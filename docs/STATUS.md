@@ -208,3 +208,28 @@ was stopped with KILL after retaining logs. The original imported root remains
 separate from runtime state. No physical phone operation ran. Evidence is in
 .symbian/gui-package[-check], gui-research/delight-archive-check.json,
 delight-import.json, delight-import-inventory.json and the private instance logs.
+
+Live ARM GDB 17.2 attachment now works against a disposable RM-807 instance.
+The actual startup source breakpoint receives reason=0 and info=0x40ffc0 at
+PC=0x700009da. A local GPL guest-debug-step.patch fixes silent execution after
+single stepping. A real frontend/GDB Pytest proves two successive Thumb stops,
+a stable fresh register read after a delay, source display and ROM SVC stops.
+The same test fails with a 30-second GDB timeout when that patch is removed;
+restoring it passes. All 143 Pytest cases with explicit optional inputs and all
+six root CTest targets pass. This is live debugging evidence, not GUI success.
+
+Stable registers show heap initialization returns KErrNotFound (-1), before
+GuiMain. The ROM requests kernel HAL page size using SVC 0x51 and chunk creation
+using 0x6D; the pinned epoc10 table maps those operations to 0x4F and 0x6B and
+dispatches 0x6D as object lookup. The real exit path reaches unimplemented
+0xF7, while its handler is registered at 0xF6. These firmware executive ABI
+discrepancies require a fuller independently checked Belle profile. No whole
+table shift, SDK replacement, or loader workaround was introduced.
+
+Visible GUI output/input, successful heap setup, normal SDK exit, stack unwinding
+and OS boot remain unverified. The test-owned frontend still requires KILL
+after TERM; reaching an exit wrapper does not establish guest cleanup. The
+original ZIP and all 13,438 baseline file digests are rechecked unchanged.
+Physical phone details remain unknown and no device operation ran. Replays and
+current limitations are in WALKTHROUGH.md section 9; transcripts, negative
+control, test logs and integrity evidence are in .symbian/gui-research/debugger*.

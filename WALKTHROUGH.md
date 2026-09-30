@@ -329,10 +329,13 @@ skips. None of these tests issues a hardware operation.
 
 ## 6. Prepare the emulator research build
 
-Use pinned EKA2L1 commit `2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8` and both
+Use pinned EKA2L1 commit `2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8` and the three
 local patches. `instance-root.patch` supplies isolated macOS data/settings roots,
 bounded CLI failure shutdown, and a loopback-only GDB listener.
 `runtime-probe.patch` supplies the documented research initialization fixes.
+`guest-debug-step.patch` makes a remote single step stop after one instruction
+and send its stop response. Without it, stepping continues silently through
+the guest until another breakpoint, so register observations can be misleading.
 These are already applied in the current workspace. For a fresh checkout:
 
 ```sh
@@ -344,6 +347,7 @@ git -C research/upstream/EKA2L1 checkout \
 git -C research/upstream/EKA2L1 submodule update --init --recursive --depth 1
 git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/instance-root.patch
 git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/runtime-probe.patch
+git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/guest-debug-step.patch
 git clone --no-checkout \
   https://github.com/SymbianSource/oss.FCL.sf.os.buildtools \
   research/upstream/buildtools
@@ -579,9 +583,13 @@ LLDB identifies the object as ARM and shows its source. This does not attach to
 the guest. Attaching LLDB to the macOS EKA2L1 process instead debugs the ARM64
 host emulator, which is useful for emulator failures but a different target.
 
-## 9. Connect a guest debugger when the GUI can launch
+## 9. Debug guest startup and the GUI
 
-**Guest attachment is unverified in this workspace.** The pinned emulator's
+**Guest attachment, startup source breakpoints and instruction stepping have
+been verified against the supplied RM-807 image.** Heap initialization fails
+before drawing; visual GUI behavior and a normal SDK exit remain unverified.
+Debugging startup is useful even while those runtime contracts are incomplete.
+The pinned emulator's
 [GDB documentation](https://github.com/EKA2L1/EKA2L1/blob/2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8/src/emu/scripting/lua/eka2l1/topics/DebuggingWithGDB.md)
 describes whole-guest debugging, Dynarmic and software breakpoints. Its stub is
 not a per-process Symbian debug agent. Start with that supported documented CPU
@@ -635,7 +643,7 @@ symbol-file -o SLIDE /absolute/repo/.symbian/gui-app/gui_app.elf
 set substitute-path /symbian-src/gui_app /absolute/repo/examples/gui_app
 set substitute-path /symbian-sdk/include /absolute/repo/.symbian/gui-sdk/include
 target remote 127.0.0.1:24689
-break GuiMain
+break GuiRunThread
 continue
 ```
 
@@ -653,11 +661,51 @@ and C++ executes Thumb. For raw-address breakpoints, upstream documents
 `set arm fallback-mode thumb` for Thumb addresses; use ARM for startup instead.
 Do not treat the Thumb state bit as a separate byte of code.
 
-The test succeeds only after a real connection, correctly relocated source
-breakpoint, expected register/instruction state, a redraw after continuing, and
-normal exit. Save debugger transcript and emulator log, and only then change
-the corresponding evidence flags. Source symbols in a static LLDB session are
-not a substitute for this test. Guest stack unwinding, crash symbolication,
+The current launch stops at `GuiRunThread`, PC `0x700009da`, with reason zero
+and thread-create information at `0x40ffc0`. Two `stepi` commands stop at
+`0x700009dc` and `0x700009de`. A fresh register read after a delay confirms the
+first stop stays halted. Source path substitution displays the actual adapter.
+A breakpoint at `startup.cc:19` observes heap result `-1` (`KErrNotFound`),
+so `GuiMain` is never called in this experiment.
+
+Live ROM breakpoints identify the failing executive-call boundary:
+
+| Guest instruction address | Belle call | Pinned emulator behavior |
+| --- | --- | --- |
+| `0x804bf730` | SVC `0x51`, kernel HAL page-size query; arguments `0,7,&size,0` | Unimplemented; its epoc10 table uses `0x4F` for HAL |
+| `0x804bf810` | SVC `0x6D`, chunk creation; owner `1`, `$HEAP` descriptor and chunk-create structure | Dispatches object lookup; chunk creation is registered at `0x6B` |
+| `0x804bfc40` | SVC `0xF7`, called from the real `User::Exit(-1)` path | Unimplemented; its thread-exiting handler is registered at `0xF6` |
+
+The HAL/chunk identifications combine real guest argument/instruction reads
+with the original SDK implementations. The exit identification is consistent
+with its caller and the original exit code. These discrepancies establish a
+kernel executive ABI problem for this firmware; they do not establish a complete
+Belle call table. Do not shift the whole table or substitute SDK implementations
+based on these three calls. A complete profile needs further independent
+mapping and controls against older supported firmware.
+
+Replay the bounded live debugging regression with the exact preserved fixture:
+
+```sh
+SYMBIAN_GUI_DEBUG_GOLDEN_ROOT="$PWD/.symbian/instances/delight-import-01" \
+SYMBIAN_GUI_DEBUG_BUILD="$PWD/.symbian/gui-app" \
+SYMBIAN_EKA2L1_EXECUTABLE="$SYMBIAN_EMULATOR" \
+uv run pytest -q symbian/tests/test_guest_debugger.py \
+  --basetemp .symbian/gui-debug-check-01
+```
+
+Use a new disposable `--basetemp` directory: Pytest clears that directory.
+The test checks ROM/EUSER and ELF/E32 digests before starting, copies the golden
+state, uses an instance-local loopback port, checks real source and ROM stops,
+retains logs, and verifies those input digests again. It explicitly expects the
+current heap failure. No input means a visible skip. Its cleanup stops only its
+own frontend process; the current frontend may require KILL after TERM. Neither
+that forced stop nor reaching `User::Exit` proves normal guest cleanup.
+
+A full GUI/debugger test still requires a redraw after continuing and normal
+exit. Keep those evidence flags separate from attachment and stepping. Source
+symbols in a static LLDB session are not a substitute for the live test.
+Guest stack unwinding, crash symbolication,
 LLDB remote compatibility and full process inspection remain separate work.
 
 ## 10. Troubleshooting and the next platform steps

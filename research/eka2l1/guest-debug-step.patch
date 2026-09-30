@@ -1,0 +1,20 @@
+diff --git a/src/emu/system/src/epoc.cpp b/src/emu/system/src/epoc.cpp
+index fb5faaf..c1b0a2b 100644
+--- a/src/emu/system/src/epoc.cpp
++++ b/src/emu/system/src/epoc.cpp
+@@ -805,6 +805,15 @@ namespace eka2l1 {
+             }
+ 
+             to_run->add_ticks(cpu->get_num_instruction_executed());
++
++            // A remote single step must produce one stop reply and leave the
++            // CPU halted. Otherwise the next loop keeps stepping silently.
++            if (should_step && stub_->is_connected()) {
++                stub_->set_cpu_step_flag(false);
++                cpu->save_context(to_run->get_thread_context());
++                stub_->send_trap_gdb(to_run, 5);
++                return 1;
++            }
+         }
+ 
+         if (!kern_->should_terminate()) {

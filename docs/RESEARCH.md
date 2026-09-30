@@ -496,3 +496,39 @@ The imported baseline is retained unbooted and inventoried separately from
 mutable runtime state; all firmware and derived data stay ignored. The native
 emulator-only importer refuses an existing output root and exposes no hardware
 transport. WALKTHROUGH.md documents the concrete material and replay.
+
+## 21. Live guest debugging and the Belle executive ABI boundary
+
+ARM GDB 17.2 connects to the isolated Dynarmic frontend using the supplied
+RM-807 ROM/Z. A relocated source breakpoint reaches GuiRunThread with reason
+zero and the expected stack-provided thread-create information. Actual guest
+register/memory reads and ROM instruction breakpoints are available before a
+GUI can draw. Full stack unwinding is not established: the raw startup frame
+lacks a proven unwind contract.
+
+The pinned system loop leaves the GDB step flag set after a CPU step, causing
+silent subsequent execution. The small GPL guest-debug-step.patch saves the
+stepped context, clears that flag and sends one stop response while halted.
+An opt-in Pytest drives the real frontend and ARM GDB; it checks two successive
+Thumb instructions, a fresh register read after a delay, source substitution,
+ROM SVC stops and the heap result. This changes emulator debugging control,
+not target SDK code or the system-call map.
+
+With stable stops, SetupThreadHeap returns KErrNotFound (-1), before GuiMain.
+The real ROM calls SVC 0x51 with (0,7,&size,0), matching
+[UserHal::PageSizeInBytes](https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/us_exec.cpp)
+and the original kernel HAL enum. It then calls 0x6D with owner=1, the $HEAP
+descriptor and a chunk-create structure. The
+[pinned epoc10 SVC table](https://github.com/EKA2L1/EKA2L1/blob/2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8/src/emu/kernel/src/svc.cpp)
+instead places HAL at 0x4F and chunk creation at 0x6B; 0x6D dispatches object
+lookup and returns not-found. User::Exit(-1) subsequently reaches SVC 0xF7,
+while the table registers its thread-exiting handler at 0xF6.
+
+The HAL/chunk semantic mapping combines runtime arguments with original source;
+the exit mapping is an inference from its caller and original cleanup code.
+This is evidence of firmware executive ABI incompatibility, not a complete
+Belle FP2 profile. Whole-table shifting would be unjustified. Next work needs
+more exported-wrapper/call-site mappings, firmware-specific selection and
+controls retaining older firmware compatibility. No synthetic SDK replacement
+or permissive import workaround was added. Visual GUI execution, normal exit,
+OS boot and physical-phone compatibility remain unverified.

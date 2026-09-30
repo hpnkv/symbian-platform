@@ -1218,3 +1218,67 @@ ClangFormat and stub/whitespace checks pass. Updated WALKTHROUGH.md and package
 docs replace the earlier absent-assets/no-GUI-package claims with measured
 results. Goal remains active; asset availability now enables SDK startup and
 guest-debugging work rather than repeated missing-ROM status reports.
+
+### 2026-09-30 — Live GDB startup diagnosis using the imported RM-807 image
+
+Installed Homebrew ARM GDB 17.2. Fresh copies of the unbooted imported baseline
+were completed before starting their frontends. A loopback GDB connection and
+relocated source breakpoint reach GuiRunThread with reason=0, info=0x40ffc0,
+PC=0x700009da, SP=0x40ffb8 and LR=0x70000020. EUSER/WS32 mappings agree with
+the prior real import/launch. Inputs remain exact ELF/E32 from the GUI build.
+
+The first unpatched debugging run was inconsistent: a stop at startup.cc:19
+was followed by registers already at the startup return loop and result=-2.
+Those stale/moving observations are not the heap result. Inspection found that
+system_impl::loop never clears the remote step flag or sends a completion stop
+after its CPU step. GDB's breakpoint continuation steps therefore keep running.
+The GPL guest-debug-step.patch clears the flag, saves the stepped context and
+sends a stop before further scheduling. No SDK or SVC table was altered.
+
+With this patch, two stepi commands produce PCs 0x700009dc and 0x700009de.
+A delayed fresh register read remains at the first stop. SetupThreadHeap returns
+-1, with PC still at 0x700009e8, LR=0x804cd55f and SP=0x40ffb8. Real SDK heap
+startup fails before GuiMain; the source adapter does not invent another heap.
+
+ROM instruction stops retain these executive-call arguments and addresses:
+
+* At 0x804bf730, SVC 0x51 receives 0,7,0x40ff80,0; LR=0x804cadab. Original
+  UserHal::PageSizeInBytes and u32hal.h identify kernel-group/page-size query.
+  The emulator table registers HAL at 0x4F and has no 0x51 implementation.
+* At 0x804bf810, SVC 0x6D receives owner=1, name=0x40febc ($HEAP),
+  create-info=0x40ff14; LR=0x804cd55f. The create-info begins 0x82,0,0,0,
+  0x00220000 and the original heap implementation calls RChunk::Create.
+  The emulator instead dispatches handle_open_object and returns not-found;
+  chunk_new is registered at 0x6B.
+* User::Exit(-1) reaches SVC 0xF7 at 0x804bfc40 with LR=0x804cc18b. Its caller
+  agrees with the original exit path, supporting the thread-exiting inference.
+  The emulator registers thread_user_exiting at 0xF6. We stop before dispatching
+  this missing call; this establishes neither a clean exit nor cleanup.
+
+The new opt-in Pytest drives actual frontend/GDB processes, checks exact
+ROM/EUSER/ELF/E32 digests, uses a copied instance and loopback port, and retains
+its logs. The first source-display assertion failed because `list GuiRunThread`
+did not include the requested heap line; explicitly listing startup.cc:18 fixes
+that test assertion. The subsequent mapped-source run passes in 6.71 seconds.
+Removing only the step patch, rebuilding, and running the identical test fails
+with a bounded 30-second GDB timeout (37.07 seconds total). The patch is restored
+in a finally block and the frontend rebuilt; the complete 143-case Pytest suite
+passes in 46.51 seconds. All six root CTest targets pass in 0.17 seconds;
+Black/Ruff and whitespace checks pass. The frontend binary hashes differ across
+rebuilds and are recorded; no reproducible emulator binary claim is made.
+
+Evidence: delight-gdb.log and delight-gdb-step-fixed.log retain manual runs;
+debugger-pytest-mapped retains the positive replay; debugger-negative retains
+the negative run and its instance; debugger-control.json records binary hashes;
+debugger-full-pytest retains the restored full-suite instances and GDB transcript;
+debugger-full-pytest.log records the full suite. Each confirmed private frontend was
+stopped; TERM did not complete shutdown, so only its owned process was killed.
+No normal guest termination is claimed. The original archive SHA-256 and all
+13,438 baseline files are rechecked unchanged in debugger-input-integrity.json.
+
+Open work: map a complete firmware-specific executive ABI independently;
+identify a reliable profile selector; retain older firmware compatibility;
+verify heap/init/Window Server services, visible drawing/input and SDK cleanup;
+then broaden debugging to unwind/crash/thread inspection. Current debugging
+proofs do not change GUI-runtime, OS-boot, physical-match or device-operation
+claims. The project goal remains active.

@@ -30,6 +30,7 @@ git clone --no-checkout https://github.com/SymbianSource/oss.FCL.sf.os.kernelhws
 git -C research/upstream/kernelhwsrv checkout 0c3208650587ac0230aed8a74e9bddb5288023eb
 git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/instance-root.patch
 git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/runtime-probe.patch
+git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/guest-debug-step.patch
 ```
 
 If the checkout already exists, verify its revision and patch before building;
@@ -181,3 +182,12 @@ CPU backends. Replay and optional SIS install/launch checks are in
 [docs/POINTERS.md](../../docs/POINTERS.md). The package harness accepts the
 verifier's independently computed `SYMBIAN_E32_TEST_HASH` reference file; the
 original probe retains its recorded hash when that explicit input is absent.
+
+The real RM-807 startup/debugger experiment is separate from these ROMless
+tests. The GPL `guest-debug-step.patch` fixes a single-step flag that otherwise
+keeps executing after a stop. `symbian/tests/test_guest_debugger.py` drives
+the actual patched frontend and ARM GDB against digest-checked ROM/EUSER and
+ELF/E32 inputs in a disposable copy. It expects the current heap startup
+failure and checks source/ROM breakpoints and stable instruction stepping.
+See [WALKTHROUGH.md](../../WALKTHROUGH.md#9-debug-guest-startup-and-the-gui)
+for replay, concrete executive ABI discrepancies and remaining limitations.
