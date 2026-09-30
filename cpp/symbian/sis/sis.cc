@@ -259,9 +259,9 @@ absl::StatusOr<std::string> BuildPackage(std::string_view executable,
   const auto image = e32::InspectImage(executable);
   if (!image.ok())
     return image.status();
-  if (image->dll || !image->imports.empty())
+  if (image->dll)
     return absl::UnimplementedError(
-        "SIS experiment requires an import-free executable");
+        "SIS experiment requires a single executable, not a DLL");
   const auto digest = Digest(executable);
   if (!digest.ok())
     return digest.status();
@@ -421,6 +421,11 @@ absl::StatusOr<PackageInfo> InspectPackage(std::string_view bytes) {
   result.executable_uid =
       Read32(*payload, 8);  // Native E32 inspection succeeded.
   result.executable_size = static_cast<uint32_t>(payload->size());
+  constexpr char kHex[] = "0123456789abcdef";
+  for (const unsigned char byte : *digest) {
+    result.executable_sha1.push_back(kHex[byte >> 4]);
+    result.executable_sha1.push_back(kHex[byte & 15]);
+  }
   return result;
 }
 

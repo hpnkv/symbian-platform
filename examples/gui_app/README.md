@@ -5,7 +5,9 @@ and the native E32 converter. See the complete root
 [WALKTHROUGH.md](../../WALKTHROUGH.md) for pinned source acquisition, SDK
 preparation, build/test commands, emulator launch, editor setup and debugging.
 
-The ELF/E32 build, host model tests, historical validation and offline debug
-symbols are tested. Visible GUI execution and guest debugging still require
-compatible real ROM/Z and system DLLs and remain unverified. This example has
-no SIS package or application registration.
+The ELF/E32 build, model tests, image validation, SIS installation/registry
+operations and offline debug symbols are tested. The supplied Delight RM-807
+bundle imports into EKA2L1 and a launch maps real system DLLs; startup logs expose
+unimplemented services and a heap lookup failure. Visible GUI behavior and
+guest debugging remain unverified. The example has a single-EXE SIS package
+and no application registration.

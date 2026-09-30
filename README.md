@@ -54,7 +54,9 @@ Use `.symbian/e32-probe` as clangd's compilation database directory.
 The native EKA2L1 build and independent oracle tests are documented in
 [research/eka2l1/README.md](research/eka2l1/README.md). The local patch provides
 an explicit macOS instance root and fixes CLI shutdown without device images.
-Matched ROM/Z assets are still needed to boot and test a target application.
+The supplied Delight RM-807 firmware now imports ROM/Z into a private emulator
+instance. A GUI launch mapped real system DLLs and exposed startup/service
+diagnostics; visual behavior remains unverified. See WALKTHROUGH.md.
 After building those research dependencies, run:
 
 ```sh

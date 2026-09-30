@@ -463,3 +463,36 @@ missing. Imported-image SIS packaging, application registration, rotation and
 full runtime support remain open. Root WALKTHROUGH.md contains creation details,
 pinned source acquisition, verified build/check commands, and explicitly
 unexecuted emulator/debugger procedures with acceptance criteria.
+
+## 20. Imported GUI packaging and supplied RM-807 firmware
+
+Single-executable SIS transport does not depend on the executable being
+import-free. The native writer now preserves validated imported E32 payloads;
+DLL payloads remain unsupported. Native inspection exposes the verified embedded
+SHA-1, enabling an independent exact-input check before installer tests. The GUI
+package adds no system DLL implementations or application registration.
+
+Seventeen historical image/checksum/installer cases verify unchanged installed
+bytes, complete registry metadata/SID/hash, reload, uninstall and reinstall.
+The configured CPU backends execute no instructions in those package cases.
+The absence-of-system-DLL case exposed an upstream defect: process creation
+succeeds while all 37 import slots remain unresolved. Inspection of
+buildup_import_fixup_table shows ignored failed fixups. This is now explicitly
+observed and reported, not treated as launch success; a loader fix needs separate
+rollback/cycle and compatibility tests. No upstream algorithm was changed here.
+
+The owner supplied Nokia 808 PureView (Delight v1.8).zip. Its seven files include
+core/ROFS2/ROFS3/UDA FPSX and a VPL declaring RM-807, product 059M7Q4, version
+113.010.1508. Required files and all supplied CRC values agree. The actual
+EKA2L1 firmware importer accepts it, producing a ROM, Z filesystem and isolated
+writable drives, identified as Nokia/808 PureView/RM-807/epoc100. This establishes
+an emulator research candidate; archive authenticity, physical-phone match and
+factory recovery suitability are unverified.
+
+A copied private instance loads gui_app.exe and real EUSER/WS32 at actual
+runtime addresses. Logs expose unimplemented SVCs 0x51/0xF7 and a $HEAP lookup
+failure. Visual behavior, guest debugging and correct SDK startup remain open.
+The imported baseline is retained unbooted and inventoried separately from
+mutable runtime state; all firmware and derived data stay ignored. The native
+emulator-only importer refuses an existing output root and exposes no hardware
+transport. WALKTHROUGH.md documents the concrete material and replay.

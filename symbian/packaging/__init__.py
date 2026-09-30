@@ -29,7 +29,12 @@ def inspect_package(path: Path) -> dict:
     result.update(
         {
             field: getattr(info, field)
-            for field in ("executable_uid", "executable_size", "target")
+            for field in (
+                "executable_uid",
+                "executable_size",
+                "executable_sha1",
+                "target",
+            )
         }
     )
     return result
@@ -40,7 +45,7 @@ def package(project: Path, artifact: Path, output: Path) -> dict:
 
     Args:
         project: Directory containing symbian.toml with a package table.
-        artifact: Native converter's import-free experimental E32 executable.
+        artifact: Native converter's validated experimental E32 executable.
         output: Directory for a SIS file and a structured evidence report.
 
     Returns:
@@ -110,7 +115,8 @@ def package(project: Path, artifact: Path, output: Path) -> dict:
         "symbian_loader_verified": False,
         "runtime_verified": False,
         "limitations": [
-            "One English import-free EXE; no resources/scripts/dependencies",
+            "One English EXE; no resources/scripts/package dependencies",
+            "Imported DLL implementations must already exist in the target",
             "Fixed 2004-01-01 timestamp, uncompressed streams, ASCII metadata",
             "SHA-1 is legacy file integrity; no certificate or signing policy",
             "Phone installation and matched Belle runtime remain unverified",

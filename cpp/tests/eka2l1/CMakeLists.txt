@@ -83,7 +83,28 @@ set_tests_properties(symbian_package_probe PROPERTIES
   ENVIRONMENT "SYMBIAN_E32_TEST_IMAGE=${SYMBIAN_E32_TEST_IMAGE};SYMBIAN_SIS_TEST_PACKAGE=${SYMBIAN_SIS_TEST_PACKAGE}"
   TIMEOUT 15)
 
+add_executable(symbian_gui_package_probe gui_package_probe_test.cc
+    "${SYMBIAN_PLATFORM_ROOT}/research/upstream/EKA2L1/src/tests/platform.cpp")
+target_compile_features(symbian_gui_package_probe PRIVATE cxx_std_20)
+target_compile_options(symbian_gui_package_probe PRIVATE -fno-exceptions)
+target_link_libraries(symbian_gui_package_probe PRIVATE
+                      epoc epockern epocmem epoctiming epocio epocpkg epocloader GTest::gtest_main)
+# The Python verifier supplies a private exact payload and independent hash.
+# Direct replay also requires SYMBIAN_E32_TEST_HASH; no default hash is invented.
+add_test(NAME symbian_gui_package_probe COMMAND symbian_gui_package_probe)
+set_tests_properties(symbian_gui_package_probe PROPERTIES
+  ENVIRONMENT "SYMBIAN_E32_TEST_IMAGE=${SYMBIAN_PLATFORM_ROOT}/.symbian/gui-app/gui_app.exe;SYMBIAN_SIS_TEST_PACKAGE=${SYMBIAN_PLATFORM_ROOT}/.symbian/gui-package/gui_app.sis"
+  TIMEOUT 15)
+
 # Separate historical EPL oracle; no emulator or production format code linked.
+add_executable(symbian_firmware_import_probe firmware_import_probe_test.cc
+    "${SYMBIAN_PLATFORM_ROOT}/research/upstream/EKA2L1/src/tests/platform.cpp")
+target_compile_features(symbian_firmware_import_probe PRIVATE cxx_std_20)
+target_compile_options(symbian_firmware_import_probe PRIVATE -fno-exceptions)
+target_link_libraries(symbian_firmware_import_probe PRIVATE
+                      epoc epockern epocmem epoctiming epocio epocloader GTest::gtest_main)
+# Opt-in research test with a new explicit output root; no physical transport.
+
 add_executable(symbian_sis_checksum_oracle sis_checksum_oracle_test.cc)
 target_compile_features(symbian_sis_checksum_oracle PRIVATE cxx_std_20)
 target_compile_options(symbian_sis_checksum_oracle PRIVATE -fno-exceptions)

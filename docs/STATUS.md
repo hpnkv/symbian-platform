@@ -177,3 +177,34 @@ The walkthrough labels these procedures as future experiments. The example
 has no application registration or SIS package; the existing SIS writer's
 import-free restriction remains. No emulator OS boot or physical-device action
 is claimed or performed. Phone RM/product/firmware details remain unknown.
+
+
+The GUI now has a native single-EXE unsigned SIS package, independently validated
+in 17 image/checksum/installer cases. Actual installer/registry behavior verifies
+exact payload bytes, UID/SID/version and an independent legacy digest, reload,
+uninstall and reinstall in disposable ROMless filesystems. A control records
+the unchanged upstream loader's missing-library defect: it creates a process
+with all 37 imported words still unresolved. No guest instructions execute in
+these installer cases. Reports explicitly keep GUI/SDK execution and matched
+loader/runtime verification false. The native writer now accepts imported EXEs
+while still rejecting DLL payloads, resources and broader package profiles.
+All 142 Pytest cases and six root CTest targets pass; the installed wheel
+reproduces ELF/E32/SIS and repeats the 17-case package check.
+
+The supplied Delight v1.8 ZIP was checked and staged privately. Its VPL declares
+RM-807, product 059M7Q4 and version 113.010.1508; seven required/present files
+pass archive and declared CRC checks. One opt-in native GTest successfully uses
+EKA2L1's VPL/FPSX/ROM/ROFS/FAT importer into a new isolated root. The result
+identifies Nokia/808 PureView/RM-807/epoc100 and supplies a ROM and actual system
+DLLs, with 13,438 imported files inventoried by SHA-256. This corrects the prior
+missing-assets state. Custom archive authenticity, stock recovery baseline and
+matching this physical phone are not established.
+
+A copied instance maps the GUI at 0x70000000, EUSER at 0x804bcce8 and WS32 at
+0x80a4c028. It logs unimplemented SVCs 0x51/0xF7 and a $HEAP lookup failure;
+visual behavior, correct startup/cleanup and debugger attachment are not yet
+verified. TERM did not finish the private emulator, so its confirmed process
+was stopped with KILL after retaining logs. The original imported root remains
+separate from runtime state. No physical phone operation ran. Evidence is in
+.symbian/gui-package[-check], gui-research/delight-archive-check.json,
+delight-import.json, delight-import-inventory.json and the private instance logs.

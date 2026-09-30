@@ -85,6 +85,17 @@ def _parser() -> argparse.ArgumentParser:
     gui.add_argument("artifact", type=Path)
     gui.add_argument("--oracles-build", type=Path, default=Path("build/eka2l1"))
     gui.add_argument("--output", type=Path, default=Path(".symbian/gui-check"))
+    gui_package = compiler_commands.add_parser(
+        "verify-gui-package", help="Check GUI SIS installation without OS boot"
+    )
+    gui_package.add_argument("package", type=Path)
+    gui_package.add_argument("--executable", type=Path, required=True)
+    gui_package.add_argument(
+        "--oracles-build", type=Path, default=Path("build/eka2l1")
+    )
+    gui_package.add_argument(
+        "--output", type=Path, default=Path(".symbian/gui-package-check")
+    )
     build = commands.add_parser("build", help="Build an ARM/E32 experiment")
     build.add_argument("--project", type=Path, default=Path.cwd())
     build.add_argument("--output", type=Path, default=Path(".symbian/build"))
@@ -133,6 +144,12 @@ def _execute(args: argparse.Namespace) -> dict:
     if args.command == "doctor":
         return doctor()
     if args.command == "toolchain":
+        if args.toolchain_command == "verify-gui-package":
+            from symbian.packaging.verification import verify_gui_package
+
+            return verify_gui_package(
+                args.package, args.executable, args.oracles_build, args.output
+            )
         if args.toolchain_command == "verify-gui":
             from symbian.toolchain.verification import verify_gui
 

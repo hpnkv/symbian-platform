@@ -22,10 +22,11 @@ struct PackageInfo {
   PackageOptions options;
   uint32_t executable_uid = 0;
   uint32_t executable_size = 0;
+  std::string executable_sha1;  // Hex digest of the verified embedded payload.
   std::string target;
 };
 
-// Deterministic unsigned SISX, English, one import-free experimental E32 EXE,
+// Deterministic unsigned SISX, English, one validated experimental E32 EXE,
 // ordinary installation to !:\sys\bin. No scripts, dependencies or signature.
 // Printable ASCII metadata, experimental UID range and <=16 MiB payload only.
 // This is a format experiment, not an authorization to install on hardware.

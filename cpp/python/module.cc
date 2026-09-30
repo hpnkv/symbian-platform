@@ -240,6 +240,7 @@ PYBIND11_MODULE(_native, module) {
       .def_readonly("options", &PackageInfo::options)
       .def_readonly("executable_uid", &PackageInfo::executable_uid)
       .def_readonly("executable_size", &PackageInfo::executable_size)
+      .def_readonly("executable_sha1", &PackageInfo::executable_sha1)
       .def_readonly("target", &PackageInfo::target);
   module.def(
       "build_sis", &BuildSis, py::arg("data"), py::arg("uid"), py::arg("name"),

@@ -8,17 +8,21 @@ The source compiles on macOS with contemporary Clang, links with LLD, and
 converts to a reproducible Symbian E32 executable. Original Nokia checksum
 and whole-image validation pass. Its ARM ELF retains valid DWARF and LLDB
 resolves its functions and source lines. **The application has not yet been
-seen running in a booted emulator or on a phone.** No matching ROM/Z material
-is available in this workspace. The launch and guest-debugging sections below
-are the next experiments, with explicit prerequisites and pass criteria.
+visually verified in an emulator or on a phone.** The user-supplied Delight
+v1.8 firmware ZIP now imports into EKA2L1 as RM-807/808 PureView/epoc100. A real
+launch mapped this GUI and EUSER/WS32, but logged unimplemented SVCs and a heap
+lookup failure. Import and mapping are tested; GUI behavior and guest debugging
+still require investigation. See section 7 for this concrete asset checkpoint.
 
 | Result | Current evidence |
 | --- | --- |
 | Public source headers and frozen function ordinals | 92 hashed header aliases; 9 EUSER and 28 WS32 imports |
 | C++20 ARM compilation and E32 conversion | Two independent CMake/Ninja builds produce identical ELF/E32 bytes |
 | Counter, layout, pointer boundaries, division | Five host GTests |
-| SDK preparation and integration policy | 15 Pytest cases with optional public source/oracle inputs |
+| SDK preparation, packaging and integration policy | 18 Pytest cases with optional public source/oracle inputs |
 | Historical image checks | Eight passing original-source checksum/validator cases |
+| GUI SIS package | 17 image/checksum/installer cases; registry reload/removal/reinstall verified |
+| Supplied RM-807 firmware | VPL/ZIP checks and native emulator import pass; real DLLs mapped during launch |
 | Debug information and editor input | DWARF verification, LLDB symbol/source lookup, real compilation database |
 | Visible drawing, pointer delivery, SDK startup/cleanup | Not executed in a matched emulator |
 | Guest debugger connection and breakpoints | Procedure researched; attachment unverified |
@@ -247,11 +251,32 @@ name. The integration fixture in `symbian/tests/test_gui.py` demonstrates this
 with paths containing spaces. Do not copy an arbitrary SDK onto the source
 profile and assume the frozen ordinals remain valid.
 
-This executable currently has no SIS package. The bounded native package
-writer still rejects imported images, and the project declares no `[package]`.
-The emulator test uses direct launch from virtual `C:\sys\bin`. Resource-based
-application registration, unsigned/signed imported-app SIS packages, and phone
-installation are separate future work.
+The native package writer now accepts imported executables while retaining its
+single-EXE profile and rejecting DLL payloads. The project declares package UID
+`0xe0000812`, independently of executable UID `0xe0000811`:
+
+```sh
+uv run symbian package --project examples/gui_app \
+  --artifact .symbian/gui-app/gui_app.exe --output .symbian/gui-package
+uv run symbian inspect .symbian/gui-package/gui_app.sis --format sis
+uv run symbian toolchain verify-gui-package .symbian/gui-package/gui_app.sis \
+  --executable .symbian/gui-app/gui_app.exe \
+  --oracles-build build/eka2l1 --output .symbian/gui-package-check
+```
+
+The package contains only the unchanged EXE; target system libraries must
+already exist. Native inspection exposes the embedded payload's verified SHA-1;
+the verifier independently compares it with the supplied executable before
+writing or running an installer. Seventeen tests cover eight image checks,
+one original SIS checksum case, and eight independent EKA2L1 filesystem/registry
+cases across two configured backends. No CPU instructions run in those
+installer cases. The absence-of-DLL control observes an upstream defect:
+process creation succeeds with all 37 import slots still holding ordinals.
+The report records this explicitly and keeps GUI/runtime verification false.
+Process creation is insufficient evidence of a successful launch.
+
+Resource-based application registration, certificates and phone installation
+are separate work. The example can still launch directly by virtual EXE path.
 
 ## 5. Run checks that do not require a ROM
 
@@ -340,7 +365,8 @@ cmake -S research/upstream/EKA2L1 -B build/eka2l1 -G Ninja \
   -DEKA2L1_ENABLE_QT_CAMERA=OFF -DEKA2L1_SCRIPTING_LUA=OFF \
   -DCMAKE_PROJECT_EKA2L1_INCLUDE="$PWD/research/eka2l1/project-tests.cmake"
 cmake --build build/eka2l1 -j 8 --target \
-  eka2l1_qt symbian_checksum_oracle symbian_validator_oracle
+  eka2l1_qt symbian_checksum_oracle symbian_validator_oracle \
+  symbian_sis_checksum_oracle symbian_gui_package_probe
 ```
 
 `kernelhwsrv` is the same pinned tree already used for headers. The historical
@@ -368,13 +394,54 @@ not been established.
 
 ## 7. Boot a real test device and launch the GUI
 
-**This section has not been executed here.** EKA2L1's
+The basic asset import and direct-launch attempt have now been executed with
+the supplied firmware; the visual/input acceptance tests below remain open.
+EKA2L1's
 [installation instructions](https://github.com/EKA2L1/EKA2L1/wiki/Using-the-emulator)
 require a ROM and a repackaged Z drive from the same device. Public headers and
 ordinal proxies cannot replace those assets. Use legitimate, independently
 preserved material and record its digests and actual device identity. A generic
 epoc10 test profile does not identify a Belle firmware. RM-807 is still a
-hypothesis for the physical phone in this project.
+hypothesis for the physical phone in this project. The supplied ZIP declares
+RM-807; that establishes the archive's identity, not the phone's current state.
+
+### Supplied Delight v1.8 archive checkpoint
+
+The provided Downloads ZIP has SHA-256
+`88403c3a8ef5ed14a48712a70fd81020b2b33ae17d5487a595004f09b8c10d98`.
+It contains seven files: core/ROFS2/ROFS3/UDA FPSX images, a VPL, a DCP and a
+signature file. Its VPL declares product `059M7Q4`, version `113.010.1508`, and
+a French/Euro variant. All required files are present; ZIP CRCs and all supplied
+VPL CRC entries agree. Some optional files, including the eMMC image, are absent.
+CRC agreement and a signature file do not establish authenticity. The filename
+identifies custom Delight material; it is not an established factory recovery
+baseline or a verified copy of this physical phone.
+
+A working extraction is in `.symbian/assets/delight-v1.8/RM-807`. The separate
+native research importer calls EKA2L1's actual VPL/FPSX/ROM/ROFS/FAT pipeline.
+It refuses an existing output root and never calls a physical transport:
+
+```sh
+cmake --build build/eka2l1 --target symbian_firmware_import_probe -j 8
+SYMBIAN_FIRMWARE_VPL="$PWD/.symbian/assets/delight-v1.8/RM-807/RM807_059M7Q4_113.010.1508_019.vpl" \
+  SYMBIAN_EMULATOR_IMPORT_ROOT="$PWD/.symbian/instances/delight-import-new" \
+  build/eka2l1/platform-tests/symbian_firmware_import_probe \
+  --gtest_output=json:"$PWD/.symbian/delight-import-new.json"
+```
+
+The retained successful root is `.symbian/instances/delight-import-01`, with
+13,438 inventoried files, a 31 MiB `data/roms/rm-807/SYM.ROM`, actual EUSER/WS32
+in `data/drives/z/rm-807/sys/bin`, and isolated writable drives. Its
+`data/devices.yml` identifies Nokia/808 PureView/RM-807/epoc100; machine UID was
+initially recorded as zero and must not be inferred from this import alone.
+Copy the complete stopped imported root before launch, wait for copying to
+finish, and use the new copy as `SYMBIAN_GUI_INSTANCE`. The direct-launch attempt
+in `delight-gui-01` mapped the GUI at `0x70000000` and both real system DLLs;
+it logged unimplemented SVCs `0x51`/`0xF7` and a `$HEAP` lookup failure.
+That is runtime diagnostic evidence, not proof of the counter rendering or
+working. Guest symbols, heap startup and emulator service coverage need the
+next debugging experiment. Original archive/extracted/imported digests and
+logs stay in ignored `.symbian/gui-research`.
 
 Launch the patched frontend:
 
@@ -414,6 +481,13 @@ directory first. All paths in this step refer to disposable emulator storage.
 The equivalent command `--app` is an alias of `--run` in this pinned frontend.
 The absolute virtual EXE path is necessary because this example has no
 application registration. Keep `gui_app.elf` on the host for debugging.
+
+Alternatively, after confirming the selected disposable device and drive,
+install `.symbian/gui-package/gui_app.sis` through the frontend's package
+installer. The pinned CLI `--install` uses drive E, so a CLI installation must
+subsequently launch `E:\sys\bin\gui_app.exe`, not the C-drive path above.
+Ordinary installation still does not create an application-menu entry without
+registration resources. The native research package tests explicitly select C.
 
 Test and record the following in `docs/RESEARCH_LOG.md` with actual results:
 
@@ -602,7 +676,7 @@ LLDB remote compatibility and full process inspection remain separate work.
 | Panic before drawing | Heap/thread-create/process startup or SDK ABI mismatch; retain log and mapping |
 | No redraw or pointer response | Window Server event/client handles, focus, pending request status and target service compatibility |
 | No application-menu icon | Registration resources and Avkon lifecycle are intentionally not implemented |
-| SIS packaging fails | Imported-image package support is not implemented for this example |
+| SIS packaging fails | Single EXE, experimental UIDs and bounded metadata required; DLL payloads/resources/signatures unsupported |
 | Breakpoint never hits | Stub enabled on supported backend, correct current code slide, ARM/Thumb state and exact ELF/executable pair |
 | Source files not found in debugger | Apply prefix substitutions rather than removing reproducibility maps |
 

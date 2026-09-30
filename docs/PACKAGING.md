@@ -1,6 +1,6 @@
 # Experimental SISX packages
 
-The native writer packages one validated import-free E32 executable. The output
+The native writer packages one validated E32 executable, including eager imports. The output
 is an unsigned SISX-format `.sis` file for ordinary installation, with separate
 package and executable UIDs. It currently supports English, printable ASCII
 metadata, a restricted executable basename, versions in 0..32767, one payload
@@ -9,7 +9,8 @@ scripts, dependencies, embedded packages, upgrades or certificates.
 
 This advances the macOS build/package/emulator loop. It does not establish
 installation policy or loader compatibility on the physical Nokia 808.
-A matched Belle ROM/Z environment remains unavailable.
+A supplied Delight RM-807 firmware bundle now imports into EKA2L1; GUI startup
+and visual behavior in that material remain under investigation.
 
 The host build requires OpenSSL 3's static libcrypto for the legacy SHA-1 field
 (`brew install openssl@3`). It follows A11's static linkage pattern; the verified
@@ -47,6 +48,8 @@ manifest and package SHA-256 digests. SHA-1 is a legacy integrity field, not
 package authentication. The inspector supports precisely this canonical profile:
 it bounds containers, verifies UID and controller/data CRCs and the file digest,
 validates the E32 through the native core, then checks a canonical reconstruction.
+Native inspection exposes the verified embedded executable SHA-1. This permits
+independent pairing with an exact supplied executable before installer work.
 Other SIS profiles return Unimplemented, not a general validity verdict.
 
 After building the research dependencies in research/eka2l1/README.md:
@@ -89,3 +92,30 @@ The pointer/virtual dispatch example also produces a package through this
 unchanged native writer. `toolchain verify-pointers --package` runs the scoped
 21-case image/dispatch/installer check. See POINTERS.md. The original
 `verify-package` command retains the earlier relocation-free probe scope.
+
+The GUI example now has package UID 0xe0000812 and executable UID 0xe0000811.
+Its imported E32 remains opaque unchanged payload; EUSER/WS32 must already exist
+in the target. DLL payloads remain unsupported. Build it and check its package:
+
+```sh
+uv run symbian package --project examples/gui_app \
+  --artifact .symbian/gui-app/gui_app.exe --output .symbian/gui-package
+uv run symbian toolchain verify-gui-package .symbian/gui-package/gui_app.sis \
+  --executable .symbian/gui-app/gui_app.exe --output .symbian/gui-package-check
+```
+
+Build symbian_gui_package_probe alongside the existing research oracles. This
+17-case check combines eight image checks, one SIS CRC oracle and eight GUI
+package cases. The original installer checks unchanged bytes, complete metadata,
+SID and an independent hashlib reference; registry reload, uninstall and
+reinstall are checked in fresh private filesystems with both CPU backends
+configured. No CPU instructions execute. A fourth case observes that the
+unchanged upstream loader creates a process despite absent system DLLs, leaving
+all 37 import slots unresolved. The report explicitly preserves that defect
+and keeps GUI/SDK execution, Belle, debugging and phone flags false.
+Equal-sized different valid executables are rejected before installer work by
+the independent digest pairing check. The installed wheel reproduces ELF/E32/SIS
+and repeats all 17 cases. See WALKTHROUGH.md and RESEARCH_LOG.md.
+
+The GUI package is 7,036 bytes, SHA-256
+`7c7f2a402c4f22175c2e120fdc6dd39f37508168908e28fe07ee50828b6f4ebf`.

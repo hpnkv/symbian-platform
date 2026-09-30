@@ -1119,3 +1119,102 @@ launch? Can the pinned GDB stub stop/step this relocated Thumb image accurately?
 ROM/Z is still missing; these questions remain open rather than manufacturing
 service implementations or declaring loader compatibility from ELF generation.
 No physical-device operation, OS boot or visible GUI test occurred.
+
+
+## 2026-09-30: GUI SIS transport and user-supplied Delight firmware
+
+**Continuation and steering:** Prior GUI work was a progress turn: source,
+toolchain, tests, walkthrough and commit abdc655 are authoritative. The next
+platform slice extends GUI packaging independently of matched execution. During
+this work the user supplied /Users/helena/Downloads/Nokia 808 PureView
+(Delight v1.8).zip and asked to check it. Asset inspection/import became the
+next independent experiment. No permission prompt or physical operation ran.
+
+**Packaging evidence and implementation:** Read EKA2L1's SIS interpreter and
+registry behavior. It extracts E32 as opaque bytes and reads SID from its header;
+imports do not alter the SIS representation. Removed the writer's artificial
+import-free restriction, preserving its validated single-EXE/unsigned/ASCII
+profile and DLL rejection. No package-format serialization changes were needed.
+Native inspection now exposes the verified embedded SHA-1 string. Python uses
+independent hashlib to reject a mismatched equal-size valid executable before
+writing or invoking installer checks; no native format logic moves to Python.
+The immutable binding and generated stub expose this field, with existing
+GIL/status policy intact. Host native code remains no-exception Abseil style.
+
+Added the GUI package declaration (package UID e0000812 versus executable/SID
+e0000811). Package bytes are 7,036, SHA-256
+7c7f2a402c4f22175c2e120fdc6dd39f37508168908e28fe07ee50828b6f4ebf.
+The E32 and ELF hashes remain those of the GUI checkpoint. The new verifier runs
+eight historical image cases, one original SIS checksum case and eight real
+installer/registry cases. Each configured backend gets a private filesystem,
+complete installed byte/metadata/SID/hash checks, registry reload, removal and
+reinstallation. These cases deliberately execute zero guest instructions.
+All reports distinguish installer evidence from GUI/SDK/Belle execution.
+
+**Unexpected loader behavior:** The initial control expected absent EUSER/WS32
+to reject process creation. Six installer cases passed; both rejection cases
+failed because the loader returned a process. Failure JSON/CLI transcript is
+retained under gui-package-check/run-uehyvdul. Source inspection identifies
+buildup_import_fixup_table discarding bool failure from elf_fix_up_import_dir.
+An independent upstream parser/memory inspection now records the actual
+failure: process creation succeeds and all 37 import slots retain their original
+ordinals, with no guest instructions run. The verifier reports rejected=false,
+unresolved_import_slots_observed=37 and GUI/runtime flags false. This observation
+does not resolve the loader defect. A correct future fix needs code-object and
+dependency rollback, including cycles and previously loaded dependencies;
+forcing deletion without those tests could leave dangling references. Upstream
+loader/installer algorithms were not changed to turn this control green.
+
+**User archive checks:** The ZIP is 202,675,963 bytes, SHA-256
+88403c3a8ef5ed14a48712a70fd81020b2b33ae17d5487a595004f09b8c10d98.
+It contains seven files plus the RM-807 directory: core, ROFS2, ROFS3 and UDA
+FPSX files, VPL, DCP and a signature file. VPL declares RM-807, product 059M7Q4,
+version 113.010.1508 and the French/Euro variant. All non-optional VPL inputs
+are present; supplied ZIP CRCs validate and supplied VPL CRC entries agree.
+Optional eMMC/templates are absent. The signature file is opaque; no authenticity
+or physical-device matching verdict is inferred from the filename, CRC or hash.
+The existing Downloads ZIP is unchanged. Working extraction is private under
+.symbian/assets/delight-v1.8, with per-file hashes and reports under gui-research.
+
+**Actual emulator import:** Added a separate GPL no-exception research GTest
+calling EKA2L1's actual VPL/FPSX/ROM/ROFS/FAT installation path, without any
+hardware transport. It requires explicit inputs and a new absolute root, refuses
+existing state, requires exactly one chosen variant, and is not a default CTest
+job. Supplied material imports successfully in 1.8 seconds into
+.symbian/instances/delight-import-01. Device metadata identifies Nokia,
+808 PureView, RM-807 and epoc100, initially machine UID zero. Imported data is
+329 MiB/13,438 inventoried files, with a 31 MiB SYM.ROM, Z/system DLLs and
+isolated C storage. The immutable-offline preservation requirement is not
+fulfilled by these owner-controlled copies; original/working/imported artifacts
+and recorded digests are only local research preservation evidence.
+
+**Runtime probe:** A separate copied root delight-gui-01 contains the unchanged
+GUI EXE on per-device C. The first frontend attempt occurred before the filesystem
+copy finished and failed device discovery; the copy handle was then awaited and
+the completed device metadata checked before retry. Record this sequencing
+mistake rather than interpreting the early failure as an asset defect. The
+second attempt has actual runtime mappings: GUI 70000000, EUSER 804bcce8 and
+WS32 80a4c028. It initializes a screen buffer and logs unimplemented SVCs 51/F7
+and a $HEAP lookup failure. No framebuffer inspection, pointer test, healthy
+exit or debugger attachment has been performed, so visual/SDK runtime flags
+remain false. TERM did not stop the process; after confirming the exact private
+argv/PID and continued liveness, KILL stopped it. The retained imported baseline
+was not booted or modified by this runtime test. Logs and mutable state remain
+ignored. Archive/phone match, correct startup and emulator service coverage
+remain separate questions; no phone API or operation is involved.
+
+**Verification:** All 142 Pytest cases passed with explicit optional paths;
+all 18 GUI Python cases passed, including native imported packaging, DLL
+rejection, equal-size mismatched payload rejection and installer/registry checks.
+All six root CTest targets pass. The new eight-case GPL package harness and
+one-case firmware importer pass against actual supplied/generated inputs.
+An existing-root negative replay fails before import; all 13,438 baseline file
+digests still agree afterward. Final archive/baseline integrity and importer
+binary hash are retained in delight-final-integrity.json.
+The installed wheel, outside the source import path, prepares the SDK, reproduces
+ELF/E32/SIS and passes eight image cases plus the 17-case package check. Native
+format logic and existing scheduler architecture are unchanged. Black/Ruff,
+ClangFormat and stub/whitespace checks pass. Updated WALKTHROUGH.md and package
+docs replace the earlier absent-assets/no-GUI-package claims with measured
+results. Goal remains active; asset availability now enables SDK startup and
+guest-debugging work rather than repeated missing-ROM status reports.

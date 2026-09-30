@@ -9,8 +9,9 @@ from pathlib import Path
 
 import pytest
 
-from symbian import toolchain
+from symbian import packaging, toolchain
 from symbian.cli.__main__ import main
+from symbian.packaging.verification import verify_gui_package
 from symbian.sdk import staging
 from symbian.status import Code, StatusError
 from symbian.toolchain.verification import verify_gui
@@ -251,3 +252,100 @@ def test_gui_validator_rejects_integer_probe(tmp_path):
         verify_gui(Path(report["artifact"]), tmp_path, tmp_path / "checks")
     assert caught.value.code == Code.INVALID_ARGUMENT
     assert not (tmp_path / "checks").exists()
+
+
+def test_imported_gui_package_keeps_native_digest_and_rejects_dll(
+    gui, tmp_path
+):
+    report, _ = gui
+    executable = Path(report["artifact"])
+    packaged = packaging.package(PROJECT, executable, tmp_path / "package")
+    assert packaged["sis"]["uid"] == 0xE0000812
+    assert packaged["sis"]["executable_uid"] == 0xE0000811
+    assert (
+        packaged["sis"]["executable_sha1"]
+        == hashlib.sha1(executable.read_bytes()).hexdigest()
+    )
+    assert not packaged["runtime_verified"]
+    assert packaged["sis"]["target"] == "!:\\sys\\bin\\gui_app.exe"
+    dll = toolchain.build(PROJECT.parent / "dll_probe", tmp_path / "dll")
+    with pytest.raises(StatusError) as caught:
+        packaging.package(PROJECT, Path(dll["artifact"]), tmp_path / "bad")
+    assert caught.value.code == Code.UNIMPLEMENTED
+    assert not (tmp_path / "bad").exists()
+
+
+def test_mismatched_equal_size_gui_payload_is_rejected_before_installation(
+    gui, tmp_path
+):
+    report, _ = gui
+    original = Path(report["artifact"])
+    packaged = packaging.package(PROJECT, original, tmp_path / "package")
+    source = Path(
+        next(path for path in report["inputs"] if path.endswith("/app.cc"))
+    ).parent
+    project = tmp_path / "modified-project"
+    shutil.copytree(source, project)
+    app = project / "app.cc"
+    app.write_text(app.read_text().replace("0x00e8ebf2", "0x00e8ebf3"))
+    changed = toolchain.build(project, tmp_path / "changed")
+    assert changed["sha256"] != report["sha256"]
+    assert Path(changed["artifact"]).stat().st_size == original.stat().st_size
+    with pytest.raises(StatusError) as caught:
+        verify_gui_package(
+            Path(packaged["artifact"]),
+            Path(changed["artifact"]),
+            tmp_path / "missing",
+            tmp_path / "checks",
+        )
+    assert caught.value.code == Code.INVALID_ARGUMENT
+    assert not (tmp_path / "checks").exists()
+
+
+@pytest.mark.skipif(
+    not ORACLES, reason="Supply historical/GUI installer oracles"
+)
+def test_gui_install_reload_remove_reinstall_and_missing_service_controls(
+    gui, tmp_path, capsys
+):
+    report, _ = gui
+    packaged = packaging.package(
+        PROJECT, Path(report["artifact"]), tmp_path / "package"
+    )
+    assert (
+        main(
+            [
+                "toolchain",
+                "verify-gui-package",
+                packaged["artifact"],
+                "--executable",
+                report["artifact"],
+                "--oracles-build",
+                ORACLES,
+                "--output",
+                str(tmp_path / "checks"),
+            ]
+        )
+        == 0
+    )
+    result = json.loads(capsys.readouterr().out)["result"]
+    assert result["tests_passed"] == 17
+    for flag in (
+        "eka2l1_install_verified",
+        "registry_reload_verified",
+        "uninstall_reinstall_verified",
+    ):
+        assert result[flag]
+    assert not result["missing_system_libraries_rejected"]
+    assert result["unresolved_import_slots_observed"] == 37
+    assert result["process_creation_without_system_libraries_observed"]
+    assert result["cpu_instructions_executed"] == 0
+    for flag in (
+        "gui_execution_verified",
+        "import_execution_verified",
+        "debugger_attachment_verified",
+        "symbian_loader_verified",
+        "runtime_verified",
+        "phone_installation_verified",
+    ):
+        assert not result[flag]
