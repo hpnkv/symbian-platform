@@ -5,6 +5,7 @@
 #include <pybind11/pybind11.h>
 
 #include "symbian/analysis/elf.h"
+#include "symbian/e32/e32.h"
 
 namespace py = pybind11;
 
@@ -32,6 +33,32 @@ symbian::analysis::Elf32Header InspectElf32(const py::bytes& data) {
   return *result;
 }
 
+py::bytes ConvertPicExecutable(const py::bytes& data, uint32_t uid3) {
+  const std::string bytes = data;
+  absl::StatusOr<std::string> result;
+  {
+    const py::gil_scoped_release release;
+    result = symbian::e32::ConvertPicExecutable(bytes, uid3);
+  }
+  if (!result.ok()) {
+    RaiseStatus(result.status());
+  }
+  return py::bytes(*result);
+}
+
+symbian::e32::ImageInfo InspectE32(const py::bytes& data) {
+  const std::string bytes = data;
+  absl::StatusOr<symbian::e32::ImageInfo> result;
+  {
+    const py::gil_scoped_release release;
+    result = symbian::e32::InspectImage(bytes);
+  }
+  if (!result.ok()) {
+    RaiseStatus(result.status());
+  }
+  return *result;
+}
+
 }  // namespace
 
 PYBIND11_MODULE(_native, module) {
@@ -50,4 +77,18 @@ PYBIND11_MODULE(_native, module) {
   module.def(
       "inspect_elf32", &InspectElf32, py::arg("data"),
       "Inspect complete ELF32 bytes, releasing the GIL for native work.");
+  using symbian::e32::ImageInfo;
+  py::class_<ImageInfo>(module, "E32ImageInfo",
+                        "Experimental E32 metadata; no runtime verdict.")
+      .def_readonly("uid3", &ImageInfo::uid3)
+      .def_readonly("header_crc", &ImageInfo::header_crc)
+      .def_readonly("flags", &ImageInfo::flags)
+      .def_readonly("code_size", &ImageInfo::code_size)
+      .def_readonly("code_base", &ImageInfo::code_base)
+      .def_readonly("entry_offset", &ImageInfo::entry_offset)
+      .def_readonly("secure_id", &ImageInfo::secure_id);
+  module.def("convert_pic_executable", &ConvertPicExecutable, py::arg("data"),
+             py::arg("uid3"), "Convert a restricted, retained-relocation ELF.");
+  module.def("inspect_e32", &InspectE32, py::arg("data"),
+             "Check the experimental E32 profile, releasing the GIL.");
 }

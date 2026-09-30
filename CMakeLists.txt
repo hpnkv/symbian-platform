@@ -31,6 +31,7 @@ function(symbian_native_library target)
 endfunction()
 
 add_subdirectory(cpp/symbian/analysis)
+add_subdirectory(cpp/symbian/e32)
 if(SYMBIAN_BUILD_PYTHON)
   add_subdirectory(cpp/python)
 endif()

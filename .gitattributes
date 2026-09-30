@@ -1,0 +1,2 @@
+# Unified patches preserve upstream space-only context lines verbatim.
+research/eka2l1/*.patch whitespace=-blank-at-eol

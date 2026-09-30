@@ -7,22 +7,13 @@
 #include <absl/status/status.h>
 #include <absl/strings/str_cat.h>
 
+#include "symbian/analysis/bytes.h"
+
 namespace symbian::analysis {
 namespace {
 
-uint16_t Read16(std::string_view bytes, size_t offset) {
-  return static_cast<uint16_t>(static_cast<uint8_t>(bytes[offset])) |
-         static_cast<uint16_t>(static_cast<uint8_t>(bytes[offset + 1]) << 8);
-}
-
-uint32_t Read32(std::string_view bytes, size_t offset) {
-  uint32_t value = 0;
-  for (size_t i = 0; i < 4; ++i) {
-    value |= static_cast<uint32_t>(static_cast<uint8_t>(bytes[offset + i]))
-             << (i * 8);
-  }
-  return value;
-}
+using internal::Read16;
+using internal::Read32;
 
 absl::Status CheckTable(size_t size, uint32_t offset, uint16_t width,
                         uint16_t count, uint16_t minimum,

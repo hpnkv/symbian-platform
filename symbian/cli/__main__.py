@@ -8,6 +8,7 @@ from pathlib import Path
 from symbian import device, preservation, toolchain
 from symbian.analysis import inspect_elf
 from symbian.doctor import doctor
+from symbian.e32 import inspect_image
 from symbian.status import Code, StatusError
 
 
@@ -25,12 +26,14 @@ def _parser() -> argparse.ArgumentParser:
     )
     probe.add_argument("--output", type=Path, default=Path(".symbian/probe"))
     probe.add_argument("--compiler", default="clang++")
-    build = commands.add_parser("build", help="Build an ARM object experiment")
+    build = commands.add_parser("build", help="Build an ARM/E32 experiment")
     build.add_argument("--project", type=Path, default=Path.cwd())
     build.add_argument("--output", type=Path, default=Path(".symbian/build"))
     build.add_argument("--compiler", default="clang++")
+    build.add_argument("--linker", default="ld.lld")
     inspect = commands.add_parser("inspect", help="Inspect ELF32 metadata")
     inspect.add_argument("artifact", type=Path)
+    inspect.add_argument("--format", choices=("elf32", "e32"), default="elf32")
     preserve_commands = commands.add_parser("preserve").add_subparsers(
         dest="preserve_command", required=True
     )
@@ -59,9 +62,12 @@ def _execute(args: argparse.Namespace) -> dict:
     if args.command == "toolchain":
         return toolchain.probe(args.output, args.compiler)
     if args.command == "build":
-        return toolchain.build(args.project, args.output, args.compiler)
+        return toolchain.build(
+            args.project, args.output, args.compiler, args.linker
+        )
     if args.command == "inspect":
-        return {"format": "elf32", "metadata": inspect_elf(args.artifact)}
+        inspector = inspect_elf if args.format == "elf32" else inspect_image
+        return {"format": args.format, "metadata": inspector(args.artifact)}
     if args.command == "preserve":
         if args.preserve_command == "create":
             return preservation.create(

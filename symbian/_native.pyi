@@ -4,7 +4,35 @@ Stateless native Symbian analysis utilities.
 
 from __future__ import annotations
 
-__all__: list[str] = ["Elf32Header", "inspect_elf32"]
+import typing
+
+__all__: list[str] = [
+    "E32ImageInfo",
+    "Elf32Header",
+    "convert_pic_executable",
+    "inspect_e32",
+    "inspect_elf32",
+]
+
+class E32ImageInfo:
+    """
+    Experimental E32 metadata; no runtime verdict.
+    """
+
+    @property
+    def code_base(self) -> int: ...
+    @property
+    def code_size(self) -> int: ...
+    @property
+    def entry_offset(self) -> int: ...
+    @property
+    def flags(self) -> int: ...
+    @property
+    def header_crc(self) -> int: ...
+    @property
+    def secure_id(self) -> int: ...
+    @property
+    def uid3(self) -> int: ...
 
 class Elf32Header:
     """
@@ -46,6 +74,18 @@ class Elf32Header:
         """
         ELF object type.
         """
+
+def convert_pic_executable(
+    data: bytes, uid3: typing.SupportsInt | typing.SupportsIndex
+) -> bytes:
+    """
+    Convert a restricted, retained-relocation ELF.
+    """
+
+def inspect_e32(data: bytes) -> E32ImageInfo:
+    """
+    Check the experimental E32 profile, releasing the GIL.
+    """
 
 def inspect_elf32(data: bytes) -> Elf32Header:
     """

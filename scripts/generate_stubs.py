@@ -24,7 +24,31 @@ def main() -> int:
         )
         output = Path(temporary) / "symbian/_native.pyi"
         subprocess.run(
-            [sys.executable, "-m", "black", "--quiet", str(output)],
+            [
+                sys.executable,
+                "-m",
+                "ruff",
+                "check",
+                "--quiet",
+                "--select=I",
+                "--fix",
+                "--config",
+                str(root / "pyproject.toml"),
+                str(output),
+            ],
+            cwd=root,
+            check=True,
+        )
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "black",
+                "--quiet",
+                "--config",
+                str(root / "pyproject.toml"),
+                str(output),
+            ],
             cwd=root,
             check=True,
         )

@@ -29,6 +29,7 @@ def doctor() -> dict:
         "next_steps": [
             "Record device identity and firmware using recovery/README.md",
             "Preserve firmware/ROM/Z artifacts with an offline reference copy",
-            "Run symbian toolchain probe to test ARM object code generation",
+            "Build examples/e32_probe to test Clang/LLD and E32 conversion",
+            "Validate the executable in a matched Belle emulator runtime",
         ],
     }

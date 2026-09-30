@@ -18,8 +18,10 @@ and a locally cached Abseil source tree. Its Thread library is available for
 future native concurrency; its entire networking/runtime stack is unnecessary
 for synchronous format inspection and host process orchestration.
 
-Three read-only research checkouts were obtained without submodules. They are
-evidence, not dependencies of the platform:
+Three research checkouts were initially obtained without submodules. The next
+experiments built EKA2L1 with its recursive submodule pins and the tracked patch
+in research/eka2l1. These remain separate research dependencies, outside the
+platform library and Python wheel:
 
 | Project | Inspected revision | Purpose |
 | --- | --- | --- |
@@ -107,7 +109,7 @@ Inspected facilities include:
 * Scripting hooks for process/thread/code-segment and IPC inspection.
 * CMake builds with macOS code paths and ARM host interpreter/JIT infrastructure.
 
-Important source-level constraints: `--install` currently installs to drive E;
+Important upstream constraints: `--install` currently installs to drive E;
 `--help` returns through a failure path after initialization; `--listapp` has an
 unfinished output implementation. Settings are read from `config.yml` relative
 to the working directory, but every path lookup must be audited before claiming
@@ -115,24 +117,28 @@ complete instance isolation. The GDB listener binds all interfaces, so a local
 debug interface needs an upstream loopback binding change or another enforced
 network boundary. No reliable batch completion protocol, CLI screenshots,
 full-machine snapshot interface, or headless application test loop has been
-demonstrated by this survey.
+demonstrated. The local patch now fixes standalone help and CLI shutdown and
+changes the debugger binding to loopback; debugger operation remains untested.
 
 ## 6. What to add around EKA2L1
 
-First build and run the pinned emulator natively. Import a matched ROM and
+The pinned emulator now builds natively and passes its upstream suite and
+desktop CLI smoke tests. Next import a matched ROM and
 Z-drive dump preserved from a legally available device; the upstream
 [setup guide](https://github.com/EKA2L1/EKA2L1/wiki/Using-the-emulator)
 requires both. Record the exact imported device/OS, emulator revision, build
 options, and hashes. If a non-808 Belle image is used provisionally, label it.
 
-Then prove storage isolation with two instances, process shutdown, and independent
-working directories. Golden state is a stopped-process filesystem baseline;
+Smoke tests verify two independent settings/assets roots and bounded CLI failure
+shutdown. Full guest storage isolation and simultaneous instances remain to be
+proved with a runtime. Golden state is a stopped-process filesystem baseline;
 copying it does not capture running memory. Add install/launch completion and
 application exit results inside the emulator rather than inferring success from
 GUI logs. On macOS, `main.cpp` changes the working directory to Qt's global
 application-data directory, overriding the launcher's working directory. A
-per-instance root override must therefore be added upstream and tested before
-using filesystem copies for concurrent runs. Add framebuffer capture and
+per-instance root override is now available as a tested local patch. Audit all
+runtime paths before using filesystem copies for concurrent guest runs.
+Add framebuffer capture and
 structured panic/IPC events through the
 existing window/kernel facilities. Extend the upstream CLI/control surface where
 possible. Keep deterministic execution as a separate measured capability.
@@ -146,13 +152,18 @@ libraries, exceptions or RTTI. This is an experimental baseline, not a final
 808 CPU/FPU specification. Inspect generated ELF metadata and compare repeated
 builds before selecting target defaults.
 
-A working executable additionally needs an ARM ELF linker (such as LLD), target
+A general executable additionally needs an ARM ELF linker (such as LLD), target
 import DSOs, startup code, compiler builtins where emitted, ELF-to-E32 conversion,
 and a loader test. Apple's Mach-O linker is not an ARM ELF linker. The initial
 probe requires no linker or SDK and must report that narrower result clearly.
 The compilation database can already use the real ARM compilation arguments.
-Later tests must cover integer/float calling convention, constructors, virtual
-dispatch, exports, imported API calls, and leave/cleanup behavior independently.
+LLD 23.1.2 now links the maintained E32 experiment. Native conversion accepts
+one RX segment with retained internal PC-relative relocations and no SDK imports,
+data, TLS or constructors. The independent EKA2L1 parser and Nokia's original
+checksum source accept its structure/checksums; this does not establish Belle
+loader or runtime compatibility. Later tests must cover integer/float calling
+convention, constructors, virtual dispatch, exports, imported API calls, and
+leave/cleanup behavior independently.
 
 ## 8. Preservation and recovery inputs
 
@@ -200,3 +211,22 @@ does not grant physical-device reset authority.
    recovery path, with a restricted transport and package classifier.
 8. **Servers/DLLs/plugins:** ordinal and IPC tests in the emulator. Hardware and
    alternative-OS research remain later projects under PLAN.md's safety boundary.
+
+## 11. First executable experiment evidence
+
+The native converter derives its header contract from f32image.h. Startup uses
+the marker and reserved code-segment word shown by
+[uc_exe.cia](https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/epoc/arm/uc_exe.cia).
+The no-resource exit experiment follows the register contract in
+[uc_exec.cia](https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/epoc/arm/uc_exec.cia)
+and the 0x73 ThreadKill mapping in EKA2L1's
+[epoc94/epoc10 tables](https://github.com/EKA2L1/EKA2L1/blob/2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8/src/emu/kernel/src/svc.cpp).
+It skips User::Exit cleanup and is not a replacement for application startup.
+
+The separate checksum oracle compiles Nokia's original
+[checksum.cpp](https://github.com/SymbianSource/oss.FCL.sf.os.buildtools/blob/7b35cd328d3a5e8e0bc177d0169fd409c3273193/toolsandutils/e32tools/elf2e32/source/checksum.cpp)
+without changing its algorithms. EKA2L1's E32 parser currently omits header CRC
+verification; a test deliberately demonstrates that blind spot. The platform's
+native inspector checks it. Neither parser acceptance nor checksum agreement
+proves that the real Belle loader will load, relocate and start the executable.
+See RESEARCH_LOG.md for artifact hashes and research/eka2l1/README.md for replay.

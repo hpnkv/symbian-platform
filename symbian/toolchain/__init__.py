@@ -35,8 +35,10 @@ PROBE_SOURCE = (
 def _compiler(name: str) -> str:
     path = shutil.which(name)
     if path is None:
-        raise StatusError(Code.NOT_FOUND, f"Compiler not found: {name}")
-    return str(Path(path).resolve())
+        raise StatusError(Code.NOT_FOUND, f"Tool not found: {name}")
+    # Multi-call LLVM tools select their driver using argv[0]. Preserve the
+    # final symlink name (ld.lld may resolve to the generic lld executable).
+    return str(Path(path).absolute())
 
 
 def _build_object(source: Path, output: Path, compiler: str, name: str) -> dict:
@@ -126,8 +128,13 @@ def probe(output: Path, compiler: str = "clang++") -> dict:
     return _build_object(source, output, compiler, "abi_probe")
 
 
-def build(project: Path, output: Path, compiler: str = "clang++") -> dict:
-    """Builds a declared ARM object experiment and its clangd database."""
+def build(
+    project: Path,
+    output: Path,
+    compiler: str = "clang++",
+    linker: str = "ld.lld",
+) -> dict:
+    """Builds a declared object or E32 experiment and its clangd database."""
     project = project.resolve()
     try:
         manifest = tomllib.loads(
@@ -138,10 +145,13 @@ def build(project: Path, output: Path, compiler: str = "clang++") -> dict:
     options = manifest.get("project")
     if not isinstance(options, dict):
         raise StatusError(Code.INVALID_ARGUMENT, "Missing [project] table")
-    if options.get("kind") != "arm-object-experiment":
+    if options.get("kind") not in (
+        "arm-object-experiment",
+        "e32-pic-experiment",
+    ):
         raise StatusError(
             Code.UNIMPLEMENTED,
-            "Only arm-object-experiment projects are supported",
+            "Only ARM object and E32 PIC experiment projects are supported",
         )
     name = options.get("name")
     filename = options.get("source")
@@ -149,6 +159,12 @@ def build(project: Path, output: Path, compiler: str = "clang++") -> dict:
         r"[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}", name
     ):
         raise StatusError(Code.INVALID_ARGUMENT, "Invalid project name")
+    if options["kind"] == "e32-pic-experiment":
+        from symbian.toolchain.executable import build_executable
+
+        return build_executable(
+            project, output.resolve(), options, compiler, linker
+        )
     if not isinstance(filename, str):
         raise StatusError(Code.INVALID_ARGUMENT, "Missing source filename")
     if "\0" in filename:

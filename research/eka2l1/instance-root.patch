@@ -1,0 +1,117 @@
+diff --git a/src/emu/gdbstub/src/gdbstub.cpp b/src/emu/gdbstub/src/gdbstub.cpp
+index 9241379..e6c5b92 100644
+--- a/src/emu/gdbstub/src/gdbstub.cpp
++++ b/src/emu/gdbstub/src/gdbstub.cpp
+@@ -1308,7 +1308,7 @@ namespace eka2l1 {
+         sockaddr_in saddr_server = {};
+         saddr_server.sin_family = AF_INET;
+         saddr_server.sin_port = htons(port);
+-        saddr_server.sin_addr.s_addr = INADDR_ANY;
++        saddr_server.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+ 
+ #if EKA2L1_PLATFORM(WIN32)
+         WSAStartup(MAKEWORD(2, 2), &InitData);
+diff --git a/src/emu/qt/src/main.cpp b/src/emu/qt/src/main.cpp
+index 9cd59d4..a73f353 100644
+--- a/src/emu/qt/src/main.cpp
++++ b/src/emu/qt/src/main.cpp
+@@ -65,6 +65,21 @@ int main(int argc, char *argv[]) {
+     QCoreApplication::setOrganizationName("EKA2L1");
+     QCoreApplication::setApplicationName("EKA2L1");
+ 
++    // An explicit root keeps emulator data and every default QSettings
++    // instance local to a disposable test device. Reject relative roots.
++    const QString instance_root = qEnvironmentVariable("EKA2L1_DATA_ROOT");
++    if (!instance_root.isEmpty()) {
++        if (!QDir::isAbsolutePath(instance_root) || !QDir().mkpath(instance_root)) {
++            qCritical("EKA2L1_DATA_ROOT must be an accessible absolute directory");
++            return 2;
++        }
++        QSettings::setDefaultFormat(QSettings::IniFormat);
++        QSettings::setPath(QSettings::IniFormat, QSettings::UserScope,
++            instance_root + "/settings");
++        QSettings::setPath(QSettings::IniFormat, QSettings::SystemScope,
++            instance_root + "/settings-system");
++    }
++
+     QTranslator translator;
+     QSettings settings;
+ 
+@@ -98,9 +113,14 @@ int main(int argc, char *argv[]) {
+     qRegisterMetaType<eka2l1::drivers::input_event>("eka2l1::drivers::input_event");
+ 
+ #if !EKA2L1_PLATFORM(WIN32)
+-    QString data_path = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/EKA2L1/";
++    QString data_path = instance_root.isEmpty()
++        ? QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + "/EKA2L1/"
++        : instance_root;
+     QDir root_dir = QDir::root();
+-    root_dir.mkpath(data_path);
++    if (!root_dir.mkpath(data_path)) {
++        qCritical("Unable to create EKA2L1 data directory");
++        return 2;
++    }
+     std::string data_path_str = data_path.toUtf8().toStdString();
+     
+     QString app_path = QDir(QCoreApplication::applicationDirPath()).path();
+@@ -117,7 +137,10 @@ int main(int argc, char *argv[]) {
+         eka2l1::common::copy_folder(app_path_str + "/compat", data_path_str + "/compat", 0, nullptr);
+     }
+ 
+-    eka2l1::common::set_current_directory(data_path_str);
++    if (!QDir::setCurrent(data_path)) {
++        qCritical("Unable to select EKA2L1 data directory");
++        return 2;
++    }
+ #endif
+ 
+     eka2l1::desktop::emulator emulator_state;
+diff --git a/src/emu/qt/src/thread.cpp b/src/emu/qt/src/thread.cpp
+index 10d3901..87fe682 100644
+--- a/src/emu/qt/src/thread.cpp
++++ b/src/emu/qt/src/thread.cpp
+@@ -353,12 +353,6 @@ namespace eka2l1::desktop {
+     }
+ 
+     int emulator_entry(QApplication &application, emulator &state, const int argc, const char **argv) {
+-        state.stage_one();
+-
+-        // Instantiate UI and High-level interface threads
+-        std::thread os_thread_obj(os_thread, std::ref(state));
+-        state.init_done_event.wait();
+-
+         eka2l1::common::arg_parser parser(argc, argv);
+ 
+         parser.add("--help, -h", "Display helps menu", help_option_handler);
+@@ -390,6 +384,23 @@ namespace eka2l1::desktop {
+         parser.add("--gendocs", "Generate Python documentation", python_docgen_option_handler);
+ #endif
+ 
++        // Help needs no installed device or emulator worker. Handle it before
++        // initialisation so a fresh instance can be inspected and exits cleanly.
++        if (argc == 2) {
++            const std::string argument(argv[1]);
++            if (argument == "--help" || argument == "-h") {
++                std::string err;
++                help_option_handler(&parser, nullptr, &err);
++                return 0;
++            }
++        }
++
++        state.stage_one();
++
++        // Instantiate UI and High-level interface threads
++        std::thread os_thread_obj(os_thread, std::ref(state));
++        state.init_done_event.wait();
++
+         if (argc > 1) {
+             std::string err;
+             state.should_emu_quit = !parser.parse(&state, &err);
+@@ -398,6 +409,7 @@ namespace eka2l1::desktop {
+                 // Notify the OS thread that is still sleeping, waiting for
+                 // graphics sema to be freed.
+                 state.graphics_event.set();
++                state.init_event.set();
+                 state.kill_event.set();
+ 
+                 std::cout << err << std::endl;
