@@ -165,6 +165,7 @@ def verify_probe(artifact: Path, oracles_build: Path, output: Path) -> dict:
     if (
         metadata["uid3"] != 0xE0000808
         or metadata["entry_offset"] != 0
+        or metadata["dll"]
         or metadata["imports"]
     ):
         raise StatusError(

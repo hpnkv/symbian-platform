@@ -47,39 +47,68 @@ per DLL and replaces slots with ordinals. The E32 loader patches them eagerly;
 the ELF lazy resolver is not used. Canonical native inspection checks import
 bounds, strings, offsets, ordinals and padding. Python owns build/report policy.
 
-## Independent development DLL experiment
+## Native frozen DLL experiment
 
-The fixture DLL contains our compiled integer function and provides no EUSER
-implementation or SDK service. Its source is under cpp/tests/eka2l1/dll_source.
-An isolated research producer uses Nokia's original EPL image declarations and
-checksums to add an ordinal-7 export/bitmap to a validated PIC image. Its linker
-script asserts the fixed function location. This trusted producer is outside
-the wheel; production DLL conversion remains open.
+The `e32-dll-experiment` profile converts a trusted modern PIC ELF into a DLL.
+It accepts a frozen DEF in `export_definition`, resolves visible function symbols
+from the retained static symbol table, and preserves sparse ordinals and ABSENT
+entries. Python supplies paths and build policy; native code owns the format.
+The output has a DLL UID1, library UID2, ordinal-zero count, complete export table,
+full absence bitmap when needed, and text relocations for every export pointer.
+Unused bitmap bits remain set. Header CRC includes the complete variable header.
+No-hole tables omit the bitmap. Full bitmaps are used even when a historical
+producer would select a smaller sparse bitmap representation.
 
-With the research oracles built as described in research/eka2l1/README.md:
+```toml
+[project]
+name = "probe"
+kind = "e32-dll-experiment"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000810
+export_definition = "exports.def"
+```
+
+The CMake helper is `symbian_add_pic_dll`. Its ELF transport still has ET_EXEC,
+one RX segment and an EKA2 ARM entry; the native converter supplies E32 DLL
+identity. The DEF must remain within the project and outside output. It is hashed
+with the compiler graph and optional import proxies. Two independent builds
+must agree. The `symbian.e32-dll-experiment/v1` report and native inspector expose
+DLL identity, header size, export addresses/absence and code relocation offsets.
+Build reports retain loader/runtime verification false.
 
 ```sh
-cmake --build build/eka2l1 --target symbian_dll_fixture symbian_import_probe
-uv run symbian build --project cpp/tests/eka2l1/dll_source \
-  --output .symbian/probe-implementation
-build/eka2l1/platform-tests/symbian_dll_fixture \
-  .symbian/probe-implementation/probe_impl.exe .symbian/import-probe/probe.dll
+uv run symbian build --project examples/dll_probe --output .symbian/native-dll
+uv run symbian inspect --format e32 .symbian/native-dll/probe.dll
+cmake --build build/eka2l1 --target symbian_import_probe
 ctest --test-dir build/eka2l1 -R '^symbian_import_probe$' --output-on-failure
 ```
 
-Six cases cover dyncom/dynarmic, changed input and launch after failure. They
-inspect the patched slot, observe the CPU at the DLL function, and check kernel
-exit/resource release. Nokia's unchanged image validator and checksum source
-accept both files in separate research binaries. The process uses direct
-ThreadKill and supplies no SDK heap/TLS/cleanup, DLL initialization framework,
-ROM/Z or Belle services.
+Build the importer and proxy with the commands above first. Six cases cover
+both CPU backends, changed input and launch after failure. They inspect the
+patched import slot and mapped export table, including relocated absent slots
+and the unchanged ordinal-zero count, observe the CPU at the DLL function,
+and check kernel exit/resource release. The fixture contains our compiled
+integer transform and supplies no EUSER implementation or SDK service. Its
+function address comes from the linker, with no fixed location assertion.
 
-The Python integration rebuilds the fixture and runs all six cases when
-SYMBIAN_EKA2L1_ORACLES_BUILD is supplied. Other tests cover metadata corruption,
-wrong veneer targets, truncation, unsupported addends and input policy. The
-SIS experiment and `verify-probe` command retain their import-free scope.
+Original Nokia checksum and whole-image validation pass native DLLs with
+ordinals 7, 641 and 65,535, covering variable headers and relocation pages.
+A separate combined import/export conversion case passes those consumers;
+its executable startup is layout evidence, not runnable DLL initialization.
+Data exports, writable data/BSS/TLS, constructors, general code-pointer
+relocations, SDK heap/TLS/static initialization and full target C++ runtime
+remain unsupported. DLL startup is a no-resource integer experiment.
+The process uses direct ThreadKill and provides no matched ROM/Z or Belle
+services. `verify-probe` and the SIS experiment require import-free executables.
 
-Evidence is under .symbian/import-layout/verification-report.json. The EXE digest
+The earlier original-header fixture producer remains under cpp/tests/eka2l1 as
+research material outside the wheel. It omitted the ordinal-zero count and
+export-pointer relocations. The structural validator and EKA2L1 export lookup
+accepted it, but that did not establish the public Symbian loader's relocation
+contract. The native DLL replaces that fixture in maintained runtime tests;
+see RESEARCH_LOG.md for the evidence correction.
+
+New evidence is under .symbian/native-dll/verification-report.json. The EXE digest
 is `8f6cbed4ca3fe010be4d73b276d3671218e9cb3c3e4fbae29284048bced5e1a4`.
 Matched DLLs, complete SDK startup/cleanup, general relocation support, ordinary
 application tests and physical installation remain pending.

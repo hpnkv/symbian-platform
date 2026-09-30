@@ -1,6 +1,6 @@
 # Symbian development platform
 
-Build reproducible ARM objects and experimental E32 executables on macOS, and
+Build reproducible ARM objects and experimental E32 executables/DLLs on macOS, and
 preserve existing firmware/ROM material in verifiable host-side archives.
 The target is Nokia 808 / Symbian Belle. The first E32 experiment passes historical
 image validation, CPU, ROMless installation and emulator process tests.
@@ -105,3 +105,10 @@ native core code compiles with exceptions disabled. The bindings release the
 GIL around stateless native conversion and inspection. Future concurrency uses
 A11's Thread library. The platform core remains synchronous; the emulator
 research harness uses EKA2L1's existing guest scheduler and timer lifecycle.
+
+
+The frozen DLL profile resolves function symbols from DEF ordinals and emits
+export tables, absence bitmaps and code relocations. Both emulator CPU backends
+execute a native generated development DLL, with actual mapped export pointers
+checked. See [docs/IMPORTS.md](docs/IMPORTS.md) for build and replay. These ROMless
+experiments do not establish matched Belle, SDK startup or physical execution.

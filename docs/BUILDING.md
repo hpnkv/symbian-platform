@@ -6,7 +6,8 @@ linked ELF to E32. This currently supports import-free PIC executables with
 one RX segment. SDK imports, writable data, constructors and matched Belle runtime validation
 remain open. The one-executable package path is documented in PACKAGING.md.
 The separate `e32-import-experiment` profile supports eager function imports and
-ROMless development DLL tests; see IMPORTS.md for its constraints.
+ROMless development DLL tests. The `e32-dll-experiment` profile emits frozen
+function exports and their relocations; see IMPORTS.md for both constraints.
 
 Copy examples/e32_probe as a starting point. symbian.toml selects the CMake
 target and preset and supplies its experimental UID:

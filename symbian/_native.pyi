@@ -8,6 +8,7 @@ import collections.abc
 import typing
 
 __all__: list[str] = [
+    "E32ExportSlot",
     "E32ImageInfo",
     "E32ImportBlock",
     "E32ImportSlot",
@@ -18,6 +19,7 @@ __all__: list[str] = [
     "SisPackageInfo",
     "SisPackageOptions",
     "build_sis",
+    "convert_dll",
     "convert_imported_executable",
     "convert_pic_executable",
     "generate_import_proxy",
@@ -28,6 +30,14 @@ __all__: list[str] = [
     "parse_def",
 ]
 
+class E32ExportSlot:
+    @property
+    def absent(self) -> bool: ...
+    @property
+    def address(self) -> int: ...
+    @property
+    def ordinal(self) -> int: ...
+
 class E32ImageInfo:
     """
     Experimental E32 metadata; no runtime verdict.
@@ -36,13 +46,21 @@ class E32ImageInfo:
     @property
     def code_base(self) -> int: ...
     @property
+    def code_relocations(self) -> list[int]: ...
+    @property
     def code_size(self) -> int: ...
     @property
+    def dll(self) -> bool: ...
+    @property
     def entry_offset(self) -> int: ...
+    @property
+    def exports(self) -> list[E32ExportSlot]: ...
     @property
     def flags(self) -> int: ...
     @property
     def header_crc(self) -> int: ...
+    @property
+    def header_size(self) -> int: ...
     @property
     def imports(self) -> list[E32ImportBlock]: ...
     @property
@@ -166,6 +184,16 @@ def build_sis(
 ) -> bytes:
     """
     Build the canonical unsigned SISX experiment, releasing the GIL.
+    """
+
+def convert_dll(
+    data: bytes,
+    definition: bytes,
+    proxies: collections.abc.Sequence[bytes],
+    uid3: typing.SupportsInt | typing.SupportsIndex,
+) -> bytes:
+    """
+    Convert frozen DLL exports and eager imports, releasing the GIL.
     """
 
 def convert_imported_executable(

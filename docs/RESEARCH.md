@@ -349,6 +349,29 @@ An independent development DLL supplies our compiled integer function at ordinal
 7. EKA2L1 patches the import slot to its relocated export. Both CPU backends
 execute the function, complete changed-input failure exits and launch again.
 Nokia's unchanged validator/checksums accept the EXE and fixture DLL. These tests
-supply no EUSER, Belle material or SDK startup/cleanup. Production DLL conversion
-remains open; the original-header User::Exit experiment remains link evidence.
+supply no EUSER, Belle material or SDK startup/cleanup. The subsequent native
+DLL experiment is described below; the original-header User::Exit experiment remains link evidence.
 See IMPORTS.md and RESEARCH_LOG.md for scope, replay and hashes.
+
+## 16. Frozen DLL tables and export-pointer relocation
+
+The public [export-table producer](https://github.com/SymbianSource/oss.FCL.sf.os.buildtools/blob/7b35cd328d3a5e8e0bc177d0169fd409c3273193/toolsandutils/e32tools/elf2e32/source/e32exporttable.cpp)
+prefixes the ordinal table with its count. Absent pointers use the entry address;
+all slots, including absent ones, receive local code relocations. Bitmap padding
+bits remain set. [Image generation](https://github.com/SymbianSource/oss.FCL.sf.os.buildtools/blob/7b35cd328d3a5e8e0bc177d0169fd409c3273193/toolsandutils/e32tools/elf2e32/source/e32imagefile.cpp)
+includes the full variable header in CRC and appends the export table to code.
+The [kernel loader](https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/userlibandfileserver/fileserver/sfile/sf_lepoc.cpp)
+skips separate export adjustment for ELF images because those pointers must
+already be covered by the code relocation section.
+
+The earlier development fixture lacked those relocation records and the count
+prefix. EKA2L1 resolves exports from its separately retained table, so import
+execution alone did not prove mapped pointers were correct for that contract.
+The original structural validator likewise does not establish all semantics.
+The new native DLL converter resolves frozen named function symbols, emits
+complete tables/bitmaps/text relocations and validates its canonical profile.
+Maintained runtime tests also inspect the actual mapped table, including holes.
+Nokia's original checksum and validator pass ordinals 7, 641 and 65,535 using
+bounded test adapters that retain the complete variable header. This supports
+the scoped no-resource emulator DLL experiment, not matched Belle or general
+C++ startup. See IMPORTS.md and RESEARCH_LOG.md for replay and remaining limits.

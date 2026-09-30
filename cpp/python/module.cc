@@ -83,6 +83,26 @@ py::bytes ConvertImportedExecutable(const py::bytes& data,
   return py::bytes(*result);
 }
 
+py::bytes ConvertDll(const py::bytes& data, const py::bytes& definition,
+                     const std::vector<py::bytes>& proxies, uint32_t uid3) {
+  const std::string bytes = data;
+  const std::string exports = definition;
+  std::vector<std::string> libraries;
+  libraries.reserve(proxies.size());
+  for (const auto& proxy : proxies) {
+    libraries.emplace_back(proxy);
+  }
+  absl::StatusOr<std::string> result;
+  {
+    const py::gil_scoped_release release;
+    result = symbian::e32::ConvertDll(bytes, exports, libraries, uid3);
+  }
+  if (!result.ok()) {
+    RaiseStatus(result.status());
+  }
+  return py::bytes(*result);
+}
+
 py::bytes BuildSis(const py::bytes& data, uint32_t uid, const std::string& name,
                    const std::string& vendor,
                    const std::string& executable_name,
@@ -168,6 +188,11 @@ PYBIND11_MODULE(_native, module) {
   module.def(
       "inspect_elf32", &InspectElf32, py::arg("data"),
       "Inspect complete ELF32 bytes, releasing the GIL for native work.");
+  using symbian::e32::ExportSlot;
+  py::class_<ExportSlot>(module, "E32ExportSlot")
+      .def_readonly("ordinal", &ExportSlot::ordinal)
+      .def_readonly("address", &ExportSlot::address)
+      .def_readonly("absent", &ExportSlot::absent);
   using symbian::e32::ImageInfo;
   using symbian::e32::ImportBlock;
   using symbian::e32::ImportSlot;
@@ -186,6 +211,10 @@ PYBIND11_MODULE(_native, module) {
       .def_readonly("code_base", &ImageInfo::code_base)
       .def_readonly("entry_offset", &ImageInfo::entry_offset)
       .def_readonly("secure_id", &ImageInfo::secure_id)
+      .def_readonly("dll", &ImageInfo::dll)
+      .def_readonly("header_size", &ImageInfo::header_size)
+      .def_readonly("exports", &ImageInfo::exports)
+      .def_readonly("code_relocations", &ImageInfo::code_relocations)
       .def_readonly("imports", &ImageInfo::imports);
   module.def("convert_pic_executable", &ConvertPicExecutable, py::arg("data"),
              py::arg("uid3"), "Convert a restricted, retained-relocation ELF.");
@@ -195,6 +224,10 @@ PYBIND11_MODULE(_native, module) {
       "convert_imported_executable", &ConvertImportedExecutable,
       py::arg("data"), py::arg("proxies"), py::arg("uid3"),
       "Convert retained calls through eager ordinal slots, releasing the GIL.");
+  module.def(
+      "convert_dll", &ConvertDll, py::arg("data"), py::arg("definition"),
+      py::arg("proxies"), py::arg("uid3"),
+      "Convert frozen DLL exports and eager imports, releasing the GIL.");
   using symbian::sis::PackageOptions;
   py::class_<PackageOptions>(module, "SisPackageOptions")
       .def_readonly("uid", &PackageOptions::uid)

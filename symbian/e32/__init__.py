@@ -17,6 +17,13 @@ def convert_imported_executable(
     return require_native().convert_imported_executable(data, proxies, uid3)
 
 
+def convert_dll(
+    data: bytes, definition: bytes, proxies: list[bytes], uid3: int
+) -> bytes:
+    """Converts frozen function exports and optional imports in native code."""
+    return require_native().convert_dll(data, definition, proxies, uid3)
+
+
 def inspect_image(path: Path) -> dict:
     """Checks the narrow E32 profile and returns its native metadata."""
     info = require_native().inspect_e32(path.read_bytes())
@@ -30,6 +37,9 @@ def inspect_image(path: Path) -> dict:
             "code_base",
             "entry_offset",
             "secure_id",
+            "dll",
+            "header_size",
+            "code_relocations",
         )
     }
     result["imports"] = [
@@ -42,6 +52,14 @@ def inspect_image(path: Path) -> dict:
         }
         for block in info.imports
     ]
+    result["exports"] = [
+        {
+            "ordinal": slot.ordinal,
+            "address": slot.address,
+            "absent": slot.absent,
+        }
+        for slot in info.exports
+    ]
     return result
 
 
@@ -49,4 +67,5 @@ __all__ = [
     "convert_pic_executable",
     "convert_imported_executable",
     "inspect_image",
+    "convert_dll",
 ]

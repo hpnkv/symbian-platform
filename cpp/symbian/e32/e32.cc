@@ -1,9 +1,11 @@
 #include "symbian/e32/e32.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include <absl/status/status.h>
@@ -11,6 +13,7 @@
 #include "symbian/analysis/bytes.h"
 #include "symbian/analysis/checksum.h"
 #include "symbian/analysis/elf.h"
+#include "symbian/e32/exports.h"
 #include "symbian/e32/imports.h"
 
 namespace symbian::e32 {
@@ -30,9 +33,9 @@ constexpr uint32_t kMaxImageSize = 0x0fffffff;
 
 // Symbian CRC32 uses reflected polynomial 0xedb88320, initial zero and no
 // final complement. UID CRC16 uses polynomial 0x1021 and initial zero.
-uint32_t HeaderCrc(std::string_view bytes) {
+uint32_t HeaderCrc(std::string_view bytes, size_t header_size) {
   uint32_t crc = 0;
-  for (size_t i = 0; i < kHeaderSize; ++i) {
+  for (size_t i = 0; i < header_size; ++i) {
     const uint8_t byte =
         i >= 20 && i < 24
             ? static_cast<uint8_t>(kCrcInitializer >> ((i - 20) * 8))
@@ -130,7 +133,8 @@ absl::Status CheckRelocations(std::string_view elf,
 absl::StatusOr<Segment> ExtractCode(std::string_view elf,
                                     const analysis::Elf32Header& header,
                                     const std::vector<std::string>* proxies,
-                                    ResolvedImports* imports) {
+                                    ResolvedImports* imports,
+                                    std::vector<Section>* output_sections) {
   if (header.type != 2 || header.machine != 40 || header.flags >> 24 != 5 ||
       (header.flags & 0x400)) {
     return absl::UnimplementedError("Requires ARM EABI5 soft-float ET_EXEC");
@@ -233,6 +237,7 @@ absl::StatusOr<Segment> ExtractCode(std::string_view elf,
   if (!status.ok()) {
     return status;
   }
+  *output_sections = std::move(sections);
   return code;
 }
 
@@ -249,7 +254,8 @@ absl::Status CheckEntry(std::string_view code, uint32_t entry) {
 
 absl::StatusOr<std::string> ConvertExecutable(
     std::string_view elf, uint32_t uid3,
-    const std::vector<std::string>* proxies) {
+    const std::vector<std::string>* proxies,
+    const std::string_view* definition = nullptr) {
   if (elf.size() > 64 * 1024 * 1024) {
     return absl::ResourceExhaustedError("ELF exceeds 64 MiB");
   }
@@ -261,7 +267,8 @@ absl::StatusOr<std::string> ConvertExecutable(
     return header.status();
   }
   ResolvedImports imports;
-  const auto segment = ExtractCode(elf, *header, proxies, &imports);
+  std::vector<Section> sections;
+  const auto segment = ExtractCode(elf, *header, proxies, &imports, &sections);
   if (!segment.ok()) {
     return segment.status();
   }
@@ -274,43 +281,92 @@ absl::StatusOr<std::string> ConvertExecutable(
   if (!status.ok()) {
     return status;
   }
-  std::string bytes(kHeaderSize, '\0');
-  Put32(bytes, 0, 0x1000007a);  // Executable image UID1.
+  std::vector<ExportSlot> exports;
+  std::string bitmap;
+  if (definition != nullptr) {
+    auto resolved =
+        internal::ResolveExports(elf, sections, *segment, entry, *definition);
+    if (!resolved.ok()) {
+      return resolved.status();
+    }
+    exports = std::move(*resolved);
+    if (std::any_of(exports.begin(), exports.end(),
+                    [](const ExportSlot& slot) { return slot.absent; })) {
+      bitmap = internal::ExportBitmap(exports);
+    }
+  }
+  const uint32_t header_size =
+      (155 + static_cast<uint32_t>(bitmap.size()) + 3) & ~uint32_t{3};
+  const uint32_t export_prefix = (segment->size + 3) & ~uint32_t{3};
+  const uint32_t code_size =
+      definition == nullptr
+          ? segment->size
+          : export_prefix + 4 + static_cast<uint32_t>(exports.size()) * 4;
+  if (code_size > kMaxImageSize - header_size ||
+      code_size > UINT32_MAX - segment->address) {
+    return absl::ResourceExhaustedError(
+        "DLL code/export layout exceeds bounds");
+  }
+  std::string bytes(header_size, '\0');
+  Put32(bytes, 0, definition == nullptr ? 0x1000007a : 0x10000079);
+  Put32(bytes, 4, definition == nullptr ? 0 : 0x1000008d);
   Put32(bytes, 8, uid3);
   Put32(bytes, 12, UidChecksum(bytes));
   Put32(bytes, 16, 0x434f5045);  // EPOC
   Put32(bytes, 24, 0x00010000);  // Module version 1.0.
   bytes[33] = 1;                 // Converter version 0.1.0.
-  Put32(bytes, 44, kFlags);
-  Put32(bytes, 48, segment->size);
+  Put32(bytes, 44, kFlags | (definition == nullptr ? 0 : 1));
+  Put32(bytes, 48, code_size);
   Put32(bytes, 56, 0x1000);
   Put32(bytes, 60, 0x100000);
   Put32(bytes, 64, 0x10000);
   Put32(bytes, 72, entry);
   Put32(bytes, 76, segment->address);
-  Put32(bytes, 96, segment->size);
-  Put32(bytes, 100, kHeaderSize);
+  Put32(bytes, 96, code_size);
+  Put32(bytes, 100, header_size);
   Put16(bytes, 120, 350);     // Foreground process priority.
   Put16(bytes, 122, 0x2001);  // ARMv5.
-  Put32(bytes, 124, segment->size);
-  Put32(bytes, 128, uid3);  // Secure ID; no capabilities or vendor ID.
-  Put32(bytes, 20, HeaderCrc(bytes));
+  Put32(bytes, 128, uid3);    // Secure ID; no capabilities or vendor ID.
+  Put16(bytes, 152, static_cast<uint16_t>(bitmap.size()));
+  bytes[154] = bitmap.empty() ? 0 : 1;  // No holes or full bitmap.
+  bytes.replace(155, bitmap.size(), bitmap);
   bytes.append(code);
+  std::vector<uint32_t> relocations;
+  if (definition != nullptr) {
+    bytes.resize(header_size + code_size, '\0');
+    Put32(bytes, 88, header_size + export_prefix + 4);
+    Put32(bytes, 92, static_cast<uint32_t>(exports.size()));
+    Put32(bytes, header_size + export_prefix,
+          static_cast<uint32_t>(exports.size()));
+    for (const auto& slot : exports) {
+      const uint32_t offset = export_prefix + slot.ordinal * 4;
+      Put32(bytes, header_size + offset, slot.address);
+      relocations.push_back(offset);
+    }
+  }
   if (proxies != nullptr) {
     if (segment->size % 4) {
       return absl::DataLossError("Imported code must be word aligned");
     }
     for (const auto& block : imports.blocks) {
       for (const auto& slot : block.slots) {
-        Put32(bytes, kHeaderSize + slot.code_offset, slot.ordinal);
+        Put32(bytes, header_size + slot.code_offset, slot.ordinal);
       }
     }
     Put32(bytes, 84, static_cast<uint32_t>(imports.blocks.size()));
     Put32(bytes, 108, static_cast<uint32_t>(bytes.size()));
     bytes.append(internal::EncodeImports(imports.blocks));
-    Put32(bytes, 124, static_cast<uint32_t>(bytes.size() - kHeaderSize));
-    Put32(bytes, 20, HeaderCrc(bytes));
   }
+  if (!relocations.empty()) {
+    const auto encoded = internal::EncodeCodeRelocations(relocations);
+    if (!encoded.ok()) {
+      return encoded.status();
+    }
+    Put32(bytes, 112, static_cast<uint32_t>(bytes.size()));
+    bytes.append(*encoded);
+  }
+  Put32(bytes, 124, static_cast<uint32_t>(bytes.size() - header_size));
+  Put32(bytes, 20, HeaderCrc(bytes, header_size));
   return bytes;
 }
 
@@ -327,66 +383,163 @@ absl::StatusOr<std::string> ConvertImportedExecutable(
   return ConvertExecutable(elf, uid3, &proxies);
 }
 
+absl::StatusOr<std::string> ConvertDll(std::string_view elf,
+                                       std::string_view definition,
+                                       const std::vector<std::string>& proxies,
+                                       uint32_t uid3) {
+  return ConvertExecutable(elf, uid3, proxies.empty() ? nullptr : &proxies,
+                           &definition);
+}
+
 absl::StatusOr<ImageInfo> InspectImage(std::string_view bytes) {
   if (bytes.size() < kHeaderSize || bytes.size() > kMaxImageSize ||
       bytes.substr(16, 4) != "EPOC") {
     return absl::DataLossError("Missing/truncated E32 V header");
   }
-  if (Read32(bytes, 44) != kFlags || Read32(bytes, 28) != 0 ||
-      Read32(bytes, 100) != kHeaderSize || Read16(bytes, 122) != 0x2001) {
+  const uint32_t flags = Read32(bytes, 44);
+  const bool dll = flags == (kFlags | 1);
+  const uint32_t header_size = Read32(bytes, 100);
+  const uint16_t description_size = Read16(bytes, 152);
+  const uint8_t description_type = static_cast<uint8_t>(bytes[154]);
+  if ((!dll && flags != kFlags) || Read32(bytes, 28) != 0 ||
+      Read16(bytes, 122) != 0x2001 || description_type > 1 ||
+      (!dll && (description_size != 0 || description_type != 0))) {
     return absl::UnimplementedError("Unsupported E32 image profile");
   }
-  if (Read32(bytes, 0) != 0x1000007a || Read32(bytes, 4) != 0 ||
+  if (header_size != ((155U + description_size + 3) & ~uint32_t{3}) ||
+      header_size > 8348 || !Within(bytes.size(), 0, header_size)) {
+    return absl::DataLossError("Invalid E32 extended header size");
+  }
+  for (size_t i = 155 + description_size; i < header_size; ++i) {
+    if (bytes[i] != 0) {
+      return absl::DataLossError("Nonzero E32 header padding");
+    }
+  }
+  if (Read32(bytes, 0) != (dll ? 0x10000079U : 0x1000007aU) ||
+      Read32(bytes, 4) != (dll ? 0x1000008dU : 0) ||
       Read32(bytes, 12) != UidChecksum(bytes) ||
-      Read32(bytes, 20) != HeaderCrc(bytes)) {
+      Read32(bytes, 20) != HeaderCrc(bytes, header_size)) {
     return absl::DataLossError("Invalid E32 identity/header checksum");
   }
   for (size_t offset :
-       {size_t{52}, size_t{68}, size_t{80}, size_t{88}, size_t{92}, size_t{104},
-        size_t{112}, size_t{116}, size_t{132}, size_t{136}, size_t{140},
-        size_t{144}, size_t{148}, size_t{152}}) {
+       {size_t{52}, size_t{68}, size_t{80}, size_t{104}, size_t{116},
+        size_t{132}, size_t{136}, size_t{140}, size_t{144}, size_t{148}}) {
     if (Read32(bytes, offset) != 0) {
-      return absl::UnimplementedError("E32 data/imports/exports unsupported");
+      return absl::UnimplementedError("E32 data/capabilities unsupported");
     }
   }
   const uint32_t size = Read32(bytes, 48);
-  const uint32_t uid3 = Read32(bytes, 8);
+  const uint32_t uid3 = Read32(bytes, 8), base = Read32(bytes, 76);
   const uint32_t count = Read32(bytes, 84), import_offset = Read32(bytes, 108);
-  if (!Within(bytes.size(), kHeaderSize, size) || Read32(bytes, 96) != size ||
-      Read32(bytes, 124) != bytes.size() - kHeaderSize ||
-      Read32(bytes, 76) % 4 || size > UINT32_MAX - Read32(bytes, 76) ||
-      uid3 < 0xe0000000 || uid3 > 0xefffffff || Read32(bytes, 128) != uid3 ||
-      Read32(bytes, 24) != 0x00010000 || Read32(bytes, 56) != 0x1000 ||
-      Read32(bytes, 60) != 0x100000 || Read32(bytes, 64) != 0x10000) {
+  const uint32_t relocation_offset = Read32(bytes, 112);
+  if (!Within(bytes.size(), header_size, size) || Read32(bytes, 96) != size ||
+      Read32(bytes, 124) != bytes.size() - header_size || base % 4 ||
+      size > UINT32_MAX - base || uid3 < 0xe0000000 || uid3 > 0xefffffff ||
+      Read32(bytes, 128) != uid3 || Read32(bytes, 24) != 0x00010000 ||
+      Read32(bytes, 56) != 0x1000 || Read32(bytes, 60) != 0x100000 ||
+      Read32(bytes, 64) != 0x10000) {
     return absl::DataLossError("Invalid experimental E32 layout/identity");
   }
-  const absl::Status status =
-      CheckEntry(bytes.substr(kHeaderSize, size), Read32(bytes, 72));
+  std::vector<ExportSlot> exports;
+  std::vector<uint32_t> expected_relocations;
+  uint32_t application_size = size;
+  if (dll) {
+    const uint32_t export_count = Read32(bytes, 92),
+                   directory = Read32(bytes, 88);
+    if (export_count == 0 || export_count > 65535 || size % 4 ||
+        uint64_t{export_count} * 4 + 4 > size ||
+        directory != header_size + size - export_count * 4 ||
+        Read32(bytes, directory - 4) != export_count ||
+        (description_type == 0 && description_size != 0) ||
+        (description_type == 1 && description_size != (export_count + 7) / 8)) {
+      return absl::DataLossError("Invalid E32 export table/bitmap layout");
+    }
+    application_size = size - (export_count + 1) * 4;
+    for (uint32_t ordinal = 1; ordinal <= export_count; ++ordinal) {
+      const uint32_t p = directory + (ordinal - 1) * 4;
+      const uint32_t address = Read32(bytes, p);
+      const uint32_t normalized = address & ~uint32_t{1};
+      const bool absent =
+          description_type == 1 &&
+          !(static_cast<uint8_t>(bytes[155 + (ordinal - 1) / 8]) &
+            (1U << ((ordinal - 1) % 8)));
+      if ((absent && address != base + Read32(bytes, 72)) ||
+          (!absent && (normalized < base ||
+                       !Within(application_size, normalized - base, 1) ||
+                       normalized % ((address & 1) ? 2 : 4) ||
+                       address == base + Read32(bytes, 72)))) {
+        return absl::DataLossError("Invalid E32 export address/absence marker");
+      }
+      exports.push_back({ordinal, address, absent});
+      expected_relocations.push_back(p - header_size);
+    }
+    const bool holes =
+        std::any_of(exports.begin(), exports.end(),
+                    [](const ExportSlot& slot) { return slot.absent; });
+    if (holes != (description_type == 1) ||
+        (holes && internal::ExportBitmap(exports) !=
+                      bytes.substr(155, description_size))) {
+      return absl::DataLossError("Noncanonical E32 export bitmap");
+    }
+  } else if (Read32(bytes, 88) || Read32(bytes, 92) || relocation_offset) {
+    return absl::UnimplementedError(
+        "Executable exports/relocations unsupported");
+  }
+  const absl::Status status = CheckEntry(
+      bytes.substr(header_size, application_size), Read32(bytes, 72));
   if (!status.ok()) {
     return status;
   }
+  const size_t import_end =
+      relocation_offset == 0 ? bytes.size() : relocation_offset;
+  size_t consumed = header_size + size;
   std::vector<ImportBlock> imports;
   if (count != 0) {
-    if (size % 4 || import_offset != kHeaderSize + size) {
+    if (size % 4 || import_offset != consumed || import_end < consumed ||
+        import_end > bytes.size()) {
       return absl::DataLossError("Invalid E32 import section position");
     }
     auto decoded = internal::DecodeImports(
-        bytes.substr(import_offset), bytes.substr(kHeaderSize, size), count);
+        bytes.substr(import_offset, import_end - import_offset),
+        bytes.substr(header_size, application_size), count);
     if (!decoded.ok()) {
       return decoded.status();
     }
     imports = std::move(*decoded);
-  } else if (import_offset != 0 || bytes.size() != kHeaderSize + size) {
-    return absl::DataLossError("Unexpected E32 trailing/import data");
+    consumed = import_end;
+  } else if (import_offset != 0) {
+    return absl::DataLossError("Unexpected E32 import section");
+  }
+  std::vector<uint32_t> relocations;
+  if (dll) {
+    if (relocation_offset != consumed || relocation_offset >= bytes.size()) {
+      return absl::DataLossError("Missing/misplaced E32 export relocations");
+    }
+    auto decoded =
+        internal::DecodeCodeRelocations(bytes.substr(consumed), size);
+    if (!decoded.ok()) {
+      return decoded.status();
+    }
+    relocations = std::move(*decoded);
+    if (relocations != expected_relocations) {
+      return absl::DataLossError(
+          "E32 export pointers must all be text relocations");
+    }
+  } else if (consumed != bytes.size()) {
+    return absl::DataLossError("Unexpected E32 trailing data");
   }
   return ImageInfo{.uid3 = uid3,
                    .header_crc = Read32(bytes, 20),
-                   .flags = kFlags,
+                   .flags = flags,
                    .code_size = size,
-                   .code_base = Read32(bytes, 76),
+                   .code_base = base,
                    .entry_offset = Read32(bytes, 72),
                    .secure_id = Read32(bytes, 128),
-                   .imports = std::move(imports)};
+                   .dll = dll,
+                   .header_size = header_size,
+                   .imports = std::move(imports),
+                   .exports = std::move(exports),
+                   .code_relocations = std::move(relocations)};
 }
 
 }  // namespace symbian::e32

@@ -149,10 +149,11 @@ def build(
         "arm-object-experiment",
         "e32-pic-experiment",
         "e32-import-experiment",
+        "e32-dll-experiment",
     ):
         raise StatusError(
             Code.UNIMPLEMENTED,
-            "Only ARM object and E32 PIC/import experiments are supported",
+            "Only ARM object and E32 PIC/import/DLL experiments are supported",
         )
     name = options.get("name")
     filename = options.get("source")
@@ -160,7 +161,11 @@ def build(
         r"[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}", name
     ):
         raise StatusError(Code.INVALID_ARGUMENT, "Invalid project name")
-    if options["kind"] in ("e32-pic-experiment", "e32-import-experiment"):
+    if options["kind"] in (
+        "e32-pic-experiment",
+        "e32-import-experiment",
+        "e32-dll-experiment",
+    ):
         from symbian.toolchain.executable import build_executable
 
         return build_executable(

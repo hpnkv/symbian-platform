@@ -152,9 +152,23 @@ bounded public API for untrusted packages. See docs/PACKAGING.md for
 hashes while keeping Belle and phone flags false.
 
 The eager import experiment adds `symbian_import_probe` with six development
-DLL execution cases. Its separate `symbian_dll_fixture` producer uses the
-original EPL image declarations/checksums; the GPL process harness consumes
-that trusted fixture without implementing an SDK system library. Build and
-replay instructions, fixture scope and artifact hashes are in
+DLL execution cases using the native frozen-export DLL. The GPL process harness
+loads that trusted fixture without implementing an SDK system library. Build
+and replay instructions, fixture scope and hashes are in
 [docs/IMPORTS.md](../../docs/IMPORTS.md). The existing import-free verifier's
 case count and scope stay unchanged.
+
+The maintained import harness now requires the native DLL, including count word
+and export-pointer relocations. Build it with:
+
+```sh
+uv run symbian build --project examples/dll_probe --output .symbian/native-dll
+cmake --build build/eka2l1 --target symbian_import_probe
+ctest --test-dir build/eka2l1 -R '^symbian_import_probe$' --output-on-failure
+```
+
+The previous fixed-address original-header DLL producer remains research material.
+It does not satisfy the stronger mapped-export checks. See docs/IMPORTS.md and
+docs/RESEARCH_LOG.md for the source-derived contract and evidence correction.
+Checksum and validator adapters now retain complete bounded headers through the
+maximum full export bitmap; upstream checksum/validator algorithms are unchanged.

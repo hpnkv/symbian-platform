@@ -8,6 +8,7 @@
 
 #include "e32_fixture.h"
 #include "symbian/analysis/bytes.h"
+#include "symbian/e32/exports.h"
 #include "symbian/e32/imports.h"
 
 namespace symbian::e32 {
@@ -180,6 +181,117 @@ TEST(E32Test, ImportCallMustReachItsOwnPcRelativeVeneerSlot) {
   EXPECT_FALSE(internal::CheckImportCall(elf, code, 0x8000, 28, 68).ok());
   Put32(elf, 32, 0xe59fc000);  // Absolute veneer cannot pass.
   EXPECT_FALSE(internal::CheckImportCall(elf, code, 0x8000, 28, 64).ok());
+}
+
+// Extend the bounded format fixture with a real named function symbol.
+std::string ExportedExecutable() {
+  std::string elf = Executable();
+  Put32(elf, 292, static_cast<uint32_t>(elf.size()));
+  Put32(elf, 296, 10);
+  elf.append("\0Function\0", 10);
+  Put32(elf, 332, 1);
+  Put32(elf, 340, 4);
+  elf[344] = 0x12;  // STB_GLOBAL, STT_FUNC.
+  return elf;
+}
+
+TEST(E32DllTest, ResolvesFrozenOrdinalsAndRelocatesAbsentSlots) {
+  const auto image = ConvertDll(
+      ExportedExecutable(),
+      "EXPORTS\nFunction @ 7 NONAME\nGone @ 3 NONAME ABSENT\n", {}, 0xe0000810);
+  ASSERT_TRUE(image.ok()) << image.status();
+  const auto info = InspectImage(*image);
+  ASSERT_TRUE(info.ok()) << info.status();
+  EXPECT_TRUE(info->dll);
+  EXPECT_EQ(info->exports.size(), 7);
+  EXPECT_EQ(info->exports[6].address, 0x8018);
+  EXPECT_FALSE(info->exports[6].absent);
+  EXPECT_EQ(info->exports[2].address, 0x8000);
+  EXPECT_TRUE(info->exports[2].absent);
+  EXPECT_EQ(info->code_relocations.size(), 7);
+  EXPECT_EQ(Read32(*image, Read32(*image, 88) - 4), 7);
+  EXPECT_EQ(static_cast<uint8_t>((*image)[155]), 0xc0);
+}
+
+TEST(E32DllTest, PreservesThumbBitAndSupportsLargeVariableHeader) {
+  std::string elf = ExportedExecutable();
+  Put32(elf, 336, 0x8019);
+  const auto image =
+      ConvertDll(elf, "EXPORTS\nFunction @ 641 NONAME\n", {}, 0xe0000810);
+  ASSERT_TRUE(image.ok()) << image.status();
+  const auto info = InspectImage(*image);
+  ASSERT_TRUE(info.ok()) << info.status();
+  EXPECT_EQ(info->header_size, 236);
+  EXPECT_EQ(info->exports.back().address, 0x8019);
+  EXPECT_EQ(info->exports.size(), 641);
+  EXPECT_EQ(info->code_relocations.size(), 641);
+}
+
+TEST(E32DllTest, SupportsNoHolesAndMaximumFrozenOrdinal) {
+  for (const uint32_t count : {1U, 65535U}) {
+    const auto image =
+        ConvertDll(ExportedExecutable(),
+                   "EXPORTS\nFunction @ " + std::to_string(count) + " NONAME\n",
+                   {}, 0xe0000810);
+    ASSERT_TRUE(image.ok()) << image.status();
+    const auto info = InspectImage(*image);
+    ASSERT_TRUE(info.ok()) << info.status();
+    EXPECT_EQ(info->exports.size(), count);
+    EXPECT_EQ(info->header_size, count == 1 ? 156 : 8348);
+    EXPECT_FALSE(info->exports.back().absent);
+  }
+}
+
+TEST(E32DllTest, RejectsMissingDataAndInvalidExportDefinitions) {
+  EXPECT_EQ(ConvertDll(ExportedExecutable(), "EXPORTS\nMissing @ 1 NONAME\n",
+                       {}, 0xe0000810)
+                .status()
+                .code(),
+            absl::StatusCode::kNotFound);
+  EXPECT_EQ(ConvertDll(ExportedExecutable(),
+                       "EXPORTS\nFunction @ 1 NONAME DATA 4\n", {}, 0xe0000810)
+                .status()
+                .code(),
+            absl::StatusCode::kUnimplemented);
+  std::string elf = ExportedExecutable();
+  elf[344] = 0x11;
+  EXPECT_EQ(ConvertDll(elf, "EXPORTS\nFunction @ 1 NONAME\n", {}, 0xe0000810)
+                .status()
+                .code(),
+            absl::StatusCode::kUnimplemented);
+}
+
+TEST(E32DllTest, RejectsTruncationsAndExportRelocationCorruption) {
+  const auto image = ConvertDll(
+      ExportedExecutable(), "EXPORTS\nFunction @ 7 NONAME\n", {}, 0xe0000810);
+  ASSERT_TRUE(image.ok()) << image.status();
+  for (size_t i = 0; i < image->size(); ++i) {
+    EXPECT_FALSE(InspectImage(std::string_view(*image).substr(0, i)).ok()) << i;
+  }
+  const size_t directory = Read32(*image, 88);
+  const size_t relocations = Read32(*image, 112);
+  for (size_t p : {directory - 4, directory, directory + 24, relocations,
+                   relocations + 4, relocations + 12}) {
+    std::string bytes = *image;
+    Put32(bytes, p, 0xffffffff);
+    EXPECT_FALSE(InspectImage(bytes).ok()) << p;
+  }
+}
+
+TEST(E32DllTest, BoundsRelocationPagesCountsAndCanonicalPadding) {
+  const std::vector<uint32_t> offsets{4, 4092, 4096, 4100, 8192};
+  const auto encoded = internal::EncodeCodeRelocations(offsets);
+  ASSERT_TRUE(encoded.ok()) << encoded.status();
+  const auto decoded = internal::DecodeCodeRelocations(*encoded, 8196);
+  ASSERT_TRUE(decoded.ok()) << decoded.status();
+  EXPECT_EQ(*decoded, offsets);
+  EXPECT_FALSE(internal::DecodeCodeRelocations(*encoded, 8195).ok());
+  EXPECT_FALSE(internal::EncodeCodeRelocations({4, 4}).ok());
+  EXPECT_FALSE(internal::EncodeCodeRelocations({4096, 4}).ok());
+  EXPECT_FALSE(internal::EncodeCodeRelocations({2}).ok());
+  std::string changed = *encoded;
+  changed.back() = 1;
+  EXPECT_FALSE(internal::DecodeCodeRelocations(changed, 8196).ok());
 }
 
 }  // namespace

@@ -717,3 +717,106 @@ conversion has independent evidence. Document replay and limits in IMPORTS.md.
 target EUSER and decorated module identity, SDK heap/TLS/DLL/static startup,
 User::Exit cleanup/leaves, data imports, full ABI and matched Belle runtime.
 Preservation, exact phone identity and recovery baseline remain unknown.
+
+## 2026-09-30 — Native frozen DLL exports and mapped pointer checks
+
+**Question:** Can the modern native converter generate a frozen-export DLL
+with the public Symbian ELF loader's export-pointer relocation contract,
+without a fixed-address research producer?
+
+**Sources:** Pinned buildtools 7b35cd328d3a5e8e0bc177d0169fd409c3273193,
+e32exporttable.cpp and e32imagefile.cpp; pinned kernelhwsrv
+0c3208650587ac0230aed8a74e9bddb5288023eb, f32image.h and sf_lepoc.cpp;
+pinned EKA2L1 2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8,
+loader/e32img.cpp and kernel/codeseg.cpp. Primary source links are in RESEARCH.md
+section 16. Original algorithms were read locally and the public header was
+checked through its pinned upstream page.
+
+**Evidence correction:** The preceding research DLL omitted the ordinal-zero
+count and code relocations for export pointers, and cleared the unused high
+bitmap bit. Nokia's structural validator accepted it. EKA2L1 can resolve its
+separately retained export table using a base delta, so successful import lookup
+and execution did not establish actual mapped table pointer relocation. The
+public ELF loader skips a separate export adjustment because those pointers
+must already be covered by code relocation records. Earlier results remain
+scoped emulator lookup/execution evidence; they do not prove that fuller
+contract or physical compatibility. The original producer remains research
+material outside the wheel and is replaced in maintained runtime tests.
+
+**Experiment:** Added native frozen DEF resolution against retained visible
+ELF function symbols, preserving original ordinals, gaps, ABSENT entries and
+ARM/Thumb addresses. Generate DLL/library UIDs, count prefix, complete ordinal
+table, no-hole or full-bitmap header, and text relocations for every export slot,
+including absence entry markers. Unused bitmap bits stay set. Header CRC spans
+the entire aligned variable header. Native inspection checks identities,
+bounds, bitmap shape, absence/address agreement, count word, canonical page
+blocks and the exact export-slot relocation list. Optional eager imports share
+the existing native import converter. General application pointer relocations,
+writable data, data exports, TLS and constructors remain unsupported.
+
+The e32-dll-experiment CMake project uses symbian_add_pic_dll, with ET_EXEC as
+its trusted intermediate transport. Python supplies the in-project frozen DEF
+and optional proxy paths, records their hashes, and requires two matching
+ELF/DLL builds. Metadata exposes DLL identity, header size, exports and code
+relocations. The synchronous pybind11 boundary copies Python inputs under the
+GIL, releases it for native work, then reacquires it for results/status errors.
+No scheduler, callback, event loop or Python reference holder is needed.
+All six core translation units compile with exceptions disabled.
+
+examples/dll_probe provides our compiled integer transform at frozen ordinal 7.
+Its linked Thumb address is 0x8021, resolved from the real static symbol table;
+there is no fixed function location assertion. Its minimal ARM startup retains
+the EKA2 marker/reserved word, makes an internal PC-relative call, preserves LR
+and returns zero. It provides no SDK initialization or resources. The process
+harness checks the patched import slot, CPU execution at that function, kernel
+exit/address-space release and repeated launch on both dyncom and dynarmic.
+It now independently reads export relocation records and inspects the actual
+mapped export array: ordinal 7 agrees with lookup, all six absent pointers
+relocate to the mapped entry, and the count prefix remains seven.
+No upstream parsing, relocation, memory, scheduler or kernel dispatch algorithm
+was altered. Historical checksum/validator test adapters now retain complete
+bounded variable headers; their original algorithms are unchanged.
+
+**Validation:** All 101 Pytest cases pass with optional dependency paths supplied;
+all 38 platform GTests and 42 independent oracle GTests pass. Native tests cover
+ARM/Thumb addresses, no-hole tables, sparse/ABSENT ordinals, maximum ordinal,
+relocation page boundaries, truncation, corrupt pointers/counts/blocks and
+missing/data export errors. Nokia's checksum plus seven whole-image validator
+cases pass separately for ordinals 7, 641 and 65,535. These exercise 156-, 236-
+and 8,348-byte headers. A combined import/export image also passes those
+consumers, but its executable startup is layout evidence only, not a runnable
+DLL initialization routine. All six maintained import execution cases pass
+with the generated DLL and stronger mapped-pointer checks. Core compilation
+has no warnings; research links retain the documented host deployment/library
+warnings. Black/Ruff, clang-format, generated stubs and whitespace checks pass.
+Clangd consumes the DLL CMake database with zero errors.
+
+Retained evidence is under .symbian/native-dll: report.json,
+verification-report.json (38 checks across importer and three DLL variants,
+private input copies, binary and image digests), pytest.log, native-ctest.log,
+independent-ctest.log, compile-policy.json and clangd.log. The wheel is installed
+in an isolated environment outside the source import path; it builds identical
+ELF/DLL bytes and metadata using its packaged module and extension. Installed
+path, wheel digest and build evidence are retained in wheel-result.json.
+The earlier upstream 288-case checkpoint concerns unchanged emulator source;
+that upstream suite was not rerun for this converter/test-adapter change.
+
+Maintained artifact SHA-256 values:
+
+- DLL ELF: `0ecaad29f85a031a99098e837905403b3fd39c875f88bb9121bdc698bc56c76e`
+- Native E32 DLL: `188cd1a6d8d40a4d00d21dc74fedfa57912dea67d0e2c25811cc178f6ebe9f9d`
+- Unchanged importer EXE: `8f6cbed4ca3fe010be4d73b276d3671218e9cb3c3e4fbae29284048bced5e1a4`
+
+**Conclusion and decision:** Publish the scoped native frozen-function DLL
+converter, inspector metadata and CMake project profile. Maintained ROMless
+execution now checks generated export-pointer relocation rather than only
+lookup. Keep full-bitmap output canonical even where sparse encoding would be
+smaller. Preserve experimental runtime/loader flags false in build reports.
+SIS and verify-probe retain their import-free executable scope.
+
+**Open questions:** General code-pointer/vtable relocation, writable data/BSS,
+static construction/destruction, TLS and target DLL initialization, SDK heap
+and User::Exit cleanup/leaves, actual EUSER/decorated module identities, complete
+C++ ABI and matched Belle runtime. One physical phone is still the only declared
+hardware; exact RM/product/firmware, preserved ROM/Z and recovery baseline remain
+unknown. No phone or device operation ran.

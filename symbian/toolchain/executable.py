@@ -9,6 +9,7 @@ from pathlib import Path
 
 from symbian.analysis import inspect_elf
 from symbian.e32 import (
+    convert_dll,
     convert_imported_executable,
     convert_pic_executable,
     inspect_image,
@@ -67,12 +68,32 @@ def build_executable(
         name: run([path, "--version"], cwd=project)
         for name, path in tools.items()
     }
+    dll = options.get("kind") == "e32-dll-experiment"
     imported = options.get("kind") == "e32-import-experiment"
+    definition_name = options.get("export_definition")
+    if dll and (not isinstance(definition_name, str) or not definition_name):
+        raise StatusError(
+            Code.INVALID_ARGUMENT, "DLL export_definition required"
+        )
+    if not dll and definition_name is not None:
+        raise StatusError(
+            Code.INVALID_ARGUMENT, "Exports require a DLL project"
+        )
+    definition = (project / definition_name).resolve() if dll else None
+    if definition is not None and (
+        not definition.is_relative_to(project)
+        or definition.is_relative_to(output)
+    ):
+        raise StatusError(
+            Code.INVALID_ARGUMENT, "Frozen DEF must stay in project"
+        )
+    definition_bytes = definition.read_bytes() if definition else b""
     proxy_names = options.get("import_proxies", [])
     if (
         not isinstance(proxy_names, list)
         or (imported and not 1 <= len(proxy_names) <= 16)
-        or (not imported and proxy_names)
+        or (dll and len(proxy_names) > 16)
+        or (not imported and not dll and proxy_names)
         or any(
             not isinstance(path, str) or not path or ";" in path or "\0" in path
             for path in proxy_names
@@ -89,6 +110,10 @@ def build_executable(
     proxy_bytes = {path: path.read_bytes() for path in proxies}
 
     def convert(data: bytes) -> bytes:
+        if dll:
+            return convert_dll(
+                data, definition_bytes, list(proxy_bytes.values()), uid3
+            )
         if imported:
             return convert_imported_executable(
                 data, list(proxy_bytes.values()), uid3
@@ -107,6 +132,8 @@ def build_executable(
     target = configure(primary)
     inputs = {path: path.read_bytes() for path in target.inputs}
     inputs.update(proxy_bytes)
+    if definition is not None:
+        inputs[definition] = definition_bytes
     first_log = cmake_build.build(primary, name, tools["cmake"])
     _unchanged(inputs)
     # Ninja's dependency graph adds headers discovered by the compiler.
@@ -135,21 +162,30 @@ def build_executable(
             raise StatusError(
                 Code.DATA_LOSS, "Independent CMake ELF/E32 builds differ"
             )
-        for suffix, data in (("elf", first_elf), ("exe", first_image)):
+        for suffix, data in (
+            ("elf", first_elf),
+            ("dll" if dll else "exe", first_image),
+        ):
             staged = temporary / f"result.{suffix}"
             staged.write_bytes(data)
             staged.replace(output / f"{name}.{suffix}")
     database = output / "compile_commands.json"
     shutil.copyfile(primary / "compile_commands.json", database)
-    image = output / f"{name}.exe"
+    image = output / f"{name}.{'dll' if dll else 'exe'}"
     elf = output / f"{name}.elf"
     report = {
         "schema": (
-            "symbian.e32-import-experiment/v1"
-            if imported
-            else "symbian.e32-pic-experiment/v2"
+            "symbian.e32-dll-experiment/v1"
+            if dll
+            else (
+                "symbian.e32-import-experiment/v1"
+                if imported
+                else "symbian.e32-pic-experiment/v2"
+            )
         ),
-        "artifact_kind": "experimental-e32-executable",
+        "artifact_kind": (
+            "experimental-e32-dll" if dll else "experimental-e32-executable"
+        ),
         "artifact": str(image),
         "sha256": hashlib.sha256(first_image).hexdigest(),
         "linked_elf": str(elf),
@@ -182,15 +218,25 @@ def build_executable(
         "import_execution_verified": False,
         "limitations": [
             (
-                "Eager function imports only; "
-                "no writable data/exports/constructors"
-                if imported
-                else "No SDK/imports, writable data, exports, "
-                "constructors or packaging"
+                "Frozen function exports and eager imports only; "
+                "no writable data/TLS/constructors or target C++ runtime"
+                if dll
+                else (
+                    "Eager function imports only; "
+                    "no writable data/exports/constructors"
+                    if imported
+                    else "No SDK/imports, writable data, exports, "
+                    "constructors or packaging"
+                )
             ),
             "All relocations must be retained by the trusted linker",
             "Hand-written absolute addresses cannot be detected",
-            "Direct thread exit skips User::Exit cleanup; no resources allowed",
+            (
+                "Minimal E32Dll entry; no SDK initialization or DLL resources"
+                if dll
+                else "Direct thread exit skips User::Exit cleanup; "
+                "no resources allowed"
+            ),
             "Matched Belle runtime and full target ABI are unverified",
         ],
     }

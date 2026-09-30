@@ -42,3 +42,13 @@ function(symbian_add_pic_executable target)
     SUFFIX ".elf" LINK_DEPENDS "${script}"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 endfunction()
+
+# The ELF transport remains ET_EXEC with a single RX segment; native conversion
+# creates the Symbian DLL identity, frozen exports and E32 relocation section.
+function(symbian_add_pic_dll target)
+  symbian_add_pic_executable(${target} ${ARGN})
+  if(SYMBIAN_IMPORT_PROXIES)
+    target_link_options(${target} PRIVATE --hash-style=sysv --no-dynamic-linker)
+    target_link_libraries(${target} PRIVATE ${SYMBIAN_IMPORT_PROXIES})
+  endif()
+endfunction()

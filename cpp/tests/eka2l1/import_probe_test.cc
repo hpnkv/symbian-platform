@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iterator>
 #include <system_error>
+#include <vector>
 
 #include <common/buffer.h>
 #include <kernel/codeseg.h>
@@ -37,6 +38,31 @@ class ImportProbeTest : public symbian::testing::ProcessEnvironment {
     ASSERT_EQ(block.ordinals.size(), 1);
     slot_offset_ = block.ordinals[0];
     ASSERT_LT(slot_offset_ + 4, image->header.code_size);
+    std::ifstream library(dll, std::ios::binary);
+    std::string library_bytes{std::istreambuf_iterator<char>(library),
+                              std::istreambuf_iterator<char>()};
+    eka2l1::common::ro_buf_stream dll_buffer(
+        reinterpret_cast<uint8_t*>(library_bytes.data()), library_bytes.size());
+    const auto dll_image = eka2l1::loader::parse_e32img(&dll_buffer, true);
+    ASSERT_TRUE(dll_image.has_value());
+    ASSERT_EQ(dll_image->header.export_dir_count, 7);
+    ASSERT_EQ(dll_image->code_reloc_section.num_relocs, 7);
+    export_offset_ =
+        dll_image->header.export_dir_offset - dll_image->header.code_offset;
+    const auto& section = dll_image->code_reloc_section;
+    std::vector<uint32_t> offsets;
+    for (const auto& page : section.entries) {
+      for (const uint16_t word : page.rels_info) {
+        if (word != 0) {
+          ASSERT_EQ(word & 0xf000, 0x1000);
+          offsets.push_back(page.base + (word & 0xfff));
+        }
+      }
+    }
+    ASSERT_EQ(offsets.size(), 7);
+    for (size_t i = 0; i < offsets.size(); ++i) {
+      EXPECT_EQ(offsets[i], export_offset_ + i * 4);
+    }
   }
 
   void BeforeExecute(eka2l1::kernel::process* process) override {
@@ -57,6 +83,22 @@ class ImportProbeTest : public symbian::testing::ProcessEnvironment {
             process->get_entry_point_address() + slot_offset_));
     ASSERT_NE(patched, nullptr);
     EXPECT_EQ(*patched, function_);
+    // Checking lookup alone would not prove the export pointers were relocated.
+    // Inspect the actual mapped table, including all absent ordinal slots.
+    const uint32_t run_base = dll->get_code_run_addr(process);
+    const auto* table = static_cast<const uint32_t*>(
+        process->get_ptr_on_addr_space(run_base + export_offset_));
+    ASSERT_NE(table, nullptr);
+    EXPECT_EQ(table[6], function_);
+    for (size_t i = 0; i < 6; ++i) {
+      EXPECT_EQ(table[i], run_base);
+    }
+    const auto* prefix = static_cast<const uint32_t*>(
+        process->get_ptr_on_addr_space(run_base + export_offset_ - 4));
+    ASSERT_NE(prefix, nullptr);
+    EXPECT_EQ(*prefix, 7);
+    RecordProperty("mapped_export_pointer", std::to_string(table[6]));
+    RecordProperty("export_slots_relocated", "7");
     saw_function_ = false;
     RecordProperty("imported_dll", "probe.dll");
     RecordProperty("imported_ordinal", "7");
@@ -69,6 +111,7 @@ class ImportProbeTest : public symbian::testing::ProcessEnvironment {
 
   uint32_t function_ = 0;
   uint32_t slot_offset_ = 0;
+  uint32_t export_offset_ = 0;
   bool saw_function_ = false;
 };
 

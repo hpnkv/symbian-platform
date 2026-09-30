@@ -1,4 +1,4 @@
-add_library(symbian_e32 STATIC e32.cc imports.cc)
+add_library(symbian_e32 STATIC e32.cc imports.cc exports.cc)
 add_library(symbian::e32 ALIAS symbian_e32)
 target_include_directories(symbian_e32 PUBLIC ${PROJECT_SOURCE_DIR}/cpp)
 target_link_libraries(symbian_e32 PUBLIC symbian::analysis symbian::sdk)

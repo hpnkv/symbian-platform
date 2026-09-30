@@ -27,14 +27,15 @@ Artifacts and reports live under .symbian/. clangd consumed the generated ARM
 compilation database with zero errors. Native core code is compiled with
 exceptions disabled; the pybind11 boundary retains canonical status codes.
 
-Verification: 87 Pytest cases pass with the patched emulator, native oracles
-and public kernel source supplied. The 32 platform GTest cases and 42 independent
+Verification: 101 Pytest cases pass with the patched emulator, native oracles
+and public kernel source supplied. The 38 platform GTest cases and 42 independent
 oracle GTest cases pass on Apple Silicon. The preceding emulator checkpoint
 passed 288 upstream EKA2L1 cases; its sources are unchanged here. Black/Ruff,
 clang-format and generated stubs pass; clangd target checks have zero errors.
 Without optional dependency paths, four emulator smoke cases and two native
 verification integration cases and one public-header research case skip.
-One additional development DLL runtime integration case needs the native oracles.
+One additional development DLL runtime case and three variable-header DLL
+validation cases need the native oracles.
 EKA2L1's parser omits header CRC verification;
 Nokia's original checksum and whole-image validator independently check it.
 The unchanged historical validator accepts this image using host type adapters.
@@ -85,3 +86,23 @@ validation/checksums accept both files. Two-DLL links and malformed controls pas
 An isolated installed wheel reproduces the same imported ELF/E32 and metadata.
 General DLL production, writable data, matched SDK services, startup/cleanup and
 Belle runtime remain open. See IMPORTS.md.
+
+
+Native DLL conversion now resolves frozen function exports from retained ELF
+symbols, preserves ordinal gaps/ABSENT entries, and emits the count prefix,
+full absence bitmap and code relocations for all export pointers. No fixed
+function address is required. Independent validation covers ordinals 7, 641 and
+65,535, including complete variable headers and relocation pages. Both emulator
+backends also verify the mapped table: present pointers agree with lookup,
+absent pointers relocate to the entry, and the count word remains unchanged.
+Combined import/export layout passes Nokia's checksum and whole-image validator;
+its executable startup is not runnable DLL initialization evidence.
+
+The earlier research DLL omitted the count prefix and export-pointer relocations.
+Its successful structural validation and export lookup proved less than the
+public ELF loader contract. It remains research material; maintained runtime
+checks now use examples/dll_probe and the native converter. The installed wheel
+reproduces the native DLL and ELF and their metadata. Evidence is in
+.symbian/native-dll/report.json, verification-report.json and wheel-result.json.
+General pointer relocations, writable data/BSS/TLS, constructors, SDK startup,
+matched target DLLs and Belle runtime remain open. No device operation ran.

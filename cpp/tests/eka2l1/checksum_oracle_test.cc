@@ -29,7 +29,11 @@ TEST(ChecksumOracleTest, MatchesHistoricalUidAndHeaderChecksums) {
   const uint32_t supplied_crc = Read32(bytes, 20);
   Put32(bytes, 20, 0xc90fdaa2);
   unsigned long header_crc = 0;
-  Crc32(header_crc, bytes.data(), 156);
+  const uint32_t header_size = Read32(bytes, 100);
+  ASSERT_GE(header_size, 156);
+  ASSERT_LE(header_size, 8348);
+  ASSERT_LE(header_size, bytes.size());
+  Crc32(header_crc, bytes.data(), header_size);
   EXPECT_EQ(header_crc, supplied_crc);
 }
 

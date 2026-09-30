@@ -113,5 +113,5 @@ target_link_libraries(symbian_import_probe PRIVATE
                       epoc epockern epocmem epoctiming epocio epocloader GTest::gtest_main)
 add_test(NAME symbian_import_probe COMMAND symbian_import_probe)
 set_tests_properties(symbian_import_probe PROPERTIES
-  ENVIRONMENT "SYMBIAN_E32_TEST_IMAGE=${SYMBIAN_PLATFORM_ROOT}/.symbian/import-probe/import_probe.exe;SYMBIAN_DLL_TEST_IMAGE=${SYMBIAN_PLATFORM_ROOT}/.symbian/import-probe/probe.dll"
+  ENVIRONMENT "SYMBIAN_E32_TEST_IMAGE=${SYMBIAN_PLATFORM_ROOT}/.symbian/import-probe/import_probe.exe;SYMBIAN_DLL_TEST_IMAGE=${SYMBIAN_PLATFORM_ROOT}/.symbian/native-dll/probe.dll"
   TIMEOUT 15)

@@ -9,7 +9,11 @@ from pathlib import Path
 import pytest
 
 from symbian import toolchain
-from symbian._native import convert_imported_executable, inspect_e32
+from symbian._native import (
+    convert_dll,
+    convert_imported_executable,
+    inspect_e32,
+)
 from symbian.e32 import convert_pic_executable
 from symbian.sdk import build_import_proxy
 from symbian.status import Code, StatusError
@@ -208,19 +212,9 @@ def test_independent_import_runtime_uses_compiled_development_dll(
 
     report, _, _ = imported
     oracles = Path(os.environ["SYMBIAN_EKA2L1_ORACLES_BUILD"]).resolve()
-    source = PROJECT.parents[1] / "cpp/tests/eka2l1/dll_source"
+    source = PROJECT.parents[1] / "examples/dll_probe"
     implementation = toolchain.build(source, tmp_path / "implementation")
-    from symbian.process import run
-
-    dll = tmp_path / "probe.dll"
-    run(
-        [
-            str(oracles / "platform-tests/symbian_dll_fixture"),
-            implementation["artifact"],
-            str(dll),
-        ],
-        cwd=tmp_path,
-    )
+    dll = Path(implementation["artifact"])
     checks, _ = run_oracles(
         {
             "SYMBIAN_E32_TEST_IMAGE": Path(report["artifact"]),
@@ -231,3 +225,35 @@ def test_independent_import_runtime_uses_compiled_development_dll(
         tmp_path / "checks",
     )
     assert checks[0]["passed"]
+
+
+def test_dll_conversion_preserves_imports_alongside_frozen_exports(
+    imported, tmp_path
+):
+    report, proxy, _ = imported
+    # This tests the combined image layout; the executable startup in this input
+    # is not a runnable DLL initialization routine.
+    image = convert_dll(
+        Path(report["linked_elf"]).read_bytes(),
+        b"EXPORTS\nProbeMain @ 7 NONAME\n",
+        [proxy],
+        0xE0000810,
+    )
+    info = inspect_e32(image)
+    assert info.dll
+    assert info.imports[0].dll == "probe.dll"
+    assert info.imports[0].slots[0].ordinal == 7
+    assert len(info.exports) == len(info.code_relocations) == 7
+    assert not info.exports[-1].absent
+    if os.environ.get("SYMBIAN_EKA2L1_ORACLES_BUILD"):
+        from symbian.toolchain.verification import run_oracles
+
+        artifact = tmp_path / "combined.dll"
+        artifact.write_bytes(image)
+        checks, _ = run_oracles(
+            {"SYMBIAN_E32_TEST_IMAGE": artifact},
+            (("symbian_checksum_oracle", 1), ("symbian_validator_oracle", 7)),
+            Path(os.environ["SYMBIAN_EKA2L1_ORACLES_BUILD"]).resolve(),
+            tmp_path / "checks",
+        )
+        assert all(check["passed"] for check in checks)

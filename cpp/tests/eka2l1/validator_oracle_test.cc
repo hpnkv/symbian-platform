@@ -35,7 +35,11 @@ class ValidatorOracleTest : public ::testing::Test {
     ASSERT_GE(bytes_.size(), sizeof(header_));
     ASSERT_LT(bytes_.size(), 0x0fffffffU);
     std::memcpy(&header_, bytes_.data(), sizeof(header_));
-    ASSERT_EQ(header_.iCodeOffset, sizeof(header_));
+    header_size_ = header_.iCodeOffset;
+    ASSERT_GE(header_size_, sizeof(header_));
+    ASSERT_LE(header_size_, sizeof(storage_));
+    ASSERT_LE(header_size_, bytes_.size());
+    std::memcpy(&storage_, bytes_.data(), header_size_);
     ASSERT_EQ(header_.iCompressionType, 0);
   }
 
@@ -43,18 +47,27 @@ class ValidatorOracleTest : public ::testing::Test {
     // These tests use a bounded, uncompressed V fixture. Do not expose this
     // historical pointer-based validator as an untrusted-file execution API.
     return header_.ValidateWholeImage(
-        bytes_.data() + sizeof(header_),
-        static_cast<TUint>(bytes_.size() - sizeof(header_)));
+        bytes_.data() + header_size_,
+        static_cast<TUint>(bytes_.size() - header_size_));
   }
 
   void UpdateHeaderCrc() {
     header_.iHeaderCrc = KImageCrcInitialiser;
     TUint32 crc = 0;
-    Mem::Crc32(crc, &header_, sizeof(header_));
+    Mem::Crc32(crc, &storage_, header_size_);
     header_.iHeaderCrc = crc;
   }
 
-  E32ImageHeaderV header_{};
+  // Original Symbian variable header extends the export bitmap past sizeof(V).
+  // Keep its complete, bounded contiguous backing storage in this test adapter.
+  struct HeaderStorage {
+    E32ImageHeaderV header{};
+    char continuation[8192]{};
+  } storage_;
+
+  static_assert(offsetof(HeaderStorage, continuation) == 156);
+  E32ImageHeaderV& header_ = storage_.header;
+  uint32_t header_size_ = 0;
   std::string bytes_;
 };
 
