@@ -3,7 +3,8 @@
 Build reproducible ARM objects and experimental E32 executables on macOS, and
 preserve existing firmware/ROM material in verifiable host-side archives.
 The target is Nokia 808 / Symbian Belle. The first E32 experiment passes historical
-image validation and ROMless CPU tests; execution in Belle remains unverified.
+image validation, CPU and ROMless emulator process tests. Execution in a matched
+Belle environment remains unverified.
 See docs/STATUS.md.
 
 ```sh
@@ -47,13 +48,16 @@ After building those research dependencies, run:
 uv run symbian toolchain verify-probe .symbian/e32-probe/e32_probe.exe
 ```
 
-This runs 20 independent native tests, retains JSON/logs and input/binary hashes
+This runs 28 independent native tests, retains JSON/logs and input/binary hashes
 under `.symbian/probe-check`, and emits a structured report. It checks the
 maintained probe with Nokia's unchanged whole-image validator and executes
 ARM startup, Thumb C++ and the exit SVC on both EKA2L1 CPU backends at two
-addresses. A negative control changes the calculation's input. No Symbian kernel
-handles that SVC; loader/runtime verification remains false. Inherited GTest
-filters and sharding cannot silently reduce the required test count.
+addresses. Eight process cases additionally use EKA2L1's loader, memory model,
+scheduler and kernel SVC dispatch under its epoc10 profile. They verify normal
+and failure exits, repeated launches and address-space release on both backends.
+No Belle ROM/Z or system services are supplied; Belle loader/runtime
+verification remains false.
+Inherited GTest filters and sharding cannot silently reduce the test count.
 
 ```sh
 cmake --preset debug
@@ -71,4 +75,5 @@ For offline builds with that exact Abseil checkout, export
 Python installation compiles the pybind11 extension with scikit-build-core;
 native core code compiles with exceptions disabled. The bindings release the
 GIL around stateless native conversion and inspection. Future concurrency uses
-A11's Thread library; current operations need no native scheduler or callbacks.
+A11's Thread library. The platform core remains synchronous; the emulator
+research harness uses EKA2L1's existing guest scheduler and timer lifecycle.

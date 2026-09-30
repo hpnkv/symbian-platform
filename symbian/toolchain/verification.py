@@ -1,4 +1,4 @@
-"""Independent structural and CPU checks for the maintained E32 probe."""
+"""Independent image, CPU and emulator process checks for the E32 probe."""
 
 import hashlib
 import json
@@ -15,6 +15,7 @@ ORACLES = (
     ("symbian_checksum_oracle", 1),
     ("symbian_validator_oracle", 7),
     ("symbian_cpu_probe", 8),
+    ("symbian_process_probe", 8),
 )
 
 
@@ -69,8 +70,8 @@ def verify_probe(artifact: Path, oracles_build: Path, output: Path) -> dict:
         output: Directory for independent test JSON, logs and the final report.
 
     Returns:
-        Verification evidence with historical validation and CPU execution
-        results. Symbian loader and runtime verification remain false.
+        Verification evidence with historical validation, CPU execution and
+        ROMless emulator process results. Belle runtime verification is false.
     """
     artifact = artifact.resolve()
     oracles_build = oracles_build.resolve()
@@ -156,13 +157,17 @@ def verify_probe(artifact: Path, oracles_build: Path, output: Path) -> dict:
         "cpu_backends": ["dyncom", "dynarmic"],
         "code_load_addresses": [0x8000, 0x20000],
         "exit_svc_observed": True,
+        "eka2l1_process_verified": True,
+        "kernel_exit_verified": True,
+        "emulator_os_profile": "epoc10",
         "symbian_loader_verified": False,
         "runtime_verified": False,
         "limitations": [
             "Checks the maintained integer probe only",
             "Historical pre-Belle validator with host type adapters",
-            "CPU SVC callback observes registers; no Symbian kernel dispatch",
-            "No ROM, process creation, imports, services or full C++ ABI test",
+            "CPU-only cases observe SVC registers without kernel dispatch",
+            "Process cases use EKA2L1's host kernel and epoc10 SVC table",
+            "No Belle ROM/Z, target DLLs, services or full C++ ABI test",
         ],
     }
     report_path = output / "report.json"

@@ -6,7 +6,7 @@ exact identity, firmware, ROM/Z-drive assets and recovery method are unknown.
 | PLAN milestone | Status | Required evidence |
 | --- | --- | --- |
 | 0 Preservation | Archive tools tested; physical baseline pending | Device inventory, original artifacts, offline archive, tested human recovery appliance |
-| 1 Toolchain | Reproducible ELF→E32 experiment; historical validation and ROMless CPU probe pass | Belle process loading and target runtime ABI tests |
+| 1 Toolchain | Reproducible ELF→E32; historical validation, CPU and ROMless emulator process tests pass | Matched Belle runtime, imports and complete target ABI tests |
 | 2 Project model | Pending | Verified SDK subset, CMake application and installed SIS |
 | 3 Emulator | Native arm64 build, upstream suite and CLI instance smoke tests pass | Matched ROM/Z image, guest boot/launch, complete runtime isolation |
 | 4–9 | Pending | Gates in PLAN.md |
@@ -27,7 +27,7 @@ compilation database with zero errors. Native core code is compiled with
 exceptions disabled; the pybind11 boundary retains canonical status codes.
 
 Verification: 59 Pytest cases with the patched emulator and native oracles
-supplied, 16 platform GTest cases, 20 independent oracle GTest cases and
+supplied, 16 platform GTest cases, 28 independent oracle GTest cases and
 288 upstream EKA2L1 cases pass on Apple Silicon. Black/Ruff, clang-format and
 generated stubs pass; the earlier clangd target check had zero errors.
 Without optional dependency paths, four emulator smoke cases and one native
@@ -36,6 +36,13 @@ Nokia's original checksum and whole-image validator independently check it.
 The unchanged historical validator accepts this image using host type adapters.
 Both EKA2L1 CPU backends execute its ARM startup and Thumb C++ at two load
 addresses; a changed input produces the expected failure exit. These are
-ROMless CPU tests: the exit SVC is observed, not dispatched to a Symbian kernel.
-No Symbian process was launched, and no physical runtime ran.
+ROMless CPU tests: the exit SVC is observed by their callback. Eight additional
+cases use EKA2L1's real process loader, flexible memory model, scheduler and
+kernel SVC dispatch under its epoc10 profile. Both backends return zero normally
+and 42 for changed input; absent executables fail to create a process. Both
+backends also launch another process after an earlier failure exit.
+The process/thread exit states and address-space release are checked. This is
+an import-free emulator process without Belle ROM/Z or system services.
+Reports distinguish eka2l1_process_verified from Belle loader/runtime flags,
+which remain false. No physical runtime ran.
 Build and patch replay instructions are in research/eka2l1/README.md.

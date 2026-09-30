@@ -288,3 +288,66 @@ synchronous and needs no new scheduler, GIL callback or Python object holder.
 **Remaining uncertainty:** Belle loader changes, actual process creation and
 kernel dispatch, matched ROM/Z assets, imports, builtins, floating-point/class
 ABI, constructors and leave/cleanup behavior. No phone operations occurred.
+
+## 2026-09-30: import-free process through the emulator kernel
+
+**Question:** Can the E32 advance beyond CPU callbacks to actual EKA2L1 process
+creation and kernel exit before a matched ROM/Z image is available?
+
+**Research finding:** EKA2 thread initialization enters the executable's own
+startup. The euser.dll bootstrap requirement in libmanager.cpp belongs to EKA1.
+The import-free EKA2 image can therefore be tested directly through EKA2L1's
+virtual filesystem, library manager, process constructor, memory model and
+guest scheduler. This does not supply Belle user libraries or system servers.
+
+**Experiments:** Added a separate GPL research GTest executable. It copies the
+unchanged E32 into a private temporary host directory, mounts that directory
+as a write-protected virtual C drive, installs the flexible memory model and
+selects the emulator's epoc10 profile. The original spawn_new_process path
+loads C:\\sys\\bin\\probe.exe, creates its main thread and schedules its context.
+Execution reaches the real ThreadKill handler via the kernel's original SVC
+callback. No SVC implementation or loader algorithm is replaced. CPU faults
+stop the test and fail it; no kernel exception-handling behavior is claimed.
+
+Eight cases pass on dyncom/dynarmic: normal exit, changed-input failure,
+another launch after failure exit and rejection of a missing executable.
+The code maps at 0x70000000, rather than its ELF link address 0x8000. Both
+backends execute ARM/Thumb interworking, return exit reason zero normally and
+42 when input 16 changes to 17, and release the process address space. The
+negative control flushes the TLB before each step so the MMU stack-write callback
+can change the input. Each launch is limited to 512 CPU steps. Exit reasons,
+backend/profile, code address, injection count and memory release are recorded
+in GTest JSON. The test retains diagnostic process/thread objects until kernel
+wipeout while checking their exit state and released memory model.
+
+The first compile found a throwing inline UID helper, and the first link required
+the upstream test-only platform.cpp UI hooks. The tracked runtime-probe.patch
+initializes previously uninitialized ROM mapping fields and the VFS ID counter,
+and changes invalid UID indexing from throwing to fail-fast abort. Its SHA-256
+is `6b477e9581aa0b3c43e88fbfd38ebec20108ea83f1e69ed9ac98105940dc22a9`.
+The emulator loader, scheduler, memory mapping and SVC algorithms remain
+unchanged. The original timer lifecycle is reused; its existing worker stops
+before kernel teardown. No platform scheduling library or Python callback was
+added. The harness itself compiles with exceptions disabled.
+
+Rebuilt the desktop emulator and upstream tests against both tracked patches.
+The bundle signature verifies. All 59 Pytest cases, 16 platform GTest cases,
+28 independent oracle GTest cases and 288 upstream EKA2L1 cases pass. Format,
+stub and whitespace checks pass. The E32 digest remains
+`997cd9c5ec35281f261a08cb3c2ca6a36c74be969b4a72cbbd8ede5ff5332395`.
+
+**Conclusion:** This executable demonstrably loads, runs and exits as an EKA2L1
+process in the tested ROMless epoc10 configuration. It is stronger evidence than
+the CPU-only harness and permits further host-side toolchain work. It is not
+an installed Belle/FP2 environment, a full SDK or a general application runner.
+
+**Implementation decision:** Extend verify-probe to require all five research
+binaries and 28 completed cases. Report eka2l1_process_verified and
+kernel_exit_verified separately; keep symbian_loader_verified/runtime_verified
+false until a matched target environment is tested. Keep the general emu and
+application-test facade pending its install/launch/isolation gates.
+
+**Remaining uncertainty:** Matched Belle ROM/Z, User::Exit cleanup, imported
+DLLs, system services, complete target ABI, package installation, desktop boot,
+debugger attachment and full runtime storage isolation. Physical identity,
+preservation and recovery remain unverified; the phone was untouched.

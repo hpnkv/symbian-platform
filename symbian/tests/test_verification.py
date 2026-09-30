@@ -96,10 +96,12 @@ def test_isolated_input_and_inherited_test_filter(probe, tmp_path, monkeypatch):
 
     monkeypatch.setattr(verification, "run", native_run)
     report = verification.verify_probe(probe, build, tmp_path / "out")
-    assert len(seen) == 4
-    assert report["tests_passed"] == 20
+    assert len(seen) == 5
+    assert report["tests_passed"] == 28
     assert report["historical_image_validation_passed"]
     assert report["cpu_probe_verified"]
+    assert report["eka2l1_process_verified"]
+    assert report["kernel_exit_verified"]
     assert not report["symbian_loader_verified"]
     assert not report["runtime_verified"]
     assert Path(report["tested_copy"]).read_bytes() == probe.read_bytes()
@@ -125,9 +127,12 @@ def test_real_native_verification_cli(probe, tmp_path, capsys):
         == 0
     )
     result = json.loads(capsys.readouterr().out)["result"]
-    assert result["tests_passed"] == 20
+    assert result["tests_passed"] == 28
     assert result["cpu_backends"] == ["dyncom", "dynarmic"]
     assert result["code_load_addresses"] == [0x8000, 0x20000]
+    assert result["eka2l1_process_verified"]
+    assert result["kernel_exit_verified"]
+    assert result["emulator_os_profile"] == "epoc10"
     assert not result["runtime_verified"]
     for oracle in result["oracles"]:
         assert Path(oracle["results"]).is_file()

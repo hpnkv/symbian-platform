@@ -1,0 +1,56 @@
+diff --git a/src/emu/common/include/common/uid.h b/src/emu/common/include/common/uid.h
+index 8a15575..2df88a4 100644
+--- a/src/emu/common/include/common/uid.h
++++ b/src/emu/common/include/common/uid.h
+@@ -2,7 +2,7 @@
+ 
+ #include <cstddef>
+ #include <cstdint>
+-#include <stdexcept>
++#include <cstdlib>
+ 
+ namespace eka2l1::epoc {
+     using uid = uint32_t;
+@@ -48,8 +48,9 @@ namespace eka2l1::epoc {
+                 break;
+             }
+ 
+-            throw std::runtime_error("UID index out of range!");
+-            return 0;
++            // An invalid UID slot is a caller invariant violation. Keep this
++            // header usable by consumers compiled with exceptions disabled.
++            std::abort();
+         }
+     };
+ }
+diff --git a/src/emu/mem/include/mem/mem.h b/src/emu/mem/include/mem/mem.h
+index 80723e5..6a3cf64 100644
+--- a/src/emu/mem/include/mem/mem.h
++++ b/src/emu/mem/include/mem/mem.h
+@@ -55,10 +55,10 @@ namespace eka2l1 {
+         mem::control_impl impl_;
+         mem::page_table_allocator_impl alloc_;
+ 
+-        void *rom_map_;
+-        std::size_t rom_size_;
++        void *rom_map_ = nullptr;
++        std::size_t rom_size_ = 0;
+ 
+-        mem::vm_address rom_addr_;
++        mem::vm_address rom_addr_ = 0;
+         config::state *conf_;
+ 
+     public:
+diff --git a/src/emu/vfs/include/vfs/vfs.h b/src/emu/vfs/include/vfs/vfs.h
+index 5c88457..66eb06e 100644
+--- a/src/emu/vfs/include/vfs/vfs.h
++++ b/src/emu/vfs/include/vfs/vfs.h
+@@ -327,7 +327,7 @@ namespace eka2l1 {
+         std::map<filesystem_id, file_system_inst> filesystems;
+         std::mutex access_lock;
+ 
+-        std::atomic<filesystem_id> id_counter;
++        std::atomic<filesystem_id> id_counter{ 0 };
+         common::identity_container<drive_change_callback_and_data> drive_change_callbacks;
+ 
+     protected:

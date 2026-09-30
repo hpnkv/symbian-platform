@@ -27,7 +27,7 @@ def _parser() -> argparse.ArgumentParser:
     probe.add_argument("--output", type=Path, default=Path(".symbian/probe"))
     probe.add_argument("--compiler", default="clang++")
     verify_probe = compiler_commands.add_parser(
-        "verify-probe", help="Run independent E32 structure and CPU checks"
+        "verify-probe", help="Run independent E32, CPU and kernel checks"
     )
     verify_probe.add_argument("artifact", type=Path)
     verify_probe.add_argument(

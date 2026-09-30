@@ -58,3 +58,13 @@ target_link_libraries(symbian_cpu_probe PRIVATE
 add_test(NAME symbian_cpu_probe COMMAND symbian_cpu_probe)
 set_tests_properties(symbian_cpu_probe PROPERTIES
   ENVIRONMENT "SYMBIAN_E32_TEST_IMAGE=${SYMBIAN_E32_TEST_IMAGE}" TIMEOUT 15)
+
+add_executable(symbian_process_probe process_probe_test.cc
+    "${SYMBIAN_PLATFORM_ROOT}/research/upstream/EKA2L1/src/tests/platform.cpp")
+target_compile_features(symbian_process_probe PRIVATE cxx_std_20)
+target_compile_options(symbian_process_probe PRIVATE -fno-exceptions)
+target_link_libraries(symbian_process_probe PRIVATE
+                      epoc epockern epocmem epoctiming epocio GTest::gtest_main)
+add_test(NAME symbian_process_probe COMMAND symbian_process_probe)
+set_tests_properties(symbian_process_probe PROPERTIES
+  ENVIRONMENT "SYMBIAN_E32_TEST_IMAGE=${SYMBIAN_E32_TEST_IMAGE}" TIMEOUT 15)

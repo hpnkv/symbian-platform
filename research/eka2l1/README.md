@@ -2,7 +2,7 @@
 
 The pinned emulator is a separate research dependency, outside the Python wheel.
 Its GPL-3.0-or-later license and dependency licenses remain in the checkout.
-The EKA2L1 parser and CPU integration harnesses in cpp/tests/eka2l1 are
+The EKA2L1 parser, CPU and process integration harnesses in cpp/tests/eka2l1 are
 GPL-3.0-or-later. Nokia's original EPL-1.0 checksum source and whole-image
 validator are compiled unchanged in separate oracle executables.
 checksum_host_types.h supplies a four-byte UID and its count;
@@ -29,6 +29,7 @@ git -C research/upstream/buildtools checkout 7b35cd328d3a5e8e0bc177d0169fd409c32
 git clone --no-checkout https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv research/upstream/kernelhwsrv
 git -C research/upstream/kernelhwsrv checkout 0c3208650587ac0230aed8a74e9bddb5288023eb
 git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/instance-root.patch
+git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/runtime-probe.patch
 ```
 
 If the checkout already exists, verify its revision and patch before building;
@@ -53,7 +54,7 @@ cmake -S research/upstream/EKA2L1 -B build/eka2l1 -G Ninja \
   -DCMAKE_PROJECT_EKA2L1_INCLUDE="$PWD/research/eka2l1/project-tests.cmake"
 cmake --build build/eka2l1 -j 8 \
   --target eka2l1_qt ekatests symbian_e32_oracle symbian_checksum_oracle \
-    symbian_validator_oracle symbian_cpu_probe
+    symbian_validator_oracle symbian_cpu_probe symbian_process_probe
 ctest --test-dir build/eka2l1 -R 'symbian_|^ekatests$' --output-on-failure
 uv run symbian toolchain verify-probe .symbian/e32-probe/e32_probe.exe
 SYMBIAN_EKA2L1_EXECUTABLE="$PWD/build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1" \
@@ -105,9 +106,30 @@ dispatches to a Symbian kernel. There is no ROM, process creation, import or
 service test. These backends are not claimed to be independent implementations
 of every instruction; Dynarmic has fallback paths.
 
-verify-probe runs all four oracle binaries with bounded execution and a private
-input copy, preserving 20 completed GTest cases, logs, artifact and binary hashes.
+The process harness uses EKA2L1's actual virtual filesystem, executable loader,
+flexible memory model, scheduler and epoc10 kernel SVC table. Each case has a
+private temporary host directory mounted as a write-protected virtual C drive.
+No ROM or Z drive is mounted, and no target DLLs/services are supplied. Eight cases
+cover normal exit, a changed-input failure exit, another launch after exit and
+missing-file rejection on both backends. The real ThreadKill handler completes
+process/thread exit and releases the address space. Negative cases flush the
+TLB before stepping so the stack-write callback can change input 16 to 17.
+It never replaces the SVC
+handler. JSON results include the actual code mapping and exit reason.
+
+The harness reuses upstream's test-only platform.cpp UI hooks for linking; no
+UI code is exercised. It uses the upstream timer lifecycle, stopping its worker
+before kernel teardown. It does not introduce a platform scheduler. Probe source
+compiles with exceptions disabled. runtime-probe.patch initializes ROM mapping
+state and the VFS ID counter, and makes invalid UID indexing fail fast instead
+of throwing from a header. The ELF/E32 loading and kernel algorithms are unchanged.
+
+verify-probe runs all five oracle binaries with bounded execution and a private
+input copy, preserving 28 completed GTest cases, logs, artifact and binary hashes.
 Filtered, disabled, skipped or failing tests cannot produce a passing report.
-It is specific to examples/e32_probe and reports loader/runtime verification
-false. These checks do not replace a Belle process launch or full ABI validation.
+It is specific to examples/e32_probe. It reports eka2l1_process_verified and
+kernel_exit_verified true, while matched Belle loader/runtime verification
+remains false. The epoc10 enum selects emulator behavior; it does not identify
+an installed Belle/FP2 image. These tests do not cover DLL imports, User::Exit,
+system services, full ABI validation, desktop boot or a package installation.
 No firmware or ROM/Z image was imported.

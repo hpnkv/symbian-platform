@@ -162,7 +162,10 @@ one RX segment with retained internal PC-relative relocations and no SDK imports
 data, TLS or constructors. The independent EKA2L1 parser, Nokia's original
 checksum source and unchanged whole-image validator accept it. A ROMless
 harness executes its integer C++ probe on two EKA2L1 CPU backends at two load
-addresses. This does not establish Belle loader or runtime compatibility.
+addresses. A further ROMless harness loads a process through EKA2L1's filesystem,
+loader, memory model and scheduler, and completes ThreadKill through its actual
+epoc10 kernel dispatch. This does not establish matched Belle loader or runtime
+compatibility.
 Later tests must cover integer/float calling
 convention, constructors, virtual dispatch, exports, imported API calls, and
 leave/cleanup behavior independently.
@@ -243,4 +246,15 @@ inputs. They observe ARM startup, Thumb C++ computation and the exit SVC's
 register contract, including a restored stack. The SVC callback stops execution
 without entering a Symbian kernel. No ROM, process, imports or system services
 are present. `toolchain verify-probe` retains the independent results and hashes
-while reporting Symbian loader/runtime verification false.
+while reporting matched Belle loader/runtime verification false.
+
+Eight further cases create an import-free process using EKA2L1's actual loader
+and flexible memory model under its epoc10 profile. Both CPU backends complete
+normal and changed-input exits and repeated launches through the kernel;
+missing files cannot create a process. Assertions check thread/process exit and
+address-space release. The test profile supplies no ROM/Z image, target DLLs or
+system services.
+It is evidence that this image loads and runs in that emulator configuration,
+not that the target Belle/FP2 system supports it. No kernel SVC algorithm was
+replaced. The small runtime-probe.patch records host initialization fixes and
+a UID-index invariant change needed for exception-free inclusion of headers.
