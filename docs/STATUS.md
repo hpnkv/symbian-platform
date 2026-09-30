@@ -144,3 +144,36 @@ the native platform and SDK ordinal checks pass. Evidence is under
 cxx20-module and cxx20-module-check. See CXX20.md. Complete standard library,
 coroutine/thread/atomic runtime, global lifetime, writable data/BSS/TLS, SDK
 services and matched Belle remain open. No physical-device operation ran.
+
+
+The requested examples/gui_app and root WALKTHROUGH.md are now present. The
+counter application directly uses Window Server; it has seven-segment drawing,
+touch increment/reset/exit and explicit request cancellation/object cleanup.
+Its primary-thread adapter attempts SDK heap/process setup and User::Exit,
+while secondary-thread, exception-entry and global lifetime support remain
+absent. The build report now correctly treats startup/cleanup as unverified
+project behavior instead of assuming every executable uses direct ThreadKill.
+
+The source profile stages 92 original header aliases and native frozen proxies
+for nine EUSER and 28 WS32 functions from pinned ignored public trees. Preparation
+checks file digests, preserves original files/licenses, rejects malformed
+profiles and output redirection, and records SDK/runtime verification false.
+Clang/LLD and independent CMake trees reproduce the ARM ELF and E32. Five model
+GTests pass, including wide/tall layouts, arithmetic, input bounds and saturation.
+Original checksum/validator sources accept the generated GUI in eight cases.
+DWARF verifies and LLDB resolves functions and source lines; clangd has no
+diagnostics with its limited check-mode refactoring selection.
+
+All 139 Pytest cases passed with explicit optional inputs; all six root CTest
+targets passed. The final drawing-layout adjustment also passed the five model
+GTests and all 15 GUI Pytest cases. An isolated installed wheel runs the SDK
+preparation/build/verification CLI, reproduces both artifacts and repeats all
+eight independent image checks. Evidence lives in .symbian/gui-sdk,
+.symbian/gui-app, .symbian/gui-validation and .symbian/gui-research.
+
+Visible GUI execution, actual Belle EUSER/WS32 compatibility, heap/cleanup and
+guest debugger attachment remain unverified because matched ROM/Z is absent.
+The walkthrough labels these procedures as future experiments. The example
+has no application registration or SIS package; the existing SIS writer's
+import-free restriction remains. No emulator OS boot or physical-device action
+is claimed or performed. Phone RM/product/firmware details remain unknown.

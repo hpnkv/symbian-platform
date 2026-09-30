@@ -430,3 +430,36 @@ contracts in this experiment. LLVM lists no supported Symbian libc++ port.
 Neither language support nor this header subset establishes a hosted standard
 library, complete ABI, matched Belle or physical execution. See CXX20.md for
 sources, compiler versions, replay and the remaining target runtime work.
+
+## 19. Source SDK and Window Server GUI experiment
+
+The maintained examples/gui_app uses original public Window Server types to
+draw a four-digit counter and accept increment/reset/exit pointer events. Its
+owned sdk.json pins 92 explicit header aliases and 37 function imports from
+original EUSER/WS32 definitions. Native DEF selection and proxy generation
+remain in the existing core; Python stages digest-checked aliases and build
+policy. Source licenses stay in ignored upstream checkouts. Reported revisions
+are manifest declarations; actual input bytes, rather than Git provenance,
+are checked by preparation. This is not a matched Belle SDK distribution.
+
+The primary-thread adapter derives R4/SP entry and heap/process initialization
+from uc_exe.cia/uc_exe.cpp and ends through SDK User::Exit. No global lifetime,
+secondary-thread or exception-entry support is claimed. A synchronous pair of
+Window Server requests drives painting and input; cancellation completes
+before request statuses leave the stack. This adds no host scheduler or Python
+callback. The platform host bindings retain their A11 status/GIL policy.
+
+Modern Clang/LLD produces identical ELF/E32 in independent build trees. Five
+GTests cover the real model, extreme layout aspect ratios, half-open hit regions,
+saturation and division against host arithmetic. Original historical checksum
+and whole-image validator accept the GUI in eight cases. DWARF verifies, clangd
+parses/indexes with a bounded tweak selection, and LLDB resolves symbols/source.
+An installed wheel outside the source import path prepares both proxies,
+reproduces the exact ELF/E32 and repeats all eight validation cases.
+
+These checks do not execute SDK imports, boot Window Server, render a GUI or
+attach a guest debugger. A matching ROM and same-device Z drive are still
+missing. Imported-image SIS packaging, application registration, rotation and
+full runtime support remain open. Root WALKTHROUGH.md contains creation details,
+pinned source acquisition, verified build/check commands, and explicitly
+unexecuted emulator/debugger procedures with acceptance criteria.

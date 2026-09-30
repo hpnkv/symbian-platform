@@ -221,6 +221,69 @@ POINTER_ORACLES = (
 )
 
 
+def verify_gui(artifact: Path, oracles_build: Path, output: Path) -> dict:
+    """Validates the maintained GUI image without executing system imports.
+
+    Args:
+        artifact: Generated examples/gui_app E32 executable.
+        oracles_build: Research build containing the two historical oracles.
+        output: Directory retaining private fixtures, logs and a report.
+
+    Returns:
+        Eight historical checksum/validation results. GUI execution, matched
+        DLLs, Belle loader compatibility and debugger attachment remain false.
+    """
+    artifact, oracles_build, output = (
+        path.resolve() for path in (artifact, oracles_build, output)
+    )
+    if artifact.is_relative_to(output):
+        raise StatusError(Code.INVALID_ARGUMENT, "Keep image outside checks")
+    data = artifact.read_bytes()
+    metadata = inspect_image(artifact)
+    selections = {
+        item["dll"]: len(item["slots"]) for item in metadata["imports"]
+    }
+    if (
+        metadata["uid3"] != 0xE0000811
+        or metadata["dll"]
+        or metadata["entry_offset"] != 0
+        or selections != {"euser.dll": 9, "ws32.dll": 28}
+    ):
+        raise StatusError(
+            Code.INVALID_ARGUMENT, "Expected the maintained GUI image profile"
+        )
+    oracles = POINTER_ORACLES[:2]
+    checks, copies = run_oracles(
+        {"SYMBIAN_E32_TEST_IMAGE": artifact}, oracles, oracles_build, output
+    )
+    if artifact.read_bytes() != data:
+        raise StatusError(Code.ABORTED, "GUI image changed during checks")
+    report = {
+        "schema": "symbian.gui-image-validation/v1",
+        "artifact": str(artifact),
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "tested_copy": str(copies["SYMBIAN_E32_TEST_IMAGE"]),
+        "e32": metadata,
+        "oracles": checks,
+        "tests_passed": sum(count for _, count in oracles),
+        "historical_image_validation_passed": True,
+        "gui_execution_verified": False,
+        "debugger_attachment_verified": False,
+        "import_execution_verified": False,
+        "symbian_loader_verified": False,
+        "runtime_verified": False,
+        "limitations": [
+            "Historical pre-Belle source validation with host type adapters",
+            "Does not launch this image or supply EUSER/WS32 implementations",
+            "Requires matched ROM/Z and a running Window Server for GUI tests",
+        ],
+    }
+    path = output / "report.json"
+    report["report"] = str(path)
+    path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    return report
+
+
 def verify_pointers(
     artifact: Path,
     oracles_build: Path,

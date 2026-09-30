@@ -1,0 +1,623 @@
+# Building and investigating the GUI example
+
+`examples/gui_app` is a small native Window Server counter application. It
+draws four seven-segment digits and three touch controls: green increments,
+amber resets, and red exits. The intended initial display is `0000`.
+
+The source compiles on macOS with contemporary Clang, links with LLD, and
+converts to a reproducible Symbian E32 executable. Original Nokia checksum
+and whole-image validation pass. Its ARM ELF retains valid DWARF and LLDB
+resolves its functions and source lines. **The application has not yet been
+seen running in a booted emulator or on a phone.** No matching ROM/Z material
+is available in this workspace. The launch and guest-debugging sections below
+are the next experiments, with explicit prerequisites and pass criteria.
+
+| Result | Current evidence |
+| --- | --- |
+| Public source headers and frozen function ordinals | 92 hashed header aliases; 9 EUSER and 28 WS32 imports |
+| C++20 ARM compilation and E32 conversion | Two independent CMake/Ninja builds produce identical ELF/E32 bytes |
+| Counter, layout, pointer boundaries, division | Five host GTests |
+| SDK preparation and integration policy | 15 Pytest cases with optional public source/oracle inputs |
+| Historical image checks | Eight passing original-source checksum/validator cases |
+| Debug information and editor input | DWARF verification, LLDB symbol/source lookup, real compilation database |
+| Visible drawing, pointer delivery, SDK startup/cleanup | Not executed in a matched emulator |
+| Guest debugger connection and breakpoints | Procedure researched; attachment unverified |
+| Nokia 808 / Belle compatibility | Unverified; actual phone identity/firmware remains unknown |
+
+## 1. What was made and why
+
+The example uses the public `w32std.h` interfaces directly. A raw Window Server
+client is sufficient to create a window, draw rectangles, and receive pointer
+and redraw events. This exposes the GUI service contract without first needing
+Avkon, application registration resources, fonts, Qt, or a resource compiler.
+It consequently has no application-menu icon or Avkon application lifecycle.
+It must be launched by its executable path.
+
+The project is divided as follows:
+
+| File | Responsibility |
+| --- | --- |
+| `model.h` | Pure counter, geometry, pointer hit testing and integer division |
+| `app.cc` | Original SDK types, Window Server connection, drawing and request loop |
+| `startup.S` | ARM entry marker and ARM-to-Thumb entry transition |
+| `startup.cc` | Checked thread-create layout, SDK heap setup, process initialization and `User::Exit` |
+| `image.ld` | Retained-relocation ELF transport with one code mapping and eager import tables |
+| `CMakeLists.txt`, `CMakePresets.json` | Target compilation, SDK definitions, debug flags and source path maps |
+| `symbian.toml` | E32 import profile, development UID `0xe0000811`, two explicit ordinal proxies |
+| `sdk.json` | Owned source-path/digest manifest and selected upstream export names |
+
+The model is ordinary C++ with no SDK or host library dependency. It caps the
+counter at 9999, treats hit regions as half-open rectangles, and ignores input
+after exit. The host tests compile this same header, rather than implementing a
+second model in Python. The model's division routine is tested against host
+integer `/` and `%` at boundary values and 8,000 mixed inputs. It requires a
+nonzero divisor; every application caller supplies a positive constant.
+Initially normal division introduced unresolved ARM compiler-runtime helpers.
+This bounded integer routine removes that dependency until compiler-rt is
+ported. It is an example utility, not a general replacement for compiler-rt.
+
+`GuiMain` explicitly constructs and closes an `RWsSession`, `CWsScreenDevice`,
+`CWindowGc`, `RWindowGroup`, and `RWindow`. Group/client handles are 1 and 2.
+The initial screen size determines the layout; supported dimensions are
+120..8192 by 160..8192. Rotation and resizing after launch are not handled yet.
+Digits and control marks are filled rectangles, so no font selection is needed.
+Green has a plus; amber has a horizontal reset stroke; red has a boxed exit
+mark. The painting implementation deliberately keeps its inputs on the stack.
+
+The loop posts `EventReady` and `RedrawReady`, waits through
+`User::WaitForRequest`, processes completed requests, and reposts them. Pointer
+button-down events for window handle 2 change the model and invalidate the
+window. Redraw requests for that handle bracket drawing with `BeginRedraw` and
+`EndRedraw`. On exit it cancels and completes pending requests before their
+stack statuses disappear, then closes GUI objects before the session.
+This is Symbian's service protocol; no host scheduler or Python callback is
+introduced. The surrounding Python staging/build policy uses existing native
+format bindings, whose GIL and status handling follow A11. Host native libraries
+retain their no-exception/Abseil status policy. At the target OS boundary the
+example uses Symbian's required `TInt` result convention. Abseil and A11's host
+thread library have not been ported into the guest.
+
+The startup is a deliberately limited primary-thread adapter. It consumes the
+entry reason and thread-create pointer, checks the source-derived struct sizes,
+calls `UserHeap::SetupThreadHeap`, then `User::InitProcess`, calls `GuiMain`, and
+ends through `User::Exit`. Unexpected thread/exception entry calls
+`User::Invariant`. It provides no secondary-thread or global constructor
+support. Unlike the earlier resource-free integer probes, it attempts real SDK
+initialization and cleanup. That attempt is still a **runtime experiment**:
+successful linking cannot prove that the installed Belle EUSER ABI agrees.
+The reference is the original
+[ARM executable startup](https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/epoc/arm/uc_exe.cpp)
+and its accompanying `uc_exe.cia`, together with the original
+[Window Server header](https://github.com/SymbianSource/oss.FCL.sf.os.graphics/blob/ff133bc50e6158bfb08cc093b0f0055321dcde99/windowing/windowserver/inc/W32STD.H).
+
+## 2. Enable the macOS toolchain
+
+All commands in this document start in this repository's root unless indicated.
+Use Apple Silicon macOS with Apple's command-line development tools installed.
+Check the selected developer directory and compiler:
+
+```sh
+xcode-select -p
+xcrun --find clang++
+xcrun clang++ --version
+brew install uv cmake ninja lld llvm googletest openssl@3
+uv sync
+uv run symbian doctor
+```
+
+Install Apple's command-line tools separately if `xcrun` cannot locate Clang.
+`uv sync` builds the host native extension and installs the project CLI and
+development tools. `doctor` reports tool availability and target readiness; a
+working host toolchain does not make the Belle runtime ready.
+
+The tested GUI build used Apple Clang 21 and LLD 23.1.2. Use the default
+`clang++`/`ld.lld` discovered on PATH, or select them explicitly:
+
+```sh
+uv run symbian build --project examples/gui_app \
+  --output .symbian/gui-app \
+  --compiler "$(xcrun --find clang++)" \
+  --linker "$(brew --prefix lld)/bin/ld.lld"
+```
+
+Run that build only after preparing the headers/proxies in the next section.
+Homebrew can install newer versions than this checkpoint; build reports record
+actual paths and versions. Reproducibility currently means independent build
+directories on the same host and toolchain, not identical output from every
+compiler release.
+
+The selected CMake preset imports the wheel's `armv5t-pic.cmake` toolchain.
+Effective C++ flags include `--target=armv5t-none-eabi`, `-mthumb`,
+`-mfloat-abi=soft`, `-mabi=aapcs`, `-ffreestanding`, `-std=c++20`,
+`-fPIC`, `-fno-exceptions`, `-fno-rtti`, and `-nostdinc`.
+The GUI adds `-g -gdwarf-4 -O1`; its final `-O1` overrides the generic `-O2`.
+Target code cannot accidentally include macOS C++ headers. SDK includes are
+supplied explicitly. `_UNICODE`, the GCC/EABI compatibility definitions,
+`__EPOC32__`, and ARM platform definitions select the upstream headers' intended
+declarations. The linker retains relocations and rejects unresolved imports.
+
+C++20 language support is real, but a complete target standard library is not
+available. This GUI uses neither a hosted libc++ nor exceptions. See
+[docs/CXX20.md](docs/CXX20.md) for the separately tested language, modules and
+selected header-only library experiments and their remaining runtime work.
+
+## 3. Acquire the pinned public source profile
+
+The checked-in manifest contains paths, hashes, revisions, and export names.
+It does not contain an SDK distribution or upstream header contents.
+For a fresh workspace acquire these exact public repositories, retaining their
+licenses. These commands create ignored research checkouts:
+
+```sh
+mkdir -p research/upstream
+git clone --filter=blob:none --no-checkout \
+  https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv \
+  research/upstream/kernelhwsrv
+git -C research/upstream/kernelhwsrv checkout \
+  0c3208650587ac0230aed8a74e9bddb5288023eb
+git clone --filter=blob:none --no-checkout \
+  https://github.com/SymbianSource/oss.FCL.sf.os.graphics \
+  research/upstream/graphics
+git -C research/upstream/graphics checkout \
+  ff133bc50e6158bfb08cc093b0f0055321dcde99
+git clone --filter=blob:none --no-checkout \
+  https://github.com/SymbianSource/oss.FCL.sf.os.ossrv \
+  research/upstream/ossrv
+git -C research/upstream/ossrv checkout \
+  1e9520caca186c601dd9768449b86bc72be39a22
+git clone --filter=blob:none --no-checkout \
+  https://github.com/SymbianSource/oss.FCL.sf.os.persistentdata \
+  research/upstream/persistentdata
+git -C research/upstream/persistentdata checkout \
+  ef8baa21cee9cd1e214e1a7986595c60b3a63271
+git clone --filter=blob:none --no-checkout \
+  https://github.com/SymbianSource/oss.FCL.sf.os.textandloc \
+  research/upstream/textandloc
+git -C research/upstream/textandloc checkout \
+  59666d6704fee305b0fdd74974f7b4f42659c6a6
+```
+
+If a checkout already exists, use `git -C <directory> rev-parse HEAD` and
+`git -C <directory> status --short` to inspect it; skip the corresponding clone.
+Do not reset local research changes to follow this recipe. A sparse checkout
+must contain every file named by `sdk.json`, including differently cased
+`INC`/`inc` directories and private header dependencies. A full checkout is
+the straightforward starting point.
+
+Prepare the source profile:
+
+```sh
+uv run symbian toolchain prepare-gui-sdk \
+  --project examples/gui_app --sources-root research/upstream \
+  --output .symbian/gui-sdk
+```
+
+Preparation verifies each actual input's SHA-256, creates explicit header aliases
+as symlinks into the original checkouts, validates both import selections in
+the native core, and builds two reproducible ordinal proxies. It refuses
+path escapes, different occupied headers, and redirected output directories.
+The 92 aliases flatten SDK includes and preserve necessary `graphics/...`
+namespaces without modifying upstream files. Reported repository revisions are
+manifest declarations; preparation verifies file digests, not Git provenance.
+Keep original licenses beside the source trees and retain those trees for as
+long as the aliases are used. Symlinks are not a preserved independent copy.
+
+The EUSER definition is `kernel/eka/eabi/euseru.def`; WS32 is
+`windowing/windowserver/eabi/WS322U.DEF`. The native parser selects the 37 frozen
+function ordinals without renumbering. The generated `euser.dso` and `ws32.dso`
+are **link-time ordinal proxies**, not executable implementations of those
+libraries. Copying them into a guest cannot supply EUSER or Window Server.
+The public source profile is pre-Belle evidence, not a verified Nokia 808 SDK.
+The future matched target must supply compatible real system DLLs and services.
+
+The preparation report is `.symbian/gui-sdk/sdk-report.json`; each proxy also
+retains its own source, build trees, input digests and `report.json`.
+
+## 4. Build, inspect, and iterate
+
+```sh
+uv run symbian build --project examples/gui_app --output .symbian/gui-app
+uv run symbian inspect .symbian/gui-app/gui_app.elf --format elf32
+uv run symbian inspect .symbian/gui-app/gui_app.exe --format e32
+```
+
+The CLI loads `symbian.toml`, passes both proxies and the packaged target
+toolchain to the project's preset, builds with Ninja, converts with the native
+E32 writer, and repeats the build in a separate directory. It compares the
+ELF and E32 bytes and records actual dependencies. No Python implementation
+of ELF/E32/DEF parsing is used.
+
+| Output | Use |
+| --- | --- |
+| `.symbian/gui-app/gui_app.exe` | Guest E32 executable |
+| `.symbian/gui-app/gui_app.elf` | Original ARM ELF with symbols and DWARF |
+| `.symbian/gui-app/report.json` | Hashes, inputs, tool versions, build logs and native metadata |
+| `.symbian/gui-app/compile_commands.json` | Real CMake compilation database for editors |
+| `.symbian/gui-app/cmake/` | Persistent CMake/Ninja target tree |
+
+Edit `app.cc` or `model.h` and rerun `symbian build`. The persistent tree provides
+the incremental build; the second build rechecks reproducibility. You can also
+use `cmake --build .symbian/gui-app/cmake` for quick compiler feedback, but that
+alone does not reconvert or update the published `.exe` and report.
+
+Changing the SDK path requires both a `SYMBIAN_GUI_SDK_INCLUDE` CMake cache
+override and updated `import_proxies` in the project manifest. An ignored
+`CMakeUserPresets.json` can inherit `symbian-pic`; set `cmake_preset` to its
+name. The integration fixture in `symbian/tests/test_gui.py` demonstrates this
+with paths containing spaces. Do not copy an arbitrary SDK onto the source
+profile and assume the frozen ordinals remain valid.
+
+This executable currently has no SIS package. The bounded native package
+writer still rejects imported images, and the project declares no `[package]`.
+The emulator test uses direct launch from virtual `C:\sys\bin`. Resource-based
+application registration, unsigned/signed imported-app SIS packages, and phone
+installation are separate future work.
+
+## 5. Run checks that do not require a ROM
+
+Build and run the host GTests and Python policy tests:
+
+```sh
+cmake --preset debug
+cmake --build --preset debug -j 8
+ctest --preset debug
+SYMBIAN_GUI_SOURCE_ROOT="$PWD/research/upstream" uv run pytest \
+  symbian/tests/test_gui.py -q
+```
+
+The source environment variable enables the real SDK/link fixture. Without it,
+the two source-dependent cases skip; they are not silently counted as passing.
+To enable historical validation also build the research oracles and supply their
+path:
+
+```sh
+SYMBIAN_GUI_SOURCE_ROOT="$PWD/research/upstream" \
+  SYMBIAN_EKA2L1_ORACLES_BUILD="$PWD/build/eka2l1" \
+  uv run pytest symbian/tests/test_gui.py -q
+uv run symbian toolchain verify-gui .symbian/gui-app/gui_app.exe \
+  --oracles-build build/eka2l1 --output .symbian/gui-validation
+```
+
+The research build recipe below supplies the oracle executables.
+`verify-gui` runs one checksum case and seven unchanged historical validator
+cases against a private exact copy of this generated image. It retains binary
+hashes, test JSON, logs and `report.json`. It does not execute GUI instructions,
+resolve target system DLLs, or boot an OS. `verify-probe` and `verify-pointers`
+are specific to other maintained examples; they cannot substitute for a GUI
+execution test. All GUI runtime, import, loader and debugger flags stay false.
+
+For formatting and the full Python suite:
+
+```sh
+uv run black --check symbian scripts
+uv run ruff check symbian scripts
+"$(brew --prefix llvm)/bin/clang-format" --dry-run --Werror \
+  examples/gui_app/app.cc examples/gui_app/startup.cc \
+  examples/gui_app/model.h cpp/tests/gui_model_test.cc
+uv run pytest -q
+```
+
+The full suite also has optional emulator/header/module inputs described in
+[research/eka2l1/README.md](research/eka2l1/README.md) and
+[docs/CXX20.md](docs/CXX20.md). Missing optional inputs must remain visible as
+skips. None of these tests issues a hardware operation.
+
+## 6. Prepare the emulator research build
+
+Use pinned EKA2L1 commit `2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8` and both
+local patches. `instance-root.patch` supplies isolated macOS data/settings roots,
+bounded CLI failure shutdown, and a loopback-only GDB listener.
+`runtime-probe.patch` supplies the documented research initialization fixes.
+These are already applied in the current workspace. For a fresh checkout:
+
+```sh
+brew install qtbase qttools qtsvg
+git clone --no-checkout https://github.com/EKA2L1/EKA2L1 \
+  research/upstream/EKA2L1
+git -C research/upstream/EKA2L1 checkout \
+  2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8
+git -C research/upstream/EKA2L1 submodule update --init --recursive --depth 1
+git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/instance-root.patch
+git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/runtime-probe.patch
+git clone --no-checkout \
+  https://github.com/SymbianSource/oss.FCL.sf.os.buildtools \
+  research/upstream/buildtools
+git -C research/upstream/buildtools checkout \
+  7b35cd328d3a5e8e0bc177d0169fd409c3273193
+(cd research/upstream/EKA2L1/src/external/ffmpeg && sh macos_arm64-build.sh)
+```
+
+Skip acquisitions and patches already present; inspect before changing existing
+research trees. The ARM64 FFmpeg step is needed because the pinned submodule's
+bundled macOS libraries are Intel-only. Preserve EKA2L1's GPL and other licenses.
+Configure the Apple Silicon build and separate historical oracle executables:
+
+```sh
+cmake -S research/upstream/EKA2L1 -B build/eka2l1 -G Ninja \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+  -DCMAKE_PREFIX_PATH="$(brew --prefix)" -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+  -DEKA2L1_BUILD_TESTS=ON -DEKA2L1_BUILD_TOOLS=OFF \
+  -DEKA2L1_ENABLE_QT_CAMERA=OFF -DEKA2L1_SCRIPTING_LUA=OFF \
+  -DCMAKE_PROJECT_EKA2L1_INCLUDE="$PWD/research/eka2l1/project-tests.cmake"
+cmake --build build/eka2l1 -j 8 --target \
+  eka2l1_qt symbian_checksum_oracle symbian_validator_oracle
+```
+
+`kernelhwsrv` is the same pinned tree already used for headers. The historical
+checksum and validator remain separate oracle binaries; their algorithms are
+not linked into the platform core. This is a local development app bundle,
+not a signed redistributable application. The verified Qt was 6.11.2; the
+research README records deployment-target/library warnings and the broader
+process/installer test targets.
+
+Select a disposable instance root, even for help:
+
+```sh
+export SYMBIAN_EMULATOR="$PWD/build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+export SYMBIAN_GUI_INSTANCE="$PWD/.symbian/instances/gui-development"
+EKA2L1_DATA_ROOT="$SYMBIAN_GUI_INSTANCE" "$SYMBIAN_EMULATOR" --help
+```
+
+The two task-specific variables must be absolute paths. Help works without a
+ROM. The patched frontend's working directory and `config.yml`, resources,
+logs and default Qt settings are beneath the instance root. Default
+`data-storage: data` then places guest storage in `$SYMBIAN_GUI_INSTANCE/data`.
+If you change `data-storage`, subsequent drive paths must use that actual
+setting. The Cocoa Qt plugin is bundled; a headless offscreen GUI runner has
+not been established.
+
+## 7. Boot a real test device and launch the GUI
+
+**This section has not been executed here.** EKA2L1's
+[installation instructions](https://github.com/EKA2L1/EKA2L1/wiki/Using-the-emulator)
+require a ROM and a repackaged Z drive from the same device. Public headers and
+ordinal proxies cannot replace those assets. Use legitimate, independently
+preserved material and record its digests and actual device identity. A generic
+epoc10 test profile does not identify a Belle firmware. RM-807 is still a
+hypothesis for the physical phone in this project.
+
+Launch the patched frontend:
+
+```sh
+EKA2L1_DATA_ROOT="$SYMBIAN_GUI_INSTANCE" "$SYMBIAN_EMULATOR"
+```
+
+Use **File/Install device** to select the preserved ROM and corresponding Z
+package. Choose separate storage for this device if offered. Verify that the
+installed device boots and the display accepts normal input before attempting
+the new executable. Record firmware code, Symbian version and screen dimensions.
+Select that device in the frontend. The CLI's `--device` option expects the
+emulator's recorded firmware code; do not invent one from the phone model.
+
+Quit the emulator before changing its virtual filesystem. With default storage,
+the host C-drive mapping is one of:
+
+| Device storage setting | Host C directory |
+| --- | --- |
+| Shared drives | `$SYMBIAN_GUI_INSTANCE/data/drives/c` |
+| Separate drives | `$SYMBIAN_GUI_INSTANCE/data/drives/<lowercase-firmware-code>/c` |
+
+These paths come from the pinned `device_drive_folder` implementation. Confirm
+the selected device and mapping; do not create both paths and guess which is
+mounted. For a shared-drive instance, copy only the generated executable:
+
+```sh
+export SYMBIAN_GUI_C_DRIVE="$SYMBIAN_GUI_INSTANCE/data/drives/c"
+mkdir -p "$SYMBIAN_GUI_C_DRIVE/sys/bin"
+cp .symbian/gui-app/gui_app.exe "$SYMBIAN_GUI_C_DRIVE/sys/bin/gui_app.exe"
+EKA2L1_DATA_ROOT="$SYMBIAN_GUI_INSTANCE" "$SYMBIAN_EMULATOR" \
+  --run 'C:\sys\bin\gui_app.exe'
+```
+
+For separate drives, set `SYMBIAN_GUI_C_DRIVE` to the confirmed per-device C
+directory first. All paths in this step refer to disposable emulator storage.
+The equivalent command `--app` is an alias of `--run` in this pinned frontend.
+The absolute virtual EXE path is necessary because this example has no
+application registration. Keep `gui_app.elf` on the host for debugging.
+
+Test and record the following in `docs/RESEARCH_LOG.md` with actual results:
+
+1. On launch, the screen shows `0000` and all three controls, with no panic.
+2. Green taps show `0001`, `0002`, and so on. Amber resets to `0000`.
+3. Taps in gaps and outside controls leave the count unchanged; a single
+   button-down increments once. Saturation at 9999 is already model-tested;
+   test it visually if automated pointer injection becomes available.
+4. Red exits. Launch again and verify the count starts at zero; record whether
+   session/window resources and address space are released normally.
+5. Obscure and restore the window and verify redraw. Launch in each intended
+   fixed orientation; rotating while running is not supported yet.
+6. With the emulator stopped, test separate copies with `cpu: dynarmic` and
+   `cpu: dyncom` in `config.yml`, GDB disabled. Record differences and failures.
+
+Preserve the matching build/validation reports, input asset digests, selected
+device, actual code-load address, screenshot and instance `EKA2L1.log`.
+`EKA2L1_TakeThis.log` holds a previous log when the frontend rotates it.
+If imports or startup fail, preserve the failure: it identifies a real missing
+runtime/ABI contract. Do not replace system libraries with link proxies.
+
+For a baseline, quit the emulator and copy its complete stopped instance into
+a separate golden directory; make a fresh copy for each experiment. This is
+filesystem restoration, not a full-machine snapshot, and the snapshot workflow
+has not been validated for every subsystem. Preserve firmware originals in an
+independently held offline copy with recorded digests; read-only permissions
+alone do not make the owner unable to change them. No physical-device recovery,
+flashing, calibration, partition or bootloader operation is part of this recipe.
+
+## 8. Enable editor navigation and verify debug information
+
+Configure your editor's clangd executable as
+`$(brew --prefix llvm)/bin/clangd` and its argument as the absolute equivalent of
+`--compile-commands-dir=.symbian/gui-app`. The CLI's compilation database is
+generated by the real target build, with SDK macros and includes. Do not use the
+root host library's database for guest source files.
+
+Check parsing/navigation inputs without booting an emulator:
+
+```sh
+"$(brew --prefix llvm)/bin/clangd" \
+  --check=examples/gui_app/app.cc \
+  --compile-commands-dir=.symbian/gui-app \
+  --tweaks=ExpandAutoType
+"$(brew --prefix llvm)/bin/llvm-dwarfdump" --verify \
+  .symbian/gui-app/gui_app.elf
+"$(brew --prefix llvm)/bin/llvm-dwarfdump" --debug-line \
+  .symbian/gui-app/gui_app.elf
+```
+
+The pinned clangd parses and indexes this source with zero errors using that
+limited tweak selection. An unrestricted `--check` also attempts every
+refactoring at every token and reports two `ExtractFunction` failures at
+loop-control statements; those are refactoring-check failures, not C++
+diagnostics. Editor parsing does not require enabling that experimental check.
+
+Debug prefix maps make the two independently built ELFs identical:
+
+| Recorded source prefix | Local replacement |
+| --- | --- |
+| `/symbian-src/gui_app` | Absolute `examples/gui_app` directory |
+| `/symbian-sdk/include` | Absolute `.symbian/gui-sdk/include` directory |
+| `/symbian-build/gui_app` | Absolute `.symbian/gui-app/cmake` directory |
+
+DWARF 4 keeps compatibility with older ARM debuggers. Its language tag can read
+as C++14 even though actual compiler commands use C++20. The retained `.elf`
+contains symbols and line tables; the converted `.exe` is the runtime format,
+not the debugger symbol file. Keep each ELF beside the exact executable and
+report it produced. `-O1` can optimize locals away and inline model methods;
+`DrawGui` is explicitly noinline to give a useful drawing breakpoint.
+
+Offline LLDB inspection has been tested:
+
+```sh
+lldb .symbian/gui-app/gui_app.elf
+```
+
+In LLDB, replace the `/absolute/repo` prefixes with this checkout's actual path:
+
+```text
+settings set target.source-map /symbian-src/gui_app /absolute/repo/examples/gui_app /symbian-sdk/include /absolute/repo/.symbian/gui-sdk/include
+image lookup -n GuiMain
+image lookup -r -n DrawGui
+source list -n GuiMain
+quit
+```
+
+LLDB identifies the object as ARM and shows its source. This does not attach to
+the guest. Attaching LLDB to the macOS EKA2L1 process instead debugs the ARM64
+host emulator, which is useful for emulator failures but a different target.
+
+## 9. Connect a guest debugger when the GUI can launch
+
+**Guest attachment is unverified in this workspace.** The pinned emulator's
+[GDB documentation](https://github.com/EKA2L1/EKA2L1/blob/2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8/src/emu/scripting/lua/eka2l1/topics/DebuggingWithGDB.md)
+describes whole-guest debugging, Dynarmic and software breakpoints. Its stub is
+not a per-process Symbian debug agent. Start with that supported documented CPU
+path and a bootable device; no stub connection is available from ROMless help.
+
+Homebrew has an
+[ARM GDB formula](https://formulae.brew.sh/formula/arm-none-eabi-gdb).
+Installation is a debugger prerequisite, not evidence of stub compatibility:
+
+```sh
+brew install arm-none-eabi-gdb
+arm-none-eabi-gdb --version
+```
+
+First launch once with GDB disabled. Search the instance log for this image:
+
+```sh
+rg -i 'gui_app|runtime code|ordinal|panic' "$SYMBIAN_GUI_INSTANCE/EKA2L1.log"
+```
+
+The pinned kernel reports `gui_app ... runtime code: 0x...` on attachment.
+Record the **actual** code address. The ELF/E32 link code base is `0x8000`.
+The symbol slide is `actual_runtime_code_base - 0x8000`; do not assume a
+particular guest address or reuse it after a different launch without checking.
+
+Quit the emulator. Edit the existing instance `config.yml`, preserving its
+device/storage settings and changing these keys:
+
+```yaml
+cpu: dynarmic
+enable-gdb-stub: true
+gdb-port: 24689
+```
+
+Useful optional trace keys in this pinned source are `log-svc`, `log-ipc`,
+`log-read`, `log-write`, and `log-exports`. Start with the specific trace needed;
+full service logging can be noisy and slow. Logs and settings are instance-local
+only with the applied root patch. Restart using the same `--run` command.
+The applied patch binds the GDB port to IPv4 loopback. Confirm its startup log;
+an occupied port or an unbootable selected device must be fixed first.
+
+Start `arm-none-eabi-gdb` in the repository root. In the following commands
+replace `SLIDE` with the calculated hexadecimal slide and `/absolute/repo`
+with the actual checkout path **before entering them**:
+
+```text
+set pagination off
+set architecture arm
+set remotetimeout 200
+symbol-file -o SLIDE /absolute/repo/.symbian/gui-app/gui_app.elf
+set substitute-path /symbian-src/gui_app /absolute/repo/examples/gui_app
+set substitute-path /symbian-sdk/include /absolute/repo/.symbian/gui-sdk/include
+target remote 127.0.0.1:24689
+break GuiMain
+continue
+```
+
+[GDB's `symbol-file -o` contract](https://sourceware.org/gdb/current/onlinedocs/gdb.html/Files.html)
+adds the offset to section addresses. Verify the loaded symbols against the
+new launch's mapping. A preliminary launch helps discover the address but does
+not guarantee identical mapping next time. If it differs, interrupt and reload
+symbols with the corrected slide and recreate breakpoints.
+
+Once stopped in the correct image, use `info registers`, `bt`, `list`,
+`step`, `next`, and `x/8i $pc`. Add a source-line breakpoint inside `DrawGui`
+using its current line number from `app.cc`; inspect model/layout values where
+optimization leaves them available. Startup assembly executes ARM instructions
+and C++ executes Thumb. For raw-address breakpoints, upstream documents
+`set arm fallback-mode thumb` for Thumb addresses; use ARM for startup instead.
+Do not treat the Thumb state bit as a separate byte of code.
+
+The test succeeds only after a real connection, correctly relocated source
+breakpoint, expected register/instruction state, a redraw after continuing, and
+normal exit. Save debugger transcript and emulator log, and only then change
+the corresponding evidence flags. Source symbols in a static LLDB session are
+not a substitute for this test. Guest stack unwinding, crash symbolication,
+LLDB remote compatibility and full process inspection remain separate work.
+
+## 10. Troubleshooting and the next platform steps
+
+| Symptom | Check |
+| --- | --- |
+| Header SHA mismatch or missing file | Exact source pins, local edits, sparse checkout and literal-case paths |
+| Duplicate SDK overload declarations | `_UNICODE` and the genuine target compilation command |
+| CMake requests GUI SDK or import proxies | Run preparation; check both include cache and manifest proxy paths |
+| Unresolved `__aeabi_*` or C++ runtime symbol | Newly added code may require compiler-rt, allocation or a library not yet ported |
+| Converter rejects data, TLS or constructors | Current transport deliberately lacks those runtime contracts; inspect the real ELF |
+| `.exe` unchanged after an incremental CMake build | Rerun `symbian build` to convert and publish it |
+| Empty device list or failure before boot | Matching ROM/Z is missing or the selected instance/storage root is wrong |
+| Executable not found | Correct mounted C path, exact virtual path and installed-device selection |
+| DLL/ordinal rejection | Compare actual matched EUSER/WS32 exports with manifest proxies; do not fabricate system implementations |
+| Panic before drawing | Heap/thread-create/process startup or SDK ABI mismatch; retain log and mapping |
+| No redraw or pointer response | Window Server event/client handles, focus, pending request status and target service compatibility |
+| No application-menu icon | Registration resources and Avkon lifecycle are intentionally not implemented |
+| SIS packaging fails | Imported-image package support is not implemented for this example |
+| Breakpoint never hits | Stub enabled on supported backend, correct current code slide, ARM/Thumb state and exact ELF/executable pair |
+| Source files not found in debugger | Apply prefix substitutions rather than removing reproducibility maps |
+
+The next meaningful milestone is visible GUI execution with compatible real
+system DLLs, followed by heap/cleanup and debugger tests. After that, add
+rotation/focus handling, application resources/registration and imported-app
+SIS packaging. A broad platform runtime still needs writable data/BSS/TLS,
+static lifetime, compiler-rt/C-library support and a carefully configured C++
+library. The evidence trail belongs in [docs/RESEARCH_LOG.md](docs/RESEARCH_LOG.md)
+and [docs/STATUS.md](docs/STATUS.md); preserve failures as well as passes.
+
+At this checkpoint the generated E32 SHA-256 is
+`93428ab91029784854db74f36c87d32d441c305572a9476eaeda7d3068a03641`
+and the debug ELF SHA-256 is
+`1d02b5449ac1b765a77749ee61889efd3fcc3d550888f31910b13784321d38ee`.
+Local evidence is under `.symbian/gui-sdk`, `.symbian/gui-app`,
+`.symbian/gui-validation`, and `.symbian/gui-research`. Those directories and
+upstream material remain outside version control.

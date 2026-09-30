@@ -1014,3 +1014,108 @@ and synchronization/event-loop adapters. Modules do not expose historical DLL
 interfaces automatically. Complete conformance, matched Belle and physical
 execution remain unverified; hardware/firmware identity is still unknown.
 The user's subsequent GUI example request is the next active slice.
+
+
+## 2026-09-30: Native GUI example and complete walkthrough
+
+**Request:** Create examples/gui_app and root WALKTHROUGH.md describing its
+construction, toolchain, emulator testing and debugging. Continue without
+permission prompts. The only known hardware remains one Nokia 808; actual
+RM/product/firmware identity and matched ROM/Z material are not known.
+
+**Source investigation:** Read original W32STD.H and WS322U.DEF at graphics
+ff133bc50e6158bfb08cc093b0f0055321dcde99, and original ARM uc_exe.cpp/uc_exe.cia startup,
+euseru.def and kernel headers at kernelhwsrv
+0c3208650587ac0230aed8a74e9bddb5288023eb. Header dependencies additionally use
+ossrv 1e9520caca186c601dd9768449b86bc72be39a22, persistentdata
+ef8baa21cee9cd1e214e1a7986595c60b3a63271 and textandloc
+59666d6704fee305b0fdd74974f7b4f42659c6a6. Original header case and the SDK's
+flattened include names require explicit aliases; a graphics/gdi header cannot
+be chosen merely by ambiguous basename. The maintained owned manifest lists
+92 aliases and per-file hashes. No upstream header contents, firmware or runtime
+state are added to Git. Licenses remain alongside original ignored checkouts.
+
+**Implementation:** Added a raw Window Server counter rather than assuming an
+unimplemented Avkon/resource/Qt stack. Pure model and target drawing adapter
+are separated. The four digits and controls use rectangles, requiring no fonts.
+The primary entry preserves the EKA2 marker and code-segment unique-ID word at
+entry+12, passes R4/SP to the adapter, aligns the stack, performs SDK heap setup
+and process initialization, and exits through User::Exit. Compile-time checks
+record source-derived thread/status layout sizes. Secondary-thread and exception
+entry fail through User::Invariant; global constructors are unsupported.
+
+Window Server uses real EventReady/RedrawReady requests and User::WaitForRequest.
+Only pointer button-down and redraw events for window handle 2 are handled.
+Pending requests are canceled/completed before stack statuses disappear;
+window/group, graphics objects and session are closed in dependency order.
+An original compiler attempt exposed ARM division builtins; a small bounded
+unsigned routine now handles digit extraction and layout, tested against host
+integer arithmetic. Digit scale is bounded by both width and available height;
+the final tests include extreme wide and tall allowed displays. Rotation after
+launch is not yet supported. No second host scheduler, Python callback, holder
+or format parser is introduced. Native host code retains its A11 reference
+style/status/no-exception policy, and target ABI calls use required SDK results.
+
+prepare-gui-sdk validates manifest types, confined paths and SHA-256, preflights
+both selections in the native core, stages links, and uses the existing native
+ordinal proxy generator. It refuses occupied/redirected destinations and changed
+inputs, preserves unknown provenance as unverified, and retains exact input
+digests. The two proxies contain 9 EUSER and 28 WS32 functions. They provide
+ordinal link contracts, not runtime implementations. Python policy tests cover
+bad nested types/selections, changed input, traversal, malformed CLI input and
+destination redirection; actual CMake/proxy/build integration uses source paths
+and output paths containing spaces.
+
+**Build and validation:** Apple Clang 21.0.0 and LLD 23.1.2 produce reproducible
+ARM ELF/E32 in independent CMake/Ninja trees. Target code uses C++20, no exceptions
+or RTTI, explicit source SDK macros and no host standard includes. Debug flags
+are -g -gdwarf-4 -O1 with stable source/build/SDK prefix maps. Both system libraries
+are eager function imports, no writable data/TLS/constructors. The final E32
+SHA-256 is 93428ab91029784854db74f36c87d32d441c305572a9476eaeda7d3068a03641;
+ELF SHA-256 is 1d02b5449ac1b765a77749ee61889efd3fcc3d550888f31910b13784321d38ee.
+
+verify-gui retains one original checksum and seven unchanged whole-image
+validator cases. It records all execution/loader/debugger flags false. It
+does not misuse the integer/pointer execution harnesses for system imports.
+The existing generic build report's claim that every EXE directly kills its
+thread was corrected: startup and cleanup are project behavior not proven by
+static conversion. The original import-free SIS writer is unchanged and this
+project has no package declaration or application registration.
+
+The full suite passed all 139 Pytest cases with optional emulator, public headers,
+module compiler, libc++ experiment, source SDK and oracle paths supplied. All
+six root CTest entries pass, including the five GUI model GTests and the optional
+original SDK ordinal check. After the final aspect-ratio improvement, model
+and all 15 GUI Python cases pass again. An isolated installed wheel outside
+the checkout import path runs prepare/build/verify through its CLI, stages both
+proxies, reproduces exact final ELF/E32 and repeats the eight historical checks.
+Wheel/module paths and all nested evidence are in gui-research/wheel-result.json.
+Black/Ruff, C++ formatting, stub checks and diff whitespace checks pass.
+
+llvm-dwarfdump verifies the final DWARF. LLDB identifies ARM and resolves
+GuiMain/DrawGui and mapped source lines. clangd parses both C++ files with no
+errors under --tweaks=ExpandAutoType. Unrestricted check-mode feature probing
+reports two ExtractFunction failures at break statements; there are no compiler
+diagnostics, and the limited refactoring selection is recorded explicitly.
+This does not claim full clangd refactoring correctness.
+
+**Emulator/debugger research:** Reconfirmed pinned EKA2L1 CLI help in a private
+root without ROM. --run accepts absolute virtual EXE paths; --device requires
+the recorded firmware code. Source inspection establishes default storage
+data/drives/c or per-device data/drives/<lowercase-code>/c, configuration cpu,
+enable-gdb-stub/gdb-port and trace keys, and runtime-code mapping logs. The local
+patch confines GDB to IPv4 loopback. Upstream docs require same-device ROM/Z and
+describe whole-guest Dynarmic software breakpoints. GDB's own documentation
+specifies symbol-file -o relocation; actual mapping minus 0x8000 is required.
+Offline symbols are tested; guest connection, breakpoints and GUI visuals are
+not. WALKTHROUGH.md provides exact source/toolchain/build commands and explicitly
+unexecuted emulator/debugger steps, acceptance criteria, logging and diagnosis.
+
+**Open questions:** Does real matched Belle EUSER agree with the public thread
+layout and startup/cleanup calls? Do target WS32 exports/versions and service
+semantics match the selected ordinals? Does pointer event routing/redraw work
+in the intended booted device? Does heap and GUI teardown survive repeated
+launch? Can the pinned GDB stub stop/step this relocated Thumb image accurately?
+ROM/Z is still missing; these questions remain open rather than manufacturing
+service implementations or declaring loader compatibility from ELF generation.
+No physical-device operation, OS boot or visible GUI test occurred.

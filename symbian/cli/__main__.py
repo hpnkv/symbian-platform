@@ -71,6 +71,20 @@ def _parser() -> argparse.ArgumentParser:
     proxy.add_argument("--compiler", default="clang++")
     proxy.add_argument("--linker", default="ld.lld")
     proxy.add_argument("--headers", type=Path)
+    gui_sdk = compiler_commands.add_parser(
+        "prepare-gui-sdk", help="Stage the GUI example's pinned source SDK"
+    )
+    gui_sdk.add_argument("--project", type=Path, required=True)
+    gui_sdk.add_argument("--sources-root", type=Path, required=True)
+    gui_sdk.add_argument(
+        "--output", type=Path, default=Path(".symbian/gui-sdk")
+    )
+    gui = compiler_commands.add_parser(
+        "verify-gui", help="Validate the GUI image without running its imports"
+    )
+    gui.add_argument("artifact", type=Path)
+    gui.add_argument("--oracles-build", type=Path, default=Path("build/eka2l1"))
+    gui.add_argument("--output", type=Path, default=Path(".symbian/gui-check"))
     build = commands.add_parser("build", help="Build an ARM/E32 experiment")
     build.add_argument("--project", type=Path, default=Path.cwd())
     build.add_argument("--output", type=Path, default=Path(".symbian/build"))
@@ -119,6 +133,14 @@ def _execute(args: argparse.Namespace) -> dict:
     if args.command == "doctor":
         return doctor()
     if args.command == "toolchain":
+        if args.toolchain_command == "verify-gui":
+            from symbian.toolchain.verification import verify_gui
+
+            return verify_gui(args.artifact, args.oracles_build, args.output)
+        if args.toolchain_command == "prepare-gui-sdk":
+            from symbian.sdk.staging import prepare_gui_sdk
+
+            return prepare_gui_sdk(args.project, args.sources_root, args.output)
         if args.toolchain_command == "probe":
             return toolchain.probe(args.output, args.compiler)
         if args.toolchain_command == "import-proxy":

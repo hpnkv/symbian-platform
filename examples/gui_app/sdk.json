@@ -1,0 +1,431 @@
+{
+  "schema": "symbian.gui-source-sdk/v1",
+  "repositories": {
+    "graphics": "ff133bc50e6158bfb08cc093b0f0055321dcde99",
+    "kernelhwsrv": "0c3208650587ac0230aed8a74e9bddb5288023eb",
+    "ossrv": "1e9520caca186c601dd9768449b86bc72be39a22",
+    "persistentdata": "ef8baa21cee9cd1e214e1a7986595c60b3a63271",
+    "textandloc": "59666d6704fee305b0fdd74974f7b4f42659c6a6"
+  },
+  "headers": {
+    "w32std.h": {
+      "source": "graphics/windowing/windowserver/inc/W32STD.H",
+      "sha256": "eb44802a7003296334cacbc854b548ac0293b0b22546f6446b1bc9bc7427d748"
+    },
+    "e32std.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32std.h",
+      "sha256": "7fba7e91d701ab5f42b5f0d1d4fa99b83573c954d8866f45b001b8f73c482836"
+    },
+    "e32cmn.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32cmn.h",
+      "sha256": "3651ca75a1e9d1241fc14fe683796bc7445691b30191a67913195aab276830fb"
+    },
+    "e32const.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32const.h",
+      "sha256": "87f811c9c627b92418ee57b01073b793200533c3a89bbc6765791f30be3252e2"
+    },
+    "e32err.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32err.h",
+      "sha256": "ca1b3c646135677e29c8853842be40db2a735743993362761f5e9f71783f769b"
+    },
+    "e32def.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32def.h",
+      "sha256": "c2802502092c4efa31786e4d000821d5b8b6168fb9fdf3e9e08bcbf452687bb8"
+    },
+    "e32def_private.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32def_private.h",
+      "sha256": "6ec17ff6ed1003beb79139b4703f665609ab1efec29dab94c2c9caf11cad067a"
+    },
+    "e32lang.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32lang.h",
+      "sha256": "6b137db9bfe53f70ead8fd1ab03537d424d9f674ae288bfa506114122a3f9510"
+    },
+    "e32reg.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32reg.h",
+      "sha256": "578aee11514282d469f924bf9538ec095c1f19a018d67403c43cc5c5b5b2911f"
+    },
+    "e32capability.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32capability.h",
+      "sha256": "341aa2300475c942d0b93e9cace8091e2c4a25cd79d88d5d5925dca1d0e4bf33"
+    },
+    "e32const_private.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32const_private.h",
+      "sha256": "d8433177c45197477054e95bd531d2c54af7045093772849df672ccd7c1f6f70"
+    },
+    "e32des8.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32des8.h",
+      "sha256": "b6984b0311fdabdef976f087ad7157f75051994a261cc57fae876cc25542e2dd"
+    },
+    "e32des8_private.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32des8_private.h",
+      "sha256": "db1b20c0ec598a7170710252d5ca4277ee8587331139eec28fc27cbb688d6de1"
+    },
+    "e32des16.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32des16.h",
+      "sha256": "40c98bff6ec02c4b851881d586dc527dcec44b0c192aaeab431ef3c2c457909f"
+    },
+    "e32des16_private.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32des16_private.h",
+      "sha256": "266db3670160294fbdce5d7225a85c67250a881ac4e89caba601639ec5d19337"
+    },
+    "e32cmn.inl": {
+      "source": "kernelhwsrv/kernel/eka/include/e32cmn.inl",
+      "sha256": "dc12b42f1af459c529416677e766a6bca1e8d7f4d2977d8566559a5426621345"
+    },
+    "e32cmn_private.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32cmn_private.h",
+      "sha256": "dccc40d6a434e22095464376129ef8ee34914829bcc43875d4cd2f594ecf2ba1"
+    },
+    "e32std.inl": {
+      "source": "kernelhwsrv/kernel/eka/include/e32std.inl",
+      "sha256": "d862ba10326d93269d7a7c7d60d2110de62d88688bf3476e634b95f696d7e11b"
+    },
+    "e32std_private.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32std_private.h",
+      "sha256": "faf39ea85ff47e12ea95c310fb0bcd158ccb3c03b9143dd4f95695a4748d67cc"
+    },
+    "fntstore.h": {
+      "source": "textandloc/fontservices/fontstore/inc/FNTSTORE.H",
+      "sha256": "b9ceb1d441a86626d2e1ecd4c834766b5d6b26c22dc46b13869684103fe20210"
+    },
+    "f32file.h": {
+      "source": "kernelhwsrv/userlibandfileserver/fileserver/inc/f32file.h",
+      "sha256": "a9944048a52667501c3dd0480f6a4b4e9f04685e89d5d8cf6954203792007b4d"
+    },
+    "e32base.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32base.h",
+      "sha256": "cc4379ecbc047ee5f03dc13c400f209de569557752883d7b98148ba3af164156"
+    },
+    "e32base.inl": {
+      "source": "kernelhwsrv/kernel/eka/include/e32base.inl",
+      "sha256": "7f4b966d4b7e6a83d37f9d47a8a00f6c9edccac25184dce72a6c54243041565e"
+    },
+    "e32base_private.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32base_private.h",
+      "sha256": "ed7f8336f06201b0a87a08801b458e43aff7f1b6f57c8e2dd0b62dfdb07640db"
+    },
+    "e32svr.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32svr.h",
+      "sha256": "8f133f7eff19e7852e88c33996a0e4892e7736e9ed38b6acf6dc2035dcff21dc"
+    },
+    "e32hal.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32hal.h",
+      "sha256": "91149c31285e58c834780a864b2328b9ea8cc8fd0a6a55ac12f5de9e249032d2"
+    },
+    "d32locd.h": {
+      "source": "kernelhwsrv/kernel/eka/include/d32locd.h",
+      "sha256": "5fe1ec7d4f33d01085e814419ee67ff0a2f7f33b281c7658d233e03bef06f850"
+    },
+    "partitions.h": {
+      "source": "kernelhwsrv/kernel/eka/include/partitions.h",
+      "sha256": "86e46432019e48449d4aa436e6acb689bcdc41916199a58345b100a9e83803dc"
+    },
+    "d32locd.inl": {
+      "source": "kernelhwsrv/kernel/eka/include/d32locd.inl",
+      "sha256": "6d7fd3510c4c10edf57483c1bff28b50e031ae6ebf5c8cfe5aad2ffb8ae551d5"
+    },
+    "e32notif.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32notif.h",
+      "sha256": "881e6416fd96828dc5e789d2adc54f56285b0357131d3e27cd4525bad038eabd"
+    },
+    "e32ldr.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32ldr.h",
+      "sha256": "a5f8070b2a8cb6af33063ffec5a1c46ae816da57adca2d7292dd3b31e081145c"
+    },
+    "e32ldr_private.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32ldr_private.h",
+      "sha256": "8e2dd5218b6b588b4f5c3e0b873f956c8fbee0bf02385002bd253ea5cab1cd28"
+    },
+    "e32event.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32event.h",
+      "sha256": "c1bbb9a382cfb112c4375e562475d9ca7627fdf9636fed4a9f0f991d16a18907"
+    },
+    "e32event_private.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32event_private.h",
+      "sha256": "58ca0baf316573c8bc43786256d9599f97cb50f0cb98b260ff93e60dc4dcff41"
+    },
+    "e32ktran.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32ktran.h",
+      "sha256": "67baaba333e6ef62413096074f7740d196388dd15a56f7c6da5f9c4013ea7116"
+    },
+    "e32keys.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32keys.h",
+      "sha256": "676375e3b69ffcdfea0de2c3bfadaa8ce597acf6f4645c9b2ad182f0d3b9fdcb"
+    },
+    "e32debug.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32debug.h",
+      "sha256": "ddcb5ac5bf7d0547a4710f3eefde66db8a1cef03fbc65db05e09c9e39f515c00"
+    },
+    "e32lmsg.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32lmsg.h",
+      "sha256": "709e71aebd2c7c37f796df42b7965077dcd5b1750d014b9f794c0db63318b8fa"
+    },
+    "f32file.inl": {
+      "source": "kernelhwsrv/userlibandfileserver/fileserver/inc/f32file.inl",
+      "sha256": "19256d20324fc2889a0f505522c176719c29c7958a574aa2d9473fb80092df70"
+    },
+    "f32file_private.h": {
+      "source": "kernelhwsrv/userlibandfileserver/fileserver/inc/f32file_private.h",
+      "sha256": "fd73754c9b69ae583a0c6d4cfebbcb88d47a860f24444937d381f83a41f3d04c"
+    },
+    "gdi.h": {
+      "source": "graphics/graphicsdeviceinterface/gdi/inc/GDI.H",
+      "sha256": "4d964d7aac50e4117a32500362db58c7b880d0c964cf187c36b416894177d349"
+    },
+    "s32std.h": {
+      "source": "persistentdata/persistentstorage/store/INC/S32STD.H",
+      "sha256": "a8c00d392fec76881cb15d4e2e3e477074007d6346d9a1774dd972f0bef1bcca"
+    },
+    "s32strm.h": {
+      "source": "persistentdata/persistentstorage/store/INC/S32STRM.H",
+      "sha256": "606ee72aec8c95f1b183d1b91410205c26e29e2b140a436f8e84669ccc4c7beb"
+    },
+    "s32strm.inl": {
+      "source": "persistentdata/persistentstorage/store/INC/S32STRM.INL",
+      "sha256": "bce09aaa77845eedbd1d928940dd224acdb8b891c3cabb64068925841716ed2c"
+    },
+    "s32std.inl": {
+      "source": "persistentdata/persistentstorage/store/INC/S32STD.INL",
+      "sha256": "c9b1618f99377dbdd78357d963a7ad6b3e000692cc30cfb6e5b4bafa45987af5"
+    },
+    "displaymode.h": {
+      "source": "graphics/graphicsdeviceinterface/gdi/inc/displaymode.h",
+      "sha256": "48a391b121f139125d479184188fbb9652d70437aa54cfd3eacd68cd4f3b30ad"
+    },
+    "u32std.h": {
+      "source": "kernelhwsrv/kernel/eka/include/u32std.h",
+      "sha256": "703f81082a7b524a0f3e1491b801a8e8ef1979df375b5df968dcd578227c0ab3"
+    },
+    "e32power.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32power.h",
+      "sha256": "7d43f33a3f9e69c0248b9f7b72ad65fc8d5831eb48b866f3cb9105ae8e90d221"
+    },
+    "e32shbufcmn.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32shbufcmn.h",
+      "sha256": "569855d9e91b7d91e58a0bf3c9cc3ee5e0f60fdd46cdd7e976bc64563f24728c"
+    },
+    "e32shbuf_priv.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32shbuf_priv.h",
+      "sha256": "6e60792cc6524230770ce42a594a833b09dfbdc29842b29f3a5c75489baf2f36"
+    },
+    "e32property.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32property.h",
+      "sha256": "67ec6f47cff1c4228def43b0f4350a7a5bbc03b6c859c8f162e6c72f72713f09"
+    },
+    "u32property.h": {
+      "source": "kernelhwsrv/kernel/eka/include/u32property.h",
+      "sha256": "68f67e0d4bdaad8b2ad4838fa872290fd2a1c36cd0d0b34850eb49c552ec6a01"
+    },
+    "u32hal.h": {
+      "source": "kernelhwsrv/kernel/eka/include/u32hal.h",
+      "sha256": "cd852138f4d76f124c40f9e21c5e7aac92eab5182a86e5bca12367060269f97d"
+    },
+    "cpudefs.h": {
+      "source": "kernelhwsrv/kernel/eka/include/cpudefs.h",
+      "sha256": "9a4d770820f9314c82f4263112ca7698bee06a79ea3ce09d3df980a9b79f52d4"
+    },
+    "graphics/gdi/glyphsample.h": {
+      "source": "graphics/graphicsdeviceinterface/gdi/inc/glyphsample.h",
+      "sha256": "df900fc6ec06b30bb5640c843d844f0cb3d3e92b8a758a2ff33ba466a88d5625"
+    },
+    "graphics/gdi/gdiconsts.h": {
+      "source": "graphics/graphicsdeviceinterface/gdi/inc/gdiconsts.h",
+      "sha256": "f8b3f01610beb8e4a3a1c283b106e04a55c6865b7adea6f4a65c708f5f58d74f"
+    },
+    "graphics/gdi/gdistructs.h": {
+      "source": "graphics/graphicsdeviceinterface/gdi/inc/gdistructs.h",
+      "sha256": "16ec5f0b6d481afb483bd1d909db5dfacce53e38533f82cd236668206345e849"
+    },
+    "graphics/gdi/gdiinline.inl": {
+      "source": "graphics/graphicsdeviceinterface/gdi/inc/gdiinline.inl",
+      "sha256": "61292ebca33c1d23bb61bc8c023cd086e5a3e3296983d16e6f11142c3513d239"
+    },
+    "gdi.inl": {
+      "source": "graphics/graphicsdeviceinterface/gdi/inc/GDI.INL",
+      "sha256": "07d061eacdc73fef2cb6dc71097acb4b4101274f834a5fffe13c7d2087c6374f"
+    },
+    "openfont.h": {
+      "source": "textandloc/fontservices/fontstore/inc/OPENFONT.H",
+      "sha256": "0eb278bacab278652032bb48e705cd8954c2a534c58c38171b4738cff66a6eb7"
+    },
+    "ecom/ecom.h": {
+      "source": "ossrv/lowlevellibsandfws/pluginfw/Framework/inc/ECom.h",
+      "sha256": "1791010a19280fc0abe7c8392032619c1e1a14073db9fddefa6cbd74fb31b228"
+    },
+    "ecom/ecomerrorcodes.h": {
+      "source": "ossrv/lowlevellibsandfws/pluginfw/Framework/inc/EComErrorCodes.h",
+      "sha256": "140f1596e548250db9be93e5fa0b255b1a3810c4d826e14c312231faa3a4a5ee"
+    },
+    "ecom/ecomextendedinterfaceerrorcodes.h": {
+      "source": "ossrv/lowlevellibsandfws/pluginfw/Framework/inc/EComExtendedInterfaceErrorCodes.h",
+      "sha256": "5bb1fde31dbea33d2317959eb31da231360a9e7a697aa1a4f11b98d5c04d14be"
+    },
+    "ecom/ecomresolverparams.h": {
+      "source": "ossrv/lowlevellibsandfws/pluginfw/Framework/inc/EComResolverParams.h",
+      "sha256": "d6e8d88f17a1a4d67cd7336b678c57e7ad9d4a03d17145c0cbf5d2c3e9ec19f3"
+    },
+    "ecom/ecomresolverparams.inl": {
+      "source": "ossrv/lowlevellibsandfws/pluginfw/Framework/inc/EComResolverParams.inl",
+      "sha256": "8482ec12bf2e1d329c35a73ac4ad8c36c5e1e02307fe97e5003ac89d770a907b"
+    },
+    "ecom/implementationinformation.h": {
+      "source": "ossrv/lowlevellibsandfws/pluginfw/Framework/inc/ImplementationInformation.h",
+      "sha256": "7ca9ef5ad992faf4501cadceefad5cff67d1a3640fc52b9a522ded432f3bb381"
+    },
+    "ecom/implementationinformation.inl": {
+      "source": "ossrv/lowlevellibsandfws/pluginfw/Framework/inc/ImplementationInformation.inl",
+      "sha256": "25e5193b5b5a0846c5521351affe315804bbccb52ee6e07742f25bdddb278406"
+    },
+    "linkedfonts.h": {
+      "source": "textandloc/fontservices/fontstore/inc/linkedfonts.h",
+      "sha256": "796c13bc7c5b2660188a6832751ac0883923beff79fed505d545cd553d1fd570"
+    },
+    "graphics/openfontconstants.h": {
+      "source": "textandloc/fontservices/fontstore/inc/openfontconstants.h",
+      "sha256": "4d1f5ec6fc50f503381b7d1474bbc3eab47ba9d49d95d067073927a143cbbc37"
+    },
+    "graphics/openfontrasterizer.h": {
+      "source": "textandloc/fontservices/fontstore/inc/openfontrasterizer.h",
+      "sha256": "d8fdb64bbcc5c1b653c66c2b9c7f5dfdbf9a54af873568691166f2b456da1c69"
+    },
+    "openfontlinkedtypefaceelementspec.h": {
+      "source": "textandloc/fontservices/fontstore/inc/openfontlinkedtypefaceelementspec.h",
+      "sha256": "3b1bee99f6eb314001882ce2acb6f2190e3ed038b1087bb99862c2c346dc38fa"
+    },
+    "graphics/openfontlinkedtypefacespecification.h": {
+      "source": "textandloc/fontservices/fontstore/inc/openfontlinkedtypefacespecification.h",
+      "sha256": "62d4cb1d8bcd5835db108baf2a22cef312514416e008e6907c78bdb38fe98618"
+    },
+    "graphics/openfontlinkedtypefaceextension.h": {
+      "source": "textandloc/fontservices/fontstore/inc/openfontlinkedtypefaceextension.h",
+      "sha256": "96fa0765b9c8ae8dad89633c009244ffd3e5e3e8c38a000fd61ec16384c3aa51"
+    },
+    "bitdev.h": {
+      "source": "graphics/graphicsdeviceinterface/bitgdi/inc/BITDEV.H",
+      "sha256": "e47f0c88779b8e98e64900fd12cbe4a650fe056acb65fd7b38e3338261f0ad56"
+    },
+    "fbs.h": {
+      "source": "graphics/fbs/fontandbitmapserver/inc/FBS.H",
+      "sha256": "40b2af718914372fd606742ebaf9dbd13ae98e60516e5893bd954cc6905c15a9"
+    },
+    "bitmap.h": {
+      "source": "graphics/fbs/fontandbitmapserver/inc/BITMAP.H",
+      "sha256": "f51c390ba1202b29e75d3868f195e8a921daedbd234c7879efe9ff21eb4c0867"
+    },
+    "graphics/bitmapuid.h": {
+      "source": "graphics/fbs/fontandbitmapserver/inc/bitmapuid.h",
+      "sha256": "7bbde75ab3003721a57efdc613c7eea66ba5ed5132b943668b78daec909a1c37"
+    },
+    "graphics/fbsdefs.h": {
+      "source": "graphics/fbs/fontandbitmapserver/inc/fbsdefs.h",
+      "sha256": "15f78c529d76865bfa3f0c166da0acabf2f463a9bc328dfb8b33a6466cfe93b7"
+    },
+    "bitbase.h": {
+      "source": "graphics/graphicsdeviceinterface/bitgdi/inc/BITBASE.H",
+      "sha256": "6bc6d5a64b5a39d4215d54c83f26ac2348d60d6a70e126f1578644f7c1511dd4"
+    },
+    "bitstd.h": {
+      "source": "graphics/graphicsdeviceinterface/bitgdi/inc/BITSTD.H",
+      "sha256": "105e51da35030efb2191450c9d05299be8ec55391832e3a4e1d69d5351d89464"
+    },
+    "bitgdi/bitgcextradata.h": {
+      "source": "graphics/graphicsdeviceinterface/bitgdi/inc/bitgcextradata.h",
+      "sha256": "ed3bd39c836161b8c1a73c7339810ebae4181299fa4f2e4a0ea1427087d3ddc3"
+    },
+    "graphicsaccelerator.h": {
+      "source": "graphics/graphicsdeviceinterface/screendriver/inc/GraphicsAccelerator.h",
+      "sha256": "e1bf5fd4699d8469c1f83df9b1c3257685110127214172385d1917b49db4171d"
+    },
+    "bitdev.inl": {
+      "source": "graphics/graphicsdeviceinterface/bitgdi/inc/BITDEV.INL",
+      "sha256": "5975cc60beae303151d40d77ed13492243f123c96145774563dcf6977145c845"
+    },
+    "textcursor.h": {
+      "source": "graphics/windowing/windowserver/inc/textcursor.h",
+      "sha256": "dd497b5dd42f0a5a4691acce9ffe2e96009b61b389be07a971318a19f1d29ac9"
+    },
+    "pointerevent.h": {
+      "source": "graphics/windowing/windowserver/inc/pointerevent.h",
+      "sha256": "afc424b0b9a85b618576aca186d538025561ba0b15d7696c619bf5ec910f00eb"
+    },
+    "advancedpointerevent.h": {
+      "source": "graphics/windowing/windowserver/inc/advancedpointerevent.h",
+      "sha256": "b540df5263824f396e689dd6af3adc78c9deca6574dcad7de5919823674e1629"
+    },
+    "advancedpointerevent.inl": {
+      "source": "graphics/windowing/windowserver/inc/advancedpointerevent.inl",
+      "sha256": "b4e76545e758410a2700bdb0591b7affbad131424c09cfddef5d4187f209caf7"
+    },
+    "sizemode.h": {
+      "source": "graphics/windowing/windowserver/inc/sizemode.h",
+      "sha256": "a799714349b5723730e09151ba6df106bbd333872ef840f0fb1bae53841df08f"
+    },
+    "babitflags.h": {
+      "source": "ossrv/lowlevellibsandfws/apputils/inc/Babitflags.h",
+      "sha256": "d53e5ad11c79b9c00952cedfe56b48a29e24c27c612fbac40c98bc18ef2c0efe"
+    },
+    "wspublishandsubscribedata.h": {
+      "source": "graphics/windowing/windowserver/inc/wspublishandsubscribedata.h",
+      "sha256": "1b5950bca9e5f0d530ee83c97d52643c27b48dfc0f14e55864a2b480b04dca2c"
+    },
+    "graphics/windowserverconstants.h": {
+      "source": "graphics/windowing/windowserver/inc/Graphics/windowserverconstants.h",
+      "sha256": "24a8aa6f8443973ce0dec077e9c0f762e0e117171020463799aa57ea112278ff"
+    },
+    "graphics/pointereventdata.h": {
+      "source": "graphics/windowing/windowserver/inc/Graphics/pointereventdata.h",
+      "sha256": "8b4af6c2c907c22fbf96f0a278ecd4e99eff05d4ccbf834479039128add7278e"
+    }
+  },
+  "imports": {
+    "euser.dll": {
+      "definition": "kernelhwsrv/kernel/eka/eabi/euseru.def",
+      "definition_sha256": "884d483cf3761273362e11b9713b8b0c6d77c17c18075a5bb52841e542f41e16",
+      "symbols": [
+        "_ZN4User11InitProcessEv",
+        "_ZN4User14WaitForRequestER14TRequestStatus",
+        "_ZN4User14WaitForRequestER14TRequestStatusS1_",
+        "_ZN4User4ExitEi",
+        "_ZN4User9InvariantEv",
+        "_ZN5TRectC1Eiiii",
+        "_ZN5TRectC1Ev",
+        "_ZN8UserHeap15SetupThreadHeapEiR24SStdEpocThreadCreateInfo",
+        "memclr"
+      ]
+    },
+    "ws32.dll": {
+      "definition": "graphics/windowing/windowserver/eabi/WS322U.DEF",
+      "definition_sha256": "a64a7a2044633d7815cee3feb08028e2b75aabf7cbd0482cde969fdbb9319dd8",
+      "symbols": [
+        "_ZN10RWsSession10EventReadyEP14TRequestStatus",
+        "_ZN10RWsSession11RedrawReadyEP14TRequestStatus",
+        "_ZN10RWsSession16EventReadyCancelEv",
+        "_ZN10RWsSession17RedrawReadyCancelEv",
+        "_ZN10RWsSession5CloseEv",
+        "_ZN10RWsSession5FlushEv",
+        "_ZN10RWsSession7ConnectEv",
+        "_ZN10RWsSession9GetRedrawER14TWsRedrawEvent",
+        "_ZN10RWsSessionC1Ev",
+        "_ZN11RWindowBase10SetVisibleEi",
+        "_ZN11RWindowBase8ActivateEv",
+        "_ZN12RWindowGroup9ConstructEmi",
+        "_ZN12RWindowGroupC1ER10RWsSession",
+        "_ZN15CWsScreenDevice9ConstructEv",
+        "_ZN15CWsScreenDeviceC1ER10RWsSession",
+        "_ZN15CWsScreenDeviceD1Ev",
+        "_ZN15RWindowTreeNode18SetOrdinalPositionEi",
+        "_ZN15RWindowTreeNode5CloseEv",
+        "_ZN7RWindow10InvalidateEv",
+        "_ZN7RWindow11BeginRedrawERK5TRect",
+        "_ZN7RWindow9ConstructERK15RWindowTreeNodem",
+        "_ZN7RWindow9EndRedrawEv",
+        "_ZN7RWindow9SetExtentERK6TPointRK5TSize",
+        "_ZN7RWindowC1ER10RWsSession",
+        "_ZN9CWindowGc9ConstructEv",
+        "_ZN9CWindowGcC1EP15CWsScreenDevice",
+        "_ZN9CWindowGcD1Ev",
+        "_ZNK10RWsSession8GetEventER8TWsEvent"
+      ]
+    }
+  }
+}

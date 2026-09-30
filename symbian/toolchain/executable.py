@@ -236,8 +236,8 @@ def build_executable(
             (
                 "Minimal E32Dll entry; no SDK initialization or DLL resources"
                 if dll
-                else "Direct thread exit skips User::Exit cleanup; "
-                "no resources allowed"
+                else "Project startup, heap initialization and cleanup "
+                "are not established by conversion or static inspection"
             ),
             "Matched Belle runtime and full target ABI are unverified",
         ],

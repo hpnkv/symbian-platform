@@ -27,3 +27,11 @@ option(SYMBIAN_BUILD_SDK_ORDINAL_ORACLE "Build isolated historical SDK ordinal m
 if(SYMBIAN_BUILD_SDK_ORDINAL_ORACLE)
   add_subdirectory(sdk_oracle)
 endif()
+
+add_executable(symbian_gui_model_test gui_model_test.cc)
+target_include_directories(symbian_gui_model_test PRIVATE
+                          "${CMAKE_CURRENT_SOURCE_DIR}/../../examples/gui_app")
+target_link_libraries(symbian_gui_model_test PRIVATE GTest::gtest_main)
+symbian_native_library(symbian_gui_model_test)
+add_test(NAME symbian_gui_model_test COMMAND symbian_gui_model_test)
+set_tests_properties(symbian_gui_model_test PROPERTIES TIMEOUT 15)

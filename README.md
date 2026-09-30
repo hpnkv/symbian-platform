@@ -8,6 +8,11 @@ Execution in a matched
 Belle environment remains unverified.
 See docs/STATUS.md.
 
+The native touch counter in [examples/gui_app](examples/gui_app) now has a full
+[WALKTHROUGH.md](WALKTHROUGH.md): source SDK preparation, modern toolchain,
+reproducible builds, checks, emulator launch and debugging. Its build and static
+checks pass; visible GUI execution needs matched ROM/Z and remains unverified.
+
 ```sh
 brew install openssl@3
 uv sync
