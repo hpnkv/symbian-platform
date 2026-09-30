@@ -159,9 +159,11 @@ probe requires no linker or SDK and must report that narrower result clearly.
 The compilation database can already use the real ARM compilation arguments.
 LLD 23.1.2 now links the maintained E32 experiment. Native conversion accepts
 one RX segment with retained internal PC-relative relocations and no SDK imports,
-data, TLS or constructors. The independent EKA2L1 parser and Nokia's original
-checksum source accept its structure/checksums; this does not establish Belle
-loader or runtime compatibility. Later tests must cover integer/float calling
+data, TLS or constructors. The independent EKA2L1 parser, Nokia's original
+checksum source and unchanged whole-image validator accept it. A ROMless
+harness executes its integer C++ probe on two EKA2L1 CPU backends at two load
+addresses. This does not establish Belle loader or runtime compatibility.
+Later tests must cover integer/float calling
 convention, constructors, virtual dispatch, exports, imported API calls, and
 leave/cleanup behavior independently.
 
@@ -230,3 +232,15 @@ verification; a test deliberately demonstrates that blind spot. The platform's
 native inspector checks it. Neither parser acceptance nor checksum agreement
 proves that the real Belle loader will load, relocate and start the executable.
 See RESEARCH_LOG.md for artifact hashes and research/eka2l1/README.md for replay.
+
+The separate historical validator oracle calls ValidateWholeImage from the
+unchanged f32image.h with fixed-width host declarations and asserted layouts.
+Its seven cases include a valid image and six malformed controls. That public
+source predates shipped Belle FP2 and is not proof of the phone's loader behavior.
+
+Eight CPU cases cover dyncom/dynarmic, two load addresses and positive/negative
+inputs. They observe ARM startup, Thumb C++ computation and the exit SVC's
+register contract, including a restored stack. The SVC callback stops execution
+without entering a Symbian kernel. No ROM, process, imports or system services
+are present. `toolchain verify-probe` retains the independent results and hashes
+while reporting Symbian loader/runtime verification false.

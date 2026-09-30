@@ -231,3 +231,60 @@ guest completion and isolation can be measured.
 process startup and application support, all runtime storage paths, concurrent
 instances, stopped golden-state restoration and debugger attachment. Device
 identity/preservation/recovery remain open; the physical phone was untouched.
+
+## 2026-09-30: historical validation and ROMless CPU execution
+
+**Question:** Does the linked E32 satisfy more than the emulator parser, and
+does the generated ARM/Thumb calculation execute with the intended result?
+
+**Experiments:** Compiled Nokia's unchanged ValidateWholeImage implementation
+from the pinned kernelhwsrv f32image.h. The separate host adapter supplies
+fixed-width types, UID/security declarations, constants and the original
+checksum implementation. Assertions check header sizes 124/128/156 and the
+export-description offset 152. The fixture is bounded, uncompressed and trusted;
+the historical pointer-based validator is not exposed as a general file API.
+Seven GTest cases pass: acceptance, CRC damage, negative heap with correct CRC,
+insufficient entry/CodeSegID space, missing imports, wrong ARM ABI and truncated
+code. The original validator and checksum source were not edited or copied into
+the maintained native library.
+
+A synchronous EKA2L1 CPU harness parses the same E32, maps read-only code and
+a writable private stack, and starts in ARM user mode. Eight cases pass across
+dyncom and dynarmic, load addresses 0x8000 and 0x20000, and positive/negative
+inputs. Within a 512-step bound, startup enters Thumb C++, restores the stack,
+returns to ARM and reaches SVC 0x73. The callback observes r0=0xffff8001,
+r1=0 and r3=0. The normal calculation yields exit reason zero; intercepting
+the volatile stack input and changing 16 to 17 yields reason 42. The harness
+does not handle the SVC in a Symbian kernel. Dynarmic has fallback paths, so
+these are two backend configurations, not wholly independent CPU implementations.
+
+The E32 artifact remains SHA-256
+`997cd9c5ec35281f261a08cb3c2ca6a36c74be969b4a72cbbd8ede5ff5332395`.
+`toolchain verify-probe` now runs the four separate oracle executables with a
+private copy of that input. It clears inherited GTest filtering/sharding,
+requires all 20 cases completed without failures/skips/disabled tests, bounds
+each native process to 15 seconds, and retains JSON/logs and binary/input hashes.
+Input and binary replacement checks reject changed bytes during verification.
+Its machine-readable report keeps symbian_loader_verified and runtime_verified
+false. Python tests cover missing evidence, reduced/skipped/failed/disabled
+reports, isolation from inherited test settings and a real CLI invocation.
+
+Full verification passes 59 Pytest cases with both optional dependency paths,
+16 maintained native GTest cases, 20 independent oracle GTest cases and
+288 upstream EKA2L1 cases. Black/Ruff, clang-format, generated stubs and
+git diff whitespace checks pass. Replay instructions include all three pinned
+upstream checkouts and the new native targets.
+
+**Conclusion:** The maintained import-free image passes the historical whole-
+image validator and executes its integer/interworking/stack probe under EKA2L1
+CPU cores. This is useful partial ABI evidence, not completion of PLAN milestone
+1. No Belle process was loaded or launched.
+
+**Implementation decision:** Keep the GPL emulator harness and EPL historical
+oracles separate from the platform core and wheel. Python orchestrates tests and
+records evidence; native libraries retain format logic. The harness is
+synchronous and needs no new scheduler, GIL callback or Python object holder.
+
+**Remaining uncertainty:** Belle loader changes, actual process creation and
+kernel dispatch, matched ROM/Z assets, imports, builtins, floating-point/class
+ABI, constructors and leave/cleanup behavior. No phone operations occurred.

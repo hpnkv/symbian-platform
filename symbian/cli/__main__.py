@@ -26,6 +26,16 @@ def _parser() -> argparse.ArgumentParser:
     )
     probe.add_argument("--output", type=Path, default=Path(".symbian/probe"))
     probe.add_argument("--compiler", default="clang++")
+    verify_probe = compiler_commands.add_parser(
+        "verify-probe", help="Run independent E32 structure and CPU checks"
+    )
+    verify_probe.add_argument("artifact", type=Path)
+    verify_probe.add_argument(
+        "--oracles-build", type=Path, default=Path("build/eka2l1")
+    )
+    verify_probe.add_argument(
+        "--output", type=Path, default=Path(".symbian/probe-check")
+    )
     build = commands.add_parser("build", help="Build an ARM/E32 experiment")
     build.add_argument("--project", type=Path, default=Path.cwd())
     build.add_argument("--output", type=Path, default=Path(".symbian/build"))
@@ -60,7 +70,11 @@ def _execute(args: argparse.Namespace) -> dict:
     if args.command == "doctor":
         return doctor()
     if args.command == "toolchain":
-        return toolchain.probe(args.output, args.compiler)
+        if args.toolchain_command == "probe":
+            return toolchain.probe(args.output, args.compiler)
+        from symbian.toolchain.verification import verify_probe
+
+        return verify_probe(args.artifact, args.oracles_build, args.output)
     if args.command == "build":
         return toolchain.build(
             args.project, args.output, args.compiler, args.linker

@@ -2,8 +2,9 @@
 
 Build reproducible ARM objects and experimental E32 executables on macOS, and
 preserve existing firmware/ROM material in verifiable host-side archives.
-The target is Nokia 808 / Symbian Belle. Independent parsers accept the first
-E32 experiment; execution in Belle remains unverified. See docs/STATUS.md.
+The target is Nokia 808 / Symbian Belle. The first E32 experiment passes historical
+image validation and ROMless CPU tests; execution in Belle remains unverified.
+See docs/STATUS.md.
 
 ```sh
 uv sync
@@ -40,6 +41,19 @@ The native EKA2L1 build and independent oracle tests are documented in
 [research/eka2l1/README.md](research/eka2l1/README.md). The local patch provides
 an explicit macOS instance root and fixes CLI shutdown without device images.
 Matched ROM/Z assets are still needed to boot and test a target application.
+After building those research dependencies, run:
+
+```sh
+uv run symbian toolchain verify-probe .symbian/e32-probe/e32_probe.exe
+```
+
+This runs 20 independent native tests, retains JSON/logs and input/binary hashes
+under `.symbian/probe-check`, and emits a structured report. It checks the
+maintained probe with Nokia's unchanged whole-image validator and executes
+ARM startup, Thumb C++ and the exit SVC on both EKA2L1 CPU backends at two
+addresses. A negative control changes the calculation's input. No Symbian kernel
+handles that SVC; loader/runtime verification remains false. Inherited GTest
+filters and sharding cannot silently reduce the required test count.
 
 ```sh
 cmake --preset debug

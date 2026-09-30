@@ -33,3 +33,28 @@ target_link_libraries(symbian_checksum_oracle PRIVATE
 add_test(NAME symbian_checksum_oracle COMMAND symbian_checksum_oracle)
 set_tests_properties(symbian_checksum_oracle PROPERTIES
   ENVIRONMENT "SYMBIAN_E32_TEST_IMAGE=${SYMBIAN_E32_TEST_IMAGE}" TIMEOUT 15)
+
+set(SYMBIAN_KERNEL_SOURCE_DIR
+    "${SYMBIAN_PLATFORM_ROOT}/research/upstream/kernelhwsrv" CACHE PATH
+    "Pinned Nokia kernel and loader headers")
+add_executable(symbian_validator_oracle validator_oracle_test.cc)
+target_compile_features(symbian_validator_oracle PRIVATE cxx_std_20)
+target_compile_options(symbian_validator_oracle PRIVATE
+                       -fno-exceptions -Wno-invalid-offsetof)
+target_include_directories(symbian_validator_oracle PRIVATE
+    "${SYMBIAN_KERNEL_SOURCE_DIR}/kernel/eka/include"
+    "${SYMBIAN_KERNEL_SOURCE_DIR}/userlibandfileserver/fileserver/inc")
+target_link_libraries(symbian_validator_oracle PRIVATE
+                      symbian_historical_checksum GTest::gtest_main)
+add_test(NAME symbian_validator_oracle COMMAND symbian_validator_oracle)
+set_tests_properties(symbian_validator_oracle PROPERTIES
+  ENVIRONMENT "SYMBIAN_E32_TEST_IMAGE=${SYMBIAN_E32_TEST_IMAGE}" TIMEOUT 15)
+
+add_executable(symbian_cpu_probe cpu_probe_test.cc)
+target_compile_features(symbian_cpu_probe PRIVATE cxx_std_20)
+target_compile_options(symbian_cpu_probe PRIVATE -fno-exceptions)
+target_link_libraries(symbian_cpu_probe PRIVATE
+                      cpu epocloader common GTest::gtest_main)
+add_test(NAME symbian_cpu_probe COMMAND symbian_cpu_probe)
+set_tests_properties(symbian_cpu_probe PROPERTIES
+  ENVIRONMENT "SYMBIAN_E32_TEST_IMAGE=${SYMBIAN_E32_TEST_IMAGE}" TIMEOUT 15)

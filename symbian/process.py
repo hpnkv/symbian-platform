@@ -1,12 +1,19 @@
 """Bounded host process execution without shell interpretation."""
 
 import subprocess
+from collections.abc import Mapping
 from pathlib import Path
 
 from symbian.status import Code, StatusError
 
 
-def run(argv: list[str], *, cwd: Path, timeout: float = 30) -> str:
+def run(
+    argv: list[str],
+    *,
+    cwd: Path,
+    timeout: float = 30,
+    env: Mapping[str, str] | None = None,
+) -> str:
     """Runs a host tool and returns UTF-8 output or a structured failure."""
     try:
         result = subprocess.run(
@@ -18,6 +25,7 @@ def run(argv: list[str], *, cwd: Path, timeout: float = 30) -> str:
             errors="replace",
             timeout=timeout,
             check=False,
+            env=env,
         )
     except subprocess.TimeoutExpired as error:
         raise StatusError(
