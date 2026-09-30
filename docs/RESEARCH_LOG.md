@@ -351,3 +351,67 @@ application-test facade pending its install/launch/isolation gates.
 DLLs, system services, complete target ABI, package installation, desktop boot,
 debugger attachment and full runtime storage isolation. Physical identity,
 preservation and recovery remain unverified; the phone was untouched.
+
+## 2026-09-30: CMake/Ninja project integration and wheel replay
+
+**Question:** Can the direct Clang/LLD experiment become a reusable modern
+project build without changing its target contract or losing reproducibility?
+
+**Experiments:** Added an ARMv5T Generic toolchain and SymbianPic CMake module
+inside the Python package, plus CMakeLists/presets for e32_probe. The helper
+accepts multiple local sources, tracks its linker script, compiles C++20 Thumb
+PIC with exceptions/RTTI disabled, and links using ld.lld directly with retained
+relocations. Python reads CMake's codemodel/cmakeFiles API, invokes the Ninja
+build, and converts the ELF through the existing native boundary. No format
+algorithm moved to Python and no new scheduler or callback binding was added.
+
+The first CMake build tried to use unavailable clang-scan-deps for C++20 modules.
+This import-free profile uses no C++ modules, so module scanning is explicitly
+disabled. A cached/fresh comparison then exposed different built-in CMake
+configuration input lists. Generated and built-in files are excluded from the
+project-input comparison; CMake's version is recorded separately. Project and
+platform module files remain hashed and checked.
+
+A multi-source test with source/build paths containing spaces exposed a missing
+header hash: Ninja's declared inputs list does not include compiler-discovered
+headers stored in its deps log. The wrapper now obtains those through the
+documented `ninja -t deps` tool, checks record counts/validity and records header
+digests. It does not parse Ninja's binary database. Editing a local multiplier
+header changes the E32, a fresh second build agrees, and the next cached build
+performs no compilation. Three new integration cases also check missing-target
+status and reject the obsolete TOML source fields. The existing source-escape
+test now exercises the CMake helper's actual file check.
+
+The baseline remains byte-for-byte identical:
+
+- ELF SHA-256: `4031252adc395d05bb7f3477262b4c00c0018aee1bc7eba40daa35feaa798e4e`
+- E32 SHA-256: `997cd9c5ec35281f261a08cb3c2ca6a36c74be969b4a72cbbd8ede5ff5332395`
+
+That CMake-produced E32 passes all 28 historical/CPU/emulator-process oracle
+cases. clangd consumes its CMake-generated database with zero errors. Built the
+arm64 Python 3.12 wheel, confirmed both CMake files are packaged, installed it
+into a separate environment under .symbian/wheel-check-gsu0lt0v, and rebuilt the
+same E32 from outside the repository's Python import path. The recorded module
+input paths point into that wheel installation. Host tools are CMake 4.4.3,
+Ninja 1.13.2, Apple Clang 21 and LLD 23.1.2.
+
+Full Pytest passes 62 cases with the optional emulator/oracle paths. Existing
+native behavior remains covered by 16 platform GTest cases and the 28 oracles;
+the upstream 288-case emulator suite passed at the preceding checkpoint.
+Black/Ruff, generated stubs and whitespace checks pass. Project instructions
+are in BUILDING.md, and build reports now use symbian.e32-pic-experiment/v2.
+
+**Conclusion:** CMake can own the build graph and source intelligence while
+the modern facade owns reproducibility evidence and native E32 conversion.
+The first artifact's measured emulator behavior is retained across that change.
+
+**Implementation decision:** Keep the primary Ninja tree for incremental builds
+and real compilation-database paths; use a fresh temporary tree for the second
+build. Declare sources/startup/linker script once in CMakeLists, and reserve
+symbian.toml for project identity, preset and experimental UID. Package the
+toolchain/module with the wheel. Keep object-only compiler research separate.
+
+**Remaining uncertainty:** General SDK imports, writable data/constructors,
+package generation/installation, matched Belle runtime and complete target ABI.
+The build comparison is local repeatability, not a hermetic compiler/input
+attestation. Physical preservation/recovery inputs are still unknown.

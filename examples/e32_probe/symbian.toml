@@ -1,7 +1,5 @@
 [project]
 name = "e32_probe"
 kind = "e32-pic-experiment"
-source = "probe.cc"
-startup = "startup.S"
-linker_script = "image.ld"
+cmake_preset = "symbian-pic"
 uid3 = 0xe0000808

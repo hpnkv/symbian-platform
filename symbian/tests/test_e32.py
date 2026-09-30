@@ -55,16 +55,17 @@ def test_native_converter_rejects_protected_identity(image):
     assert caught.value.code == Code.INVALID_ARGUMENT
 
 
+@pytest.mark.skipif(not TOOLS_AVAILABLE, reason="Clang/LLD unavailable")
 def test_project_auxiliary_files_cannot_escape(tmp_path):
-    (tmp_path / "symbian.toml").write_text(
-        '[project]\nname="escape"\nkind="e32-pic-experiment"\n'
-        'source="source.cc"\nstartup="../startup.S"\n'
-        'linker_script="image.ld"\nuid3=0xe0000808\n'
-    )
-    (tmp_path / "source.cc").write_text("int ProbeMain() { return 0; }")
+    project = tmp_path / "project"
+    shutil.copytree(PROJECT, project)
+    shutil.copyfile(PROJECT / "startup.S", tmp_path / "startup.S")
+    cmake = project / "CMakeLists.txt"
+    cmake.write_text(cmake.read_text().replace("startup.S", "../startup.S"))
     with pytest.raises(StatusError) as caught:
-        toolchain.build(tmp_path, tmp_path / "output")
-    assert caught.value.code == Code.INVALID_ARGUMENT
+        toolchain.build(project, tmp_path / "output")
+    assert caught.value.code == Code.FAILED_PRECONDITION
+    assert "must be a file within the project" in str(caught.value)
 
 
 @pytest.mark.skipif(not TOOLS_AVAILABLE, reason="Clang/LLD unavailable")

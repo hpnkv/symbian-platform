@@ -27,9 +27,13 @@ metadata through the native parser, compares bytes, and writes an object, report
 and compilation database. It requires neither an SDK nor a target linker. Set
 clangd's `--compile-commands-dir=.symbian/build` for the object example.
 
-The E32 experiment additionally requires an ARM ELF linker (`brew install lld`).
-It links ARM startup to Thumb C++, preserves relocations with LLD, converts in
-the native core, and compares two ELF/E32 builds. It supports one read-only code
+The E32 experiment uses CMake presets and Ninja, and additionally requires an
+ARM ELF linker (`brew install lld`). It links ARM startup to Thumb C++, preserves
+relocations with LLD, converts in the native core, and compares two CMake
+ELF/E32 builds. The primary tree remains usable for incremental compilation;
+CMake supplies the actual clangd database. See
+[docs/BUILDING.md](docs/BUILDING.md) for project configuration and migration.
+It supports one read-only code
 segment and internal relative references. It rejects imports, absolute
 relocations, writable data, TLS and constructors. Hand-written absolute addresses
 or stripped relocation records cannot be proved absent: input must come from a

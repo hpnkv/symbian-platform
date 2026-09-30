@@ -258,3 +258,22 @@ It is evidence that this image loads and runs in that emulator configuration,
 not that the target Belle/FP2 system supports it. No kernel SVC algorithm was
 replaced. The small runtime-probe.patch records host initialization fixes and
 a UID-index invariant change needed for exception-free inclusion of headers.
+
+## 12. CMake project path
+
+The experimental E32 build now configures a declared CMake target using a Ninja
+preset and packaged ARM toolchain/module files. The source graph is declared
+in CMakeLists; symbian.toml selects the target/preset and UID. The retained
+primary build tree supplies an actual compilation database and incremental
+dependency tracking. A fresh second tree verifies identical linked/converted
+bytes. The original ELF and E32 hashes remain unchanged for examples/e32_probe.
+
+Project metadata comes from CMake's
+[file API](https://cmake.org/cmake/help/latest/manual/cmake-file-api.7.html),
+with generated and built-in CMake files excluded from the source-input comparison.
+The tool version is recorded separately. Compiler-discovered headers are obtained
+through Ninja's dependency tool; the declared `inputs` graph alone omits those
+stored dependencies. Tests cover multiple translation units, paths with spaces,
+local header changes, no-op rebuilds and missing targets. The installed wheel
+contains the CMake files and reproduces the same E32 in a separate environment.
+See BUILDING.md and RESEARCH_LOG.md for scope and experiment evidence.

@@ -7,7 +7,7 @@ exact identity, firmware, ROM/Z-drive assets and recovery method are unknown.
 | --- | --- | --- |
 | 0 Preservation | Archive tools tested; physical baseline pending | Device inventory, original artifacts, offline archive, tested human recovery appliance |
 | 1 Toolchain | Reproducible ELF→E32; historical validation, CPU and ROMless emulator process tests pass | Matched Belle runtime, imports and complete target ABI tests |
-| 2 Project model | Pending | Verified SDK subset, CMake application and installed SIS |
+| 2 Project model | Experimental CMake/Ninja project path, persistent database and wheel replay pass | Verified SDK subset, general application support and installed SIS |
 | 3 Emulator | Native arm64 build, upstream suite and CLI instance smoke tests pass | Matched ROM/Z image, guest boot/launch, complete runtime isolation |
 | 4–9 | Pending | Gates in PLAN.md |
 
@@ -26,7 +26,7 @@ Artifacts and reports live under .symbian/. clangd consumed the generated ARM
 compilation database with zero errors. Native core code is compiled with
 exceptions disabled; the pybind11 boundary retains canonical status codes.
 
-Verification: 59 Pytest cases with the patched emulator and native oracles
+Verification: 62 Pytest cases with the patched emulator and native oracles
 supplied, 16 platform GTest cases, 28 independent oracle GTest cases and
 288 upstream EKA2L1 cases pass on Apple Silicon. Black/Ruff, clang-format and
 generated stubs pass; the earlier clangd target check had zero errors.
@@ -46,3 +46,9 @@ an import-free emulator process without Belle ROM/Z or system services.
 Reports distinguish eka2l1_process_verified from Belle loader/runtime flags,
 which remain false. No physical runtime ran.
 Build and patch replay instructions are in research/eka2l1/README.md.
+
+The CMake path preserves the baseline ELF/E32 bytes. Multi-source builds, header
+changes, paths with spaces and cached no-op builds are tested. Its compilation
+database points to existing build objects; clangd reports zero errors. The wheel
+contains the CMake modules and builds the same E32 from an isolated installation.
+Project instructions and the v2 build report are described in docs/BUILDING.md.
