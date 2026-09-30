@@ -1,0 +1,12 @@
+# Match A11's static crypto linkage so wheels do not depend on a Homebrew dylib.
+set(OPENSSL_USE_STATIC_LIBS TRUE)
+find_package(OpenSSL 3.0 REQUIRED COMPONENTS Crypto)
+get_target_property(symbian_crypto_archive OpenSSL::Crypto IMPORTED_LOCATION)
+if(APPLE AND NOT symbian_crypto_archive MATCHES "\\.a$")
+  message(FATAL_ERROR "Static OpenSSL 3 libcrypto.a required; clear cached OpenSSL paths")
+endif()
+add_library(symbian_sis STATIC sis.cc)
+add_library(symbian::sis ALIAS symbian_sis)
+target_include_directories(symbian_sis PUBLIC ${PROJECT_SOURCE_DIR}/cpp)
+target_link_libraries(symbian_sis PUBLIC symbian::e32 PRIVATE OpenSSL::Crypto)
+symbian_native_library(symbian_sis)

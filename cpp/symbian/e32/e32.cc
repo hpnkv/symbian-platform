@@ -1,6 +1,5 @@
 #include "symbian/e32/e32.h"
 
-#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -10,6 +9,7 @@
 #include <absl/status/status.h>
 
 #include "symbian/analysis/bytes.h"
+#include "symbian/analysis/checksum.h"
 #include "symbian/analysis/elf.h"
 
 namespace symbian::e32 {
@@ -19,6 +19,7 @@ using analysis::internal::Put16;
 using analysis::internal::Put32;
 using analysis::internal::Read16;
 using analysis::internal::Read32;
+using analysis::internal::UidChecksum;
 using analysis::internal::Within;
 
 constexpr uint32_t kHeaderSize = 156;
@@ -41,19 +42,6 @@ uint32_t HeaderCrc(std::string_view bytes) {
     }
   }
   return crc;
-}
-
-uint32_t UidChecksum(std::string_view bytes) {
-  std::array<uint16_t, 2> crc{};
-  for (size_t i = 0; i < 12; ++i) {
-    uint16_t& value = crc[i % 2];
-    value ^= static_cast<uint16_t>(static_cast<uint8_t>(bytes[i]) << 8);
-    for (int bit = 0; bit < 8; ++bit) {
-      value =
-          static_cast<uint16_t>((value << 1) ^ ((value & 0x8000) ? 0x1021 : 0));
-    }
-  }
-  return (static_cast<uint32_t>(crc[1]) << 16) | crc[0];
 }
 
 struct Segment {

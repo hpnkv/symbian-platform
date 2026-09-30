@@ -61,24 +61,15 @@ def _check_results(path: Path, expected: int) -> dict:
     return {"tests": expected, "results": str(path), "passed": True}
 
 
-def verify_probe(artifact: Path, oracles_build: Path, output: Path) -> dict:
-    """Checks the maintained e32_probe, preserving native test evidence.
-
-    Args:
-        artifact: Converter output for the maintained e32_probe example.
-        oracles_build: EKA2L1 CMake build containing platform-tests executables.
-        output: Directory for independent test JSON, logs and the final report.
-
-    Returns:
-        Verification evidence with historical validation, CPU execution and
-        ROMless emulator process results. Belle runtime verification is false.
-    """
-    artifact = artifact.resolve()
-    oracles_build = oracles_build.resolve()
-    output = output.resolve()
-    data = artifact.read_bytes()
+def run_oracles(
+    fixtures: dict[str, Path],
+    oracles: tuple[tuple[str, int], ...],
+    oracles_build: Path,
+    output: Path,
+) -> tuple[list[dict], dict[str, Path]]:
+    """Runs complete native suites against retained private fixture copies."""
     executables = [
-        oracles_build / "platform-tests" / name for name, _ in ORACLES
+        oracles_build / "platform-tests" / name for name, _ in oracles
     ]
     for executable in executables:
         if not executable.is_file():
@@ -87,13 +78,16 @@ def verify_probe(artifact: Path, oracles_build: Path, output: Path) -> dict:
             )
     output.mkdir(parents=True, exist_ok=True)
     directory = Path(tempfile.mkdtemp(prefix="run-", dir=output))
-    fixture = directory / "probe.exe"
-    fixture.write_bytes(data)
-    metadata = inspect_image(fixture)
-    if metadata["uid3"] != 0xE0000808 or metadata["entry_offset"] != 0:
-        raise StatusError(
-            Code.INVALID_ARGUMENT, "Oracles require the maintained e32_probe"
-        )
+    originals = {key: path.read_bytes() for key, path in fixtures.items()}
+    copies = {}
+    for key, path in fixtures.items():
+        copy = directory / path.name
+        if copy in copies.values():
+            raise StatusError(
+                Code.INVALID_ARGUMENT, "Duplicate oracle fixture basename"
+            )
+        copy.write_bytes(originals[key])
+        copies[key] = copy
     # A private input copy ties every oracle to exactly the reported bytes.
     # Inherited test filters/sharding must never turn partial execution green.
     env = {
@@ -101,10 +95,10 @@ def verify_probe(artifact: Path, oracles_build: Path, output: Path) -> dict:
         for key, value in os.environ.items()
         if not key.startswith("GTEST_")
     }
-    env["SYMBIAN_E32_TEST_IMAGE"] = str(fixture)
+    env.update({key: str(path) for key, path in copies.items()})
     checks = []
     try:
-        for executable, (_, count) in zip(executables, ORACLES, strict=True):
+        for executable, (_, count) in zip(executables, oracles, strict=True):
             results_path = directory / f"{executable.name}.json"
             binary_digest = hashlib.sha256(executable.read_bytes()).hexdigest()
             stdout = run(
@@ -140,6 +134,42 @@ def verify_probe(artifact: Path, oracles_build: Path, output: Path) -> dict:
         raise StatusError(
             error.code, f"{error.message}; verification artifacts: {directory}"
         ) from error
+    if any(
+        path.read_bytes() != originals[key]
+        or copies[key].read_bytes() != originals[key]
+        for key, path in fixtures.items()
+    ):
+        raise StatusError(
+            Code.ABORTED, "Oracle fixture changed during verification"
+        )
+    return checks, copies
+
+
+def verify_probe(artifact: Path, oracles_build: Path, output: Path) -> dict:
+    """Checks the maintained e32_probe, preserving native test evidence.
+
+    Args:
+        artifact: Converter output for the maintained e32_probe example.
+        oracles_build: EKA2L1 CMake build containing platform-tests executables.
+        output: Directory for independent test JSON, logs and the final report.
+
+    Returns:
+        Verification evidence with historical validation, CPU execution and
+        ROMless emulator process results. Belle runtime verification is false.
+    """
+    artifact = artifact.resolve()
+    oracles_build = oracles_build.resolve()
+    output = output.resolve()
+    data = artifact.read_bytes()
+    metadata = inspect_image(artifact)
+    if metadata["uid3"] != 0xE0000808 or metadata["entry_offset"] != 0:
+        raise StatusError(
+            Code.INVALID_ARGUMENT, "Oracles require the maintained e32_probe"
+        )
+    checks, copies = run_oracles(
+        {"SYMBIAN_E32_TEST_IMAGE": artifact}, ORACLES, oracles_build, output
+    )
+    fixture = copies["SYMBIAN_E32_TEST_IMAGE"]
     if artifact.read_bytes() != data or fixture.read_bytes() != data:
         raise StatusError(
             Code.ABORTED, "Probe bytes changed during verification"

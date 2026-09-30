@@ -3,8 +3,8 @@
 The E32 build path uses CMake presets, Ninja and Clang/LLD. CMake owns the source
 graph and compilation database; the platform's native library converts the
 linked ELF to E32. This currently supports import-free PIC executables with
-one RX segment. SDK imports, writable data, constructors, packaging and matched
-Belle runtime validation remain open.
+one RX segment. SDK imports, writable data, constructors and matched Belle runtime validation
+remain open. The one-executable package path is documented in PACKAGING.md.
 
 Copy examples/e32_probe as a starting point. symbian.toml selects the CMake
 target and preset and supplies its experimental UID:

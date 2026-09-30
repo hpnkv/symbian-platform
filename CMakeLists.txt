@@ -32,6 +32,7 @@ endfunction()
 
 add_subdirectory(cpp/symbian/analysis)
 add_subdirectory(cpp/symbian/e32)
+add_subdirectory(cpp/symbian/sis)
 if(SYMBIAN_BUILD_PYTHON)
   add_subdirectory(cpp/python)
 endif()

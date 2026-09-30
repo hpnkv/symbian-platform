@@ -1,11 +1,14 @@
+#include <array>
 #include <string>
 
 #include <absl/status/status.h>
 #include <absl/status/statusor.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #include "symbian/analysis/elf.h"
 #include "symbian/e32/e32.h"
+#include "symbian/sis/sis.h"
 
 namespace py = pybind11;
 
@@ -59,6 +62,35 @@ symbian::e32::ImageInfo InspectE32(const py::bytes& data) {
   return *result;
 }
 
+py::bytes BuildSis(const py::bytes& data, uint32_t uid, const std::string& name,
+                   const std::string& vendor,
+                   const std::string& executable_name,
+                   const std::array<int32_t, 3>& version) {
+  const std::string bytes = data;
+  const symbian::sis::PackageOptions options{uid, name, vendor, executable_name,
+                                             version};
+  absl::StatusOr<std::string> result;
+  {
+    const py::gil_scoped_release release;
+    result = symbian::sis::BuildPackage(bytes, options);
+  }
+  if (!result.ok())
+    RaiseStatus(result.status());
+  return py::bytes(*result);
+}
+
+symbian::sis::PackageInfo InspectSis(const py::bytes& data) {
+  const std::string bytes = data;
+  absl::StatusOr<symbian::sis::PackageInfo> result;
+  {
+    const py::gil_scoped_release release;
+    result = symbian::sis::InspectPackage(bytes);
+  }
+  if (!result.ok())
+    RaiseStatus(result.status());
+  return *result;
+}
+
 }  // namespace
 
 PYBIND11_MODULE(_native, module) {
@@ -91,4 +123,25 @@ PYBIND11_MODULE(_native, module) {
              py::arg("uid3"), "Convert a restricted, retained-relocation ELF.");
   module.def("inspect_e32", &InspectE32, py::arg("data"),
              "Check the experimental E32 profile, releasing the GIL.");
+  using symbian::sis::PackageOptions;
+  py::class_<PackageOptions>(module, "SisPackageOptions")
+      .def_readonly("uid", &PackageOptions::uid)
+      .def_readonly("name", &PackageOptions::name)
+      .def_readonly("vendor", &PackageOptions::vendor)
+      .def_readonly("executable_name", &PackageOptions::executable_name)
+      .def_readonly("version", &PackageOptions::version);
+  using symbian::sis::PackageInfo;
+  py::class_<PackageInfo>(module, "SisPackageInfo")
+      .def_readonly("options", &PackageInfo::options)
+      .def_readonly("executable_uid", &PackageInfo::executable_uid)
+      .def_readonly("executable_size", &PackageInfo::executable_size)
+      .def_readonly("target", &PackageInfo::target);
+  module.def(
+      "build_sis", &BuildSis, py::arg("data"), py::arg("uid"), py::arg("name"),
+      py::arg("vendor"), py::arg("executable_name"),
+      py::arg("version") = std::array<int32_t, 3>{1, 0, 0},
+      "Build the canonical unsigned SISX experiment, releasing the GIL.");
+  module.def(
+      "inspect_sis", &InspectSis, py::arg("data"),
+      "Check the canonical unsigned SISX experiment, releasing the GIL.");
 }

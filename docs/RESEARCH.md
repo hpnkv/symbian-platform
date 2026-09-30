@@ -277,3 +277,36 @@ stored dependencies. Tests cover multiple translation units, paths with spaces,
 local header changes, no-op rebuilds and missing targets. The installed wheel
 contains the CMake files and reproduces the same E32 in a separate environment.
 See BUILDING.md and RESEARCH_LOG.md for scope and experiment evidence.
+
+## 13. SISX packaging and disposable installation
+
+The public appinstall checkout is pinned at
+`760927eba63e3324cceee974b9ed582da90cb9a3`. Its
+[sisxlibrary](https://github.com/SymbianSource/oss.FCL.sf.mw.appinstall/tree/760927eba63e3324cceee974b9ed582da90cb9a3/secureswitools/swisistools/source/sisxlibrary)
+defines aligned typed fields, arrays with implicit element types, compressed
+controller/file streams, checksums, file descriptions and data units. These
+contracts permit a small independent native writer without rebuilding makesis
+or importing the SDK. The current writer intentionally supports only one
+uncompressed, unsigned ordinary executable package with a fixed timestamp.
+It does not parse the historical `.pkg` language or implement signing.
+
+EKA2L1's existing package manager can install into a host-backed filesystem and
+registry without a ROM. A disposable harness uses its unchanged parser,
+interpreter and registry before launching through the existing process kernel.
+Installed bytes, UID/SID, package identity/version and registry reload are
+checked. Uninstall and reinstall work on both CPU backends. The package hash is
+checked against an independent hashlib baseline because this installer stores
+it without enforcing phone signing/capability policy.
+
+The separate original Nokia checksum implementation agrees with the SIS UID,
+controller and data CRCs. The production core validates sizes, padding, CRCs,
+SHA-1 and E32, and accepts only its canonical reconstruction. This bounded API
+is separate from the trusted-fixture upstream harness. Python retains TOML,
+filesystem and report policy. OpenSSL 3 libcrypto supplies legacy SHA-1 with
+static linkage following A11; its license is included with the wheel.
+
+The build/package/install/kernel-exit experiment now has 35 independent native
+cases. This evidence supports an import-free ROMless loop, while matched Belle,
+SDK services, complete ABI, GUI/resource processing, signing and physical
+installation remain open. See PACKAGING.md and RESEARCH_LOG.md for replay and
+artifact hashes.

@@ -68,3 +68,29 @@ target_link_libraries(symbian_process_probe PRIVATE
 add_test(NAME symbian_process_probe COMMAND symbian_process_probe)
 set_tests_properties(symbian_process_probe PROPERTIES
   ENVIRONMENT "SYMBIAN_E32_TEST_IMAGE=${SYMBIAN_E32_TEST_IMAGE}" TIMEOUT 15)
+
+add_executable(symbian_package_probe package_probe_test.cc
+    "${SYMBIAN_PLATFORM_ROOT}/research/upstream/EKA2L1/src/tests/platform.cpp")
+target_compile_features(symbian_package_probe PRIVATE cxx_std_20)
+target_compile_options(symbian_package_probe PRIVATE -fno-exceptions)
+target_link_libraries(symbian_package_probe PRIVATE
+                      epoc epockern epocmem epoctiming epocio epocpkg GTest::gtest_main)
+set(SYMBIAN_SIS_TEST_PACKAGE
+    "${SYMBIAN_PLATFORM_ROOT}/.symbian/package/probe.sis" CACHE FILEPATH
+    "Maintained canonical SISX experiment, prevalidated by the native core")
+add_test(NAME symbian_package_probe COMMAND symbian_package_probe)
+set_tests_properties(symbian_package_probe PROPERTIES
+  ENVIRONMENT "SYMBIAN_E32_TEST_IMAGE=${SYMBIAN_E32_TEST_IMAGE};SYMBIAN_SIS_TEST_PACKAGE=${SYMBIAN_SIS_TEST_PACKAGE}"
+  TIMEOUT 15)
+
+# Separate historical EPL oracle; no emulator or production format code linked.
+add_executable(symbian_sis_checksum_oracle sis_checksum_oracle_test.cc)
+target_compile_features(symbian_sis_checksum_oracle PRIVATE cxx_std_20)
+target_compile_options(symbian_sis_checksum_oracle PRIVATE -fno-exceptions)
+target_include_directories(symbian_sis_checksum_oracle PRIVATE
+                           "${SYMBIAN_PLATFORM_ROOT}/cpp")
+target_link_libraries(symbian_sis_checksum_oracle PRIVATE
+                      symbian_historical_checksum GTest::gtest_main)
+add_test(NAME symbian_sis_checksum_oracle COMMAND symbian_sis_checksum_oracle)
+set_tests_properties(symbian_sis_checksum_oracle PROPERTIES
+  ENVIRONMENT "SYMBIAN_SIS_TEST_PACKAGE=${SYMBIAN_SIS_TEST_PACKAGE}" TIMEOUT 15)

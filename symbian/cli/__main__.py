@@ -5,7 +5,7 @@ import json
 import sys
 from pathlib import Path
 
-from symbian import device, preservation, toolchain
+from symbian import device, packaging, preservation, toolchain
 from symbian.analysis import inspect_elf
 from symbian.doctor import doctor
 from symbian.e32 import inspect_image
@@ -36,14 +36,37 @@ def _parser() -> argparse.ArgumentParser:
     verify_probe.add_argument(
         "--output", type=Path, default=Path(".symbian/probe-check")
     )
+    verify_package = compiler_commands.add_parser(
+        "verify-package", help="Check SIS installation and kernel execution"
+    )
+    verify_package.add_argument("package", type=Path)
+    verify_package.add_argument("--executable", type=Path, required=True)
+    verify_package.add_argument(
+        "--oracles-build", type=Path, default=Path("build/eka2l1")
+    )
+    verify_package.add_argument(
+        "--output", type=Path, default=Path(".symbian/package-check")
+    )
     build = commands.add_parser("build", help="Build an ARM/E32 experiment")
     build.add_argument("--project", type=Path, default=Path.cwd())
     build.add_argument("--output", type=Path, default=Path(".symbian/build"))
     build.add_argument("--compiler", default="clang++")
     build.add_argument("--linker", default="ld.lld")
-    inspect = commands.add_parser("inspect", help="Inspect ELF32 metadata")
+    package = commands.add_parser(
+        "package", help="Build an unsigned SISX experiment"
+    )
+    package.add_argument("--project", type=Path, default=Path.cwd())
+    package.add_argument("--artifact", type=Path, required=True)
+    package.add_argument(
+        "--output", type=Path, default=Path(".symbian/package")
+    )
+    inspect = commands.add_parser(
+        "inspect", help="Inspect native format metadata"
+    )
     inspect.add_argument("artifact", type=Path)
-    inspect.add_argument("--format", choices=("elf32", "e32"), default="elf32")
+    inspect.add_argument(
+        "--format", choices=("elf32", "e32", "sis"), default="elf32"
+    )
     preserve_commands = commands.add_parser("preserve").add_subparsers(
         dest="preserve_command", required=True
     )
@@ -72,6 +95,12 @@ def _execute(args: argparse.Namespace) -> dict:
     if args.command == "toolchain":
         if args.toolchain_command == "probe":
             return toolchain.probe(args.output, args.compiler)
+        if args.toolchain_command == "verify-package":
+            from symbian.packaging.verification import verify_package
+
+            return verify_package(
+                args.package, args.executable, args.oracles_build, args.output
+            )
         from symbian.toolchain.verification import verify_probe
 
         return verify_probe(args.artifact, args.oracles_build, args.output)
@@ -79,8 +108,14 @@ def _execute(args: argparse.Namespace) -> dict:
         return toolchain.build(
             args.project, args.output, args.compiler, args.linker
         )
+    if args.command == "package":
+        return packaging.package(args.project, args.artifact, args.output)
     if args.command == "inspect":
-        inspector = inspect_elf if args.format == "elf32" else inspect_image
+        inspector = {
+            "elf32": inspect_elf,
+            "e32": inspect_image,
+            "sis": packaging.inspect_package,
+        }[args.format]
         return {"format": args.format, "metadata": inspector(args.artifact)}
     if args.command == "preserve":
         if args.preserve_command == "create":

@@ -3,11 +3,13 @@
 Build reproducible ARM objects and experimental E32 executables on macOS, and
 preserve existing firmware/ROM material in verifiable host-side archives.
 The target is Nokia 808 / Symbian Belle. The first E32 experiment passes historical
-image validation, CPU and ROMless emulator process tests. Execution in a matched
+image validation, CPU, ROMless installation and emulator process tests.
+Execution in a matched
 Belle environment remains unverified.
 See docs/STATUS.md.
 
 ```sh
+brew install openssl@3
 uv sync
 uv run symbian doctor
 uv run symbian toolchain probe
@@ -15,6 +17,9 @@ uv run symbian build --project examples/abi_probe
 uv run symbian inspect .symbian/build/abi_probe.o
 uv run symbian build --project examples/e32_probe --output .symbian/e32-probe
 uv run symbian inspect --format e32 .symbian/e32-probe/e32_probe.exe
+uv run symbian package --project examples/e32_probe \
+  --artifact .symbian/e32-probe/e32_probe.exe
+uv run symbian inspect --format sis .symbian/package/probe.sis
 uv run symbian device policy flash
 ```
 
@@ -38,8 +43,7 @@ segment and internal relative references. It rejects imports, absolute
 relocations, writable data, TLS and constructors. Hand-written absolute addresses
 or stripped relocation records cannot be proved absent: input must come from a
 trusted link retaining all relocations. The startup directly exits a thread and
-is limited to a process without runtime resources. This is not an SDK, SIS package
-or verified Belle application. Reports keep Symbian loader verification false.
+is limited to a process without runtime resources. This is not an SDK or verified Belle application. Reports keep Symbian loader verification false.
 Use `.symbian/e32-probe` as clangd's compilation database directory.
 
 The native EKA2L1 build and independent oracle tests are documented in
@@ -62,6 +66,19 @@ and failure exits, repeated launches and address-space release on both backends.
 No Belle ROM/Z or system services are supplied; Belle loader/runtime
 verification remains false.
 Inherited GTest filters and sharding cannot silently reduce the test count.
+
+The native unsigned SISX writer and bounded inspector are described in
+[docs/PACKAGING.md](docs/PACKAGING.md). With the research oracles built, run:
+
+```sh
+uv run symbian toolchain verify-package .symbian/package/probe.sis \
+  --executable .symbian/e32-probe/e32_probe.exe
+```
+
+This extends the check to 35 cases. The package installs its unchanged executable
+into disposable emulator filesystems; both CPU backends launch it through the
+kernel. Registry reload, uninstall and reinstall are also checked. Belle and
+phone installation remain unverified. No physical-device executor is exposed.
 
 ```sh
 cmake --preset debug

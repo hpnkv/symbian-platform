@@ -78,8 +78,12 @@ def test_missing_cmake_target_is_structured(tmp_path):
 def test_legacy_source_fields_are_not_silently_ignored(tmp_path):
     project = tmp_path / "project"
     shutil.copytree(PROJECT, project)
-    with (project / "symbian.toml").open("a") as stream:
-        stream.write('source = "probe.cc"\n')
+    manifest = project / "symbian.toml"
+    manifest.write_text(
+        manifest.read_text().replace(
+            "[project]", '[project]\nsource = "probe.cc"'
+        )
+    )
     with pytest.raises(StatusError) as caught:
         toolchain.build(project, tmp_path / "out")
     assert caught.value.code == Code.INVALID_ARGUMENT

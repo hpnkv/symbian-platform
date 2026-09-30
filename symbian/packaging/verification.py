@@ -1,0 +1,88 @@
+"""Independent SIS installation and execution for the maintained probe."""
+
+import hashlib
+import json
+from pathlib import Path
+
+from symbian.packaging import inspect_package
+from symbian.status import Code, StatusError
+from symbian.toolchain.verification import run_oracles, verify_probe
+
+ORACLES = (("symbian_sis_checksum_oracle", 1), ("symbian_package_probe", 6))
+
+
+def verify_package(
+    package: Path, executable: Path, oracles_build: Path, output: Path
+) -> dict:
+    """Runs image, CPU, kernel, historical SIS CRC and installer checks.
+
+    Args:
+        package: Canonical package for the maintained e32_probe.
+        executable: Corresponding unchanged E32 output, used as an oracle.
+        oracles_build: Native EKA2L1 build with the research GTest executables.
+        output: Directory retaining input copies, logs and native test results.
+
+    Returns:
+        Scoped ROMless emulator evidence; Belle and phone flags remain false.
+    """
+    package, executable, oracles_build, output = (
+        path.resolve() for path in (package, executable, oracles_build, output)
+    )
+    metadata = inspect_package(package)
+    data = package.read_bytes()
+    image = executable.read_bytes()
+    if (
+        metadata["uid"] != 0xE0000809
+        or metadata["executable_uid"] != 0xE0000808
+        or metadata["name"] != "Symbian E32 Probe"
+        or metadata["vendor"] != "Symbian research"
+        or metadata["executable_name"] != "probe.exe"
+        or metadata["version"] != [1, 0, 0]
+    ):
+        raise StatusError(
+            Code.INVALID_ARGUMENT,
+            "Oracles require the maintained probe package",
+        )
+    image_report = verify_probe(executable, oracles_build, output / "image")
+    checks, copies = run_oracles(
+        {
+            "SYMBIAN_SIS_TEST_PACKAGE": package,
+            "SYMBIAN_E32_TEST_IMAGE": executable,
+        },
+        ORACLES,
+        oracles_build,
+        output,
+    )
+    if package.read_bytes() != data or executable.read_bytes() != image:
+        raise StatusError(Code.ABORTED, "Package verification inputs changed")
+    report = {
+        "schema": "symbian.sis-probe-verification/v1",
+        "artifact": str(package),
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "executable": str(executable),
+        "executable_sha256": hashlib.sha256(image).hexdigest(),
+        "tested_copy": str(copies["SYMBIAN_SIS_TEST_PACKAGE"]),
+        "sis": metadata,
+        "image_verification": image_report,
+        "oracles": checks,
+        "tests_passed": image_report["tests_passed"]
+        + sum(n for _, n in ORACLES),
+        "historical_sis_checksums_verified": True,
+        "eka2l1_install_launch_verified": True,
+        "registry_reload_verified": True,
+        "uninstall_reinstall_verified": True,
+        "cpu_backends": ["dyncom", "dynarmic"],
+        "emulator_os_profile": "epoc10",
+        "symbian_loader_verified": False,
+        "runtime_verified": False,
+        "phone_installation_verified": False,
+        "limitations": [
+            "Unsigned import-free probe in disposable ROMless filesystems",
+            "EKA2L1 installer does not enforce phone signing/capability policy",
+            "No Belle ROM/Z, target DLLs, GUI or general application runtime",
+        ],
+    }
+    path = output / "report.json"
+    report["report"] = str(path)
+    path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    return report

@@ -54,7 +54,10 @@ cmake -S research/upstream/EKA2L1 -B build/eka2l1 -G Ninja \
   -DCMAKE_PROJECT_EKA2L1_INCLUDE="$PWD/research/eka2l1/project-tests.cmake"
 cmake --build build/eka2l1 -j 8 \
   --target eka2l1_qt ekatests symbian_e32_oracle symbian_checksum_oracle \
-    symbian_validator_oracle symbian_cpu_probe symbian_process_probe
+    symbian_validator_oracle symbian_cpu_probe symbian_process_probe \
+    symbian_sis_checksum_oracle symbian_package_probe
+uv run symbian package --project examples/e32_probe \
+  --artifact .symbian/e32-probe/e32_probe.exe --output .symbian/package
 ctest --test-dir build/eka2l1 -R 'symbian_|^ekatests$' --output-on-failure
 uv run symbian toolchain verify-probe .symbian/e32-probe/e32_probe.exe
 SYMBIAN_EKA2L1_EXECUTABLE="$PWD/build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1" \
@@ -133,3 +136,17 @@ remains false. The epoc10 enum selects emulator behavior; it does not identify
 an installed Belle/FP2 image. These tests do not cover DLL imports, User::Exit,
 system services, full ABI validation, desktop boot or a package installation.
 No firmware or ROM/Z image was imported.
+
+The SIS checksum oracle remains a separate EPL binary using the same historical
+CRC implementation. The GPL package harness reuses the process environment,
+but mounts its private C filesystem writable and starts without an executable.
+The unchanged EKA2L1 installer creates the payload and registry. Six cases cover
+install/launch, registry reload/uninstall and uninstall/reinstall/launch on both
+backends. Installed bytes must match the supplied E32; registry fields and an
+independently recorded SHA-1 digest are checked. No ROM or target services are
+present, and signing policy is not enforced by this emulator installer.
+SYMBIAN_SIS_TEST_PACKAGE defaults to .symbian/package/probe.sis. Only pass the
+maintained fixture after native inspection; these upstream parsers are not a
+bounded public API for untrusted packages. See docs/PACKAGING.md for
+`toolchain verify-package`, which retains 35 complete cases and input/binary
+hashes while keeping Belle and phone flags false.

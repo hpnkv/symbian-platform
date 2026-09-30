@@ -415,3 +415,93 @@ toolchain/module with the wheel. Keep object-only compiler research separate.
 package generation/installation, matched Belle runtime and complete target ABI.
 The build comparison is local repeatability, not a hermetic compiler/input
 attestation. Physical preservation/recovery inputs are still unknown.
+
+## 2026-09-30 — Native SISX and disposable install/launch/uninstall
+
+**Question:** Can the macOS build path generate a package and use EKA2L1's
+existing installer before kernel execution, without a historical Windows tool
+or Belle ROM?
+
+**Historical behaviour and evidence:** Cloned the public Nokia appinstall
+repository to ignored research/upstream/appinstall, pin
+`760927eba63e3324cceee974b9ed582da90cb9a3`, preserving its EPL-1.0 material.
+Read secureswitools/swisistools/source/sisxlibrary, particularly siscontents.cpp,
+header.cpp, sisarray.h, siscompressed.h, sisinfo.cpp, sisfiledescription.cpp,
+sishash.cpp and sisdate.cpp. UID1 is 0x10201a7a; UID2 is reserved zero; UID3 is
+package identity. Fields carry type/length and four-byte padding; arrays omit
+element types from individual headers. Controller and data CRCs cover serialized
+fields including headers/padding. File descriptions bind indexed data to targets
+and carry SHA-1. The historical default epoch is 2004-01-01, with zero-based
+month. EKA2L1's pinned package manager/interpreter already installs files and
+registries using only its virtual filesystem/configuration. Its source stores
+the file digest without checking certificate/capability policy or enforcing a
+phone installer contract.
+
+**Experiments:** Implemented an independent native C++ SIS writer/inspector for
+one ordinary import-free E32 executable, no dependencies/scripts/signatures,
+uncompressed streams, English ASCII metadata and experimental UIDs. Package
+UID 0xe0000809 differs from executable UID/SID 0xe0000808. Fixed the date for
+repeatability. Native logic reuses E32 inspection and a shared native UID CRC
+helper; no binary format moved into Python. SHA-1 uses static OpenSSL 3.6.5
+libcrypto.a, matching A11's linkage pattern. Only the pybind11 boundary enables
+exceptions, and it releases the GIL around the stateless native work. The wheel
+includes OpenSSL's Apache-2.0 license and has no Homebrew crypto dylib dependency.
+
+Seven maintained SIS GTest cases cover round-trip identity, every truncation and
+single-byte mutation, hostile lengths/trailing data, metadata/path/version
+rejection, required E32 validation and payload size. A payload changed with a
+recomputed data CRC still fails SHA-1; deflate/run operations with a recomputed
+controller CRC remain unsupported. Reused the existing E32 fixture and moved the
+process environment into a GPL test header so no second scheduler or kernel
+implementation was introduced.
+
+Six new GPL oracle cases install into a fresh private writable C filesystem,
+compare installed bytes to the independently supplied E32, and inspect registry
+identity/version/SID/hash. Both dyncom and dynarmic launch the installed image
+through EKA2L1's unchanged loader, scheduler and kernel SVC dispatch. Registry
+reload and uninstall remove the executable and prevent process creation.
+Reinstall after a changed-input failure exit then runs normally, with exit reasons
+42 and 0. The independent hashlib baseline for the unchanged E32 is
+`f464490fdf04c80df2e778f65326189e9e2b38d8`; the registry's legacy digest agrees.
+A seventh separate EPL case compiles Nokia's original checksum.cpp and agrees
+with UID and controller/data CRCs. No EKA2L1 package algorithm was patched.
+
+The baseline E32 remains
+`997cd9c5ec35281f261a08cb3c2ca6a36c74be969b4a72cbbd8ede5ff5332395`.
+The package is 908 bytes, SHA-256
+`9065031847f1db3b1fae1779b478208c38ea3f61a2e5554c2bd293106903abb9`.
+`toolchain verify-package` preserves 35 complete cases: the existing 28 oracles
+and the seven new ones. Its report is .symbian/package-check/report.json with
+retained private inputs, GTest JSON/logs and binary digests. Test filters/shards
+are removed and full expected counts are required. Python exposes package,
+SIS inspection and verification commands with canonical statuses and strict
+TOML fields. The full-suite run exposed a project test that appended its legacy
+source field beneath the new package table; corrected it to insert explicitly
+into the project table, preserving the original check.
+
+Validation completed: 73 Pytest cases with both optional dependency paths,
+23 maintained native GTest cases, all 35 independent native cases, and the
+unchanged upstream suite's 288 cases/28172 assertions. Black/Ruff, clang-format,
+generated stubs and whitespace checks pass. Built the macOS arm64/Python 3.12
+wheel, confirmed packaged crypto licensing and packaging modules, and installed
+it into .symbian/sis-wheel-check-wbeb510b/venv. From outside the repository's
+Python import path, that wheel generated the identical SIS and completed all
+35 verification cases. wheel-result.json records the actual imported wheel path
+and retained check report. Otool shows only system framework/libc++/libSystem
+links for the native module, with no Homebrew crypto dylib.
+
+**Conclusion:** A modern native writer and EKA2L1's existing installer provide
+an observable build→package→install→kernel-exit loop for this maintained probe.
+No VM, `.pkg` parser or general package scheduler was needed.
+
+**Implementation decision:** Keep the production writer/inspector synchronous
+and bounded, with Python handling policy and reports. Keep historical EPL CRC
+and GPL emulator probes in separate research binaries, outside the wheel.
+Publish a verification command for the maintained profile, not a general
+untrusted SIS installer API. Document packaging in PACKAGING.md.
+
+**Remaining uncertainty:** Matched Belle ROM/Z and installer/loader behaviour,
+certificates/capabilities, SDK imports, writable data/constructors/full C++ ABI,
+GUI resources and ordinary applications. The fixed timestamp and local repeat
+are not a hermetic toolchain attestation. The sole 808's exact identity, preserved
+firmware/ROM and recovery baseline remain unknown. No hardware operation ran.
