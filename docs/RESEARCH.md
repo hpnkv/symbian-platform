@@ -532,3 +532,28 @@ more exported-wrapper/call-site mappings, firmware-specific selection and
 controls retaining older firmware compatibility. No synthetic SDK replacement
 or permissive import workaround was added. Visual GUI execution, normal exit,
 OS boot and physical-phone compatibility remain unverified.
+
+## 22. Guarded Symbian 101 routing and initial GUI drawing calls
+
+Native inspection of the real EUSER export table and source-wrapper comparison
+now provides 212 old-call mappings with no conflicting constraints, spanning
+both executive shift boundaries. This supports a separate piecewise experimental
+map, rather than a uniform shift. The original epoc10 map is retained. Selection
+requires an explicit profile name and exact full-ROM digest; actual frontend
+tests reject an unknown name and a modified private ROM. Private operations,
+new loader extensions and the existing SVC 0xFF interception remain open.
+
+The corrected routing completes heap setup and reaches GuiMain. Real instruction
+stepping identifies a Dynarmic abort on TPIDRURO, an independent ARM thread
+register. A native patch adds its read and context preservation on both tested
+macOS backends. Unequal-register and context-switch GTests reject TLS aliasing.
+The subsequent guest panic E32USER-CBase/69 identifies a missing trap handler;
+the example now installs the original SDK cleanup stack before calling GuiMain.
+
+Live ARM GDB observes RWsSession::Connect returning zero, the initial DrawGui
+entry with count zero and a 360 by 640 layout, and return from that function.
+This is actual guest SDK execution, not a framebuffer or pointer-input proof.
+Default-profile heap failure remains a control. Full DLL initialization, normal
+cleanup/exit, rendered pixels and physical compatibility remain unverified.
+The scoped evidence, source contracts, patch recipe and replay are in
+[BELLE_ABI.md](BELLE_ABI.md); private code/data/logs stay outside Git.

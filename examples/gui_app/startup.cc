@@ -1,4 +1,4 @@
-#include <e32std.h>
+#include <e32base.h>
 #include <u32std.h>
 
 static_assert(sizeof(TInt) == 4 && sizeof(TUint32) == 4);
@@ -18,7 +18,13 @@ extern "C" void GuiRunThread(TInt reason, SStdEpocThreadCreateInfo* info) {
   TInt result = UserHeap::SetupThreadHeap(EFalse, *info);
   if (result == KErrNone) {
     User::InitProcess();
-    result = GuiMain();
+    CTrapCleanup* cleanup = CTrapCleanup::New();
+    if (cleanup == nullptr) {
+      result = KErrNoMemory;
+    } else {
+      result = GuiMain();
+      delete cleanup;
+    }
   }
   User::Exit(result);
 }

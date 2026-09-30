@@ -4,14 +4,16 @@ Build reproducible ARM objects and experimental E32 executables/DLLs on macOS, a
 preserve existing firmware/ROM material in verifiable host-side archives.
 The target is Nokia 808 / Symbian Belle. The first E32 experiment passes historical
 image validation, CPU, ROMless installation and emulator process tests.
-Execution in a matched
-Belle environment remains unverified.
+Full Belle runtime compatibility remains unverified; a guarded experiment now
+executes the GUI's initial drawing function against supplied RM-807 firmware.
 See docs/STATUS.md.
 
 The native touch counter in [examples/gui_app](examples/gui_app) now has a full
 [WALKTHROUGH.md](WALKTHROUGH.md): source SDK preparation, modern toolchain,
 reproducible builds, checks, emulator launch and debugging. Its build and static
-checks pass; visible GUI execution needs matched ROM/Z and remains unverified.
+checks pass. Live GDB verifies SDK heap setup, Window Server connection and
+initial drawing calls with the supplied ROM/Z. Displayed pixels, input and
+normal shutdown remain unverified; see [the ABI experiment](docs/BELLE_ABI.md).
 
 ```sh
 brew install openssl@3
@@ -55,8 +57,9 @@ The native EKA2L1 build and independent oracle tests are documented in
 [research/eka2l1/README.md](research/eka2l1/README.md). The local patch provides
 an explicit macOS instance root and fixes CLI shutdown without device images.
 The supplied Delight RM-807 firmware now imports ROM/Z into a private emulator
-instance. A GUI launch mapped real system DLLs and exposed startup/service
-diagnostics; visual behavior remains unverified. See WALKTHROUGH.md.
+instance. Firmware-specific executive routing, ARM thread-register preservation
+and SDK cleanup-stack setup now permit initial GUI drawing calls. Visual
+behavior remains unverified. See WALKTHROUGH.md.
 After building those research dependencies, run:
 
 ```sh

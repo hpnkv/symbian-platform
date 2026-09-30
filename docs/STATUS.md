@@ -1,15 +1,19 @@
 # Status
 
 The initial technical survey is in RESEARCH.md. The owner has one Nokia 808;
-exact identity, firmware, ROM/Z-drive assets and recovery method are unknown.
+exact physical identity, installed firmware and recovery method remain unknown.
+The supplied Delight RM-807 archive provides preserved emulator ROM/Z material;
+a guarded disposable experiment now completes the initial GUI drawing function.
 
 | PLAN milestone | Status | Required evidence |
 | --- | --- | --- |
 | 0 Preservation | Archive tools tested; physical baseline pending | Device inventory, original artifacts, offline archive, tested human recovery appliance |
 | 1 Toolchain | Reproducible ELF→E32; historical validation and ROMless process/DLL import tests pass | Matched Belle runtime, SDK imports and complete target ABI tests |
 | 2 Project model | CMake/Ninja, persistent database, native SIS and ROMless install/launch pass | Matched SDK/DLL imports, general application support and Belle installer |
-| 3 Emulator | Native arm64 build, upstream suite, instance smoke and ROMless package tests pass | Matched ROM/Z image, guest boot/launch, complete runtime isolation |
-| 4–9 | Pending | Gates in PLAN.md |
+| 3 Emulator | Native arm64 build, supplied ROM/Z import, guarded SDK startup/drawing calls and disposable tests pass | Rendered output/input, normal exit, OS boot and general runtime coverage |
+| 4 Automated development | Native build/package/check loops pass; GUI execution is an opt-in research test | General unattended application execution, pixels/input and facade orchestration |
+| 5 Modern debugging | Live ARM GDB source/ROM stops, stable stepping and model inspection pass | Full unwinding, crash/thread inspection and normal exit |
+| 6–9 | Pending | Physical deployment/system/hardware/alternative OS gates in PLAN.md |
 
 No physical-device executor, flashing capability or recovery automation exists.
 Source inspection is not an emulator runtime test. Record implementation and
@@ -233,3 +237,42 @@ original ZIP and all 13,438 baseline file digests are rechecked unchanged.
 Physical phone details remain unknown and no device operation ran. Replays and
 current limitations are in WALKTHROUGH.md section 9; transcripts, negative
 control, test logs and integrity evidence are in .symbian/gui-research/debugger*.
+
+
+### 2026-09-30 — Guarded RM-807 ABI and initial drawing-function execution
+
+The real ROM export probe and source-wrapper comparison now support a piecewise
+experimental Symbian 101 executive map. It has 170 existing handlers, while the
+original 172-handler epoc10 map remains intact. Profile selection is explicit
+and exact-ROM-digest guarded; real frontend tests reject unknown profile names
+and changed private ROM bytes. This is a research profile for the supplied
+Delight image, not universal Belle support or authenticated stock firmware.
+
+With that profile heap setup returns zero and GuiMain executes. A separate ARM
+TPIDRURO register fixes the original Dynarmic coprocessor abort, with four real
+instruction/context cases passing on both tested macOS backends. Window Server
+connection returns zero. A subsequent E32USER-CBase/69 panic exposed missing
+cleanup-stack setup; the example now creates the SDK CTrapCleanup before GuiMain
+and deletes it on return. Its frozen EUSER import count is now ten (38 total).
+
+Live GDB verifies the initial DrawGui entry, zero/running model, 360 by 640 layout
+and return after its guest drawing calls. The default map still fails heap
+startup, preserving a useful control. Full DLL initialization remains unproven:
+0x10D is still unimplemented. Rendered pixels, pointer delivery, normal cleanup/
+exit, full unwinding, OS boot and physical-phone compatibility remain unverified.
+No screenshot or visible-GUI success is claimed from a drawing-function stop.
+
+All 146 Pytest cases pass with explicit optional inputs, all six root CTest
+targets pass, and the two new research CTest targets pass seven GTest cases.
+The opt-in ROM export probe passes separately, rejects existing/nested output,
+and executes no guest instructions. All six patches apply in documented order
+against fresh pinned source files. An isolated installed wheel reproduces the
+updated ELF/E32, packages it and passes all 17 historical/installer checks;
+research tests/firmware remain excluded. Black/Ruff and C++ formatting pass.
+
+The original ZIP and every path, size and SHA-256 of the 13,438-file unbooted
+baseline are rechecked unchanged. Runtime work uses copied instances; the
+baseline is not booted. Phone identity and independent offline preservation
+remain unknown. No device operation ran. Replays and boundaries are recorded in
+WALKTHROUGH.md and docs/BELLE_ABI.md; private evidence is under
+.symbian/belle-abi-research. The platform mission remains active.

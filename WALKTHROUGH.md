@@ -10,13 +10,15 @@ and whole-image validation pass. Its ARM ELF retains valid DWARF and LLDB
 resolves its functions and source lines. **The application has not yet been
 visually verified in an emulator or on a phone.** The user-supplied Delight
 v1.8 firmware ZIP now imports into EKA2L1 as RM-807/808 PureView/epoc100. A real
-launch mapped this GUI and EUSER/WS32, but logged unimplemented SVCs and a heap
-lookup failure. Import and mapping are tested; GUI behavior and guest debugging
-still require investigation. See section 7 for this concrete asset checkpoint.
+launch first exposed executive ABI and ARM-register gaps. The guarded profile
+and CPU corrections now complete heap setup, the Window Server connection and
+the initial drawing function. Rendered pixels, pointer delivery and normal exit
+remain unverified. Live guest debugging is tested; see section 9 and
+[docs/BELLE_ABI.md](docs/BELLE_ABI.md) for the current runtime evidence.
 
 | Result | Current evidence |
 | --- | --- |
-| Public source headers and frozen function ordinals | 92 hashed header aliases; 9 EUSER and 28 WS32 imports |
+| Public source headers and frozen function ordinals | 92 hashed header aliases; 10 EUSER and 28 WS32 imports |
 | C++20 ARM compilation and E32 conversion | Two independent CMake/Ninja builds produce identical ELF/E32 bytes |
 | Counter, layout, pointer boundaries, division | Five host GTests |
 | SDK preparation, packaging and integration policy | 18 Pytest cases with optional public source/oracle inputs |
@@ -24,8 +26,8 @@ still require investigation. See section 7 for this concrete asset checkpoint.
 | GUI SIS package | 17 image/checksum/installer cases; registry reload/removal/reinstall verified |
 | Supplied RM-807 firmware | VPL/ZIP checks and native emulator import pass; real DLLs mapped during launch |
 | Debug information and editor input | DWARF verification, LLDB symbol/source lookup, real compilation database |
-| Visible drawing, pointer delivery, SDK startup/cleanup | Not executed in a matched emulator |
-| Guest debugger connection and breakpoints | Procedure researched; attachment unverified |
+| Initial drawing function | Real guest calls complete in the guarded RM-807 experiment; pixels/input/exit unverified |
+| Guest debugger connection and breakpoints | Live ARM GDB source/ROM stops and stable single stepping verified |
 | Nokia 808 / Belle compatibility | Unverified; actual phone identity/firmware remains unknown |
 
 ## 1. What was made and why
@@ -83,8 +85,10 @@ thread library have not been ported into the guest.
 
 The startup is a deliberately limited primary-thread adapter. It consumes the
 entry reason and thread-create pointer, checks the source-derived struct sizes,
-calls `UserHeap::SetupThreadHeap`, then `User::InitProcess`, calls `GuiMain`, and
-ends through `User::Exit`. Unexpected thread/exception entry calls
+calls `UserHeap::SetupThreadHeap`, then `User::InitProcess`, creates an SDK
+`CTrapCleanup`, calls `GuiMain`, deletes the cleanup object, and ends through
+`User::Exit`. Failure to allocate the cleanup object returns `KErrNoMemory`.
+Unexpected thread/exception entry calls
 `User::Invariant`. It provides no secondary-thread or global constructor
 support. Unlike the earlier resource-free integer probes, it attempts real SDK
 initialization and cleanup. That attempt is still a **runtime experiment**:
@@ -207,7 +211,7 @@ Keep original licenses beside the source trees and retain those trees for as
 long as the aliases are used. Symlinks are not a preserved independent copy.
 
 The EUSER definition is `kernel/eka/eabi/euseru.def`; WS32 is
-`windowing/windowserver/eabi/WS322U.DEF`. The native parser selects the 37 frozen
+`windowing/windowserver/eabi/WS322U.DEF`. The native parser selects the 38 frozen
 function ordinals without renumbering. The generated `euser.dso` and `ws32.dso`
 are **link-time ordinal proxies**, not executable implementations of those
 libraries. Copying them into a guest cannot supply EUSER or Window Server.
@@ -271,7 +275,7 @@ writing or running an installer. Seventeen tests cover eight image checks,
 one original SIS checksum case, and eight independent EKA2L1 filesystem/registry
 cases across two configured backends. No CPU instructions run in those
 installer cases. The absence-of-DLL control observes an upstream defect:
-process creation succeeds with all 37 import slots still holding ordinals.
+process creation succeeds with all 38 import slots still holding ordinals.
 The report records this explicitly and keeps GUI/runtime verification false.
 Process creation is insufficient evidence of a successful launch.
 
@@ -329,14 +333,18 @@ skips. None of these tests issues a hardware operation.
 
 ## 6. Prepare the emulator research build
 
-Use pinned EKA2L1 commit `2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8` and the three
+Use pinned EKA2L1 commit `2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8` and the six
 local patches. `instance-root.patch` supplies isolated macOS data/settings roots,
 bounded CLI failure shutdown, and a loopback-only GDB listener.
 `runtime-probe.patch` supplies the documented research initialization fixes.
 `guest-debug-step.patch` makes a remote single step stop after one instruction
 and send its stop response. Without it, stepping continues silently through
 the guest until another breakpoint, so register observations can be misleading.
-These are already applied in the current workspace. For a fresh checkout:
+`guest-debug-library-query.patch` removes an unsupported GDB capability.
+`symbian101-experimental.patch` supplies explicitly selected, ROM-digest-guarded
+executive routing; `guest-thread-register.patch` adds separate TPIDRURO state
+and tested macOS backend context preservation. These are already applied in
+the current workspace. For a fresh checkout:
 
 ```sh
 brew install qtbase qttools qtsvg
@@ -348,6 +356,9 @@ git -C research/upstream/EKA2L1 submodule update --init --recursive --depth 1
 git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/instance-root.patch
 git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/runtime-probe.patch
 git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/guest-debug-step.patch
+git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/guest-debug-library-query.patch
+git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/symbian101-experimental.patch
+git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/guest-thread-register.patch
 git clone --no-checkout \
   https://github.com/SymbianSource/oss.FCL.sf.os.buildtools \
   research/upstream/buildtools
@@ -639,6 +650,7 @@ with the actual checkout path **before entering them**:
 set pagination off
 set architecture arm
 set remotetimeout 200
+file /absolute/repo/.symbian/gui-app/gui_app.elf
 symbol-file -o SLIDE /absolute/repo/.symbian/gui-app/gui_app.elf
 set substitute-path /symbian-src/gui_app /absolute/repo/examples/gui_app
 set substitute-path /symbian-sdk/include /absolute/repo/.symbian/gui-sdk/include
@@ -659,9 +671,13 @@ using its current line number from `app.cc`; inspect model/layout values where
 optimization leaves them available. Startup assembly executes ARM instructions
 and C++ executes Thumb. For raw-address breakpoints, upstream documents
 `set arm fallback-mode thumb` for Thumb addresses; use ARM for startup instead.
+For raw disassembly check CPSR bit `0x20`: use `set arm force-mode arm`
+when clear and `set arm force-mode thumb` when set, returning to `auto`
+for symbolized source. An incorrect fallback can misdecode ARM as Thumb.
 Do not treat the Thumb state bit as a separate byte of code.
 
-The current launch stops at `GuiRunThread`, PC `0x700009da`, with reason zero
+With the default executive profile, the launch stops at `GuiRunThread`,
+PC `0x700009da`, with reason zero
 and thread-create information at `0x40ffc0`. Two `stepi` commands stop at
 `0x700009dc` and `0x700009de`. A fresh register read after a delay confirms the
 first stop stays halted. Source path substitution displays the actual adapter.
@@ -681,8 +697,14 @@ with the original SDK implementations. The exit identification is consistent
 with its caller and the original exit code. These discrepancies establish a
 kernel executive ABI problem for this firmware; they do not establish a complete
 Belle call table. Do not shift the whole table or substitute SDK implementations
-based on these three calls. A complete profile needs further independent
-mapping and controls against older supported firmware.
+based on these three calls. Subsequent source/export wrapper analysis supports
+a piecewise experimental profile and retains default-profile controls. See
+[docs/BELLE_ABI.md](docs/BELLE_ABI.md) for its derivation and remaining gaps.
+To select it for a disposable launch, prefix the emulator command with
+`EKA2L1_EXPERIMENTAL_SVC_PROFILE=rm807-113.010.1508`; it requires the exact
+preserved ROM digest. The initial drawing function now completes with SDK
+cleanup-stack setup and a separate ARM TPIDRURO register. This does not yet
+establish displayed pixels, input delivery, complete DLL initialization or exit.
 
 Replay the bounded live debugging regression with the exact preserved fixture:
 
@@ -698,7 +720,10 @@ Use a new disposable `--basetemp` directory: Pytest clears that directory.
 The test checks ROM/EUSER and ELF/E32 digests before starting, copies the golden
 state, uses an instance-local loopback port, checks real source and ROM stops,
 retains logs, and verifies those input digests again. It explicitly expects the
-current heap failure. No input means a visible skip. Its cleanup stops only its
+default heap failure. The explicit guarded-profile case reaches and returns from
+the initial `DrawGui` function, inspecting the zero counter and 360 by 640
+layout. Two further cases check actual rejection of an unknown profile and
+a one-byte-modified private ROM. No input means a visible skip. Its cleanup stops only its
 own frontend process; the current frontend may require KILL after TERM. Neither
 that forced stop nor reaching `User::Exit` proves normal guest cleanup.
 
@@ -728,18 +753,21 @@ LLDB remote compatibility and full process inspection remain separate work.
 | Breakpoint never hits | Stub enabled on supported backend, correct current code slide, ARM/Thumb state and exact ELF/executable pair |
 | Source files not found in debugger | Apply prefix substitutions rather than removing reproducibility maps |
 
-The next meaningful milestone is visible GUI execution with compatible real
-system DLLs, followed by heap/cleanup and debugger tests. After that, add
-rotation/focus handling, application resources/registration and imported-app
-SIS packaging. A broad platform runtime still needs writable data/BSS/TLS,
+The next runtime checks are captured pixels, pointer delivery, redraw after
+model changes and normal SDK cleanup/exit. Heap setup, a service connection,
+initial drawing-function execution and live debugging now have concrete
+evidence in the guarded firmware experiment. Then broaden firmware ABI
+coverage, rotation/focus handling and application resources/registration.
+Imported-app single-EXE SIS installation is already tested separately. A broad platform runtime still needs writable data/BSS/TLS,
 static lifetime, compiler-rt/C-library support and a carefully configured C++
 library. The evidence trail belongs in [docs/RESEARCH_LOG.md](docs/RESEARCH_LOG.md)
 and [docs/STATUS.md](docs/STATUS.md); preserve failures as well as passes.
 
 At this checkpoint the generated E32 SHA-256 is
-`93428ab91029784854db74f36c87d32d441c305572a9476eaeda7d3068a03641`
+`2ef4145fa9323837d3d16d8914652d69f0b703a747b4dbb52ab83db83b727792`
 and the debug ELF SHA-256 is
-`1d02b5449ac1b765a77749ee61889efd3fcc3d550888f31910b13784321d38ee`.
+`7b2918ba000c8faf039069a3571816a6203edde129a5cb9c2144e475d582d05f`.
 Local evidence is under `.symbian/gui-sdk`, `.symbian/gui-app`,
-`.symbian/gui-validation`, and `.symbian/gui-research`. Those directories and
+`.symbian/gui-validation`, `.symbian/gui-research`, and
+`.symbian/belle-abi-research`. Those directories and
 upstream material remain outside version control.

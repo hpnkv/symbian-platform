@@ -390,7 +390,8 @@
         "_ZN5TRectC1Eiiii",
         "_ZN5TRectC1Ev",
         "_ZN8UserHeap15SetupThreadHeapEiR24SStdEpocThreadCreateInfo",
-        "memclr"
+        "memclr",
+        "_ZN12CTrapCleanup3NewEv"
       ]
     },
     "ws32.dll": {

@@ -191,3 +191,14 @@ ELF/E32 inputs in a disposable copy. It expects the current heap startup
 failure and checks source/ROM breakpoints and stable instruction stepping.
 See [WALKTHROUGH.md](../../WALKTHROUGH.md#9-debug-guest-startup-and-the-gui)
 for replay, concrete executive ABI discrepancies and remaining limitations.
+
+
+The guarded RM-807 experiment additionally uses the GPL
+`guest-debug-library-query.patch`, `symbian101-experimental.patch` and
+`guest-thread-register.patch`. The native ROM/routing/register probes and live
+Pytest cover actual preserved ROM exports, explicit profile rejection, separate
+ARM register contexts and initial drawing-function execution. They are research
+components excluded from the wheel. Patch order, exact digest guards, source
+contracts and unresolved ABI/runtime limits are in
+[docs/BELLE_ABI.md](../../docs/BELLE_ABI.md). The example now installs an SDK
+cleanup stack; rendered pixels, pointer input and normal exit remain unverified.

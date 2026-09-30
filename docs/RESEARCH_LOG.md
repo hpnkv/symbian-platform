@@ -1282,3 +1282,105 @@ verify heap/init/Window Server services, visible drawing/input and SDK cleanup;
 then broaden debugging to unwind/crash/thread inspection. Current debugging
 proofs do not change GUI-runtime, OS-boot, physical-match or device-operation
 claims. The project goal remains active.
+
+
+### 2026-09-30 — Firmware-specific routing, ARM thread state and SDK cleanup
+
+Continued from the live heap failure and revalidated the modified worktree.
+The original imported platform.txt declares SymbianOSMajorVersion=101, while
+EKA2L1's version detector groups 100/101 under epoc10. The preserved device/ROM
+identity is a research fixture; it does not identify the physical phone.
+
+Added a trusted opt-in native ROM probe using unchanged upstream load_rom and
+parse_romimg. It copies ROM into its temporary environment before mapping it,
+retains actual EUSER code/export data, and records zero guest instructions.
+Observed code address 0x804bcce8, size 301100, exports 2566 and version 2.4.0.
+Output path guards reject an existing directory and a child of the preserved
+input; those negative controls leave the child absent. The probe remains
+excluded from the production wheel and default research CTest invocation.
+
+The original genexec.pl generates old executive numbers from execs.txt. Its
+obsolete cpp flags fail on current macOS. A private shim invokes current Clang
+as a C++ preprocessor while retaining the original Perl generator. Native DEF
+parsing joins original frozen ordinals to mapped real ROM exports. LLVM builds
+an analysis-only ELF with raw code and symbol labels; GDB explicitly selects
+ARM for the stub region and Thumb for exported wrapper code. The output contains
+307 decoded stub addresses and 446 exported wrapper call records. Comparing
+source functions and Exec call sets yields 313 constraints and 212 distinct
+old-call mappings without conflicts. Ambiguous wrappers are omitted. A first
+research regex stalled; its identified Python process was stopped and a linear
+block parser replaced it. That was an analysis-script defect, not guest behavior.
+
+The observed shifts are zero through 0x10, +2 through old 0xD5, and +1 from old
+0xD8 onward. The two intervening private source operations are not independently
+identified. Fast calls in the observed subset retain their numbers. Added a
+separate map of existing handlers, excluding the two unverified newer loader
+extensions. Metadata GTests confirm 172 original and 170 experimental handlers.
+Unknown new calls and the SVC 0xFF/HLE trampoline collision remain unresolved;
+this is not a complete firmware executive specification.
+
+Selection requires EKA2L1_EXPERIMENTAL_SVC_PROFILE=rm807-113.010.1508, epoc10 and
+full-ROM digest b5c1ea63cb6359270c5b7cfb1bb453594e208a01b8aeb5b5e020f37d546f7086.
+Both unknown selection and a one-byte-modified private ROM are rejected by real
+frontend tests. The exact digest does not authenticate other firmware files.
+Default routing remains unchanged. The first full-file GDB attempt failed because
+the stub advertises qXfer:libraries:read but does not implement it. Removing that
+advertisement permits normal file/symbol-file loading; no library introspection
+support is claimed. The six local patches replay successfully on fresh pinned
+source files in the documented order.
+
+The profile first returns heap result zero at 0x700009e8 and reaches GuiMain at
+0x7000002a, then aborts on actual ARM instruction 0xee1d0f70 at 0x804c26f0.
+The raw fallback initially misdecoded it as Thumb; forcing ARM identifies
+TPIDRURO. Arm's architecture manual and the original Symbian SMP scheduler show
+that it is separate from TPIDRURW. Dynarmic lacks the read; dyncom already reads
+it but omits context save/restore. Added independent state/read/preservation on
+both tested macOS backends and zero initialization for a new HLE thread. Writes
+to TPIDRURO and ARM32/12l1r remain outside this patch's verified scope.
+
+Four native cases execute unequal-register reads, context switching and saved
+context restoration on both backends. The initial two-word memory fixture caused
+an interpreter read-ahead exception; mapping a whole code page fixes the test
+fixture. Initial SVC-name assertions also used a std::string where GTest expects
+a C string; the helper now uses c_str without throwing map::at calls. A build
+attempt selected nonexistent target eka2l1; the actual frontend target is
+eka2l1_qt. Corrected builds and native tests pass with exceptions disabled for
+our research translation units.
+
+Live execution then completes RWsSession::Connect with zero, but screen-device
+construction panics E32USER-CBase/69. The original panic definition identifies
+missing CTrapCleanup. Added SDK CTrapCleanup::New before GuiMain, allocation
+failure handling and deletion on return. This uses frozen ordinal 196 and adds
+one EUSER import. No target C++ exception runtime was introduced. The new build
+has ten EUSER and 28 WS32 imports; the validator/package checks now require that
+maintained profile. The old 37-import artifacts are retained privately.
+
+A cleanup-enabled run reaches DrawGui at 0x700003ae. The maintained real GDB test
+inspects count=0, running=true and 360x640 layout, then returns from the function
+at 0x700002f0. Initially retained HAL/chunk breakpoints stopped again inside heap
+setup and produced misleading marker PCs; deleting each completed breakpoint
+before the next stage fixes the script, with PCs asserted at every claimed stop.
+The new startup preserves more registers, so heap argument stack addresses move
+by eight bytes; digest-pinned expectations are updated from the actual trace.
+The default-profile heap failure and real profile-rejection cases still pass.
+Partial source backtraces reach startup, but GDB warns at the raw ARM frame;
+full unwind support remains unverified.
+
+All 146 Pytest cases pass in 73.44 seconds with explicit optional inputs. All six
+root CTest targets and the two new research targets pass. Original image checking
+accepts the updated GUI in eight cases. An isolated installed wheel imports its
+own extension, reproduces ELF/E32, packages the GUI and passes 17 historical/
+installer cases with 38 unresolved slots in the ROMless missing-library control.
+Firmware-specific execution is a separate opt-in frontend test, not a stronger
+claim attached to that static/package verifier. Formatting and whitespace checks
+pass. The final four live checks with model/layout assertions pass in 19.51
+seconds. Logs, GTest JSON, disassembly, fresh copied instances, patch replay and
+wheel evidence are retained under .symbian/belle-abi-research.
+
+Original ZIP SHA-256 and all 13438 baseline paths/sizes/digests are unchanged.
+No frontend or analysis process is intentionally left running. Captured pixels,
+pointer/redraw delivery, normal SDK cleanup/exit, complete DLL initialization,
+new private executive operations and broader firmware selection remain next work.
+The existing 0x10D warning persists even though the drawing function runs. This
+turn advances real GUI execution without declaring full platform compatibility
+or completing the broader mission. No physical phone operation was performed.

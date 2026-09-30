@@ -1,0 +1,12 @@
+diff --git a/src/emu/gdbstub/src/gdbstub.cpp b/src/emu/gdbstub/src/gdbstub.cpp
+--- a/src/emu/gdbstub/src/gdbstub.cpp
++++ b/src/emu/gdbstub/src/gdbstub.cpp
+@@ -516,7 +516,7 @@ namespace eka2l1 {
+             send_reply("T0");
+         } else if (strncmp(query, "Supported", strlen("Supported")) == 0) {
+             // PacketSize needs to be large enough for target xml
+-            send_reply("PacketSize=2000;qXfer:features:read+;qXfer:threads:read+;qXfer:libraries:read+");
++            send_reply("PacketSize=2000;qXfer:features:read+;qXfer:threads:read+");
+         } else if (strncmp(query, "Xfer:features:read:target.xml:",
+                        strlen("Xfer:features:read:target.xml:"))
+             == 0) {

@@ -203,7 +203,7 @@ def test_gui_real_headers_link_without_division_helpers_or_host_runtime(gui):
     assert not report["e32"]["dll"]
     assert {
         item["dll"]: len(item["slots"]) for item in report["e32"]["imports"]
-    } == {"euser.dll": 9, "ws32.dll": 28}
+    } == {"euser.dll": 10, "ws32.dll": 28}
     assert not report["runtime_verified"]
     assert not report["import_execution_verified"]
     assert any(path.endswith("W32STD.H") for path in report["inputs"])
@@ -337,7 +337,7 @@ def test_gui_install_reload_remove_reinstall_and_missing_service_controls(
     ):
         assert result[flag]
     assert not result["missing_system_libraries_rejected"]
-    assert result["unresolved_import_slots_observed"] == 37
+    assert result["unresolved_import_slots_observed"] == 38
     assert result["process_creation_without_system_libraries_observed"]
     assert result["cpu_instructions_executed"] == 0
     for flag in (

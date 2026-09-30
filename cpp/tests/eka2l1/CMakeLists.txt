@@ -105,6 +105,29 @@ target_link_libraries(symbian_firmware_import_probe PRIVATE
                       epoc epockern epocmem epoctiming epocio epocloader GTest::gtest_main)
 # Opt-in research test with a new explicit output root; no physical transport.
 
+add_executable(symbian_rom_abi_probe rom_abi_probe_test.cc
+    "${SYMBIAN_PLATFORM_ROOT}/research/upstream/EKA2L1/src/tests/platform.cpp")
+target_compile_features(symbian_rom_abi_probe PRIVATE cxx_std_20)
+target_compile_options(symbian_rom_abi_probe PRIVATE -fno-exceptions)
+target_link_libraries(symbian_rom_abi_probe PRIVATE
+                      epoc epockern epocmem epoctiming epocio epocloader GTest::gtest_main)
+# Opt-in trusted-firmware analysis, excluded from default CTest and the wheel.
+
+add_executable(symbian_svc_profile_probe svc_profile_probe_test.cc
+    "${SYMBIAN_PLATFORM_ROOT}/research/upstream/EKA2L1/src/tests/platform.cpp")
+target_compile_features(symbian_svc_profile_probe PRIVATE cxx_std_20)
+target_compile_options(symbian_svc_profile_probe PRIVATE -fno-exceptions)
+target_link_libraries(symbian_svc_profile_probe PRIVATE
+                      epoc epockern epocmem epoctiming epocio epocloader GTest::gtest_main)
+add_test(NAME symbian_svc_profile_probe COMMAND symbian_svc_profile_probe)
+
+add_executable(symbian_cpu_register_probe cpu_register_probe_test.cc)
+target_compile_features(symbian_cpu_register_probe PRIVATE cxx_std_20)
+target_compile_options(symbian_cpu_register_probe PRIVATE -fno-exceptions)
+target_link_libraries(symbian_cpu_register_probe PRIVATE cpu GTest::gtest_main)
+add_test(NAME symbian_cpu_register_probe COMMAND symbian_cpu_register_probe)
+set_tests_properties(symbian_cpu_register_probe PROPERTIES TIMEOUT 15)
+
 add_executable(symbian_sis_checksum_oracle sis_checksum_oracle_test.cc)
 target_compile_features(symbian_sis_checksum_oracle PRIVATE cxx_std_20)
 target_compile_options(symbian_sis_checksum_oracle PRIVATE -fno-exceptions)

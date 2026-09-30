@@ -171,7 +171,7 @@ def verify_gui_package(
         "registry_reload_verified": True,
         "uninstall_reinstall_verified": True,
         "missing_system_libraries_rejected": False,
-        "unresolved_import_slots_observed": 37,
+        "unresolved_import_slots_observed": 38,
         "process_creation_without_system_libraries_observed": True,
         "cpu_backends_configured": ["dyncom", "dynarmic"],
         "cpu_instructions_executed": 0,
@@ -184,7 +184,7 @@ def verify_gui_package(
         "limitations": [
             "Installer/registry tests in disposable ROMless C filesystems",
             "Upstream creates a process despite missing EUSER/WS32; "
-            "all 37 import slots remain unresolved",
+            "all 38 import slots remain unresolved",
             "No booted OS, Window Server, visual output or guest debugging",
             "Emulator installer does not establish phone signing policy",
         ],

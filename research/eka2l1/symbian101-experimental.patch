@@ -1,0 +1,122 @@
+diff --git a/src/emu/kernel/include/kernel/svc.h b/src/emu/kernel/include/kernel/svc.h
+index cf4d7a5..1adea58 100644
+--- a/src/emu/kernel/include/kernel/svc.h
++++ b/src/emu/kernel/include/kernel/svc.h
+@@ -342,6 +342,8 @@ namespace eka2l1::epoc {
+ 
+     ///> @brief The SVC map for Symbian S^3.
+     extern const eka2l1::hle::func_map svc_register_funcs_v10;
++    // Experimental, explicitly selected and ROM-fingerprint guarded.
++    extern const eka2l1::hle::func_map svc_register_funcs_v101;
+ 
+     ///> @brief The SVC map for Symbian 8.0.
+     extern const eka2l1::hle::func_map svc_register_funcs_v80;
+diff --git a/src/emu/kernel/src/svc.cpp b/src/emu/kernel/src/svc.cpp
+index 803c79a..a91c299 100644
+--- a/src/emu/kernel/src/svc.cpp
++++ b/src/emu/kernel/src/svc.cpp
+@@ -6105,6 +6105,26 @@ namespace eka2l1::epoc {
+         BRIDGE_REGISTER(0x10D, library_load_prepare)
+     };
+ 
++    const eka2l1::hle::func_map svc_register_funcs_v101 = [] {
++        eka2l1::hle::func_map result;
++        for (const auto &[old_number, handler] : svc_register_funcs_v10) {
++            // Public source/ROM wrapper comparison establishes two insertions
++            // after ExecuteInSupervisorMode and one missing slot between
++            // ThreadStackInfo and CondVarCreate. The two intervening private
++            // operations have no independent semantic mapping yet.
++            // The two newer loader extensions lack that independent mapping.
++            if (old_number == 0xD6 || old_number == 0xD7
++                || old_number == 0x10C || old_number == 0x10D) {
++                continue;
++            }
++            const auto number = old_number <= 0x10 || old_number >= 0x800000
++                ? old_number
++                : old_number < 0xD7 ? old_number + 2 : old_number + 1;
++            result.emplace(number, handler);
++        }
++        return result;
++    }();
++
+     const eka2l1::hle::func_map svc_register_funcs_v94 = {
+         /* FAST EXECUTIVE CALL */
+         BRIDGE_REGISTER(0x00800000, wait_for_any_request),
+diff --git a/src/emu/system/CMakeLists.txt b/src/emu/system/CMakeLists.txt
+index 2e90ee6..684f16b 100644
+--- a/src/emu/system/CMakeLists.txt
++++ b/src/emu/system/CMakeLists.txt
+@@ -32,6 +32,7 @@ target_link_libraries(epoc PRIVATE
+         FAT
+         gdbstub
+         j2me
++        mbedcrypto
+         pugixml)
+ 
+ if (EKA2L1_ENABLE_SCRIPTING_ABILITY)
+diff --git a/src/emu/system/src/epoc.cpp b/src/emu/system/src/epoc.cpp
+index fb5faaf..03325b0 100644
+--- a/src/emu/system/src/epoc.cpp
++++ b/src/emu/system/src/epoc.cpp
+@@ -32,6 +32,8 @@
+ #include <common/random.h>
+ 
+ #include <disasm/disasm.h>
++#include <kernel/svc.h>
++#include <mbedtls/sha256.h>
+ 
+ #include <system/consts.h>
+ #include <system/epoc.h>
+@@ -47,6 +49,7 @@
+ 
+ #include <array>
+ #include <atomic>
++#include <cstdlib>
+ #include <fstream>
+ #include <string>
+ 
+@@ -830,6 +833,33 @@ namespace eka2l1 {
+         }
+ 
+         eka2l1::ro_file_stream rom_fstream(f.get());
++        const char *experimental_profile = std::getenv("EKA2L1_EXPERIMENTAL_SVC_PROFILE");
++        const bool use_symbian101 = experimental_profile && experimental_profile[0];
++        if (use_symbian101) {
++            if (std::string(experimental_profile) != "rm807-113.010.1508"
++                || kern_->get_epoc_version() != epocver::epoc10
++                || rom_fstream.left() > 64 * 1024 * 1024) {
++                LOG_ERROR(SYSTEM, "Unsupported experimental executive profile or ROM");
++                return false;
++            }
++            std::vector<unsigned char> bytes(rom_fstream.left());
++            if (rom_fstream.read(bytes.data(), bytes.size()) != bytes.size()) {
++                return false;
++            }
++            std::array<unsigned char, 32> digest{};
++            if (mbedtls_sha256(bytes.data(), bytes.size(), digest.data(), 0) != 0) {
++                return false;
++            }
++            std::string fingerprint;
++            for (const auto byte : digest) {
++                fingerprint += fmt::format("{:02x}", byte);
++            }
++            if (fingerprint != "b5c1ea63cb6359270c5b7cfb1bb453594e208a01b8aeb5b5e020f37d546f7086") {
++                LOG_ERROR(SYSTEM, "Experimental RM-807 executive profile rejected mismatched ROM fingerprint");
++                return false;
++            }
++            rom_fstream.seek(0, common::seek_where::beg);
++        }
+         std::optional<loader::rom> romf_res = loader::load_rom(reinterpret_cast<common::ro_stream *>(
+             &rom_fstream));
+ 
+@@ -860,5 +890,10 @@ namespace eka2l1 {
+             return false;
+         }
+ 
++        if (use_symbian101) {
++            kern_->get_lib_manager()->svc_funcs_ = epoc::svc_register_funcs_v101;
++            LOG_WARN(SYSTEM, "Using experimental RM-807 Symbian 101 executive profile; full firmware compatibility is unverified");
++        }
++
+         return true;
+     }

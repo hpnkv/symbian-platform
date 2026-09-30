@@ -154,7 +154,7 @@ TEST_P(GuiPackageProbeTest, MissingSystemLibrariesLeaveUnresolvedImportSlots) {
       ++unresolved;
     }
   }
-  EXPECT_EQ(unresolved, 37);
+  EXPECT_EQ(unresolved, 38);
   RecordProperty("unresolved_import_slots", std::to_string(unresolved));
   RecordProperty("process_created_without_system_libraries", "true");
   EXPECT_EQ(exits_, 0);
