@@ -8,7 +8,11 @@ import tempfile
 from pathlib import Path
 
 from symbian.analysis import inspect_elf
-from symbian.e32 import convert_pic_executable, inspect_image
+from symbian.e32 import (
+    convert_imported_executable,
+    convert_pic_executable,
+    inspect_image,
+)
 from symbian.process import run
 from symbian.status import Code, StatusError
 from symbian.toolchain import _compiler
@@ -63,15 +67,46 @@ def build_executable(
         name: run([path, "--version"], cwd=project)
         for name, path in tools.items()
     }
+    imported = options.get("kind") == "e32-import-experiment"
+    proxy_names = options.get("import_proxies", [])
+    if (
+        not isinstance(proxy_names, list)
+        or (imported and not 1 <= len(proxy_names) <= 16)
+        or (not imported and proxy_names)
+        or any(
+            not isinstance(path, str) or not path or ";" in path or "\0" in path
+            for path in proxy_names
+        )
+    ):
+        raise StatusError(Code.INVALID_ARGUMENT, "Invalid import_proxies list")
+    proxies = tuple((project / path).resolve() for path in proxy_names)
+    if len(set(proxies)) != len(proxies) or any(
+        path.is_relative_to(output) for path in proxies
+    ):
+        raise StatusError(
+            Code.INVALID_ARGUMENT, "Distinct proxies must stay outside output"
+        )
+    proxy_bytes = {path: path.read_bytes() for path in proxies}
+
+    def convert(data: bytes) -> bytes:
+        if imported:
+            return convert_imported_executable(
+                data, list(proxy_bytes.values()), uid3
+            )
+        return convert_pic_executable(data, uid3)
+
     output.mkdir(parents=True, exist_ok=True)
     primary = output / "cmake"
     name = options["name"]
 
     def configure(tree: Path) -> cmake_build.Target:
-        return cmake_build.configure(project, tree, name, preset, **tools)
+        return cmake_build.configure(
+            project, tree, name, preset, **tools, import_proxies=proxies
+        )
 
     target = configure(primary)
     inputs = {path: path.read_bytes() for path in target.inputs}
+    inputs.update(proxy_bytes)
     first_log = cmake_build.build(primary, name, tools["cmake"])
     _unchanged(inputs)
     # Ninja's dependency graph adds headers discovered by the compiler.
@@ -81,7 +116,7 @@ def build_executable(
     for path in dependencies:
         inputs.setdefault(path, path.read_bytes())
     first_elf = target.artifact.read_bytes()
-    first_image = convert_pic_executable(first_elf, uid3)
+    first_image = convert(first_elf)
     with tempfile.TemporaryDirectory(prefix="repro-", dir=output) as temporary:
         temporary = Path(temporary)
         repeated = configure(temporary)
@@ -95,7 +130,7 @@ def build_executable(
         if repeated_dependencies != dependencies:
             raise StatusError(Code.ABORTED, "Compiler dependency graph changed")
         second_elf = repeated.artifact.read_bytes()
-        second_image = convert_pic_executable(second_elf, uid3)
+        second_image = convert(second_elf)
         if (first_elf, first_image) != (second_elf, second_image):
             raise StatusError(
                 Code.DATA_LOSS, "Independent CMake ELF/E32 builds differ"
@@ -109,7 +144,11 @@ def build_executable(
     image = output / f"{name}.exe"
     elf = output / f"{name}.elf"
     report = {
-        "schema": "symbian.e32-pic-experiment/v2",
+        "schema": (
+            "symbian.e32-import-experiment/v1"
+            if imported
+            else "symbian.e32-pic-experiment/v2"
+        ),
         "artifact_kind": "experimental-e32-executable",
         "artifact": str(image),
         "sha256": hashlib.sha256(first_image).hexdigest(),
@@ -140,8 +179,15 @@ def build_executable(
         "compile_commands": str(database),
         "symbian_loader_verified": False,
         "runtime_verified": False,
+        "import_execution_verified": False,
         "limitations": [
-            "No SDK/imports, writable data, exports, constructors or packaging",
+            (
+                "Eager function imports only; "
+                "no writable data/exports/constructors"
+                if imported
+                else "No SDK/imports, writable data, exports, "
+                "constructors or packaging"
+            ),
             "All relocations must be retained by the trusted linker",
             "Hand-written absolute addresses cannot be detected",
             "Direct thread exit skips User::Exit cleanup; no resources allowed",

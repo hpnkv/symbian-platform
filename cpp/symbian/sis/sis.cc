@@ -259,6 +259,8 @@ absl::StatusOr<std::string> BuildPackage(std::string_view executable,
   const auto image = e32::InspectImage(executable);
   if (!image.ok())
     return image.status();
+  if (!image->imports.empty())
+    return absl::UnimplementedError("SIS experiment requires an import-free image");
   const auto digest = Digest(executable);
   if (!digest.ok())
     return digest.status();

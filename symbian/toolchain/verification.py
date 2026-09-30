@@ -162,7 +162,11 @@ def verify_probe(artifact: Path, oracles_build: Path, output: Path) -> dict:
     output = output.resolve()
     data = artifact.read_bytes()
     metadata = inspect_image(artifact)
-    if metadata["uid3"] != 0xE0000808 or metadata["entry_offset"] != 0:
+    if (
+        metadata["uid3"] != 0xE0000808
+        or metadata["entry_offset"] != 0
+        or metadata["imports"]
+    ):
         raise StatusError(
             Code.INVALID_ARGUMENT, "Oracles require the maintained e32_probe"
         )

@@ -6,7 +6,7 @@ exact identity, firmware, ROM/Z-drive assets and recovery method are unknown.
 | PLAN milestone | Status | Required evidence |
 | --- | --- | --- |
 | 0 Preservation | Archive tools tested; physical baseline pending | Device inventory, original artifacts, offline archive, tested human recovery appliance |
-| 1 Toolchain | Reproducible ELF→E32; historical validation, CPU and ROMless emulator process tests pass | Matched Belle runtime, imports and complete target ABI tests |
+| 1 Toolchain | Reproducible ELF→E32; historical validation and ROMless process/DLL import tests pass | Matched Belle runtime, SDK imports and complete target ABI tests |
 | 2 Project model | CMake/Ninja, persistent database, native SIS and ROMless install/launch pass | Matched SDK/DLL imports, general application support and Belle installer |
 | 3 Emulator | Native arm64 build, upstream suite, instance smoke and ROMless package tests pass | Matched ROM/Z image, guest boot/launch, complete runtime isolation |
 | 4–9 | Pending | Gates in PLAN.md |
@@ -27,13 +27,14 @@ Artifacts and reports live under .symbian/. clangd consumed the generated ARM
 compilation database with zero errors. Native core code is compiled with
 exceptions disabled; the pybind11 boundary retains canonical status codes.
 
-Verification: 78 Pytest cases pass with the patched emulator, native oracles
-and public kernel source supplied. The 28 platform GTest cases and 36 independent
+Verification: 87 Pytest cases pass with the patched emulator, native oracles
+and public kernel source supplied. The 32 platform GTest cases and 42 independent
 oracle GTest cases pass on Apple Silicon. The preceding emulator checkpoint
 passed 288 upstream EKA2L1 cases; its sources are unchanged here. Black/Ruff,
 clang-format and generated stubs pass; clangd target checks have zero errors.
 Without optional dependency paths, four emulator smoke cases and two native
 verification integration cases and one public-header research case skip.
+One additional development DLL runtime integration case needs the native oracles.
 EKA2L1's parser omits header CRC verification;
 Nokia's original checksum and whole-image validator independently check it.
 The unchanged historical validator accepts this image using host type adapters.
@@ -74,5 +75,13 @@ clangd reports zero errors. The public request status is eight bytes with flags.
 Proxy and link ELF builds repeat; SDK/source/header dependencies are recorded.
 An isolated wheel installation includes the target probe resource and builds
 the same proxy and linked ELF.
-These are link contracts, not a verified 808 SDK or E32 import runtime. Writable
-LLD GOT/PLT placement and import conversion remain open. See SDK.md for replay.
+These are link contracts, not a verified 808 SDK. See SDK.md for replay.
+
+The E32 import profile places function GOT slots in its code region and resolves
+versioned symbols against original proxy ordinals. A compiled development DLL at
+ordinal 7 executes on both EKA2L1 CPU backends; the patched slot, function PC,
+changed-input failure and repeated launch are checked in six cases. Historical
+validation/checksums accept both files. Two-DLL links and malformed controls pass.
+An isolated installed wheel reproduces the same imported ELF/E32 and metadata.
+General DLL production, writable data, matched SDK services, startup/cleanup and
+Belle runtime remain open. See IMPORTS.md.

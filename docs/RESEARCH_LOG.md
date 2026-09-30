@@ -614,3 +614,106 @@ Use CMake/Ninja for real objects, dependency tracking and clangd. Document in SD
 identity, actual target euser bytes, startup heap/TLS/static initialization,
 leave/cleanup semantics, data exports, full C++ ABI and matched Belle runtime.
 The phone's identity, preservation and recovery baseline remain unknown.
+
+## 2026-09-30 — Eager E32 imports and compiled development DLL execution
+
+**Question:** Can modern LLD function calls become E32 ordinal imports without
+retaining an ELF dynamic loader, and can an independent emulator consumer execute
+the imported compiled function after relocating both code segments?
+
+**Historical behaviour and evidence:** Read the pinned f32image.h import block
+and ValidateImports implementation, buildtools' E32ImageFile::ProcessImports,
+and EKA2L1's libmanager.cpp/codeseg.cpp. ELF-derived E32 import lists contain
+code-relative slot offsets. Slot low/high halves contain ordinal/addend. The
+loader locates a dependency, looks up its ordinal in the attached process and
+writes the relocated export address into the slot. The public converter rejects
+imports into its writable data segment. ELF proxy soname and target LinkAs DLL
+identity remain distinct. The original source/checkouts stay isolated research
+dependencies; no historical dynamic loader is added to the platform.
+
+**Experiments:** An LLD ET_EXEC custom script puts .plt, .got.plt and dynamic
+metadata in one RX load, with a matching read-only PT_DYNAMIC. A retained Thumb
+BLX reaches the ARM PLT veneer, which computes its slot address relative to PC.
+That veneer needs no load-address relocation after the slot is eagerly patched.
+The original-header shared ELF from the preceding experiment remains outside
+this ET_EXEC layout.
+
+Native conversion resolves undefined global function symbols against version
+records and validated proxy metadata, then writes original ordinals and canonical
+E32 import blocks. Retained static calls must reach their own PC-relative LLD
+veneers. Dynamic tags, all GOT slots, identities, counts, bounds and string
+tables are checked. Only zero-addend R_ARM_JUMP_SLOT function imports are
+supported; data/BSS/TLS/constructors, RELA and decorated DLL identity remain open.
+DLL case aliases, duplicate/ambiguous functions and unsupported references fail.
+The import-free path preserves its previous ELF/E32 bytes and checks.
+
+The first two-DLL test failed because I assumed interleaved 32-byte version
+records. LLD packs 16-byte version headers followed by 16-byte auxiliary records.
+Readelf exposed the offsets; corrected that layout and reran the test. The native
+parser now checks this exact generated profile. Both DLL identities retain
+independent ordinals, 7 and 641. This does not generalize to every ELF version
+record producer or export type.
+
+The modern CMake project path accepts explicit external proxy inputs, hashes
+them with compiler-discovered dependencies and builds twice. Native bindings
+copy Python data before releasing the GIL and use canonical Abseil statuses.
+Core code keeps exceptions disabled. No scheduler, callback or reference holder
+is added to production libraries. SIS packaging and the old maintained-probe
+verifier explicitly retain their import-free scope.
+
+Built our own integer function as Thumb C++ in an independent development DLL
+fixture. An isolated research producer uses Nokia's original image declarations
+and checksums, adds an ordinal-7 export and missing-export bitmap, and validates
+the whole result. Its fixed function placement is asserted in the linker script.
+This producer is outside the wheel and is not general DLL conversion.
+It implements no EUSER function and claims no SDK startup/cleanup compatibility.
+
+Six EKA2L1 cases cover dyncom/dynarmic, positive/changed input and repeated launch
+after failure. They parse the import block independently, locate the loaded DLL,
+compare the patched slot to its relocated export, observe the CPU at that
+function, and check kernel exit reasons 0/42 and address-space release. No loader,
+relocation, scheduler or kernel dispatch algorithm was replaced. Added passive
+observation hooks to the existing research harness. The phone was not accessed.
+
+The maintained artifacts are:
+
+- ELF SHA-256: `5e7eb4c1662c975de9f0d45675ac8738679bc3a2d98160d67d6b4e44319f841b`
+- E32 EXE SHA-256: `8f6cbed4ca3fe010be4d73b276d3671218e9cb3c3e4fbae29284048bced5e1a4`
+- Development DLL SHA-256: `e90cbeb360f6ededc04b746f2827ff54ff09d33a06029b1a26b2542f0dc608b0`
+
+**Validation:** All 87 Pytest cases pass with optional emulator, native oracle
+and public-header paths supplied. All 32 platform GTests and 42 independent
+oracle cases pass. The historical checksum and seven whole-image validator cases
+also pass against each new EXE/DLL fixture. The missing-import negative control
+now clears iImportOffset explicitly, so it remains a meaningful missing-section
+check when testing an imported image. Core builds have no compiler warnings.
+Black/Ruff, clang-format, generated stubs and whitespace checks pass. Clangd
+checks examples/import_probe/probe.cc with its persistent database: zero errors.
+The previous upstream 288-case suite concerns unchanged emulator sources and
+was not rerun for this converter/harness change.
+
+Retained evidence: .symbian/import-probe/report.json,
+.symbian/import-layout/verification-report.json (private input copies, binary
+and artifact digests, 14 EXE checks and eight DLL checks), pytest.log, clangd.log,
+and the independent validator/runtime JSON and logs.
+
+Built and installed the new wheel in an isolated environment outside the source
+import path. Its CLI builds the same proxy, ELF and E32 using the packaged CMake
+module and native extension; import metadata and both executable digests agree.
+Evidence is in .symbian/import-wheel-check-mz171mjk/wheel-result.json, including
+the installed module path, wheel digest, compiler graph and both build logs.
+
+**Conclusion:** Modern LLD calls can be converted into eagerly patched E32
+function imports. The unchanged emulator consumer resolves and executes the
+relocated compiled export in this development DLL experiment. No ELF dynamic
+runtime or historical compiler environment was required.
+
+**Implementation decision:** Publish the native imported-executable converter,
+canonical inspection and separate e32-import-experiment CMake project profile.
+Keep the development DLL producer as a research oracle until general DLL
+conversion has independent evidence. Document replay and limits in IMPORTS.md.
+
+**Remaining uncertainty:** Production DLL/export/relocation generation, actual
+target EUSER and decorated module identity, SDK heap/TLS/DLL/static startup,
+User::Exit cleanup/leaves, data imports, full ABI and matched Belle runtime.
+Preservation, exact phone identity and recovery baseline remain unknown.

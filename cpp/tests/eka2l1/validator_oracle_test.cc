@@ -81,6 +81,7 @@ TEST_F(ValidatorOracleTest, RequiresSpaceForEntryCodeSegmentId) {
 
 TEST_F(ValidatorOracleTest, RejectsMissingImportSectionDespiteCorrectCrc) {
   header_.iDllRefTableCount = 1;
+  header_.iImportOffset = 0;
   UpdateHeaderCrc();
   EXPECT_EQ(Validate(), KErrCorrupt);
 }

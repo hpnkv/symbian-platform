@@ -1,0 +1,6 @@
+[project]
+name = "import_probe"
+kind = "e32-import-experiment"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000808
+import_proxies = ["../../.symbian/probe-dll/probe.dso"]

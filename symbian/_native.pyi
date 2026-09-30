@@ -9,6 +9,8 @@ import typing
 
 __all__: list[str] = [
     "E32ImageInfo",
+    "E32ImportBlock",
+    "E32ImportSlot",
     "Elf32Header",
     "ProxyInfo",
     "ProxySources",
@@ -16,6 +18,7 @@ __all__: list[str] = [
     "SisPackageInfo",
     "SisPackageOptions",
     "build_sis",
+    "convert_imported_executable",
     "convert_pic_executable",
     "generate_import_proxy",
     "inspect_e32",
@@ -41,9 +44,23 @@ class E32ImageInfo:
     @property
     def header_crc(self) -> int: ...
     @property
+    def imports(self) -> list[E32ImportBlock]: ...
+    @property
     def secure_id(self) -> int: ...
     @property
     def uid3(self) -> int: ...
+
+class E32ImportBlock:
+    @property
+    def dll(self) -> str: ...
+    @property
+    def slots(self) -> list[E32ImportSlot]: ...
+
+class E32ImportSlot:
+    @property
+    def code_offset(self) -> int: ...
+    @property
+    def ordinal(self) -> int: ...
 
 class Elf32Header:
     """
@@ -149,6 +166,15 @@ def build_sis(
 ) -> bytes:
     """
     Build the canonical unsigned SISX experiment, releasing the GIL.
+    """
+
+def convert_imported_executable(
+    data: bytes,
+    proxies: collections.abc.Sequence[bytes],
+    uid3: typing.SupportsInt | typing.SupportsIndex,
+) -> bytes:
+    """
+    Convert retained calls through eager ordinal slots, releasing the GIL.
     """
 
 def convert_pic_executable(

@@ -76,8 +76,9 @@ It is not a general ELF authenticity/validity verdict. The research artifacts:
 
 The linked probe uses R_ARM_JUMP_SLOT in a writable GOT/PLT segment. The current
 E32 converter supports an import-free PIC profile and correctly rejects it.
-Next work must establish an E32-compatible import-slot layout and ordinal/import
-conversion, then test against actual target DLLs. SDK startup additionally
+The separate eager import profile provides a code-region slot layout, ordinal
+conversion and development DLL execution; see IMPORTS.md. Actual target DLLs
+remain untested. SDK startup additionally
 initializes heap/TLS and DLL/static entry points before E32Main; User::Exit performs
 cleanup. Linking its symbol does not justify replacing those contracts with the
 existing direct-thread-exit experiment.

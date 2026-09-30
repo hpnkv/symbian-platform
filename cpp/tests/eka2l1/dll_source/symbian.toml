@@ -1,0 +1,5 @@
+[project]
+name = "probe_impl"
+kind = "e32-pic-experiment"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000810

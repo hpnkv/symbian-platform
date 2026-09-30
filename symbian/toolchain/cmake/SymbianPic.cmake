@@ -9,6 +9,15 @@ function(_symbian_project_file output filename)
   set(${output} "${resolved}" PARENT_SCOPE)
 endfunction()
 
+function(symbian_add_import_executable target)
+  if(NOT SYMBIAN_IMPORT_PROXIES)
+    message(FATAL_ERROR "Import experiment requires SYMBIAN_IMPORT_PROXIES")
+  endif()
+  symbian_add_pic_executable(${target} ${ARGN})
+  target_link_options(${target} PRIVATE --hash-style=sysv --no-dynamic-linker)
+  target_link_libraries(${target} PRIVATE ${SYMBIAN_IMPORT_PROXIES})
+endfunction()
+
 function(symbian_add_pic_executable target)
   cmake_parse_arguments(PARSE_ARGV 1 PIC "" "STARTUP;LINKER_SCRIPT" "SOURCES")
   if(PIC_UNPARSED_ARGUMENTS OR PIC_KEYWORDS_MISSING_VALUES OR

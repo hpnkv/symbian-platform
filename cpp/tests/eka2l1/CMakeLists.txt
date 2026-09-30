@@ -94,3 +94,24 @@ target_link_libraries(symbian_sis_checksum_oracle PRIVATE
 add_test(NAME symbian_sis_checksum_oracle COMMAND symbian_sis_checksum_oracle)
 set_tests_properties(symbian_sis_checksum_oracle PROPERTIES
   ENVIRONMENT "SYMBIAN_SIS_TEST_PACKAGE=${SYMBIAN_SIS_TEST_PACKAGE}" TIMEOUT 15)
+
+# Trusted development DLL fixture, separate from the production wheel.
+add_executable(symbian_dll_fixture dll_fixture.cc)
+target_compile_features(symbian_dll_fixture PRIVATE cxx_std_20)
+target_compile_options(symbian_dll_fixture PRIVATE -fno-exceptions
+                       -Wno-invalid-offsetof)
+target_include_directories(symbian_dll_fixture PRIVATE
+    "${SYMBIAN_KERNEL_SOURCE_DIR}/kernel/eka/include"
+    "${SYMBIAN_KERNEL_SOURCE_DIR}/userlibandfileserver/fileserver/inc")
+target_link_libraries(symbian_dll_fixture PRIVATE symbian_historical_checksum)
+
+add_executable(symbian_import_probe import_probe_test.cc
+    "${SYMBIAN_PLATFORM_ROOT}/research/upstream/EKA2L1/src/tests/platform.cpp")
+target_compile_features(symbian_import_probe PRIVATE cxx_std_20)
+target_compile_options(symbian_import_probe PRIVATE -fno-exceptions)
+target_link_libraries(symbian_import_probe PRIVATE
+                      epoc epockern epocmem epoctiming epocio epocloader GTest::gtest_main)
+add_test(NAME symbian_import_probe COMMAND symbian_import_probe)
+set_tests_properties(symbian_import_probe PROPERTIES
+  ENVIRONMENT "SYMBIAN_E32_TEST_IMAGE=${SYMBIAN_PLATFORM_ROOT}/.symbian/import-probe/import_probe.exe;SYMBIAN_DLL_TEST_IMAGE=${SYMBIAN_PLATFORM_ROOT}/.symbian/import-probe/probe.dll"
+  TIMEOUT 15)

@@ -10,10 +10,17 @@ def convert_pic_executable(data: bytes, uid3: int) -> bytes:
     return require_native().convert_pic_executable(data, uid3)
 
 
+def convert_imported_executable(
+    data: bytes, proxies: list[bytes], uid3: int
+) -> bytes:
+    """Converts retained eager function calls using native ordinal proxies."""
+    return require_native().convert_imported_executable(data, proxies, uid3)
+
+
 def inspect_image(path: Path) -> dict:
     """Checks the narrow E32 profile and returns its native metadata."""
     info = require_native().inspect_e32(path.read_bytes())
-    return {
+    result = {
         field: getattr(info, field)
         for field in (
             "uid3",
@@ -25,6 +32,21 @@ def inspect_image(path: Path) -> dict:
             "secure_id",
         )
     }
+    result["imports"] = [
+        {
+            "dll": block.dll,
+            "slots": [
+                {"code_offset": slot.code_offset, "ordinal": slot.ordinal}
+                for slot in block.slots
+            ],
+        }
+        for block in info.imports
+    ]
+    return result
 
 
-__all__ = ["convert_pic_executable", "inspect_image"]
+__all__ = [
+    "convert_pic_executable",
+    "convert_imported_executable",
+    "inspect_image",
+]

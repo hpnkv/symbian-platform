@@ -150,3 +150,11 @@ maintained fixture after native inspection; these upstream parsers are not a
 bounded public API for untrusted packages. See docs/PACKAGING.md for
 `toolchain verify-package`, which retains 35 complete cases and input/binary
 hashes while keeping Belle and phone flags false.
+
+The eager import experiment adds `symbian_import_probe` with six development
+DLL execution cases. Its separate `symbian_dll_fixture` producer uses the
+original EPL image declarations/checksums; the GPL process harness consumes
+that trusted fixture without implementing an SDK system library. Build and
+replay instructions, fixture scope and artifact hashes are in
+[docs/IMPORTS.md](../../docs/IMPORTS.md). The existing import-free verifier's
+case count and scope stay unchanged.

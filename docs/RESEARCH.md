@@ -331,6 +331,24 @@ The SDK headers stay outside the wheel and version control.
 
 Default LLD linking puts R_ARM_JUMP_SLOT imports into a writable GOT/PLT segment;
 that research ELF remains outside the native converter's supported profile.
-Actual import-slot conversion and execution against target DLLs are the next
-contract to establish. Startup and User::Exit cleanup still require target
+The separate eager import experiment below establishes code-region slot
+conversion; execution against matched target DLLs remains open.
+Startup and User::Exit cleanup still require target
 heap/TLS/DLL initialization. See SDK.md for scoped CLI and oracle replay.
+
+## 15. Eager E32 function imports
+
+The converter resolves versioned undefined functions against bounded ordinal
+proxies and emits canonical ELF-format E32 import blocks. LLD's PC-relative ARM
+veneers reach GOT slots placed in the code region for eager loader patching.
+Retained calls, DLL/version identities, GOT coverage and dynamic records are
+checked in native code. Two-DLL tests verify LLD's packed version records and
+separate original ordinals.
+
+An independent development DLL supplies our compiled integer function at ordinal
+7. EKA2L1 patches the import slot to its relocated export. Both CPU backends
+execute the function, complete changed-input failure exits and launch again.
+Nokia's unchanged validator/checksums accept the EXE and fixture DLL. These tests
+supply no EUSER, Belle material or SDK startup/cleanup. Production DLL conversion
+remains open; the original-header User::Exit experiment remains link evidence.
+See IMPORTS.md and RESEARCH_LOG.md for scope, replay and hashes.

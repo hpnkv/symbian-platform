@@ -83,7 +83,9 @@ phone installation remain unverified. No physical-device executor is exposed.
 Frozen export and original SDK-header research is available through
 `toolchain import-proxy`. See [docs/SDK.md](docs/SDK.md) for a repeatable
 User::Exit ordinal proxy, typed original-header link probe and clangd checks.
-E32 import execution remains unverified.
+The eager E32 import profile executes a compiled development DLL through
+EKA2L1's loader and kernel. See [docs/IMPORTS.md](docs/IMPORTS.md) for build and
+research-test replay. Matched Belle SDK/runtime imports remain unverified.
 
 ```sh
 cmake --preset debug

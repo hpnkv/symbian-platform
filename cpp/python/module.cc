@@ -63,6 +63,26 @@ symbian::e32::ImageInfo InspectE32(const py::bytes& data) {
   return *result;
 }
 
+py::bytes ConvertImportedExecutable(const py::bytes& data,
+                                    const std::vector<py::bytes>& proxies,
+                                    uint32_t uid3) {
+  const std::string bytes = data;
+  std::vector<std::string> libraries;
+  libraries.reserve(proxies.size());
+  for (const auto& proxy : proxies) {
+    libraries.emplace_back(proxy);
+  }
+  absl::StatusOr<std::string> result;
+  {
+    const py::gil_scoped_release release;
+    result = symbian::e32::ConvertImportedExecutable(bytes, libraries, uid3);
+  }
+  if (!result.ok()) {
+    RaiseStatus(result.status());
+  }
+  return py::bytes(*result);
+}
+
 py::bytes BuildSis(const py::bytes& data, uint32_t uid, const std::string& name,
                    const std::string& vendor,
                    const std::string& executable_name,
@@ -149,6 +169,14 @@ PYBIND11_MODULE(_native, module) {
       "inspect_elf32", &InspectElf32, py::arg("data"),
       "Inspect complete ELF32 bytes, releasing the GIL for native work.");
   using symbian::e32::ImageInfo;
+  using symbian::e32::ImportBlock;
+  using symbian::e32::ImportSlot;
+  py::class_<ImportSlot>(module, "E32ImportSlot")
+      .def_readonly("code_offset", &ImportSlot::code_offset)
+      .def_readonly("ordinal", &ImportSlot::ordinal);
+  py::class_<ImportBlock>(module, "E32ImportBlock")
+      .def_readonly("dll", &ImportBlock::dll)
+      .def_readonly("slots", &ImportBlock::slots);
   py::class_<ImageInfo>(module, "E32ImageInfo",
                         "Experimental E32 metadata; no runtime verdict.")
       .def_readonly("uid3", &ImageInfo::uid3)
@@ -157,11 +185,16 @@ PYBIND11_MODULE(_native, module) {
       .def_readonly("code_size", &ImageInfo::code_size)
       .def_readonly("code_base", &ImageInfo::code_base)
       .def_readonly("entry_offset", &ImageInfo::entry_offset)
-      .def_readonly("secure_id", &ImageInfo::secure_id);
+      .def_readonly("secure_id", &ImageInfo::secure_id)
+      .def_readonly("imports", &ImageInfo::imports);
   module.def("convert_pic_executable", &ConvertPicExecutable, py::arg("data"),
              py::arg("uid3"), "Convert a restricted, retained-relocation ELF.");
   module.def("inspect_e32", &InspectE32, py::arg("data"),
              "Check the experimental E32 profile, releasing the GIL.");
+  module.def(
+      "convert_imported_executable", &ConvertImportedExecutable,
+      py::arg("data"), py::arg("proxies"), py::arg("uid3"),
+      "Convert retained calls through eager ordinal slots, releasing the GIL.");
   using symbian::sis::PackageOptions;
   py::class_<PackageOptions>(module, "SisPackageOptions")
       .def_readonly("uid", &PackageOptions::uid)

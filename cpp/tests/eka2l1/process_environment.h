@@ -99,6 +99,10 @@ class ProcessEnvironment : public ::testing::TestWithParam<arm_emulator_type> {
 
   virtual uint32_t DriveAttributes() { return io_attrib_write_protected; }
 
+  virtual void BeforeExecute(eka2l1::kernel::process*) {}
+
+  virtual void ObserveStep(uint32_t) {}
+
   void TearDown() override {
     if (timer_) {
       timer_->stop();
@@ -135,6 +139,7 @@ class ProcessEnvironment : public ::testing::TestWithParam<arm_emulator_type> {
     thread->increase_access_count();
     ASSERT_TRUE(process->get_mem_model());
     const auto entry = process->get_entry_point_address();
+    ASSERT_NO_FATAL_FAILURE(BeforeExecute(process));
     RecordProperty("emulator_os_profile", "epoc10");
     RecordProperty("cpu_backend", GetParam() == arm_emulator_type::dyncom
                                       ? "dyncom"
@@ -168,6 +173,7 @@ class ProcessEnvironment : public ::testing::TestWithParam<arm_emulator_type> {
       if (inject_wrong_input) {
         cpu_->flush_tlb();
       }
+      ObserveStep(cpu_->get_pc());
       cpu_->step();
       saw_thumb |= cpu_->is_thumb_mode();
     }

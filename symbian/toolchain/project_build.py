@@ -95,6 +95,7 @@ def configure(
     ninja: str,
     compiler: str,
     linker: str,
+    import_proxies: tuple[Path, ...] = (),
 ) -> Target:
     """Configures a Ninja tree and reads CMake's declared executable graph."""
     query = tree / ".cmake/api/v1/query/client-symbian-platform"
@@ -115,6 +116,8 @@ def configure(
             f"-DCMAKE_LINKER={linker}",
             f"-DCMAKE_MAKE_PROGRAM={ninja}",
             "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DSYMBIAN_IMPORT_PROXIES="
+            + ";".join(str(path) for path in import_proxies),
         ],
         cwd=project,
     )
