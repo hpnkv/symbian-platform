@@ -1,0 +1,12 @@
+[project]
+name = "cxx20_module_probe"
+kind = "e32-pic-experiment"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000808
+
+[package]
+uid = 0xe0000809
+name = "Symbian E32 Probe"
+vendor = "Symbian research"
+executable_name = "probe.exe"
+version = [1, 0, 0]

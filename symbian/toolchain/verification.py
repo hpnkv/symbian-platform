@@ -146,10 +146,10 @@ def run_oracles(
 
 
 def verify_probe(artifact: Path, oracles_build: Path, output: Path) -> dict:
-    """Checks the maintained e32_probe, preserving native test evidence.
+    """Checks a maintained integer probe, preserving native test evidence.
 
     Args:
-        artifact: Converter output for the maintained e32_probe example.
+        artifact: Converted e32_probe or cxx20_module_probe executable.
         oracles_build: EKA2L1 CMake build containing platform-tests executables.
         output: Directory for independent test JSON, logs and the final report.
 
@@ -170,7 +170,7 @@ def verify_probe(artifact: Path, oracles_build: Path, output: Path) -> dict:
         or metadata["code_relocations"]
     ):
         raise StatusError(
-            Code.INVALID_ARGUMENT, "Oracles require the maintained e32_probe"
+            Code.INVALID_ARGUMENT, "Oracles require a maintained integer probe"
         )
     checks, copies = run_oracles(
         {"SYMBIAN_E32_TEST_IMAGE": artifact}, ORACLES, oracles_build, output
@@ -230,7 +230,7 @@ def verify_pointers(
     """Checks the maintained pointer probe with the original loader consumers.
 
     Args:
-        artifact: Converted examples/pointer_probe executable.
+        artifact: Converted pointer_probe or cxx20_probe executable.
         oracles_build: Research build with the independent GTest consumers.
         output: Directory preserving test JSON, logs, copies and final evidence.
         package: Optional canonical SISX wrapping this exact maintained image.
@@ -264,7 +264,7 @@ def verify_pointers(
     ):
         raise StatusError(
             Code.INVALID_ARGUMENT,
-            "Oracles require the maintained pointer_probe",
+            "Oracles require a maintained callback/virtual probe",
         )
     checks, copies = run_oracles(
         {"SYMBIAN_E32_TEST_IMAGE": artifact},

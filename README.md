@@ -118,3 +118,6 @@ Const callback tables and simple C++ virtual dispatch now run through the
 unchanged emulator loader with native pointer relocations. Their packaged probe
 installs and launches on both CPU backends. Use `toolchain verify-pointers`
 with an optional `--package`; see [docs/POINTERS.md](docs/POINTERS.md).
+
+C++20 language, named-module and selected library experiments are documented in
+[docs/CXX20.md](docs/CXX20.md), with maintained examples and loader evidence.

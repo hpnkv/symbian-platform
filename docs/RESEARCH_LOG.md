@@ -936,3 +936,81 @@ multiple/virtual inheritance and RTTI, target heap and User::Exit cleanup/leaves
 full Symbian C++ ABI, actual system DLL identities, matched Belle runtime and
 physical installation. Exact phone identity, firmware/ROM/Z preservation and
 recovery baseline remain unknown. No device operation ran.
+
+
+## 2026-09-30 — C++20 language, module and library boundaries
+
+**Question:** Can modern C++20 programs be supported, beyond selecting a compiler
+standard flag? What needs a target runtime rather than only compiler support?
+
+**Experiments:** Added examples/cxx20_probe with actual concepts/requires,
+structural class template arguments, consteval, designated initialization,
+constrained generic lambdas, defaulted equality, constinit callback tables,
+char8_t and a no_unique_address layout assertion. C++17, signed constrained
+arguments and dynamic constinit initialization fail for the expected reason;
+positive controls use the actual ARM compilation command. Apple Clang 21 builds
+it without C/C++ system headers or hosted libraries. Optimization preserves the
+earlier pointer ELF/E32 bytes. Both backends pass mapped pointer/state checks,
+indirect/virtual dispatch, failure/relaunch and the complete 21-case SIS loop.
+
+Homebrew libc++ 23.1.2's unmodified host configuration fails for ARM availability
+and thread configuration. A separate research __config_site disables those and
+unsupported host facilities, leaving upstream header bodies unchanged. Upstream
+Clang 23.1.2 compiles bit/concepts/span with its freestanding resource headers;
+coroutine fails for memcpy, ranges for memory/mbstate_t/stdio, atomic for memory
+and time declarations. These failures identify missing port work, not language
+impossibility. The maintained opt-in library callback uses span, rotate and
+population count, with a separate expected arithmetic reference. Apple Clang 21
+builds this distinct E32; all 21 loader/installer checks pass. Its 186 input
+hashes include upstream headers and the isolated configuration. No target libc++
+binary, C library or host SDK is linked. Matching runtime/library configuration
+will be required for a real port, as LLVM's vendor documentation specifies.
+
+Upstream Clang 23.1.2 builds a minimal named module; the installed Apple compiler
+rejects it with the tested ARM flags. Added examples/cxx20_module_probe with a
+CMake CXX_MODULES file set and explicit target scanning. Independent CMake trees
+produce identical ELF/E32, retain a BMI and record actual compilation commands.
+Changing its immediate function and arithmetic body rebuilds an unchanged
+importer and changes the artifact. The earlier exported constexpr object
+experiment generated init_array; conversion correctly rejected it. The
+maintained module uses an immediate function, requiring no static startup.
+Its original parser/checksum/validator, both CPU backends at two addresses,
+real kernel and SIS installer loop passes all 35 cases.
+
+Package verification now supplies an independent hashlib reference for the exact
+caller-supplied executable, like the pointer verifier. It preserves original
+hash baselines for direct native tests, checks package payload size before
+execution, and rejects report/hash output collisions with either input. The
+original package and new module package both pass. All inherited fixture/filter
+isolation remains in the existing common verifier; no format logic moves into
+Python and no scheduler/callback/holder is introduced.
+
+**Validation:** All 124 Pytest cases pass with optional emulator, public headers,
+module compiler, libc++ configuration and oracle paths supplied. Root native
+platform GTests and optional SDK ordinal oracle pass. Existing independent
+loader/installer binaries are reused without algorithm changes: language 21,
+selected library 21, module 35 checks. An isolated installed wheel outside the
+source import path reproduces all three ELF/E32/SIS variants and repeats all 77
+checks. Its module path, wheel digest, nested reports and source/tool hashes are
+in .symbian/cxx20-probe/wheel-result.json. Commands/header logs are in
+.symbian/cxx20-research; full Pytest evidence is in cxx20-probe/pytest.log.
+The unchanged upstream 288-case checkpoint was not repeated.
+
+**Writable-data investigation:** Public kernel sf_lepoc.cpp and EKA2L1 apply
+separate code/data deltas. A real two-load PIC link emits REL32 across those
+segments, which cannot assume the linked distance survives loading. An explicit
+non-PIC link emits ABS32 with code/data targets: five code-to-data words and
+three initialized-data words, including a BSS pointer and Thumb callback.
+Artifacts remain in .symbian/data-research. The incomplete typed relocation/API
+sketch was removed before publication; no writable-data support is claimed.
+A future implementation must distinguish source section from referenced segment
+and reject cross-segment relative contracts, then validate initialization/BSS
+and mapped words under differing deltas.
+
+**Decision and remaining work:** Publish the scoped C++20 probes and CXX20.md.
+A broad target standard library needs C library/compiler-rt, allocation/failure
+policy, ABI configuration, SDK heap/TLS/DLL startup and cleanup, static lifetime
+and synchronization/event-loop adapters. Modules do not expose historical DLL
+interfaces automatically. Complete conformance, matched Belle and physical
+execution remain unverified; hardware/firmware identity is still unknown.
+The user's subsequent GUI example request is the next active slice.

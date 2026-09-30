@@ -404,3 +404,29 @@ The isolated installed wheel reproduces the artifacts and 21-case loop.
 This adds ordinary C++ dispatch evidence without a hosted target runtime.
 Full inheritance/RTTI/lifetime ABI, writable data/TLS, SDK initialization/cleanup
 and matched Belle remain open. See POINTERS.md and RESEARCH_LOG.md.
+
+
+## 18. C++20 language, modules and header-only library experiments
+
+C++20 is feasible in the bounded native E32 path. A maintained C++20 probe
+uses concepts/requires, a constrained generic lambda, a structural class
+argument, designated initialization, consteval, constinit, defaulted equality,
+char8_t and no_unique_address. Compiler negative controls fail for the expected
+language/constraint/initialization reasons. Its optimized ELF/E32 matches the
+already executed callback/virtual probe.
+
+A separate named-module example uses upstream Clang and CMake's CXX_MODULES
+scanning. It builds reproducibly, retains an actual BMI and rebuilds an unchanged
+importer when its exported immediate function changes. Its 35-case image/package
+loop passes on both emulator CPU backends. Exporting a constexpr object caused
+an init_array and was correctly rejected; function-only modules do not establish
+static lifetime support.
+
+An isolated header configuration permits external libc++ bit/concepts/span
+operations without a target library binary. A distinct callback executes
+rotation and population count in the 21-case installer/loader loop. Unchanged
+host configuration fails; coroutine/ranges/atomic expose missing target C-library
+contracts in this experiment. LLVM lists no supported Symbian libc++ port.
+Neither language support nor this header subset establishes a hosted standard
+library, complete ABI, matched Belle or physical execution. See CXX20.md for
+sources, compiler versions, replay and the remaining target runtime work.

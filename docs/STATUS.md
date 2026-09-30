@@ -126,3 +126,21 @@ in independently validated layout cases. External absolute pointers, GOT_PREL,
 writable data/BSS/TLS and global lifetime support remain open. Simple virtual
 dispatch does not prove the full target C++ ABI. Matched Belle and physical
 execution are still unverified; no device operation ran.
+
+
+C++20 now has maintained language and named-module examples. Concepts/requires,
+structural class arguments, consteval/constinit, designated initialization,
+constrained lambdas, equality and small layout contracts compile with explicit
+controls. The language probe passes 21 independent loader/installer cases. A
+separately configured libc++ bit/concepts/span experiment produces distinct
+machine code and passes the same loop without linking a hosted runtime.
+The module example uses upstream Clang/CMake scanning, retains its BMI, checks
+importer invalidation and passes the 35-case image/package loop. An isolated
+installed wheel reproduces all three ELF/E32/SIS variants and all 77 checks.
+
+All 124 Pytest cases pass with explicit optional compiler/header/oracle inputs;
+the native platform and SDK ordinal checks pass. Evidence is under
+.symbian/cxx20-probe, cxx20-check, cxx20-library, cxx20-library-check,
+cxx20-module and cxx20-module-check. See CXX20.md. Complete standard library,
+coroutine/thread/atomic runtime, global lifetime, writable data/BSS/TLS, SDK
+services and matched Belle remain open. No physical-device operation ran.

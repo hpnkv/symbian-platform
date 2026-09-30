@@ -157,3 +157,28 @@ def test_real_package_install_launch_uninstall_cli(image, tmp_path, capsys):
     for check in report["oracles"]:
         assert Path(check["results"]).is_file()
         assert Path(check["log"]).is_file()
+
+
+@pytest.mark.parametrize(
+    ("filename", "colliding_input"),
+    [("report.json", "package"), ("expected-image.sha1", "executable")],
+)
+def test_verification_preserves_inputs_at_generated_output_paths(
+    image, tmp_path, filename, colliding_input
+):
+    packaged = packaging.package(PROJECT, image, tmp_path / "package")
+    package = Path(packaged["artifact"])
+    executable = image
+    output = tmp_path / "checks"
+    output.mkdir()
+    collision = output / filename
+    original = (package if colliding_input == "package" else image).read_bytes()
+    collision.write_bytes(original)
+    if colliding_input == "package":
+        package = collision
+    else:
+        executable = collision
+    with pytest.raises(StatusError) as caught:
+        verify_package(package, executable, tmp_path / "missing", output)
+    assert caught.value.code == Code.INVALID_ARGUMENT
+    assert collision.read_bytes() == original

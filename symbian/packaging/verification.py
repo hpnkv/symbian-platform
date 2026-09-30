@@ -17,7 +17,7 @@ def verify_package(
     """Runs image, CPU, kernel, historical SIS CRC and installer checks.
 
     Args:
-        package: Canonical package for the maintained e32_probe.
+        package: Canonical e32_probe or cxx20_module_probe package.
         executable: Corresponding unchanged E32 output, used as an oracle.
         oracles_build: Native EKA2L1 build with the research GTest executables.
         output: Directory retaining input copies, logs and native test results.
@@ -28,6 +28,14 @@ def verify_package(
     package, executable, oracles_build, output = (
         path.resolve() for path in (package, executable, oracles_build, output)
     )
+    inputs = {package, executable}
+    if any(
+        path.resolve() in inputs
+        for path in (output / "report.json", output / "expected-image.sha1")
+    ):
+        raise StatusError(
+            Code.INVALID_ARGUMENT, "Verification would overwrite input"
+        )
     metadata = inspect_package(package)
     data = package.read_bytes()
     image = executable.read_bytes()
@@ -38,16 +46,20 @@ def verify_package(
         or metadata["vendor"] != "Symbian research"
         or metadata["executable_name"] != "probe.exe"
         or metadata["version"] != [1, 0, 0]
+        or metadata["executable_size"] != len(image)
     ):
         raise StatusError(
             Code.INVALID_ARGUMENT,
             "Oracles require the maintained probe package",
         )
     image_report = verify_probe(executable, oracles_build, output / "image")
+    reference = output / "expected-image.sha1"
+    reference.write_bytes(hashlib.sha1(image).digest())
     checks, copies = run_oracles(
         {
             "SYMBIAN_SIS_TEST_PACKAGE": package,
             "SYMBIAN_E32_TEST_IMAGE": executable,
+            "SYMBIAN_E32_TEST_HASH": reference,
         },
         ORACLES,
         oracles_build,
@@ -63,6 +75,7 @@ def verify_package(
         "executable_sha256": hashlib.sha256(image).hexdigest(),
         "tested_copy": str(copies["SYMBIAN_SIS_TEST_PACKAGE"]),
         "sis": metadata,
+        "expected_image_sha1": reference.read_bytes().hex(),
         "image_verification": image_report,
         "oracles": checks,
         "tests_passed": image_report["tests_passed"]
