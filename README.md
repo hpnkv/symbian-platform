@@ -112,3 +112,9 @@ export tables, absence bitmaps and code relocations. Both emulator CPU backends
 execute a native generated development DLL, with actual mapped export pointers
 checked. See [docs/IMPORTS.md](docs/IMPORTS.md) for build and replay. These ROMless
 experiments do not establish matched Belle, SDK startup or physical execution.
+
+
+Const callback tables and simple C++ virtual dispatch now run through the
+unchanged emulator loader with native pointer relocations. Their packaged probe
+installs and launches on both CPU backends. Use `toolchain verify-pointers`
+with an optional `--package`; see [docs/POINTERS.md](docs/POINTERS.md).

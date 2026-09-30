@@ -44,7 +44,9 @@ struct ImageInfo {
 };
 
 // Accepts ARM EABI5 ET_EXEC linked with --emit-relocs: one RX PT_LOAD,
-// internal PC-relative references, EKA2 ARM entry, no imports/data/exports.
+// internal relative references and resolved ABS32 pointers into RX code,
+// EKA2 ARM entry, no imports/writable application data/exports.
+// Named .data.rel.ro tables are placed in the read-only code mapping.
 // Input must come from a trusted link retaining ALL relocations. This cannot
 // detect stripped relocations or absolute addresses hand-written in code.
 // UID3 must be in the experimental unprotected 0xe0000000..0xefffffff range.

@@ -257,3 +257,57 @@ def test_dll_conversion_preserves_imports_alongside_frozen_exports(
             tmp_path / "checks",
         )
         assert all(check["passed"] for check in checks)
+
+
+@pytest.mark.skipif(not TOOLS, reason="Clang/LLD required")
+def test_internal_pointer_relocations_coexist_with_eager_imports(
+    imported, tmp_path
+):
+    _, _, root = imported
+    project = tmp_path / "project"
+    shutil.copytree(PROJECT, project)
+    (project / "probe.cc").write_text(
+        'extern "C" unsigned SymbianProbeTransform(unsigned);\n'
+        'extern "C" int InvokeImport() { volatile unsigned input = 16;\n'
+        "return SymbianProbeTransform(input) == 0x918U ? 0 : 42; }\n"
+        "using Function = int (*)();\n"
+        'extern "C" __attribute__((visibility("hidden"))) const Function '
+        "functions[] = {InvokeImport};\n"
+        'extern "C" int ProbeMain() { '
+        "const Function* volatile table = functions; "
+        "return table[0](); }\n"
+    )
+    script = project / "image.ld"
+    script.write_text(
+        script.read_text().replace(
+            " .data :",
+            " .data.rel.ro : { *(.data.rel.ro .data.rel.ro.*) } :code\n"
+            " .data :",
+        )
+    )
+    manifest = project / "symbian.toml"
+    manifest.write_text(
+        manifest.read_text().replace(
+            "../../.symbian/probe-dll/probe.dso", str(root / "proxy/probe.dso")
+        )
+    )
+    report = toolchain.build(project, tmp_path / "build")
+    assert len(report["e32"]["code_relocations"]) == 1
+    assert report["e32"]["imports"][0]["slots"][0]["ordinal"] == 7
+    image = bytearray(Path(report["artifact"]).read_bytes())
+    relocation = struct.unpack_from("<I", image, 112)[0]
+    import_slot = report["e32"]["imports"][0]["slots"][0]["code_offset"]
+    # Code-pointer relocation must not alias an eager ordinal slot.
+    struct.pack_into("<H", image, relocation + 16, 0x1000 | import_slot)
+    with pytest.raises(StatusError):
+        inspect_e32(bytes(image))
+    if os.environ.get("SYMBIAN_EKA2L1_ORACLES_BUILD"):
+        from symbian.toolchain.verification import run_oracles
+
+        checks, _ = run_oracles(
+            {"SYMBIAN_E32_TEST_IMAGE": Path(report["artifact"])},
+            (("symbian_checksum_oracle", 1), ("symbian_validator_oracle", 7)),
+            Path(os.environ["SYMBIAN_EKA2L1_ORACLES_BUILD"]).resolve(),
+            tmp_path / "checks",
+        )
+        assert all(check["passed"] for check in checks)

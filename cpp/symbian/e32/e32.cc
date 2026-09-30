@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <set>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -52,10 +53,40 @@ using internal::ResolvedImports;
 using internal::Section;
 using internal::Segment;
 
+// ELF marks relocation-bearing const data writable before load-time fixups.
+// This profile stores only named RELRO tables inside its RX code mapping.
+absl::StatusOr<bool> IsRelro(std::string_view elf,
+                             const analysis::Elf32Header& header,
+                             size_t section_header, const Section& section) {
+  if (section.type != 1 || (section.flags & 5) != 1) {
+    return false;
+  }
+  const uint16_t names_index = Read16(elf, 50);
+  if (names_index == 0 || names_index >= header.section_count) {
+    return false;
+  }
+  const size_t names = Read32(elf, 32) + names_index * Read16(elf, 46);
+  const uint32_t offset = Read32(elf, names + 16);
+  const uint32_t size = Read32(elf, names + 20);
+  const uint32_t name_offset = Read32(elf, section_header);
+  if (Read32(elf, names + 4) != 3 || !Within(elf.size(), offset, size) ||
+      name_offset >= size) {
+    return absl::DataLossError("Invalid ELF RELRO section name table");
+  }
+  std::string_view name = elf.substr(offset + name_offset, size - name_offset);
+  const size_t end = name.find('\0');
+  if (end == std::string_view::npos) {
+    return absl::DataLossError("Unterminated ELF section name");
+  }
+  name = name.substr(0, end);
+  return name == ".data.rel.ro" || name.starts_with(".data.rel.ro.");
+}
+
 absl::Status CheckRelocations(std::string_view elf,
                               const std::vector<Section>& sections,
                               const Segment& code,
-                              const ResolvedImports* imports) {
+                              const ResolvedImports* imports,
+                              std::vector<uint32_t>* pointers) {
   bool retained = false;
   for (size_t section_index = 0; section_index < sections.size();
        ++section_index) {
@@ -85,10 +116,10 @@ absl::Status CheckRelocations(std::string_view elf,
       const uint32_t info = Read32(elf, section.offset + i + 4);
       const uint32_t symbol = info >> 8;
       const uint32_t type = info & 0xff;
-      // ARM ABI PC-relative relocations only. No ABS32, MOVW/MOVT, GOT,
-      // dynamic relocations or imported symbols are silently discarded.
-      if (type != 1 && type != 3 && type != 10 && type != 28 && type != 29 &&
-          type != 30 && type != 42) {
+      // PC-relative references and resolved ABS32 words into the RX mapping.
+      // MOVW/MOVT, GOT and unknown dynamic contracts remain unsupported.
+      if (type != 2 && type != 1 && type != 3 && type != 10 && type != 28 &&
+          type != 29 && type != 30 && type != 42) {
         return absl::UnimplementedError("Unsupported ARM relocation type");
       }
       if (location < target.address ||
@@ -120,12 +151,42 @@ absl::Status CheckRelocations(std::string_view elf,
           !Within(code.size, address - code.address, 1)) {
         return absl::UnimplementedError("Relocation needs an external symbol");
       }
+      // R_ARM_ABS32 words in the linked ET_EXEC are already resolved.
+      if (type == 2) {
+        if (location % 4) {
+          return absl::UnimplementedError(
+              "E32 absolute pointer must be word aligned");
+        }
+        if (imports != nullptr && (section.info == imports->got_index ||
+                                   section.info == imports->dynamic_index)) {
+          return absl::UnimplementedError(
+              "Absolute references in import metadata unsupported");
+        }
+        const uint32_t offset = location - code.address;
+        const uint32_t value = Read32(elf, code.offset + offset);
+        const uint8_t symbol_type = static_cast<uint8_t>(elf[sym + 12]) & 15;
+        if (value < code.address ||
+            !Within(code.size, value - code.address, 1) ||
+            (symbol_type == 2 && ((value ^ Read32(elf, sym + 4)) & 1))) {
+          return absl::DataLossError(
+              "Resolved ELF absolute pointer/state outside code");
+        }
+        if (pointers->size() >= 65535) {
+          return absl::ResourceExhaustedError("Too many E32 absolute pointers");
+        }
+        pointers->push_back(offset);
+      }
     }
   }
   if (!retained) {
     return absl::FailedPreconditionError(
         "Retained runtime relocation records required; link with "
         "--emit-relocs");
+  }
+  std::sort(pointers->begin(), pointers->end());
+  if (std::adjacent_find(pointers->begin(), pointers->end()) !=
+      pointers->end()) {
+    return absl::DataLossError("Duplicate ELF absolute pointer relocation");
   }
   return absl::OkStatus();
 }
@@ -134,7 +195,8 @@ absl::StatusOr<Segment> ExtractCode(std::string_view elf,
                                     const analysis::Elf32Header& header,
                                     const std::vector<std::string>* proxies,
                                     ResolvedImports* imports,
-                                    std::vector<Section>* output_sections) {
+                                    std::vector<Section>* output_sections,
+                                    std::vector<uint32_t>* pointers) {
   if (header.type != 2 || header.machine != 40 || header.flags >> 24 != 5 ||
       (header.flags & 0x400)) {
     return absl::UnimplementedError("Requires ARM EABI5 soft-float ET_EXEC");
@@ -175,6 +237,7 @@ absl::StatusOr<Segment> ExtractCode(std::string_view elf,
     return absl::DataLossError("Missing ELF code segment");
   }
   std::vector<Section> sections;
+  std::set<size_t> relro;
   for (size_t i = 0; i < header.section_count; ++i) {
     const size_t s = Read32(elf, 32) + i * Read16(elf, 46);
     Section section{Read32(elf, s + 4),  Read32(elf, s + 8),
@@ -190,7 +253,15 @@ absl::StatusOr<Segment> ExtractCode(std::string_view elf,
       return absl::UnimplementedError("Dynamic/RELA ELF is unsupported");
     }
     if ((section.flags & 2) && section.size) {
-      if ((section.flags & (proxies == nullptr ? 0x401 : 0x400)) ||
+      const auto readonly = IsRelro(elf, header, s, section);
+      if (!readonly.ok()) {
+        return readonly.status();
+      }
+      if (*readonly) {
+        relro.insert(i);
+      }
+      if ((section.flags & 0x400) ||
+          (proxies == nullptr && (section.flags & 1) && !*readonly) ||
           section.type == 8 || (section.type >= 14 && section.type <= 16)) {
         return absl::UnimplementedError("Data/TLS/constructors unsupported");
       }
@@ -210,7 +281,8 @@ absl::StatusOr<Segment> ExtractCode(std::string_view elf,
     *imports = std::move(*resolved);
     for (size_t i = 0; i < sections.size(); ++i) {
       if ((sections[i].flags & 1) && sections[i].size &&
-          i != imports->got_index && i != imports->dynamic_index) {
+          i != imports->got_index && i != imports->dynamic_index &&
+          !relro.contains(i)) {
         return absl::UnimplementedError(
             "Writable application data unsupported");
       }
@@ -233,7 +305,7 @@ absl::StatusOr<Segment> ExtractCode(std::string_view elf,
     }
   }
   const absl::Status status = CheckRelocations(
-      elf, sections, code, proxies == nullptr ? nullptr : imports);
+      elf, sections, code, proxies == nullptr ? nullptr : imports, pointers);
   if (!status.ok()) {
     return status;
   }
@@ -268,7 +340,9 @@ absl::StatusOr<std::string> ConvertExecutable(
   }
   ResolvedImports imports;
   std::vector<Section> sections;
-  const auto segment = ExtractCode(elf, *header, proxies, &imports, &sections);
+  std::vector<uint32_t> relocations;
+  const auto segment =
+      ExtractCode(elf, *header, proxies, &imports, &sections, &relocations);
   if (!segment.ok()) {
     return segment.status();
   }
@@ -331,8 +405,11 @@ absl::StatusOr<std::string> ConvertExecutable(
   bytes[154] = bitmap.empty() ? 0 : 1;  // No holes or full bitmap.
   bytes.replace(155, bitmap.size(), bitmap);
   bytes.append(code);
-  std::vector<uint32_t> relocations;
   if (definition != nullptr) {
+    if (exports.size() > 65535 - relocations.size()) {
+      return absl::ResourceExhaustedError(
+          "Combined E32 pointer/export relocation limit exceeded");
+    }
     bytes.resize(header_size + code_size, '\0');
     Put32(bytes, 88, header_size + export_prefix + 4);
     Put32(bytes, 92, static_cast<uint32_t>(exports.size()));
@@ -481,9 +558,8 @@ absl::StatusOr<ImageInfo> InspectImage(std::string_view bytes) {
                       bytes.substr(155, description_size))) {
       return absl::DataLossError("Noncanonical E32 export bitmap");
     }
-  } else if (Read32(bytes, 88) || Read32(bytes, 92) || relocation_offset) {
-    return absl::UnimplementedError(
-        "Executable exports/relocations unsupported");
+  } else if (Read32(bytes, 88) || Read32(bytes, 92)) {
+    return absl::UnimplementedError("Executable exports unsupported");
   }
   const absl::Status status = CheckEntry(
       bytes.substr(header_size, application_size), Read32(bytes, 72));
@@ -494,6 +570,7 @@ absl::StatusOr<ImageInfo> InspectImage(std::string_view bytes) {
       relocation_offset == 0 ? bytes.size() : relocation_offset;
   size_t consumed = header_size + size;
   std::vector<ImportBlock> imports;
+  std::set<uint32_t> import_slots;
   if (count != 0) {
     if (size % 4 || import_offset != consumed || import_end < consumed ||
         import_end > bytes.size()) {
@@ -506,12 +583,17 @@ absl::StatusOr<ImageInfo> InspectImage(std::string_view bytes) {
       return decoded.status();
     }
     imports = std::move(*decoded);
+    for (const auto& block : imports) {
+      for (const auto& slot : block.slots) {
+        import_slots.insert(slot.code_offset);
+      }
+    }
     consumed = import_end;
   } else if (import_offset != 0) {
     return absl::DataLossError("Unexpected E32 import section");
   }
   std::vector<uint32_t> relocations;
-  if (dll) {
+  if (relocation_offset != 0) {
     if (relocation_offset != consumed || relocation_offset >= bytes.size()) {
       return absl::DataLossError("Missing/misplaced E32 export relocations");
     }
@@ -521,11 +603,24 @@ absl::StatusOr<ImageInfo> InspectImage(std::string_view bytes) {
       return decoded.status();
     }
     relocations = std::move(*decoded);
-    if (relocations != expected_relocations) {
+    if (!std::includes(relocations.begin(), relocations.end(),
+                       expected_relocations.begin(),
+                       expected_relocations.end())) {
       return absl::DataLossError(
           "E32 export pointers must all be text relocations");
     }
-  } else if (consumed != bytes.size()) {
+    for (const uint32_t offset : relocations) {
+      const uint32_t value = Read32(bytes, header_size + offset);
+      if (import_slots.contains(offset) ||
+          (!Within(application_size, offset, 4) &&
+           !std::binary_search(expected_relocations.begin(),
+                               expected_relocations.end(), offset)) ||
+          value < base || !Within(application_size, value - base, 1)) {
+        return absl::DataLossError(
+            "E32 pointer relocation outside application code/table");
+      }
+    }
+  } else if (dll || consumed != bytes.size()) {
     return absl::DataLossError("Unexpected E32 trailing data");
   }
   return ImageInfo{.uid3 = uid3,

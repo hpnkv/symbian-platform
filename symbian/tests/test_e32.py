@@ -69,7 +69,7 @@ def test_project_auxiliary_files_cannot_escape(tmp_path):
 
 
 @pytest.mark.skipif(not TOOLS_AVAILABLE, reason="Clang/LLD unavailable")
-def test_absolute_data_reference_rejected_after_real_link(tmp_path):
+def test_unaligned_absolute_pointer_rejected_after_real_link(tmp_path):
     project = tmp_path / "project"
     shutil.copytree(PROJECT, project)
     (project / "probe.cc").write_text(
@@ -77,7 +77,9 @@ def test_absolute_data_reference_rejected_after_real_link(tmp_path):
         '\nextern "C" int ProbeMain() { return 0; }\n'
     )
     with (project / "startup.S").open("a") as stream:
-        stream.write('.section .rodata, "a", %progbits\n.word ProbeMain\n')
+        stream.write(
+            '.section .rodata, "a", %progbits\n.byte 0\n.word ProbeMain\n'
+        )
     with pytest.raises(StatusError) as caught:
         toolchain.build(project, tmp_path / "output")
     assert caught.value.code == Code.UNIMPLEMENTED

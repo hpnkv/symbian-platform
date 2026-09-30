@@ -172,3 +172,12 @@ It does not satisfy the stronger mapped-export checks. See docs/IMPORTS.md and
 docs/RESEARCH_LOG.md for the source-derived contract and evidence correction.
 Checksum and validator adapters now retain complete bounded headers through the
 maximum full export bitmap; upstream checksum/validator algorithms are unchanged.
+
+
+The pointer experiment adds `symbian_pointer_probe` with six process cases.
+They independently decode the four text relocations, inspect mapped pointer
+values, and observe the ARM callback, Thumb callback and virtual method on both
+CPU backends. Replay and optional SIS install/launch checks are in
+[docs/POINTERS.md](../../docs/POINTERS.md). The package harness accepts the
+verifier's independently computed `SYMBIAN_E32_TEST_HASH` reference file; the
+original probe retains its recorded hash when that explicit input is absent.

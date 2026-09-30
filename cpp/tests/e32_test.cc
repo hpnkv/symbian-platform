@@ -56,11 +56,11 @@ TEST(E32Test, RejectsUnsupportedTargetAndUid) {
             absl::StatusCode::kUnimplemented);
 }
 
-TEST(E32Test, RejectsAbsoluteAndExternalRelocations) {
+TEST(E32Test, RejectsOutOfRangeAbsoluteAndExternalRelocations) {
   std::string elf = Executable();
   Put32(elf, 352, 0x102);  // R_ARM_ABS32.
   EXPECT_EQ(ConvertPicExecutable(elf, 0xe0000808).status().code(),
-            absl::StatusCode::kUnimplemented);
+            absl::StatusCode::kDataLoss);
   Put32(elf, 352, 0x11c);
   Put16(elf, 346, 0);  // Undefined symbol.
   EXPECT_EQ(ConvertPicExecutable(elf, 0xe0000808).status().code(),
@@ -183,6 +183,45 @@ TEST(E32Test, ImportCallMustReachItsOwnPcRelativeVeneerSlot) {
   EXPECT_FALSE(internal::CheckImportCall(elf, code, 0x8000, 28, 64).ok());
 }
 
+TEST(E32PointerTest, EmitsRuntimeFixupWithoutReapplyingLinkedSymbol) {
+  std::string elf = Executable();
+  Put32(elf, 100, 0x8019);
+  Put32(elf, 336, 0x8019);
+  elf[344] = 0x12;
+  Put32(elf, 352, 0x102);
+  const auto image = ConvertPicExecutable(elf, 0xe0000808);
+  ASSERT_TRUE(image.ok()) << image.status();
+  const auto info = InspectImage(*image);
+  ASSERT_TRUE(info.ok()) << info.status();
+  EXPECT_EQ(info->code_relocations, std::vector<uint32_t>{16});
+  EXPECT_EQ(Read32(*image, 156 + 16), 0x8019);  // Preserve Thumb bit.
+  EXPECT_FALSE(info->dll);
+  std::string changed = *image;
+  Put32(changed, 156 + 16, 0xfffffffc);
+  EXPECT_FALSE(InspectImage(changed).ok());
+}
+
+TEST(E32PointerTest, RejectsBadPointerStateAlignmentAndDuplicateFixups) {
+  std::string elf = Executable();
+  Put32(elf, 100, 0x8018);
+  Put32(elf, 336, 0x8019);
+  elf[344] = 0x12;
+  Put32(elf, 352, 0x102);
+  EXPECT_EQ(ConvertPicExecutable(elf, 0xe0000808).status().code(),
+            absl::StatusCode::kDataLoss);
+  Put32(elf, 100, 0x8019);
+  Put32(elf, 348, 0x8011);
+  EXPECT_EQ(ConvertPicExecutable(elf, 0xe0000808).status().code(),
+            absl::StatusCode::kUnimplemented);
+  Put32(elf, 348, 0x8010);
+  elf.append(8, '\0');
+  Put32(elf, 356, 0x8010);
+  Put32(elf, 360, 0x102);
+  Put32(elf, 256, 16);
+  EXPECT_EQ(ConvertPicExecutable(elf, 0xe0000808).status().code(),
+            absl::StatusCode::kDataLoss);
+}
+
 // Extend the bounded format fixture with a real named function symbol.
 std::string ExportedExecutable() {
   std::string elf = Executable();
@@ -211,6 +250,21 @@ TEST(E32DllTest, ResolvesFrozenOrdinalsAndRelocatesAbsentSlots) {
   EXPECT_EQ(info->code_relocations.size(), 7);
   EXPECT_EQ(Read32(*image, Read32(*image, 88) - 4), 7);
   EXPECT_EQ(static_cast<uint8_t>((*image)[155]), 0xc0);
+}
+
+TEST(E32DllTest, KeepsApplicationPointerAndExportRelocationsTogether) {
+  std::string elf = ExportedExecutable();
+  Put32(elf, 100, 0x8018);
+  Put32(elf, 352, 0x102);
+  const auto image =
+      ConvertDll(elf, "EXPORTS\nFunction @ 7 NONAME\n", {}, 0xe0000810);
+  ASSERT_TRUE(image.ok()) << image.status();
+  const auto info = InspectImage(*image);
+  ASSERT_TRUE(info.ok()) << info.status();
+  EXPECT_EQ(info->code_relocations.size(), 8);
+  EXPECT_EQ(info->code_relocations[0], 16);
+  EXPECT_EQ(info->code_relocations[1], 36);
+  EXPECT_EQ(Read32(*image, 156 + 16), 0x8018);
 }
 
 TEST(E32DllTest, PreservesThumbBitAndSupportsLargeVariableHeader) {

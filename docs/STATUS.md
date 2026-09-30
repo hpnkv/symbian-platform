@@ -15,7 +15,7 @@ No physical-device executor, flashing capability or recovery automation exists.
 Source inspection is not an emulator runtime test. Record implementation and
 verification results in RESEARCH_LOG.md before changing milestone status.
 
-Current working commands: `doctor`, `toolchain probe`, `toolchain verify-probe`,
+Current working commands: `doctor`, `toolchain probe`, `toolchain verify-probe`, `toolchain verify-pointers`,
 `toolchain verify-package`, `toolchain import-proxy`, experimental
 `build`/`package`, ELF/E32/SIS/import-proxy `inspect`, `preserve create/verify`,
 and informational `device policy`.
@@ -27,15 +27,16 @@ Artifacts and reports live under .symbian/. clangd consumed the generated ARM
 compilation database with zero errors. Native core code is compiled with
 exceptions disabled; the pybind11 boundary retains canonical status codes.
 
-Verification: 101 Pytest cases pass with the patched emulator, native oracles
-and public kernel source supplied. The 38 platform GTest cases and 42 independent
+Verification: 112 Pytest cases pass with the patched emulator, native oracles
+and public kernel source supplied. The 41 platform GTest cases and 48 independent
 oracle GTest cases pass on Apple Silicon. The preceding emulator checkpoint
 passed 288 upstream EKA2L1 cases; its sources are unchanged here. Black/Ruff,
 clang-format and generated stubs pass; clangd target checks have zero errors.
 Without optional dependency paths, four emulator smoke cases and two native
 verification integration cases and one public-header research case skip.
 One additional development DLL runtime case and three variable-header DLL
-validation cases need the native oracles.
+validation cases need the native oracles. Two additional pointer/combined-layout
+cases need them.
 EKA2L1's parser omits header CRC verification;
 Nokia's original checksum and whole-image validator independently check it.
 The unchanged historical validator accepts this image using host type adapters.
@@ -84,7 +85,7 @@ ordinal 7 executes on both EKA2L1 CPU backends; the patched slot, function PC,
 changed-input failure and repeated launch are checked in six cases. Historical
 validation/checksums accept both files. Two-DLL links and malformed controls pass.
 An isolated installed wheel reproduces the same imported ELF/E32 and metadata.
-General DLL production, writable data, matched SDK services, startup/cleanup and
+General writable-data DLL support, matched SDK services, startup/cleanup and
 Belle runtime remain open. See IMPORTS.md.
 
 
@@ -106,3 +107,22 @@ reproduces the native DLL and ELF and their metadata. Evidence is in
 .symbian/native-dll/report.json, verification-report.json and wheel-result.json.
 General pointer relocations, writable data/BSS/TLS, constructors, SDK startup,
 matched target DLLs and Belle runtime remain open. No device operation ran.
+
+
+Retained internal ABS32 words now generate E32 text relocations, permitting
+named RELRO tables within the RX mapping. A maintained multi-source C++ probe
+executes an ARM callback, a Thumb callback and a virtual method, and reads a
+constant-data pointer with an addend. Both emulator backends verify all four
+mapped words and instruction state at the three indirect targets, changed-input
+failure, repeated launch and address-space release. Its native SIS installs,
+launches, reloads the registry, uninstalls and reinstalls in separate cases.
+The new verify-pointers command retains 14 image/dispatch checks or 21 with the
+package. An isolated wheel reproduces ELF/E32/SIS and repeats all 21 checks.
+Evidence is in .symbian/pointer-probe, .symbian/pointer-package and
+.symbian/pointer-check. See POINTERS.md for replay and the trusted-link contract.
+
+Internal pointer relocations also coexist with eager imports and frozen exports
+in independently validated layout cases. External absolute pointers, GOT_PREL,
+writable data/BSS/TLS and global lifetime support remain open. Simple virtual
+dispatch does not prove the full target C++ ABI. Matched Belle and physical
+execution are still unverified; no device operation ran.

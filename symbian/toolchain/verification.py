@@ -93,7 +93,7 @@ def run_oracles(
     env = {
         key: value
         for key, value in os.environ.items()
-        if not key.startswith("GTEST_")
+        if not key.startswith(("GTEST_", "SYMBIAN_"))
     }
     env.update({key: str(path) for key, path in copies.items()})
     checks = []
@@ -167,6 +167,7 @@ def verify_probe(artifact: Path, oracles_build: Path, output: Path) -> dict:
         or metadata["entry_offset"] != 0
         or metadata["dll"]
         or metadata["imports"]
+        or metadata["code_relocations"]
     ):
         raise StatusError(
             Code.INVALID_ARGUMENT, "Oracles require the maintained e32_probe"
@@ -205,6 +206,154 @@ def verify_probe(artifact: Path, oracles_build: Path, output: Path) -> dict:
             "No Belle ROM/Z, target DLLs, services or full C++ ABI test",
         ],
     }
+    report_path = output / "report.json"
+    report["report"] = str(report_path)
+    report_path.write_text(
+        json.dumps(report, indent=2) + "\n", encoding="utf-8"
+    )
+    return report
+
+
+POINTER_ORACLES = (
+    ("symbian_checksum_oracle", 1),
+    ("symbian_validator_oracle", 7),
+    ("symbian_pointer_probe", 6),
+)
+
+
+def verify_pointers(
+    artifact: Path,
+    oracles_build: Path,
+    output: Path,
+    package: Path | None = None,
+) -> dict:
+    """Checks the maintained pointer probe with the original loader consumers.
+
+    Args:
+        artifact: Converted examples/pointer_probe executable.
+        oracles_build: Research build with the independent GTest consumers.
+        output: Directory preserving test JSON, logs, copies and final evidence.
+        package: Optional canonical SISX wrapping this exact maintained image.
+
+    Returns:
+        Scoped ROMless pointer/virtual dispatch and optional installer evidence.
+        Matched Belle and physical execution remain unverified.
+    """
+    artifact, oracles_build, output = (
+        path.resolve() for path in (artifact, oracles_build, output)
+    )
+    inputs = {artifact}
+    if package is not None:
+        package = package.resolve()
+        inputs.add(package)
+    generated = [output / "report.json"]
+    if package is not None:
+        generated.append(output / "expected-image.sha1")
+    if any(path.resolve() in inputs for path in generated):
+        raise StatusError(
+            Code.INVALID_ARGUMENT, "Verification would overwrite input"
+        )
+    data = artifact.read_bytes()
+    metadata = inspect_image(artifact)
+    if (
+        metadata["uid3"] != 0xE0000808
+        or metadata["entry_offset"] != 0
+        or metadata["dll"]
+        or metadata["imports"]
+        or len(metadata["code_relocations"]) != 4
+    ):
+        raise StatusError(
+            Code.INVALID_ARGUMENT,
+            "Oracles require the maintained pointer_probe",
+        )
+    checks, copies = run_oracles(
+        {"SYMBIAN_E32_TEST_IMAGE": artifact},
+        POINTER_ORACLES,
+        oracles_build,
+        output,
+    )
+    report = {
+        "schema": "symbian.pointer-probe-verification/v1",
+        "artifact": str(artifact),
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "tested_copy": str(copies["SYMBIAN_E32_TEST_IMAGE"]),
+        "e32": metadata,
+        "oracles": checks,
+        "tests_passed": sum(count for _, count in POINTER_ORACLES),
+        "historical_image_validation_passed": True,
+        "mapped_pointer_words_verified": True,
+        "indirect_calls_verified": True,
+        "virtual_dispatch_verified": True,
+        "eka2l1_process_verified": True,
+        "kernel_exit_verified": True,
+        "cpu_backends": ["dyncom", "dynarmic"],
+        "emulator_os_profile": "epoc10",
+        "symbian_loader_verified": False,
+        "runtime_verified": False,
+        "eka2l1_install_launch_verified": False,
+        "physical_installation_verified": False,
+        "limitations": [
+            "Maintained ARM/Thumb callback and virtual method probe",
+            "Single inheritance without RTTI/exceptions; no full C++ ABI test",
+            "No writable data/TLS/static lifetime or SDK startup",
+            "ROMless epoc10 host kernel; no matched Belle ROM/Z or system DLLs",
+        ],
+    }
+    if package is not None:
+        from symbian.packaging import inspect_package
+
+        package = package.resolve()
+        package_bytes = package.read_bytes()
+        package_metadata = inspect_package(package)
+        if any(
+            package_metadata[field] != expected
+            for field, expected in {
+                "uid": 0xE0000809,
+                "name": "Symbian E32 Probe",
+                "vendor": "Symbian research",
+                "executable_name": "probe.exe",
+                "version": [1, 0, 0],
+                "executable_uid": 0xE0000808,
+                "executable_size": len(data),
+            }.items()
+        ):
+            raise StatusError(
+                Code.INVALID_ARGUMENT, "Unexpected pointer package"
+            )
+        output.mkdir(parents=True, exist_ok=True)
+        reference = output / "expected-image.sha1"
+        reference.write_bytes(hashlib.sha1(data).digest())
+        package_checks, package_copies = run_oracles(
+            {
+                "SYMBIAN_E32_TEST_IMAGE": artifact,
+                "SYMBIAN_SIS_TEST_PACKAGE": package,
+                "SYMBIAN_E32_TEST_HASH": reference,
+            },
+            (("symbian_sis_checksum_oracle", 1), ("symbian_package_probe", 6)),
+            oracles_build,
+            output / "package",
+        )
+        if package.read_bytes() != package_bytes:
+            raise StatusError(
+                Code.ABORTED, "Pointer package changed during checks"
+            )
+        report.update(
+            {
+                "package": str(package),
+                "package_sha256": hashlib.sha256(package_bytes).hexdigest(),
+                "tested_package": str(
+                    package_copies["SYMBIAN_SIS_TEST_PACKAGE"]
+                ),
+                "package_oracles": package_checks,
+                "expected_image_sha1": reference.read_bytes().hex(),
+                "eka2l1_install_launch_verified": True,
+                "registry_reload_verified": True,
+                "uninstall_reinstall_verified": True,
+                "tests_passed": report["tests_passed"] + 7,
+            }
+        )
+    if artifact.read_bytes() != data:
+        raise StatusError(Code.ABORTED, "Pointer probe changed during checks")
     report_path = output / "report.json"
     report["report"] = str(report_path)
     report_path.write_text(

@@ -5,6 +5,8 @@ graph and compilation database; the platform's native library converts the
 linked ELF to E32. This currently supports import-free PIC executables with
 one RX segment. SDK imports, writable data, constructors and matched Belle runtime validation
 remain open. The one-executable package path is documented in PACKAGING.md.
+Internal code-pointer relocations and named RELRO tables are now supported;
+POINTERS.md demonstrates const callbacks, C++ virtual dispatch and packaging.
 The separate `e32-import-experiment` profile supports eager function imports and
 ROMless development DLL tests. The `e32-dll-experiment` profile emits frozen
 function exports and their relocations; see IMPORTS.md for both constraints.

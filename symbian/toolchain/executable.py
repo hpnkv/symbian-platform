@@ -219,13 +219,15 @@ def build_executable(
         "limitations": [
             (
                 "Frozen function exports and eager imports only; "
-                "no writable data/TLS/constructors or target C++ runtime"
+                "RELRO tables allowed; no writable data/TLS/constructors "
+                "or target C++ runtime"
                 if dll
                 else (
                     "Eager function imports only; "
                     "no writable data/exports/constructors"
                     if imported
-                    else "No SDK/imports, writable data, exports, "
+                    else "Internal RX pointer relocations and RELRO allowed; "
+                    "no SDK/imports, writable data, exports, "
                     "constructors or packaging"
                 )
             ),

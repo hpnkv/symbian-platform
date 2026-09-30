@@ -36,6 +36,18 @@ def _parser() -> argparse.ArgumentParser:
     verify_probe.add_argument(
         "--output", type=Path, default=Path(".symbian/probe-check")
     )
+    pointers = compiler_commands.add_parser(
+        "verify-pointers",
+        help="Check relocated callbacks and C++ virtual dispatch",
+    )
+    pointers.add_argument("artifact", type=Path)
+    pointers.add_argument("--package", type=Path)
+    pointers.add_argument(
+        "--oracles-build", type=Path, default=Path("build/eka2l1")
+    )
+    pointers.add_argument(
+        "--output", type=Path, default=Path(".symbian/pointer-check")
+    )
     verify_package = compiler_commands.add_parser(
         "verify-package", help="Check SIS installation and kernel execution"
     )
@@ -126,6 +138,12 @@ def _execute(args: argparse.Namespace) -> dict:
 
             return verify_package(
                 args.package, args.executable, args.oracles_build, args.output
+            )
+        if args.toolchain_command == "verify-pointers":
+            from symbian.toolchain.verification import verify_pointers
+
+            return verify_pointers(
+                args.artifact, args.oracles_build, args.output, args.package
             )
         from symbian.toolchain.verification import verify_probe
 

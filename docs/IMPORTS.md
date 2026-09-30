@@ -95,8 +95,7 @@ Original Nokia checksum and whole-image validation pass native DLLs with
 ordinals 7, 641 and 65,535, covering variable headers and relocation pages.
 A separate combined import/export conversion case passes those consumers;
 its executable startup is layout evidence, not runnable DLL initialization.
-Data exports, writable data/BSS/TLS, constructors, general code-pointer
-relocations, SDK heap/TLS/static initialization and full target C++ runtime
+Data exports, writable data/BSS/TLS, constructors, SDK heap/TLS/static initialization and full target C++ runtime
 remain unsupported. DLL startup is a no-resource integer experiment.
 The process uses direct ThreadKill and provides no matched ROM/Z or Belle
 services. `verify-probe` and the SIS experiment require import-free executables.
@@ -110,5 +109,6 @@ see RESEARCH_LOG.md for the evidence correction.
 
 New evidence is under .symbian/native-dll/verification-report.json. The EXE digest
 is `8f6cbed4ca3fe010be4d73b276d3671218e9cb3c3e4fbae29284048bced5e1a4`.
-Matched DLLs, complete SDK startup/cleanup, general relocation support, ordinary
+Internal RX pointer relocations are described in POINTERS.md.
+Matched DLLs, complete SDK startup/cleanup, data relocation support, ordinary
 application tests and physical installation remain pending.

@@ -76,6 +76,7 @@ def test_isolated_input_and_inherited_test_filter(probe, tmp_path, monkeypatch):
     for name, _ in verification.ORACLES:
         (executables / name).write_bytes(b"test-double")
     monkeypatch.setenv("GTEST_FILTER", "nothing")
+    monkeypatch.setenv("SYMBIAN_E32_TEST_HASH", "unrelated-reference")
     monkeypatch.setenv("GTEST_TOTAL_SHARDS", "99")
     monkeypatch.setenv("GTEST_SHARD_INDEX", "98")
     seen = []
@@ -86,6 +87,7 @@ def test_isolated_input_and_inherited_test_filter(probe, tmp_path, monkeypatch):
         assert fixture.read_bytes() == probe.read_bytes()
         assert fixture.parent == cwd
         assert not any(key.startswith("GTEST_") for key in env)
+        assert "SYMBIAN_E32_TEST_HASH" not in env
         assert timeout == 15
         name = Path(argv[0]).name
         count = dict(verification.ORACLES)[name]

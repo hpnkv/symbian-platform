@@ -820,3 +820,119 @@ and User::Exit cleanup/leaves, actual EUSER/decorated module identities, complet
 C++ ABI and matched Belle runtime. One physical phone is still the only declared
 hardware; exact RM/product/firmware, preserved ROM/Z and recovery baseline remain
 unknown. No phone or device operation ran.
+
+## 2026-09-30 — Internal pointer tables, C++ virtual dispatch and installation
+
+**Question:** Which additional modern compiler output is needed to run ordinary
+const callback tables and simple virtual dispatch through the existing loader?
+
+**Sources and survey:** Re-read PLAN sections 10, 20 and 21, current RESEARCH.md,
+STATUS.md and converter sources. Reviewed A11 native status and Python boundary
+conventions; this change remains synchronous and adds no scheduler. Read pinned
+Nokia pl_elflocalrelocation.cpp/e32imagefile.cpp, the EKA2L1 relocation consumer,
+and Arm's ELF specification. Primary upstream pages were checked; links are in
+RESEARCH.md section 17. A first guessed historical filename returned 404; the
+local checkout identified pl_elflocalrelocation.cpp and its pinned page was read.
+
+**Experiment:** A real Clang PIC function-pointer table emits `.data.rel.ro`
+with SHF_WRITE and R_ARM_ABS32. Default visible table access also requires
+GOT_PREL, outside the supported profile. Hidden internal table/class visibility
+emits local REL32 access, while the table pointers still require load-time
+adjustment. A single-inheritance virtual class similarly needs a vtable
+function pointer, without RTTI, allocation or target runtime imports.
+The initial research ELF and source are retained under .symbian/pointer-research.
+
+The historical producer chooses text/data relocation kinds according to the
+referenced segment. Its unresolved ELF pointer fixup adds a symbol value; the
+modern ET_EXEC word is already resolved. Copying that fixup would incorrectly
+add the symbol twice. The native converter instead preserves the linked word
+and emits a Symbian text relocation. It checks retained symbol/target bounds,
+word alignment, instruction-state agreement for functions, duplicate fixups and
+in-range targets. External absolute pointers and GOT/dynamic metadata fixups
+remain unsupported. A bounded native name reader admits `.data.rel.ro` and its
+dot-suffixed sections only as non-executable PROGBITS tables inside the RX load.
+Ordinary writable data/BSS, TLS and construction arrays remain rejected.
+This is a trusted compiler/link contract, not semantic validation of arbitrary
+hand-authored code. One-past-the-mapping pointer values remain unsupported.
+
+Native inspection now handles application and DLL export fixups together,
+requires all export slots and rejects import-slot aliasing. The combined
+relocation count is bounded to 65,535. Existing relocation-free artifacts
+retain their bytes. The former blanket ABS32-negative controls now check
+out-of-range and unaligned pointers; new positive controls establish the
+supported behavior. No relocation producer/parser logic was added to Python.
+All six core translation units still compile without exceptions and return
+Abseil statuses; existing GIL release boundaries cover this native work.
+
+**Maintained vertical slice:** examples/pointer_probe builds four source units
+with its real CMake database and discovered header dependencies. It has two
+const callbacks (Thumb C++ and ARM assembly), a constant-text pointer with
+addend one, and a Thumb virtual method in a stack object. Its four E32 fixup
+offsets are 240, 244, 248 and 260. The separate GPL research harness uses the
+unchanged EKA2L1 parser and process loader, inspects all four mapped pointer
+values against the actual base delta, and observes the CPU at all three
+function targets in their correct ARM/Thumb states. Both backends exit zero
+normally, exit 42 with changed input, and launch successfully after failure.
+Kernel exit releases the address space. The label pointer retains its addend.
+The compiler-generated stack vptr and indirect method call execute as emitted.
+No upstream relocation, memory, process, scheduling or kernel algorithm changed.
+
+The same native SIS writer packages this pointer-bearing image. The existing
+installer harness loads it, checks unchanged installed bytes and registry
+fields, launches it, reloads the registry, uninstalls and reinstalls it. A
+separate retained Python hashlib SHA-1 reference replaces the fixed old hash
+only when supplied explicitly; the earlier fixture keeps its historical
+baseline. The common verifier now clears inherited Symbian fixture variables
+as well as GTest filters/shards before passing private copies. Existing filter
+and input isolation controls verify that unrelated hash paths do not leak in.
+
+The new `toolchain verify-pointers` command performs 14 original checksum,
+whole-image validator and mapped-pointer/dispatch cases. Supplying `--package`
+adds seven checksum/installer cases for 21. It records binary/artifact hashes,
+private copies and complete native reports. `verify-probe` rejects code-fixup
+images explicitly, preserving its earlier relocation-free scope. Build/package
+and verification reports keep matched Belle and physical flags false.
+
+**Validation:** All 112 Pytest cases pass with optional emulator, oracle and
+public kernel paths supplied. All 41 platform GTests and 48 independent oracle
+cases pass on Apple Silicon. The new six process cases pass on both backends.
+Real-link combined import/application-pointer and DLL export/application-pointer
+layouts pass the unchanged Nokia checksum and seven whole-image validator cases;
+the combined DLL has executable startup and is layout evidence only. Negative
+controls cover pointer value/state/alignment, duplicates, section-name bounds,
+unknown writable sections, import-slot aliasing, verifier scope and output/input
+collisions that must preserve supplied artifacts. The earlier
+import/DLL/package tests remain green. Core builds have no warnings. Research
+links retain the previously documented deployment/library warnings. Black/Ruff,
+clang-format, generated stubs and whitespace checks pass. Clangd checks the
+pointer example through its persistent CMake database with zero errors.
+The unchanged upstream emulator 288-case checkpoint was not rerun here.
+
+Evidence is retained in .symbian/pointer-probe (build report, pytest.log,
+independent-ctest.log, clangd.log, compile-policy.json and wheel-result.json),
+.symbian/pointer-package/package-report.json, and
+.symbian/pointer-check/report.json with the 21-case private test reports/logs.
+An isolated installed wheel outside the source import path reproduces identical
+ELF/E32/SIS bytes and runs the complete 21-case verification loop. Its installed
+module path, wheel digest and nested build/package/verification reports are in
+wheel-result.json.
+
+Artifact SHA-256 values:
+
+- ELF: `abc3c3c9e31d3ca9f325627af4ce86813d1b7c295e6be9ea294fe344a583a9ce`
+- E32: `82cbc8e080efdc844733a273bdcfcf69914b71e2535367188a43348e637ec73a`
+- SIS: `b8201005adf9908402d11e84de3e90aa9c235cef013cf211dcd57a144bc82c7d`
+
+**Conclusion and decision:** Native macOS Clang can supply these ordinary C++
+const-table/dispatch contracts with local visibility and retained pointer
+fixups. Publish the bounded internal ABS32/RELRO extension, maintained probe
+and verification command. Reuse the existing package writer and loader; no
+compatibility runtime or additional scheduler was needed. Replay and exact
+profile limits are documented in POINTERS.md.
+
+**Remaining questions:** General GOT/preemptible data and external function
+pointers, writable data/BSS/TLS, target DLL initialization, global lifetime,
+multiple/virtual inheritance and RTTI, target heap and User::Exit cleanup/leaves,
+full Symbian C++ ABI, actual system DLL identities, matched Belle runtime and
+physical installation. Exact phone identity, firmware/ROM/Z preservation and
+recovery baseline remain unknown. No device operation ran.

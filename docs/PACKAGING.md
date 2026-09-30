@@ -83,3 +83,9 @@ Golden artifact on the verified Apple Silicon toolchain:
 
 See RESEARCH_LOG.md for pinned sources and experiment details. Hardware
 preservation and recovery remain gates for physical-device development.
+
+
+The pointer/virtual dispatch example also produces a package through this
+unchanged native writer. `toolchain verify-pointers --package` runs the scoped
+21-case image/dispatch/installer check. See POINTERS.md. The original
+`verify-package` command retains the earlier relocation-free probe scope.

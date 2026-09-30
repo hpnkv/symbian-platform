@@ -375,3 +375,32 @@ Nokia's original checksum and validator pass ordinals 7, 641 and 65,535 using
 bounded test adapters that retain the complete variable header. This supports
 the scoped no-resource emulator DLL experiment, not matched Belle or general
 C++ startup. See IMPORTS.md and RESEARCH_LOG.md for replay and remaining limits.
+
+## 17. Const tables and internal absolute-pointer fixups
+
+A real Clang PIC callback table requires R_ARM_ABS32 plus `.data.rel.ro`.
+Hidden internal table/class visibility changes its accesses from GOT_PREL to
+local REL32; its linked pointer words still require a base adjustment. The
+[Arm ELF specification](https://github.com/ARM-software/abi-aa/blob/main/aaelf32/aaelf32.rst)
+defines the absolute relocation and instruction-state contract. The pinned
+[Nokia local relocation implementation](https://github.com/SymbianSource/oss.FCL.sf.os.buildtools/blob/7b35cd328d3a5e8e0bc177d0169fd409c3273193/toolsandutils/e32tools/elf2e32/source/pl_elflocalrelocation.cpp)
+selects text/data relocation kinds by the referenced segment. Its unresolved
+ELF fixup must not be copied directly onto already resolved modern ET_EXEC words.
+
+The converter now preserves bounded linked words and emits aligned text fixups,
+including const-table entries inside named RELRO sections in its RX load.
+It rejects unknown writable sections and unsupported external/GOT contracts.
+Its inspector permits application and export fixups together, requires all
+export slots, and forbids aliasing eager import slots. Real combined layout
+cases pass the original checksum and structural validator.
+
+The maintained C++ probe includes a const callback table with ARM/Thumb targets,
+a pointer with a constant-text addend, and a single-inheritance virtual method.
+Both emulator backends verify the actual four mapped pointer values, execute
+all three indirect targets in their expected states, exit with correct results,
+and reload after failure. Its SIS installs and runs in the original package
+manager; a separately retained hashlib reference checks the registry hash.
+The isolated installed wheel reproduces the artifacts and 21-case loop.
+This adds ordinary C++ dispatch evidence without a hosted target runtime.
+Full inheritance/RTTI/lifetime ABI, writable data/TLS, SDK initialization/cleanup
+and matched Belle remain open. See POINTERS.md and RESEARCH_LOG.md.
