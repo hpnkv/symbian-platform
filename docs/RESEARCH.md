@@ -310,3 +310,27 @@ cases. This evidence supports an import-free ROMless loop, while matched Belle,
 SDK services, complete ABI, GUI/resource processing, signing and physical
 installation remain open. See PACKAGING.md and RESEARCH_LOG.md for replay and
 artifact hashes.
+
+## 14. Frozen exports and original-header compilation
+
+A small native SDK component now reads frozen EABI definitions, preserves sparse
+ordinals and generates selected function proxy sources. Modern Clang/LLD builds
+these as ELF with a versioned target DLL identity. The linker script keeps ordinal
+symbols in section one and dynamic addresses equal to file offsets, matching
+assumptions in the public converter's
+[ELF implementation](https://github.com/SymbianSource/oss.FCL.sf.os.buildtools/blob/7b35cd328d3a5e8e0bc177d0169fd409c3273193/toolsandutils/e32tools/elf2e32/source/pl_elfexecutable.cpp).
+Nokia's unaltered ordinal lookup method independently reads the generated
+User::Exit slot as 641. This is not the complete historical ELF consumer.
+
+The original public e32std.h compiles as ARM C++20 with the GCC/EABI macros chosen
+explicitly. A typed User::Exit call links against that proxy, and descriptor,
+integer, UID and request-status size assertions pass for this source profile.
+TRequestStatus is eight bytes with flags, also matching EKA2L1's EKA2 request
+status representation. Clangd checks that translation unit with zero errors.
+The SDK headers stay outside the wheel and version control.
+
+Default LLD linking puts R_ARM_JUMP_SLOT imports into a writable GOT/PLT segment;
+that research ELF remains outside the native converter's supported profile.
+Actual import-slot conversion and execution against target DLLs are the next
+contract to establish. Startup and User::Exit cleanup still require target
+heap/TLS/DLL initialization. See SDK.md for scoped CLI and oracle replay.

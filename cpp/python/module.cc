@@ -8,6 +8,7 @@
 
 #include "symbian/analysis/elf.h"
 #include "symbian/e32/e32.h"
+#include "symbian/sdk/exports.h"
 #include "symbian/sis/sis.h"
 
 namespace py = pybind11;
@@ -91,6 +92,44 @@ symbian::sis::PackageInfo InspectSis(const py::bytes& data) {
   return *result;
 }
 
+std::vector<symbian::sdk::Export> ParseDef(const py::bytes& data) {
+  const std::string bytes = data;
+  absl::StatusOr<std::vector<symbian::sdk::Export>> result;
+  {
+    const py::gil_scoped_release release;
+    result = symbian::sdk::ParseExports(bytes);
+  }
+  if (!result.ok())
+    RaiseStatus(result.status());
+  return *result;
+}
+
+symbian::sdk::ProxySources GenerateProxy(
+    const py::bytes& data, const std::vector<std::string>& symbols,
+    const std::string& soname, const std::string& target_dll) {
+  const std::string bytes = data;
+  absl::StatusOr<symbian::sdk::ProxySources> result;
+  {
+    const py::gil_scoped_release release;
+    result = symbian::sdk::GenerateProxy(bytes, symbols, soname, target_dll);
+  }
+  if (!result.ok())
+    RaiseStatus(result.status());
+  return *result;
+}
+
+symbian::sdk::ProxyInfo InspectProxy(const py::bytes& data) {
+  const std::string bytes = data;
+  absl::StatusOr<symbian::sdk::ProxyInfo> result;
+  {
+    const py::gil_scoped_release release;
+    result = symbian::sdk::InspectProxy(bytes);
+  }
+  if (!result.ok())
+    RaiseStatus(result.status());
+  return *result;
+}
+
 }  // namespace
 
 PYBIND11_MODULE(_native, module) {
@@ -144,4 +183,29 @@ PYBIND11_MODULE(_native, module) {
   module.def(
       "inspect_sis", &InspectSis, py::arg("data"),
       "Check the canonical unsigned SISX experiment, releasing the GIL.");
+  using symbian::sdk::Export;
+  py::class_<Export>(module, "SdkExport")
+      .def_readonly("symbol", &Export::symbol)
+      .def_readonly("ordinal", &Export::ordinal)
+      .def_readonly("data", &Export::data)
+      .def_readonly("absent", &Export::absent);
+  using symbian::sdk::ProxySources;
+  py::class_<ProxySources>(module, "ProxySources")
+      .def_readonly("assembly", &ProxySources::assembly)
+      .def_readonly("version_script", &ProxySources::version_script)
+      .def_readonly("linker_script", &ProxySources::linker_script)
+      .def_readonly("exports", &ProxySources::exports);
+  using symbian::sdk::ProxyInfo;
+  py::class_<ProxyInfo>(module, "ProxyInfo")
+      .def_readonly("soname", &ProxyInfo::soname)
+      .def_readonly("target_dll", &ProxyInfo::target_dll)
+      .def_readonly("exports", &ProxyInfo::exports);
+  module.def("parse_def", &ParseDef, py::arg("data"),
+             "Parse bounded EABI export declarations, releasing the GIL.");
+  module.def("generate_import_proxy", &GenerateProxy, py::arg("data"),
+             py::arg("symbols"), py::arg("soname"), py::arg("target_dll"),
+             "Generate ordinal proxy sources, releasing the GIL.");
+  module.def(
+      "inspect_import_proxy", &InspectProxy, py::arg("data"),
+      "Check the generated ELF ordinal proxy contract, releasing the GIL.");
 }

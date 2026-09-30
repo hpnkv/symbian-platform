@@ -47,6 +47,18 @@ def _parser() -> argparse.ArgumentParser:
     verify_package.add_argument(
         "--output", type=Path, default=Path(".symbian/package-check")
     )
+    proxy = compiler_commands.add_parser(
+        "import-proxy", help="Build selected DEF ordinal proxies"
+    )
+    proxy.add_argument("definition", type=Path)
+    proxy.add_argument("--symbol", action="append", required=True)
+    proxy.add_argument("--target-dll", required=True)
+    proxy.add_argument(
+        "--output", type=Path, default=Path(".symbian/import-proxy")
+    )
+    proxy.add_argument("--compiler", default="clang++")
+    proxy.add_argument("--linker", default="ld.lld")
+    proxy.add_argument("--headers", type=Path)
     build = commands.add_parser("build", help="Build an ARM/E32 experiment")
     build.add_argument("--project", type=Path, default=Path.cwd())
     build.add_argument("--output", type=Path, default=Path(".symbian/build"))
@@ -65,7 +77,9 @@ def _parser() -> argparse.ArgumentParser:
     )
     inspect.add_argument("artifact", type=Path)
     inspect.add_argument(
-        "--format", choices=("elf32", "e32", "sis"), default="elf32"
+        "--format",
+        choices=("elf32", "e32", "sis", "import-proxy"),
+        default="elf32",
     )
     preserve_commands = commands.add_parser("preserve").add_subparsers(
         dest="preserve_command", required=True
@@ -95,6 +109,18 @@ def _execute(args: argparse.Namespace) -> dict:
     if args.command == "toolchain":
         if args.toolchain_command == "probe":
             return toolchain.probe(args.output, args.compiler)
+        if args.toolchain_command == "import-proxy":
+            from symbian.sdk import build_import_proxy
+
+            return build_import_proxy(
+                args.definition,
+                args.symbol,
+                args.target_dll,
+                args.output,
+                args.compiler,
+                args.linker,
+                args.headers,
+            )
         if args.toolchain_command == "verify-package":
             from symbian.packaging.verification import verify_package
 
@@ -111,10 +137,13 @@ def _execute(args: argparse.Namespace) -> dict:
     if args.command == "package":
         return packaging.package(args.project, args.artifact, args.output)
     if args.command == "inspect":
+        from symbian.sdk import inspect_proxy
+
         inspector = {
             "elf32": inspect_elf,
             "e32": inspect_image,
             "sis": packaging.inspect_package,
+            "import-proxy": inspect_proxy,
         }[args.format]
         return {"format": args.format, "metadata": inspector(args.artifact)}
     if args.command == "preserve":

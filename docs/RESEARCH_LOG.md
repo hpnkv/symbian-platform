@@ -505,3 +505,112 @@ certificates/capabilities, SDK imports, writable data/constructors/full C++ ABI,
 GUI resources and ordinary applications. The fixed timestamp and local repeat
 are not a hermetic toolchain attestation. The sole 808's exact identity, preserved
 firmware/ROM and recovery baseline remain unknown. No hardware operation ran.
+
+## 2026-09-30 — Frozen ordinal proxies and public SDK headers
+
+**Question:** Which properties of a Symbian import library actually matter, and
+can modern Clang/LLD link an original-header User::Exit call without recreating
+a historical SDK/compiler environment?
+
+**Historical behaviour and evidence:** Read the pinned kernel source's
+kernel/eka/eabi/euseru.def, kernel/eka/include/e32def.h/e32cmn.h/e32std.h,
+euser/us_func.cpp and euser/epoc/arm/uc_exe.cpp. The public table contains 2546
+exports and assigns `_ZN4User4ExitEi` ordinal 641. Its library MMP links as
+euser.dll and records public DLL UID3 0x100039e5; that does not identify the
+physical phone's exact DLL/version. User::Exit notifies thread exit, closes
+handles and invokes cleanup. Startup establishes the thread heap, TLS, DLL and
+static initialization before E32Main. A direct ThreadKill experiment cannot
+stand in for those contracts.
+
+Read buildtools' pl_elfproducer.cpp, pl_elfexecutable.cpp and e32imagefile.cpp.
+Proxy symbols name ordinal words rather than function implementation addresses.
+The ordinal getter requires section index ESegmentRO=1. The historical dynamic
+reader interprets its pointer fields as file offsets, and ELF version metadata
+carries the target DLL name distinct from the proxy soname. Public producer
+flags use BPABI version 4; modern Clang/LLD uses EABI5. The method oracle below
+checks ordinal lookup only, not acceptance of all modern ELF flags by a complete
+historical consumer.
+
+**Experiments:** The first header compile with only __GCCE__ lacked Int64,
+IMPORT_C and literal definitions. Selecting __GCC32__/__GCCV3__ enabled the
+actual historical GCC branch. Adding __EABI__ supplied template specialization
+syntax. No original header was edited. The first layout assertion incorrectly
+expected TRequestStatus to occupy one word. The public class contains iStatus
+and iFlags and is eight bytes; EKA2L1's EKA2 request status also has both fields.
+Corrected the measured profile. Integer, UID, interval and descriptor assertions
+now compile with ARM soft-float C++20 and exceptions/RTTI disabled.
+
+A Clang assembly ordinal word plus an LLD version script can resolve the original
+User::Exit declaration. Quoting the version-script node name caused LLD to
+retain quote characters in ELF metadata; unquoted euser.dll produces the required
+plain identity. A custom linker script makes the ordinal section first and
+keeps dynamic metadata addresses equal to their file offsets. The proxy links
+and repeats byte-for-byte without an independent hand-written ELF writer.
+
+Implemented cpp/symbian/sdk: bounded ASCII frozen-DEF parsing, unique names and
+ordinals, ABSENT/DATA metadata, selected function source generation and bounded
+inspection of the generated proxy ELF contract. Sparse ordinals are retained,
+not renumbered. Invalid/absent/data selections, aliases, unsupported directives,
+unsafe basenames and decorated UID/version names are rejected. Native logic
+returns Abseil statuses, disables exceptions and releases the GIL in its bindings.
+No scheduler/callback/reference holder is introduced. Python runs CMake/Ninja,
+hashes the DEF and consumed source/header dependencies, compares two build trees
+and retains the actual database. Target C++ probe source lives under cpp and is
+installed as a wheel resource; original SDK assets are not redistributed.
+
+The public source builds euser.dso with one slot, ordinal 641. A User::Exit call
+including e32std.h links to it and retains a version need for euser.dll. Both
+artifacts repeat in separate CMake trees:
+
+- Proxy SHA-256: `c53aa0b81ec07f6d18c8eab0298a8237e7906909eaa5caac975e55d3659876fb`
+- Link probe SHA-256: `934eb1b3da3c3d7cde86388e797a61dfd251e1c32ed7608c65567ae8a42b272d`
+
+Nokia's original GetSymbolOrdinal method is extracted unchanged at CMake
+configuration from pl_elfexecutable.cpp and compiled in an optional separate
+EPL research test using asserted 16/32-byte symbol/program declarations.
+The complete source file's SHA-256 is
+`5dacc5f9ef9d830e721548483cd9b6e7bb5ace458d189a0807cb89a098f69c6a`.
+It independently reads 641 and returns UINT32_MAX after the section index is
+changed. This is a trusted fixture method oracle, not an untrusted parser API
+or whole-consumer compatibility result. C++ library/source tests and Python
+integration cover parsing failures, no renumbering, actual multi-export proxy
+builds with spaces in paths, every generated-ELF truncation, read-only bound
+metadata and the original public header/link probe.
+
+Evidence is retained beneath .symbian/euser-proxy: report.json, header_probe ELF,
+readelf metadata/relocations, historical_ordinal.json and clangd.log. Clangd checks
+the real header translation unit with zero errors. Default LLD places the import
+R_ARM_JUMP_SLOT at 0x302dc in a writable GOT/PLT segment with virtual addresses
+unlike file offsets. It is not convertible by the existing import-free E32 path;
+reports retain import_execution_verified/symbian_loader_verified false.
+
+**Validation:** All 78 Pytest cases pass with the optional emulator, native
+verification binaries and public kernel source supplied. The 28 platform GTest
+cases and the new historical ordinal method case pass. The existing 35
+independent source/emulator checks run through the Python verification tests,
+bringing the independent total to 36. Black/Ruff, clang-format, stub regeneration
+and whitespace checks pass. Native core compile commands retain -fno-exceptions.
+The preceding checkpoint's 288 upstream emulator cases remain evidence for its
+unchanged sources; they were not rerun for this SDK-only change.
+
+Built a new wheel and installed it in an isolated virtual environment outside
+the source import path. The wheel includes the target header_probe.cc resource.
+Its installed CLI compiles the public headers and reproduces both artifact
+digests above. Evidence is in
+.symbian/sdk-wheel-check-k067mfyh/wheel-result.json, which records the installed
+Python module path, source/header hashes and both CMake build logs.
+
+**Conclusion:** Frozen function contracts and original header declarations can
+be exposed through modern native utilities and LLVM without carrying the full
+SDK or writing another ELF emitter. Compiling and linking them is evidence for
+those exact contracts, not for the runtime or complete target ABI.
+
+**Implementation decision:** Provide `toolchain import-proxy` and native
+inspection for the narrow generated profile. Keep public headers/definitions
+as explicit external inputs and an isolated optional historical-method oracle.
+Use CMake/Ninja for real objects, dependency tracking and clangd. Document in SDK.md.
+
+**Remaining uncertainty:** E32 import/GOT conversion, decorated DLL version/UID
+identity, actual target euser bytes, startup heap/TLS/static initialization,
+leave/cleanup semantics, data exports, full C++ ABI and matched Belle runtime.
+The phone's identity, preservation and recovery baseline remain unknown.

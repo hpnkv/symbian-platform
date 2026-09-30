@@ -10,13 +10,19 @@ import typing
 __all__: list[str] = [
     "E32ImageInfo",
     "Elf32Header",
+    "ProxyInfo",
+    "ProxySources",
+    "SdkExport",
     "SisPackageInfo",
     "SisPackageOptions",
     "build_sis",
     "convert_pic_executable",
+    "generate_import_proxy",
     "inspect_e32",
     "inspect_elf32",
+    "inspect_import_proxy",
     "inspect_sis",
+    "parse_def",
 ]
 
 class E32ImageInfo:
@@ -80,6 +86,34 @@ class Elf32Header:
         ELF object type.
         """
 
+class ProxyInfo:
+    @property
+    def exports(self) -> list[SdkExport]: ...
+    @property
+    def soname(self) -> str: ...
+    @property
+    def target_dll(self) -> str: ...
+
+class ProxySources:
+    @property
+    def assembly(self) -> str: ...
+    @property
+    def exports(self) -> list[SdkExport]: ...
+    @property
+    def linker_script(self) -> str: ...
+    @property
+    def version_script(self) -> str: ...
+
+class SdkExport:
+    @property
+    def absent(self) -> bool: ...
+    @property
+    def data(self) -> bool: ...
+    @property
+    def ordinal(self) -> int: ...
+    @property
+    def symbol(self) -> str: ...
+
 class SisPackageInfo:
     @property
     def executable_size(self) -> int: ...
@@ -124,6 +158,16 @@ def convert_pic_executable(
     Convert a restricted, retained-relocation ELF.
     """
 
+def generate_import_proxy(
+    data: bytes,
+    symbols: collections.abc.Sequence[str],
+    soname: str,
+    target_dll: str,
+) -> ProxySources:
+    """
+    Generate ordinal proxy sources, releasing the GIL.
+    """
+
 def inspect_e32(data: bytes) -> E32ImageInfo:
     """
     Check the experimental E32 profile, releasing the GIL.
@@ -134,7 +178,17 @@ def inspect_elf32(data: bytes) -> Elf32Header:
     Inspect complete ELF32 bytes, releasing the GIL for native work.
     """
 
+def inspect_import_proxy(data: bytes) -> ProxyInfo:
+    """
+    Check the generated ELF ordinal proxy contract, releasing the GIL.
+    """
+
 def inspect_sis(data: bytes) -> SisPackageInfo:
     """
     Check the canonical unsigned SISX experiment, releasing the GIL.
+    """
+
+def parse_def(data: bytes) -> list[SdkExport]:
+    """
+    Parse bounded EABI export declarations, releasing the GIL.
     """

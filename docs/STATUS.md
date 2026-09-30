@@ -7,7 +7,7 @@ exact identity, firmware, ROM/Z-drive assets and recovery method are unknown.
 | --- | --- | --- |
 | 0 Preservation | Archive tools tested; physical baseline pending | Device inventory, original artifacts, offline archive, tested human recovery appliance |
 | 1 Toolchain | Reproducible ELF→E32; historical validation, CPU and ROMless emulator process tests pass | Matched Belle runtime, imports and complete target ABI tests |
-| 2 Project model | CMake/Ninja, persistent database, native SIS and ROMless install/launch pass | Verified SDK subset, general application support and Belle installer |
+| 2 Project model | CMake/Ninja, persistent database, native SIS and ROMless install/launch pass | Matched SDK/DLL imports, general application support and Belle installer |
 | 3 Emulator | Native arm64 build, upstream suite, instance smoke and ROMless package tests pass | Matched ROM/Z image, guest boot/launch, complete runtime isolation |
 | 4–9 | Pending | Gates in PLAN.md |
 
@@ -16,8 +16,9 @@ Source inspection is not an emulator runtime test. Record implementation and
 verification results in RESEARCH_LOG.md before changing milestone status.
 
 Current working commands: `doctor`, `toolchain probe`, `toolchain verify-probe`,
-`toolchain verify-package`, experimental `build`/`package`, ELF/E32/SIS `inspect`, `preserve create/verify`, and
-informational `device policy`.
+`toolchain verify-package`, `toolchain import-proxy`, experimental
+`build`/`package`, ELF/E32/SIS/import-proxy `inspect`, `preserve create/verify`,
+and informational `device policy`.
 The e32_probe example has no SDK/imports/data/constructors; its direct thread
 exit is a no-resource experiment. Both the linked ELF and converted E32 repeat
 byte-for-byte in two builds on this host. Parser acceptance does not prove
@@ -26,12 +27,14 @@ Artifacts and reports live under .symbian/. clangd consumed the generated ARM
 compilation database with zero errors. Native core code is compiled with
 exceptions disabled; the pybind11 boundary retains canonical status codes.
 
-Verification: 73 Pytest cases with the patched emulator and native oracles
-supplied, 23 platform GTest cases, 35 independent oracle GTest cases and
-288 upstream EKA2L1 cases pass on Apple Silicon. Black/Ruff, clang-format and
-generated stubs pass; the earlier clangd target check had zero errors.
+Verification: 78 Pytest cases pass with the patched emulator, native oracles
+and public kernel source supplied. The 28 platform GTest cases and 36 independent
+oracle GTest cases pass on Apple Silicon. The preceding emulator checkpoint
+passed 288 upstream EKA2L1 cases; its sources are unchanged here. Black/Ruff,
+clang-format and generated stubs pass; clangd target checks have zero errors.
 Without optional dependency paths, four emulator smoke cases and two native
-verification integration cases skip. EKA2L1's parser omits header CRC verification;
+verification integration cases and one public-header research case skip.
+EKA2L1's parser omits header CRC verification;
 Nokia's original checksum and whole-image validator independently check it.
 The unchanged historical validator accepts this image using host type adapters.
 Both EKA2L1 CPU backends execute its ARM startup and Thumb C++ at two load
@@ -62,3 +65,14 @@ The production native inspector verifies checksums, SHA-1, E32 and the restricte
 canonical profile before the trusted experiment. Reports retain Belle runtime
 and phone installation flags false. See PACKAGING.md for profile limits and replay.
 OpenSSL 3 is statically linked for SHA-1; its license is packaged with the wheel.
+
+The native SDK component reads frozen EABI definitions and generates selected
+function ordinal proxies using Clang/LLD. The public User::Exit slot remains 641,
+and Nokia's unchanged ordinal lookup method agrees in a separate optional test.
+An original e32std.h call compiles and links, typed layout assertions pass, and
+clangd reports zero errors. The public request status is eight bytes with flags.
+Proxy and link ELF builds repeat; SDK/source/header dependencies are recorded.
+An isolated wheel installation includes the target probe resource and builds
+the same proxy and linked ELF.
+These are link contracts, not a verified 808 SDK or E32 import runtime. Writable
+LLD GOT/PLT placement and import conversion remain open. See SDK.md for replay.
