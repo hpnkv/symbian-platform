@@ -1,0 +1,47 @@
+[build-system]
+requires = ["scikit-build-core>=0.11.6", "pybind11>=3.0,<4"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "symbian-platform"
+version = "0.1.0"
+description = "Native development and research tools for Nokia 808 / Symbian Belle"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+symbian = "symbian.cli.__main__:main"
+
+[tool.scikit-build]
+cmake.version = ">=3.28"
+build-dir = "build/python/{wheel_tag}"
+wheel.packages = ["symbian"]
+wheel.exclude = ["**/tests/**", "**/__pycache__/**", "**/*.pyc"]
+sdist.exclude = ["research/upstream", ".symbian", ".idea"]
+
+[tool.scikit-build.cmake.define]
+SYMBIAN_BUILD_PYTHON = "ON"
+BUILD_TESTING = "OFF"
+
+[dependency-groups]
+dev = [
+    "pytest>=9,<10",
+    "black>=26,<27",
+    "ruff>=0.12,<1",
+    "pybind11-stubgen>=2.5.5,<3",
+]
+
+[tool.black]
+line-length = 80
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 80
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["symbian"]

@@ -1,0 +1,16 @@
+{
+  "schema": "symbian.device-inventory/v1",
+  "role": "reference",
+  "model": "Nokia 808 PureView",
+  "rm_observed": null,
+  "product_code_observed": null,
+  "firmware_version_observed": null,
+  "firmware_date_observed": null,
+  "region_language_observed": null,
+  "modifications_observed": null,
+  "physical_condition": null,
+  "storage_inventory": [],
+  "backup_inventory": [],
+  "recovery_verified": false,
+  "notes": "Owner has one phone; target is RM-807, still unverified."
+}

@@ -1,0 +1,4 @@
+[project]
+name = "abi_probe"
+kind = "arm-object-experiment"
+source = "probe.cc"
