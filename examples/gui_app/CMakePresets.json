@@ -1,17 +1,22 @@
 {
   "version": 6,
-  "configurePresets": [{
-    "name": "symbian-pic",
-    "generator": "Ninja",
-    "binaryDir": "${sourceDir}/../../.symbian/cmake/gui-app",
-    "toolchainFile": "${sourceDir}/../../symbian/toolchain/cmake/armv5t-pic.cmake",
-    "cacheVariables": {
-      "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-      "SYMBIAN_GUI_SDK_INCLUDE": "${sourceDir}/../../.symbian/gui-sdk/include"
+  "configurePresets": [
+    {
+      "name": "symbian-pic",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../../.symbian/cmake/gui-app",
+      "toolchainFile": "${sourceDir}/../../symbian/toolchain/cmake/armv5t-pic.cmake",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "SYMBIAN_GUI_SDK_INCLUDE": "${sourceDir}/../../.symbian/gui-sdk/include",
+        "SYMBIAN_IMPORT_PROXIES": "${sourceDir}/../../.symbian/gui-sdk/euser/euser.dso;${sourceDir}/../../.symbian/gui-sdk/ws32/ws32.dso"
+      }
     }
-  }],
-  "buildPresets": [{
-    "name": "symbian-pic",
-    "configurePreset": "symbian-pic"
-  }]
+  ],
+  "buildPresets": [
+    {
+      "name": "symbian-pic",
+      "configurePreset": "symbian-pic"
+    }
+  ]
 }

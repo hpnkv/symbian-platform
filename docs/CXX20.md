@@ -3,8 +3,10 @@
 C++20 programs are feasible with the modern ARM compiler and native E32
 converter. The maintained examples compile, package and execute through the
 ROMless EKA2L1 loader. This is not a complete hosted C++20 implementation or a
-verified Nokia 808 runtime. There is no matched Belle ROM/Z image in this
-workspace, and no phone execution has been performed.
+verified Nokia 808 runtime. Preserved Delight RM-807 ROM/Z now enables a separate
+guarded SDK GUI experiment on both macOS backends; the language/library/module
+probes described here retain their ROMless scope. No phone execution has been
+performed.
 
 The [Clang language status](https://clang.llvm.org/cxx_status.html) and
 [libc++ library status](https://libcxx.llvm.org/Status/Cxx20.html) describe

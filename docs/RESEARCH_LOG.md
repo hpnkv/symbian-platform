@@ -1384,3 +1384,193 @@ new private executive operations and broader firmware selection remain next work
 The existing 0x10D warning persists even though the drawing function runs. This
 turn advances real GUI execution without declaring full platform compatibility
 or completing the broader mission. No physical phone operation was performed.
+
+
+## 2026-10-01 — Native captures/input/exit, CLion setup and plan review
+
+Question: do the guest drawing calls create real visible output, can normal
+Window Server pointer requests operate the model, and does the SDK cleanup/exit
+complete? The original Android screenshot path supplied the graphics contract:
+read_bitmap(screen_texture), 32-bit RGBA output. Qt encodes PNG atomically in a
+private endpoint directory. Four-kilobyte native command bounds, logical input
+validation, no-overwrite outputs and explicit final status cover accidental
+misuse; only capture/pointer/status operations are exposed, with no hardware API.
+
+The first build failed because the injected project() hook ran before upstream
+selected C++20. Selecting/restoring the standard around pinned Abseil/native
+configuration fixes it; direct emulator library dependencies supply required
+headers. Existing CMake feature-check cache entries were cleared once for this
+failed configuration. The final adapter and native tests compile with
+-fno-exceptions; no Python bindings, GIL holders or second scheduler are needed.
+
+control-live-01 captures the actual initial portrait frame, then pointer delivery
+times out from holding the kernel lock across Window Server's own grab-window
+lock. Releasing the validation lock before the existing frontend delivery path
+allows count=1. control-live-02 additionally gets a real kernel-busy response;
+the maintained test retries UNAVAILABLE only, never ambiguous timeouts.
+
+The first full GUI tests render all expected frames on both backends and reach
+ThreadKill reason zero, but frontend teardown crashes with SIGSEGV. The local
+EKA2L1 diagnostic stack points to ControlServer::Impl::~Impl accessing the kernel
+after the OS worker reset symsys. Stop now unregisters before kill_emulator and
+saves native final status before the endpoint disappears. The next run exits
+zero but the oracle expected an undecorated process name. The actual kernel
+name is gui_app[e0000811]0001; the oracle now checks that exact record. No guest
+startup, drawing or input code was replaced to satisfy these checks.
+
+The final two-backend test passes in 8.83 seconds. It reads actual PNG segment
+centers and control/background colors, checks 0→1→2→outside unchanged→0, then
+normal process UID/type/reason and host exit zero. It additionally checks native
+malformed/oversized input, unknown operations, invalid coordinates, traversal
+and duplicate capture refusal. Native path/startup controls pass four GTests;
+control/routing/register targets pass eleven total. Saved-status policy tests
+require an explicit saved request and reject malformed/oversized envelopes.
+
+The GUI's standalone preset lacked SYMBIAN_IMPORT_PROXIES because the CLI used
+to supply them. Added the two staged proxies to the preset. CMake configure and
+Ninja build pass from examples/gui_app; documented clangd check with
+--tweaks=ExpandAutoType reports zero errors. An unrestricted check reports two
+ExtractFunction refactoring failures at loop-control statements, with no target
+parsing diagnostics. Canonical rebuild retains ELF 7b2918ba... and E32
+2ef4145f..., matching the previous artifact digests. CLion menu/toolchain,
+compilation-database fallback, E32 publication and remote ARM debugging are now
+in docs/CLION.md. The CLion UI itself remains untested.
+
+All 161 Pytest cases pass with explicit optional inputs in 73.69 seconds; all
+six root CTest targets pass. The seventh guest-control patch replays after the
+six existing patches against 15 fresh pinned upstream source files. Native
+control is GPL-3.0-or-later with its license retained and excluded from the
+production Python extension/wheel. An isolated installed wheel outside the
+source import path reads the retained native final exit envelope and inspects
+the GUI E32 with its native extension. Module paths, wheel digest and reports
+are in control-wheel-result.json; development tests and the research native
+adapter are absent from the wheel. Input integrity
+rechecks all 13,438 baseline paths/sizes/digests and the supplied ZIP unchanged.
+No physical operation ran; the golden is never booted.
+
+Review: the vertical slices successfully replaced Windows build/package needs
+for their limited subset, but private scripts/copies are not yet a complete
+platform workflow. PLAN.md now preserves the broad mission while prioritizing
+IDE onboarding, owned emulator lifecycle and symbian test, unresolved 0x10D/0xFF
+and DLL lifetime, bounded writable data/TLS/runtime, then diagnostics and broader
+application/system scope. Hosted C++20, OS boot and device compatibility are not
+claimed. Private logs, PNGs, copied instances, final status and replay evidence
+remain under .symbian/belle-abi-research.
+
+Actual IDE setup: the running application is IntelliJ IDEA 2026.2.1 with the
+CLion plugin, rather than standalone CLion. The application's normal MCP
+endpoint returns an authorization error, and desktop Accessibility is not
+available. No authorization mechanism was changed or bypassed. Saved a named
+Symbian ARM toolchain in the plugin's primary mac/cpp.toolchains.xml storage,
+retaining Default and backing up its old migration file. An ignored GUI
+CMakeUserPresets.json specifies CMake/Ninja/Clang/LLD paths, Homebrew PATH, ARM
+GDB through the named toolchain and its own build directory. That exact preset
+configures/builds and clangd reports zero errors.
+
+The normal application launcher opens the GUI project. Its first profile names
+copied from A11 triggered a migration warning: this plugin version names build
+profiles directly. Corrected the enabled profile to clion-arm and retained the
+plugin's new-format marker. The project opens and CMake workspace reloads, but
+logs still report zero resolved sources. Global toolchain/UI loading needs an
+IDE restart and verification; no restart was forced into the user's open
+session. docs/CLION.md records this remaining step rather than claiming the
+live IDE analysis or remote debugger was validated. Settings and log evidence
+are retained under .symbian/clion-setup; machine-specific files remain ignored.
+
+The user confirms the live error “Toolchain Symbian ARM is not found”. This
+matches the application-settings caching limit. Changed the local clion-arm
+vendor selection to existing Default while preserving explicit ARM compiler,
+linker, Ninja and SDK paths; terminal configure/build still passes. The saved
+named toolchain remains available after restart for ARM GDB. Preset reload and
+live target-model verification remain required; a terminal build cannot clear
+this evidence gate by itself.
+
+Live IDE follow-up: opening the changed local preset triggers its reload.
+At 10:58:48 the IDE runs cmake --preset clion-arm with the correct GUI source
+and build directory and gets exit zero. Its generated file-API gui_app target
+lists startup.S, app.cc and startup.cc. The initial GUI model reports two
+resolved C++ sources, one assembly source and zero unknown sources; at 10:58:56
+it invokes the gui_app build. This resolves the missing-toolchain/target gate
+for the running session without restart. Private ide-model.log and target.json
+record the actual IDE evidence. Default remains the live frontend toolchain;
+explicit CMake paths provide the ARM cross-build. The saved named toolchain
+needs restart for application-settings loading; ARM remote frontend debugging
+and editor-inspection behavior are still untested.
+
+## 2026-10-01 — Owned IDE Run/Debug launches
+
+The user additionally requests working Run/Debug buttons. Added synchronous
+Python policy in symbian/emulator/launch.py, gdb.py and ide.py. Run publishes
+current source through the existing native build/converter, fingerprints the
+named fixture, copies the unbooted golden, launches one owned frontend and
+retains a manifest/logs/instance. No new scheduler, native parser or hardware
+API is introduced. Stop/interrupt reaps only children of this launcher with
+bounded terminate/kill waits; native endpoint directories are removed. Normal
+guest exit preserves the final native report.
+
+Debug supervises a real ARM GDB child and a fresh halted frontend. Version/
+configuration probes exec GDB directly without building/launching. A busy port
+is refused before a new instance is created. The first experiment tried to
+read runtime mapping before GDB connection, but the listener opens before the
+GUI is loaded. The corrected hook runs after target remote and uses the actual
+kernel mapping plus native-inspected link-time base. Source mappings and symbol
+relocation then precede IDE breakpoint insertion. Batch source breakpoints reach
+GuiMain at 0x7000002a and DrawGui at 0x700003ae; model inspection and instruction
+step pass. A real MI2 conversation connects, inserts/hits the relocated source
+breakpoint, reads PC and steps the Thumb BLX into the ARM constructor veneer.
+The initial test incorrectly assumed linear stepping at that source breakpoint;
+independent llvm-objdump shows BLX 0x8a50, matching runtime 0x70000a50 and cleared
+CPSR Thumb bit. This is a test correction, not an emulator stepping change.
+
+The installed IDEA/CLion plugin enables its new Debug Profiles feature by
+default. Old Remote Debug debugger fields alone are ignored in that mode.
+The generated local shared Symbian GUI GDB profile selects the supervisor and
+the dedicated GUI project selects it. The root project's host debugger remains
+unchanged. Run uses the native CMake run configuration with explicit Python
+RUN_PATH, avoiding an invalid unregistered Python SDK. Generated GUI Run/GUI
+Debug settings can be recreated with symbian emu configure-ide. The actual
+IDE target model is verified; toolbar clicks, frontend inspections and complete
+stack unwinding remain unautomated checks. Private launch/MI test evidence is
+in .symbian/clion-setup; retained owned instances are in .symbian/gui-runs.
+
+### Launcher shutdown and final checks
+
+First full launcher suite: 168 passed, two failed in 125.46 seconds. Both
+failures requested release after Exit-down had already removed the guest window
+and initiated frontend teardown; the native guest and host exit evidence was
+zero. Corrected the tests to issue down only. After application.exec() returns,
+the control adapter also drains accepted pending output with a bounded 100 ms
+wait per socket before destruction, without starting another event loop.
+
+Second full suite: 169 passed, one failed in 140.63 seconds. Dynarmic's guest
+ThreadKill reason was zero, but the frontend exceeded the 15-second wait and
+cleanup killed only that owned process. No final native report was published.
+This is distinct from the release-after-exit mistake. Added three native Stop
+phase messages and a bounded /usr/bin/sample of the exact frontend before
+cleanup on a repeat timeout. Twelve single GUI repetitions pass; then five
+groups of all four guest-debugger and both GUI-backend tests pass (30 cases).
+No repeated hang/stack appears. The timeout cause remains an open question;
+do not infer it was fixed merely from subsequent successful runs.
+
+Final full suite, with every optional input enabled: 170 passed in 112.82
+seconds. The control/routing/register CTest targets again pass all eleven GTests.
+After selecting GUI Run as the generated default, four focused installer/path/
+ownership tests pass. The rebuilt wheel is installed in the isolated environment
+and checked from /tmp: native E32 inspection, saved native exit envelope, GDB
+version discovery without fixture startup and the default GUI selection.
+.symbian/clion-setup/wheel-result.json records the current digest and module
+paths. .symbian/clion-setup/input-integrity.json confirms all 13,438 baseline
+paths/sizes/digests and the original ZIP unchanged; physical operations remain
+zero. No additional native scheduler, Python holder or device API was added.
+
+IDE indexing: the root content model exceeded two million files after retained
+firmware copies accumulated. A11-style contentRoot alone did not exclude those
+files and was removed. Saved CidrRootsConfiguration exclusions for .symbian,
+research/upstream, build, out and .venv, with the staged gui-sdk unexcluded.
+Live root exclusion loading is unverified. The dedicated GUI project reopened
+at 11:39:10, scanned only 535 files, and still reports two resolved C++ sources,
+one assembly/weak source and zero unknown sources. Keep that guest project as
+the normal editing/Run/Debug context. Its RunManager lists GUI Run and GUI Debug
+and its saved native profile is Symbian GUI GDB. Saved default selection now
+chooses GUI Run; the automatic gui_app ELF configuration is not the launcher.
+Actual toolbar interaction and the full debugger frontend remain unautomated.

@@ -5,15 +5,17 @@ preserve existing firmware/ROM material in verifiable host-side archives.
 The target is Nokia 808 / Symbian Belle. The first E32 experiment passes historical
 image validation, CPU, ROMless installation and emulator process tests.
 Full Belle runtime compatibility remains unverified; a guarded experiment now
-executes the GUI's initial drawing function against supplied RM-807 firmware.
+renders and operates the GUI against supplied RM-807 firmware on both backends.
 See docs/STATUS.md.
 
 The native touch counter in [examples/gui_app](examples/gui_app) now has a full
 [WALKTHROUGH.md](WALKTHROUGH.md): source SDK preparation, modern toolchain,
 reproducible builds, checks, emulator launch and debugging. Its build and static
 checks pass. Live GDB verifies SDK heap setup, Window Server connection and
-initial drawing calls with the supplied ROM/Z. Displayed pixels, input and
-normal shutdown remain unverified; see [the ABI experiment](docs/BELLE_ABI.md).
+initial drawing calls with the supplied ROM/Z. Separate live tests now check
+actual screen captures, pointer-driven count/reset changes and normal zero exit.
+See [the control replay](docs/EMULATOR_CONTROL.md) and
+[CLion setup](docs/CLION.md); full firmware/phone compatibility remains open.
 
 ```sh
 brew install openssl@3

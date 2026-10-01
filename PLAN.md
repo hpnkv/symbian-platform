@@ -14,6 +14,142 @@ rather than:
 
 > "How do we reproduce Nokia's 2010 development environment?"
 
+
+## Implementation review — 2026-10-01
+
+The initial survey and several vertical slices are complete. Continue from this
+checkpoint and [docs/STATUS.md](docs/STATUS.md); do not restart the initial
+survey or infer that the platform mission is complete. The original long-term
+objectives below remain in force. Current research and replay instructions are
+in [docs/RESEARCH.md](docs/RESEARCH.md), [WALKTHROUGH.md](WALKTHROUGH.md),
+[docs/BELLE_ABI.md](docs/BELLE_ABI.md) and
+[docs/EMULATOR_CONTROL.md](docs/EMULATOR_CONTROL.md).
+
+### What the work established
+
+* Contemporary Clang/LLD, CMake/Ninja and a native E32/SIS implementation can
+  replace the normal historical Windows build/package pipeline for the tested
+  subset. Original Nokia checksums/whole-image validation and independent
+  EKA2L1 loader/CPU/process/installer tests remain valuable behavioral oracles.
+* C++20 language features, a named-module example and selected configured
+  libc++ headers compile and run in the ROMless probes. The GUI also compiles
+  as C++20 and runs with real SDK imports in the guarded firmware experiment.
+  These results do not establish a hosted C++20 library or general target ABI.
+* The supplied Delight v1.8 archive provides a usable preserved RM-807 ROM/Z
+  fixture. Its metadata describes the archive; it does not identify the owner's
+  phone, authenticate stock firmware or prove recovery suitability.
+* The hardest GUI failures were runtime contracts: a firmware-specific
+  executive-call map, a separate ARM TPIDRURO register and SDK cleanup-stack
+  setup. No whole-table shift or replacement system-library implementation was
+  sufficient evidence. The original emulator profile remains a control.
+* Both tested macOS CPU backends now render the counter through real EUSER/WS32,
+  accept pointer input, redraw after increment/reset, ignore an outside-control
+  tap and exit with guest reason zero and frontend exit zero. Pixel oracles and
+  native kernel exit records establish more than a drawing-function breakpoint.
+* Live ARM GDB source/ROM breakpoints and stable instruction stepping work.
+  Full unwinding, comprehensive crash/process inspection and CLion's debugger
+  frontend remain unverified. CLion's GUI source belongs to a separate ARM
+  CMake project; its standalone and machine-local presets and clangd context
+  now pass checks. Symbian ARM settings are saved for the actual IDEA/CLion
+  instance; the live preset uses Default with explicit ARM paths until those
+  settings load. The actual IDE configures successfully and resolves all three
+  GUI target sources; its remote-debug frontend remains an onboarding gate.
+
+### What needs to change in the execution strategy
+
+Keep the narrow, independently checked experiments, but consolidate them into
+repeatable developer workflows before adding more platform breadth. The GUI now
+has an owned foreground launcher and generated IDE Run/Remote Debug settings;
+source builds, copied fixture, cleanup and post-connection symbol relocation
+are checked. This remains a bounded example workflow, not the general lifecycle
+manager or symbian test API. Ad hoc
+private copies and GDB scripts proved contracts; they are not yet a general
+emulator lifecycle API. Seven owned patches currently extend a pinned emulator
+checkout. Keep their replay and regression coverage, document ownership and
+seek upstreamable changes rather than allowing an unbounded local fork.
+
+Separate four levels of evidence in reports: compiler/format acceptance,
+ROMless loader/kernel execution, execution against a named preserved firmware
+fixture, and physical-device compatibility. A success at one level must not
+silently promote another. Emit fixture hashes and actual scope, including skips
+and unresolved warnings. Reproducibility on this host is not a hermetic-build
+attestation. Read-only file permissions are not immutable preservation against
+the owner; the original archive still needs an independently held offline copy.
+
+The current runtime still reports an unimplemented 0x10D loader operation.
+SVC 0xFF interception, private executive operations and complete DLL initialization
+are unresolved despite the GUI success. Writable data/BSS, TLS, general static
+initialization, compiler runtime and hosted C/C++ libraries are not supported by
+the current transport. Do not label the experimental toolchain a general Belle
+SDK or make these failures disappear by dropping sections or ignoring errors.
+
+### Next work, in priority order
+
+1. **Finish developer onboarding and keep it exercised.** Maintain separate host
+   and guest CMake contexts, correct compilation databases, SDK provenance,
+   E32 publication after IDE edits and ARM debugger relocation instructions.
+   The standalone and local GUI presets and clangd checks pass; actual toolchain
+   settings are saved and the actual IDE target model resolves the GUI. Exercise
+   the CLion debugger frontend and retain E32 publication coverage. The owned
+   launcher and real GDB MI2 checks now pass; keep native debug-profile selection
+   explicit in this IDE version. Document the application loop in WALKTHROUGH.md.
+2. **Consolidate the emulator lifecycle and `symbian test`.** Build on the
+   existing native capture/input/exit endpoint and independent installer tests.
+   Add create/start/install/launch/log/stop/reset operations for explicitly owned
+   disposable instances, with structured manifests, input/binary digests,
+   bounded process ownership and retained artifacts. Stopped filesystem copies
+   are the initial snapshot mechanism; do not claim live-machine snapshots.
+   Acceptance: two fresh independent runs install the generated package,
+   exercise the GUI, record PNGs/exit status, restore/discard the instance and
+   leave every golden/input digest unchanged. Include startup failure, timeout,
+   stale endpoint, wrong fixture and repeated-launch controls. Diagnose the
+   observed intermittent frontend shutdown timeout with retained native stacks;
+   repeated successful runs do not explain a timeout. Keep private runtime copies
+   out of IDE indexing and add managed artifact retention.
+3. **Close the demonstrated ABI/runtime gaps before expanding firmware scope.**
+   Trace 0x10D and 0xFF with original source, actual wrapper/caller instructions
+   and live guest observations. Test DLL initialization/destruction and repeated
+   SDK cleanup, then focus/occlusion/orientation and resource lifetime. Retain
+   exact-ROM opt-in guards and the unmodified/default profile control. Support
+   another firmware only with its own independently checked contract and tests.
+4. **Extend the target runtime through one bounded feature at a time.** Start
+   with writable-data/BSS and relocations, then initialization/TLS and required
+   compiler-rt/C-library entry points. Each feature needs original-validator
+   acceptance, actual mapped execution, a failing control and cleanup checks.
+   Only then build a configured no-exceptions C++ library subset with explicit
+   allocation/failure policy. Containers, coroutines, atomics and threads are
+   separate capabilities; enabling `-std=c++20` does not provide them.
+5. **Make debugging failures useful.** Add correlated process/thread/module
+   inspection, panic capture and source symbolication using real mapping data.
+   Demonstrate a deliberate guest failure with a useful retained report, and
+   establish an unwind contract before promising stack traces. Connect the
+   tested ARM GDB path to CLion without assuming the UI is already validated.
+6. **Expand application/system scope only after these gates pass.** Add resources
+   and registration, then a minimal server/DLL/IPC slice and evaluate Avkon/Qt
+   needs from real applications. Complete preservation and an enforced device
+   broker before physical deployment; system replacement, hardware recovery and
+   alternative-OS work retain their original human/device boundaries.
+
+### Implementation constraints
+
+Use A11 as the practical implementation reference: Python policy in `symbian/`,
+native libraries in `cpp/symbian/<component>/`, bindings in `cpp/python/`, Google
+style/docstrings, exceptions disabled with Abseil Status/StatusOr, and exceptions
+only at pybind11 translation boundaries. Native format logic must remain native.
+Use A11's thread library if adding native concurrency; existing emulator event
+loops may be reused without introducing another scheduler. Async Python bindings
+must follow A11's GIL and deferred reference-holder patterns. Synchronous parsers
+and the socket policy client need no new callback/holder infrastructure.
+
+Use GTest/Pytest, Black/Ruff at 80 columns, .clang-format, CMake presets/Ninja and
+actual compile_commands.json. Keep upstream checkouts, firmware/private data,
+builds and runtime artifacts ignored; preserve licenses. The GPL control adapter
+belongs only to the research emulator, not the production Python extension.
+The current full suite passes 170 Pytest cases with explicit optional inputs,
+six root CTest targets and the new control/routing/register GTests. Keep evidence
+counts in STATUS/RESEARCH_LOG current rather than treating these numbers as a
+permanent acceptance threshold.
+
 ---
 
 # 1. Core principles
@@ -209,7 +345,8 @@ Do not expose it as a general-purpose coding-agent environment.
 
 Treat the physical phone as valuable hardware and assume unfinished software can damage it.
 
-Before experimental development:
+Before physical-device experimental development (read-only research and
+disposable emulator work may proceed independently):
 
 1. Identify the exact device variant.
 2. Record its current software/firmware state.
@@ -219,7 +356,8 @@ Before experimental development:
 6. Document recovery procedures.
 7. Establish a known-good baseline.
 
-Create an immutable reference archive.
+Create an independently held offline reference copy and record its digest.
+Owner-reversible read-only permissions alone do not satisfy immutable preservation.
 
 Prefer having a second Nokia 808 for experimentation if practical:
 
@@ -774,6 +912,10 @@ Work incrementally.
 
 ## Milestone 0 — Device preservation
 
+Current evidence: archive inventory/hash tools and supplied material are tested;
+physical identity, installed firmware, independent offline copy and recovery
+appliance remain pending. This is not complete.
+
 Produce:
 
 * exact device identification
@@ -787,6 +929,10 @@ Do not experiment with firmware yet.
 
 ## Milestone 1 — Native macOS toolchain
 
+Current evidence: the limited LLVM/E32 toolchain is reproducible and independently
+validated; ROMless probes and one guarded SDK GUI run pass. General ABI, runtime
+and physical compatibility remain acceptance gates.
+
 Produce:
 
 * initial ARM/Symbian toolchain investigation
@@ -795,6 +941,10 @@ Produce:
 * first reproducible binary
 
 ## Milestone 2 — Modern project model
+
+Current evidence: CMake/Ninja, compilation databases, native single-EXE packaging
+and standalone ARM GUI IDE setup exist. General project/resource/package profiles
+and the actual CLion UI experience remain work.
 
 Produce:
 
@@ -805,6 +955,11 @@ Produce:
 * package generation
 
 ## Milestone 3 — Emulator
+
+Current evidence: native arm64 frontend, preserved ROM/Z import, copied instances
+and real GUI pixels/input/zero exit pass on both backends. Native control exposes
+status/capture/pointer only; general lifecycle/reset/snapshot orchestration and
+full OS boot remain incomplete.
 
 Produce:
 
@@ -819,6 +974,10 @@ Produce:
 
 ## Milestone 4 — Automated application development
 
+Current evidence: build/package/verification and opt-in live GUI Pytest loops
+exist. `symbian test` and the general unattended install/run/artifact loop are
+not yet implemented; make these the next developer-facing integration slice.
+
 Produce:
 
 ```bash
@@ -829,6 +988,10 @@ symbian test
 where tests actually execute applications in the emulator.
 
 ## Milestone 5 — Modern debugging
+
+Current evidence: relocated live ARM GDB source/ROM stops, stable single stepping
+and native process-exit records pass. Full stack traces, panic symbolication,
+thread/module inspection and CLion remote-debug validation remain open.
 
 Produce:
 
@@ -1010,11 +1173,14 @@ Avoid building speculative infrastructure for capabilities that have not yet bee
 
 ---
 
-# 26. Initial task
+# 26. Working procedure after the initial survey
 
-Begin by surveying the current state of the project directory and repository.
+The initial survey is recorded in docs/RESEARCH.md and subsequent experiments in
+docs/RESEARCH_LOG.md. Resume from the implementation review and current STATUS,
+inspect the workspace for unfinished changes/processes, then pursue the next
+unmet evidence gate. Do not repeat completed archaeology without a new question.
 
-Then produce a technical research document containing:
+Keep the research document current as scope expands, covering:
 
 1. What is already available.
 2. What historical Symbian/Belle components appear genuinely necessary.

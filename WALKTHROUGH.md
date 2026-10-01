@@ -1,20 +1,20 @@
 # Building and investigating the GUI example
 
 `examples/gui_app` is a small native Window Server counter application. It
-draws four seven-segment digits and three touch controls: green increments,
-amber resets, and red exits. The intended initial display is `0000`.
+draws four seven-segment digits and three touch controls: increment, reset and
+exit. The intended initial display is `0000`.
 
 The source compiles on macOS with contemporary Clang, links with LLD, and
 converts to a reproducible Symbian E32 executable. Original Nokia checksum
 and whole-image validation pass. Its ARM ELF retains valid DWARF and LLDB
-resolves its functions and source lines. **The application has not yet been
-visually verified in an emulator or on a phone.** The user-supplied Delight
-v1.8 firmware ZIP now imports into EKA2L1 as RM-807/808 PureView/epoc100. A real
-launch first exposed executive ABI and ARM-register gaps. The guarded profile
-and CPU corrections now complete heap setup, the Window Server connection and
-the initial drawing function. Rendered pixels, pointer delivery and normal exit
-remain unverified. Live guest debugging is tested; see section 9 and
-[docs/BELLE_ABI.md](docs/BELLE_ABI.md) for the current runtime evidence.
+resolves its functions and source lines. The supplied Delight v1.8 firmware
+imports as RM-807/808 PureView/epoc100. A guarded firmware-specific executive
+profile and CPU corrections enable SDK startup. Both macOS CPU backends now
+produce actual GUI screen captures, respond to increment/reset/outside taps and
+complete normal zero guest exit and zero frontend exit. This does not establish
+full Belle compatibility, OS boot or physical-phone behavior. Live guest
+debugging is tested; see sections 8–9, [docs/BELLE_ABI.md](docs/BELLE_ABI.md) and
+[docs/EMULATOR_CONTROL.md](docs/EMULATOR_CONTROL.md).
 
 | Result | Current evidence |
 | --- | --- |
@@ -26,7 +26,7 @@ remain unverified. Live guest debugging is tested; see section 9 and
 | GUI SIS package | 17 image/checksum/installer cases; registry reload/removal/reinstall verified |
 | Supplied RM-807 firmware | VPL/ZIP checks and native emulator import pass; real DLLs mapped during launch |
 | Debug information and editor input | DWARF verification, LLDB symbol/source lookup, real compilation database |
-| Initial drawing function | Real guest calls complete in the guarded RM-807 experiment; pixels/input/exit unverified |
+| Rendered GUI, pointer delivery and SDK exit | Real texture PNGs, count/reset/outside taps, guest reason zero and frontend exit zero on both backends |
 | Guest debugger connection and breakpoints | Live ARM GDB source/ROM stops and stable single stepping verified |
 | Nokia 808 / Belle compatibility | Unverified; actual phone identity/firmware remains unknown |
 
@@ -333,7 +333,7 @@ skips. None of these tests issues a hardware operation.
 
 ## 6. Prepare the emulator research build
 
-Use pinned EKA2L1 commit `2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8` and the six
+Use pinned EKA2L1 commit `2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8` and the seven
 local patches. `instance-root.patch` supplies isolated macOS data/settings roots,
 bounded CLI failure shutdown, and a loopback-only GDB listener.
 `runtime-probe.patch` supplies the documented research initialization fixes.
@@ -343,7 +343,10 @@ the guest until another breakpoint, so register observations can be misleading.
 `guest-debug-library-query.patch` removes an unsupported GDB capability.
 `symbian101-experimental.patch` supplies explicitly selected, ROM-digest-guarded
 executive routing; `guest-thread-register.patch` adds separate TPIDRURO state
-and tested macOS backend context preservation. These are already applied in
+and tested macOS backend context preservation. `guest-control.patch` links the
+GPL native adapter for screen capture, logical pointer input and final exit
+records; it is disabled unless an explicit private socket is supplied. These
+are already applied in
 the current workspace. For a fresh checkout:
 
 ```sh
@@ -359,6 +362,7 @@ git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/guest-debug-step.
 git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/guest-debug-library-query.patch
 git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/symbian101-experimental.patch
 git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/guest-thread-register.patch
+git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/guest-control.patch
 git clone --no-checkout \
   https://github.com/SymbianSource/oss.FCL.sf.os.buildtools \
   research/upstream/buildtools
@@ -370,6 +374,10 @@ git -C research/upstream/buildtools checkout \
 Skip acquisitions and patches already present; inspect before changing existing
 research trees. The ARM64 FFmpeg step is needed because the pinned submodule's
 bundled macOS libraries are Intel-only. Preserve EKA2L1's GPL and other licenses.
+The injected hook fetches the same pinned Abseil revision as the host platform.
+An existing matching checkout can be selected with `SYMBIAN_ABSEIL_SOURCE_DIR`
+(or its CMake cache variable). The hook explicitly selects C++20 before
+configuring Abseil because it runs before upstream's standard selection.
 Configure the Apple Silicon build and separate historical oracle executables:
 
 ```sh
@@ -381,7 +389,7 @@ cmake -S research/upstream/EKA2L1 -B build/eka2l1 -G Ninja \
   -DCMAKE_PROJECT_EKA2L1_INCLUDE="$PWD/research/eka2l1/project-tests.cmake"
 cmake --build build/eka2l1 -j 8 --target \
   eka2l1_qt symbian_checksum_oracle symbian_validator_oracle \
-  symbian_sis_checksum_oracle symbian_gui_package_probe
+  symbian_sis_checksum_oracle symbian_gui_package_probe symbian_control_probe
 ```
 
 `kernelhwsrv` is the same pinned tree already used for headers. The historical
@@ -507,11 +515,11 @@ registration resources. The native research package tests explicitly select C.
 Test and record the following in `docs/RESEARCH_LOG.md` with actual results:
 
 1. On launch, the screen shows `0000` and all three controls, with no panic.
-2. Green taps show `0001`, `0002`, and so on. Amber resets to `0000`.
+2. Left-control taps show `0001`, `0002`, and so on. The middle control resets to `0000`.
 3. Taps in gaps and outside controls leave the count unchanged; a single
    button-down increments once. Saturation at 9999 is already model-tested;
    test it visually if automated pointer injection becomes available.
-4. Red exits. Launch again and verify the count starts at zero; record whether
+4. The right control exits. Launch again and verify the count starts at zero; record whether
    session/window resources and address space are released normally.
 5. Obscure and restore the window and verify redraw. Launch in each intended
    fixed orientation; rotating while running is not supported yet.
@@ -533,6 +541,13 @@ alone do not make the owner unable to change them. No physical-device recovery,
 flashing, calibration, partition or bootloader operation is part of this recipe.
 
 ## 8. Enable editor navigation and verify debug information
+
+For CLion, open `examples/gui_app` in its own window and enable the
+`symbian-pic` CMake profile. The root CMake project builds the host utilities;
+its targets do not include the guest application. The example preset now sets
+both staged import proxies, so standalone configuration works. Full toolchain,
+compilation-database, E32 build and remote-debug instructions are in
+[docs/CLION.md](docs/CLION.md).
 
 Configure your editor's clangd executable as
 `$(brew --prefix llvm)/bin/clangd` and its argument as the absolute equivalent of
@@ -727,8 +742,10 @@ a one-byte-modified private ROM. No input means a visible skip. Its cleanup stop
 own frontend process; the current frontend may require KILL after TERM. Neither
 that forced stop nor reaching `User::Exit` proves normal guest cleanup.
 
-A full GUI/debugger test still requires a redraw after continuing and normal
-exit. Keep those evidence flags separate from attachment and stepping. Source
+The separate autonomous GUI test now verifies rendered redraws, pointer delivery
+and normal exit on both backends. Enable the private native control socket and
+replay its pixel/exit checks using [EMULATOR_CONTROL.md](docs/EMULATOR_CONTROL.md).
+Keep those evidence flags separate from attachment and stepping. Source
 symbols in a static LLDB session are not a substitute for the live test.
 Guest stack unwinding, crash symbolication,
 LLDB remote compatibility and full process inspection remain separate work.
@@ -753,11 +770,10 @@ LLDB remote compatibility and full process inspection remain separate work.
 | Breakpoint never hits | Stub enabled on supported backend, correct current code slide, ARM/Thumb state and exact ELF/executable pair |
 | Source files not found in debugger | Apply prefix substitutions rather than removing reproducibility maps |
 
-The next runtime checks are captured pixels, pointer delivery, redraw after
-model changes and normal SDK cleanup/exit. Heap setup, a service connection,
-initial drawing-function execution and live debugging now have concrete
-evidence in the guarded firmware experiment. Then broaden firmware ABI
-coverage, rotation/focus handling and application resources/registration.
+Captured pixels, pointer-driven redraws, reset and normal SDK exit now have
+concrete evidence in the guarded firmware experiment, alongside live debugging.
+Next broaden firmware ABI coverage, rotation/focus handling, resource accounting
+and application resources/registration.
 Imported-app single-EXE SIS installation is already tested separately. A broad platform runtime still needs writable data/BSS/TLS,
 static lifetime, compiler-rt/C-library support and a carefully configured C++
 library. The evidence trail belongs in [docs/RESEARCH_LOG.md](docs/RESEARCH_LOG.md)
@@ -771,3 +787,21 @@ Local evidence is under `.symbian/gui-sdk`, `.symbian/gui-app`,
 `.symbian/gui-validation`, `.symbian/gui-research`, and
 `.symbian/belle-abi-research`. Those directories and
 upstream material remain outside version control.
+
+## Installed IDE Run and Debug workflow
+
+The prepared GUI project now has GUI Run and GUI Debug configurations. Open
+examples/gui_app in its own IDE window and select clion-arm. GUI Run publishes
+the current E32, copies the golden and launches the emulator. GUI Debug uses
+CLion Remote Debug plus the separately selected native Symbian GUI GDB profile;
+its supervisor publishes/starts a halted copy and automatically relocates
+symbols after connection. Set source breakpoints before Resume. The GUI example
+must run in the emulator; the CMake ELF is an ARM build product.
+
+[docs/CLION.md](docs/CLION.md#installed-run-and-debug-buttons) gives the installed
+settings, regeneration command, retained evidence, Stop behavior and toolchain
+caching caveat. Inputs/binaries, logs and fresh instances live under
+.symbian/gui-runs; source inputs remain unchanged. This is the bounded GUI
+experiment, not a complete emulator instance manager or physical-device launch
+path. Live launch and GDB/MI checks pass; IDE toolbar operation and complete
+frontend stack unwinding are not claimed from those checks.

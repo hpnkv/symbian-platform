@@ -3,16 +3,17 @@
 The initial technical survey is in RESEARCH.md. The owner has one Nokia 808;
 exact physical identity, installed firmware and recovery method remain unknown.
 The supplied Delight RM-807 archive provides preserved emulator ROM/Z material;
-a guarded disposable experiment now completes the initial GUI drawing function.
+guarded disposable tests now verify real GUI pixels, pointer-driven redraws,
+reset and normal zero guest/frontend exit on both macOS CPU backends.
 
 | PLAN milestone | Status | Required evidence |
 | --- | --- | --- |
 | 0 Preservation | Archive tools tested; physical baseline pending | Device inventory, original artifacts, offline archive, tested human recovery appliance |
 | 1 Toolchain | Reproducible ELF→E32; historical validation and ROMless process/DLL import tests pass | Matched Belle runtime, SDK imports and complete target ABI tests |
 | 2 Project model | CMake/Ninja, persistent database, native SIS and ROMless install/launch pass | Matched SDK/DLL imports, general application support and Belle installer |
-| 3 Emulator | Native arm64 build, supplied ROM/Z import, guarded SDK startup/drawing calls and disposable tests pass | Rendered output/input, normal exit, OS boot and general runtime coverage |
-| 4 Automated development | Native build/package/check loops pass; GUI execution is an opt-in research test | General unattended application execution, pixels/input and facade orchestration |
-| 5 Modern debugging | Live ARM GDB source/ROM stops, stable stepping and model inspection pass | Full unwinding, crash/thread inspection and normal exit |
+| 3 Emulator | Native arm64 build, ROM/Z import and real GUI pixels/input/zero exit pass on both backends | Lifecycle/reset/snapshot facade, full OS boot and general runtime coverage |
+| 4 Automated development | Native build/package/check loops and opt-in rendered GUI tests pass | General unattended install/run/artifact loop and symbian test |
+| 5 Modern debugging | Live ARM GDB stops/stepping, model inspection and native process-exit records pass | Full unwinding, panic/thread/module inspection and CLion debugger validation |
 | 6–9 | Pending | Physical deployment/system/hardware/alternative OS gates in PLAN.md |
 
 No physical-device executor, flashing capability or recovery automation exists.
@@ -22,7 +23,9 @@ verification results in RESEARCH_LOG.md before changing milestone status.
 Current working commands: `doctor`, `toolchain probe`, `toolchain verify-probe`, `toolchain verify-pointers`,
 `toolchain verify-package`, `toolchain import-proxy`, experimental
 `build`/`package`, ELF/E32/SIS/import-proxy `inspect`, `preserve create/verify`,
-and informational `device policy`.
+`emu status`, `emu screenshot`, `emu pointer`, and informational `device policy`.
+The emu commands require an explicitly started private research endpoint; they
+are not a general lifecycle API or a physical transport.
 The e32_probe example has no SDK/imports/data/constructors; its direct thread
 exit is a no-resource experiment. Both the linked ELF and converted E32 repeat
 byte-for-byte in two builds on this host. Parser acceptance does not prove
@@ -276,3 +279,93 @@ baseline is not booted. Phone identity and independent offline preservation
 remain unknown. No device operation ran. Replays and boundaries are recorded in
 WALKTHROUGH.md and docs/BELLE_ABI.md; private evidence is under
 .symbian/belle-abi-research. The platform mission remains active.
+
+
+### 2026-10-01 — Rendered GUI, pointer input, normal exit and developer workflow
+
+The native GPL research adapter reads the actual guest screen texture, routes
+logical pointer events through Window Server and copies kernel process-exit
+records. It runs on existing Qt/kernel loops, adds no scheduler/thread/Python
+callback and compiles with exceptions disabled using Abseil Status/StatusOr.
+The wheel contains only the synchronous Python policy client for this endpoint;
+EKA2L1 and the native adapter remain separate research binaries.
+
+Live tests on Dynarmic and Dyncom verify 720x1280 portrait PNGs (logical 360x640,
+scale two), 0000 → 0001 → 0002, an outside tap leaving 0002, reset to 0000 and
+exit type kill/0 with reason zero for UID 0xe0000811. The frontend also exits
+zero. Four native GTests exercise disabled/invalid/private-path startup bounds;
+live tests reject malformed/oversized commands, traversal, duplicate outputs and
+invalid pointers. Two observed locking/lifecycle mistakes were corrected:
+pointer delivery must not retain the kernel lock that Window Server acquires,
+and callbacks must detach before the OS worker destroys the kernel. Final native
+status survives socket closure; saved reports are explicitly selected.
+
+The GUI preset now provides both SDK import proxies without CLI injection.
+Standalone CMake configure/build and clangd parsing/indexing pass with zero
+errors using the limited documented tweak selection. Canonical ELF/E32 rebuilds
+retain their previous hashes. The running IntelliJ IDEA/CLion-plugin instance
+now has persisted Symbian ARM toolchain settings and a local clion-arm preset.
+The exact local preset configures/builds and clangd reports zero errors. The GUI
+project now configures successfully in the actual IDE. Its generated CMake API
+lists app.cc, startup.cc and startup.S; the initial model resolves two C++
+sources and one assembly source with zero unknown sources. The live preset
+selects existing Default with explicit ARM paths because the running IDE had
+not loaded the saved application toolchain name. The generated native GDB
+profile selects the ARM debugger independently and does not need that restart.
+The debugger frontend is untested. Setup, E32 publication and ARM remote-debug steps are in docs/CLION.md.
+
+The initial control checkpoint passed 161 Pytest cases with explicit optional
+inputs; the launcher checkpoint now passes all 170. All six root CTest
+targets pass, and the three control/routing/register research targets pass eleven
+GTests. Seven patches replay against 15 fresh pinned source files. Black/Ruff,
+clang-format and whitespace checks pass. An isolated installed wheel outside
+the source tree reads the native final exit envelope and inspects the actual
+GUI E32 through its native extension. Its module paths, wheel digest and reports
+are in .symbian/clion-setup/wheel-result.json. The research native
+adapter and tests are absent from the wheel; Pillow is a development dependency.
+The original ZIP and all 13,438 baseline paths/sizes/SHA-256 values are rechecked
+unchanged. No physical-device operation ran; identity and independent offline
+preservation remain unknown.
+
+PLAN.md now records the completed vertical slices, evidence boundaries and
+ordered next gates: developer onboarding, disposable lifecycle/symbian test,
+unresolved ABI/DLL lifetime, bounded runtime/C++ library support, diagnostics,
+then broader application/system/device scope. Full initialization (including
+0x10D), 0xFF interception, writable data/TLS/static lifetime, full unwinding,
+OS boot and physical compatibility remain unverified. The broader mission
+remains active. Replays are in WALKTHROUGH.md and docs/EMULATOR_CONTROL.md;
+private evidence is under .symbian/belle-abi-research/control* and gui-control*.
+
+A bounded foreground GUI launcher now publishes the current E32 before Run or
+Debug, copies the named golden, owns/reaps its frontend and retains manifests,
+logs and final native status. Generated local GUI Run/GUI Debug configurations
+and a native Symbian GUI GDB profile are installed in the dedicated GUI project.
+The supervisor starts a halted instance before GDB, then relocates symbols after
+connection using the actual mapping. Source breakpoint/variable checks and the
+IDE's GDB MI2 protocol pass, including Thumb-to-ARM instruction stepping. Normal
+Run exit, Stop cleanup, occupied ports and launcher-path quoting are checked.
+IDE toolbar interaction and full debugger frontend/stack unwinding remain
+unverified. This is not yet the general lifecycle/symbian test API.
+
+The final full launcher/control suite passes 170 tests in 112.82 seconds with
+all optional inputs enabled. Four targeted installer/ownership tests pass after
+saving GUI Run as the default selection. Research CTest again passes all three
+targets/eleven GTests. The installed wheel is exercised from /tmp, including
+GDB version discovery without startup and default configuration selection.
+The ZIP and all 13,438 baseline files remain unchanged.
+
+Earlier full runs exposed an Exit-up request after the app had already closed
+and one frontend that did not finish shutdown within 15 seconds despite guest
+ThreadKill reason zero. Exit tests now send only down; the native adapter drains
+already queued replies for a bounded interval when its Qt loop stops. Added
+teardown phase logs and an owned-process stack sample on a repeat timeout.
+Twelve repeated GUI runs, five six-case debugger/GUI groups and the final full
+suite then pass. No repeat stack is available; the isolated shutdown timeout's
+cause remains open rather than being inferred from later passes. IDE Stop still
+has tested bounded cleanup.
+
+The reopened GUI project scans 535 files and resolves its three target sources.
+Root-project exclusions for private runtime/upstream/build data are saved with
+the staged SDK unexcluded; their live application is unverified. IDE toolbar
+interaction remains unautomated. PLAN.md retains these developer-lifecycle gates
+before broader ABI/runtime and device scope.

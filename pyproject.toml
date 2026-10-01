@@ -30,6 +30,7 @@ dev = [
     "black>=26,<27",
     "ruff>=0.12,<1",
     "pybind11-stubgen>=2.5.5,<3",
+    "pillow>=12,<13",
 ]
 
 [tool.black]

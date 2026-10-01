@@ -1,0 +1,46 @@
+diff --git a/src/emu/qt/CMakeLists.txt b/src/emu/qt/CMakeLists.txt
+index 446d1b3..e3de97d 100644
+--- a/src/emu/qt/CMakeLists.txt
++++ b/src/emu/qt/CMakeLists.txt
+@@ -196,6 +196,7 @@ if (TARGET Qt${QT_VERSION_MAJOR}::GuiPrivate)
+ endif()
+ 
+ target_link_libraries(eka2l1_qt PRIVATE
++    symbian_emulator_control
+     Qt${QT_VERSION_MAJOR}::Svg
+     Qt${QT_VERSION_MAJOR}::Widgets
+     Qt${QT_VERSION_MAJOR}::Network
+diff --git a/src/emu/qt/src/thread.cpp b/src/emu/qt/src/thread.cpp
+index 87fe682..822d335 100644
+--- a/src/emu/qt/src/thread.cpp
++++ b/src/emu/qt/src/thread.cpp
+@@ -35,6 +35,8 @@
+ #include <qt/state.h>
+ #include <qt/thread.h>
+ #include <qt/utils.h>
++#include <symbian/emulator/control.h>
++#include <cstdlib>
+ 
+ #include <drivers/graphics/emu_window.h>
+ #include <drivers/graphics/graphics.h>
+@@ -435,7 +437,19 @@ namespace eka2l1::desktop {
+             state.ui_main->setup_and_switch_to_game_mode();
+         }
+ 
+-        const int exec_code = application.exec();
++        auto control = symbian::emulator::ControlServer::Start(
++            &state, std::getenv("EKA2L1_RESEARCH_CONTROL_SOCKET"));
++        if (!control.ok()) {
++            LOG_ERROR(FRONTEND_CMDLINE, "Emulator control rejected: {}", control.status().ToString());
++        }
++        const int exec_code = control.ok() ? application.exec() : 2;
++        if (control.ok() && *control) {
++            const auto status = (*control)->Stop();
++            if (!status.ok()) {
++                LOG_ERROR(FRONTEND_CMDLINE, "Cannot save emulator control status: {}", status.ToString());
++            }
++            control->reset();
++        }
+         kill_emulator(state);
+ 
+         // Wait for OS thread to die

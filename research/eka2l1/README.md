@@ -202,3 +202,13 @@ components excluded from the wheel. Patch order, exact digest guards, source
 contracts and unresolved ABI/runtime limits are in
 [docs/BELLE_ABI.md](../../docs/BELLE_ABI.md). The example now installs an SDK
 cleanup stack; rendered pixels, pointer input and normal exit remain unverified.
+
+
+The seventh GPL patch, `guest-control.patch`, links the separate native adapter
+in `cpp/symbian/emulator` into the Qt research frontend. An explicit private Unix
+socket enables actual screen-texture PNG capture, logical Window Server input
+and kernel exit records. The adapter uses existing event loops and detaches
+before kernel teardown. Four native path/startup tests and two real-backend GUI
+render/input/normal-exit tests pass. It is never linked into the Python wheel.
+See [the replay and bounds](../../docs/EMULATOR_CONTROL.md) and
+[CLion configuration](../../docs/CLION.md).

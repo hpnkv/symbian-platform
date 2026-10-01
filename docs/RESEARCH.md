@@ -557,3 +557,39 @@ Default-profile heap failure remains a control. Full DLL initialization, normal
 cleanup/exit, rendered pixels and physical compatibility remain unverified.
 The scoped evidence, source contracts, patch recipe and replay are in
 [BELLE_ABI.md](BELLE_ABI.md); private code/data/logs stay outside Git.
+
+
+## 23. Real texture/input/exit evidence and implementation review
+
+A thin native GPL adapter adds an opt-in private Unix endpoint to the existing
+Qt frontend. It uses the original graphics driver to read the screen texture,
+Window Server's existing pointer path and real kernel process-exit callbacks.
+No target model mutation, fake SDK drawing, host desktop capture or new native
+scheduler is involved. Scalar/string exit records avoid lifetime issues with
+process pointers. The synchronous Python client supplies policy and transport;
+format/image work remains native.
+
+Both Dynarmic and Dyncom produce real portrait counter frames and pass the
+0→1→2→outside unchanged→reset→exit sequence. Normal SDK exit reaches User::Exit,
+thread_user_exiting and ThreadKill with reason zero. A final kernel report and
+frontend exit zero survive normal teardown. The initial render-only experiment
+exposed a recursive kernel lock on pointer delivery; releasing the validation
+lock before the existing delivery path fixes it. The first exit experiment
+exposed a callback destructor after kernel destruction; detaching before worker
+shutdown and persisting the final report fixes it. These failures remain in the
+private evidence rather than being reclassified as successful runs.
+
+CLion's missing target context comes from opening the host CMake project for a
+guest source. The GUI's separate ARM preset now includes the two staged proxies
+needed for standalone configuration, and configure/build plus clangd parsing
+pass. CLI conversion still publishes E32 separately from the IDE's ELF build.
+CLion UI/debugger integration itself remains a manual validation task. C++20
+language/library evidence and firmware execution remain separate claims.
+
+The review updates PLAN.md to consolidate workflows before expanding scope:
+owned disposable emulator lifecycle/test artifacts, unresolved executive/DLL
+contracts, bounded target runtime support, useful diagnostics, then broader
+application/system work. Current UI success does not establish a full OS boot,
+complete DLL initialization, TLS/static lifetime, hosted C++20, complete unwind
+support or phone compatibility. See [EMULATOR_CONTROL.md](EMULATOR_CONTROL.md)
+and [CLION.md](CLION.md) for the concrete replay and developer setup.

@@ -96,6 +96,28 @@ def _parser() -> argparse.ArgumentParser:
     gui_package.add_argument(
         "--output", type=Path, default=Path(".symbian/gui-package-check")
     )
+    emulator_commands = commands.add_parser("emu").add_subparsers(
+        dest="emu_command", required=True
+    )
+    ide = emulator_commands.add_parser(
+        "configure-ide", help="Install local GUI Run and ARM Debug profiles"
+    )
+    ide.add_argument("--root", type=Path, default=Path.cwd())
+    ide.add_argument(
+        "--gdb", type=Path, default=Path("/opt/homebrew/bin/arm-none-eabi-gdb")
+    )
+    for operation in ("status", "screenshot", "pointer"):
+        command = emulator_commands.add_parser(operation)
+        command.add_argument("--endpoint", type=Path, required=True)
+        command.add_argument("--timeout", type=float, default=5)
+        if operation == "status":
+            command.add_argument("--saved", action="store_true")
+        elif operation == "screenshot":
+            command.add_argument("--name", required=True)
+        elif operation == "pointer":
+            command.add_argument("x", type=int)
+            command.add_argument("y", type=int)
+            command.add_argument("action", choices=("press", "release"))
     build = commands.add_parser("build", help="Build an ARM/E32 experiment")
     build.add_argument("--project", type=Path, default=Path.cwd())
     build.add_argument("--output", type=Path, default=Path(".symbian/build"))
@@ -187,6 +209,19 @@ def _execute(args: argparse.Namespace) -> dict:
         from symbian.toolchain.verification import verify_probe
 
         return verify_probe(args.artifact, args.oracles_build, args.output)
+    if args.command == "emu":
+        if args.emu_command == "configure-ide":
+            from symbian.emulator.ide import configure
+
+            return configure(args.root, args.gdb)
+        from symbian.emulator import Control
+
+        control = Control(args.endpoint, timeout=args.timeout)
+        if args.emu_command == "screenshot":
+            return control.capture(args.name)
+        if args.emu_command == "pointer":
+            return control.pointer(args.x, args.y, args.action)
+        return control.exit_report() if args.saved else control.status()
     if args.command == "build":
         return toolchain.build(
             args.project, args.output, args.compiler, args.linker

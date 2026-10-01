@@ -170,3 +170,13 @@ add_test(NAME symbian_pointer_probe COMMAND symbian_pointer_probe)
 set_tests_properties(symbian_pointer_probe PROPERTIES
   ENVIRONMENT "SYMBIAN_E32_TEST_IMAGE=${SYMBIAN_PLATFORM_ROOT}/.symbian/pointer-probe/pointer_probe.exe"
   TIMEOUT 15)
+
+add_executable(symbian_control_probe control_probe_test.cc
+    "${SYMBIAN_PLATFORM_ROOT}/research/upstream/EKA2L1/src/tests/platform.cpp")
+target_compile_features(symbian_control_probe PRIVATE cxx_std_20)
+target_compile_options(symbian_control_probe PRIVATE -fno-exceptions)
+target_link_libraries(symbian_control_probe PRIVATE
+                      symbian_emulator_control epoc epockern epocmem epoctiming epocio
+                      GTest::gtest_main)
+add_test(NAME symbian_control_probe COMMAND symbian_control_probe)
+set_tests_properties(symbian_control_probe PROPERTIES TIMEOUT 15)

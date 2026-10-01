@@ -10,6 +10,9 @@ operations and offline debug symbols are tested. The supplied Delight RM-807
 bundle imports into EKA2L1. With the guarded experimental executive profile and
 CPU correction, live ARM GDB verifies heap setup, Window Server connection and
 completion of the initial drawing function. SDK cleanup-stack initialization is
-provided. Rendered pixels, pointer delivery and normal exit remain unverified.
+provided. Both backends now pass rendered PNG, increment/reset/outside pointer
+and normal zero guest/frontend exit checks; see
+[the control replay](../../docs/EMULATOR_CONTROL.md). CLion should load this
+directory's `symbian-pic` profile; see [CLion setup](../../docs/CLION.md).
 See [the ABI experiment](../../docs/BELLE_ABI.md) for scope and replay. The example has a single-EXE SIS package
 and no application registration.

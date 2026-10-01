@@ -142,3 +142,14 @@ patch replay. The earlier `delight-profile-02/04` runs retain the coprocessor
 abort, `delight-profile-06` retains panic 69, and the cleanup run retains the
 initial drawing-function stop. Firmware, derived code, instances and build
 products remain excluded from Git and the production wheel.
+
+
+## Render/input/exit follow-up
+
+The guarded profile now has separate end-to-end evidence on Dynarmic and Dyncom:
+real screen-texture captures, two increment taps, an outside-control tap, reset
+and normal SDK exit with reason zero. The frontend exits zero and retains a
+native kernel process-exit report. This advances the earlier drawing-call-only
+checkpoint; it does not resolve full DLL initialization, SVC 0x10D/0xFF, complete
+unwinding or general firmware compatibility. Replay and bounds are in
+[EMULATOR_CONTROL.md](EMULATOR_CONTROL.md).
