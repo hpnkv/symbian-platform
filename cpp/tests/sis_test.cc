@@ -18,6 +18,16 @@ using analysis::internal::Crc16;
 using analysis::internal::Put16;
 using analysis::internal::Put32;
 using analysis::internal::Read32;
+using analysis::internal::UidChecksum;
+
+std::string Resource(uint32_t uid2, uint32_t uid3) {
+  std::string bytes(24, '\0');
+  Put32(bytes, 0, 0x101f4a6b);
+  Put32(bytes, 4, uid2);
+  Put32(bytes, 8, uid3);
+  Put32(bytes, 12, UidChecksum(bytes));
+  return bytes;
+}
 
 PackageOptions Options() {
   return {0xe0000809, "Probe", "Symbian research", "probe.exe", {1, 2, 3}};
@@ -51,6 +61,68 @@ TEST_F(SisTest,
   EXPECT_EQ(info->target, "!:\\sys\\bin\\probe.exe");
   EXPECT_EQ(info->options.name, "Probe");
   EXPECT_EQ(info->options.vendor, "Symbian research");
+}
+
+TEST_F(SisTest, RegisteredPackageOwnsThreeVerifiedFiles) {
+  const std::string registration = Resource(0x101f8021, 0xe0000808);
+  const std::string caption = Resource(0, 0);
+  const auto package =
+      BuildRegisteredPackage(image_, registration, caption, Options());
+  ASSERT_TRUE(package.ok()) << package.status();
+  const auto info = InspectPackage(*package);
+  ASSERT_TRUE(info.ok()) << info.status();
+  ASSERT_EQ(info->files.size(), 3);
+  EXPECT_TRUE(info->application_registered);
+  EXPECT_EQ(info->files[0].target, "!:\\sys\\bin\\probe.exe");
+  EXPECT_EQ(info->files[1].target,
+            "!:\\private\\10003a3f\\import\\apps\\probe_reg.rsc");
+  EXPECT_EQ(info->files[2].target, "!:\\resource\\apps\\probe_loc.rsc");
+  EXPECT_EQ(info->files[1].size, registration.size());
+  EXPECT_EQ(info->files[2].size, caption.size());
+  EXPECT_FALSE(info->files[1].sha1.empty());
+  EXPECT_EQ(BuildRegisteredPackage(image_, registration, caption, Options()),
+            package);
+  std::string wrong = registration;
+  Put32(wrong, 8, 0xe0000809);
+  Put32(wrong, 12, UidChecksum(wrong));
+  EXPECT_EQ(
+      BuildRegisteredPackage(image_, wrong, caption, Options()).status().code(),
+      absl::StatusCode::kInvalidArgument);
+}
+
+TEST_F(SisTest, LocalesAndSvgIconUseCanonicalBoundedAssets) {
+  const auto icon = BuildSvgMif(
+      R"(<svg xmlns="http://www.w3.org/2000/svg"><circle r="5"/></svg>)");
+  ASSERT_TRUE(icon.ok()) << icon.status();
+  EXPECT_EQ(Read32(*icon, 0), 0x34232342);
+  EXPECT_EQ(Read32(*icon, 4), 2);
+  EXPECT_EQ(Read32(*icon, 12), 2);
+  EXPECT_EQ(Read32(*icon, 16), 32);
+  EXPECT_EQ(Read32(*icon, 32), 0x34232343);
+  EXPECT_EQ(Read32(*icon, 48), 1);
+  const std::string prefix = "!:\\resource\\apps\\probe";
+  std::vector<ApplicationFile> assets = {
+      {"!:\\private\\10003a3f\\import\\apps\\probe_reg.rsc",
+       Resource(0x101f8021, 0xe0000808)},
+      {prefix + "_loc.rsc", Resource(0, 0)},
+      {prefix + "_loc.r01", Resource(0, 0)},
+      {prefix + "_loc.r02", Resource(0, 0)},
+      {prefix + ".mif", *icon},
+  };
+  const auto package = BuildApplicationPackage(image_, assets, Options());
+  ASSERT_TRUE(package.ok()) << package.status();
+  const auto info = InspectPackage(*package);
+  ASSERT_TRUE(info.ok()) << info.status();
+  EXPECT_EQ(info->files.size(), 6);
+  EXPECT_TRUE(info->application_registered);
+  EXPECT_EQ(info->files.back().target, prefix + ".mif");
+  EXPECT_EQ(BuildApplicationPackage(image_, assets, Options()), package);
+  std::swap(assets[2], assets[3]);
+  EXPECT_EQ(BuildApplicationPackage(image_, assets, Options()).status().code(),
+            absl::StatusCode::kInvalidArgument);
+  assets[2].target = "!:\\sys\\bin\\unsafe.dll";
+  EXPECT_EQ(BuildApplicationPackage(image_, assets, Options()).status().code(),
+            absl::StatusCode::kInvalidArgument);
 }
 
 TEST_F(SisTest, RejectsEveryTruncationAndSingleByteMutation) {

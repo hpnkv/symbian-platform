@@ -247,7 +247,19 @@ def verify_gui(artifact: Path, oracles_build: Path, output: Path) -> dict:
         metadata["uid3"] != 0xE0000811
         or metadata["dll"]
         or metadata["entry_offset"] != 0
-        or selections != {"euser.dll": 10, "ws32.dll": 28}
+        or not {"euser.dll", "ws32.dll"}.issubset(selections)
+        or not set(selections).issubset(
+            {
+                "euser.dll",
+                "ws32.dll",
+                "gdi.dll",
+                "libc.dll",
+                "libm.dll",
+                "libpthread.dll",
+                "drtaeabi.dll",
+            }
+        )
+        or any(count == 0 for count in selections.values())
     ):
         raise StatusError(
             Code.INVALID_ARGUMENT, "Expected the maintained GUI image profile"

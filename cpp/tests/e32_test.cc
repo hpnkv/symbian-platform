@@ -1,7 +1,10 @@
 #include "symbian/e32/e32.h"
 
 #include <cstddef>
+#include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include <absl/status/status.h>
 #include <gtest/gtest.h>
@@ -34,7 +37,106 @@ TEST(E32Test, ConvertsSupportedExecutableWithStableIdentity) {
   EXPECT_EQ(info->secure_id, info->uid3);
   EXPECT_EQ(info->code_size, 32);
   EXPECT_EQ(info->entry_offset, 0);
+  EXPECT_EQ(info->exception_descriptor_offset, 0);
   EXPECT_EQ(*result, *ConvertPicExecutable(Executable(), 0xe0000808));
+}
+
+TEST(E32Test, RejectsRenamedArmExceptionIndexWithoutDescriptor) {
+  auto elf = Executable();
+  Put32(elf, 160, 0x70000001);  // SHT_ARM_EXIDX without .ARM.exidx name.
+  EXPECT_EQ(ConvertPicExecutable(elf, 0xe0000808).status().code(),
+            absl::StatusCode::kDataLoss);
+}
+
+TEST(E32Test, PreservesIndependentDataBssAndTypedPointers) {
+  const auto image =
+      ConvertPicExecutable(testing::DataExecutable(), 0xe0000808);
+  ASSERT_TRUE(image.ok()) << image.status();
+  const auto info = InspectImage(*image);
+  ASSERT_TRUE(info.ok()) << info.status();
+  EXPECT_EQ(info->data_size, 12);
+  EXPECT_EQ(info->bss_size, 12);
+  EXPECT_EQ(info->data_base, 0x20000000);
+  EXPECT_EQ(info->code_relocations, std::vector<uint32_t>{16});
+  EXPECT_EQ(info->code_data_relocations, std::vector<uint32_t>{16});
+  EXPECT_EQ(info->data_relocations, (std::vector<uint32_t>{0, 4, 8}));
+  EXPECT_EQ(info->data_data_relocations, (std::vector<uint32_t>{4, 8}));
+  const auto data_offset = Read32(*image, 104);
+  EXPECT_EQ(Read32(*image, data_offset), 0x8019);  // Preserve Thumb bit.
+  EXPECT_EQ(Read32(*image, data_offset + 8), 0x2000000c);
+  for (size_t i = 0; i < image->size(); ++i) {
+    EXPECT_FALSE(InspectImage(std::string_view(*image).substr(0, i)).ok()) << i;
+  }
+  for (const auto offset :
+       {size_t{172}, size_t{data_offset}, size_t{data_offset + 4}}) {
+    auto changed = *image;
+    Put32(changed, offset, 0x10000000);
+    EXPECT_FALSE(InspectImage(changed).ok()) << offset;
+  }
+  auto changed = *image;
+  // Claim a code target for a word that actually points into data.
+  Put16(changed, Read32(changed, 112) + 16, 0x1010);
+  EXPECT_FALSE(InspectImage(changed).ok());
+}
+
+TEST(E32Test, AcceptsBssWithoutInitializedData) {
+  auto elf = testing::DataExecutable();
+  Put32(elf, 100, 0);           // RW file size.
+  Put32(elf, 340, 0);           // Empty data section.
+  Put32(elf, 372, 0x20000000);  // BSS address.
+  Put32(elf, 380, 24);
+  Put32(elf, 420, 0);  // No retained data-source relocations.
+  Put16(elf, 526, 5);  // Symbol 2 now denotes BSS.
+  const auto image = ConvertPicExecutable(elf, 0xe0000808);
+  ASSERT_TRUE(image.ok()) << image.status();
+  const auto info = InspectImage(*image);
+  ASSERT_TRUE(info.ok()) << info.status();
+  EXPECT_EQ(info->data_size, 0);
+  EXPECT_EQ(info->bss_size, 24);
+  EXPECT_EQ(Read32(*image, 104), 0);
+  EXPECT_TRUE(info->data_relocations.empty());
+  EXPECT_EQ(info->code_data_relocations, std::vector<uint32_t>{16});
+}
+
+TEST(E32Test, RejectsMalformedWritableMappingsAndUnverifiedLifetime) {
+  for (const auto& [offset, value] : std::vector<std::pair<size_t, uint32_t>>{
+           {88, 116},
+           {92, 0x8000},
+           {92, 0xfffffffc},
+           {100, 13},
+           {104, 8},
+           {104, 1024 * 1024 + 4},
+           {108, 7},
+           {112, 3},
+           {328, 0x403},
+           {324, 14},
+           {372, 0x20000008},
+           {548, 0x203},       // Cross-mapping REL32.
+           {552, 0x2000000c},  // Relocation source is BSS.
+           {508,
+            2},  // Function symbol in data (symbol 1 changed below instead).
+       }) {
+    auto elf = testing::DataExecutable();
+    Put32(elf, offset, value);
+    if (offset == 508) {
+      Put32(elf, 500, 0x20000000);
+    }
+    EXPECT_FALSE(ConvertPicExecutable(elf, 0xe0000808).ok()) << offset;
+  }
+}
+
+TEST(E32Test, EncodesTypedFixupsWithoutWeakeningLegacyDecode) {
+  const std::vector<uint32_t> offsets{0, 4, 4096};
+  const std::set<uint32_t> data{4};
+  const auto encoded = internal::EncodeCodeRelocations(offsets, data);
+  ASSERT_TRUE(encoded.ok()) << encoded.status();
+  EXPECT_FALSE(internal::DecodeCodeRelocations(*encoded, 4100).ok());
+  std::set<uint32_t> decoded_data;
+  auto decoded = internal::DecodeCodeRelocations(*encoded, 4100, &decoded_data);
+  ASSERT_TRUE(decoded.ok()) << decoded.status();
+  EXPECT_EQ(*decoded, offsets);
+  EXPECT_EQ(decoded_data, data);
+  EXPECT_FALSE(internal::EncodeCodeRelocations(offsets, {8}).ok());
 }
 
 TEST(E32Test, RejectsEveryElfTruncation) {
@@ -222,6 +324,144 @@ TEST(E32PointerTest, RejectsBadPointerStateAlignmentAndDuplicateFixups) {
             absl::StatusCode::kDataLoss);
 }
 
+// LLD synthesizes local GOT words without emitting ABS32 records for them.
+// Retained GOT_PREL references identify the symbols whose words need fixups.
+std::string GotExecutable() {
+  std::string elf = Executable();
+  const std::string sections = elf.substr(116, 200);
+  elf.resize(512 + 7 * 40, '\0');
+  elf.replace(512, sections.size(), sections);
+  Put32(elf, 32, 512);
+  Put16(elf, 48, 7);
+  Put16(elf, 50, 5);
+  Put32(elf, 512 + 40 + 20, 24);  // Text excludes the GOT.
+  Put32(elf, 336, 0x8014);
+  elf[344] = 0x11;         // Global object.
+  Put32(elf, 352, 0x160);  // R_ARM_GOT_PREL, symbol 1.
+  Put32(elf, 100, 8);      // Resolved PC-relative displacement stays unchanged.
+  Put32(elf, 108, 0x8014);
+  elf.replace(356, 6, "\0.got\0", 6);
+  Put32(elf, 512 + 5 * 40 + 4, 3);  // Section-name string table.
+  Put32(elf, 512 + 5 * 40 + 16, 356);
+  Put32(elf, 512 + 5 * 40 + 20, 6);
+  const size_t got = 512 + 6 * 40;
+  Put32(elf, got, 1);
+  Put32(elf, got + 4, 1);
+  Put32(elf, got + 8, 3);
+  Put32(elf, got + 12, 0x8018);
+  Put32(elf, got + 16, 108);
+  Put32(elf, got + 20, 4);
+  return elf;
+}
+
+TEST(E32GotTest, RelocatesLocalObjectWordAndPreservesLinkedReference) {
+  const auto image = ConvertPicExecutable(GotExecutable(), 0xe0000808);
+  ASSERT_TRUE(image.ok()) << image.status();
+  const auto info = InspectImage(*image);
+  ASSERT_TRUE(info.ok()) << info.status();
+  EXPECT_EQ(info->code_relocations, std::vector<uint32_t>{24});
+  EXPECT_EQ(Read32(*image, 156 + 24), 0x8014);
+  EXPECT_EQ(Read32(*image, 156 + 16), 8);
+}
+
+TEST(E32GotTest, PreservesThumbAndOddByteObjectAddressesExactly) {
+  for (const char type : {char{0x12}, char{0x11}}) {
+    std::string elf = GotExecutable();
+    elf[344] = type;
+    Put32(elf, 336, 0x8015);
+    Put32(elf, 108, 0x8015);
+    const auto image = ConvertPicExecutable(elf, 0xe0000808);
+    ASSERT_TRUE(image.ok()) << image.status();
+    EXPECT_EQ(Read32(*image, 156 + 24), 0x8015);
+    Put32(elf, 108, 0x8014);
+    EXPECT_EQ(ConvertPicExecutable(elf, 0xe0000808).status().code(),
+              absl::StatusCode::kDataLoss);
+  }
+}
+
+TEST(E32GotTest, RejectsMissingTableUndefinedSymbolAndUnclaimedWords) {
+  std::string elf = GotExecutable();
+  Put32(elf, 512 + 6 * 40 + 20, 0);
+  EXPECT_FALSE(ConvertPicExecutable(elf, 0xe0000808).ok());
+  elf = GotExecutable();
+  Put16(elf, 346, 0);
+  EXPECT_EQ(ConvertPicExecutable(elf, 0xe0000808).status().code(),
+            absl::StatusCode::kUnimplemented);
+  for (uint32_t value : {0U, 0x8016U, 0xfffffff0U}) {
+    elf = GotExecutable();
+    Put32(elf, 108, value);
+    EXPECT_EQ(ConvertPicExecutable(elf, 0xe0000808).status().code(),
+              absl::StatusCode::kDataLoss);
+  }
+  elf = GotExecutable();
+  Put32(elf, 352, 0x11c);  // Ordinary call cannot claim a GOT word.
+  EXPECT_EQ(ConvertPicExecutable(elf, 0xe0000808).status().code(),
+            absl::StatusCode::kDataLoss);
+}
+
+TEST(E32GotTest, CoversEverySlotAndRejectsMissingSymbolCoverage) {
+  std::string elf = GotExecutable();
+  Put32(elf, 512 + 6 * 40 + 20, 8);
+  Put32(elf, 112, 0x8014);  // Two aliases still need two loader fixups.
+  const auto image = ConvertPicExecutable(elf, 0xe0000808);
+  ASSERT_TRUE(image.ok()) << image.status();
+  EXPECT_EQ(InspectImage(*image)->code_relocations,
+            (std::vector<uint32_t>{24, 28}));
+  Put32(elf, 112, 0x8016);
+  EXPECT_EQ(ConvertPicExecutable(elf, 0xe0000808).status().code(),
+            absl::StatusCode::kDataLoss);
+  elf = GotExecutable();
+  // A second referenced symbol without its own GOT word cannot be published.
+  Put32(elf, 320, 0x8016);  // Symbol zero becomes another defined object.
+  elf[328] = 0x11;
+  Put16(elf, 330, 1);
+  const size_t relocs = elf.size();
+  elf.append(16, '\0');
+  Put32(elf, relocs, 0x8010);
+  Put32(elf, relocs + 4, 0x160);
+  Put32(elf, relocs + 8, 0x8014);
+  Put32(elf, relocs + 12, 0x60);
+  Put32(elf, 512 + 3 * 40 + 16, static_cast<uint32_t>(relocs));
+  Put32(elf, 512 + 3 * 40 + 20, 16);
+  EXPECT_EQ(ConvertPicExecutable(elf, 0xe0000808).status().code(),
+            absl::StatusCode::kDataLoss);
+}
+
+TEST(E32GotTest, RejectsSymbolsOutsideTheirSectionAndUnsupportedSymbolKinds) {
+  std::string elf = GotExecutable();
+  Put32(elf, 336, 0x801c);  // In RX, but outside the symbol's text section.
+  Put32(elf, 108, 0x801c);
+  EXPECT_EQ(ConvertPicExecutable(elf, 0xe0000808).status().code(),
+            absl::StatusCode::kUnimplemented);
+  elf = GotExecutable();
+  elf[344] = 0x10;  // Undefined symbol semantics must not be guessed.
+  EXPECT_EQ(ConvertPicExecutable(elf, 0xe0000808).status().code(),
+            absl::StatusCode::kUnimplemented);
+}
+
+TEST(E32GotTest, RejectsBadShapeNamesDuplicateTablesAndTargetRelocations) {
+  const size_t got = 512 + 6 * 40;
+  for (const size_t offset : {got, got + 4, got + 8, got + 12, got + 16,
+                              got + 20, size_t{512 + 5 * 40 + 16}}) {
+    std::string elf = GotExecutable();
+    Put32(elf, offset, 0xfffffff0);
+    EXPECT_FALSE(ConvertPicExecutable(elf, 0xe0000808).ok()) << offset;
+  }
+  std::string elf = GotExecutable();
+  Put32(elf, got + 20, 3);
+  EXPECT_FALSE(ConvertPicExecutable(elf, 0xe0000808).ok());
+  elf = GotExecutable();
+  elf.append(elf.substr(got, 40));
+  Put16(elf, 48, 8);
+  EXPECT_EQ(ConvertPicExecutable(elf, 0xe0000808).status().code(),
+            absl::StatusCode::kDataLoss);
+  elf = GotExecutable();
+  Put32(elf, 512 + 3 * 40 + 28, 6);  // Relocation target is the GOT itself.
+  Put32(elf, 348, 0x8018);
+  EXPECT_EQ(ConvertPicExecutable(elf, 0xe0000808).status().code(),
+            absl::StatusCode::kUnimplemented);
+}
+
 // Extend the bounded format fixture with a real named function symbol.
 std::string ExportedExecutable() {
   std::string elf = Executable();
@@ -232,6 +472,40 @@ std::string ExportedExecutable() {
   Put32(elf, 340, 4);
   elf[344] = 0x12;  // STB_GLOBAL, STT_FUNC.
   return elf;
+}
+
+std::string ExportedDataExecutable() {
+  std::string elf = testing::DataExecutable();
+  // Name the existing Thumb function symbol without changing the data and
+  // pointer-relocation fixture.
+  Put32(elf, 456, static_cast<uint32_t>(elf.size()));
+  Put32(elf, 460, 10);
+  elf.append("\0Function\0", 10);
+  Put32(elf, 496, 1);
+  Put32(elf, 504, 4);
+  elf[508] = 0x12;
+  return elf;
+}
+
+TEST(E32DllTest, PreservesWritableDataBssAndTypedRelocations) {
+  const auto image =
+      ConvertDll(ExportedDataExecutable(), "EXPORTS\nFunction @ 1 NONAME\n", {},
+                 0xe0000810);
+  ASSERT_TRUE(image.ok()) << image.status();
+  const auto info = InspectImage(*image);
+  ASSERT_TRUE(info.ok()) << info.status();
+  EXPECT_TRUE(info->dll);
+  EXPECT_EQ(info->data_size, 12);
+  EXPECT_EQ(info->bss_size, 12);
+  EXPECT_EQ(info->data_base, 0x20000000);
+  EXPECT_EQ(info->code_relocations, (std::vector<uint32_t>{16, 36}));
+  EXPECT_EQ(info->code_data_relocations, (std::vector<uint32_t>{16}));
+  EXPECT_EQ(info->data_relocations, (std::vector<uint32_t>{0, 4, 8}));
+  EXPECT_EQ(info->data_data_relocations, (std::vector<uint32_t>{4, 8}));
+  EXPECT_EQ(info->exports.front().address, 0x8019);
+  EXPECT_EQ(*image,
+            *ConvertDll(ExportedDataExecutable(),
+                        "EXPORTS\nFunction @ 1 NONAME\n", {}, 0xe0000810));
 }
 
 TEST(E32DllTest, ResolvesFrozenOrdinalsAndRelocatesAbsentSlots) {

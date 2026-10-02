@@ -1,4 +1,4 @@
-"""Loads the native boundary lazily so doctor can diagnose its absence."""
+"""Access to the native boundary; doctor avoids importing this module."""
 
 import importlib
 from types import ModuleType

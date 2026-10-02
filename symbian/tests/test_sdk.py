@@ -8,9 +8,9 @@ from pathlib import Path
 import pytest
 
 from symbian._native import inspect_import_proxy, parse_def
-from symbian.cli.__main__ import main
 from symbian.sdk import build_import_proxy, inspect_proxy
 from symbian.status import Code, StatusError
+from symbian.tests.cli_json import main
 
 DEFINITION = "EXPORTS\n_ZN4User4ExitEi @ 641 NONAME\nFunction @ 7 NONAME\n"
 

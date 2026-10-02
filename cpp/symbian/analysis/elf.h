@@ -6,6 +6,8 @@
 
 #include <absl/status/statusor.h>
 
+#include "symbian/analysis/arm_attributes.h"
+
 namespace symbian::analysis {
 
 // Metadata from an ELF32 little-endian header and bounded table locations.
@@ -17,6 +19,7 @@ struct Elf32Header {
   uint32_t flags = 0;
   uint16_t program_count = 0;
   uint16_t section_count = 0;
+  ArmAttributes arm;
 };
 
 // Inspects a complete file. Extended numbering and other ELF classes/endian

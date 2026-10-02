@@ -1,0 +1,13 @@
+[project]
+name = "runtime_probe"
+kind = "e32-import-experiment"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000813
+import_proxies = ["../../.symbian/runtime-sdk/euser/euser.dso"]
+
+[package]
+uid = 0xe0000814
+name = "Symbian C++ Runtime Probe"
+vendor = "Symbian research"
+executable_name = "runtime_probe.exe"
+version = [1, 0, 0]

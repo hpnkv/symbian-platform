@@ -1,5 +1,16 @@
 find_package(GTest CONFIG REQUIRED)
+add_executable(symbian_firmware_tests firmware_test.cc
+    "${SYMBIAN_PLATFORM_ROOT}/research/upstream/EKA2L1/src/tests/platform.cpp")
+target_compile_options(symbian_firmware_tests PRIVATE -fno-exceptions)
+target_link_libraries(symbian_firmware_tests PRIVATE
+                     symbian_emulator_firmware epoc config drivers GTest::gtest_main)
+add_test(NAME symbian_firmware_tests COMMAND symbian_firmware_tests)
 add_executable(symbian_e32_oracle e32_oracle_test.cc)
+add_executable(symbian_rom_atomic_oracle rom_atomic_oracle.cc)
+target_compile_features(symbian_rom_atomic_oracle PRIVATE cxx_std_20)
+target_compile_options(symbian_rom_atomic_oracle PRIVATE -fno-exceptions)
+target_link_libraries(symbian_rom_atomic_oracle PRIVATE
+                      epocloader epocmem config common)
 target_compile_features(symbian_e32_oracle PRIVATE cxx_std_20)
 target_compile_options(symbian_e32_oracle PRIVATE -fno-exceptions)
 target_link_libraries(symbian_e32_oracle PRIVATE
@@ -59,6 +70,13 @@ add_test(NAME symbian_cpu_probe COMMAND symbian_cpu_probe)
 set_tests_properties(symbian_cpu_probe PROPERTIES
   ENVIRONMENT "SYMBIAN_E32_TEST_IMAGE=${SYMBIAN_E32_TEST_IMAGE}" TIMEOUT 15)
 
+add_executable(symbian_cpu_strexd cpu_strexd_test.cc)
+target_compile_features(symbian_cpu_strexd PRIVATE cxx_std_20)
+target_compile_options(symbian_cpu_strexd PRIVATE -fno-exceptions)
+target_link_libraries(symbian_cpu_strexd PRIVATE cpu GTest::gtest_main)
+add_test(NAME symbian_cpu_strexd COMMAND symbian_cpu_strexd)
+set_tests_properties(symbian_cpu_strexd PROPERTIES TIMEOUT 15)
+
 add_executable(symbian_process_probe process_probe_test.cc
     "${SYMBIAN_PLATFORM_ROOT}/research/upstream/EKA2L1/src/tests/platform.cpp")
 target_compile_features(symbian_process_probe PRIVATE cxx_std_20)
@@ -87,8 +105,11 @@ add_executable(symbian_gui_package_probe gui_package_probe_test.cc
     "${SYMBIAN_PLATFORM_ROOT}/research/upstream/EKA2L1/src/tests/platform.cpp")
 target_compile_features(symbian_gui_package_probe PRIVATE cxx_std_20)
 target_compile_options(symbian_gui_package_probe PRIVATE -fno-exceptions)
+target_include_directories(symbian_gui_package_probe PRIVATE
+  "${SYMBIAN_PLATFORM_ROOT}/research/upstream/EKA2L1/src/emu/services/include")
 target_link_libraries(symbian_gui_package_probe PRIVATE
-                      epoc epockern epocmem epoctiming epocio epocpkg epocloader GTest::gtest_main)
+                      epoc epockern epocmem epoctiming epocio epocpkg epocloader
+                      epocservs GTest::gtest_main)
 # The Python verifier supplies a private exact payload and independent hash.
 # Direct replay also requires SYMBIAN_E32_TEST_HASH; no default hash is invented.
 add_test(NAME symbian_gui_package_probe COMMAND symbian_gui_package_probe)
@@ -159,6 +180,13 @@ add_test(NAME symbian_import_probe COMMAND symbian_import_probe)
 set_tests_properties(symbian_import_probe PROPERTIES
   ENVIRONMENT "SYMBIAN_E32_TEST_IMAGE=${SYMBIAN_PLATFORM_ROOT}/.symbian/import-probe/import_probe.exe;SYMBIAN_DLL_TEST_IMAGE=${SYMBIAN_PLATFORM_ROOT}/.symbian/native-dll/probe.dll"
   TIMEOUT 15)
+
+add_executable(symbian_import_data_probe import_data_probe_test.cc
+    "${SYMBIAN_PLATFORM_ROOT}/research/upstream/EKA2L1/src/tests/platform.cpp")
+target_compile_features(symbian_import_data_probe PRIVATE cxx_std_20)
+target_compile_options(symbian_import_data_probe PRIVATE -fno-exceptions)
+target_link_libraries(symbian_import_data_probe PRIVATE
+                      epoc epockern epocmem epoctiming epocio epocloader GTest::gtest_main)
 
 add_executable(symbian_pointer_probe pointer_probe_test.cc
     "${SYMBIAN_PLATFORM_ROOT}/research/upstream/EKA2L1/src/tests/platform.cpp")

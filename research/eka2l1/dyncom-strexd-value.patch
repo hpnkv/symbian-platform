@@ -1,0 +1,12 @@
+diff --git a/src/emu/cpu/src/dyncom/arm_dyncom_interpreter.cpp b/src/emu/cpu/src/dyncom/arm_dyncom_interpreter.cpp
+--- a/src/emu/cpu/src/dyncom/arm_dyncom_interpreter.cpp
++++ b/src/emu/cpu/src/dyncom/arm_dyncom_interpreter.cpp
+@@ -4934,7 +4934,7 @@ STREXD_INST : {
+         else
+             value = (((std::uint64_t)rt2 << 32) | rt);
+ 
+-        RD = (cpu->exmonitor()->exclusive_write64(cpu->parent(), write_addr, RM) ? 0 : 1);
++        RD = (cpu->exmonitor()->exclusive_write64(cpu->parent(), write_addr, value) ? 0 : 1);
+     }
+     cpu->Reg[15] += cpu->GetInstructionSize();
+     INC_PC(sizeof(generic_arm_inst));

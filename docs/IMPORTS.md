@@ -68,11 +68,16 @@ uid3 = 0xe0000810
 export_definition = "exports.def"
 ```
 
-The CMake helper is `symbian_add_pic_dll`. Its ELF transport still has ET_EXEC,
-one RX segment and an EKA2 ARM entry; the native converter supplies E32 DLL
-identity. The DEF must remain within the project and outside output. It is hashed
-with the compiler graph and optional import proxies. Two independent builds
-must agree. The `symbian.e32-dll-experiment/v1` report and native inspector expose
+The original project CMake helper is `symbian_add_pic_dll`; installed SDK
+projects can also use `symbian_add_dynamic_library` to publish a DLL, retain its
+ELF symbols and create a selected ordinal proxy. Its ELF transport remains
+ET_EXEC with separate RX and optional RW mappings; the converter supplies E32 DLL
+identity. In the `e32-dll-experiment` project path the DEF stays within the
+project and outside output, is hashed with the compiler graph and optional
+import proxies, and two independent builds must agree. The installed CMake
+publisher checks its linked inputs and converts on dependency changes; it does
+not yet create a two-build reproducibility report. The
+`symbian.e32-dll-experiment/v1` report and native inspector expose
 DLL identity, header size, export addresses/absence and code relocation offsets.
 Build reports retain loader/runtime verification false.
 
@@ -95,8 +100,12 @@ Original Nokia checksum and whole-image validation pass native DLLs with
 ordinals 7, 641 and 65,535, covering variable headers and relocation pages.
 A separate combined import/export conversion case passes those consumers;
 its executable startup is layout evidence, not runnable DLL initialization.
-Data exports, writable data/BSS/TLS, constructors, SDK heap/TLS/static initialization and full target C++ runtime
-remain unsupported. DLL startup is a no-resource integer experiment.
+Data exports, TLS, constructors, SDK heap/TLS/static initialization and a full
+target C++ DLL runtime remain unsupported. A separate maintained DLL data probe
+has verified 4-byte initialized state, 4-byte BSS and GOT fixups resetting for
+each new process on Dyncom and Dynarmic. Hidden/internal cross-mapping data
+references are still rejected; see [RUNTIME.md](RUNTIME.md). DLL startup here
+is a no-resource integer experiment.
 The process uses direct ThreadKill and provides no matched ROM/Z or Belle
 services. `verify-probe` and the SIS experiment require import-free executables.
 
@@ -110,5 +119,5 @@ see RESEARCH_LOG.md for the evidence correction.
 New evidence is under .symbian/native-dll/verification-report.json. The EXE digest
 is `8f6cbed4ca3fe010be4d73b276d3671218e9cb3c3e4fbae29284048bced5e1a4`.
 Internal RX pointer relocations are described in POINTERS.md.
-Matched DLLs, complete SDK startup/cleanup, data relocation support, ordinary
+Matched DLLs, complete SDK startup/cleanup, general DLL relocation/lifetime, ordinary
 application tests and physical installation remain pending.

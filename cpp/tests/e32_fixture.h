@@ -66,6 +66,65 @@ inline std::string Executable() {
   return bytes;
 }
 
+// Independent code/data addresses, pointers from both mappings to both targets,
+// and a Thumb function. File data is 12 bytes; BSS is another 12 bytes.
+inline std::string DataExecutable() {
+  std::string bytes(580, '\0');
+  const auto original = Executable();
+  bytes.replace(0, 52, original.substr(0, 52));
+  Put32(bytes, 32, 160);
+  Put16(bytes, 44, 2);
+  Put16(bytes, 48, 8);
+  bytes.replace(52, 32, original.substr(52, 32));
+  Put32(bytes, 56, 116);
+  Put32(bytes, 84, 1);
+  Put32(bytes, 88, 148);
+  Put32(bytes, 92, 0x20000000);
+  Put32(bytes, 100, 12);
+  Put32(bytes, 104, 24);
+  Put32(bytes, 108, 6);
+  Put32(bytes, 112, 4);
+  bytes.replace(116, 32, original.substr(84, 32));
+  Put32(bytes, 132, 0x20000000);  // Code to initialized data.
+  Put32(bytes, 148, 0x8019);      // Data to Thumb code.
+  Put32(bytes, 152, 0x20000000);  // Data to data.
+  Put32(bytes, 156, 0x2000000c);  // Data to BSS.
+  auto section = [&](uint32_t index, uint32_t type, uint32_t flags,
+                     uint32_t address, uint32_t offset, uint32_t size,
+                     uint32_t link, uint32_t info, uint32_t entry) {
+    const uint32_t p = 160 + index * 40;
+    Put32(bytes, p + 4, type);
+    Put32(bytes, p + 8, flags);
+    Put32(bytes, p + 12, address);
+    Put32(bytes, p + 16, offset);
+    Put32(bytes, p + 20, size);
+    Put32(bytes, p + 24, link);
+    Put32(bytes, p + 28, info);
+    Put32(bytes, p + 36, entry);
+  };
+  section(1, 1, 6, 0x8000, 116, 32, 0, 0, 0);
+  section(2, 2, 0, 0, 480, 64, 7, 0, 16);
+  section(3, 9, 0, 0, 544, 8, 2, 1, 8);
+  section(4, 1, 3, 0x20000000, 148, 12, 0, 0, 0);
+  section(5, 8, 3, 0x2000000c, 160, 12, 0, 0, 0);
+  section(6, 9, 0, 0, 552, 24, 2, 4, 8);
+  section(7, 3, 0, 0, 576, 4, 0, 0, 0);
+  for (uint32_t index = 1; index <= 3; ++index) {
+    const uint32_t p = 480 + index * 16;
+    Put32(bytes, p + 4,
+          index == 1 ? 0x8019 : (index == 2 ? 0x20000000 : 0x2000000c));
+    bytes[p + 12] = index == 1 ? 2 : 1;
+    Put16(bytes, p + 14, index == 1 ? 1 : (index == 2 ? 4 : 5));
+  }
+  Put32(bytes, 544, 0x8010);
+  Put32(bytes, 548, 0x202);
+  for (uint32_t index = 0; index < 3; ++index) {
+    Put32(bytes, 552 + index * 8, 0x20000000 + index * 4);
+    Put32(bytes, 556 + index * 8, ((index + 1) << 8) | 2);
+  }
+  return bytes;
+}
+
 }  // namespace symbian::testing
 
 #endif  // SYMBIAN_TESTS_E32_FIXTURE_H_

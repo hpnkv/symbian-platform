@@ -5,10 +5,15 @@ build-backend = "scikit_build_core.build"
 [project]
 name = "symbian-platform"
 version = "0.1.0"
-description = "Native development and research tools for Nokia 808 / Symbian Belle"
+description = "Native development and research tools for Symbian devices"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "pydantic>=2.12,<3",
+    "fastapi>=0.115,<1",
+    "httpx>=0.28,<1",
+    "msgpack>=1,<2",
+]
 
 [project.scripts]
 symbian = "symbian.cli.__main__:main"
@@ -16,12 +21,13 @@ symbian = "symbian.cli.__main__:main"
 [tool.scikit-build]
 cmake.version = ">=3.28"
 build-dir = "build/python/{wheel_tag}"
-wheel.packages = ["symbian"]
+wheel.packages = ["symbian", "pybind11_abseil"]
 wheel.exclude = ["**/tests/**", "**/__pycache__/**", "**/*.pyc"]
 sdist.exclude = ["research/upstream", ".symbian", ".idea"]
 
 [tool.scikit-build.cmake.define]
 SYMBIAN_BUILD_PYTHON = "ON"
+SYMBIAN_BUILD_GUI_EXAMPLE = "OFF"
 BUILD_TESTING = "OFF"
 
 [dependency-groups]
@@ -46,3 +52,22 @@ select = ["E", "F", "I", "B"]
 
 [tool.pytest.ini_options]
 testpaths = ["symbian"]
+
+# Host-tool wheels first. Emulator/LLVM/GDB payload wheels have separate
+# platform baselines and are designed in docs/DISTRIBUTION.md.
+[tool.cibuildwheel]
+build = "cp311-* cp312-* cp313-* cp314-*"
+skip = "*-musllinux* *-win32 *-win_amd64 *-win_arm64"
+before-all = "bash {project}/scripts/bootstrap_wheel_deps.sh"
+test-command = "python -m symbian.build_support.audit {wheel}"
+environment = { CMAKE_BUILD_PARALLEL_LEVEL = "4", CMAKE_ARGS = "-DSYMBIAN_DEPS_PREFIX=$SYMBIAN_DEPS_PREFIX" }
+environment-pass = ["SYMBIAN_DEPS_PREFIX", "SYMBIAN_WHEEL_ARCH"]
+
+[tool.cibuildwheel.linux]
+archs = ["x86_64", "aarch64"]
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+
+[tool.cibuildwheel.macos]
+archs = ["arm64"]
+environment = { MACOSX_DEPLOYMENT_TARGET = "26.0", CMAKE_BUILD_PARALLEL_LEVEL = "4", CMAKE_ARGS = "-DSYMBIAN_DEPS_PREFIX=$SYMBIAN_DEPS_PREFIX -DCMAKE_OSX_DEPLOYMENT_TARGET=26.0" }

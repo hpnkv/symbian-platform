@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 
 from symbian import toolchain
-from symbian.cli.__main__ import main
 from symbian.status import Code, StatusError
+from symbian.tests.cli_json import main
 from symbian.toolchain import verification
 
 

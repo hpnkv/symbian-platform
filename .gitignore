@@ -8,6 +8,7 @@ __pycache__/
 build/
 dist/
 .symbian/
+# Disposable upstream checkouts, including patched EKA2L1 and nested FFmpeg.
 research/upstream/
 CMakeUserPresets.json
 .DS_Store

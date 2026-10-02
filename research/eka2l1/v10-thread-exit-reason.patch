@@ -1,0 +1,21 @@
+diff --git a/src/emu/kernel/src/svc.cpp b/src/emu/kernel/src/svc.cpp
+--- a/src/emu/kernel/src/svc.cpp
++++ b/src/emu/kernel/src/svc.cpp
+@@ -5987,6 +5987,7 @@
+         BRIDGE_REGISTER(0x2F, thread_set_flags),
+         BRIDGE_REGISTER(0x30, thread_request_count),
+         BRIDGE_REGISTER(0x31, thread_exit_type),
++        BRIDGE_REGISTER(0x32, thread_exit_reason),
+         BRIDGE_REGISTER(0x34, timer_cancel),
+         BRIDGE_REGISTER(0x35, timer_after),
+         BRIDGE_REGISTER(0x36, timer_at_utc),
+@@ -6124,7 +6125,6 @@
+             result.emplace(number, handler);
+         }
+-        // Belle's ROM RThread::ExitReason wrapper calls 0x34. The v10 table
+-        // omits its older slot, so translate this observed call explicitly.
+-        result.insert(BRIDGE_REGISTER(0x34, thread_exit_reason));
++        // Belle's ROM RThread::ExitReason wrapper calls 0x34, shifted from
++        // the v10 0x32 slot by the two observed earlier insertions.
+         return result;
+     }();

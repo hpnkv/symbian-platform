@@ -3,8 +3,9 @@
 The E32 build path uses CMake presets, Ninja and Clang/LLD. CMake owns the source
 graph and compilation database; the platform's native library converts the
 linked ELF to E32. This currently supports import-free PIC executables with
-one RX segment. SDK imports, writable data, constructors and matched Belle runtime validation
-remain open. The one-executable package path is documented in PACKAGING.md.
+one RX segment. Selected SDK function imports and guarded Belle GUI/container
+execution now pass; writable data, general constructors and full runtime ABI
+coverage remain open. See RUNTIME.md for the maintained libc++ subset. The one-executable package path is documented in PACKAGING.md.
 Internal code-pointer relocations and named RELRO tables are now supported;
 POINTERS.md demonstrates const callbacks, C++ virtual dispatch and packaging.
 The separate `e32-import-experiment` profile supports eager function imports and
@@ -101,3 +102,7 @@ uv run symbian toolchain verify-probe .symbian/e32-probe/e32_probe.exe
 That command checks this specific probe with the historical validator, CPU
 backends and ROMless emulator process harness. It is not a general application
 test command. SDK/package/runtime work must pass the remaining PLAN.md gates.
+
+Host tooling/wheel and Linux instructions are in [HOST_BUILD.md](HOST_BUILD.md).
+The root CMake project exposes the prepared ARM GUI alongside native tooling;
+see [CLION.md](CLION.md).

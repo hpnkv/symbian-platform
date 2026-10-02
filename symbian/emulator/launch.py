@@ -1,7 +1,6 @@
-"""Owned foreground launches for the digest-pinned GUI emulator experiment."""
+"""Owned foreground launches using resolved, verified ROM / Z baselines."""
 
 import argparse
-import hashlib
 import json
 import os
 import shutil
@@ -11,21 +10,26 @@ import subprocess
 import sys
 import tempfile
 import time
+import tomllib
 from contextlib import contextmanager
-from dataclasses import dataclass
 from pathlib import Path
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from symbian import toolchain
 from symbian.e32 import inspect_image
 from symbian.emulator import Control
+from symbian.emulator.background import (
+    background_environment,
+    executable_for_session,
+)
+from symbian.emulator.configuration import add_options, options, resolve
+from symbian.emulator.firmware import digest, selected, svc_profile
 from symbian.status import Code, StatusError
-
-_ROM = "b5c1ea63cb6359270c5b7cfb1bb453594e208a01b8aeb5b5e020f37d546f7086"
-_EUSER = "3cec7e1546f8ed0cf64a73fece9fdd8fe6e4976535ddffd18b7068c19c01357b"
 
 
 def _digest(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return digest(path)
 
 
 def _stop(process: subprocess.Popen | None) -> None:
@@ -40,11 +44,45 @@ def _stop(process: subprocess.Popen | None) -> None:
         process.wait(timeout=5)
 
 
-@dataclass
-class Session:
+def guest_outcome(report: Path, uid: int) -> None:
+    """Reports guest failure even when the frontend exits successfully."""
+    if not report.is_file():
+        raise StatusError(
+            Code.FAILED_PRECONDITION,
+            f"Guest exit evidence unavailable: {report}",
+        )
+    try:
+        envelope = json.loads(report.read_text())
+        records = envelope["result"]["process_exits"]
+        exits = [record for record in records if record["uid"] == uid]
+        if not exits:
+            raise KeyError("No matching application exit")
+        failure = next(
+            (record for record in exits if record["reason"] or record["type"]),
+            None,
+        )
+    except (ValueError, KeyError, TypeError) as error:
+        raise StatusError(
+            Code.DATA_LOSS, f"Invalid guest exit evidence: {report}"
+        ) from error
+    if failure:
+        code = {-4: Code.RESOURCE_EXHAUSTED, -5: Code.UNIMPLEMENTED}.get(
+            failure["reason"], Code.FAILED_PRECONDITION
+        )
+        raise StatusError(
+            code,
+            f"Guest {failure['name']} exited with type "
+            f"{failure['type']}, reason {failure['reason']}; "
+            f"evidence: {report.parent}",
+        )
+
+
+class Session(BaseModel):
     """Resources of one fresh instance; its owning context reaps the child."""
 
-    process: subprocess.Popen
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    process: subprocess.Popen = Field(exclude=True)
     directory: Path
     endpoint: Path
     symbols: Path
@@ -52,6 +90,7 @@ class Session:
     headers: Path
     port: int
     image: dict
+    name: str = "gui_app"
 
     def wait_ready(self, *, debug: bool, timeout: float = 20) -> None:
         """Waits without connecting to the single-client GDB listener."""
@@ -90,14 +129,17 @@ class Session:
             str(self.source),
             str(self.headers),
             self.image["code_base"],
+            self.name,
+            self.image["uid3"],
         ]
         hook = self.directory / "remote.gdb"
+        package_root = str(Path(__file__).resolve().parents[2])
         hook.write_text(
             "set pagination off\nset confirm off\n"
             "set architecture arm\nset remotetimeout 20\n"
             "python\nimport sys\n"
-            f"sys.path.insert(0, {str(self.source.parents[1])!r})\n"
-            "from symbian.emulator.gdb import register\n"
+            f"sys.path.insert(0, {package_root!r})\n"
+            "from symbian.gdb_bridge import register\n"
             f"register(*{arguments!r})\nend\n"
             "define target hookpost-remote\n"
             "  symbian-relocate\n"
@@ -108,7 +150,15 @@ class Session:
 
 
 @contextmanager
-def session(root: Path, *, debug: bool = False, port: int = 24689):
+def session(
+    root: Path,
+    *,
+    debug: bool = False,
+    port: int = 24689,
+    project: Path | None = None,
+    backend: str | None = None,
+    overrides: dict | None = None,
+):
     """Builds and launches one fixture copy, retaining logs and reaping it.
 
     Args:
@@ -120,19 +170,59 @@ def session(root: Path, *, debug: bool = False, port: int = 24689):
         Session with an owned child and private native control endpoint.
     """
     root = root.resolve()
-    golden = root / ".symbian/instances/delight-import-01"
-    executable = root / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
-    inputs = {
-        golden / "data/roms/rm-807/SYM.ROM": _ROM,
-        golden / "data/drives/z/rm-807/sys/bin/euser.dll": _EUSER,
-    }
-    for path, expected in inputs.items():
-        if not path.is_file() or _digest(path) != expected:
+    name, uid = "gui_app", 0xE0000811
+    source = root / "examples/gui_app"
+    build = root / ".symbian/gui-app"
+    headers = root / ".symbian/gui-sdk/include"
+    compiler, linker = "/usr/bin/clang++", "/opt/homebrew/bin/ld.lld"
+    if project is not None:
+        from symbian.project.configuration import ProjectConfiguration
+        from symbian.project.sdk import AppSdk
+
+        project = project.resolve()
+        configuration = ProjectConfiguration.load(project)
+        sdk = configuration.sdk
+        AppSdk.load(sdk.prefix / "sdk.json")
+        compiler, linker = str(sdk.compiler), str(sdk.linker)
+        source, build = project, project / ".symbian/build"
+        headers = sdk.prefix / "include/platform"
+        options = tomllib.loads((project / "symbian.toml").read_text())[
+            "project"
+        ]
+        name, uid = options["name"], options["uid3"]
+        port = configuration.preferences.port
+    if not source.is_dir():
+        raise StatusError(
+            Code.FAILED_PRECONDITION, f"Application source missing: {source}"
+        )
+    command = dict(overrides or {})
+    if backend is not None:
+        command["backend"] = backend
+    resolution = resolve(project=project, root=root, overrides=command)
+    golden, firmware = selected(resolution)
+    profile = svc_profile(firmware, resolution.settings.profile)
+    executable = resolution.settings.emulator
+    backend = resolution.settings.backend or "dynarmic"
+    language = resolution.settings.language or 1
+    if firmware.device.kernel != "eka2":
+        raise StatusError(
+            Code.FAILED_PRECONDITION,
+            f"{firmware.device.model} uses EKA1; the current ARM EABI/E32-V"
+            " starter requires EKA2 startup/import ABI. Firmware import is"
+            " supported; EKA1 application ABI adaptation remains"
+            " unimplemented",
+        )
+    if backend not in ("dynarmic", "dyncom"):
+        raise StatusError(Code.INVALID_ARGUMENT, "Unknown emulator CPU backend")
+    inputs = {golden / path: value for path, value in firmware.files.items()}
+    for dll in ("euser.dll", "ws32.dll", "gdi.dll"):
+        if not (golden / firmware.device.z_drive / "sys/bin" / dll).is_file():
             raise StatusError(
                 Code.FAILED_PRECONDITION,
-                f"Fixture fingerprint mismatch: {path}",
+                f"GUI requires {dll}; unavailable in selected firmware"
+                f" {firmware.identity}",
             )
-    if not executable.is_file():
+    if executable is None or not executable.is_file():
         raise StatusError(
             Code.NOT_FOUND, f"Build patched emulator: {executable}"
         )
@@ -144,36 +234,51 @@ def session(root: Path, *, debug: bool = False, port: int = 24689):
                 reservation.bind(("127.0.0.1", port))
         except OSError as error:
             raise StatusError(Code.ALREADY_EXISTS, "GDB port busy") from error
-    source = root / "examples/gui_app"
-    build = root / ".symbian/gui-app"
-    toolchain.build(
-        source, build, "/usr/bin/clang++", "/opt/homebrew/bin/ld.lld"
-    )
-    image = inspect_image(build / "gui_app.exe")
-    if image["uid3"] != 0xE0000811 or image["dll"]:
+    toolchain.build(source, build, compiler, linker)
+    image = inspect_image(build / f"{name}.exe")
+    imported_dlls = {entry["dll"].lower() for entry in image["imports"]}
+    pthread_path = firmware.device.z_drive + "/sys/bin/libpthread.dll"
+    if "libpthread.dll" in imported_dlls and pthread_path not in firmware.files:
+        raise StatusError(
+            Code.FAILED_PRECONDITION,
+            f"{firmware.device.model} has no libpthread.dll in drive Z, but "
+            f"{name}.exe imports it. Generate with 'symbian init "
+            "--portable-runtime' or set SYMBIAN_ENABLE_TIMER_TASKS=OFF "
+            "and SYMBIAN_ENABLE_ABSEIL_STATUS=OFF, then rebuild.",
+        )
+    from symbian.toolchain.architecture import require_execution_architecture
+
+    require_execution_architecture(image["architecture"], backend)
+    if image["uid3"] != uid or image["dll"]:
         raise StatusError(Code.FAILED_PRECONDITION, "Unexpected GUI executable")
-    output = root / ".symbian/gui-runs"
+    output = (
+        (project / ".symbian/runs") if project else root / ".symbian/gui-runs"
+    )
     output.mkdir(parents=True, exist_ok=True)
     directory = Path(
         tempfile.mkdtemp(prefix="debug-" if debug else "run-", dir=output)
     )
     instance = directory / "instance"
     shutil.copytree(golden, instance)
-    target = instance / "data/drives/rm-807/c/sys/bin/gui_app.exe"
+    target = instance / firmware.device.c_drive / "sys/bin" / f"{name}.exe"
     target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(build / "gui_app.exe", target)
+    shutil.copyfile(build / f"{name}.exe", target)
     (instance / "config.yml").write_text(
-        "data-storage: data\ncpu: dynarmic\ndevice: 0\nlanguage: 1\n"
+        f"data-storage: data\ncpu: {backend}\ndevice: 0\nlanguage: {language}\n"
         f"enable-gdb-stub: {'true' if debug else 'false'}\n"
         f"gdb-port: {port}\nlog-svc: true\n"
     )
     manifest = {
         "schema": "symbian.gui-launch/v1",
         "debug": debug,
+        "firmware": f"sha256:{firmware.identity}",
+        "device": firmware.device.model_dump(),
+        "configuration": resolution.model_dump(mode="json"),
+        "svc_profile": profile,
         "gdb_port": port if debug else None,
         "inputs": {str(p): digest for p, digest in inputs.items()},
-        "e32_sha256": _digest(build / "gui_app.exe"),
-        "elf_sha256": _digest(build / "gui_app.elf"),
+        "e32_sha256": _digest(build / f"{name}.exe"),
+        "elf_sha256": _digest(build / f"{name}.elf"),
         "emulator_sha256": _digest(executable),
     }
     process = None
@@ -183,19 +288,23 @@ def session(root: Path, *, debug: bool = False, port: int = 24689):
         ) as private:
             endpoint = Path(private) / "control.sock"
             env = os.environ.copy()
+            env.pop("EKA2L1_EXPERIMENTAL_SVC_PROFILE", None)
             env.update(
                 EKA2L1_DATA_ROOT=str(instance),
-                EKA2L1_EXPERIMENTAL_SVC_PROFILE="rm807-113.010.1508",
                 EKA2L1_RESEARCH_CONTROL_SOCKET=str(endpoint),
+                **background_environment(),
             )
+            if profile != "default":
+                env["EKA2L1_EXPERIMENTAL_SVC_PROFILE"] = profile
+            launch_executable = executable_for_session(executable, directory)
             with (directory / "frontend.log").open("w") as log:
                 process = subprocess.Popen(
                     [
-                        str(executable),
+                        str(launch_executable),
                         "--device",
-                        "RM-807",
+                        firmware.device.firmware_code,
                         "--run",
-                        "C:\\sys\\bin\\gui_app.exe",
+                        f"C:\\sys\\bin\\{name}.exe",
                     ],
                     cwd=directory,
                     env=env,
@@ -212,14 +321,15 @@ def session(root: Path, *, debug: bool = False, port: int = 24689):
                     flush=True,
                 )
                 active = Session(
-                    process,
-                    directory,
-                    endpoint,
-                    build / "gui_app.elf",
-                    source,
-                    root / ".symbian/gui-sdk/include",
-                    port,
-                    image,
+                    process=process,
+                    directory=directory,
+                    endpoint=endpoint,
+                    symbols=build / f"{name}.elf",
+                    source=source,
+                    headers=headers,
+                    name=name,
+                    port=port,
+                    image=image,
                 )
                 try:
                     active.wait_ready(debug=debug)
@@ -242,12 +352,14 @@ def session(root: Path, *, debug: bool = False, port: int = 24689):
         )
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, *, raise_errors: bool = False) -> int:
     """Launches Run or supervises the actual GDB child used by CLion Debug."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument("--root", type=Path, default=Path.cwd())
+    parser.add_argument("--project", type=Path)
     parser.add_argument("--gdb", type=Path)
     parser.add_argument("--port", type=int, default=24689)
+    add_options(parser)
     args, debugger_args = parser.parse_known_args(argv)
     if args.gdb and any(
         a in ("--version", "--configuration", "--help") for a in debugger_args
@@ -262,7 +374,13 @@ def main(argv: list[str] | None = None) -> int:
     signal.signal(signal.SIGTERM, cancel)
     debugger = None
     try:
-        with session(args.root, debug=bool(args.gdb), port=args.port) as active:
+        with session(
+            args.root,
+            debug=bool(args.gdb),
+            port=args.port,
+            project=args.project,
+            overrides=options(args),
+        ) as active:
             if args.gdb:
                 debugger = subprocess.Popen(
                     [
@@ -272,11 +390,22 @@ def main(argv: list[str] | None = None) -> int:
                         *debugger_args,
                     ]
                 )
-                return debugger.wait()
-            return active.process.wait()
+                result = debugger.wait()
+            else:
+                result = active.process.wait()
+        if not args.gdb and result == 0:
+            guest_outcome(
+                active.directory / "control.sock.status.json",
+                active.image["uid3"],
+            )
+        return result
     except KeyboardInterrupt:
         return 130
     except (StatusError, OSError) as error:
+        if raise_errors:
+            if isinstance(error, StatusError):
+                raise
+            raise StatusError(Code.INTERNAL, str(error)) from error
         print(str(error), file=sys.stderr)
         return 1
     finally:

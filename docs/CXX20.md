@@ -4,7 +4,8 @@ C++20 programs are feasible with the modern ARM compiler and native E32
 converter. The maintained examples compile, package and execute through the
 ROMless EKA2L1 loader. This is not a complete hosted C++20 implementation or a
 verified Nokia 808 runtime. Preserved Delight RM-807 ROM/Z now enables a separate
-guarded SDK GUI experiment on both macOS backends; the language/library/module
+guarded SDK GUI and real libc++ string/vector runtime execution on both macOS
+backends; the language/library/module
 probes described here retain their ROMless scope. No phone execution has been
 performed.
 
@@ -24,7 +25,8 @@ Symbian startup, library, loader or device compatibility.
 | Named modules with a function and immediate function | CMake scanning, reproducible E32, package and execution | Upstream Clang 23.1.2; no `import std` or header units |
 | `std::span`, `std::unsigned_integral`, `std::bit_cast`, `std::rotl`, `std::popcount` | Experimental headers compile; distinct E32 executes | External header configuration; no target libc++ binary |
 | `<coroutine>`, `<ranges>`, `<atomic>` header smoke tests | Fail in the current header experiment | Missing target C-library declarations/types; this is not impossibility evidence |
-| Heap containers, threads/jthread, I/O, filesystem, formatting | Not established | Require target runtime, allocation, services and failure policy |
+| Heap-backed std::string/std::vector<int> | Real libc++ sources compile; E32 executes on both firmware-backed CPU backends | Primary-thread, no-exceptions subset; cleanup and allocation failure controls pass (RUNTIME.md) |
+| Threads/jthread, I/O, filesystem, formatting | Not established | Require broader runtime, services and failure policy |
 | Complete C++20 conformance, matched Belle, physical Nokia 808 | Not established | Remain separate milestones |
 
 Apple Clang 21.0.0 builds the language and selected library probes. The separate
@@ -150,12 +152,26 @@ SYMBIAN_EKA2L1_ORACLES_BUILD="$PWD/build/eka2l1" \
   uv run pytest -q symbian/tests/test_cxx20.py
 ```
 
+## Maintained runtime subset
+
+[docs/RUNTIME.md](RUNTIME.md) now documents original LLVM string/new-helper
+sources, a generated target configuration and real SDK heap adapters. This is
+separate from the older external-header smoke experiment above. Strings and
+vectors allocate, mutate and destruct repeatedly in real firmware-backed guest
+execution; nothrow/fatal allocation paths and heap-cell cleanup are checked.
+The SDK placement-new conflict is isolated behind a C ABI. Global std::nothrow,
+constant reads and Thumb function references now execute through bounded local
+GOT relocation on both backends; changed-value and malformed-table controls
+remain maintained. See also
+[application caveats](../CXX_CAVEATS.md).
+
 ## Work toward broader support
 
-The next steps are bounded writable-data/BSS relocation, SDK heap/TLS and DLL
-initialization/cleanup, then a target C library/compiler-rt and a configured
-no-exceptions libc++ subset. Containers need allocation and an explicit failure
-policy; coroutines need an ownership/allocation model and event-loop integration;
+The next steps are bounded writable-data/BSS relocation, general TLS/global
+and DLL initialization/cleanup, then broader C/compiler-rt services and
+extensions to the configured no-exceptions libc++ subset. Existing containers
+have tested heap allocation and an explicit failure policy; coroutines still
+need an ownership/allocation model and event-loop integration;
 atomics and threads need target synchronization primitives. None follows simply
 from enabling the language standard.
 

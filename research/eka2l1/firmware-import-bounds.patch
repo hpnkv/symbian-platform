@@ -1,0 +1,179 @@
+diff --git a/src/emu/loader/src/rom.cpp b/src/emu/loader/src/rom.cpp
+index 84a9ac2..a06fcaf 100644
+--- a/src/emu/loader/src/rom.cpp
++++ b/src/emu/loader/src/rom.cpp
+@@ -435,11 +435,18 @@ namespace eka2l1::loader {
+         return true;
+     }
+ 
++    static bool safe_dump_component(const std::u16string &name) {
++        if (name.empty() || name == u"." || name == u"..") return false;
++        return name.find_first_of(std::u16string(u"/\\:")) == std::u16string::npos &&
++            name.find(u'\0') == std::u16string::npos;
++    }
++
+     static bool dump_rom_directory(common::ro_stream *stream, rom_dir &dir, std::string base, std::uint32_t rom_base,
+         std::size_t &passed_size, progress_changed_callback progress_cb, cancel_requested_callback cancel_cb) {
+         common::create_directories(base);
+ 
+         for (auto &entry : dir.entries) {
++            if (!safe_dump_component(entry.name)) return false;
+             if (!(entry.attrib & 0x10) && (entry.size != 0)) {
+                 if (!dump_rom_file(stream, entry, base, rom_base, passed_size, progress_cb, cancel_cb)) {
+                     return false;
+@@ -448,6 +455,7 @@ namespace eka2l1::loader {
+         }
+ 
+         for (auto &subdir : dir.subdirs) {
++            if (!safe_dump_component(subdir.name)) return false;
+             std::string new_base;
+ 
+             if (common::is_platform_case_sensitive()) {
+diff --git a/src/emu/system/src/installation/rpkg.cpp b/src/emu/system/src/installation/rpkg.cpp
+index 78e8346..5dbeb85 100644
+--- a/src/emu/system/src/installation/rpkg.cpp
++++ b/src/emu/system/src/installation/rpkg.cpp
+@@ -70,7 +70,25 @@ namespace eka2l1::loader {
+     static bool extract_file(const std::string &devices_rom_path, FILE *parent, rpkg_entry &ent, const std::size_t total,
+         std::unordered_set<std::string> &created_directories, progress_changed_callback progress_cb,
+         cancel_requested_callback cancel_cb) {
++        if (ent.path.size() < 4 || (ent.path[0] != u'Z' && ent.path[0] != u'z') ||
++            ent.path[1] != u':' || (ent.path[2] != u'\\' && ent.path[2] != u'/')) {
++            return false;
++        }
+         std::string file_full_relative = common::ucs2_to_utf8(ent.path.substr(3));
++        std::replace(file_full_relative.begin(), file_full_relative.end(), '\\', '/');
++        if (file_full_relative.empty() || file_full_relative.front() == '/' ||
++            file_full_relative.find(':') != std::string::npos ||
++            file_full_relative.find('\0') != std::string::npos) {
++            return false;
++        }
++        std::size_t start = 0;
++        while (start < file_full_relative.size()) {
++            const auto end = file_full_relative.find('/', start);
++            const auto component = file_full_relative.substr(start, end - start);
++            if (component == ".." || component == ".") return false;
++            if (end == std::string::npos) break;
++            start = end + 1;
++        }
+         std::transform(file_full_relative.begin(), file_full_relative.end(), file_full_relative.begin(),
+             ::tolower);
+ 
+@@ -265,7 +283,8 @@ namespace eka2l1::loader {
+         fseek(f, 0, SEEK_END);
+ 
+         // Total steps is 10. For progress reporting.
+-        const std::size_t total_size = ftell(f) * 10 / 9;
++        const std::size_t file_size = ftell(f);
++        const std::size_t total_size = file_size * 10 / 9;
+ 
+         fseek(f, 0, SEEK_SET);
+ 
+@@ -274,12 +293,17 @@ namespace eka2l1::loader {
+         std::size_t total_read_size = 0;
+ 
+         if (fread(&header.magic, 4, 4, f) != 4) {
+-            return device_installation_insufficent;
++            fclose(f);
++            return device_installation_rpkg_corrupt;
+         }
+ 
+         total_read_size = 16;
+         std::uint8_t is_ver_one = 1;
+ 
++        if (header.magic[0] != 'R' || header.magic[1] != 'P' || header.magic[2] != 'K') {
++            fclose(f);
++            return device_installation_rpkg_corrupt;
++        }
+         if ((header.magic[0] == 'R') && (header.magic[1] == 'P') && (header.magic[2] == 'K')) {
+             switch (header.magic[3]) {
+             case 'G':
+@@ -311,7 +335,7 @@ namespace eka2l1::loader {
+             header.header_size = 24;
+         }
+ 
+-        if (total_read_size != header.header_size) {
++        if (total_read_size != header.header_size || header.count > 200000) {
+             fclose(f);
+             return device_installation_rpkg_corrupt;
+         }
+@@ -321,6 +345,8 @@ namespace eka2l1::loader {
+         // directory hierarchy again, without retaining stale filesystem state.
+         std::unordered_set<std::string> created_directories;
+ 
++        bool corrupt = false;
++        std::size_t entries_read = 0;
+         while (!feof(f)) {
+             total_read_size = 0;
+ 
+@@ -331,6 +357,12 @@ namespace eka2l1::loader {
+             total_read_size += fread(&entry.path_len, 1, 8, f);
+ 
+             if (total_read_size != 24) {
++                corrupt = total_read_size != 0;
++                break;
++            }
++            if (++entries_read > 200000 || entry.path_len < 4 || entry.path_len > 32768 ||
++                entry.path_len * 2 + 8 > file_size - static_cast<std::size_t>(ftell(f))) {
++                corrupt = true;
+                 break;
+             }
+ 
+@@ -341,13 +373,16 @@ namespace eka2l1::loader {
+             total_read_size += fread(entry.path.data(), 1, entry.path_len * 2, f);
+             total_read_size += fread(&entry.data_size, 1, 8, f);
+ 
+-            if (total_read_size != entry.path_len * 2 + 8) {
++            if (total_read_size != entry.path_len * 2 + 8 || entry.data_size > (8ULL << 30) ||
++                entry.data_size > file_size - static_cast<std::size_t>(ftell(f))) {
++                corrupt = true;
+                 break;
+             }
+ 
+             LOG_INFO(SYSTEM, "Extracting: {}", common::ucs2_to_utf8(entry.path));
+ 
+             if (!extract_file(devices_rom_path, f, entry, total_size, created_directories, progress_cb, cancel_cb)) {
++                corrupt = true;
+                 break;
+             }
+ 
+@@ -360,6 +395,10 @@ namespace eka2l1::loader {
+ 
+         const std::string folder_extracted = add_path(devices_rom_path, "temp\\");
+ 
++        if (corrupt) {
++            common::delete_folder(folder_extracted);
++            return device_installation_rpkg_corrupt;
++        }
+         if (cancel_cb && cancel_cb()) {
+             common::delete_folder(folder_extracted);
+             return device_installation_general_failure;
+diff --git a/src/emu/system/src/software.cpp b/src/emu/system/src/software.cpp
+index 86685ce..8abd707 100644
+--- a/src/emu/system/src/software.cpp
++++ b/src/emu/system/src/software.cpp
+@@ -430,7 +430,7 @@ namespace eka2l1::loader {
+         return true;
+     }
+ 
+-    bool determine_rpkg_product_info(const std::string &extracted_path, std::string &manufacturer, std::string &firmcode, std::string &model) {
++    static bool determine_rpkg_product_info_impl(const std::string &extracted_path, std::string &manufacturer, std::string &firmcode, std::string &model) {
+         if (common::exists(add_path(extracted_path, "system\\install\\sonyericssonp90xplatform.sis"))) {
+             if (determine_product_info_from_machine_uid(extracted_path, manufacturer, firmcode, model)) {
+                 return true;
+@@ -455,4 +455,15 @@ namespace eka2l1::loader {
+ 
+         return true;
+     }
++    bool determine_rpkg_product_info(const std::string &extracted_path, std::string &manufacturer, std::string &firmcode, std::string &model) {
++        if (!determine_rpkg_product_info_impl(extracted_path, manufacturer, firmcode, model)) return false;
++        // Product codes become host directory names in every installer.
++        if (firmcode.empty() || firmcode == "." || firmcode == ".." || firmcode.size() > 128) return false;
++        for (const unsigned char c : firmcode) {
++            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
++                  (c >= '0' && c <= '9') || c == '-' || c == '_' || c == '.')) return false;
++        }
++        return true;
++    }
++
+ }

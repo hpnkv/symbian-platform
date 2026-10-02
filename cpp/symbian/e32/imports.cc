@@ -9,6 +9,7 @@
 
 #include <absl/status/status.h>
 #include <absl/strings/ascii.h>
+#include <absl/strings/str_cat.h>
 
 #include "symbian/analysis/bytes.h"
 #include "symbian/sdk/exports.h"
@@ -110,13 +111,20 @@ absl::StatusOr<ResolvedImports> ResolveImports(
   const Section& symbols = sections[indices.at(11)];
   const Section& versions = sections[indices.at(0x6fffffff)];
   const Section& needs = sections[indices.at(0x6ffffffe)];
+  // The project may declare more compatible proxies than this image uses.
+  // Only the ELF's needed/version records become E32 import blocks.
+  const size_t needed_count = needs.size / 32;
   if (symbols.size < 32 || symbols.size > 1025 * 16 ||
       symbols.entry_size != 16 || symbols.size % 16 ||
       symbols.link >= sections.size() || dynamic.link != symbols.link ||
       versions.link != indices.at(11) || needs.link != symbols.link ||
       versions.size != symbols.size / 8 || dynamic.size % 8 ||
-      needs.size != libraries.size() * 32 || needs.info != libraries.size()) {
-    return absl::DataLossError("Invalid ELF import metadata layout");
+      needs.size % 32 || needed_count == 0 || needed_count > libraries.size() ||
+      needs.info != needed_count) {
+    return absl::DataLossError(absl::StrCat(
+        "Invalid ELF import metadata layout: needed=", needed_count,
+        " proxies=", libraries.size(), " dynsym=", symbols.size,
+        " versions=", versions.size, " needed-info=", needs.info));
   }
   const Section& strings = sections[symbols.link];
   if (strings.type != 3 || strings.flags != 2 || symbols.flags != 2 ||
@@ -130,12 +138,12 @@ absl::StatusOr<ResolvedImports> ResolveImports(
   const auto table = elf.substr(strings.offset, strings.size);
   std::map<uint32_t, std::string> version_libraries;
   std::set<std::string> used;
-  for (size_t i = 0; i < libraries.size(); ++i) {
+  for (size_t i = 0; i < needed_count; ++i) {
     const size_t p = needs.offset + i * 16;
-    const size_t aux = needs.offset + (libraries.size() + i) * 16;
+    const size_t aux = needs.offset + (needed_count + i) * 16;
     if (Read16(elf, p) != 1 || Read16(elf, p + 2) != 1 ||
-        Read32(elf, p + 8) != libraries.size() * 16 ||
-        Read32(elf, p + 12) != (i + 1 == libraries.size() ? 0 : 16) ||
+        Read32(elf, p + 8) != needed_count * 16 ||
+        Read32(elf, p + 12) != (i + 1 == needed_count ? 0 : 16) ||
         Read16(elf, aux + 4) != 0 || Read32(elf, aux + 12) != 0) {
       return absl::UnimplementedError("Requires one version per import DLL");
     }
@@ -159,10 +167,14 @@ absl::StatusOr<ResolvedImports> ResolveImports(
   result.dynamic_index = indices.at(6);
   for (size_t i = 1; i < sections.size(); ++i) {
     if (sections[i].type == 9 && sections[i].link == indices.at(11)) {
-      if (result.relocation_index != 0) {
+      if (sections[i].name == ".rel.plt" && result.relocation_index == 0) {
+        result.relocation_index = i;
+      } else if (sections[i].name == ".rel.dyn" &&
+                 result.data_relocation_index == 0) {
+        result.data_relocation_index = i;
+      } else {
         return absl::UnimplementedError("Multiple dynamic relocation tables");
       }
-      result.relocation_index = i;
     }
   }
   if (result.relocation_index == 0) {
@@ -185,7 +197,7 @@ absl::StatusOr<ResolvedImports> ResolveImports(
   }
   std::set<uint32_t> tags;
   std::set<std::string> needed;
-  const std::map<uint32_t, uint32_t> expected{
+  std::map<uint32_t, uint32_t> expected{
       {0, 0},
       {21, 0},
       {23, relocs.address},
@@ -199,7 +211,48 @@ absl::StatusOr<ResolvedImports> ResolveImports(
       {4, sections[indices.at(5)].address},
       {0x6ffffff0, versions.address},
       {0x6ffffffe, needs.address},
-      {0x6fffffff, static_cast<uint32_t>(libraries.size())}};
+      {0x6fffffff, static_cast<uint32_t>(needed_count)}};
+  if (result.data_relocation_index != 0) {
+    const Section& data_relocs = sections[result.data_relocation_index];
+    if (data_relocs.flags != 2 || data_relocs.info != 0 ||
+        data_relocs.entry_size != 8 || data_relocs.size == 0 ||
+        data_relocs.size > 256 * 8 || data_relocs.size % 8) {
+      return absl::DataLossError("Invalid imported data relocation table");
+    }
+    expected.emplace(17, data_relocs.address);  // DT_REL
+    expected.emplace(18, data_relocs.size);     // DT_RELSZ
+    expected.emplace(19, 8);                    // DT_RELENT
+  }
+  for (const Section& array : sections) {
+    uint32_t address_tag = 0;
+    uint32_t size_tag = 0;
+    if (array.name == ".init_array") {
+      address_tag = 25;
+      size_tag = 27;
+    } else if (array.name == ".fini_array") {
+      address_tag = 26;
+      size_tag = 28;
+    } else {
+      continue;
+    }
+    if ((array.size == 0 ? array.flags != 2 && array.flags != 3
+                         : array.flags != 3) ||
+        (array.size != 0 && array.address % 4) || array.size % 4 ||
+        array.size > 1024 || array.address < code.address ||
+        !Within(code.size, array.address - code.address, array.size) ||
+        (array.size == 0 && array.type != 1 &&
+         array.type != address_tag - 11) ||
+        (array.size != 0 && array.type != address_tag - 11)) {
+      return absl::DataLossError(
+          absl::StrCat("Invalid ELF lifecycle dynamic metadata: ", array.name,
+                       " type=", array.type, " flags=", array.flags,
+                       " address=", array.address, " size=", array.size));
+    }
+    if (!expected.emplace(address_tag, array.address).second ||
+        !expected.emplace(size_tag, array.size).second) {
+      return absl::DataLossError("Duplicate ELF lifecycle dynamic metadata");
+    }
+  }
   for (size_t p = dynamic.offset; p < dynamic.offset + dynamic.size; p += 8) {
     const uint32_t tag = Read32(elf, p), value = Read32(elf, p + 4);
     if (tag == 1) {
@@ -227,6 +280,18 @@ absl::StatusOr<ResolvedImports> ResolveImports(
   }
   std::map<std::string, std::vector<ImportSlot>> blocks;
   std::set<uint32_t> locations, symbol_indices;
+  const Section* plt = nullptr;
+  for (const Section& section : sections) {
+    if (section.name == ".plt") {
+      if (plt != nullptr || section.type != 1 || section.flags != 6 ||
+          section.size != 32 + relocs.size * 2 ||
+          section.address < code.address ||
+          !Within(code.size, section.address - code.address, section.size)) {
+        return absl::UnimplementedError("Requires generated ARM function PLT");
+      }
+      plt = &section;
+    }
+  }
   for (size_t i = 0; i < relocs.size; i += 8) {
     const uint32_t location = Read32(elf, relocs.offset + i);
     const uint32_t info = Read32(elf, relocs.offset + i + 4);
@@ -240,7 +305,12 @@ absl::StatusOr<ResolvedImports> ResolveImports(
           "Requires unique R_ARM_JUMP_SLOT imports");
     }
     const size_t sym = symbols.offset + symbol * 16;
-    if (Read32(elf, sym + 4) != 0 || Read32(elf, sym + 8) != 0 ||
+    const uint32_t symbol_value = Read32(elf, sym + 4);
+    const uint32_t plt_index = static_cast<uint32_t>(i / 8);
+    const uint32_t plt_value =
+        plt == nullptr ? 0 : plt->address + 32 + plt_index * 16;
+    if ((symbol_value != 0 && (plt == nullptr || symbol_value != plt_value)) ||
+        Read32(elf, sym + 8) != 0 ||
         static_cast<uint8_t>(elf[sym + 12]) != 0x12 || elf[sym + 13] != 0 ||
         Read16(elf, sym + 14) != 0) {
       return absl::UnimplementedError("Only undefined global function imports");
@@ -263,12 +333,39 @@ absl::StatusOr<ResolvedImports> ResolveImports(
       return absl::FailedPreconditionError(
           "Missing/ambiguous imported function");
     }
+    if (plt != nullptr) {
+      result.plt_functions.emplace(*name, plt_value);
+    }
     blocks[library.target_dll].push_back(
         {location - code.address, function->ordinal});
   }
   if (symbol_indices.size() + 1 != symbols.size / 16 ||
-      blocks.size() != libraries.size()) {
+      blocks.size() != needed_count) {
     return absl::UnimplementedError("Unreferenced dynamic symbols/proxies");
+  }
+  if (result.data_relocation_index != 0) {
+    const Section& data_relocs = sections[result.data_relocation_index];
+    for (size_t i = 0; i < data_relocs.size; i += 8) {
+      const uint32_t location = Read32(elf, data_relocs.offset + i);
+      const uint32_t info = Read32(elf, data_relocs.offset + i + 4);
+      const uint32_t symbol = info >> 8;
+      if ((info & 0xff) != 2 || symbol == 0 ||
+          !symbol_indices.contains(symbol) || location % 4) {
+        return absl::UnimplementedError(
+            "Only imported-function R_ARM_ABS32 data relocations");
+      }
+      const auto name = SymbolName(elf, sections, symbols, symbol);
+      if (!name.ok()) {
+        return name.status();
+      }
+      const auto plt_function = result.plt_functions.find(*name);
+      if (plt_function == result.plt_functions.end() ||
+          !result.data_function_pointers.emplace(location, plt_function->second)
+               .second) {
+        return absl::UnimplementedError(
+            "Imported data pointer lacks a unique function PLT slot");
+      }
+    }
   }
   for (auto& [dll, slots] : blocks) {
     std::sort(slots.begin(), slots.end(), [](const auto& a, const auto& b) {
@@ -284,14 +381,15 @@ absl::Status CheckImportCall(std::string_view elf, const Segment& code,
                              uint32_t slot_offset) {
   const size_t p = code.offset + location - code.address;
   int64_t target = 0;
-  if (type == 28) {
+  if (type == 28 || type == 29) {
     if (location % 4) {
       return absl::DataLossError("ARM import instruction is unaligned");
     }
     const uint32_t word = Read32(elf, p);
-    if ((word & 0xff000000) != 0xeb000000 &&
-        (word & 0xfe000000) != 0xfa000000) {
-      return absl::UnimplementedError("Requires linked ARM BL/BLX import call");
+    if ((type == 28 && (word & 0xff000000) != 0xeb000000 &&
+         (word & 0xfe000000) != 0xfa000000) ||
+        (type == 29 && (word & 0xff000000) != 0xea000000)) {
+      return absl::UnimplementedError("Requires linked ARM branch to import");
     }
     int64_t displacement = static_cast<int64_t>(word & 0xffffff) * 4;
     if (word & 0x800000) {

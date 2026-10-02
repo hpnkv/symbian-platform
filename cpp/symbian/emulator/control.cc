@@ -5,16 +5,15 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QImage>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QSaveFile>
 #include <QTimer>
 #include <cstdint>
+#include <filesystem>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -23,6 +22,7 @@
 #include <drivers/itc.h>
 #include <kernel/kernel.h>
 #include <kernel/process.h>
+#include <nlohmann/json.hpp>
 #include <qt/state.h>
 #include <services/window/screen.h>
 #include <services/window/window.h>
@@ -34,17 +34,31 @@
 namespace symbian::emulator {
 namespace {
 
-QJsonObject Response(const absl::StatusOr<QJsonObject>& result) {
+nlohmann::json Response(const absl::StatusOr<nlohmann::json>& result) {
   const auto& status = result.status();
-  QJsonObject response{
+  nlohmann::json response{
       {"schema", "symbian.emulator-control/v1"},
-      {"status", QJsonObject{{"code", static_cast<int>(status.code())},
-                             {"message", QString::fromStdString(
-                                             std::string(status.message()))}}}};
+      {"status", nlohmann::json{{"code", static_cast<int>(status.code())},
+                                {"message", std::string(status.message())}}}};
   if (result.ok()) {
-    response.insert("result", *result);
+    response["result"] = *result;
   }
   return response;
+}
+
+std::string StringField(const nlohmann::json& request, std::string_view key) {
+  const auto entry = request.find(key);
+  return entry != request.end() && entry->is_string()
+             ? entry->get<std::string>()
+             : std::string();
+}
+
+std::string EncodeResponse(const absl::StatusOr<nlohmann::json>& result) {
+  // Process names originate in guest bytes. Diagnostics replace invalid UTF-8
+  // instead of allowing a strict serializer to abort a no-exceptions process.
+  return Response(result).dump(-1, ' ', false,
+                               nlohmann::json::error_handler_t::replace) +
+         '\n';
 }
 
 }  // namespace
@@ -58,15 +72,16 @@ struct ControlServer::Impl {
   };
 
   eka2l1::desktop::emulator* state;
-  QString directory;
-  QString report_path;
+  std::string directory;
+  std::string report_path;
   QLocalServer server;
   std::mutex exits_mutex;
   std::vector<ExitRecord> exits;
   std::size_t exit_callback = 0;
   bool callback_registered = false;
 
-  Impl(eka2l1::desktop::emulator* emulator, QString root, QString report)
+  Impl(eka2l1::desktop::emulator* emulator, std::string root,
+       std::string report)
       : state(emulator),
         directory(std::move(root)),
         report_path(std::move(report)) {}
@@ -97,35 +112,35 @@ struct ControlServer::Impl {
         socket->waitForBytesWritten(100);
       }
     }
-    if (QFileInfo::exists(report_path) || QFileInfo(report_path).isSymLink()) {
+    if (QFileInfo::exists(QString::fromStdString(report_path)) ||
+        QFileInfo(QString::fromStdString(report_path)).isSymLink()) {
       return absl::AlreadyExistsError(
           "Final status destination already exists");
     }
-    const auto data = QJsonDocument(Response(Handle({{"operation", "status"}})))
-                          .toJson(QJsonDocument::Compact) +
-                      '\n';
-    QSaveFile output(report_path);
+    const std::string data = EncodeResponse(Handle({{"operation", "status"}}));
+    QSaveFile output(QString::fromStdString(report_path));
     if (!output.open(QIODevice::WriteOnly) ||
-        output.write(data) != data.size() || !output.commit()) {
+        output.write(data.data(), static_cast<qint64>(data.size())) !=
+            static_cast<qint64>(data.size()) ||
+        !output.commit()) {
       return absl::InternalError("Cannot publish final emulator status");
     }
     qInfo("Symbian control: final status published");
     return absl::OkStatus();
   }
 
-  absl::StatusOr<QJsonObject> Handle(const QJsonObject& request) {
-    const QString operation = request.value("operation").toString();
+  absl::StatusOr<nlohmann::json> Handle(const nlohmann::json& request) {
+    const std::string operation = StringField(request, "operation");
     if (operation == "status") {
-      QJsonArray records;
+      nlohmann::json records = nlohmann::json::array();
       std::lock_guard lock(exits_mutex);
       for (const auto& record : exits) {
-        records.append(
-            QJsonObject{{"uid", static_cast<qint64>(record.uid)},
-                        {"type", record.type},
-                        {"reason", record.reason},
-                        {"name", QString::fromStdString(record.name)}});
+        records.push_back(nlohmann::json{{"uid", record.uid},
+                                         {"type", record.type},
+                                         {"reason", record.reason},
+                                         {"name", record.name}});
       }
-      return QJsonObject{{"process_exits", records}};
+      return nlohmann::json{{"process_exits", records}};
     }
     if (operation != "capture" && operation != "pointer") {
       return absl::UnimplementedError("Unknown emulator control operation");
@@ -146,13 +161,20 @@ struct ControlServer::Impl {
       return absl::UnavailableError("No focused emulator screen");
     }
     if (operation == "pointer") {
-      const auto x = request.value("x");
-      const auto y = request.value("y");
-      const auto action = request.value("action").toString();
-      if (!x.isDouble() || !y.isDouble() || x.toDouble() != x.toInt(-1) ||
-          y.toDouble() != y.toInt(-1) || x.toInt(-1) < 0 || y.toInt(-1) < 0 ||
-          x.toInt() >= screen->current_mode().size.x ||
-          y.toInt() >= screen->current_mode().size.y ||
+      const auto x_field = request.find("x");
+      const auto y_field = request.find("y");
+      const std::string action = StringField(request, "action");
+      if (x_field == request.end() || y_field == request.end() ||
+          !x_field->is_number() || !y_field->is_number()) {
+        return absl::InvalidArgumentError(
+            "Invalid logical pointer coordinates");
+      }
+      const double x = x_field->get<double>();
+      const double y = y_field->get<double>();
+      if (!std::isfinite(x) || !std::isfinite(y) || x != std::floor(x) ||
+          y != std::floor(y) || x < 0 || y < 0 ||
+          x >= screen->current_mode().size.x ||
+          y >= screen->current_mode().size.y ||
           (action != "press" && action != "release")) {
         return absl::InvalidArgumentError(
             "Invalid logical pointer coordinates");
@@ -160,8 +182,8 @@ struct ControlServer::Impl {
       eka2l1::drivers::input_event event{};
       event.type_ = eka2l1::drivers::input_event_type::touch;
       event.mouse_.raw_screen_pos_ = true;
-      event.mouse_.pos_x_ = x.toInt();
-      event.mouse_.pos_y_ = y.toInt();
+      event.mouse_.pos_x_ = static_cast<int>(x);
+      event.mouse_.pos_y_ = static_cast<int>(y);
       event.mouse_.button_ = eka2l1::drivers::mouse_button_left;
       event.mouse_.action_ = action == "press"
                                  ? eka2l1::drivers::mouse_action_press
@@ -170,14 +192,14 @@ struct ControlServer::Impl {
       // delivering to a grabbed window. Do not recursively lock that mutex.
       kernel_lock.unlock();
       state->winserv->queue_input_from_driver(event);
-      return QJsonObject{{"queued", true}};
+      return nlohmann::json{{"queued", true}};
     }
 
-    const QString name = request.value("name").toString();
-    if (name.isEmpty() || name.size() > 64) {
+    const std::string name = StringField(request, "name");
+    if (name.empty() || name.size() > 64) {
       return absl::InvalidArgumentError("Capture needs a bounded basename");
     }
-    for (const QChar character : name) {
+    for (const char character : name) {
       if (!((character >= 'a' && character <= 'z') ||
             (character >= 'A' && character <= 'Z') ||
             (character >= '0' && character <= '9') || character == '-' ||
@@ -185,8 +207,10 @@ struct ControlServer::Impl {
         return absl::InvalidArgumentError("Invalid capture basename");
       }
     }
-    const QString path = QDir(directory).filePath(name + ".png");
-    if (QFileInfo::exists(path) || QFileInfo(path).isSymLink()) {
+    const std::string path =
+        (std::filesystem::path(directory) / (name + ".png")).string();
+    if (QFileInfo::exists(QString::fromStdString(path)) ||
+        QFileInfo(QString::fromStdString(path)).isSymLink()) {
       return absl::AlreadyExistsError("Capture destination already exists");
     }
     eka2l1::vec2 size;
@@ -215,15 +239,18 @@ struct ControlServer::Impl {
                                       image.bits())) {
       return absl::UnavailableError("Emulator screen texture read failed");
     }
-    QSaveFile output(path);
+    QSaveFile output(QString::fromStdString(path));
     if (!output.open(QIODevice::WriteOnly) || !image.save(&output, "PNG") ||
         !output.commit()) {
       return absl::InternalError("Cannot publish capture image");
     }
-    return QJsonObject{{"path", path},
-                       {"width", width},
-                       {"height", height},
-                       {"source", "eka2l1-screen-texture"}};
+    return nlohmann::json{{"path", path},
+                          {"width", width},
+                          {"height", height},
+                          {"logical_width", size.x},
+                          {"logical_height", size.y},
+                          {"display_scale", scale},
+                          {"source", "eka2l1-screen-texture"}};
   }
 
   void ConnectClient() {
@@ -250,18 +277,17 @@ struct ControlServer::Impl {
           return;
         }
         socket->setProperty("handled", true);
-        const auto data = socket->readLine(4097);
-        absl::StatusOr<QJsonObject> result =
+        const std::string data = socket->readLine(4097).toStdString();
+        absl::StatusOr<nlohmann::json> result =
             absl::InvalidArgumentError("Invalid bounded JSON request");
-        QJsonParseError error;
-        const auto document = QJsonDocument::fromJson(data, &error);
-        if (data.endsWith('\n') && data.size() <= 4096 &&
-            error.error == QJsonParseError::NoError && document.isObject()) {
-          result = Handle(document.object());
+        const auto document =
+            nlohmann::json::parse(data, nullptr, /*allow_exceptions=*/false);
+        if (data.ends_with('\n') && data.size() <= 4096 &&
+            !document.is_discarded() && document.is_object()) {
+          result = Handle(document);
         }
-        socket->write(
-            QJsonDocument(Response(result)).toJson(QJsonDocument::Compact) +
-            '\n');
+        const std::string response = EncodeResponse(result);
+        socket->write(response.data(), static_cast<qint64>(response.size()));
         socket->disconnectFromServer();
       };
       QObject::connect(socket, &QLocalSocket::readyRead, socket, read);
@@ -284,26 +310,27 @@ absl::StatusOr<std::unique_ptr<ControlServer>> ControlServer::Start(
   if (!socket_path || !socket_path[0]) {
     return std::unique_ptr<ControlServer>();
   }
-  const QString path = QString::fromUtf8(socket_path);
-  QFileInfo info(path);
-  const QString parent = info.dir().canonicalPath();
+  const std::string path(socket_path);
+  QFileInfo info(QString::fromStdString(path));
+  const std::string parent = info.dir().canonicalPath().toStdString();
   struct stat metadata{};
-  if (!info.isAbsolute() || parent.isEmpty() || path.toUtf8().size() > 100 ||
-      ::stat(parent.toUtf8().constData(), &metadata) != 0 ||
-      metadata.st_uid != ::getuid() || (metadata.st_mode & 077) != 0) {
+  if (!info.isAbsolute() || parent.empty() || path.size() > 100 ||
+      ::stat(parent.c_str(), &metadata) != 0 || metadata.st_uid != ::getuid() ||
+      (metadata.st_mode & 077) != 0) {
     return absl::InvalidArgumentError(
         "Socket requires an owned private directory");
   }
   if (!state || !state->symsys) {
     return absl::FailedPreconditionError("Emulator system unavailable");
   }
-  const QString report = path + ".status.json";
-  if (QFileInfo::exists(report) || QFileInfo(report).isSymLink()) {
+  const std::string report = path + ".status.json";
+  if (QFileInfo::exists(QString::fromStdString(report)) ||
+      QFileInfo(QString::fromStdString(report)).isSymLink()) {
     return absl::AlreadyExistsError("Final status destination already exists");
   }
   auto impl = std::make_unique<Impl>(state, parent, report);
   impl->server.setSocketOptions(QLocalServer::UserAccessOption);
-  if (!impl->server.listen(path)) {
+  if (!impl->server.listen(QString::fromStdString(path))) {
     return absl::AlreadyExistsError("Cannot bind private control socket");
   }
   QObject::connect(&impl->server, &QLocalServer::newConnection, &impl->server,

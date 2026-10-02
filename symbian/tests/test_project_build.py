@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import shlex
 import shutil
 from pathlib import Path
 
@@ -87,3 +88,64 @@ def test_legacy_source_fields_are_not_silently_ignored(tmp_path):
     with pytest.raises(StatusError) as caught:
         toolchain.build(project, tmp_path / "out")
     assert caught.value.code == Code.INVALID_ARGUMENT
+
+
+def test_compiler_alias_change_keeps_required_preset_values(tmp_path):
+    """CMake's implicit reset must not discard the SDK/preset configuration."""
+    project = tmp_path / "project"
+    shutil.copytree(PROJECT, project)
+    presets = project / "CMakePresets.json"
+    settings = json.loads(presets.read_text())
+    settings["configurePresets"][0].setdefault("cacheVariables", {})[
+        "SYMBIAN_TEST_PRESET_PRESENT"
+    ] = "ON"
+    presets.write_text(json.dumps(settings))
+    cmake = project / "CMakeLists.txt"
+    cmake.write_text(
+        cmake.read_text() + "\n"
+        "if(NOT SYMBIAN_TEST_PRESET_PRESENT)\n"
+        '  message(FATAL_ERROR "Preset was discarded")\n'
+        "endif()\n"
+    )
+    compiler = Path(shutil.which("clang++")).absolute()
+    alias = tmp_path / "alternate-clang++"
+    alias.write_text(
+        "#!/bin/sh\nexec " + shlex.quote(str(compiler)) + ' "$@"\n'
+    )
+    alias.chmod(0o755)
+    output = tmp_path / "out"
+    first = toolchain.build(project, output, str(compiler))
+    second = toolchain.build(project, output, str(alias))
+    assert second["reproducible"]
+    assert second["sha256"] == first["sha256"]
+    assert (
+        "SYMBIAN_TEST_PRESET_PRESENT:UNINITIALIZED=ON"
+        in (output / "cmake/CMakeCache.txt").read_text()
+    )
+
+
+def test_updated_compiler_at_same_path_discards_old_objects(tmp_path):
+    """Driver updates must not mix cached and newly generated guest objects."""
+    project = tmp_path / "project"
+    shutil.copytree(PROJECT, project)
+    probe = project / "probe.cc"
+    probe.write_text(probe.read_text().replace("17U", "SDK_MULTIPLIER"))
+    compiler = shlex.quote(shutil.which("clang++"))
+    driver = tmp_path / "clang++"
+
+    def version(multiplier):
+        driver.write_text(
+            '#!/bin/sh\nif [ "$1" = "--version" ]; then\n'
+            f"  {compiler} --version\n"
+            f"  echo 'SDK revision {multiplier}'\n  exit 0\nfi\n"
+            f'exec {compiler} -DSDK_MULTIPLIER={multiplier}U "$@"\n'
+        )
+        driver.chmod(0o755)
+
+    output = tmp_path / "out"
+    version(17)
+    first = toolchain.build(project, output, str(driver))
+    version(18)
+    second = toolchain.build(project, output, str(driver))
+    assert second["reproducible"]
+    assert first["sha256"] != second["sha256"]

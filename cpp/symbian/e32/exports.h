@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <set>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -22,9 +23,11 @@ absl::StatusOr<std::vector<ExportSlot>> ResolveExports(
 std::string ExportBitmap(const std::vector<ExportSlot>& exports);
 
 absl::StatusOr<std::string> EncodeCodeRelocations(
-    const std::vector<uint32_t>& offsets);
+    const std::vector<uint32_t>& offsets,
+    const std::set<uint32_t>& data_targets = {});
 absl::StatusOr<std::vector<uint32_t>> DecodeCodeRelocations(
-    std::string_view bytes, uint32_t code_size);
+    std::string_view bytes, uint32_t code_size,
+    std::set<uint32_t>* data_targets = nullptr);
 
 }  // namespace symbian::e32::internal
 

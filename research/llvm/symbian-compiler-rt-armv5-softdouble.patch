@@ -1,0 +1,50 @@
+diff --git a/compiler-rt/lib/builtins/arm/adddf3.S b/compiler-rt/lib/builtins/arm/adddf3.S
+--- a/compiler-rt/lib/builtins/arm/adddf3.S
++++ b/compiler-rt/lib/builtins/arm/adddf3.S
+@@ -494,5 +494,5 @@ LOCAL_LABEL(addsub_return_nan):
+   // Return the default NaN, in the case of adding +inf to -inf.
+-  movw    xh, 0x7ff8
++  ldr     xh, =0x7ff8
+   lsls    xh, xh, #16        // 0x7ff80000 is the high word of the default NaN
+   mov     xl, #0             // and the low word is 0
+   bx      lr
+diff --git a/compiler-rt/lib/builtins/arm/addsf3.S b/compiler-rt/lib/builtins/arm/addsf3.S
+--- a/compiler-rt/lib/builtins/arm/addsf3.S
++++ b/compiler-rt/lib/builtins/arm/addsf3.S
+@@ -223,7 +223,8 @@ LOCAL_LABEL(add_roundeven_ovf):
+   // field of the number is exactly 0xff. So all we have to do is clear the
+   // mantissa, to make it into an infinity of the output sign.
+ LOCAL_LABEL(add_ovf):
+-  bfc     r0, #0, #23
++  lsr     r0, r0, #23
++  lsl     r0, r0, #23
+   bx      lr
+ 
+ LOCAL_LABEL(add_uncommon):
+diff --git a/compiler-rt/lib/builtins/arm/divdf3.S b/compiler-rt/lib/builtins/arm/divdf3.S
+--- a/compiler-rt/lib/builtins/arm/divdf3.S
++++ b/compiler-rt/lib/builtins/arm/divdf3.S
+@@ -616,5 +616,5 @@ LOCAL_LABEL(ddiv_ivo_pop):
+   pop     {r4,r5,r6,r7,r8,lr}
+ LOCAL_LABEL(ddiv_ivo):
+-  movw    xh, 0x7ff8
++  ldr     xh, =0x7ff8
+   lsls    xh, xh, #16
+   mov     xl, #0
+   bx      lr
+diff --git a/compiler-rt/lib/builtins/arm/muldf3.S b/compiler-rt/lib/builtins/arm/muldf3.S
+--- a/compiler-rt/lib/builtins/arm/muldf3.S
++++ b/compiler-rt/lib/builtins/arm/muldf3.S
+@@ -255,4 +255,4 @@ LOCAL_LABEL(rounded):
+   // if yl >= 0x7fe detects both overflow and underflow at once.
+-  movw    r12, #0x7FE
++  ldr     r12, =0x7FE
+   cmp     yl, r12
+   poplo   {r4,r5,r6,pc}
+@@ -394,5 +394,5 @@ LOCAL_LABEL(retnan):
+   // Return the default NaN, in the case where the inputs were 0 and infinity.
+-  movw    xh, 0x7ff8
++  ldr     xh, =0x7ff8
+   lsls    xh, xh, #16
+   mov     xl, #0
+   bx      lr

@@ -1,0 +1,41 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "symbian-pic",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../../.symbian/cmake/abseil-status-probe",
+      "toolchainFile": "$env{SYMBIAN_SDK_PREFIX}/cmake/symbian-arm.cmake",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "SYMBIAN_TARGET_ARCH": "armv6",
+        "SYMBIAN_SDK_PREFIX": "$env{SYMBIAN_SDK_PREFIX}",
+        "SYMBIAN_ABSEIL_SOURCE": "$env{SYMBIAN_ABSEIL_SOURCE}"
+      }
+    },
+    {
+      "name": "symbian-sdk",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../../.symbian/cmake/abseil-status-sdk-probe",
+      "toolchainFile": "$env{SYMBIAN_SDK_PREFIX}/cmake/symbian-arm.cmake",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "SYMBIAN_TARGET_ARCH": "armv6",
+        "SYMBIAN_SDK_PREFIX": "$env{SYMBIAN_SDK_PREFIX}",
+        "SYMBIAN_ABSEIL_USE_SDK": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "symbian-pic",
+      "configurePreset": "symbian-pic",
+      "targets": ["abseil_status_probe"]
+    },
+    {
+      "name": "symbian-sdk",
+      "configurePreset": "symbian-sdk",
+      "targets": ["abseil_status_probe"]
+    }
+  ]
+}

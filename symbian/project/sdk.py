@@ -1,0 +1,1272 @@
+"""Local target SDK exports with explicit external host dependencies."""
+
+import hashlib
+import json
+import os
+import platform
+import shutil
+import sys
+import tempfile
+from importlib.resources import files
+from pathlib import Path
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, ValidationError
+
+from symbian import toolchain
+from symbian.process import run
+from symbian.sdk import build_import_proxy
+from symbian.status import Code, StatusError
+
+
+class AppSdk(BaseModel):
+    """Explicit dependency locations of the current bounded SDK profile."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_version: Literal[1] = 1
+    prefix: Path
+    compiler: Path
+    c_compiler: Path | None = None
+    linker: Path
+    ar: Path | None = None
+    ranlib: Path | None = None
+    python: Path
+    emulator: Path
+    # Deprecated development-export field; firmware now lives in a shared store.
+    golden: Path | None = None
+    firmware_importer: Path | None = None
+    gdb: Path | None = None
+    architectures: tuple[Literal["armv5t", "armv6"], ...] = (
+        "armv6",
+        "armv5t",
+    )
+
+    @classmethod
+    def load(cls, path: Path) -> "AppSdk":
+        """Loads and validates the materialized SDK's declared dependencies."""
+        try:
+            sdk = cls.model_validate_json(path.read_text())
+        except ValidationError as error:
+            raise StatusError(Code.INVALID_ARGUMENT, str(error)) from error
+        for dependency in (
+            sdk.compiler,
+            sdk.c_compiler,
+            sdk.linker,
+            sdk.ar,
+            sdk.ranlib,
+            sdk.python,
+            sdk.prefix / "lib/libsymbian_guest_runtime.a",
+            sdk.prefix / "cmake/SymbianApp.cmake",
+        ):
+            if dependency is not None and not dependency.is_file():
+                raise StatusError(
+                    Code.NOT_FOUND, f"SDK dependency: {dependency}"
+                )
+        return sdk
+
+
+def _build_runtime_variant(
+    workspace: Path,
+    architecture: str,
+    compiler: Path,
+    linker: Path,
+    *,
+    profile: Literal["streams", "native_atomic64"],
+) -> tuple[bytes, bytes]:
+    """Builds a complete alternate runtime twice in isolated CMake trees."""
+    cmake = shutil.which("cmake")
+    ninja = shutil.which("ninja")
+    if cmake is None or ninja is None:
+        raise StatusError(Code.NOT_FOUND, "CMake and Ninja are required")
+    project = workspace / "examples/runtime_probe"
+    toolchain_file = workspace / "symbian/toolchain/cmake/symbian-arm.cmake"
+    outputs = []
+    with tempfile.TemporaryDirectory(
+        prefix=f"{profile}-{architecture}-", dir=workspace / ".symbian"
+    ) as temporary:
+        for index in range(2):
+            tree = Path(temporary) / str(index)
+            run(
+                [
+                    cmake,
+                    "-S",
+                    str(project),
+                    "-B",
+                    str(tree),
+                    "-G",
+                    "Ninja",
+                    f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}",
+                    f"-DSYMBIAN_PLATFORM_ROOT={workspace}",
+                    f"-DSYMBIAN_TARGET_ARCH={architecture}",
+                    f"-DCMAKE_CXX_COMPILER={compiler}",
+                    f"-DCMAKE_C_COMPILER={compiler.parent / 'clang'}",
+                    f"-DCMAKE_LINKER={linker}",
+                    f"-DCMAKE_AR={compiler.parent / 'llvm-ar'}",
+                    f"-DCMAKE_RANLIB={compiler.parent / 'llvm-ranlib'}",
+                    f"-DCMAKE_MAKE_PROGRAM={ninja}",
+                    "-DSYMBIAN_RUNTIME_LOCALE_STREAM="
+                    + ("ON" if profile == "streams" else "OFF"),
+                    "-DSYMBIAN_RUNTIME_NATIVE_ATOMIC64="
+                    + ("ON" if profile == "native_atomic64" else "OFF"),
+                    "-DSYMBIAN_IMPORT_PROXIES="
+                    + str(workspace / ".symbian/runtime-sdk/euser/euser.dso"),
+                    "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+                ],
+                cwd=project,
+                timeout=120,
+            )
+            run(
+                [
+                    cmake,
+                    "--build",
+                    str(tree),
+                    "--target",
+                    "symbian_guest_runtime",
+                ],
+                cwd=tree,
+                timeout=120,
+            )
+            outputs.append(
+                (
+                    (tree / "runtime/libsymbian_guest_runtime.a").read_bytes(),
+                    (tree / "runtime/include/__config_site").read_bytes(),
+                )
+            )
+    if outputs[0] != outputs[1]:
+        raise StatusError(
+            Code.DATA_LOSS,
+            f"Independent {profile} runtime builds differ",
+        )
+    return outputs[0]
+
+
+def _build_abseil(
+    workspace: Path, output: Path, compiler: Path, linker: Path
+) -> tuple[dict[str, dict[str, str]], dict[str, str]]:
+    """Builds the pinned, patched StatusOr closure for both ARM targets."""
+    source = workspace / "research/upstream/abseil-cpp"
+    revision = "5650e9cf76d3be4318d5fa3af38ee483ddfd5e4a"
+    if not (source / "absl/status/statusor.h").is_file():
+        raise StatusError(
+            Code.NOT_FOUND,
+            "Prepare the pinned Abseil checkout at "
+            f"{source} before exporting the SDK",
+        )
+    if run(["git", "rev-parse", "HEAD"], cwd=source) != revision:
+        raise StatusError(Code.FAILED_PRECONDITION, "Abseil revision mismatch")
+    if run(["git", "status", "--porcelain"], cwd=source):
+        raise StatusError(
+            Code.FAILED_PRECONDITION, "Abseil source checkout is modified"
+        )
+    patches = [
+        workspace / "research/abseil/symbian-platform.patch",
+        workspace / "research/abseil/symbian-low-level-alloc.patch",
+        workspace / "research/abseil/symbian-container-no-elf-tls.patch",
+    ]
+    patch_digests = {
+        patch.name: hashlib.sha256(patch.read_bytes()).hexdigest()
+        for patch in patches
+    }
+    project = workspace / "examples/abseil_status_probe"
+    archives_by_architecture = {}
+    with tempfile.TemporaryDirectory(
+        prefix="abseil-sdk-", dir=workspace / ".symbian"
+    ) as temporary:
+        staged = Path(temporary) / "source"
+        run(
+            ["git", "clone", "--no-hardlinks", str(source), str(staged)],
+            cwd=workspace,
+            timeout=120,
+        )
+        for patch in patches:
+            run(["git", "apply", "--check", str(patch)], cwd=staged)
+            run(["git", "apply", str(patch)], cwd=staged)
+            run(
+                ["git", "apply", "--reverse", "--check", str(patch)],
+                cwd=staged,
+            )
+
+        headers = output / "include/abseil"
+        for header in (staged / "absl").rglob("*"):
+            if header.is_file() and header.suffix in (".h", ".inc"):
+                target = headers / header.relative_to(staged)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(header, target)
+
+        environment = dict(os.environ)
+        environment.update(
+            SYMBIAN_ABSEIL_SOURCE=str(staged),
+            SYMBIAN_SDK_PREFIX=str(output),
+        )
+        for architecture in ("armv5t", "armv6"):
+            build = Path(temporary) / f"build-{architecture}"
+            run(
+                [
+                    "cmake",
+                    "--preset",
+                    "symbian-pic",
+                    "-B",
+                    str(build),
+                    f"-DSYMBIAN_TARGET_ARCH={architecture}",
+                    f"-DCMAKE_CXX_COMPILER={compiler}",
+                    f"-DCMAKE_C_COMPILER={compiler.parent / 'clang'}",
+                    f"-DCMAKE_LINKER={linker}",
+                    f"-DCMAKE_AR={compiler.parent / 'llvm-ar'}",
+                    f"-DCMAKE_RANLIB={compiler.parent / 'llvm-ranlib'}",
+                ],
+                cwd=project,
+                env=environment,
+                timeout=120,
+            )
+            run(
+                [
+                    "cmake",
+                    "--build",
+                    str(build),
+                    "--target",
+                    "abseil_status_probe",
+                    "-j",
+                    "8",
+                ],
+                cwd=project,
+                env=environment,
+                timeout=600,
+            )
+            artifacts = sorted((build / "abseil").rglob("libabsl_*.a"))
+            if not any(path.name == "libabsl_statusor.a" for path in artifacts):
+                raise StatusError(
+                    Code.DATA_LOSS,
+                    f"Abseil StatusOr archive missing for {architecture}",
+                )
+            destination = output / "lib" / architecture / "abseil"
+            destination.mkdir(parents=True)
+            digests = {}
+            for artifact in artifacts:
+                target = destination / artifact.name
+                if target.exists():
+                    raise StatusError(
+                        Code.DATA_LOSS,
+                        f"Duplicate Abseil archive: {artifact.name}",
+                    )
+                shutil.copyfile(artifact, target)
+                digests[target.name] = hashlib.sha256(
+                    target.read_bytes()
+                ).hexdigest()
+            archives_by_architecture[architecture] = digests
+    if (
+        archives_by_architecture["armv5t"].keys()
+        != archives_by_architecture["armv6"].keys()
+    ):
+        raise StatusError(
+            Code.DATA_LOSS, "Abseil archive closure differs by architecture"
+        )
+    return archives_by_architecture, patch_digests
+
+
+def prepare(workspace: Path, output: Path) -> AppSdk:
+    """Exports target headers/runtime/proxies without source-tree symlinks.
+
+    Args:
+        workspace: Prepared platform source checkout with preserved inputs.
+        output: New SDK prefix, outside the upstream research source trees.
+
+    Returns:
+        SDK dependency manifest. LLVM, GDB and the emulator are external host
+        dependencies in this development export, not bundled wheel payloads.
+    """
+    workspace, output = workspace.resolve(), output.absolute()
+    if any(
+        output.resolve().is_relative_to(workspace / name)
+        for name in ("research", "cpp", "symbian", "examples")
+    ):
+        raise StatusError(
+            Code.INVALID_ARGUMENT, "SDK output overlaps source inputs"
+        )
+    if output.exists():
+        raise StatusError(Code.ALREADY_EXISTS, f"SDK prefix exists: {output}")
+    compiler = Path("/opt/homebrew/opt/llvm/bin/clang++")
+    linker = Path("/opt/homebrew/bin/ld.lld")
+    if not compiler.is_file():
+        compiler = Path(shutil.which("clang++") or "clang++").absolute()
+        linker = Path(shutil.which("ld.lld") or "ld.lld").absolute()
+    c_compiler = compiler.parent / "clang"
+    if not c_compiler.is_file():
+        raise StatusError(
+            Code.NOT_FOUND, f"Matching LLVM C compiler: {c_compiler}"
+        )
+    archive_tools = {}
+    for name in ("llvm-ar", "llvm-ranlib"):
+        candidate = compiler.parent / name
+        if not candidate.is_file():
+            candidate = Path(shutil.which(name) or "/missing/" + name)
+        if not candidate.is_file():
+            raise StatusError(
+                Code.NOT_FOUND,
+                f"LLVM {name} required for ARM static libraries",
+            )
+        archive_tools[name] = candidate
+    runtimes = {}
+    for architecture in ("armv5t", "armv6"):
+        runtime = workspace / f".symbian/runtime-probe-{architecture}"
+        toolchain.build(
+            workspace / "examples/runtime_probe",
+            runtime,
+            str(compiler),
+            str(linker),
+            architecture=architecture,
+        )
+        runtimes[architecture] = runtime
+    stream_runtimes = {
+        architecture: _build_runtime_variant(
+            workspace, architecture, compiler, linker, profile="streams"
+        )
+        for architecture in ("armv5t", "armv6")
+    }
+    native_atomic64_runtimes = {
+        architecture: _build_runtime_variant(
+            workspace,
+            architecture,
+            compiler,
+            linker,
+            profile="native_atomic64",
+        )
+        for architecture in ("armv5t", "armv6")
+    }
+    runtime = runtimes[
+        "armv5t"
+    ]  # Compatibility archive for older project files.
+    source = workspace / "research/upstream"
+    libcxx = source / "llvm-project/libcxx"
+    openc = source / "ossrv/genericopenlibs/openenvcore"
+    output.mkdir(parents=True)
+    try:
+        shutil.copytree(
+            workspace / ".symbian/gui-sdk/include", output / "include/platform"
+        )
+        shutil.copyfile(
+            workspace
+            / "research/upstream/appsupport/appfw/apparchitecture/inc"
+            / "AppInfo.rh",
+            output / "include/platform/AppInfo.rh",
+        )
+        shutil.copytree(libcxx / "include", output / "include/c++")
+        resource = Path(
+            run([str(compiler), "-print-resource-dir"], cwd=workspace).strip()
+        )
+        shutil.copytree(resource / "include", output / "include/compiler")
+        shutil.copytree(openc / "include", output / "include/openc")
+        shutil.copytree(openc / "libm/include", output / "include/libm")
+        shutil.copytree(openc / "libc/inc", output / "include/libc")
+        shutil.copytree(openc / "libpthread/inc", output / "include/pthread")
+        shutil.copytree(openc / "include/posix4", output / "include/posix4")
+        startup = output / "share/symbian/runtime"
+        startup.mkdir(parents=True)
+        source_startup = workspace / "examples/runtime_probe"
+        shutil.copyfile(source_startup / "startup.S", startup / "startup.S")
+        shutil.copyfile(source_startup / "image.ld", startup / "image.ld")
+        startup_code = (source_startup / "startup.cc").read_text()
+        marker = '#include "abi.h"'
+        if startup_code.count(marker) != 1:
+            raise StatusError(Code.DATA_LOSS, "Guest startup include changed")
+        (startup / "startup.cc").write_text(
+            startup_code.replace(marker, '#include "symbian/runtime.h"')
+        )
+        (output / "include/symbian").mkdir()
+        shutil.copyfile(
+            workspace / "cpp/symbian/runtime/abi.h",
+            output / "include/symbian/runtime.h",
+        )
+        shutil.copytree(
+            workspace / "cpp/symbian/concurrency/common/symbian",
+            output / "include/symbian",
+            dirs_exist_ok=True,
+        )
+        shutil.copytree(
+            workspace / "cpp/symbian/concurrency/guest/symbian",
+            output / "include/symbian",
+            dirs_exist_ok=True,
+        )
+        shutil.copytree(
+            workspace / "cpp/symbian/concurrency/common/thread",
+            output / "include/thread",
+        )
+        shutil.copytree(
+            workspace / "cpp/symbian/concurrency/guest/thread",
+            output / "include/thread",
+            dirs_exist_ok=True,
+            ignore=shutil.ignore_patterns("*.cc"),
+        )
+        host_headers = output / "include/host/thread"
+        host_headers.mkdir(parents=True)
+        for header in (workspace / "cpp/symbian/concurrency/host/thread").glob(
+            "*.h"
+        ):
+            shutil.copyfile(header, host_headers / header.name)
+        # __config_site and assertion handler are generated with the library;
+        # consumers must use these exact files, not host libc++ configuration.
+        config = runtime / "cmake/runtime/include"
+        (output / "include/config").mkdir()
+        for name in ("__config_site", "__assertion_handler"):
+            shutil.copyfile(config / name, output / "include/config" / name)
+        shutil.copyfile(
+            workspace / "cpp/symbian/runtime/include/stdarg_e.h",
+            output / "include/config/stdarg_e.h",
+        )
+        shutil.copyfile(
+            workspace / "cpp/symbian/runtime/include/ctype.h",
+            output / "include/config/ctype.h",
+        )
+        shutil.copyfile(
+            workspace / "cpp/symbian/runtime/include/inttypes.h",
+            output / "include/config/inttypes.h",
+        )
+        shutil.copyfile(
+            workspace / "cpp/symbian/runtime/include/math.h",
+            output / "include/config/math.h",
+        )
+        locale_header = output / "include/config/__locale_dir"
+        locale_header.mkdir()
+        shutil.copyfile(
+            workspace
+            / "cpp/symbian/runtime/include/__locale_dir/locale_base_api.h",
+            locale_header / "locale_base_api.h",
+        )
+        stream_config = output / "include/stream-config"
+        stream_config.mkdir()
+        stream_config.joinpath("__config_site").write_bytes(
+            stream_runtimes["armv6"][1]
+        )
+        (output / "include/config/stdapis").symlink_to(
+            "../openc", target_is_directory=True
+        )
+        (output / "lib").mkdir()
+        for architecture, built in runtimes.items():
+            library = output / "lib" / architecture
+            library.mkdir()
+            shutil.copyfile(
+                built / "cmake/runtime/libsymbian_guest_runtime.a",
+                library / "libsymbian_guest_runtime.a",
+            )
+            library.joinpath("libsymbian_guest_runtime_streams.a").write_bytes(
+                stream_runtimes[architecture][0]
+            )
+            library.joinpath(
+                "libsymbian_guest_runtime_native_atomic64.a"
+            ).write_bytes(native_atomic64_runtimes[architecture][0])
+            if stream_runtimes[architecture][1] != stream_runtimes["armv6"][1]:
+                raise StatusError(
+                    Code.DATA_LOSS,
+                    "Stream runtime configurations differ across ARM targets",
+                )
+            if (
+                native_atomic64_runtimes[architecture][1]
+                != (config / "__config_site").read_bytes()
+            ):
+                raise StatusError(
+                    Code.DATA_LOSS,
+                    "Native atomic runtime configuration differs from default",
+                )
+            for name in ("__config_site", "__assertion_handler"):
+                if (built / "cmake/runtime/include" / name).read_bytes() != (
+                    config / name
+                ).read_bytes():
+                    raise StatusError(
+                        Code.DATA_LOSS,
+                        "Target runtime header configurations differ",
+                    )
+        shutil.copyfile(
+            runtime / "cmake/runtime/libsymbian_guest_runtime.a",
+            output / "lib/libsymbian_guest_runtime.a",
+        )
+        gui = json.loads(
+            (workspace / "research/gui_app/source-profile.json").read_text()
+        )
+        euser = gui["imports"]["euser.dll"]["symbols"] + [
+            "_ZN4User5AllocEi",
+            "_ZN4User4FreeEPv",
+            "_ZN4User9AllocatorEv",
+            "_ZN4User15CountAllocCellsEv",
+            "memcpy",
+            "memmove",
+            "memset",
+            "_ZN5TTime8HomeTimeEv",
+            "_ZNK5TTime8DateTimeEv",
+            "_ZN7TPtrC16C1EPKti",
+            "_ZN8RLibrary4LoadERK7TDesC16S2_",
+            "_ZN8RLibrary5CloseEv",
+            "_ZNK8RLibrary6LookupEi",
+            "_ZN9RFastLock11CreateLocalE10TOwnerType",
+            "_ZN9RFastLock4WaitEv",
+            "_ZN9RFastLock4PollEv",
+            "_ZN9RFastLock6SignalEv",
+            "__e32_memory_barrier",
+            "__e32_atomic_add_ord32",
+            "__e32_atomic_and_ord32",
+            "__e32_atomic_load_acq32",
+            "__e32_atomic_ior_ord32",
+            "__e32_atomic_cas_ord32",
+            "__e32_atomic_cas_ord8",
+            "__e32_atomic_load_acq8",
+            "__e32_atomic_store_ord32",
+            "__e32_atomic_store_ord8",
+            "__e32_atomic_swp_ord32",
+            "__e32_atomic_swp_ord8",
+            "_ZN7UserHal15PageSizeInBytesERi",
+            "_ZN6RChunk11CreateLocalEii10TOwnerType",
+            "_ZNK6RChunk4BaseEv",
+            "_ZNK6RChunk4SizeEv",
+            "_ZN4User5AfterE27TTimeIntervalMicroSeconds32",
+            "_ZN4User14WaitForRequestER14TRequestStatus",
+            "_ZN4User17WaitForAnyRequestEv",
+            "_ZN6RTimer11CreateLocalEv",
+            "_ZN6RTimer6CancelEv",
+            "_ZN6RTimer7HighResER14TRequestStatus27TTimeIntervalMicroSeconds32",
+            "_ZN9RProperty6AttachE4TUidj10TOwnerType",
+            "_ZN9RProperty6DefineE4TUidjii",
+            "_ZN9RProperty6DeleteE4TUidj",
+            "_ZN9RProperty9SubscribeER14TRequestStatus",
+            "_ZN9RProperty6CancelEv",
+            "_ZN9RProperty3SetEi",
+            "_ZN9RProperty3GetERi",
+            "_ZN7RThread4OpenE9TThreadId10TOwnerType",
+            "_ZNK7RThread2IdEv",
+            "_ZNK7RThread13RequestSignalEv",
+            "_ZN7RThread6CreateERK7TDesC16PFiPvEiiiS3_10TOwnerType",
+            "_ZNK7RThread5LogonER14TRequestStatus",
+            "_ZNK7RThread6ResumeEv",
+            "_ZNK7RThread10ExitReasonEv",
+            "_ZNK7RThread8ExitTypeEv",
+            "_ZN4User9TickCountEv",
+            "_ZN4User10NTickCountEv",
+            "_ZN4User11FastCounterEv",
+            "_ZN7UserHal10TickPeriodER27TTimeIntervalMicroSeconds32",
+            "_ZN7UserSvr11HalFunctionEiiPvS0_",
+            "_ZN11RHandleBase5CloseEv",
+        ]
+        ws32 = gui["imports"]["ws32.dll"]["symbols"] + [
+            "_ZN15CWsScreenDevice11ReleaseFontEP5CFont",
+            "_ZN15CWsScreenDevice35GetNearestFontToDesignHeightInTwipsERP5CFontRK9TFontSpec",
+        ]
+        for dll, definition, symbols in (
+            ("euser", source / "kernelhwsrv/kernel/eka/eabi/euseru.def", euser),
+            (
+                "ws32",
+                source / "graphics/windowing/windowserver/eabi/WS322U.DEF",
+                ws32,
+            ),
+            (
+                "gdi",
+                source / "graphics/graphicsdeviceinterface/gdi/eabi/GDI2U.def",
+                ["_ZN9TFontSpecC1ERK7TDesC16i"],
+            ),
+            (
+                "libc",
+                source
+                / "ossrv/genericopenlibs/openenvcore/libc/eabi/libcu.def",
+                [
+                    "__errno",
+                    "__stderr",
+                    "__stdin",
+                    "__stdout",
+                    "__assert",
+                    "abort",
+                    "asprintf",
+                    "btowc",
+                    "clock_gettime",
+                    "close",
+                    "fclose",
+                    "ferror",
+                    "fflush",
+                    "fopen",
+                    "fprintf",
+                    "fputwc",
+                    "fread",
+                    "fseek",
+                    "fwrite",
+                    "getc",
+                    "getenv",
+                    "getwc",
+                    "gmtime_r",
+                    "localtime_r",
+                    "mktime",
+                    "sched_yield",
+                    "free",
+                    "iswalpha",
+                    "isdigit",
+                    "isspace",
+                    "iswblank",
+                    "iswcntrl",
+                    "iswdigit",
+                    "iswlower",
+                    "iswprint",
+                    "iswpunct",
+                    "iswspace",
+                    "iswupper",
+                    "iswxdigit",
+                    "localeconv",
+                    "malloc",
+                    "mbrlen",
+                    "mbrtowc",
+                    "mbsnrtowcs",
+                    "mbsrtowcs",
+                    "mbtowc",
+                    "memchr",
+                    "nanosleep",
+                    "open",
+                    "read",
+                    "realloc",
+                    "snprintf",
+                    "strcpy",
+                    "strchr",
+                    "sscanf",
+                    "strcmp",
+                    "strcoll",
+                    "strerror_r",
+                    "strftime",
+                    "strptime",
+                    "strtod",
+                    "strtol",
+                    "strtoull",
+                    "strncmp",
+                    "strtof",
+                    "strtold",
+                    "strxfrm",
+                    "tolower",
+                    "toupper",
+                    "sysconf",
+                    "towlower",
+                    "towupper",
+                    "ungetc",
+                    "ungetwc",
+                    "vsnprintf",
+                    "wcscoll",
+                    "wcrtomb",
+                    "wcslen",
+                    "wcsnrtombs",
+                    "wcsxfrm",
+                    "wctob",
+                    "wmemchr",
+                ],
+            ),
+            (
+                "libm",
+                source
+                / "ossrv/genericopenlibs/openenvcore/libm/eabi/libmu.def",
+                [
+                    "ceilf",
+                    "frexp",
+                    "ldexp",
+                    "modf",
+                    "nextafterf",
+                    "round",
+                    "scalbnf",
+                ],
+            ),
+            (
+                "libpthread",
+                source
+                / "ossrv/genericopenlibs/openenvcore/libpthread/eabi"
+                / "libpthreadu.def",
+                [
+                    "pthread_create",
+                    "pthread_join",
+                    "pthread_detach",
+                    "pthread_self",
+                    "pthread_key_create",
+                    "pthread_key_delete",
+                    "pthread_setspecific",
+                    "pthread_getspecific",
+                    "pthread_mutex_init",
+                    "pthread_mutex_lock",
+                    "pthread_mutex_unlock",
+                    "pthread_mutex_trylock",
+                    "pthread_mutex_destroy",
+                    "pthread_cond_broadcast",
+                    "pthread_cond_init",
+                    "pthread_cond_signal",
+                    "pthread_cond_wait",
+                    "pthread_cond_timedwait",
+                    "pthread_cond_destroy",
+                    "pthread_once",
+                ],
+            ),
+            (
+                "drtaeabi",
+                source / "kernelhwsrv/kernel/eka/compsupp/eabi/drtaeabiu.def",
+                [
+                    "__cxa_guard_acquire",
+                    "__cxa_guard_release",
+                    "__cxa_pure_virtual",
+                    "_ZSt9terminatev",
+                ],
+            ),
+        ):
+            build_import_proxy(
+                definition,
+                sorted(set(symbols)),
+                dll + ".dll",
+                output / "proxies" / dll,
+                str(compiler),
+                str(linker),
+            )
+        build_import_proxy(
+            source / "kernelhwsrv/kernel/eka/eabi/euseru.def",
+            sorted(
+                set(euser)
+                | {
+                    "__e32_atomic_add_ord64",
+                    "__e32_atomic_cas_ord64",
+                    "__e32_atomic_load_acq64",
+                    "__e32_atomic_store_ord64",
+                    "__e32_atomic_swp_ord64",
+                }
+            ),
+            "euser.dll",
+            output / "proxies/euser-native64",
+            str(compiler),
+            str(linker),
+        )
+        cmake = output / "cmake"
+        shutil.copytree(workspace / "symbian/toolchain/cmake", cmake)
+        (cmake / "SymbianApp.cmake").write_bytes(
+            files("symbian.project")
+            .joinpath("templates", "SymbianApp.cmake")
+            .read_bytes()
+        )
+        (cmake / "SymbianAbseil.cmake").write_bytes(
+            files("symbian.project")
+            .joinpath("templates", "SymbianAbseil.cmake")
+            .read_bytes()
+        )
+        (cmake / "SymbianHostConcurrency.cmake").write_bytes(
+            files("symbian.project")
+            .joinpath("templates", "SymbianHostConcurrency.cmake")
+            .read_bytes()
+        )
+        abseil_archives, abseil_patches = _build_abseil(
+            workspace, output, compiler, linker
+        )
+        cmake_tool = shutil.which("cmake")
+        ninja_tool = shutil.which("ninja")
+        if cmake_tool is None or ninja_tool is None:
+            raise StatusError(Code.NOT_FOUND, "CMake and Ninja are required")
+        for architecture in ("armv5t", "armv6"):
+            with tempfile.TemporaryDirectory(
+                prefix=f"symbian-fiber-{architecture}-"
+            ) as temporary:
+                build_tree = Path(temporary) / "build"
+                run(
+                    [
+                        cmake_tool,
+                        "-S",
+                        str(workspace / "cpp/symbian/concurrency/guest"),
+                        "-B",
+                        str(build_tree),
+                        "-G",
+                        "Ninja",
+                        f"-DSYMBIAN_SDK_PREFIX={output}",
+                        f"-DSYMBIAN_TARGET_ARCH={architecture}",
+                        "-DCMAKE_TOOLCHAIN_FILE="
+                        f"{output / 'cmake/symbian-arm.cmake'}",
+                        f"-DCMAKE_CXX_COMPILER={compiler}",
+                        f"-DCMAKE_LINKER={linker}",
+                        f"-DCMAKE_AR={archive_tools['llvm-ar']}",
+                        f"-DCMAKE_RANLIB={archive_tools['llvm-ranlib']}",
+                        f"-DCMAKE_MAKE_PROGRAM={ninja_tool}",
+                    ],
+                    cwd=workspace,
+                )
+                run(
+                    [cmake_tool, "--build", str(build_tree)],
+                    cwd=workspace,
+                )
+                shutil.copyfile(
+                    build_tree / "libsymbian_guest_fiber.a",
+                    output / "lib" / architecture / "libsymbian_guest_fiber.a",
+                )
+        with tempfile.TemporaryDirectory(
+            prefix="symbian-host-concurrency-"
+        ) as temporary:
+            build_tree = Path(temporary) / "build"
+            configure = [
+                cmake_tool,
+                "-S",
+                str(workspace / "cpp/symbian/concurrency/host_package"),
+                "-B",
+                str(build_tree),
+                "-G",
+                "Ninja",
+                f"-DCMAKE_MAKE_PROGRAM={ninja_tool}",
+            ]
+            deps_prefix = os.environ.get("SYMBIAN_DEPS_PREFIX")
+            if deps_prefix:
+                configure.append(f"-DCMAKE_PREFIX_PATH={deps_prefix}")
+            run(configure, cwd=workspace, timeout=120)
+            run(
+                [
+                    cmake_tool,
+                    "--build",
+                    str(build_tree),
+                    "--target",
+                    "symbian_host_primitives_bundle",
+                ],
+                cwd=workspace,
+                timeout=300,
+            )
+            host_library = (
+                output
+                / "lib/host"
+                / f"{platform.system()}-{platform.machine()}"
+            )
+            host_library.mkdir(parents=True)
+            shutil.copyfile(
+                build_tree / "concurrency/libsymbian_host_primitives.a",
+                host_library / "libsymbian_host_primitives.a",
+            )
+        licenses = output / "licenses"
+        licenses.mkdir()
+        shutil.copyfile(libcxx / "LICENSE.TXT", licenses / "LLVM-libcxx.txt")
+        shutil.copyfile(
+            workspace / "research/upstream/abseil-cpp/LICENSE",
+            licenses / "Abseil-Apache-2.0.txt",
+        )
+        shutil.copyfile(
+            workspace / "third_party/a11/LICENSE", licenses / "A11.txt"
+        )
+        shutil.copyfile(
+            workspace / "third_party/boost/LICENSE_1_0.txt",
+            licenses / "Boost-BSL-1.0.txt",
+        )
+        shutil.copyfile(
+            source / "llvm-project/compiler-rt/LICENSE.TXT",
+            licenses / "LLVM-compiler-rt.txt",
+        )
+        shutil.copyfile(
+            workspace / "third_party/symbian/EPL-1.0.html",
+            licenses / "EPL-1.0.html",
+        )
+        (output / "provenance.json").write_text(
+            json.dumps(
+                {
+                    "platform_source_profile": gui,
+                    "runtime_build_inputs": {
+                        architecture: json.loads(
+                            (built / "report.json").read_text()
+                        )["inputs"]
+                        for architecture, built in runtimes.items()
+                    },
+                    "stream_runtime_archives": {
+                        architecture: hashlib.sha256(archive).hexdigest()
+                        for architecture, (
+                            archive,
+                            _,
+                        ) in stream_runtimes.items()
+                    },
+                    "native_atomic64_runtime_archives": {
+                        architecture: hashlib.sha256(archive).hexdigest()
+                        for architecture, (
+                            archive,
+                            _,
+                        ) in native_atomic64_runtimes.items()
+                    },
+                    "target_profiles": [
+                        json.loads((built / "report.json").read_text())[
+                            "target"
+                        ]
+                        for built in runtimes.values()
+                    ],
+                    "llvm_revision": "85ac560262434c9ccfc0c183ec22d4138ed647fb",
+                    "llvm_tag": "llvmorg-23.1.2",
+                    "abseil_revision": (
+                        "5650e9cf76d3be4318d5fa3af38ee483ddfd5e4a"
+                    ),
+                    "abseil_patches": abseil_patches,
+                    "abseil_statusor_archives": abseil_archives,
+                    "rcomp_revision": (
+                        "d3c2eadd3ff7826bdf9e1d92f447c357571af18b"
+                    ),
+                    "rcomp_host_patch_sha256": hashlib.sha256(
+                        (
+                            workspace / "research/rcomp/modern-host.patch"
+                        ).read_bytes()
+                    ).hexdigest(),
+                    "appinfo_header_source": (
+                        "research/upstream/appsupport/appfw/apparchitecture/inc"
+                        "/AppInfo.rh"
+                    ),
+                    "epl_license_source": "https://www.eclipse.org/legal/epl-v10.html",
+                    "profile": "bounded-w32-libcxx-v1",
+                    "physical_device_verified": False,
+                },
+                indent=2,
+            )
+            + "\n"
+        )
+        for tree in (
+            "kernelhwsrv",
+            "graphics",
+            "ossrv",
+            "persistentdata",
+            "textandloc",
+        ):
+            candidates = list((source / tree).glob("*icense*")) + list(
+                (source / tree).glob("*ICENSE*")
+            )
+            for index, candidate in enumerate(dict.fromkeys(candidates)):
+                if candidate.is_file():
+                    shutil.copyfile(candidate, licenses / f"{tree}-{index}.txt")
+        sdk = AppSdk(
+            prefix=output,
+            architectures=("armv5t", "armv6"),
+            compiler=compiler,
+            c_compiler=c_compiler,
+            linker=linker,
+            ar=archive_tools["llvm-ar"],
+            ranlib=archive_tools["llvm-ranlib"],
+            python=Path(sys.executable).absolute(),
+            emulator=workspace
+            / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1",
+            firmware_importer=workspace
+            / "build/eka2l1/platform-control/symbian_firmware_tool",
+            gdb=(
+                Path(shutil.which("arm-none-eabi-gdb"))
+                if shutil.which("arm-none-eabi-gdb")
+                else None
+            ),
+        )
+        (output / "sdk.json").write_text(sdk.model_dump_json(indent=2) + "\n")
+        digests = {
+            str(p.relative_to(output)): hashlib.sha256(
+                p.read_bytes()
+            ).hexdigest()
+            for p in output.rglob("*")
+            if p.is_file()
+        }
+        (output / "digests.json").write_text(
+            json.dumps(digests, indent=2) + "\n"
+        )
+        return AppSdk.load(output / "sdk.json")
+    except BaseException:
+        shutil.rmtree(output)
+        raise
+
+
+def discover_sdk(explicit: Path | None = None) -> Path:
+    """Resolves explicit SDK, environment override, then the active user SDK."""
+    if explicit is not None:
+        return (
+            explicit / "sdk.json" if explicit.is_dir() else explicit
+        ).absolute()
+    if value := os.environ.get("SYMBIAN_SDK_MANIFEST"):
+        return Path(value).absolute()
+    config = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+    active = config / "symbian/active-sdk.json"
+    if active.is_file():
+        return Path(json.loads(active.read_text())["manifest"])
+    local = Path.cwd() / ".symbian/app-sdk/sdk.json"
+    if local.is_file():
+        return local
+    raise StatusError(
+        Code.FAILED_PRECONDITION,
+        "Install a local SDK with symbian sdk install or pass --sdk",
+    )
+
+
+def activate_sdk(sdk: AppSdk) -> None:
+    """Records the active SDK for CLI use from arbitrary directories."""
+    config = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+    active = config / "symbian/active-sdk.json"
+    active.parent.mkdir(parents=True, exist_ok=True)
+    temporary = active.with_suffix(".tmp")
+    temporary.write_text(
+        json.dumps({"manifest": str(sdk.prefix / "sdk.json")}) + "\n"
+    )
+    temporary.replace(active)
+
+
+def _install_resource_tools(bin_path: Path) -> None:
+    """Builds the pinned EPL resource compiler and its UID helper."""
+    workspace = Path(__file__).resolve().parents[2]
+    source = workspace / ".symbian/rcomp-epl-research"
+    support = workspace / "research/rcomp"
+    if not (source / "bintools/rcomp/src/main.cpp").is_file():
+        raise StatusError(
+            Code.NOT_FOUND,
+            "Prepared EPL rcomp checkout is required for SDK export; "
+            "see research/rcomp/README.md",
+        )
+    revision = run(
+        ["git", "-C", str(source), "rev-parse", "HEAD"], cwd=workspace
+    ).strip()
+    if revision != "d3c2eadd3ff7826bdf9e1d92f447c357571af18b":
+        raise StatusError(
+            Code.FAILED_PRECONDITION, "Unexpected rcomp source pin"
+        )
+    patch = support / "modern-host.patch"
+    try:
+        run(
+            [
+                "git",
+                "-C",
+                str(source),
+                "apply",
+                "--reverse",
+                "--check",
+                str(patch),
+            ],
+            cwd=workspace,
+        )
+    except StatusError:
+        run(
+            ["git", "-C", str(source), "apply", "--check", str(patch)],
+            cwd=workspace,
+        )
+        run(["git", "-C", str(source), "apply", str(patch)], cwd=workspace)
+    compiler = shutil.which("clang++") or shutil.which("g++")
+    if compiler is None:
+        raise StatusError(Code.NOT_FOUND, "Host C++ compiler for rcomp")
+    rcomp = source / "bintools/rcomp"
+    inputs = sorted((rcomp / "src").glob("*.cpp")) + sorted(
+        (rcomp / "src").glob("*.CPP")
+    )
+    run(
+        [
+            compiler,
+            "-std=c++14",
+            "-D__LINUX__",
+            "-Wno-deprecated-declarations",
+            f"-I{support / 'compat'}",
+            f"-I{rcomp / 'inc'}",
+            f"-I{rcomp / 'src'}",
+            *(str(path) for path in inputs),
+            "-o",
+            str(bin_path / "rcomp"),
+        ],
+        cwd=workspace,
+        timeout=120,
+    )
+    run(
+        [
+            compiler,
+            "-std=c++20",
+            "-fno-exceptions",
+            f"-I{workspace / 'cpp'}",
+            str(workspace / "cpp/symbian/resource/uidcrc_main.cc"),
+            "-o",
+            str(bin_path / "uidcrc"),
+        ],
+        cwd=workspace,
+    )
+    shutil.copyfile(
+        support / "EPL-1.0.html",
+        bin_path.parent / "licenses/rcomp-EPL-1.0.html",
+    )
+
+
+def install_tools(sdk: AppSdk) -> AppSdk:
+    """Exposes Python utilities/native modules and host command shims in SDK."""
+    import shlex
+
+    import pybind11_abseil.ok_status_singleton
+    import pybind11_abseil.status
+
+    import pybind11_abseil
+    from symbian.native import require_native
+
+    prefix = sdk.prefix
+    native = require_native()
+    licenses = Path(native.__file__).parent / "licenses"
+    notices = (
+        "A11-LICENSE",
+        "Abseil-LICENSE",
+        "nlohmann-json-LICENSE",
+        "pybind11-LICENSE",
+        "pybind11_abseil-LICENSE",
+    )
+    for name in notices:
+        if not (licenses / name).is_file():
+            raise StatusError(
+                Code.FAILED_PRECONDITION,
+                "Reinstall the SDK host package to include native notices: "
+                + name,
+            )
+    tools = prefix / "lib/python"
+    tools.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(
+        Path(__file__).resolve().parents[1],
+        tools / "symbian",
+        ignore=shutil.ignore_patterns("tests", "__pycache__", "*.pyc"),
+    )
+    # The source tree keeps this GPL-compatible probe beside its native SDK
+    # implementation; the wheel normally installs it as Python package data.
+    resource_dir = tools / "symbian/sdk/resources"
+    resource_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(
+        Path(__file__).resolve().parents[2]
+        / "cpp/symbian/sdk/probes/header_probe.cc",
+        resource_dir / "header_probe.cc",
+    )
+    shutil.copytree(
+        Path(pybind11_abseil.__file__).parent,
+        tools / "pybind11_abseil",
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+    )
+    for module, package in (
+        (native, "symbian"),
+        (pybind11_abseil.status, "pybind11_abseil"),
+        (pybind11_abseil.ok_status_singleton, "pybind11_abseil"),
+    ):
+        original = Path(module.__file__)
+        target = tools / package / original.name
+        if not target.exists():
+            shutil.copyfile(original, target)
+    shutil.copytree(licenses, prefix / "licenses/host", dirs_exist_ok=True)
+    shutil.copytree(licenses, tools / "symbian/licenses", dirs_exist_ok=True)
+    (prefix / "libexec").mkdir(exist_ok=True)
+    (prefix / "libexec/python-bootstrap.py").write_bytes(
+        files("symbian.project")
+        .joinpath("templates", "python-bootstrap.py")
+        .read_bytes()
+    )
+    bin_path = prefix / "bin"
+    bin_path.mkdir()
+    _install_resource_tools(bin_path)
+    dependencies = {
+        "clang++": sdk.compiler,
+        "clang": sdk.c_compiler or sdk.compiler.parent / "clang",
+        "ld.lld": sdk.linker,
+        "python": sdk.python,
+    }
+    if sdk.ar and sdk.ranlib:
+        dependencies["llvm-ar"] = sdk.ar
+        dependencies["llvm-ranlib"] = sdk.ranlib
+    if sdk.gdb:
+        dependencies["arm-none-eabi-gdb"] = sdk.gdb
+    for name, target in dependencies.items():
+        preamble = ""
+        if name == "python":
+            preamble = (
+                'sdk_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\n'
+                'export PYTHONPATH="$sdk_dir/lib/python'
+                '${PYTHONPATH:+:$PYTHONPATH}"\n'
+            )
+        wrapper = bin_path / name
+        suffix = (
+            ' "$sdk_dir/libexec/python-bootstrap.py"'
+            if name == "python"
+            else ""
+        )
+        wrapper.write_text(
+            "#!/bin/sh\n"
+            + preamble
+            + "exec "
+            + shlex.quote(str(target))
+            + suffix
+            + ' "$@"\n'
+        )
+        wrapper.chmod(0o755)
+    wrapper = bin_path / "symbian"
+    wrapper.write_text(
+        "#!/bin/sh\n"
+        'sdk_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\n'
+        'export SYMBIAN_ACTIVE_SDK="$sdk_dir"\n'
+        'export SYMBIAN_SDK_MANIFEST="$sdk_dir/sdk.json"\n'
+        'exec "$sdk_dir/bin/python" -m symbian.cli "$@"\n'
+    )
+    wrapper.chmod(0o755)
+    result = sdk.model_copy(
+        update={
+            "compiler": bin_path / "clang++",
+            "c_compiler": bin_path / "clang",
+            "linker": bin_path / "ld.lld",
+            "ar": bin_path / "llvm-ar" if sdk.ar else None,
+            "ranlib": bin_path / "llvm-ranlib" if sdk.ranlib else None,
+            "python": bin_path / "python",
+            "gdb": bin_path / "arm-none-eabi-gdb" if sdk.gdb else None,
+        }
+    )
+    (prefix / "host-dependencies.json").write_text(
+        sdk.model_dump_json(indent=2) + "\n"
+    )
+    (prefix / "sdk.json").write_text(result.model_dump_json(indent=2) + "\n")
+    seal_sdk(prefix)
+    return result
+
+
+def seal_sdk(prefix: Path) -> None:
+    """Records materialized files, excluding its own digest manifest."""
+    digests = {
+        str(p.relative_to(prefix)): hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in prefix.rglob("*")
+        if p.is_file()
+        and p.name != "digests.json"
+        and p != prefix / "emulator.json"
+        and "__pycache__" not in p.parts
+    }
+    (prefix / "digests.json").write_text(json.dumps(digests, indent=2) + "\n")
+
+
+def install(destination: Path, workspace: Path | None = None) -> AppSdk:
+    """Installs an observable SDK tree from source inputs or the active SDK.
+
+    Args:
+        destination: New directory for visible headers, libraries and tools.
+        workspace: Prepared research checkout for the first installation.
+
+    Returns:
+        Installed SDK manifest. Host interpreter dependencies and the emulator
+        remain explicit external dependencies until their payloads are bundled.
+    """
+    destination = destination.resolve()
+    if destination.exists():
+        raise StatusError(
+            Code.ALREADY_EXISTS, f"SDK already exists: {destination}"
+        )
+    if workspace:
+        sdk = install_tools(prepare(workspace, destination))
+    else:
+        original = AppSdk.load(discover_sdk())
+        if destination.is_relative_to(original.prefix):
+            raise StatusError(
+                Code.INVALID_ARGUMENT, "SDK destination overlaps source"
+            )
+        shutil.copytree(
+            original.prefix,
+            destination,
+            symlinks=True,
+            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+        )
+        if not (destination / "bin/symbian").exists():
+            sdk = install_tools(
+                original.model_copy(update={"prefix": destination})
+            )
+        else:
+
+            def moved(path):
+                return (
+                    destination / path.relative_to(original.prefix)
+                    if path and path.is_relative_to(original.prefix)
+                    else path
+                )
+
+            sdk = original.model_copy(
+                update={
+                    "prefix": destination,
+                    "compiler": moved(original.compiler),
+                    "c_compiler": moved(original.c_compiler),
+                    "linker": moved(original.linker),
+                    "ar": moved(original.ar),
+                    "ranlib": moved(original.ranlib),
+                    "python": moved(original.python),
+                    "gdb": moved(original.gdb),
+                    "emulator": moved(original.emulator),
+                    "firmware_importer": moved(original.firmware_importer),
+                }
+            )
+            (destination / "sdk.json").write_text(
+                sdk.model_dump_json(indent=2) + "\n"
+            )
+            seal_sdk(destination)
+    activate_sdk(sdk)
+    return AppSdk.load(destination / "sdk.json")

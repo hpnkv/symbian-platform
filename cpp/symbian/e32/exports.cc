@@ -110,12 +110,19 @@ std::string ExportBitmap(const std::vector<ExportSlot>& exports) {
 }
 
 absl::StatusOr<std::string> EncodeCodeRelocations(
-    const std::vector<uint32_t>& offsets) {
+    const std::vector<uint32_t>& offsets,
+    const std::set<uint32_t>& data_targets) {
   if (offsets.empty() || offsets.size() > 65535) {
     return absl::InvalidArgumentError(
         "Code relocations require 1..65535 offsets");
   }
   std::string bytes(8, '\0');
+  for (const auto offset : data_targets) {
+    if (!std::binary_search(offsets.begin(), offsets.end(), offset)) {
+      return absl::InvalidArgumentError(
+          "Data relocation target lacks an offset");
+    }
+  }
   size_t first = 0;
   while (first < offsets.size()) {
     const uint32_t page = offsets[first] & ~uint32_t{0xfff};
@@ -134,7 +141,9 @@ absl::StatusOr<std::string> EncodeCodeRelocations(
     Put32(bytes, start + 4, static_cast<uint32_t>(block_size));
     for (size_t i = first; i < end; ++i) {
       Put16(bytes, start + 8 + (i - first) * 2,
-            static_cast<uint16_t>(0x1000 | (offsets[i] & 0xfff)));
+            static_cast<uint16_t>(
+                (data_targets.contains(offsets[i]) ? 0x2000 : 0x1000) |
+                (offsets[i] & 0xfff)));
     }
     first = end;
   }
@@ -145,13 +154,15 @@ absl::StatusOr<std::string> EncodeCodeRelocations(
 }
 
 absl::StatusOr<std::vector<uint32_t>> DecodeCodeRelocations(
-    std::string_view bytes, uint32_t code_size) {
+    std::string_view bytes, uint32_t code_size,
+    std::set<uint32_t>* data_targets) {
   if (bytes.size() < 16 || bytes.size() > 1024 * 1024 ||
       Read32(bytes, 0) != bytes.size() - 8 || bytes.size() % 4 ||
       Read32(bytes, 4) == 0 || Read32(bytes, 4) > 65535) {
     return absl::DataLossError("Invalid E32 code relocation section");
   }
   std::vector<uint32_t> offsets;
+  std::set<uint32_t> data;
   size_t p = 8;
   while (p < bytes.size()) {
     if (!Within(bytes.size(), p, 8)) {
@@ -167,20 +178,28 @@ absl::StatusOr<std::vector<uint32_t>> DecodeCodeRelocations(
         continue;
       }
       const uint64_t offset = uint64_t{page} + (word & 0xfff);
-      if ((word & 0xf000) != 0x1000 || offset % 4 ||
-          !Within(code_size, offset, 4) || offsets.size() >= 65535) {
+      const auto type = word & 0xf000;
+      if ((type != 0x1000 && (type != 0x2000 || data_targets == nullptr)) ||
+          offset % 4 || !Within(code_size, offset, 4) ||
+          offsets.size() >= 65535) {
         return absl::DataLossError("Invalid E32 text relocation entry");
       }
       offsets.push_back(static_cast<uint32_t>(offset));
+      if (type == 0x2000) {
+        data.insert(static_cast<uint32_t>(offset));
+      }
     }
     p += size;
   }
   if (offsets.size() != Read32(bytes, 4)) {
     return absl::DataLossError("E32 relocation count mismatch");
   }
-  const auto encoded = EncodeCodeRelocations(offsets);
+  const auto encoded = EncodeCodeRelocations(offsets, data);
   if (!encoded.ok() || *encoded != bytes) {
     return absl::DataLossError("Noncanonical E32 code relocations");
+  }
+  if (data_targets != nullptr) {
+    *data_targets = std::move(data);
   }
   return offsets;
 }

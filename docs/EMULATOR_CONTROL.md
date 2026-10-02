@@ -146,7 +146,9 @@ produce visible skips; full platform evidence still requires all optional inputs
 The tested sequence is 0 → 1 → 2 → outside unchanged → 0 → exit. Saturation,
 rotation, occlusion/focus restoration, full resource/address-space accounting,
 general facade create/reset/snapshot/install orchestration, complete DLL
-initialization and OS boot remain separate work. The SVC 0x10D warning persists.
+initialization and OS boot remain separate work. This earlier control checkpoint
+logged 0x10D; the later bounded DLL attach work maps that observed hook. DLL
+detach/unload and other private operations remain open.
 
 One full-suite run observed the frontend exceeding its 15-second shutdown bound
 after the guest exited normally. Native phase logs and stack sampling now retain

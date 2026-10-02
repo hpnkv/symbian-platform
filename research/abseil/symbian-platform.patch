@@ -1,0 +1,114 @@
+diff --git a/absl/base/config.h b/absl/base/config.h
+index 6b2c81c..edfbdb3 100644
+--- a/absl/base/config.h
++++ b/absl/base/config.h
+@@ -769,9 +769,9 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
+ #error ABSL_INTERNAL_HAS_CXA_DEMANGLE cannot be directly set
+ #elif defined(OS_ANDROID) && (defined(__i386__) || defined(__x86_64__))
+ #undef ABSL_INTERNAL_HAS_CXA_DEMANGLE
+-#elif defined(__GNUC__)
++#elif defined(__GNUC__) && !defined(__SYMBIAN32__)
+ #define ABSL_INTERNAL_HAS_CXA_DEMANGLE 1
+-#elif defined(__clang__) && !defined(_MSC_VER)
++#elif defined(__clang__) && !defined(_MSC_VER) && !defined(__SYMBIAN32__)
+ #define ABSL_INTERNAL_HAS_CXA_DEMANGLE 1
+ #endif
+ 
+diff --git a/absl/base/internal/sysinfo.cc b/absl/base/internal/sysinfo.cc
+index cd08e51..ca5c5b4 100644
+--- a/absl/base/internal/sysinfo.cc
++++ b/absl/base/internal/sysinfo.cc
+@@ -202,7 +202,7 @@ static double GetNominalCPUFrequency() {
+ // and the memory location pointed to by value is set to the value read.
+ static bool ReadLongFromFile(const char *file, long *value) {
+   bool ret = false;
+-#if defined(_POSIX_C_SOURCE)
++#if defined(_POSIX_C_SOURCE) && !defined(__SYMBIAN32__)
+   const int file_mode = (O_RDONLY | O_CLOEXEC);
+ #else
+   const int file_mode = O_RDONLY;
+@@ -480,7 +480,7 @@ pid_t GetTID() {
+ // userspace construct) to avoid unnecessary system calls. Without this caching,
+ // it can take roughly 98ns, while it takes roughly 1ns with this caching.
+ pid_t GetCachedTID() {
+-#ifdef ABSL_HAVE_THREAD_LOCAL
++#if defined(ABSL_HAVE_THREAD_LOCAL) && !defined(__SYMBIAN32__)
+   static thread_local pid_t thread_id = GetTID();
+   return thread_id;
+ #else
+diff --git a/absl/base/internal/thread_identity.cc b/absl/base/internal/thread_identity.cc
+index 0471a25..6aeb7c0 100644
+--- a/absl/base/internal/thread_identity.cc
++++ b/absl/base/internal/thread_identity.cc
+@@ -85,7 +85,7 @@ void SetCurrentThreadIdentity(ThreadIdentity* identity,
+                   reclaimer);
+ 
+ #if defined(__wasi__) || defined(__EMSCRIPTEN__) || defined(__MINGW32__) || \
+-    defined(__hexagon__)
++    defined(__hexagon__) || defined(__SYMBIAN32__)
+   // Emscripten, WASI and MinGW pthread implementations does not support
+   // signals. See
+   // https://kripken.github.io/emscripten-site/docs/porting/pthreads.html for
+diff --git a/absl/base/internal/thread_identity.h b/absl/base/internal/thread_identity.h
+index 0c2d619..7a951f6 100644
+--- a/absl/base/internal/thread_identity.h
++++ b/absl/base/internal/thread_identity.h
+@@ -184,7 +184,13 @@ struct ThreadIdentity {
+     kWaitingForWork = 1,
+   };
+   std::atomic<WaitState> wait_state;
++#if defined(__SYMBIAN32__)
++  // The SDK routes byte atomics through EUSER; the compiler alone cannot
++  // report that imported implementation as always lock-free on ARMv5T.
++  static_assert(sizeof(std::atomic<WaitState>) == sizeof(WaitState));
++#else
+   static_assert(std::atomic<WaitState>::is_always_lock_free);
++#endif
+ 
+   // Add a padding such that scheduler_state is on a different cache line than
+   // waiter state.  We use padding here, so that the size of the structure does
+diff --git a/absl/debugging/internal/elf_mem_image.h b/absl/debugging/internal/elf_mem_image.h
+index c8a1036..8a2c796 100644
+--- a/absl/debugging/internal/elf_mem_image.h
++++ b/absl/debugging/internal/elf_mem_image.h
+@@ -35,7 +35,7 @@
+ #if defined(__ELF__) && !defined(__OpenBSD__) && !defined(__QNX__) &&    \
+     !defined(__asmjs__) && !defined(__wasm__) && !defined(__HAIKU__) &&  \
+     !defined(__sun) && !defined(__VXWORKS__) && !defined(__hexagon__) && \
+-    !defined(__XTENSA__)
++    !defined(__XTENSA__) && !defined(__SYMBIAN32__)
+ #define ABSL_HAVE_ELF_MEM_IMAGE 1
+ #endif
+ 
+diff --git a/absl/time/internal/cctz/src/time_zone_info.cc b/absl/time/internal/cctz/src/time_zone_info.cc
+index f8484c9..9ea4c0f 100644
+--- a/absl/time/internal/cctz/src/time_zone_info.cc
++++ b/absl/time/internal/cctz/src/time_zone_info.cc
+@@ -521,6 +521,7 @@ std::unique_ptr<ZoneInfoSource> AndroidZoneInfoSource::Open(
+ //
+ // [1]:
+ // https://fuchsia.dev/fuchsia-src/development/components/data#using_config_data_in_your_component
++#if defined(__Fuchsia__)
+ class FuchsiaZoneInfoSource : public FileZoneInfoSource {
+  public:
+   static std::unique_ptr<ZoneInfoSource> Open(const std::string& name);
+@@ -582,6 +583,8 @@ std::unique_ptr<ZoneInfoSource> FuchsiaZoneInfoSource::Open(
+   return nullptr;
+ }
+ 
++#endif  // defined(__Fuchsia__)
++
+ }  // namespace
+ 
+ // What (no leap-seconds) UTC+seconds zoneinfo would look like.
+@@ -820,7 +823,10 @@ bool TimeZoneInfo::Load(const std::string& name) {
+       name, [](const std::string& n) -> std::unique_ptr<ZoneInfoSource> {
+         if (auto z = FileZoneInfoSource::Open(n)) return z;
+         if (auto z = AndroidZoneInfoSource::Open(n)) return z;
++
++#if defined(__Fuchsia__)
+         if (auto z = FuchsiaZoneInfoSource::Open(n)) return z;
++#endif
+         return nullptr;
+       });
+   return zip != nullptr && Load(zip.get());

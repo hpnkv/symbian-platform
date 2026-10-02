@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 
+from symbian.native import require_native
 from symbian.packaging import inspect_package
 from symbian.status import Code, StatusError
 from symbian.toolchain.verification import run_oracles, verify_gui, verify_probe
@@ -171,7 +172,10 @@ def verify_gui_package(
         "registry_reload_verified": True,
         "uninstall_reinstall_verified": True,
         "missing_system_libraries_rejected": False,
-        "unresolved_import_slots_observed": 38,
+        "unresolved_import_slots_observed": sum(
+            len(block.slots)
+            for block in require_native().inspect_e32(image).imports
+        ),
         "process_creation_without_system_libraries_observed": True,
         "cpu_backends_configured": ["dyncom", "dynarmic"],
         "cpu_instructions_executed": 0,
@@ -184,7 +188,7 @@ def verify_gui_package(
         "limitations": [
             "Installer/registry tests in disposable ROMless C filesystems",
             "Upstream creates a process despite missing EUSER/WS32; "
-            "all 38 import slots remain unresolved",
+            "all imported slots remain unresolved in that process",
             "No booted OS, Window Server, visual output or guest debugging",
             "Emulator installer does not establish phone signing policy",
         ],

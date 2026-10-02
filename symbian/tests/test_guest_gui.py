@@ -14,7 +14,12 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
+from symbian.e32 import convert_imported_executable
 from symbian.emulator import Control
+from symbian.emulator.background import (
+    background_environment,
+    executable_for_session,
+)
 from symbian.status import Code, StatusError
 
 GOLDEN = os.environ.get("SYMBIAN_GUI_DEBUG_GOLDEN_ROOT")
@@ -28,6 +33,32 @@ pytestmark = pytest.mark.skipif(
 
 def _digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _published_gui(build: Path) -> dict[Path, str]:
+    """Checks the current source/published ELF/E32 pair, allowing IDE edits."""
+    report = json.loads((build / "report.json").read_text())
+    assert report["reproducible"] is True
+    assert all(
+        _digest(Path(p)) == digest for p, digest in report["inputs"].items()
+    )
+    inputs = {
+        build / "gui_app.exe": report["sha256"],
+        build / "gui_app.elf": report["linked_elf_sha256"],
+    }
+    assert {path: _digest(path) for path in inputs} == inputs
+    proxies = [
+        Path(path).read_bytes()
+        for path in report["inputs"]
+        if path.endswith(".dso")
+    ]
+    assert (
+        convert_imported_executable(
+            (build / "gui_app.elf").read_bytes(), proxies, 0xE0000811
+        )
+        == (build / "gui_app.exe").read_bytes()
+    )
+    return inputs
 
 
 def _ready(operation, *, timeout=15):
@@ -106,6 +137,21 @@ def _frame(control, expected, label, output):
         time.sleep(0.05)
 
 
+def _pulse(control, expected, label):
+    """Checks the timer-backed marker independently of the counter digits."""
+    deadline = time.monotonic() + 5
+    attempt = 0
+    while True:
+        result = _ready(partial(control.capture, f"{label}-{attempt}"))
+        with Image.open(result["path"]) as image:
+            pixel = image.convert("RGB").getpixel((40, 40))
+        if pixel == ((118, 159, 78) if expected else (37, 28, 27)):
+            return
+        assert time.monotonic() < deadline, pixel
+        attempt += 1
+        time.sleep(0.05)
+
+
 def _raw(endpoint, payload):
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as stream:
         stream.settimeout(5)
@@ -135,11 +181,7 @@ def test_rendered_counter_input_reset_and_normal_sdk_exit(tmp_path, backend):
             "3cec7e1546f8ed0cf64a73fece9fdd8f"
             "e6e4976535ddffd18b7068c19c01357b"
         ),
-        build
-        / "gui_app.exe": (
-            "2ef4145fa9323837d3d16d8914652d69"
-            "f0b703a747b4dbb52ab83db83b727792"
-        ),
+        **_published_gui(build),
     }
     assert {p: _digest(p) for p in inputs} == inputs
     instance = tmp_path / "instance"
@@ -160,11 +202,12 @@ def test_rendered_counter_input_reset_and_normal_sdk_exit(tmp_path, backend):
             EKA2L1_DATA_ROOT=str(instance),
             EKA2L1_EXPERIMENTAL_SVC_PROFILE="rm807-113.010.1508",
             EKA2L1_RESEARCH_CONTROL_SOCKET=str(endpoint),
+            **background_environment(),
         )
         with (tmp_path / "frontend.log").open("w") as log:
             process = subprocess.Popen(
                 [
-                    Path(EMULATOR).resolve(),
+                    executable_for_session(Path(EMULATOR), tmp_path),
                     "--device",
                     "RM-807",
                     "--run",
@@ -211,6 +254,19 @@ def test_rendered_counter_input_reset_and_normal_sdk_exit(tmp_path, backend):
                     _ready(partial(control.pointer, x, y, "press"))
                     _ready(partial(control.pointer, x, y, "release"))
                     _frame(control, expected, label, tmp_path)
+                    if label == "one":
+                        _pulse(control, True, "delayed-marker")
+                    if label == "reset":
+                        _pulse(control, False, "reset-marker")
+                # Cancellation must keep an already scheduled timer from
+                # restoring the marker after the counter has been reset.
+                _ready(lambda: control.pointer(64, 575, "press"))
+                _ready(lambda: control.pointer(64, 575, "release"))
+                _ready(lambda: control.pointer(180, 575, "press"))
+                _ready(lambda: control.pointer(180, 575, "release"))
+                time.sleep(0.45)
+                _pulse(control, False, "cancelled-marker")
+                _frame(control, 0, "cancelled-count", tmp_path)
                 _ready(lambda: control.pointer(296, 575, "press"))
                 # The app exits on down; its window no longer accepts an up.
                 # The real frontend automatically closes after this app exits.

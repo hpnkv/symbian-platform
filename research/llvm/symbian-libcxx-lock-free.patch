@@ -1,0 +1,54 @@
+diff --git a/libcxx/include/__atomic/atomic_ref.h b/libcxx/include/__atomic/atomic_ref.h
+index 93f19a74..3ffef786 100644
+--- a/libcxx/include/__atomic/atomic_ref.h
++++ b/libcxx/include/__atomic/atomic_ref.h
+@@ -45,6 +45,10 @@ _LIBCPP_PUSH_MACROS
+ 
+ _LIBCPP_BEGIN_NAMESPACE_STD
+ 
++#if defined(__SYMBIAN32__)
++extern "C" bool SymbianRuntimeAtomicIsLockFree(unsigned int);
++#endif
++
+ #if _LIBCPP_STD_VER >= 20
+ 
+ // These types are required to make __atomic_is_always_lock_free work across GCC and Clang.
+@@ -122,10 +126,18 @@ public:
+   // that the pointer is going to be aligned properly at runtime because that is a (checked) precondition
+   // of atomic_ref's constructor.
+   static constexpr bool is_always_lock_free =
++#if defined(__SYMBIAN32__)
++      // The selected runtime may use the lock-backed 64-bit profile.
++      sizeof(_Tp) < 8 &&
++#endif
+       __atomic_always_lock_free(sizeof(_Tp), std::addressof(__get_aligner_instance<required_alignment>::__instance));
+ 
+   [[nodiscard]] _LIBCPP_HIDE_FROM_ABI bool is_lock_free() const noexcept {
++#if defined(__SYMBIAN32__)
++    return SymbianRuntimeAtomicIsLockFree(sizeof(_Tp));
++#else
+     return __atomic_is_lock_free(sizeof(_Tp), __ptr_);
++#endif
+   }
+ 
+   _LIBCPP_HIDE_FROM_ABI void store(_Tp __desired, memory_order __order = memory_order::seq_cst) const noexcept
+diff --git a/libcxx/include/__atomic/support.h b/libcxx/include/__atomic/support.h
+index 053ad54a..eafd3945 100644
+--- a/libcxx/include/__atomic/support.h
++++ b/libcxx/include/__atomic/support.h
+@@ -108,6 +108,15 @@
+ #  include <__atomic/support/c11.h>
+ #endif
+ 
++#if defined(__SYMBIAN32__)
++// The target builtin cannot describe which 64-bit runtime archive is linked.
++_LIBCPP_BEGIN_NAMESPACE_STD
++extern "C" bool SymbianRuntimeAtomicIsLockFree(unsigned int);
++_LIBCPP_END_NAMESPACE_STD
++#  undef __cxx_atomic_is_lock_free
++#  define __cxx_atomic_is_lock_free(__s) SymbianRuntimeAtomicIsLockFree(__s)
++#endif
++
+ _LIBCPP_BEGIN_NAMESPACE_STD
+ 
+ template <typename _Tp, typename _Base = __cxx_atomic_base_impl<_Tp> >

@@ -5,7 +5,7 @@ symbian_native_library(symbian_analysis_test)
 add_test(NAME symbian_analysis_test COMMAND symbian_analysis_test)
 set_tests_properties(symbian_analysis_test PROPERTIES TIMEOUT 15)
 
-add_executable(symbian_e32_test e32_test.cc)
+add_executable(symbian_e32_test e32_test.cc arm_attributes_test.cc)
 target_link_libraries(symbian_e32_test PRIVATE symbian::e32 GTest::gtest_main)
 symbian_native_library(symbian_e32_test)
 add_test(NAME symbian_e32_test COMMAND symbian_e32_test)
@@ -35,3 +35,35 @@ target_link_libraries(symbian_gui_model_test PRIVATE GTest::gtest_main)
 symbian_native_library(symbian_gui_model_test)
 add_test(NAME symbian_gui_model_test COMMAND symbian_gui_model_test)
 set_tests_properties(symbian_gui_model_test PROPERTIES TIMEOUT 15)
+
+add_executable(symbian_status_test status_test.cc)
+target_link_libraries(symbian_status_test PRIVATE symbian::status GTest::gtest_main)
+symbian_native_library(symbian_status_test)
+add_test(NAME symbian_status_test COMMAND symbian_status_test)
+set_tests_properties(symbian_status_test PROPERTIES TIMEOUT 15)
+
+add_executable(symbian_app_starter_test app_starter_test.cc
+  "${CMAKE_SOURCE_DIR}/symbian/project/templates/model.cc"
+  "${CMAKE_SOURCE_DIR}/symbian/project/templates/app_bridge.cc")
+target_include_directories(symbian_app_starter_test PRIVATE
+  "${CMAKE_SOURCE_DIR}/symbian/project/templates")
+target_link_libraries(symbian_app_starter_test PRIVATE GTest::gtest_main)
+symbian_native_library(symbian_app_starter_test)
+add_test(NAME symbian_app_starter_test COMMAND symbian_app_starter_test)
+set_tests_properties(symbian_app_starter_test PROPERTIES TIMEOUT 15)
+
+add_executable(symbian_concurrency_test concurrency_test.cc)
+target_link_libraries(symbian_concurrency_test PRIVATE
+  symbian::concurrency GTest::gtest_main)
+symbian_native_library(symbian_concurrency_test)
+add_test(NAME symbian_concurrency_test COMMAND symbian_concurrency_test)
+set_tests_properties(symbian_concurrency_test PROPERTIES TIMEOUT 15)
+if(TARGET symbian_host_primitives)
+  add_executable(symbian_concurrency_fiber_test concurrency_fiber_test.cc)
+  target_link_libraries(symbian_concurrency_fiber_test PRIVATE
+    symbian::concurrency GTest::gtest_main)
+  symbian_native_library(symbian_concurrency_fiber_test)
+  add_test(NAME symbian_concurrency_fiber_test
+    COMMAND symbian_concurrency_fiber_test)
+  set_tests_properties(symbian_concurrency_fiber_test PROPERTIES TIMEOUT 15)
+endif()

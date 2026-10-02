@@ -18,6 +18,12 @@ endif()
 set(_SYMBIAN_SAVED_CXX_STANDARD "${CMAKE_CXX_STANDARD}")
 set(CMAKE_CXX_STANDARD 20)
 FetchContent_MakeAvailable(abseil)
+set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(nlohmann_json
+  URL https://github.com/nlohmann/json/archive/refs/tags/v3.12.0.tar.gz
+  URL_HASH SHA256=4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE SYSTEM)
+FetchContent_MakeAvailable(nlohmann_json)
 add_subdirectory("${SYMBIAN_PLATFORM_ROOT}/cpp/symbian/emulator"
                  "${CMAKE_BINARY_DIR}/platform-control")
 if(_SYMBIAN_SAVED_CXX_STANDARD)

@@ -8,10 +8,10 @@ from pathlib import Path
 import pytest
 
 from symbian import packaging, toolchain
-from symbian._native import build_sis, inspect_sis
-from symbian.cli.__main__ import main
+from symbian._native import build_sis, inspect_e32, inspect_sis
 from symbian.packaging.verification import verify_package
 from symbian.status import Code, StatusError
+from symbian.tests.cli_json import main
 
 PROJECT = Path(__file__).parents[2] / "examples/e32_probe"
 
@@ -118,10 +118,105 @@ def test_missing_native_oracles_does_not_claim_installation(image, tmp_path):
 def test_inspection_bounds_host_file_read(tmp_path):
     path = tmp_path / "huge.sis"
     with path.open("wb") as stream:
-        stream.truncate(16 * 1024 * 1024 + 4097)
+        stream.truncate(16 * 1024 * 1024 + 65537)
     with pytest.raises(StatusError) as caught:
         packaging.inspect_package(path)
     assert caught.value.code == Code.RESOURCE_EXHAUSTED
+
+
+@pytest.mark.skipif(
+    not os.environ.get("SYMBIAN_APP_SDK")
+    or not os.environ.get("SYMBIAN_REGISTRATION_TEST_IMAGE"),
+    reason="Set SYMBIAN_APP_SDK and SYMBIAN_REGISTRATION_TEST_IMAGE",
+)
+def test_registered_package_compiles_real_menu_resources(tmp_path, monkeypatch):
+    monkeypatch.setenv("SYMBIAN_SDK_MANIFEST", os.environ["SYMBIAN_APP_SDK"])
+    image = Path(os.environ["SYMBIAN_REGISTRATION_TEST_IMAGE"])
+    uid3 = inspect_e32(image.read_bytes()).uid3
+    (tmp_path / "symbian.toml").write_text(
+        f'[package]\nuid = {uid3}\nname = "Resource Probe"\n'
+        'vendor = "Symbian research"\nexecutable_name = "probe.exe"\n'
+        "version = [1, 0, 0]\n\n[application]\n"
+        'caption = "Resource Probe"\nshort_caption = "Probe"\n'
+    )
+    result = packaging.package(tmp_path, image, tmp_path / "output")
+    sis = result["sis"]
+    assert sis["application_registered"] is True
+    assert [file["target"] for file in sis["files"]] == [
+        "!:\\sys\\bin\\probe.exe",
+        "!:\\private\\10003a3f\\import\\apps\\probe_reg.rsc",
+        "!:\\resource\\apps\\probe_loc.rsc",
+    ]
+    assert all(file["size"] > 24 for file in sis["files"][1:])
+    (tmp_path / "symbian.toml").write_text(
+        (tmp_path / "symbian.toml")
+        .read_text()
+        .replace('caption = "Resource Probe"', "caption = 'Bad\"Name'")
+    )
+    with pytest.raises(StatusError) as caught:
+        packaging.package(tmp_path, image, tmp_path / "rejected")
+    assert caught.value.code == Code.INVALID_ARGUMENT
+    assert not (tmp_path / "rejected").exists()
+
+
+@pytest.mark.skipif(
+    not os.environ.get("SYMBIAN_APP_SDK")
+    or not os.environ.get("SYMBIAN_REGISTRATION_TEST_IMAGE"),
+    reason="Set SYMBIAN_APP_SDK and SYMBIAN_REGISTRATION_TEST_IMAGE",
+)
+def test_localized_svg_package_is_reproducible(tmp_path, monkeypatch):
+    monkeypatch.setenv("SYMBIAN_SDK_MANIFEST", os.environ["SYMBIAN_APP_SDK"])
+    image = Path(os.environ["SYMBIAN_REGISTRATION_TEST_IMAGE"])
+    uid3 = inspect_e32(image.read_bytes()).uid3
+    (tmp_path / "icon.svg").write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">'
+        '<circle cx="8" cy="8" r="7" fill="#456"/></svg>'
+    )
+    (tmp_path / "symbian.toml").write_text(
+        f'[package]\nuid = {uid3}\nname = "Locale Probe"\n'
+        'vendor = "Symbian research"\nexecutable_name = "probe.exe"\n'
+        "version = [1, 0, 0]\n\n[application]\n"
+        'caption = "Locale Probe"\nshort_caption = "Probe"\n'
+        'icon = "icon.svg"\n\n[application.localizations.fr]\n'
+        'caption = "Compteur"\nshort_caption = "Compteur"\n'
+        "\n[application.localizations.de]\n"
+        'caption = "Zähler"\nshort_caption = "Zähler"\n',
+        encoding="utf-8",
+    )
+    report = packaging.package(tmp_path, image, tmp_path / "output")
+    targets = [file["target"] for file in report["sis"]["files"]]
+    assert targets == [
+        "!:\\sys\\bin\\probe.exe",
+        "!:\\private\\10003a3f\\import\\apps\\probe_reg.rsc",
+        "!:\\resource\\apps\\probe_loc.rsc",
+        "!:\\resource\\apps\\probe_loc.r02",
+        "!:\\resource\\apps\\probe_loc.r03",
+        "!:\\resource\\apps\\probe.mif",
+    ]
+    assert report["application_asset_sha256"]["icon.svg"]
+    assert (
+        packaging.package(tmp_path, image, tmp_path / "output")["sha256"]
+        == report["sha256"]
+    )
+    manifest = tmp_path / "symbian.toml"
+    original = manifest.read_text()
+    manifest.write_text(
+        original.replace("localizations.fr", "localizations.zz")
+    )
+    with pytest.raises(StatusError) as caught:
+        packaging.package(tmp_path, image, tmp_path / "bad-locale")
+    assert caught.value.code == Code.INVALID_ARGUMENT
+    manifest.write_text(
+        original.replace('icon = "icon.svg"', 'icon = "../icon.svg"')
+    )
+    with pytest.raises(StatusError) as caught:
+        packaging.package(tmp_path, image, tmp_path / "bad-path")
+    assert caught.value.code == Code.INVALID_ARGUMENT
+    manifest.write_text(original)
+    (tmp_path / "icon.svg").write_text("<not-svg/>")
+    with pytest.raises(StatusError) as caught:
+        packaging.package(tmp_path, image, tmp_path / "bad-icon")
+    assert caught.value.code == Code.INVALID_ARGUMENT
 
 
 @pytest.mark.skipif(

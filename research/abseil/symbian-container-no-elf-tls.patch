@@ -1,0 +1,33 @@
+diff --git a/absl/container/internal/raw_hash_set.cc b/absl/container/internal/raw_hash_set.cc
+index 6ab06e4..428c2fe 100644
+--- a/absl/container/internal/raw_hash_set.cc
++++ b/absl/container/internal/raw_hash_set.cc
+@@ -75,7 +75,7 @@ void ValidateMaxCapacity(size_t capacity, size_t key_size, size_t slot_size) {
+ 
+ // Returns "random" seed.
+ inline size_t RandomSeed() {
+-#ifdef ABSL_HAVE_THREAD_LOCAL
++#if defined(ABSL_HAVE_THREAD_LOCAL) && !defined(__SYMBIAN32__)
+   static thread_local size_t counter = 0;
+   size_t value = ++counter;
+ #else   // ABSL_HAVE_THREAD_LOCAL
+@@ -137,10 +137,19 @@ inline void* PrevSlot(void* slot, size_t slot_size) {
+ // which is caused by non-constexpr initialization.
+ uint16_t NextHashTableSeed() {
+   static_assert(PerTableSeed::kBitCount <= 16);
++#if defined(__SYMBIAN32__)
++  // E32 has no ELF TLS relocation for this local static. Keep the original
++  // process-address mix and advance one atomic seed across all threads.
++  static std::atomic<uint32_t> seed{0};
++  const uint32_t next = seed.fetch_add(0xad53, std::memory_order_relaxed) +
++                        uint32_t{0xad53};
++  return static_cast<uint16_t>(next ^ reinterpret_cast<uintptr_t>(&seed));
++#else
+   thread_local uint16_t seed =
+       static_cast<uint16_t>(reinterpret_cast<uintptr_t>(&seed));
+   seed += uint16_t{0xad53};
+   return seed;
++#endif
+ }
+ 
+ GenerationType* EmptyGeneration() {

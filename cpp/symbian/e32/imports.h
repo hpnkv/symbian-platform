@@ -29,14 +29,18 @@ struct Section {
   uint32_t link;
   uint32_t info;
   uint32_t entry_size;
+  std::string name;
 };
 
 struct ResolvedImports {
   std::vector<ImportBlock> blocks;
   std::map<std::string, uint32_t> functions;
+  std::map<std::string, uint32_t> plt_functions;
+  std::map<uint32_t, uint32_t> data_function_pointers;
   size_t got_index = 0;
   size_t dynamic_index = 0;
   size_t relocation_index = 0;
+  size_t data_relocation_index = 0;
 };
 
 absl::StatusOr<ResolvedImports> ResolveImports(

@@ -1,0 +1,12 @@
+diff --git a/src/emu/kernel/src/svc.cpp b/src/emu/kernel/src/svc.cpp
+--- a/src/emu/kernel/src/svc.cpp
++++ b/src/emu/kernel/src/svc.cpp
+@@ -6123,5 +6123,8 @@
+                 : old_number < 0xD7 ? old_number + 2 : old_number + 1;
+             result.emplace(number, handler);
+         }
++        // Belle's ROM RThread::ExitReason wrapper calls 0x34. The v10 table
++        // omits its older slot, so translate this observed call explicitly.
++        result.insert(BRIDGE_REGISTER(0x34, thread_exit_reason));
+         return result;
+     }();

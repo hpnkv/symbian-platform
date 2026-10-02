@@ -7,9 +7,12 @@ with evidence; ARM ELF generation does not prove Symbian loader compatibility.
 Use ~/dev/a11 as the implementation reference. Python lives in symbian/,
 native libraries in cpp/symbian/<component>/, and Python bindings in
 cpp/python/. Use Google C++ style and Google Python docstrings. C++ libraries
-compile with exceptions disabled and return absl::Status/StatusOr. Only
-pybind11 boundary translation units enable exceptions. Do not duplicate native
-format logic in Python. Bindings release the GIL for native work, acquire it
+default to exceptions disabled and return absl::Status/StatusOr. Selected
+translation units may enable exceptions where an implementation boundary
+requires them, as in A11's Boost fiber backend and pybind11 bindings. Keep
+those boundaries explicit in CMake; exceptions are not the general error
+policy. Do not duplicate native format logic in Python. Bindings release the
+GIL for native work, acquire it
 before accessing Python, and keep Python policy outside native libraries.
 
 Use A11's cpp/thread library for native concurrency when concurrency is needed;

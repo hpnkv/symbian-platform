@@ -5,7 +5,10 @@
 #include <absl/status/statusor.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11_abseil/status_casters.h>
 
+#include "python/concurrency_interop.h"
+#include "python/status_interop.h"
 #include "symbian/analysis/elf.h"
 #include "symbian/e32/e32.h"
 #include "symbian/sdk/exports.h"
@@ -15,52 +18,22 @@ namespace py = pybind11;
 
 namespace {
 
-void RaiseStatus(const absl::Status& status) {
-  py::object error_type =
-      py::module_::import("symbian.status").attr("StatusError");
-  py::object error = error_type(static_cast<int>(status.code()),
-                                std::string(status.message()));
-  PyErr_SetObject(error_type.ptr(), error.ptr());
-  throw py::error_already_set();
-}
-
 symbian::analysis::Elf32Header InspectElf32(const py::bytes& data) {
   const std::string bytes = data;
-  absl::StatusOr<symbian::analysis::Elf32Header> result;
-  {
-    const py::gil_scoped_release release;
-    result = symbian::analysis::InspectElf32(bytes);
-  }
-  if (!result.ok()) {
-    RaiseStatus(result.status());
-  }
-  return *result;
+  return symbian::python::ValueWithoutGil(
+      [&] { return symbian::analysis::InspectElf32(bytes); });
 }
 
 py::bytes ConvertPicExecutable(const py::bytes& data, uint32_t uid3) {
   const std::string bytes = data;
-  absl::StatusOr<std::string> result;
-  {
-    const py::gil_scoped_release release;
-    result = symbian::e32::ConvertPicExecutable(bytes, uid3);
-  }
-  if (!result.ok()) {
-    RaiseStatus(result.status());
-  }
-  return py::bytes(*result);
+  return py::bytes(symbian::python::ValueWithoutGil(
+      [&] { return symbian::e32::ConvertPicExecutable(bytes, uid3); }));
 }
 
 symbian::e32::ImageInfo InspectE32(const py::bytes& data) {
   const std::string bytes = data;
-  absl::StatusOr<symbian::e32::ImageInfo> result;
-  {
-    const py::gil_scoped_release release;
-    result = symbian::e32::InspectImage(bytes);
-  }
-  if (!result.ok()) {
-    RaiseStatus(result.status());
-  }
-  return *result;
+  return symbian::python::ValueWithoutGil(
+      [&] { return symbian::e32::InspectImage(bytes); });
 }
 
 py::bytes ConvertImportedExecutable(const py::bytes& data,
@@ -72,15 +45,9 @@ py::bytes ConvertImportedExecutable(const py::bytes& data,
   for (const auto& proxy : proxies) {
     libraries.emplace_back(proxy);
   }
-  absl::StatusOr<std::string> result;
-  {
-    const py::gil_scoped_release release;
-    result = symbian::e32::ConvertImportedExecutable(bytes, libraries, uid3);
-  }
-  if (!result.ok()) {
-    RaiseStatus(result.status());
-  }
-  return py::bytes(*result);
+  return py::bytes(symbian::python::ValueWithoutGil([&] {
+    return symbian::e32::ConvertImportedExecutable(bytes, libraries, uid3);
+  }));
 }
 
 py::bytes ConvertDll(const py::bytes& data, const py::bytes& definition,
@@ -92,15 +59,9 @@ py::bytes ConvertDll(const py::bytes& data, const py::bytes& definition,
   for (const auto& proxy : proxies) {
     libraries.emplace_back(proxy);
   }
-  absl::StatusOr<std::string> result;
-  {
-    const py::gil_scoped_release release;
-    result = symbian::e32::ConvertDll(bytes, exports, libraries, uid3);
-  }
-  if (!result.ok()) {
-    RaiseStatus(result.status());
-  }
-  return py::bytes(*result);
+  return py::bytes(symbian::python::ValueWithoutGil([&] {
+    return symbian::e32::ConvertDll(bytes, exports, libraries, uid3);
+  }));
 }
 
 py::bytes BuildSis(const py::bytes& data, uint32_t uid, const std::string& name,
@@ -110,76 +71,99 @@ py::bytes BuildSis(const py::bytes& data, uint32_t uid, const std::string& name,
   const std::string bytes = data;
   const symbian::sis::PackageOptions options{uid, name, vendor, executable_name,
                                              version};
-  absl::StatusOr<std::string> result;
-  {
-    const py::gil_scoped_release release;
-    result = symbian::sis::BuildPackage(bytes, options);
+  return py::bytes(symbian::python::ValueWithoutGil(
+      [&] { return symbian::sis::BuildPackage(bytes, options); }));
+}
+
+py::bytes BuildRegisteredSis(const py::bytes& data,
+                             const py::bytes& registration,
+                             const py::bytes& caption, uint32_t uid,
+                             const std::string& name, const std::string& vendor,
+                             const std::string& executable_name,
+                             const std::array<int32_t, 3>& version) {
+  const std::string bytes = data;
+  const std::string registration_bytes = registration;
+  const std::string caption_bytes = caption;
+  const symbian::sis::PackageOptions options{uid, name, vendor, executable_name,
+                                             version};
+  return py::bytes(symbian::python::ValueWithoutGil([&] {
+    return symbian::sis::BuildRegisteredPackage(bytes, registration_bytes,
+                                                caption_bytes, options);
+  }));
+}
+
+py::bytes BuildApplicationSis(
+    const py::bytes& data,
+    const std::vector<std::pair<std::string, py::bytes>>& files, uint32_t uid,
+    const std::string& name, const std::string& vendor,
+    const std::string& executable_name, const std::array<int32_t, 3>& version) {
+  const std::string bytes = data;
+  std::vector<symbian::sis::ApplicationFile> assets;
+  assets.reserve(files.size());
+  for (const auto& [target, contents] : files) {
+    assets.push_back({target, std::string(contents)});
   }
-  if (!result.ok())
-    RaiseStatus(result.status());
-  return py::bytes(*result);
+  const symbian::sis::PackageOptions options{uid, name, vendor, executable_name,
+                                             version};
+  return py::bytes(symbian::python::ValueWithoutGil([&] {
+    return symbian::sis::BuildApplicationPackage(bytes, assets, options);
+  }));
+}
+
+py::bytes BuildSvgMif(const py::bytes& data) {
+  const std::string bytes = data;
+  return py::bytes(symbian::python::ValueWithoutGil(
+      [&] { return symbian::sis::BuildSvgMif(bytes); }));
 }
 
 symbian::sis::PackageInfo InspectSis(const py::bytes& data) {
   const std::string bytes = data;
-  absl::StatusOr<symbian::sis::PackageInfo> result;
-  {
-    const py::gil_scoped_release release;
-    result = symbian::sis::InspectPackage(bytes);
-  }
-  if (!result.ok())
-    RaiseStatus(result.status());
-  return *result;
+  return symbian::python::ValueWithoutGil(
+      [&] { return symbian::sis::InspectPackage(bytes); });
 }
 
 std::vector<symbian::sdk::Export> ParseDef(const py::bytes& data) {
   const std::string bytes = data;
-  absl::StatusOr<std::vector<symbian::sdk::Export>> result;
-  {
-    const py::gil_scoped_release release;
-    result = symbian::sdk::ParseExports(bytes);
-  }
-  if (!result.ok())
-    RaiseStatus(result.status());
-  return *result;
+  return symbian::python::ValueWithoutGil(
+      [&] { return symbian::sdk::ParseExports(bytes); });
 }
 
 symbian::sdk::ProxySources GenerateProxy(
     const py::bytes& data, const std::vector<std::string>& symbols,
     const std::string& soname, const std::string& target_dll) {
   const std::string bytes = data;
-  absl::StatusOr<symbian::sdk::ProxySources> result;
-  {
-    const py::gil_scoped_release release;
-    result = symbian::sdk::GenerateProxy(bytes, symbols, soname, target_dll);
-  }
-  if (!result.ok())
-    RaiseStatus(result.status());
-  return *result;
+  return symbian::python::ValueWithoutGil([&] {
+    return symbian::sdk::GenerateProxy(bytes, symbols, soname, target_dll);
+  });
 }
 
 symbian::sdk::ProxyInfo InspectProxy(const py::bytes& data) {
   const std::string bytes = data;
-  absl::StatusOr<symbian::sdk::ProxyInfo> result;
-  {
-    const py::gil_scoped_release release;
-    result = symbian::sdk::InspectProxy(bytes);
-  }
-  if (!result.ok())
-    RaiseStatus(result.status());
-  return *result;
+  return symbian::python::ValueWithoutGil(
+      [&] { return symbian::sdk::InspectProxy(bytes); });
 }
 
 }  // namespace
 
 PYBIND11_MODULE(_native, module) {
+  symbian::python::InstallPythonSchedulerParkGuard();
+  symbian::python::BindConcurrencyInterop(module);
+  py::google::ImportStatusModule();
+  symbian::python::BindStatus(module);
   using symbian::analysis::Elf32Header;
   module.doc() = "Stateless native Symbian analysis utilities.";
+  py::class_<symbian::analysis::ArmAttributes>(module, "ArmAttributes")
+      .def_readonly("cpu_arch", &symbian::analysis::ArmAttributes::cpu_arch)
+      .def_readonly("fp_arch", &symbian::analysis::ArmAttributes::fp_arch)
+      .def_readonly("simd_arch", &symbian::analysis::ArmAttributes::simd_arch)
+      .def_readonly("thumb_isa", &symbian::analysis::ArmAttributes::thumb_isa)
+      .def_readonly("vfp_args", &symbian::analysis::ArmAttributes::vfp_args);
   py::class_<Elf32Header>(module, "Elf32Header",
                           "ELF32 metadata; not a loader acceptance result.")
       .def_readonly("type", &Elf32Header::type, "ELF object type.")
       .def_readonly("machine", &Elf32Header::machine, "ELF machine identifier.")
       .def_readonly("entry", &Elf32Header::entry, "ELF entry address.")
+      .def_readonly("arm", &Elf32Header::arm)
       .def_readonly("flags", &Elf32Header::flags, "Target-specific ELF flags.")
       .def_readonly("program_count", &Elf32Header::program_count,
                     "Number of program headers.")
@@ -207,14 +191,23 @@ PYBIND11_MODULE(_native, module) {
       .def_readonly("uid3", &ImageInfo::uid3)
       .def_readonly("header_crc", &ImageInfo::header_crc)
       .def_readonly("flags", &ImageInfo::flags)
+      .def_readonly("architecture", &ImageInfo::architecture)
       .def_readonly("code_size", &ImageInfo::code_size)
       .def_readonly("code_base", &ImageInfo::code_base)
+      .def_readonly("data_size", &ImageInfo::data_size)
+      .def_readonly("bss_size", &ImageInfo::bss_size)
+      .def_readonly("data_base", &ImageInfo::data_base)
       .def_readonly("entry_offset", &ImageInfo::entry_offset)
       .def_readonly("secure_id", &ImageInfo::secure_id)
       .def_readonly("dll", &ImageInfo::dll)
       .def_readonly("header_size", &ImageInfo::header_size)
+      .def_readonly("exception_descriptor_offset",
+                    &ImageInfo::exception_descriptor_offset)
       .def_readonly("exports", &ImageInfo::exports)
       .def_readonly("code_relocations", &ImageInfo::code_relocations)
+      .def_readonly("code_data_relocations", &ImageInfo::code_data_relocations)
+      .def_readonly("data_relocations", &ImageInfo::data_relocations)
+      .def_readonly("data_data_relocations", &ImageInfo::data_data_relocations)
       .def_readonly("imports", &ImageInfo::imports);
   module.def("convert_pic_executable", &ConvertPicExecutable, py::arg("data"),
              py::arg("uid3"), "Convert a restricted, retained-relocation ELF.");
@@ -236,17 +229,36 @@ PYBIND11_MODULE(_native, module) {
       .def_readonly("executable_name", &PackageOptions::executable_name)
       .def_readonly("version", &PackageOptions::version);
   using symbian::sis::PackageInfo;
+  py::class_<PackageInfo::EmbeddedFile>(module, "SisEmbeddedFile")
+      .def_readonly("target", &PackageInfo::EmbeddedFile::target)
+      .def_readonly("size", &PackageInfo::EmbeddedFile::size)
+      .def_readonly("sha1", &PackageInfo::EmbeddedFile::sha1);
   py::class_<PackageInfo>(module, "SisPackageInfo")
       .def_readonly("options", &PackageInfo::options)
       .def_readonly("executable_uid", &PackageInfo::executable_uid)
       .def_readonly("executable_size", &PackageInfo::executable_size)
       .def_readonly("executable_sha1", &PackageInfo::executable_sha1)
-      .def_readonly("target", &PackageInfo::target);
+      .def_readonly("target", &PackageInfo::target)
+      .def_readonly("files", &PackageInfo::files)
+      .def_readonly("application_registered",
+                    &PackageInfo::application_registered);
   module.def(
       "build_sis", &BuildSis, py::arg("data"), py::arg("uid"), py::arg("name"),
       py::arg("vendor"), py::arg("executable_name"),
       py::arg("version") = std::array<int32_t, 3>{1, 0, 0},
       "Build the canonical unsigned SISX experiment, releasing the GIL.");
+  module.def("build_registered_sis", &BuildRegisteredSis, py::arg("data"),
+             py::arg("registration"), py::arg("caption"), py::arg("uid"),
+             py::arg("name"), py::arg("vendor"), py::arg("executable_name"),
+             py::arg("version") = std::array<int32_t, 3>{1, 0, 0},
+             "Build a registered unsigned SISX, releasing the GIL.");
+  module.def("build_application_sis", &BuildApplicationSis, py::arg("data"),
+             py::arg("files"), py::arg("uid"), py::arg("name"),
+             py::arg("vendor"), py::arg("executable_name"),
+             py::arg("version") = std::array<int32_t, 3>{1, 0, 0},
+             "Build a localized application SISX, releasing the GIL.");
+  module.def("build_svg_mif", &BuildSvgMif, py::arg("data"),
+             "Compile a bounded SVG icon into MIF, releasing the GIL.");
   module.def(
       "inspect_sis", &InspectSis, py::arg("data"),
       "Check the canonical unsigned SISX experiment, releasing the GIL.");

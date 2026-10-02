@@ -1,0 +1,128 @@
+diff --git a/absl/base/internal/low_level_alloc.cc b/absl/base/internal/low_level_alloc.cc
+index 3887a92f..ef009039 100644
+--- a/absl/base/internal/low_level_alloc.cc
++++ b/absl/base/internal/low_level_alloc.cc
+@@ -31,6 +31,10 @@
+ #include "absl/base/macros.h"
+ #include "absl/base/thread_annotations.h"
+ 
++#ifdef __SYMBIAN32__
++#include "symbian/runtime.h"
++#endif
++
+ // LowLevelAlloc requires that the platform support low-level
+ // allocation of virtual memory. Platforms lacking this cannot use
+ // LowLevelAlloc.
+@@ -216,6 +220,11 @@ struct LowLevelAlloc::Arena {
+   AllocList freelist ABSL_GUARDED_BY(mu);
+   // Count of allocated blocks
+   int32_t allocation_count ABSL_GUARDED_BY(mu);
++#ifdef __SYMBIAN32__
++  // Each RChunk must be closed by its owner, even if adjacent free regions
++  // coalesce into one skiplist entry.
++  SymbianRuntimePageOwner* page_owners ABSL_GUARDED_BY(mu);
++#endif
+   // flags passed to NewArena
+   const uint32_t flags;
+   // Result of sysconf(_SC_PAGESIZE)
+@@ -364,6 +373,10 @@ size_t GetPageSize() {
+   SYSTEM_INFO system_info;
+   GetSystemInfo(&system_info);
+   return std::max(system_info.dwPageSize, system_info.dwAllocationGranularity);
++#elif defined(__SYMBIAN32__)
++  const int page_size = SymbianRuntimePageSize();
++  ABSL_RAW_CHECK(page_size > 0, "Symbian page size unavailable");
++  return static_cast<size_t>(page_size);
+ #elif defined(__wasm__) || defined(__asmjs__) || defined(__hexagon__)
+   return static_cast<size_t>(getpagesize());
+ #else
+@@ -385,6 +398,9 @@ size_t RoundedUpBlockSize() {
+ LowLevelAlloc::Arena::Arena(uint32_t flags_value)
+     : mu(base_internal::SCHEDULE_KERNEL_ONLY),
+       allocation_count(0),
++#ifdef __SYMBIAN32__
++      page_owners(nullptr),
++#endif
+       flags(flags_value),
+       pagesize(GetPageSize()),
+       round_up(RoundedUpBlockSize()),
+@@ -436,6 +452,10 @@ bool LowLevelAlloc::DeleteArena(Arena *arena) {
+                    "empty arena has non-page-aligned block size");
+     ABSL_RAW_CHECK(reinterpret_cast<uintptr_t>(region) % arena->pagesize == 0,
+                    "empty arena has non-page-aligned block");
++#ifdef __SYMBIAN32__
++    // The owner list below closes each chunk once. Adjacent chunks can
++    // coalesce into one freelist entry, so region boundaries are insufficient.
++#else
+     int munmap_result;
+ #ifdef _WIN32
+     munmap_result = VirtualFree(region, 0, MEM_RELEASE);
+@@ -456,7 +476,15 @@ bool LowLevelAlloc::DeleteArena(Arena *arena) {
+                    errno);
+     }
+ #endif  // _WIN32
++#endif  // __SYMBIAN32__
+   }
++#ifdef __SYMBIAN32__
++  while (arena->page_owners != nullptr) {
++    SymbianRuntimePageOwner* owner = arena->page_owners;
++    arena->page_owners = SymbianRuntimePageNext(owner);
++    SymbianRuntimePageClose(owner);
++  }
++#endif
+   section.Leave();
+   arena->~Arena();
+   Free(arena);
+@@ -584,7 +612,17 @@ static void *DoAllocWithArena(size_t request, LowLevelAlloc::Arena *arena) {
+       // the chances/impact of fragmentation:
+       size_t new_pages_size = RoundUp(req_rnd, arena->pagesize * 16);
+       void *new_pages;
+-#ifdef _WIN32
++#ifdef __SYMBIAN32__
++      SymbianRuntimePageOwner* owner = nullptr;
++      new_pages = nullptr;
++      ABSL_RAW_CHECK(new_pages_size <= 0x7fffffffU,
++                     "Symbian page request too large");
++      const int map_result = SymbianRuntimePageCreate(
++          static_cast<unsigned int>(new_pages_size), &owner, &new_pages);
++      ABSL_RAW_CHECK(map_result == 0 && owner != nullptr &&
++                         new_pages != nullptr,
++                     "Symbian page allocation failed");
++#elif defined(_WIN32)
+       new_pages = VirtualAlloc(nullptr, new_pages_size,
+                                MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+       ABSL_RAW_CHECK(new_pages != nullptr, "VirtualAlloc failed");
+@@ -619,6 +657,10 @@ static void *DoAllocWithArena(size_t request, LowLevelAlloc::Arena *arena) {
+ #endif  // __linux__
+ #endif  // _WIN32
+       arena->mu.lock();
++#ifdef __SYMBIAN32__
++      SymbianRuntimePageSetNext(owner, arena->page_owners);
++      arena->page_owners = owner;
++#endif
+       s = reinterpret_cast<AllocList *>(new_pages);
+       s->header.size = new_pages_size;
+       // Pretend the block is allocated; call AddToFreelist() to free it.
+diff --git a/absl/base/internal/low_level_alloc.h b/absl/base/internal/low_level_alloc.h
+index 23218dd5..e9ad1f74 100644
+--- a/absl/base/internal/low_level_alloc.h
++++ b/absl/base/internal/low_level_alloc.h
+@@ -36,7 +36,8 @@
+ // LowLevelAlloc.
+ #ifdef ABSL_LOW_LEVEL_ALLOC_MISSING
+ #error ABSL_LOW_LEVEL_ALLOC_MISSING cannot be directly set
+-#elif !defined(ABSL_HAVE_MMAP) && !defined(_WIN32)
++#elif !defined(ABSL_HAVE_MMAP) && !defined(_WIN32) && \
++    !defined(__SYMBIAN32__)
+ #define ABSL_LOW_LEVEL_ALLOC_MISSING 1
+ #endif
+ 
+@@ -47,7 +48,7 @@
+ #ifdef ABSL_LOW_LEVEL_ALLOC_ASYNC_SIGNAL_SAFE_MISSING
+ #error ABSL_LOW_LEVEL_ALLOC_ASYNC_SIGNAL_SAFE_MISSING cannot be directly set
+ #elif defined(_WIN32) || defined(__asmjs__) || defined(__wasm__) || \
+-    defined(__hexagon__)
++    defined(__hexagon__) || defined(__SYMBIAN32__)
+ #define ABSL_LOW_LEVEL_ALLOC_ASYNC_SIGNAL_SAFE_MISSING 1
+ #endif
+ 

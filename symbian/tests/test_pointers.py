@@ -11,9 +11,9 @@ import pytest
 
 from symbian import packaging, toolchain
 from symbian._native import convert_dll, inspect_e32
-from symbian.cli.__main__ import main
 from symbian.e32 import convert_pic_executable
 from symbian.status import Code, StatusError
+from symbian.tests.cli_json import main
 from symbian.toolchain.verification import (
     run_oracles,
     verify_pointers,

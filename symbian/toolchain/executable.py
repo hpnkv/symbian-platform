@@ -16,8 +16,14 @@ from symbian.e32 import (
 )
 from symbian.process import run
 from symbian.status import Code, StatusError
-from symbian.toolchain import _compiler
 from symbian.toolchain import project_build as cmake_build
+from symbian.toolchain.architecture import (
+    project_architecture,
+)
+from symbian.toolchain.architecture import (
+    target as arm_target,
+)
+from symbian.toolchain.builds import _compiler
 
 
 def _unchanged(inputs: dict[Path, bytes]) -> None:
@@ -58,6 +64,7 @@ def build_executable(
         r"[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}", preset
     ):
         raise StatusError(Code.INVALID_ARGUMENT, "Invalid CMake preset name")
+    architecture = project_architecture(project, options, preset)
     tools = {
         "compiler": _compiler(compiler),
         "linker": _compiler(linker),
@@ -100,6 +107,24 @@ def build_executable(
         )
     ):
         raise StatusError(Code.INVALID_ARGUMENT, "Invalid import_proxies list")
+    if any(path.startswith("${sdk}/") for path in proxy_names):
+        from symbian.project.configuration import ProjectConfiguration
+        from symbian.project.sdk import discover_sdk
+
+        # Standalone examples can use the active SDK without pretending to be
+        # generated application projects. Generated projects keep their own
+        # explicit, transferable sdk-location.json selection.
+        if (project / "symbian-project.json").is_file():
+            prefix = ProjectConfiguration.load(project).sdk.prefix
+        elif (project / "sdk-location.json").is_file():
+            location = json.loads((project / "sdk-location.json").read_text())
+            prefix = (project / location["sdk"]).resolve()
+        else:
+            prefix = discover_sdk().parent
+        proxy_names = [
+            str(prefix / path[7:]) if path.startswith("${sdk}/") else path
+            for path in proxy_names
+        ]
     proxies = tuple((project / path).resolve() for path in proxy_names)
     if len(set(proxies)) != len(proxies) or any(
         path.is_relative_to(output) for path in proxies
@@ -126,7 +151,13 @@ def build_executable(
 
     def configure(tree: Path) -> cmake_build.Target:
         return cmake_build.configure(
-            project, tree, name, preset, **tools, import_proxies=proxies
+            project,
+            tree,
+            name,
+            preset,
+            **tools,
+            import_proxies=proxies,
+            architecture=architecture,
         )
 
     target = configure(primary)
@@ -143,6 +174,16 @@ def build_executable(
     for path in dependencies:
         inputs.setdefault(path, path.read_bytes())
     first_elf = target.artifact.read_bytes()
+    metadata = inspect_elf(target.artifact)
+    expected = arm_target(architecture)
+    if metadata["arm_attributes"]["cpu_arch"] != expected.cpu_attribute:
+        raise StatusError(
+            Code.FAILED_PRECONDITION,
+            f"Compiler output disagrees with {architecture}: "
+            f"{metadata['arm_attributes']}; "
+            "remove conflicting -march/-mcpu flags and rebuild "
+            "in a fresh target tree",
+        )
     first_image = convert(first_elf)
     with tempfile.TemporaryDirectory(prefix="repro-", dir=output) as temporary:
         temporary = Path(temporary)
@@ -187,6 +228,7 @@ def build_executable(
             "experimental-e32-dll" if dll else "experimental-e32-executable"
         ),
         "artifact": str(image),
+        "target": arm_target(architecture).model_dump(),
         "sha256": hashlib.sha256(first_image).hexdigest(),
         "linked_elf": str(elf),
         "linked_elf_sha256": hashlib.sha256(first_elf).hexdigest(),
@@ -219,14 +261,16 @@ def build_executable(
         "limitations": [
             (
                 "Frozen function exports and eager imports only; "
-                "RELRO tables allowed; no writable data/TLS/constructors "
-                "or target C++ runtime"
+                "RELRO/local GOT and bounded per-process data/BSS allowed; "
+                "constructor arrays need the SDK DLL entry; "
+                "no TLS or general unload/lifetime contract"
                 if dll
                 else (
-                    "Eager function imports only; "
-                    "no writable data/exports/constructors"
+                    "Eager function imports, bounded local GOT "
+                    "and EXE data/BSS; "
+                    "no TLS/exports; constructors need SDK startup"
                     if imported
-                    else "Internal RX pointer relocations and RELRO allowed; "
+                    else "Internal RX pointers, RELRO and bounded local GOT; "
                     "no SDK/imports, writable data, exports, "
                     "constructors or packaging"
                 )
@@ -234,7 +278,7 @@ def build_executable(
             "All relocations must be retained by the trusted linker",
             "Hand-written absolute addresses cannot be detected",
             (
-                "Minimal E32Dll entry; no SDK initialization or DLL resources"
+                "DLL entry/lifetime must be verified separately from conversion"
                 if dll
                 else "Project startup, heap initialization and cleanup "
                 "are not established by conversion or static inspection"

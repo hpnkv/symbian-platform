@@ -1,0 +1,47 @@
+diff --git a/src/emu/drivers/src/graphics/backend/context_agl.mm b/src/emu/drivers/src/graphics/backend/context_agl.mm
+index cbd0a6b..613d72c 100644
+--- a/src/emu/drivers/src/graphics/backend/context_agl.mm
++++ b/src/emu/drivers/src/graphics/backend/context_agl.mm
+@@ -3,6 +3,7 @@
+ 
+ #include "context_agl.h"
+ #include <common/log.h>
++#include <cstdlib>
+ 
+ namespace eka2l1::drivers::graphics {
+     static bool update_cached_dimensions(NSView* view, std::uint32_t* width, std::uint32_t* height) {
+@@ -37,7 +38,17 @@ static bool attach_context_to_view(NSOpenGLContext* context, NSView* view, std::
+       dispatch_sync(dispatch_get_main_queue(), ^{
+         [window makeFirstResponder:view];
+         [context setView:view];
+-        [window makeKeyAndOrderFront:nil];
++        const char* background = std::getenv("EKA2L1_RESEARCH_BACKGROUND_WINDOW");
++        if (background && background[0] == '1' && background[1] == '\0') {
++          // Keep owned sessions on a normal desktop Space. In particular,
++          // never join or tile beside the developer's full-screen IDE.
++          [window setCollectionBehavior:(NSWindowCollectionBehaviorManaged |
++                                         NSWindowCollectionBehaviorFullScreenNone |
++                                         NSWindowCollectionBehaviorFullScreenDisallowsTiling)];
++          [window orderBack:nil];
++        } else {
++          [window makeKeyAndOrderFront:nil];
++        }
+       });
+       return true;
+     }
+diff --git a/src/emu/qt/src/mainwindow.cpp b/src/emu/qt/src/mainwindow.cpp
+index 5e4005c..6de4c7d 100644
+--- a/src/emu/qt/src/mainwindow.cpp
++++ b/src/emu/qt/src/mainwindow.cpp
+@@ -1735,6 +1735,11 @@ void main_window::on_action_check_for_update_triggered() {
+ }
+ 
+ void main_window::load_and_show() {
++    // SDK-owned test and Run sessions have a supervisor and should leave the
++    // developer's terminal/IDE active when their window first appears.
++    if (qEnvironmentVariable("EKA2L1_RESEARCH_BACKGROUND_WINDOW") == "1") {
++        setAttribute(Qt::WA_ShowWithoutActivating);
++    }
+     show();
+     if (applist_) {
+         applist_->request_reload();

@@ -1,0 +1,19 @@
+diff --git a/src/emu/kernel/src/svc.cpp b/src/emu/kernel/src/svc.cpp
+--- a/src/emu/kernel/src/svc.cpp
++++ b/src/emu/kernel/src/svc.cpp
+@@ -3003,10 +3003,12 @@
+     static constexpr std::uint32_t TICK_MASK = ~0b1;
+ 
+     BRIDGE_FUNC(std::uint32_t, fast_counter) {
+-        const std::uint64_t DEFAULT_FAST_COUNTER_PERIOD = (common::microsecs_per_sec / epoc::HIGH_RES_TIMER_HZ);
+-
+         ntimer *timing = kern->get_ntimer();
+-        return static_cast<std::uint32_t>(timing->microseconds() / DEFAULT_FAST_COUNTER_PERIOD);
++        const std::uint64_t micros = timing->microseconds();
++        const std::uint64_t seconds = micros / common::microsecs_per_sec;
++        const std::uint64_t remainder = micros % common::microsecs_per_sec;
++        return static_cast<std::uint32_t>(seconds * epoc::HIGH_RES_TIMER_HZ +
++            remainder * epoc::HIGH_RES_TIMER_HZ / common::microsecs_per_sec);
+     }
+ 
+     BRIDGE_FUNC(std::uint32_t, ntick_count) {

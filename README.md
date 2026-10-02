@@ -1,8 +1,13 @@
 # Symbian development platform
 
+For generated applications, visible SDK installation, relative project settings
+and IDE Run/Debug integration, see [Standalone projects](docs/PROJECTS.md).
+
 Build reproducible ARM objects and experimental E32 executables/DLLs on macOS, and
 preserve existing firmware/ROM material in verifiable host-side archives.
-The target is Nokia 808 / Symbian Belle. The first E32 experiment passes historical
+ARMv6 is the default, with ARMv5T available; firmware profiles include several
+Symbian devices and do not live inside generated projects. The first E32
+experiment passes historical
 image validation, CPU, ROMless installation and emulator process tests.
 Full Belle runtime compatibility remains unverified; a guarded experiment now
 renders and operates the GUI against supplied RM-807 firmware on both backends.
@@ -32,8 +37,10 @@ uv run symbian inspect --format sis .symbian/package/probe.sis
 uv run symbian device policy flash
 ```
 
-All operation results are JSON with canonical status codes. Hardware commands
-describe policy only; there is no device executor. Preservation instructions
+Commands show readable summaries by default. Add `--output-format=json`
+before or after a command for the canonical result and status schema in scripts.
+`--help` describes each command and option. Hardware recovery commands
+describe policy only; there is no recovery executor. Preservation instructions
 are in recovery/README.md. Firmware and private device records stay outside Git.
 
 The probe compiles twice in independent directories, checks ARM ELF32 EABI5
@@ -124,6 +131,11 @@ export tables, absence bitmaps and code relocations. Both emulator CPU backends
 execute a native generated development DLL, with actual mapped export pointers
 checked. See [docs/IMPORTS.md](docs/IMPORTS.md) for build and replay. These ROMless
 experiments do not establish matched Belle, SDK startup or physical execution.
+The installed SDK now publishes C/C++ DLL targets with selected frozen exports,
+ordinal proxy targets and retained ELF symbols. A bounded DLL data/BSS case runs
+on both emulator CPU backends; [the Mbed TLS SHA-256 probe](examples/mbedtls_dll_probe)
+shows a real C archive link. See [library targets](docs/PROJECTS.md) for the
+current contract and remaining lifetime limits.
 
 
 Const callback tables and simple C++ virtual dispatch now run through the
@@ -133,3 +145,9 @@ with an optional `--package`; see [docs/POINTERS.md](docs/POINTERS.md).
 
 C++20 language, named-module and selected library experiments are documented in
 [docs/CXX20.md](docs/CXX20.md), with maintained examples and loader evidence.
+
+Application guidance: [CXX_CAVEATS.md](CXX_CAVEATS.md). The guest runtime
+subset and tests are in [docs/RUNTIME.md](docs/RUNTIME.md). Runtime cost
+hypotheses and measurement gates are in
+[PERFORMANCE_CONSIDERATIONS.md](PERFORMANCE_CONSIDERATIONS.md); the one-install
+distribution design is in [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md).

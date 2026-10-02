@@ -7,7 +7,12 @@ from __future__ import annotations
 import collections.abc
 import typing
 
+import pybind11_abseil.status
+
+import symbian.status
+
 __all__: list[str] = [
+    "ArmAttributes",
     "E32ExportSlot",
     "E32ImageInfo",
     "E32ImportBlock",
@@ -16,9 +21,14 @@ __all__: list[str] = [
     "ProxyInfo",
     "ProxySources",
     "SdkExport",
+    "SisEmbeddedFile",
     "SisPackageInfo",
     "SisPackageOptions",
+    "Status",
+    "build_application_sis",
+    "build_registered_sis",
     "build_sis",
+    "build_svg_mif",
     "convert_dll",
     "convert_imported_executable",
     "convert_pic_executable",
@@ -28,7 +38,23 @@ __all__: list[str] = [
     "inspect_import_proxy",
     "inspect_sis",
     "parse_def",
+    "status_code_from_http",
+    "status_code_from_websocket",
+    "status_code_to_http",
+    "status_code_to_websocket",
 ]
+
+class ArmAttributes:
+    @property
+    def cpu_arch(self) -> int: ...
+    @property
+    def fp_arch(self) -> int: ...
+    @property
+    def simd_arch(self) -> int: ...
+    @property
+    def thumb_isa(self) -> int: ...
+    @property
+    def vfp_args(self) -> int: ...
 
 class E32ExportSlot:
     @property
@@ -44,15 +70,31 @@ class E32ImageInfo:
     """
 
     @property
+    def architecture(self) -> str: ...
+    @property
+    def bss_size(self) -> int: ...
+    @property
     def code_base(self) -> int: ...
+    @property
+    def code_data_relocations(self) -> list[int]: ...
     @property
     def code_relocations(self) -> list[int]: ...
     @property
     def code_size(self) -> int: ...
     @property
+    def data_base(self) -> int: ...
+    @property
+    def data_data_relocations(self) -> list[int]: ...
+    @property
+    def data_relocations(self) -> list[int]: ...
+    @property
+    def data_size(self) -> int: ...
+    @property
     def dll(self) -> bool: ...
     @property
     def entry_offset(self) -> int: ...
+    @property
+    def exception_descriptor_offset(self) -> int: ...
     @property
     def exports(self) -> list[E32ExportSlot]: ...
     @property
@@ -85,6 +127,8 @@ class Elf32Header:
     ELF32 metadata; not a loader acceptance result.
     """
 
+    @property
+    def arm(self) -> ArmAttributes: ...
     @property
     def entry(self) -> int:
         """
@@ -149,13 +193,25 @@ class SdkExport:
     @property
     def symbol(self) -> str: ...
 
+class SisEmbeddedFile:
+    @property
+    def sha1(self) -> str: ...
+    @property
+    def size(self) -> int: ...
+    @property
+    def target(self) -> str: ...
+
 class SisPackageInfo:
+    @property
+    def application_registered(self) -> bool: ...
     @property
     def executable_sha1(self) -> str: ...
     @property
     def executable_size(self) -> int: ...
     @property
     def executable_uid(self) -> int: ...
+    @property
+    def files(self) -> list[SisEmbeddedFile]: ...
     @property
     def options(self) -> SisPackageOptions: ...
     @property
@@ -173,6 +229,110 @@ class SisPackageOptions:
     @property
     def version(self) -> typing.Annotated[list[int], "FixedSize(3)"]: ...
 
+class Status:
+    __hash__: typing.ClassVar[None] = None
+    def __eq__(self, right: Status) -> bool:
+        """
+        Returns whether two statuses have equal code, message, and details.
+        """
+
+    def __init__(
+        self,
+        code: typing.SupportsInt | typing.SupportsIndex = 0,
+        message: str = "OK",
+        details: typing.Any = [],
+    ) -> None:
+        """
+        Creates a status from a canonical code, message, and details list.
+        """
+
+    def __repr__(self) -> str:
+        """
+        Returns a debug representation of the status.
+        """
+
+    def __str__(self) -> str:
+        """
+        Returns a 'CODE: message' string form of the status.
+        """
+
+    def _as_dict(self) -> dict[str, typing.Any]:
+        """
+        Returns the status as a JSON-compatible dict.
+        """
+
+    def _copy(self) -> Status:
+        """
+        Returns a copy of this status.
+        """
+
+    def is_ok(self) -> bool:
+        """
+        Returns whether the status is OK (no error).
+        """
+
+    @property
+    def code(self) -> symbian.status.StatusCode:
+        """
+        The canonical status code.
+        """
+
+    @code.setter
+    def code(self, arg1: typing.SupportsInt | typing.SupportsIndex) -> None: ...
+    @property
+    def details(self) -> list[typing.Any]:
+        """
+        The structured status details, as a list.
+        """
+
+    @details.setter
+    def details(self, arg1: list[typing.Any]) -> None: ...
+    @property
+    def message(self) -> str:
+        """
+        The human-readable status message.
+        """
+
+    @message.setter
+    def message(self, arg1: str) -> None: ...
+
+def _absl_status_roundtrip(arg0: None) -> pybind11_abseil.status.Status: ...
+def _status_from_callback(arg0: collections.abc.Callable) -> typing.Any: ...
+def _status_or_value(arg0: typing.Any, arg1: str) -> str: ...
+def _status_roundtrip(arg0: typing.Any) -> typing.Any: ...
+def build_application_sis(
+    data: bytes,
+    files: collections.abc.Sequence[tuple[str, bytes]],
+    uid: typing.SupportsInt | typing.SupportsIndex,
+    name: str,
+    vendor: str,
+    executable_name: str,
+    version: typing.Annotated[
+        collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex],
+        "FixedSize(3)",
+    ] = [1, 0, 0],
+) -> bytes:
+    """
+    Build a localized application SISX, releasing the GIL.
+    """
+
+def build_registered_sis(
+    data: bytes,
+    registration: bytes,
+    caption: bytes,
+    uid: typing.SupportsInt | typing.SupportsIndex,
+    name: str,
+    vendor: str,
+    executable_name: str,
+    version: typing.Annotated[
+        collections.abc.Sequence[typing.SupportsInt | typing.SupportsIndex],
+        "FixedSize(3)",
+    ] = [1, 0, 0],
+) -> bytes:
+    """
+    Build a registered unsigned SISX, releasing the GIL.
+    """
+
 def build_sis(
     data: bytes,
     uid: typing.SupportsInt | typing.SupportsIndex,
@@ -186,6 +346,11 @@ def build_sis(
 ) -> bytes:
     """
     Build the canonical unsigned SISX experiment, releasing the GIL.
+    """
+
+def build_svg_mif(data: bytes) -> bytes:
+    """
+    Compile a bounded SVG icon into MIF, releasing the GIL.
     """
 
 def convert_dll(
@@ -248,3 +413,16 @@ def parse_def(data: bytes) -> list[SdkExport]:
     """
     Parse bounded EABI export declarations, releasing the GIL.
     """
+
+def status_code_from_http(
+    arg0: typing.SupportsInt | typing.SupportsIndex,
+) -> int: ...
+def status_code_from_websocket(
+    arg0: typing.SupportsInt | typing.SupportsIndex,
+) -> int: ...
+def status_code_to_http(
+    arg0: typing.SupportsInt | typing.SupportsIndex,
+) -> int: ...
+def status_code_to_websocket(
+    arg0: typing.SupportsInt | typing.SupportsIndex,
+) -> int: ...

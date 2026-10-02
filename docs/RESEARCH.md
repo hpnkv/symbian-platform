@@ -434,9 +434,10 @@ sources, compiler versions, replay and the remaining target runtime work.
 ## 19. Source SDK and Window Server GUI experiment
 
 The maintained examples/gui_app uses original public Window Server types to
-draw a four-digit counter and accept increment/reset/exit pointer events. Its
-owned sdk.json pins 92 explicit header aliases and 37 function imports from
-original EUSER/WS32 definitions. Native DEF selection and proxy generation
+draw a four-digit counter and accept increment/reset/exit pointer events.
+The separate `research/gui_app/source-profile.json` pins 93 explicit
+header aliases and 38 function imports from original EUSER/WS32 definitions.
+Native DEF selection and proxy generation
 remain in the existing core; Python stages digest-checked aliases and build
 policy. Source licenses stay in ignored upstream checkouts. Reported revisions
 are manifest declarations; actual input bytes, rather than Git provenance,
@@ -593,3 +594,51 @@ application/system work. Current UI success does not establish a full OS boot,
 complete DLL initialization, TLS/static lifetime, hosted C++20, complete unwind
 support or phone compatibility. See [EMULATOR_CONTROL.md](EMULATOR_CONTROL.md)
 and [CLION.md](CLION.md) for the concrete replay and developer setup.
+
+## 24. Bounded local GOT and fallible generated model acquisition
+
+The runtime's global std::nothrow control previously failed because LLD emitted
+a separate `.got` and retained R_ARM_GOT_PREL references, without ABS32 records
+for the synthesized words. The native converter now validates one local table
+of at most 1,024 slots, matches every word to a defined object/function named
+by retained GOT_PREL, and emits E32 text relocations for those words. It leaves
+the linked PC-relative references unchanged and preserves Thumb state. This
+extends the existing RX transport; writable data/BSS and external data imports
+remain unsupported. Unknown/malformed contracts still fail publication.
+
+An eight-case firmware-backed test builds real string/vector/allocation probes,
+reads an external constant and calls a Thumb function through their relocated
+GOT on both CPU backends. A changed constant exits -113, ordinary heap exhaustion
+exits -4 and global std::nothrow success exits zero. Native malformed-table and
+coverage controls and the unchanged original Symbian validator remain separate
+oracles. No LLVM/EKA2L1 implementation changes were needed.
+
+Generated models now use nothrow acquisition; a null result releases acquired
+window/group/font resources and returns KErrNoMemory. Both-backend generated-app
+heap-limit controls and normal GUI/debugger checks pass. Later container growth
+still has the ordinary fatal OOM policy. The visible SDK was refreshed from a
+new export with a retained previous tree and verified input digests, without
+rewriting owner projects. See [RUNTIME.md](RUNTIME.md), [PROJECTS.md](PROJECTS.md)
+and the latest RESEARCH_LOG.md entry. Global lifetime, TLS, guest Abseil/JSON,
+A11 concurrency, general DLL initialization and physical execution remain gates.
+
+
+## 25. Shared firmware selection and bounded writable EXE storage
+
+Current implementation supersedes the historical RX-only/data-rejection
+checkpoints above. Native original EKA2L1 import forms, portable ROM/Z content
+identities and global/SDK/project/command resolution are described in
+FIRMWARE.md. C7, E6, 6120 and E71 generated modern-runtime starters execute with
+the default emulator profile; 7610/P900 import but require an EKA1 startup ABI
+that the current SDK does not supply. SDK-provided language/library capabilities
+are judged by tested contracts, rather than restricted to their historical OS
+introduction date.
+
+Bounded EXE initialized data/BSS now uses an independent RW mapping, with typed
+code/data relocation sections. Both CPU backends load, zero-fill, mutate and
+follow pointers to both mappings; altered initial data fails with -115. Original
+whole-image and checksum oracles accept the images. Native negative controls
+preserve the TLS/constructor/DLL lifetime and unsupported-relocation gates.
+See RUNTIME.md and the latest RESEARCH_LOG.md entries for retained evidence.
+The actual 46-file A11 thread/concurrency closure is staged and digest-verified;
+this source adoption does not yet supply a guest backend.

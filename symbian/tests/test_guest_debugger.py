@@ -16,6 +16,13 @@ from pathlib import Path
 
 import pytest
 
+from symbian.e32 import inspect_image
+from symbian.emulator.background import (
+    background_environment,
+    executable_for_session,
+)
+from symbian.tests.test_guest_gui import _published_gui
+
 GOLDEN = os.environ.get("SYMBIAN_GUI_DEBUG_GOLDEN_ROOT")
 EMULATOR = os.environ.get("SYMBIAN_EKA2L1_EXECUTABLE")
 BUILD = os.environ.get("SYMBIAN_GUI_DEBUG_BUILD")
@@ -62,12 +69,13 @@ def test_experimental_profile_rejects_unknown_selection_and_changed_rom(
         rejection = "Unsupported experimental executive profile or ROM"
     env = os.environ.copy()
     env["EKA2L1_DATA_ROOT"] = str(instance)
+    env.update(background_environment())
     env["EKA2L1_EXPERIMENTAL_SVC_PROFILE"] = profile
     log_path = tmp_path / "frontend.log"
     with log_path.open("w") as log:
         process = subprocess.Popen(
             [
-                Path(EMULATOR).resolve(),
+                executable_for_session(Path(EMULATOR), tmp_path),
                 "--device",
                 "RM-807",
                 "--run",
@@ -116,14 +124,7 @@ def test_live_source_breakpoints_and_single_step_remain_halted(
         / "data/drives/z/rm-807/sys/bin/euser.dll": (
             "3cec7e1546f8ed0cf64a73fece9fdd8fe6e4976535ddffd18b7068c19c01357b"
         ),
-        build
-        / "gui_app.exe": (
-            "2ef4145fa9323837d3d16d8914652d69f0b703a747b4dbb52ab83db83b727792"
-        ),
-        build
-        / "gui_app.elf": (
-            "7b2918ba000c8faf039069a3571816a6203edde129a5cb9c2144e475d582d05f"
-        ),
+        **_published_gui(build),
     }
     assert {p: _digest(p) for p in inputs} == inputs
     assert executable.is_file()
@@ -199,10 +200,11 @@ def test_live_source_breakpoints_and_single_step_remain_halted(
     if experimental:
         env["EKA2L1_EXPERIMENTAL_SVC_PROFILE"] = "rm807-113.010.1508"
     env["EKA2L1_DATA_ROOT"] = str(instance)
+    env.update(background_environment())
     with (tmp_path / "frontend.log").open("w") as log:
         process = subprocess.Popen(
             [
-                executable,
+                executable_for_session(Path(executable), tmp_path),
                 "--device",
                 "RM-807",
                 "--run",
@@ -251,21 +253,35 @@ def test_live_source_breakpoints_and_single_step_remain_halted(
                 kernel_log
             )
             if experimental:
-                assert "HEAP_RESULT=0 HEAP_PC=0x700009e8" in result.stdout
+                assert "HEAP_RESULT=0 HEAP_PC=" in result.stdout
                 assert "GUI_MAIN_PC=0x7000002a" in result.stdout
                 assert "REGISTER_READ_PC=0x804c26f0" in result.stdout
                 assert "REGISTER_READ_DONE=0x804c26f4 URO=0" in result.stdout
                 assert "SESSION_CONNECT_PC=0x70000032 RESULT=0" in result.stdout
-                assert "DRAW_GUI_PC=0x700003ae" in result.stdout
-                assert "DRAW_RETURN_PC=0x700002f0" in result.stdout
+                draw = re.search(r"DRAW_GUI_PC=(0x[0-9a-f]+)", result.stdout)
+                assert draw, result.stdout
+                assert 0x70000000 <= int(draw[1], 16) < 0x70100000
+                assert f"Breakpoint 8 at {draw[1]}:" in result.stdout
+                assert "DRAW_RETURN_PC=" in result.stdout
                 assert "count_ = 0, running_ = true" in result.stdout
                 assert "width = 360, height = 640" in result.stdout
                 assert "Using experimental RM-807" in kernel_log
                 assert "Can't open object: $HEAP" not in kernel_log
             else:
-                assert "HEAP_RESULT=-1 HEAP_PC=0x700009e8" in result.stdout
+                assert "HEAP_RESULT=-1 HEAP_PC=" in result.stdout
                 assert "EXIT_SVC=0x804bfc40 REASON=-1" in result.stdout
                 assert "Can't open object: $HEAP" in kernel_log
+            image = inspect_image(build / "gui_app.exe")
+            # Caller locations move with legitimate IDE edits. Firmware call
+            # addresses remain guarded above; caller stops must be mapped RX.
+            for address in re.findall(
+                r"(?:HEAP_PC|DRAW_RETURN_PC)=(0x[0-9a-f]+)", result.stdout
+            ):
+                assert (
+                    0x70000000
+                    <= int(address, 16)
+                    < (0x70000000 + image["code_size"])
+                )
         finally:
             process.terminate()
             try:

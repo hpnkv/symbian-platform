@@ -1,0 +1,14 @@
+diff --git a/src/emu/services/src/fbs/fbs.cpp b/src/emu/services/src/fbs/fbs.cpp
+index da59a44..b52555e 100644
+--- a/src/emu/services/src/fbs/fbs.cpp
++++ b/src/emu/services/src/fbs/fbs.cpp
+@@ -296,6 +296,9 @@ namespace eka2l1 {
+ 
+         default: {
+             LOG_ERROR(SERVICE_FBS, "Unhandled FBScli opcode 0x{:X}", ctx->msg->function);
++            // Unsupported synchronous requests must return an error. Leaving
++            // one pending strands the client in teardown (observed on RM-243).
++            ctx->complete(epoc::error_not_supported);
+             break;
+         }
+         }

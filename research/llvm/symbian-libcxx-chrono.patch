@@ -1,0 +1,30 @@
+diff --git a/libcxx/src/chrono.cpp b/libcxx/src/chrono.cpp
+index af5fe7c0..deeaebbe 100644
+--- a/libcxx/src/chrono.cpp
++++ b/libcxx/src/chrono.cpp
+@@ -22,6 +22,10 @@
+ 
+ #include <time.h> // clock_gettime and CLOCK_{MONOTONIC,REALTIME,MONOTONIC_RAW}
+ 
++#if defined(__SYMBIAN32__)
++extern "C" long long SymbianRuntimeSteadyClockNanoseconds();
++#endif
++
+ #if __has_include(<unistd.h>)
+ #  include <unistd.h> // _POSIX_TIMERS
+ #endif
+@@ -170,7 +174,13 @@ system_clock::time_point system_clock::from_time_t(time_t t) noexcept { return s
+ 
+ #if _LIBCPP_HAS_MONOTONIC_CLOCK
+ 
+-#  if defined(__APPLE__)
++#  if defined(__SYMBIAN32__)
++
++static steady_clock::time_point __libcpp_steady_clock_now() {
++  return steady_clock::time_point(nanoseconds(SymbianRuntimeSteadyClockNanoseconds()));
++}
++
++#  elif defined(__APPLE__)
+ 
+ // On Apple platforms, only CLOCK_UPTIME_RAW, CLOCK_MONOTONIC_RAW or
+ // mach_absolute_time are able to time functions in the nanosecond range.

@@ -32,6 +32,10 @@
       "source": "kernelhwsrv/kernel/eka/include/e32def.h",
       "sha256": "c2802502092c4efa31786e4d000821d5b8b6168fb9fdf3e9e08bcbf452687bb8"
     },
+    "e32atomics.h": {
+      "source": "kernelhwsrv/kernel/eka/include/e32atomics.h",
+      "sha256": "0bdb9c83eb813395107a497434d1ca26ea861310367b5c3f682a940e1fbe0f23"
+    },
     "e32def_private.h": {
       "source": "kernelhwsrv/kernel/eka/include/e32def_private.h",
       "sha256": "6ec17ff6ed1003beb79139b4703f665609ab1efec29dab94c2c9caf11cad067a"

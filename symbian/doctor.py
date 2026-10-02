@@ -15,11 +15,12 @@ def doctor() -> dict:
         "schema": "symbian.doctor/v1",
         "host": {"system": platform.system(), "machine": platform.machine()},
         "tools": tools,
-        "native_analysis": importlib.util.find_spec("symbian._native")
-        is not None,
+        "native_analysis": (
+            importlib.util.find_spec("symbian._native") is not None
+        ),
         "target": {
-            "model": "Nokia 808 PureView",
-            "intended_rm": "RM-807",
+            "application_abi": "ARM EABI / EKA2 E32-V",
+            "firmware_selection": "symbian emu resolve",
             "device_identity_verified": False,
             "firmware_inventory_verified": False,
             "sdk_verified": False,
@@ -27,9 +28,12 @@ def doctor() -> dict:
             "symbian_loader_verified": False,
         },
         "next_steps": [
-            "Record device identity and firmware using recovery/README.md",
+            "Import separately supplied ROM/Z using symbian firmware import",
             "Preserve firmware/ROM/Z artifacts with an offline reference copy",
             "Build examples/e32_probe to test Clang/LLD and E32 conversion",
-            "Validate the executable in a matched Belle emulator runtime",
+            (
+                "Validate the executable against the selected device's"
+                " ABI/services"
+            ),
         ],
     }

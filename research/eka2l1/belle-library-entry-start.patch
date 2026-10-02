@@ -1,0 +1,16 @@
+diff --git a/src/emu/kernel/src/svc.cpp b/src/emu/kernel/src/svc.cpp
+--- a/src/emu/kernel/src/svc.cpp
++++ b/src/emu/kernel/src/svc.cpp
+@@ -6112,9 +6112,10 @@
+             // after ExecuteInSupervisorMode and one missing slot between
+             // ThreadStackInfo and CondVarCreate. The two intervening private
+             // operations have no independent semantic mapping yet.
+-            // The two newer loader extensions lack that independent mapping.
++            // Belle calls the v10 library-entry-start hook at 0x10D while
++            // walking StaticCallList. Keep the other loader extension gated.
+             if (old_number == 0xD6 || old_number == 0xD7
+-                || old_number == 0x10C || old_number == 0x10D) {
++                || old_number == 0x10D) {
+                 continue;
+             }
+             const auto number = old_number <= 0x10 || old_number >= 0x800000

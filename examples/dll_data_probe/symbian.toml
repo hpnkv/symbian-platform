@@ -1,0 +1,6 @@
+[project]
+name = "probe"
+kind = "e32-dll-experiment"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000810
+export_definition = "exports.def"

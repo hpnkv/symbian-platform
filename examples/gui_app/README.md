@@ -1,7 +1,14 @@
 # Native Window Server GUI experiment
 
 Build a touch counter with original public Symbian headers, modern Clang/LLD,
-and the native E32 converter. See the complete root
+the installed SDK's `Symbian::Stackless` runtime and the native E32 converter.
+Each increment schedules a 300-ms timer Future that lights a small marker;
+Reset cancels pending work. A narrow `async_bridge.cc` keeps the original
+Window Server headers out of modern C++ code, while one event-thread loop
+owns Window Server and timer request completion. The selected ROM needs
+`libpthread.dll`. Select an installed SDK through the active global SDK,
+`SYMBIAN_SDK_MANIFEST`, or an ignored local `sdk-location.json` containing
+`{"sdk": "/path/to/sdk"}`. See the complete root
 [WALKTHROUGH.md](../../WALKTHROUGH.md) for pinned source acquisition, SDK
 preparation, build/test commands, emulator launch, editor setup and debugging.
 

@@ -1,15 +1,80 @@
 # CLion for the host platform and ARM GUI
 
-The root CMake project builds macOS utilities and tests. The GUI uses a separate
-CMake project with an ARM target, a source SDK and import proxies. Opening only
-the root therefore leaves `examples/gui_app/app.cc` outside every active target.
-The SDK types cannot be resolved using the root's compilation database.
+For generated applications, visible SDK installation, relative project settings
+and IDE Run/Debug integration, see [Standalone projects](PROJECTS.md).
 
-| Code being edited | CMake context / existing compilation database |
+The root CMake project now includes the prepared ARM GUI alongside native
+utilities and tests. Its compilation database supplies the real ARM triple,
+macros and SDK headers for `examples/gui_app/app.cc`, while tooling sources keep
+native flags. The standalone GUI project remains available.
+The root GUI now defaults to ARMv6 and its CMake file API records an explicit
+`--target=armv6-none-eabi` flag. This lets CLion probe the guest compiler with
+the correct target while probing native tooling with the Mac host target.
+Set `SYMBIAN_GUI_TARGET_ARCH=armv5t` in a user preset for an older guest;
+reload CMake so both the editor model and published E32 use that choice.
+
+The root project also has dedicated **guest probe** CMake profiles. The shared
+`guest-probes-armv6` and `guest-probes-armv5t` presets select the real ARM
+toolchain; ignored local `clion-guest-probes-*` presets select this Mac's LLVM,
+LLD and Ninja explicitly. The ARMv6 IDE profile was enabled alongside the
+existing host Debug profile without changing its other settings; ARMv5T is
+available but disabled until selected. Reload CMake in the IDE after opening
+the new presets. The `symbian_probe_index` aggregate builds per-project object
+targets for ABI, pinned Abseil allocator/Status, C++20, C++20 modules,
+DLL/data/lifecycle, E32, import, pointer and runtime probes. The Abseil
+objects use the selected SDK's real `Symbian::AbseilStatusOr` headers and
+streams profile. Each source belongs to a real target with the ARM
+compiler triple, its local headers and special exception/locale settings
+where needed. The C++20 module uses CMake's module scanner. The local presets
+also include the Mbed TLS DLL probe using `MBEDTLS_SOURCE` and
+`SYMBIAN_SDK_PREFIX`; a checkout without that external adaptation omits only
+that target. The C++20 module requires upstream Clang with `clang-scan-deps`;
+CMake diagnoses a host compiler without it during configure. Both local ARM
+profiles compiled the original 48 probe
+`.cc`/`.c`/`.cppm`/`.S` files; the later two Abseil objects separately
+configured and compiled on both ARM profiles. The later ARM/Thumb fiber-context
+probe is also an ordinary runtime index source. Both compilation databases
+contain the new probe sources as well as the original 48
+with the matching target triple. The index creates no runnable ARM ELF in the
+host IDE project. It does not publish or execute an E32 image; execution
+acceptance remains in the probe integration tests and standalone projects.
+
+| Target in the root project | Purpose |
 | --- | --- |
-| Host native libraries and bindings | Repository root / `build/debug/compile_commands.json` |
-| Guest GUI | `examples/gui_app` / `.symbian/gui-app/compile_commands.json` |
-| Research Qt control adapter | Injected EKA2L1 project / `build/eka2l1/compile_commands.json` |
+| `gui_app` | Compile/link the ARM ELF for source development |
+| `gui_app_e32` | Independently build twice and publish the matching ELF/E32 |
+| `gui_app_run` | Native executable that starts the owned emulator supervisor |
+
+Reload the root CMake project after these changes. Select **GUI Run** (or the
+`gui_app_run` CMake Application target) and press Run. The launcher replaces
+itself with the Python supervisor, which publishes the app, copies the stopped
+golden instance, opens EKA2L1 and reaps its owned child on Stop/exit. Building
+`gui_app_run` only builds the launcher; pressing Run executes it. The ARM
+`gui_app.elf` cannot be launched directly by the host.
+
+The saved root **GUI Run** explicitly sets Executable to
+`/Users/helena/dev/symbian/build/debug/gui_app_run`; Program arguments is empty.
+The launcher target writes that stable path even in the IDE's existing Debug
+profile. If an already-open configuration dialog still says **Not selected**,
+close/reopen the dialog after reloading the project, or select that executable
+path in its Executable field. No firmware/emulator arguments belong there.
+
+Root Run and Remote Debug configurations are installed in ignored `.idea`
+files. Root **GUI Debug** uses the **Symbian GUI GDB** debug profile; select it
+before guest debugging and restore the host debugger profile for native tests.
+The generator preserves the root's existing current debugger selection because
+this IDE version selects debug profiles at project scope.
+
+| Source | Compilation database |
+| --- | --- |
+| Host tooling and root GUI | `build/debug/compile_commands.json` |
+| Root platform probes (ARMv6/ARMv5T) | `build/guest-probes-armv6/compile_commands.json` / `build/guest-probes-armv5t/compile_commands.json` |
+| Standalone guest project | `.symbian/gui-app/compile_commands.json` |
+| Research Qt adapter | `build/eka2l1/compile_commands.json` |
+
+The root target graph/ARM and native builds and actual emulator launch are
+verified from the terminal. The IDE UI's newly reloaded root Run/debug frontend
+has not been driven through authenticated desktop automation.
 
 For the research adapter, open that existing database as a project or configure
 the upstream CMake project with the hook/options from WALKTHROUGH.md section 6.
@@ -46,8 +111,7 @@ source and zero unknown sources. The IDE also invokes the `gui_app` build.
 Opening the changed local preset through the normal launcher triggered the
 reload. This confirms target membership in the actual IDE, beyond terminal
 configure/build and the zero-error clangd check. Select **clion-arm** in the
-GUI project window when editing the app; the repository window has a separate
-host context.
+GUI project window when editing the app; the repository window now has a combined host/guest target graph.
 
 The remote debugger frontend and detailed editor inspections remain untested.
 The IDE control endpoint and desktop automation were unavailable for

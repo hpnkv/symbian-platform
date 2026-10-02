@@ -1,0 +1,18 @@
+diff --git a/src/emu/cpu/src/dyncom/arm_dyncom_interpreter.cpp b/src/emu/cpu/src/dyncom/arm_dyncom_interpreter.cpp
+index db1efa1..0a752eb 100644
+--- a/src/emu/cpu/src/dyncom/arm_dyncom_interpreter.cpp
++++ b/src/emu/cpu/src/dyncom/arm_dyncom_interpreter.cpp
+@@ -5043,6 +5043,13 @@ SWI_INST : {
+         }
+     }
+ 
++    // An SVC may kill the current process and unmap its code before this
++    // instruction returns. Respect the kernel's stop request before fetching
++    // from the now-dead address space.
++    if (cpu->NumInstrsToExecute == 0) {
++        goto END;
++    }
++
+     FETCH_INST;
+     GOTO_NEXT_INST;
+ }

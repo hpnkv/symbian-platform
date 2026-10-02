@@ -67,12 +67,36 @@ absl::StatusOr<Elf32Header> InspectElf32(std::string_view bytes) {
   if (!status.ok()) {
     return status;
   }
+  ArmAttributes arm;
+  if (Read16(bytes, 18) == 40) {
+    bool found_attributes = false;
+    for (uint16_t index = 0; index < section_count; ++index) {
+      const size_t p =
+          section_offset + static_cast<size_t>(index) * Read16(bytes, 46);
+      if (Read32(bytes, p + 4) != 0x70000003) {
+        continue;
+      }
+      const uint32_t offset = Read32(bytes, p + 16),
+                     size = Read32(bytes, p + 20);
+      if (found_attributes || !internal::Within(bytes.size(), offset, size)) {
+        return absl::DataLossError(
+            "Duplicate/out-of-bounds ARM attributes section");
+      }
+      found_attributes = true;
+      auto parsed = InspectArmAttributes(bytes.substr(offset, size));
+      if (!parsed.ok()) {
+        return parsed.status();
+      }
+      arm = *parsed;
+    }
+  }
   return Elf32Header{.type = Read16(bytes, 16),
                      .machine = Read16(bytes, 18),
                      .entry = Read32(bytes, 24),
                      .flags = Read32(bytes, 36),
                      .program_count = program_count,
-                     .section_count = section_count};
+                     .section_count = section_count,
+                     .arm = arm};
 }
 
 }  // namespace symbian::analysis

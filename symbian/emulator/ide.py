@@ -57,8 +57,20 @@ def configure(root: Path, gdb: Path, python: Path | None = None) -> dict:
     )
     wrapper.chmod(0o755)
     profile_id = str(uuid.uuid5(uuid.NAMESPACE_URL, str(root) + "/gui-gdb"))
-    for project in (root / "examples/gui_app",):
+    for project in (root, root / "examples/gui_app"):
         idea = project / ".idea"
+        profile = "clion-arm"
+        if project == root:
+            profile = "debug"
+            workspace = idea / "workspace.xml"
+            if workspace.exists():
+                state = ET.parse(workspace).getroot()
+                enabled = state.findall(
+                    "./component[@name='CMakeSettings']/configurations/"
+                    "configuration[@ENABLED='true']"
+                )
+                if enabled:
+                    profile = enabled[0].get("PROFILE_NAME", profile)
         configurations = idea / "runConfigurations"
         container = ET.Element(
             "component", name="ProjectRunConfigurationManager"
@@ -70,9 +82,9 @@ def configure(root: Path, gdb: Path, python: Path | None = None) -> dict:
             name="GUI Run",
             type="CMakeRunConfiguration",
             factoryName="Application",
-            PROJECT_NAME="gui_app",
-            TARGET_NAME="gui_app",
-            CONFIG_NAME="clion-arm",
+            PROJECT_NAME="symbian_platform" if project == root else "gui_app",
+            TARGET_NAME="gui_app_run" if project == root else "gui_app",
+            CONFIG_NAME=profile,
             RUN_PATH=str(python),
             PROGRAM_PARAMS="-m symbian.emulator.launch --root "
             + shlex.quote(str(root)),
@@ -80,6 +92,12 @@ def configure(root: Path, gdb: Path, python: Path | None = None) -> dict:
             PASS_PARENT_ENVS_2="true",
             EMULATE_TERMINAL="false",
         )
+        if project == root:
+            # CLion keeps an empty executable on a formerly custom target.
+            # Use the tested host artifact explicitly rather than depending
+            # on its cached target-kind/executable inference.
+            run.set("RUN_PATH", str(root / "build/debug/gui_app_run"))
+            run.set("PROGRAM_PARAMS", "")
         envs = ET.SubElement(run, "envs")
         ET.SubElement(
             envs,
@@ -175,5 +193,5 @@ def configure(root: Path, gdb: Path, python: Path | None = None) -> dict:
     return {
         "wrapper": str(wrapper),
         "debug_profile": "Symbian GUI GDB",
-        "projects": [str(root / "examples/gui_app")],
+        "projects": [str(root), str(root / "examples/gui_app")],
     }

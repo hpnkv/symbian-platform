@@ -50,10 +50,11 @@ The identities of the new `0x11/0x12` calls and the intervening private
 private operation was removed.
 
 The GPL `symbian101-experimental.patch` builds a separate map from existing
-handlers (170 registrations) and retains the original `svc_register_funcs_v10`. It excludes the
-unverified loader extensions. The GUI still logs unimplemented `0x10D` during
-DLL initialization, so reaching application code does not prove complete DLL
-initialization. Genuine firmware SVC `0xFF` can also conflict with EKA2L1's
+handlers and retains the original `svc_register_funcs_v10`. The later ordered
+`belle-library-entry-start.patch` maps the observed 0x10D hook. A bounded SDK
+C++ DLL constructor now runs through the real process-attach list on both
+backends/architectures; detach, TLS and complete DLL initialization remain
+unverified. Genuine firmware SVC `0xFF` can also conflict with EKA2L1's
 existing HLE trampoline interception; that collision is unresolved.
 
 ## Explicit selection and limits
@@ -150,6 +151,7 @@ The guarded profile now has separate end-to-end evidence on Dynarmic and Dyncom:
 real screen-texture captures, two increment taps, an outside-control tap, reset
 and normal SDK exit with reason zero. The frontend exits zero and retains a
 native kernel process-exit report. This advances the earlier drawing-call-only
-checkpoint; it does not resolve full DLL initialization, SVC 0x10D/0xFF, complete
+checkpoint; later DLL attach tests resolve the observed 0x10D mapping, but not
+SVC 0xFF, full DLL lifetime, complete
 unwinding or general firmware compatibility. Replay and bounds are in
 [EMULATOR_CONTROL.md](EMULATOR_CONTROL.md).

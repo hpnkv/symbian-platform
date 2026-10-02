@@ -2,18 +2,20 @@
 
 import json
 import re
-from dataclasses import dataclass
 from pathlib import Path
+
+from pydantic import BaseModel, ConfigDict
 
 from symbian.process import run
 from symbian.status import Code, StatusError
 
-TOOLCHAIN = Path(__file__).parent / "cmake/armv5t-pic.cmake"
+TOOLCHAIN = Path(__file__).parent / "cmake/symbian-arm.cmake"
 
 
-@dataclass(frozen=True)
-class Target:
+class Target(BaseModel):
     """Configured executable and the inputs declared by its CMake graph."""
+
+    model_config = ConfigDict(frozen=True)
 
     artifact: Path
     inputs: frozenset[Path]
@@ -63,14 +65,17 @@ def _target(tree: Path, project: Path, name: str) -> Target:
             (project / filename).resolve()
             for filename in ("symbian.toml", "CMakePresets.json")
         )
+        for filename in ("sdk-location.json", "symbian-project.json"):
+            if (project / filename).is_file():
+                inputs.add((project / filename).resolve())
         user_presets = project / "CMakeUserPresets.json"
         if user_presets.is_file():
             inputs.add(user_presets.resolve())
         return Target(
-            artifact,
-            frozenset(inputs),
-            target["compileGroups"],
-            target["link"]["commandFragments"],
+            artifact=artifact,
+            inputs=frozenset(inputs),
+            compile_groups=target["compileGroups"],
+            link_fragments=target["link"]["commandFragments"],
         )
     except (
         OSError,
@@ -96,15 +101,62 @@ def configure(
     compiler: str,
     linker: str,
     import_proxies: tuple[Path, ...] = (),
+    architecture: str = "armv6",
 ) -> Target:
     """Configures a Ninja tree and reads CMake's declared executable graph."""
     query = tree / ".cmake/api/v1/query/client-symbian-platform"
     query.mkdir(parents=True, exist_ok=True)
     for kind in ("codemodel-v2", "cmakeFiles-v1"):
         (query / kind).touch()
+    fresh = []
+    cache = tree / "CMakeCache.txt"
+    ar = Path(compiler).parent / "llvm-ar"
+    ranlib = Path(compiler).parent / "llvm-ranlib"
+    if ar.is_file() != ranlib.is_file():
+        raise StatusError(
+            Code.FAILED_PRECONDITION,
+            "SDK must supply both llvm-ar and llvm-ranlib for ARM archives",
+        )
+    archive_tools = (
+        {"ar": str(ar), "ranlib": str(ranlib)} if ar.is_file() else {}
+    )
+    identity = json.dumps(
+        {
+            "architecture": architecture,
+            "compiler": compiler,
+            "compiler_version": run([compiler, "--version"], cwd=project),
+            "linker": linker,
+            "linker_version": run([linker, "--version"], cwd=project),
+            **archive_tools,
+            **{
+                f"{name}_version": run([path, "--version"], cwd=project)
+                for name, path in archive_tools.items()
+            },
+        },
+        sort_keys=True,
+    )
+    identity_path = tree / "symbian-toolchain.json"
+    if cache.is_file():
+        previous = re.search(
+            r"^CMAKE_CXX_COMPILER:[^=]+=(.*)$",
+            cache.read_text(encoding="utf-8"),
+            re.MULTILINE,
+        )
+        if (
+            (previous and previous[1] != compiler)
+            or not identity_path.is_file()
+            or identity_path.read_text() != identity
+        ):
+            # CMake's implicit compiler-change restart drops supplied cache
+            # variables, including the SDK/preset values. Start this owned
+            # generated tree freshly with the full command instead. A stable
+            # driver path can also select a new compiler after an Xcode or
+            # SDK update; discard objects produced by the previous version.
+            fresh = ["--fresh"]
     run(
         [
             cmake,
+            *fresh,
             "--preset",
             preset,
             "-S",
@@ -112,8 +164,17 @@ def configure(
             "-B",
             str(tree),
             f"-DCMAKE_TOOLCHAIN_FILE={TOOLCHAIN}",
+            f"-DSYMBIAN_TARGET_ARCH={architecture}",
             f"-DCMAKE_CXX_COMPILER={compiler}",
             f"-DCMAKE_LINKER={linker}",
+            *(
+                [
+                    f"-DCMAKE_AR={archive_tools['ar']}",
+                    f"-DCMAKE_RANLIB={archive_tools['ranlib']}",
+                ]
+                if archive_tools
+                else []
+            ),
             f"-DCMAKE_MAKE_PROGRAM={ninja}",
             "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
             "-DSYMBIAN_IMPORT_PROXIES="
@@ -121,6 +182,7 @@ def configure(
         ],
         cwd=project,
     )
+    identity_path.write_text(identity)
     return _target(tree, project, name)
 
 

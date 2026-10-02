@@ -1,0 +1,21 @@
+cmake_minimum_required(VERSION 3.28)
+project(symbian_host_concurrency LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(ABSL_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(ABSL_PROPAGATE_CXX_STD ON CACHE BOOL "" FORCE)
+get_filename_component(workspace "${CMAKE_CURRENT_LIST_DIR}/../../../.." ABSOLUTE)
+if(NOT EXISTS "${workspace}/research/upstream/abseil-cpp/CMakeLists.txt")
+  message(FATAL_ERROR "Pinned Abseil source is required for the host archive")
+endif()
+add_subdirectory("${workspace}/research/upstream/abseil-cpp"
+  "${CMAKE_CURRENT_BINARY_DIR}/abseil")
+function(symbian_native_library target)
+  target_compile_features(${target} PUBLIC cxx_std_20)
+  target_compile_options(${target} PRIVATE
+    $<$<CXX_COMPILER_ID:AppleClang,Clang,GNU>:-fno-exceptions;-Wall;-Wextra;-Wconversion;-Wshadow>)
+endfunction()
+add_subdirectory("${workspace}/cpp/symbian/concurrency"
+  "${CMAKE_CURRENT_BINARY_DIR}/concurrency")

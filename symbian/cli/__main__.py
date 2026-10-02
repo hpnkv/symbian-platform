@@ -1,23 +1,258 @@
 """Entry point for read-only research and experimental host builds."""
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
-from symbian import device, packaging, preservation, toolchain
-from symbian.analysis import inspect_elf
+from symbian.cli.output import render
 from symbian.doctor import doctor
-from symbian.e32 import inspect_image
-from symbian.status import Code, StatusError
+from symbian.emulator.configuration import (
+    add_options,
+    option_arguments,
+    options,
+)
+
+_COMMAND_DESCRIPTIONS = {
+    (): "Build software, inspect inputs, and manage devices and emulators.",
+    ("doctor",): "Check host tools and verified target capabilities.",
+    ("init",): "Create a standalone application and its initial build.",
+    ("app",): "Build, run, or configure a standalone application.",
+    (
+        "app",
+        "build",
+    ): "Build the project with its selected SDK and verify reproducibility.",
+    (
+        "app",
+        "run",
+    ): "Build and run the application in a selected emulator instance.",
+    (
+        "app",
+        "configure",
+    ): "Regenerate SDK and IDE configuration for an existing project.",
+    ("sdk",): "Install a visible SDK directory that applications can select.",
+    (
+        "sdk",
+        "install",
+    ): "Copy an installed SDK or export one from a prepared workspace.",
+    (
+        "firmware",
+    ): "Import, inspect, and transfer ROM and drive-Z configurations.",
+    (
+        "firmware",
+        "list",
+    ): "List shared firmware imports available from the configured store.",
+    (
+        "firmware",
+        "inspect",
+    ): "Inspect one imported firmware identity and device profile.",
+    (
+        "firmware",
+        "probe",
+    ): "Examine an input archive without importing or changing it.",
+    (
+        "firmware",
+        "import",
+    ): "Import a ROM/Z source into the independent content store.",
+    (
+        "firmware",
+        "export",
+    ): "Make a portable bundle of one imported firmware identity.",
+    ("emu",): "Resolve emulator settings and inspect a running instance.",
+    (
+        "emu",
+        "resolve",
+    ): "Show effective global, SDK, project, and command overrides.",
+    ("emu", "configure"): "Save emulator settings at one configuration level.",
+    ("emu", "status"): "Inspect a running emulator through its control socket.",
+    ("device",): "Discover USB handsets and stage application packages safely.",
+    (
+        "device",
+        "list",
+    ): "List candidate Symbian handsets associated with the host.",
+    ("device", "info"): "Inspect USB and mounted-volume state for one handset.",
+    (
+        "device",
+        "install",
+    ): "Build and stage a SIS for a human-approved on-phone install.",
+    (
+        "device",
+        "policy",
+    ): "Explain whether a device operation has an authorized executor.",
+    (
+        "inspect",
+    ): "Read ELF, E32, SIS, or import-proxy metadata from a local file.",
+    ("build",): "Build an ARM/E32 executable experiment.",
+    ("package",): "Package an application executable and resources into a SIS.",
+    ("preserve",): "Create or verify digested copies of research inputs.",
+    ("toolchain",): "Build and validate target-format experiments.",
+}
+
+_OPTION_DESCRIPTIONS = {
+    "project": "Application project directory (default: current directory).",
+    "sdk": "Installed SDK directory or its sdk.json path.",
+    "root": "Workspace root for resolving relative configuration paths.",
+    "workspace": "Prepared source workspace for a fresh SDK export.",
+    "output": "Destination for generated artifacts or verification reports.",
+    "compiler": "ARM-capable Clang C++ compiler executable.",
+    "linker": "LLD linker executable.",
+    "architecture": "Target instruction-set profile; ARMv6 is the default.",
+    "device": "USB selector shown by symbian device list.",
+    "volume": "Mounted disk identifier shown by symbian device info.",
+    "package": "Input SIS package file.",
+    "endpoint": "Control socket of the owned emulator instance.",
+    "timeout": "Maximum wait time in seconds.",
+    "format": "Input artifact format to inspect.",
+    "non_interactive": "Use supplied options and defaults without prompting.",
+    "name": "Name for the created application or imported item.",
+    "ide": "Generate IntelliJ/CLion project integration, or omit it.",
+    "uid3": "Application or DLL UID3, written in decimal or 0x notation.",
+    "scope": "Configuration level to update.",
+    "unset": "Setting name to remove; may be repeated.",
+    "clear_firmware": "Remove the saved firmware selection at this level.",
+    "artifact": "Local binary artifact to read or verify.",
+    "source": "Input archive, ROM image, or source directory.",
+    "destination": "Directory or file to create.",
+    "reference": "Firmware alias or sha256: content identity.",
+    "operation": "Device operation to inspect without executing it.",
+    "definition": "Frozen Symbian DEF export definition.",
+    "target_dll": "Target DLL name used by the import proxy.",
+    "symbol": "Selected exported symbol; may be repeated.",
+    "executable": "Associated E32 executable for independent validation.",
+    "oracles_build": "Built EKA2L1 validation and execution tools.",
+    "provenance": "Short description stored with the preservation manifest.",
+    "manifest_sha256": "Expected manifest digest for independent verification.",
+    "read_only": "Report without making changes.",
+    "store": "Shared content store for imported ROM and drive-Z material.",
+    "emulator": "EKA2L1 frontend executable to use for this command.",
+    "importer": "Native EKA2L1 firmware import helper executable.",
+    "backend": "Emulator CPU backend for this run.",
+    "language": "Emulated system language number.",
+    "profile": "Compatibility profile for the selected emulator firmware.",
+    "headers": "Prepared platform header directory for symbol validation.",
+    "elf": "Linked ARM ELF input image.",
+    "import_proxy": "Selected import-proxy library; may be repeated.",
+    "sources_root": "Pinned original Symbian source checkout.",
+    "gdb": "ARM GDB executable for the IDE's remote debug profile.",
+    "saved": "Read the retained exit report from a stopped emulator session.",
+    "x": "Horizontal pointer coordinate in display pixels.",
+    "y": "Vertical pointer coordinate in display pixels.",
+    "action": "Pointer button transition to send.",
+    "rom": "Unpacked ROM image input.",
+    "vpl": "Firmware VPL manifest input.",
+    "instance": "Existing EKA2L1 instance directory to import.",
+    "bundle": "Portable firmware bundle to import.",
+    "rpkg": "RPKG companion for a ROM image.",
+    "z_drive": "Unpacked drive-Z companion for a ROM image.",
+    "variant": "ROM variant index; -1 selects the importer default.",
+    "replace_alias": "Move an existing local alias to the imported identity.",
+    "archive": "Preserved archive directory to create or verify.",
+}
+
+
+def _add_output_format(
+    parser: argparse.ArgumentParser, path: tuple[str, ...] = ()
+) -> None:
+    """Adds presentation and descriptive help at every command level."""
+    parser.formatter_class = (
+        lambda prog: argparse.ArgumentDefaultsHelpFormatter(
+            prog, max_help_position=32, width=96
+        )
+    )
+    parser.description = _COMMAND_DESCRIPTIONS.get(
+        path,
+        parser.description
+        or "Inspect or change the selected Symbian workflow.",
+    )
+    parser.epilog = (
+        "Use --output-format=json for stable machine-readable output."
+    )
+    parser.add_argument(
+        "--output-format",
+        choices=("human", "json"),
+        default="human" if not path else argparse.SUPPRESS,
+        help="Display a readable summary (default) or canonical JSON",
+    )
+    for action in parser._actions:
+        if action.help is None and action.dest in _OPTION_DESCRIPTIONS:
+            action.help = _OPTION_DESCRIPTIONS[action.dest]
+        if (
+            path == ("toolchain", "prepare-gui-sdk")
+            and action.dest == "profile"
+        ):
+            action.help = "Explicit source-input selection and digest profile."
+        if isinstance(action, argparse._SubParsersAction):
+            listed = {choice.dest: choice for choice in action._choices_actions}
+            action._choices_actions[:] = [
+                listed.get(command)
+                or action._ChoicesPseudoAction(
+                    command,
+                    [],
+                    help=_COMMAND_DESCRIPTIONS.get(
+                        path + (command,),
+                        "Inspect or change this Symbian workflow.",
+                    ),
+                )
+                for command in action.choices
+            ]
+            for choice in action._choices_actions:
+                if not choice.help:
+                    choice.help = _COMMAND_DESCRIPTIONS.get(
+                        path + (choice.dest,),
+                        "Inspect or change this Symbian workflow.",
+                    )
+            for command, child in action.choices.items():
+                _add_output_format(child, path + (command,))
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Native Symbian research tools"
-    )
+    parser = argparse.ArgumentParser(prog="symbian")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("doctor", help="Report host tools and target readiness")
+    init = commands.add_parser(
+        "init", help="Create a complete hello-time app project"
+    )
+    init.add_argument("destination", type=Path)
+    init.add_argument("--sdk", type=Path, default=None)
+    init.add_argument("--name")
+    init.add_argument("--ide", choices=("intellij", "none"))
+    init.add_argument("--architecture", choices=("armv6", "armv5t"))
+    init.add_argument("--uid3", type=lambda value: int(value, 0))
+    init.add_argument("--non-interactive", action="store_true")
+    init.add_argument(
+        "--portable-runtime",
+        action="store_true",
+        help="Use the GUI/heap profile without the libpthread-backed task APIs",
+    )
+    add_options(init)
+    init.add_argument(
+        "--no-build", action="store_true", help="Skip initial build"
+    )
+    app = commands.add_parser("app").add_subparsers(
+        dest="app_command", required=True
+    )
+    for action in ("build", "run"):
+        operation = app.add_parser(action)
+        operation.add_argument("--project", type=Path, default=Path.cwd())
+        if action == "run":
+            add_options(operation)
+    export = commands.add_parser(
+        "prepare-app-sdk", help="Export a local target SDK"
+    )
+    export.add_argument("--workspace", type=Path, default=Path.cwd())
+    export.add_argument("--output", type=Path, default=Path(".symbian/app-sdk"))
+    sdk_commands = commands.add_parser("sdk").add_subparsers(
+        dest="sdk_command", required=True
+    )
+    install = sdk_commands.add_parser(
+        "install", help="Install an observable SDK directory"
+    )
+    install.add_argument("destination", type=Path)
+    install.add_argument("--workspace", type=Path)
+    configure = app.add_parser(
+        "configure", help="Refresh SDK and CLion integration"
+    )
+    configure.add_argument("--project", type=Path, default=Path.cwd())
+    configure.add_argument("--sdk", type=Path)
     compiler_commands = commands.add_parser("toolchain").add_subparsers(
         dest="toolchain_command", required=True
     )
@@ -26,6 +261,9 @@ def _parser() -> argparse.ArgumentParser:
     )
     probe.add_argument("--output", type=Path, default=Path(".symbian/probe"))
     probe.add_argument("--compiler", default="clang++")
+    probe.add_argument(
+        "--architecture", choices=("armv6", "armv5t"), default="armv6"
+    )
     verify_probe = compiler_commands.add_parser(
         "verify-probe", help="Run independent E32, CPU and kernel checks"
     )
@@ -71,10 +309,22 @@ def _parser() -> argparse.ArgumentParser:
     proxy.add_argument("--compiler", default="clang++")
     proxy.add_argument("--linker", default="ld.lld")
     proxy.add_argument("--headers", type=Path)
+    dll_convert = compiler_commands.add_parser(
+        "convert-dll", help="Convert a linked ARM ELF and frozen DEF to E32 DLL"
+    )
+    dll_convert.add_argument("elf", type=Path)
+    dll_convert.add_argument("--definition", type=Path, required=True)
+    dll_convert.add_argument(
+        "--uid3", type=lambda value: int(value, 0), required=True
+    )
+    dll_convert.add_argument(
+        "--import-proxy", type=Path, action="append", default=[]
+    )
+    dll_convert.add_argument("--output", type=Path, required=True)
     gui_sdk = compiler_commands.add_parser(
         "prepare-gui-sdk", help="Stage the GUI example's pinned source SDK"
     )
-    gui_sdk.add_argument("--project", type=Path, required=True)
+    gui_sdk.add_argument("--profile", type=Path, required=True)
     gui_sdk.add_argument("--sources-root", type=Path, required=True)
     gui_sdk.add_argument(
         "--output", type=Path, default=Path(".symbian/gui-sdk")
@@ -99,6 +349,55 @@ def _parser() -> argparse.ArgumentParser:
     emulator_commands = commands.add_parser("emu").add_subparsers(
         dest="emu_command", required=True
     )
+    for action in ("resolve", "configure"):
+        command = emulator_commands.add_parser(action)
+        command.add_argument("--project", type=Path)
+        command.add_argument("--sdk", type=Path)
+        command.add_argument("--root", type=Path, default=Path.cwd())
+        add_options(command)
+        if action == "configure":
+            command.add_argument(
+                "--scope", choices=("global", "sdk", "project"), required=True
+            )
+            command.add_argument("--unset", action="append", default=[])
+            command.add_argument("--clear-firmware", action="store_true")
+    firmware_commands = commands.add_parser(
+        "firmware", help="Import and select shared ROM / drive Z baselines"
+    ).add_subparsers(dest="firmware_command", required=True)
+    for action in ("import", "list", "inspect", "export", "probe"):
+        command = firmware_commands.add_parser(action)
+        command.add_argument("--project", type=Path)
+        command.add_argument("--sdk", type=Path)
+        command.add_argument("--root", type=Path, default=Path.cwd())
+        add_options(command, firmware=False)
+        if action == "probe":
+            command.add_argument("source", type=Path)
+        elif action == "import":
+            command.add_argument(
+                "source",
+                nargs="?",
+                type=Path,
+                help=".7z/.zip ROM/RPKG or ROM/Z archive",
+            )
+            group = command.add_mutually_exclusive_group()
+            for form in ("rom", "vpl", "instance", "bundle"):
+                group.add_argument(f"--{form}", type=Path)
+            companion = command.add_mutually_exclusive_group()
+            companion.add_argument("--rpkg", type=Path)
+            companion.add_argument("--z-drive", type=Path)
+            command.add_argument("--variant", type=int, default=-1)
+            command.add_argument("--name")
+            command.add_argument("--replace-alias", action="store_true")
+            command.add_argument(
+                "--use",
+                choices=("global", "sdk", "project"),
+                help="Save the imported exact content ID at this scope",
+            )
+            command.add_argument("--timeout", type=float, default=300)
+        elif action in ("inspect", "export"):
+            command.add_argument("reference", help="Alias or sha256:ID")
+            if action == "export":
+                command.add_argument("destination", type=Path)
     ide = emulator_commands.add_parser(
         "configure-ide", help="Install local GUI Run and ARM Debug profiles"
     )
@@ -123,6 +422,7 @@ def _parser() -> argparse.ArgumentParser:
     build.add_argument("--output", type=Path, default=Path(".symbian/build"))
     build.add_argument("--compiler", default="clang++")
     build.add_argument("--linker", default="ld.lld")
+    build.add_argument("--architecture", choices=("armv6", "armv5t"))
     package = commands.add_parser(
         "package", help="Build an unsigned SISX experiment"
     )
@@ -159,12 +459,270 @@ def _parser() -> argparse.ArgumentParser:
         "policy", help="Describe operation authority"
     )
     policy.add_argument("operation")
+    device_commands.add_parser(
+        "list", help="List connected USB Symbian device candidates"
+    )
+    info = device_commands.add_parser(
+        "info", help="Inspect USB descriptors and mounted storage"
+    )
+    info.add_argument("--device")
+    install_app = device_commands.add_parser(
+        "install",
+        help="Build, package and stage a SIS for on-phone installation",
+    )
+    install_app.add_argument("--project", type=Path, default=Path.cwd())
+    install_app.add_argument("--device")
+    install_app.add_argument(
+        "--volume", help="Disk identifier from device info"
+    )
+    install_app.add_argument("--package", type=Path, help="Use a prepared SIS")
+    install_app.add_argument("--compiler", default="clang++")
+    install_app.add_argument("--linker", default="ld.lld")
+    _add_output_format(parser)
     return parser
 
 
 def _execute(args: argparse.Namespace) -> dict:
+    from symbian import device, packaging, preservation, toolchain
+    from symbian.analysis import inspect_elf
+    from symbian.e32 import inspect_image
+
     if args.command == "doctor":
         return doctor()
+    if args.command == "firmware":
+        from symbian.emulator.configuration import (
+            config_path,
+            configure,
+            resolve,
+        )
+        from symbian.emulator.firmware import (
+            export_firmware,
+            import_firmware,
+            list_firmware,
+            locate,
+            validate_manifest,
+        )
+        from symbian.status import Code, StatusError
+
+        resolution = resolve(
+            project=args.project,
+            sdk=args.sdk,
+            overrides=options(args),
+            root=args.root.resolve(),
+        )
+        store = resolution.settings.store
+        if store is None:
+            raise StatusError(
+                Code.FAILED_PRECONDITION, "No firmware store configured"
+            )
+        if args.firmware_command == "list":
+            return list_firmware(store)
+        if args.firmware_command == "probe":
+            from symbian.emulator.firmware import probe_archive
+
+            return probe_archive(resolution, args.source)
+        if args.firmware_command == "inspect":
+            return validate_manifest(locate(store, args.reference)).model_dump(
+                mode="json"
+            )
+        if args.firmware_command == "export":
+            return export_firmware(store, args.reference, args.destination)
+        forms = [
+            (key, getattr(args, key))
+            for key in ("rom", "vpl", "instance", "bundle")
+            if getattr(args, key) is not None
+        ]
+        if (args.source is None) == (not forms):
+            raise StatusError(
+                Code.INVALID_ARGUMENT,
+                "Supply one archive SOURCE or one of --rom / --vpl / --instance"
+                " / --bundle",
+            )
+        form, source = forms[0] if forms else ("archive", args.source)
+        if (args.rpkg or args.z_drive) and form != "rom":
+            raise StatusError(
+                Code.INVALID_ARGUMENT, "--rpkg / --z-drive require --rom"
+            )
+        if args.timeout <= 0 or args.variant < -1:
+            raise StatusError(
+                Code.INVALID_ARGUMENT,
+                "Positive timeout and variant >= -1 required",
+            )
+        if args.use:
+            config_path(args.use, project=args.project, sdk=args.sdk)
+        result = import_firmware(
+            resolution,
+            source=source,
+            form="z" if args.z_drive else form,
+            companion=args.z_drive or args.rpkg,
+            name=args.name,
+            replace_alias=args.replace_alias,
+            variant=args.variant,
+            timeout=args.timeout,
+        )
+        if args.use:
+            values = {"firmware": result["firmware"]}
+            if args.store is not None:
+                values["store"] = str(args.store.resolve())
+            result["configuration"] = configure(
+                args.use, values, project=args.project, sdk=args.sdk
+            )
+        return result
+    if args.command == "sdk":
+        from symbian.project.sdk import install
+
+        return install(args.destination, args.workspace).model_dump(mode="json")
+    if args.command == "prepare-app-sdk":
+        from symbian.project.sdk import activate_sdk, install_tools, prepare
+
+        sdk = install_tools(prepare(args.workspace, args.output))
+        activate_sdk(sdk)
+        return sdk.model_dump(mode="json")
+    if args.command == "init":
+        import os
+
+        from symbian.project.generate import wizard
+        from symbian.project.sdk import AppSdk, discover_sdk
+
+        sdk_path = discover_sdk(args.sdk)
+        selected = AppSdk.load(sdk_path)
+        entry = selected.prefix / "bin/symbian"
+        if entry.is_file() and os.environ.get("SYMBIAN_ACTIVE_SDK") != str(
+            selected.prefix
+        ):
+            arguments = [
+                str(entry),
+                "init",
+                str(args.destination),
+                "--sdk",
+                str(sdk_path),
+            ]
+            for flag, value in (
+                ("--name", args.name),
+                ("--ide", args.ide),
+                ("--uid3", args.uid3),
+                ("--architecture", args.architecture),
+            ):
+                if value is not None:
+                    arguments.extend((flag, str(value)))
+            for flag, enabled in (
+                ("--non-interactive", args.non_interactive),
+                ("--no-build", args.no_build),
+                ("--portable-runtime", args.portable_runtime),
+            ):
+                if enabled:
+                    arguments.append(flag)
+            arguments.extend(option_arguments(args))
+            arguments.extend(("--output-format", args.output_format))
+            os.execv(str(entry), arguments)
+
+        emulator_values = {}
+        timer_tasks = not args.portable_runtime
+        if options(args):
+            from symbian.emulator.configuration import resolve
+            from symbian.emulator.firmware import selected
+
+            resolved = resolve(sdk=sdk_path, overrides=options(args))
+            emulator_values = {
+                key: str(value.resolve()) if isinstance(value, Path) else value
+                for key, value in options(args).items()
+            }
+            if "firmware" in emulator_values:
+                _, imported = selected(resolved)
+                emulator_values["firmware"] = f"sha256:{imported.identity}"
+                if (
+                    imported.device.z_drive + "/sys/bin/libpthread.dll"
+                    not in imported.files
+                ):
+                    timer_tasks = False
+        result = wizard(
+            args.destination,
+            sdk_path,
+            name=args.name,
+            ide=args.ide,
+            uid3=args.uid3,
+            architecture=args.architecture,
+            timer_tasks=timer_tasks,
+            non_interactive=args.non_interactive,
+        )
+        if emulator_values:
+            from symbian.emulator.configuration import configure
+
+            project = Path(result["project"])
+            result["emulator_configuration"] = configure(
+                "project", emulator_values, project=project
+            )
+        if not args.no_build:
+            from symbian.process import run
+            from symbian.project.configuration import ProjectConfiguration
+
+            project = Path(result["project"])
+            sdk = ProjectConfiguration.load(project).sdk
+            run(
+                [
+                    str(sdk.prefix / "bin/symbian"),
+                    "app",
+                    "build",
+                    "--project",
+                    str(project),
+                ],
+                cwd=project,
+            )
+            result["initial_build"] = True
+        return result
+    if args.command == "app":
+        from symbian.project.configuration import ProjectConfiguration
+
+        project = args.project.resolve()
+        configuration = ProjectConfiguration.load(project)
+        if args.app_command == "configure":
+            from symbian.project.generate import configure_project
+            from symbian.project.sdk import AppSdk
+
+            if args.sdk:
+                sdk = AppSdk.load(
+                    args.sdk / "sdk.json" if args.sdk.is_dir() else args.sdk
+                )
+            else:
+                sdk = configuration.sdk
+            return configure_project(project, configuration.preferences, sdk)
+        sdk = configuration.sdk
+        import os
+
+        if os.environ.get("SYMBIAN_ACTIVE_SDK") != str(sdk.prefix):
+            os.execv(
+                str(sdk.prefix / "bin/symbian"),
+                [
+                    str(sdk.prefix / "bin/symbian"),
+                    "app",
+                    args.app_command,
+                    "--project",
+                    str(project),
+                    "--output-format",
+                    args.output_format,
+                    *option_arguments(args),
+                ],
+            )
+        if args.app_command == "build":
+            return toolchain.build(
+                project,
+                project / ".symbian/build",
+                str(sdk.compiler),
+                str(sdk.linker),
+            )
+        from symbian.emulator.launch import main as launch
+        from symbian.status import Code, StatusError
+
+        result = launch(
+            ["--project", str(project), *option_arguments(args)],
+            raise_errors=True,
+        )
+        if result:
+            raise StatusError(
+                Code.CANCELLED if result == 130 else Code.INTERNAL,
+                f"Emulator supervisor exited {result}",
+            )
+        return {"frontend_exit": result}
     if args.command == "toolchain":
         if args.toolchain_command == "verify-gui-package":
             from symbian.packaging.verification import verify_gui_package
@@ -179,9 +737,11 @@ def _execute(args: argparse.Namespace) -> dict:
         if args.toolchain_command == "prepare-gui-sdk":
             from symbian.sdk.staging import prepare_gui_sdk
 
-            return prepare_gui_sdk(args.project, args.sources_root, args.output)
+            return prepare_gui_sdk(args.profile, args.sources_root, args.output)
         if args.toolchain_command == "probe":
-            return toolchain.probe(args.output, args.compiler)
+            return toolchain.probe(
+                args.output, args.compiler, architecture=args.architecture
+            )
         if args.toolchain_command == "import-proxy":
             from symbian.sdk import build_import_proxy
 
@@ -194,6 +754,20 @@ def _execute(args: argparse.Namespace) -> dict:
                 args.linker,
                 args.headers,
             )
+        if args.toolchain_command == "convert-dll":
+            from symbian.e32 import convert_dll, inspect_image
+
+            image = convert_dll(
+                args.elf.read_bytes(),
+                args.definition.read_bytes(),
+                [proxy.read_bytes() for proxy in args.import_proxy],
+                args.uid3,
+            )
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            staged = args.output.with_suffix(args.output.suffix + ".tmp")
+            staged.write_bytes(image)
+            staged.replace(args.output)
+            return inspect_image(args.output)
         if args.toolchain_command == "verify-package":
             from symbian.packaging.verification import verify_package
 
@@ -210,6 +784,57 @@ def _execute(args: argparse.Namespace) -> dict:
 
         return verify_probe(args.artifact, args.oracles_build, args.output)
     if args.command == "emu":
+        if args.emu_command in ("resolve", "configure"):
+            from symbian.emulator.configuration import configure, resolve
+            from symbian.emulator.firmware import describe
+
+            if args.emu_command == "configure":
+                import os
+
+                from symbian.emulator.configuration import config_path
+                from symbian.emulator.firmware import selected
+
+                path = config_path(
+                    args.scope, project=args.project, sdk=args.sdk
+                )
+                values = {
+                    key: (
+                        (
+                            str(value)
+                            if value.is_absolute()
+                            else os.path.relpath(value.resolve(), path.parent)
+                        )
+                        if isinstance(value, Path)
+                        else value
+                    )
+                    for key, value in options(args).items()
+                }
+                if args.scope != "global" and args.firmware:
+                    resolved = resolve(
+                        project=args.project,
+                        sdk=args.sdk,
+                        overrides=options(args),
+                        root=args.root.resolve(),
+                    )
+                    _, manifest = selected(resolved)
+                    values["firmware"] = f"sha256:{manifest.identity}"
+                if args.clear_firmware:
+                    values["firmware"] = None
+                return configure(
+                    args.scope,
+                    values,
+                    unset=args.unset,
+                    project=args.project,
+                    sdk=args.sdk,
+                )
+            return describe(
+                resolve(
+                    project=args.project,
+                    sdk=args.sdk,
+                    overrides=options(args),
+                    root=args.root.resolve(),
+                )
+            )
         if args.emu_command == "configure-ide":
             from symbian.emulator.ide import configure
 
@@ -223,10 +848,62 @@ def _execute(args: argparse.Namespace) -> dict:
             return control.pointer(args.x, args.y, args.action)
         return control.exit_report() if args.saved else control.status()
     if args.command == "build":
+        if (args.project / "sdk-location.json").is_file():
+            import os
+
+            from symbian.project.configuration import ProjectConfiguration
+
+            sdk = ProjectConfiguration.load(args.project.resolve()).sdk
+            if os.environ.get("SYMBIAN_ACTIVE_SDK") != str(sdk.prefix):
+                os.execv(
+                    str(sdk.prefix / "bin/symbian"),
+                    [
+                        str(sdk.prefix / "bin/symbian"),
+                        "build",
+                        "--project",
+                        str(args.project.resolve()),
+                        "--output",
+                        str(args.output.resolve()),
+                        "--output-format",
+                        args.output_format,
+                        *(
+                            ["--architecture", args.architecture]
+                            if args.architecture
+                            else []
+                        ),
+                    ],
+                )
+            args.compiler, args.linker = str(sdk.compiler), str(sdk.linker)
         return toolchain.build(
-            args.project, args.output, args.compiler, args.linker
+            args.project,
+            args.output,
+            args.compiler,
+            args.linker,
+            architecture=args.architecture,
         )
     if args.command == "package":
+        if (args.project / "sdk-location.json").is_file():
+            import os
+
+            from symbian.project.configuration import ProjectConfiguration
+
+            sdk = ProjectConfiguration.load(args.project.resolve()).sdk
+            if os.environ.get("SYMBIAN_ACTIVE_SDK") != str(sdk.prefix):
+                os.execv(
+                    str(sdk.prefix / "bin/symbian"),
+                    [
+                        str(sdk.prefix / "bin/symbian"),
+                        "package",
+                        "--project",
+                        str(args.project.resolve()),
+                        "--artifact",
+                        str(args.artifact.resolve()),
+                        "--output",
+                        str(args.output.resolve()),
+                        "--output-format",
+                        args.output_format,
+                    ],
+                )
         return packaging.package(args.project, args.artifact, args.output)
     if args.command == "inspect":
         from symbian.sdk import inspect_proxy
@@ -244,12 +921,40 @@ def _execute(args: argparse.Namespace) -> dict:
                 args.source, args.archive, args.provenance
             )
         return preservation.verify(args.archive, args.manifest_sha256)
-    return device.policy(args.operation)
+    if args.device_command == "policy":
+        return device.policy(args.operation)
+    from symbian.device.connection import inspect_device, list_devices
+
+    if args.device_command == "list":
+        return list_devices()
+    if args.device_command == "info":
+        return inspect_device(args.device)
+    from symbian.device.installation import install
+
+    return install(
+        args.project,
+        args.device,
+        args.volume,
+        package_path=args.package,
+        compiler=args.compiler,
+        linker=args.linker,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Emits JSON with canonical status and returns a process exit code."""
+    """Emits human or canonical JSON output and returns a process exit code."""
     args = _parser().parse_args(argv)
+    if args.command == "doctor":
+        # Diagnostics must still work before the native wheel is installed.
+        response = {
+            "schema": "symbian.cli/v1",
+            "status": {"code": 0, "name": "OK", "message": ""},
+            "result": doctor(),
+        }
+        print(render(response, args.output_format, args.command))
+        return 0
+    from symbian.status import Code, StatusError
+
     try:
         result = _execute(args)
         response = {
@@ -269,7 +974,20 @@ def main(argv: list[str] | None = None) -> int:
             error = StatusError(code, str(error))
         response = {"schema": "symbian.cli/v1", "status": error.as_dict()}
         exit_code = 1
-    print(json.dumps(response, sort_keys=True, ensure_ascii=True))
+    action = (
+        getattr(args, f"{args.command}_command", "")
+        if args.command in ("device", "firmware", "emu", "app", "sdk")
+        else ""
+    )
+    formatted = render(response, args.output_format, args.command, action)
+    print(
+        formatted,
+        file=(
+            sys.stderr
+            if exit_code and args.output_format == "human"
+            else sys.stdout
+        ),
+    )
     return exit_code
 
 

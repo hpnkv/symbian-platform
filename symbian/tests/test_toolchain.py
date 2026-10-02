@@ -19,7 +19,7 @@ def test_real_clang_reproducibility_and_compilation_database(tmp_path):
     assert report["artifact_kind"] == "arm-elf-relocatable"
     assert inspect_elf(Path(report["artifact"]))["machine"] == 40
     database = json.loads(Path(report["compile_commands"]).read_text())
-    assert "--target=armv5t-none-eabi" in database[0]["arguments"]
+    assert "--target=armv6-none-eabi" in database[0]["arguments"]
     assert Path(database[0]["file"]).exists()
     assert Path(report["artifact"]).exists()
 

@@ -42,7 +42,7 @@ bool FileName(std::string_view name, std::string_view suffix) {
       !name.ends_with(suffix)) {
     return false;
   }
-  for (char c : name) {
+  for (const char c : name) {
     if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
           (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.')) {
       return false;
@@ -234,13 +234,13 @@ absl::StatusOr<ProxyInfo> InspectProxy(std::string_view bytes) {
          dynamic_index = 0;
   for (size_t i = 0; i < header->section_count; ++i) {
     const size_t p = Read32(bytes, 32) + i * Read16(bytes, 46);
-    Section section{Read32(bytes, p + 4),
-                    Read32(bytes, p + 12),
-                    Read32(bytes, p + 16),
-                    Read32(bytes, p + 20),
-                    Read32(bytes, p + 24),
-                    Read32(bytes, p + 36),
-                    {}};
+    Section section{.type = Read32(bytes, p + 4),
+                    .address = Read32(bytes, p + 12),
+                    .offset = Read32(bytes, p + 16),
+                    .size = Read32(bytes, p + 20),
+                    .link = Read32(bytes, p + 24),
+                    .entry_size = Read32(bytes, p + 36),
+                    .bytes = {}};
     if (!Within(bytes.size(), section.offset, section.size)) {
       return absl::DataLossError("Proxy section exceeds file");
     }

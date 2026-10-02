@@ -35,11 +35,11 @@ def _digest(path: Path, expected: str) -> bytes:
     return data
 
 
-def prepare_gui_sdk(project: Path, sources_root: Path, output: Path) -> dict:
+def prepare_gui_sdk(profile: Path, sources_root: Path, output: Path) -> dict:
     """Stages explicit trusted headers and selected frozen function imports.
 
     Args:
-        project: GUI example containing the owned sdk.json source manifest.
+        profile: Research source-selection manifest, separate from the app.
         sources_root: Directory containing the preserved upstream source trees.
         output: Separate disposable directory for header links and proxies.
 
@@ -47,18 +47,18 @@ def prepare_gui_sdk(project: Path, sources_root: Path, output: Path) -> dict:
         Header/proxy paths and digests. This source profile is not a matched
         Belle SDK or an emulator/device execution verdict.
     """
-    project, sources_root, output = (
-        path.resolve() for path in (project, sources_root, output)
+    profile, sources_root, output = (
+        path.resolve() for path in (profile, sources_root, output)
     )
     if any(
         output.is_relative_to(root) or root.is_relative_to(output)
-        for root in (project, sources_root)
+        for root in (profile.parent, sources_root)
     ):
         raise StatusError(
             Code.INVALID_ARGUMENT, "Keep SDK staging outside its input trees"
         )
-    manifest_path = project / "sdk.json"
-    manifest_bytes = manifest_path.read_bytes()
+    manifest_path = profile
+    manifest_bytes = profile.read_bytes()
     try:
         manifest = json.loads(manifest_bytes)
         if manifest["schema"] != "symbian.gui-source-sdk/v1":

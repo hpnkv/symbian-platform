@@ -10,15 +10,22 @@ from pathlib import Path
 import pytest
 
 from symbian import packaging, toolchain
-from symbian.cli.__main__ import main
 from symbian.packaging.verification import verify_gui_package
 from symbian.sdk import staging
 from symbian.status import Code, StatusError
+from symbian.tests.cli_json import main
 from symbian.toolchain.verification import verify_gui
 
 PROJECT = Path(__file__).parents[2] / "examples/gui_app"
 SOURCES = os.environ.get("SYMBIAN_GUI_SOURCE_ROOT")
 ORACLES = os.environ.get("SYMBIAN_EKA2L1_ORACLES_BUILD")
+
+
+def test_gui_example_keeps_source_profile_outside_application():
+    assert not (PROJECT / "sdk.json").exists()
+    assert (
+        PROJECT.parents[1] / "research/gui_app/source-profile.json"
+    ).is_file()
 
 
 @pytest.fixture
@@ -49,7 +56,7 @@ def source_profile(tmp_path):
             ).hexdigest(),
             "symbols": ["Function"],
         }
-    (project / "sdk.json").write_text(json.dumps(manifest))
+    (project / "source-profile.json").write_text(json.dumps(manifest))
     return project, sources, tmp_path / "stage", manifest
 
 
@@ -64,8 +71,12 @@ def test_staging_keeps_original_headers_and_records_unverified_scope(
         return {"fixture": dll}
 
     monkeypatch.setattr(staging, "build_import_proxy", proxy)
-    first = staging.prepare_gui_sdk(project, sources, output)
-    second = staging.prepare_gui_sdk(project, sources, output)
+    first = staging.prepare_gui_sdk(
+        project / "source-profile.json", sources, output
+    )
+    second = staging.prepare_gui_sdk(
+        project / "source-profile.json", sources, output
+    )
     assert first == second
     assert len(calls) == 4
     assert (output / "include/fixture.h").is_symlink()
@@ -96,9 +107,11 @@ def test_bad_profiles_fail_before_publishing(source_profile, mutation):
         manifest["headers"]["."] = manifest["headers"].pop("fixture.h")
     else:
         manifest["repositories"]["fixture"] = 17
-    (project / "sdk.json").write_text(json.dumps(manifest))
+    (project / "source-profile.json").write_text(json.dumps(manifest))
     with pytest.raises(StatusError) as caught:
-        staging.prepare_gui_sdk(project, sources, output)
+        staging.prepare_gui_sdk(
+            project / "source-profile.json", sources, output
+        )
     assert caught.value.code == (
         Code.DATA_LOSS if mutation == "digest" else Code.INVALID_ARGUMENT
     )
@@ -108,9 +121,11 @@ def test_bad_profiles_fail_before_publishing(source_profile, mutation):
 def test_invalid_second_dll_selection_does_not_stage_first(source_profile):
     project, sources, output, manifest = source_profile
     manifest["imports"]["ws32.dll"]["symbols"] = ["Missing"]
-    (project / "sdk.json").write_text(json.dumps(manifest))
+    (project / "source-profile.json").write_text(json.dumps(manifest))
     with pytest.raises(StatusError):
-        staging.prepare_gui_sdk(project, sources, output)
+        staging.prepare_gui_sdk(
+            project / "source-profile.json", sources, output
+        )
     assert not output.exists()
 
 
@@ -129,7 +144,9 @@ def test_existing_output_cannot_redirect_or_replace_inputs(
     else:
         (output / "euser").symlink_to(sources, target_is_directory=True)
     with pytest.raises(StatusError):
-        staging.prepare_gui_sdk(project, sources, output)
+        staging.prepare_gui_sdk(
+            project / "source-profile.json", sources, output
+        )
     assert (sources / "MixedCase.H").read_bytes() == original
     if redirect == "occupied":
         assert (output / "include/fixture.h").read_bytes() == b"existing"
@@ -137,14 +154,14 @@ def test_existing_output_cannot_redirect_or_replace_inputs(
 
 def test_malformed_profile_cli_returns_canonical_status(source_profile, capsys):
     project, sources, output, _ = source_profile
-    (project / "sdk.json").write_text('{"schema": []}')
+    (project / "source-profile.json").write_text('{"schema": []}')
     assert (
         main(
             [
                 "toolchain",
                 "prepare-gui-sdk",
-                "--project",
-                str(project),
+                "--profile",
+                str(project / "source-profile.json"),
                 "--sources-root",
                 str(sources),
                 "--output",
@@ -165,7 +182,11 @@ def gui(tmp_path_factory):
     root = tmp_path_factory.mktemp("GUI project and SDK with spaces")
     project = root / "project"
     shutil.copytree(PROJECT, project)
-    prepared = staging.prepare_gui_sdk(project, Path(SOURCES), root / "sdk")
+    prepared = staging.prepare_gui_sdk(
+        PROJECT.parents[1] / "research/gui_app/source-profile.json",
+        Path(SOURCES),
+        root / "sdk",
+    )
     manifest = project / "symbian.toml"
     text = manifest.read_text().replace(
         'cmake_preset = "symbian-pic"', 'cmake_preset = "gui-sdk"'
@@ -195,15 +216,22 @@ def gui(tmp_path_factory):
     return toolchain.build(project, root / "build"), prepared
 
 
-def test_gui_real_headers_link_without_division_helpers_or_host_runtime(gui):
+def test_gui_real_headers_and_selected_runtime_imports_link(gui):
     report, prepared = gui
     assert report["reproducible"]
-    assert prepared["header_count"] == 92
+    assert prepared["header_count"] == 93
     assert report["e32"]["uid3"] == 0xE0000811
     assert not report["e32"]["dll"]
     assert {
         item["dll"]: len(item["slots"]) for item in report["e32"]["imports"]
-    } == {"euser.dll": 10, "ws32.dll": 28}
+    } == {
+        "euser.dll": 42,
+        "ws32.dll": 28,
+        "libc.dll": 60,
+        "libm.dll": 7,
+        "libpthread.dll": 13,
+        "drtaeabi.dll": 3,
+    }
     assert not report["runtime_verified"]
     assert not report["import_execution_verified"]
     assert any(path.endswith("W32STD.H") for path in report["inputs"])
@@ -337,7 +365,7 @@ def test_gui_install_reload_remove_reinstall_and_missing_service_controls(
     ):
         assert result[flag]
     assert not result["missing_system_libraries_rejected"]
-    assert result["unresolved_import_slots_observed"] == 38
+    assert result["unresolved_import_slots_observed"] > 0
     assert result["process_creation_without_system_libraries_observed"]
     assert result["cpu_instructions_executed"] == 0
     for flag in (

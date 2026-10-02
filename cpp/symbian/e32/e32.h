@@ -32,21 +32,37 @@ struct ImageInfo {
   uint32_t uid3 = 0;
   uint32_t header_crc = 0;
   uint32_t flags = 0;
+  std::string architecture;
   uint32_t code_size = 0;
   uint32_t code_base = 0;
+  uint32_t data_size = 0;
+  uint32_t bss_size = 0;
+  uint32_t data_base = 0;
   uint32_t entry_offset = 0;
   uint32_t secure_id = 0;
   bool dll = false;
   uint32_t header_size = 0;
+  // Code-relative offset of the verified Symbian EHABI descriptor, or zero.
+  uint32_t exception_descriptor_offset = 0;
   std::vector<ImportBlock> imports;
   std::vector<ExportSlot> exports;
   std::vector<uint32_t> code_relocations;
+  std::vector<uint32_t> code_data_relocations;
+  std::vector<uint32_t> data_relocations;
+  std::vector<uint32_t> data_data_relocations;
 };
 
 // Accepts ARM EABI5 ET_EXEC linked with --emit-relocs: one RX PT_LOAD,
-// internal relative references and resolved ABS32 pointers into RX code,
-// EKA2 ARM entry, no imports/writable application data/exports.
+// one optional bounded RW mapping with initialized data and zero-filled BSS,
+// internal relative references and resolved ABS32 pointers into code/data,
+// EKA2 ARM entry, no imports/exports/TLS. Bounded constructor arrays require
+// an SDK startup that calls the guest runtime after thread-heap setup.
 // Named .data.rel.ro tables are placed in the read-only code mapping.
+// One .got table (at most 1024 words) supports retained R_ARM_GOT_PREL to
+// defined code/constant/data/BSS symbols. Every slot matches a referenced symbol;
+// slot addresses receive typed text/data fixups, preserving Thumb state.
+// Code and data mappings relocate independently. Direct PC-relative references
+// across them are rejected. Writable EXE storage is capped at 1 MiB.
 // Input must come from a trusted link retaining ALL relocations. This cannot
 // detect stripped relocations or absolute addresses hand-written in code.
 // UID3 must be in the experimental unprotected 0xe0000000..0xefffffff range.
@@ -54,7 +70,9 @@ absl::StatusOr<std::string> ConvertPicExecutable(std::string_view elf,
                                                  uint32_t uid3);
 
 // Eager function imports from validated ordinal proxies, retained call relocs,
-// one RX load containing GOT/PLT and dynamic metadata. No data/TLS/constructors.
+// one RX load containing GOT/PLT and dynamic metadata; optional bounded RW
+// data/BSS as above. Bounded constructor arrays require the SDK startup;
+// TLS and general DLL unload/lifetime are not established by conversion.
 // Link with --emit-relocs and the import layout; all imports have zero addends.
 absl::StatusOr<std::string> ConvertImportedExecutable(
     std::string_view elf, const std::vector<std::string>& proxies,

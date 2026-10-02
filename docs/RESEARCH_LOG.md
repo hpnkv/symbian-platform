@@ -1,5 +1,1118 @@
 # Research log
 
+## 2026-10-02: First shared guest timer/property/fiber event owner
+
+The source-pin check still matches 46 A11 files and 92 local include edges.
+The isolated original host tests passed 23 thread cases, 10 introspection
+cases, and 7 of 8 affinity cases; the CPU-pinning case is skipped on macOS.
+These are host reference tests, not guest parity evidence.
+
+The new guest EventExecutor drives the existing TimerPump, PropertyWatch,
+EventMailbox and OS-thread-pinned Scheduler in bounded turns. It offers an
+explicit event-thread dispatch method and arms fiber deadlines through the
+same timer request owner. Only TimerPump consumes the thread's native request
+semaphore. PropertyWatch removes an entry before invoking inline completion;
+TaskGroup::Finish now returns the same asynchronous join task on repeated
+calls. NativeTaskOwner starts one timer and one property subscription,
+forwards cancellation and an absolute deadline, and publishes its join after
+both child results and deadline-alarm drainage. The GUI and generated
+timer-task bridge use the event owner.
+
+The first standalone probe link failed because it combined the source runtime
+archive with the installed SDK's streams archive, producing duplicate libc++
+symbols. Building the probe against the installed Stackless target and its
+full EUSER proxy fixed the build configuration. Normal and changed-result
+guest controls passed 8/8 over ARMv5T/ARMv6 × Dyncom/Dynarmic. The probe
+observed an actual RProperty value of 17, a timer, a fiber Await and sleep,
+property cancellation, reentrant resubscription, Await timeout without
+overwriting the producer result, abandonment, cross-thread event dispatch,
+repeated join, structured owner success/close/timeout/error, and balanced heap
+cells. A fresh SDK candidate was exported under
+`.symbian/event-executor-sdk-owner` with 3,130 digest-valid files;
+the GUI and generated starter both linked with it. The GUI's pixel/input/
+reset/normal-exit test passed on both emulator backends. The physical phone
+was not accessed.
+
+Open questions: timer/property statuses still have separate adapter state,
+and Window Server statuses remain in the application; the executor has one
+request-semaphore consumer but is not yet a general native status registry.
+The TaskGroup and NativeTaskOwner probes start children before adding them
+to the group, so they do not yet prove child registration before native
+submission. Fiber stack
+guards, native TRAP/leave safety, A11 Select/channel rendezvous, trees,
+worker pools, complete futures and PythonLoop parity remain open. The
+candidate SDK has not been promoted to the visible installation.
+
+## 2026-10-02: Selected exception boundary for full A11 host thread
+
+The previous blanket interpretation of the SDK's no-exceptions policy kept
+the host adaptation from using A11's actual Boost fiber teardown and pool.
+The owner clarified that the SDK should follow A11: exceptions off by default,
+with selected translation units allowed to enable them. An isolated build of
+the pinned, unmodified A11 `cpp/thread` compiled with `-fno-exceptions` on
+the library and `-fexceptions` on only `boost_primitives.cc` and
+`thread_pool.cc`. Its original `thread_test`, `fiber_introspect_test` and
+`thread_affinity_test` passed (3/3). A maintained standalone CMake probe now
+records the exact dependency and flag setup. This is a host feasibility result;
+the SDK-distributed staged host archive was not silently replaced, and the
+guest still needs an ARM-specific fiber backend and lifecycle validation.
+
+## 2026-10-02: Host A11 scheduler and Python boundary adaptation
+
+The bounded host `thread::Fiber` previously ran on Boost's default scheduler,
+which could park while retaining CPython's GIL. An A11-derived private Boost
+algorithm now owns the ready queue, accepts a per-OS-thread policy, and wraps
+each idle park in the `SchedulerParkGuard` release/acquire pair. A pybind
+boundary installs A11's `PyEval_SaveThread`/`PyEval_RestoreThread` callbacks.
+The installed wheel's fiber-park test let another Python thread run during the
+native wait and returned with the GIL held. Its native test checked a custom
+last-ready ordering policy and balanced park callbacks.
+
+The host now builds a single shared stackless callback pool for `Post` and
+`PostAt` using A11's original `WorkQueue` implementation. A publication
+sequence plus an idle-worker count avoids lost wakeups and unnecessary
+notifications. Accepted absolute deadlines are converted once to steady-clock
+waits. The original A11 `cases.h`, Select and PermanentEvent implementations
+were copied with licenses; Select's fiber-registry instrumentation was removed
+because that registry is not yet adapted. Native tests covered 256 move-only
+posts, absolute and infinite deadlines, a level-triggered event, fiber
+parking and timeout. The host archive remained self-contained with no Boost
+consumer include or separate link dependency.
+
+The Python boundary adopts A11's raw-reference holder: a destructor retires
+references without acquiring the GIL, and binding entry/atexit paths drain
+them with the GIL held. A bounded Future-to-asyncio bridge captures the running
+loop, releases the GIL around OnReady registration, reacquires it on completion
+and dispatches across threads with `call_soon_threadsafe`. An extracted wheel
+passed completion, cancellation and deferred-reference checks. Full A11
+PythonLoop resolution, fiber-tree lifecycle, pooled fiber work stealing,
+channel selection, introspection and finalization stress remain open; neither
+the guest nor the host is advertised as full A11 parity.
+
+## 2026-10-02: Automatic control-body braces and starter link closure
+
+clang-format 23's `InsertBraces: true` enclosed one-statement `if`/`else`
+and loop bodies in the first-party C++ sources and generated starter. The
+root and template configurations are byte-identical. Formatting 47 owned
+files left 170 inspected first-party files idempotent; the two pre-existing
+user-owned edits were left untouched. An installed-SDK `symbian init` initial
+build then failed with unresolved guest `thread::Fiber::Current` and
+`thread::Scheduler` references from the now fiber-aware lock header. The
+starter linked `Symbian::Stackless`, whose imported CMake target did not
+include the guest fiber archive. The target now links `Symbian::Fibers` when
+that archive is present, with an acyclic Abseil dependency. The same
+initial-build, copied-SDK and moved-project test passed after the repair.
+The selected SDK has 3,123 verified payload files; its changed originals
+were copied to `.symbian/formatter-sdk-backup-20261002`. The macOS wheel
+contains `symbian/project/templates/.clang-format`.
+
+## 2026-10-02: Guest fiber-aware locks and custom scheduling slice
+
+The host's incomplete no-Boost OS-thread fallback was removed at the owner's
+request. Boost.Fiber/Context is now a required private host build dependency;
+the opaque host SDK ABI does not expose Boost to consumers. The host build now
+uses LLVM ar's MRI interface to merge the SDK primitive objects with static
+Boost.Fiber/Context objects into one archive. Its CMake consumer link command
+contains `libsymbian_host_primitives.a` and no Boost library path; both host
+concurrency CTests pass, and `otool -L` on the fiber test names no Boost dylib.
+A separate host-package CMake build from the pinned local Abseil checkout also
+produced that archive. A previous forced-no-Boost test documents the discarded
+branch, not current support.
+The exported `Symbian::HostConcurrency` target compiled, linked and ran a
+consumer while CMake Boost discovery was explicitly disabled. The final
+visible SDK carries the host and both guest archives and verifies 3,122
+payload hashes after a targeted copy that preserved the prior tree.
+The bundled Boost license was copied from Boost's published
+`https://www.boost.org/LICENSE_1_0.txt` (SHA-256
+`c9bff75738922193e67fa726fa225535870d2aa1059f91452c411736284ad566`)
+into `third_party/boost/` and the SDK payload.
+
+The guest now builds `thread::Fiber` on the previously verified ARM/Thumb
+`SymbianFiberSwap`, with an explicitly pumped, OS-thread-pinned
+`thread::Scheduler`. `thread::SchedulerPolicy` can select a ready fiber and
+receive a cross-thread wake notification outside the scheduler lock. Guest
+`thread::Mutex` parks a contending fiber instead of blocking its OS thread;
+`thread::CondVar` parks and releases its mutex, supports signal/broadcast and
+monotonic timeouts; `thread::SleepFor` parks a fiber. Outside a fiber, the
+primitives retain OS-thread behavior. An unresolved guest `Future::Await`
+parks only inside a fiber and still fails clearly on the event thread outside
+one. A normal/changed control executes C++ cleanup, contention, a future,
+timeout, a custom LIFO policy and notification from a second OS thread. It
+passed 8/8 on ARMv5T/ARMv6 × Dyncom/Dynarmic with an installed Abseil SDK.
+
+The guest Boost.Fiber/Context headers are not currently a direct substitute:
+an ARMv6 `-fno-exceptions` syntax probe against the installed target headers
+and host Boost 1.90 headers fails in Boost's Symbian config
+(`"Unsuppoted Symbian SDK"`) and in `boost/context/fiber_fcontext.hpp` at its
+`throw forced_unwind`. Defining Boost's old `__S60_3X__` selector removes the
+first error but not the forced-unwind error. No pinned Symbian ARM Boost binary
+or matching OS/TLS/stack closure exists in the SDK. This does not prove Boost
+could never be ported with an explicit alternate exception backend;
+the bounded native ARM backend already executes and keeps Boost private to
+hosts. The new scheduler is not A11's shared pool, fiber tree, `Select`,
+`PermanentEvent`, cancellation/join contract or native request owner.
+The event loop must pump `RunReady` and arm its single native wait for
+`NextDeadline`; that integration is still open. The present 16 KiB heap
+stacks have no guard/high-water accounting, and no native TRAP/leave boundary
+or floating-point context test has been passed. These remain C3 gates.
+## 2026-10-02: One host/guest concurrency layer and private Boost backend
+
+The guest's buffered `thread::Channel<T>` and bounded
+`symbian::concurrency` Future/Task, fan-in, TaskGroup, inline pump and mailbox
+had no Symbian dependency above `thread::Mutex`/`CondVar`. They now have one
+source under `cpp/symbian/concurrency/common/`. Guest export copies that
+layer and then its OS-thread primitive backend into the same installed include
+tree. The host `symbian::concurrency` CMake target selects a separate opaque
+primitive header and private Boost.Fiber/Context implementation when Boost is
+available, with an OS-thread fallback when absent. An ordinary host consumer
+builds with exceptions disabled and neither includes nor directly links
+Boost. The host SDK library statically contains Boost; a symbol export list
+hides Boost and Abseil implementation symbols. `otool -L` and `nm -gU` checked
+the no-Boost dependency/export boundary on macOS. A forced no-Boost CMake
+build and its concurrency GTest passed.
+
+The first host fiber test directly constructed `boost::fibers::fiber`; that
+violated the intended public API and, when the test linked a second static
+Boost copy, hung due to separate runtime scheduler state. The test was
+replaced by a bounded `thread::Fiber` host API with private Boost construction,
+same-OS-thread join, cooperative cancellation and normal C++ cleanup. Its
+consumer tests now use only `thread::Fiber`, `Mutex`, `CondVar` and `SleepFor`.
+Wrong-thread and repeated joins return `FailedPrecondition`; destruction of an
+unjoined fiber terminates, matching the explicit-join ownership contract and
+avoiding unverified forced unwind. This is not A11's tree/Select/pool backend
+and is not yet a guest fiber implementation.
+
+The earlier guest `CondVar` control had the reverse boolean convention from
+A11. Both backends now return true on timeout. An updated installed-SDK
+stackless/timer/channel matrix passed 16/16 on ARMv5T/ARMv6 and
+Dyncom/Dynarmic. Root host CTest passed 10/10, including an actual
+`thread::Fiber` Await/parking, same-thread join and C++ cleanup test. A fresh
+workspace SDK export then passed 4/4 timer/Future guest executions and a
+generated-project SDK copy/build check. Its 3,113 payload digests verified.
+The visible SDK was updated only with the four functional changed files after
+comparing the export; the previous visible tree remains at
+`~/dev/symbian-sdk-before-shared-concurrency-20261002`. Both trees have
+3,113 digest-valid files. The pinned 46-file A11 source and 92 include-edge
+check still passes unchanged.
+
+## 2026-10-02: Guest channel and readable CLI output
+
+The pinned A11 `thread/channel.h` depends on `Select`, fiber cancellation,
+fiber-aware primitives and exception-throwing writes to a closed channel. The
+guest default disables exceptions and does not yet have fiber parking. An
+explicit OS-thread adaptation now exposes `thread::Channel<T>`, `Reader<T>`,
+`Writer<T>`, `Mutex`, `MutexLock` and `CondVar` under the original `thread::`
+namespace and header paths. Blocking channel reads/writes are limited to OS
+worker threads; nonblocking `TryRead`/`TryWrite` return Abseil status and are
+used by `EventMailbox`. The queue is bounded and FIFO, closed reads drain,
+blocked writers wake on close, and a failed move-only write retains its
+payload. Zero-capacity rendezvous, `Select`, fiber parking and A11's throwing
+closed-write signature remain open. The guest runtime lacked the original
+libc++ `condition_variable_destructor.cpp`; the link failed until that pinned
+source was added to both ARM runtime archives. A 2 ms no-signal control then
+observed `wait_for` reporting `no_timeout` without a signal on the guest.
+The adapted timed wait now checks an explicit signal generation and tracks
+remaining time with the verified monotonic clock in bounded slices. The
+normal/changed stackless and timer/channel controls passed 16/16 across
+ARMv5T/ARMv6 and Dyncom/Dynarmic. A fresh SDK export was promoted to the
+visible path; its 3,113 payload digests after the CLI refresh and the
+preserved prior SDK's 3,110 digests verified.
+
+The CLI previously emitted only canonical JSON, including for `device list`.
+Human-readable summaries are now the default; `--output-format=json` preserves
+the existing schema and works before or after nested commands. Terminal output
+uses color only on a TTY without `NO_COLOR`, and nested help describes every
+option. Root help also lists every command group, and long scalar lists now
+print one item per line. The connected device control displayed the observed
+Nokia USB and mounted storage without printing its serial. The output-mode
+tests, 44-test CLI/device/control/SDK group and selected-SDK application
+regression passed. The rebuilt macOS wheel passed its isolated installed-wheel
+audit, including canonical JSON output from `doctor`.
+The separate package fixture still encounters its preexisting ARM unwind-index
+exception-descriptor gate before its CLI assertions run.
+
+## 2026-10-02: SDK selection without application-level provenance
+
+Generated projects contain only an ignored `sdk-location.json` path and
+shared application preferences; the installed SDK's own short `sdk.json`
+describes its tools. The detailed `examples/gui_app/sdk.json` was a research
+source-selection manifest, not an application SDK lock. Its bytes were moved
+to `research/gui_app/source-profile.json`; the explicit staging command and
+SDK export now read it there. Against the pinned upstream source tree, source
+preparation still succeeded. A relative SDK path switched a generated
+application's CLI build to a second SDK installation and back, with both
+compiler commands and compiler identity changing. A direct CMake/Ninja build
+before the fix retained the old compiler and reported no work. Adding
+`CMAKE_CONFIGURE_DEPENDS` to generated `sdk.cmake` made direct builds
+reconfigure and rebuild on both switches. The real GUI source/link test
+passed after correcting its stale two-DLL import expectation to the current
+six-DLL profile. No hashes were removed from the reproducibility report or
+from SDK source verification. The prepared-workspace export completed with
+the moved profile and its 3,109 payload digests verified. The visible SDK's
+Python utilities and template were refreshed and its 3,109 digests verified;
+the global SDK selection was restored to that visible installation.
+
+## 2026-10-02: Localized AppArc resources and SVG icon container
+
+The original `e32lang.h` supplies the language-number mapping, while
+EKA2L1's original AppArc `get_nearest_lang_file` selects `.rXX` when present
+and `.rsc` otherwise. This lets the SDK expose BCP 47 tags and package all
+translations without exposing RSS, RLS or SIS language groups to an author.
+The first UTF-8 RSS trial with `rcomp -u` produced mojibake: independent
+AppArc decoded `Zähler` incorrectly. Original `rcomp` defaults to CP1252
+even in Unicode-output mode. Adding its supported `CHARACTER_SET UTF8`
+directive fixed the independent parser. The original EKA2L1 MIF reader
+recognizes a version-2 MIF containing a gzip-wrapped SVG entry; the SDK's
+native writer emits that bounded, deterministic container. Its original
+reader recovered the SVG after headless installation. The installed AppArc
+selected French, German and Japanese resources, including correct Unicode
+German and Japanese captions, on Dyncom and Dynarmic (8/8). No actual phone menu icon
+rendering, language-switch UI, or in-app translation is claimed yet.
+
+## 2026-10-02: Application-menu registration
+
+The original `AppInfo.rh` defines `APP_REGISTRATION_INFO` and
+`LOCALISABLE_APP_INFO`; the pinned EKA2L1 application list expects registration
+under `private/10003a3f/import/apps` and local resources under
+`resource/apps` on the EXE's drive. An EPL-licensed original `rcomp` from
+`SymbianRevive/symbian-build` revision
+`d3c2eadd3ff7826bdf9e1d92f447c357571af18b` compiled both RSS forms
+after the tracked modern-host pointer-width/header patch. A UID helper
+reproduced the native Symbian resource header checksum. Its patch
+reverse-checks on the prepared source tree. The first compilation omitted
+`rcomp -u`; the native SIS installer accepted those byte-text resources, but
+EKA2L1's original AppArc parser decoded a corrupt localisable path and
+rejected the caption. Enabling `-u` produced 97-byte registration and 80-byte
+caption resources for `gui_app`; its original parser then read the expected
+path and both captions on Dyncom and Dynarmic. The native SIS reader
+verified three embedded file digests and canonical paths. A fresh
+`symbian init` ARMv6 project built and packaged from the 3,108-file sealed SDK;
+`gui_app` packaged the same way. EKA2L1's original headless SIS installer
+accepted the registration and caption files on Dyncom and Dynarmic, reloaded
+their registry entries, removed them and reinstalled them (8/8). Its import
+negative control was updated for the current six-DLL executable instead of
+assuming the old two-DLL/38-slot shape; it still checks every imported slot
+remains unresolved without system DLLs. The final export added pin/patch
+provenance and its 3,108 digests verified. It replaced the visible development
+SDK after preserving the old 3,100-file installation at
+`~/dev/symbian-sdk-before-menu-registration-20261002`; the visible SDK produced
+corrected Unicode resources after a deliberate Python-tool update and
+digest reseal; 3,108 files match and there are no extra files. Fresh ARMv5T
+portable and ARMv6 default
+starters both built and packaged through that visible SDK. After the owner
+confirmed the photo copy was complete, the SDK staged the corrected ARMv5T
+portable SIS in the phone's existing `Installs` directory, verified SHA-256
+`db4875221d6ecabbe02bfba76c4201c5da5f8f0df298ae50f7f5050356e70db1`,
+and ejected the USB disk. The installer result and handset menu are not yet
+observed by SDK automation. The owner subsequently reported successful
+on-phone installation and a visible `menu_v5` application-menu entry. This is
+user-supplied observation. The owner then opened the app and reported that it
+responded to a tap. No on-device registry API, launch trace or device log was
+collected.
+The updated visible-SDK `verify-gui-package` ran 17 original image/checksum
+and installer cases against the registered GUI SIS. It counted 153 imported
+slots in the current six-DLL image rather than retaining the obsolete fixed
+38-slot report. No guest instructions ran in that headless package test.
+
+## 2026-10-02: Read-only physical USB discovery and SIS staging preparation
+
+The owner's connected Nokia 808 is visible as `0421:05d0` in macOS IOService,
+although `system_profiler SPUSBDataType -json` returned no USB devices. The
+IOService ancestry puts an `S60` block device under the same phone, and
+`diskutil` reports a writable mounted volume with an existing `Installs`
+directory. No serial is emitted in SDK output. USB product identification does
+not establish RM code or firmware. No phone writes were made while the owner
+copied photos. The new discovery/transfer/policy/Linux/low-space controls passed 8/8
+with synthetic trees and temporary volumes. `~/dev/symbian-app-3` rebuilt
+reproducibly via its selected SDK; the resulting unsigned SIS passed the native
+reader and a real
+SIS staging/hash check on a temporary host volume. The prior GUI example's
+root build returned `DATA_LOSS` because independent CMake products differ;
+this was not suppressed or used as a physical install candidate.
+A separately exported SDK candidate at `~/dev/symbian-sdk-device-20261002`
+completed installation with both target architectures. Its bundled CLI found
+the connected phone and mounted S60 volume through read-only commands. The
+current visible SDK remains in place until the device flow is finished. A
+fresh portable `symbian init` project under `.symbian/device-install-smoke`
+completed its initial ARMv6 build and native SIS package through the candidate
+SDK. Its only E32 imports are EUSER, WS32 and GDI; no handset copy or install
+was attempted while the owner transfers photos.
+
+Gammu's [Symbian configuration documentation](https://docs.gammu.org/faq/config.html)
+describes Bluetooth with an on-phone applet; its similarly named install
+command installs that applet, not an arbitrary SDK SIS. The present USB mode
+supports storage copy, not a verified remote installer. On-phone acceptance,
+signing/import compatibility, installer state observation, and real Linux USB
+device validation remain open. Future screenshot/debug adapters must report real
+capabilities, while irreversible/recovery operations stay outside the agent
+execution surface.
+
+## 2026-10-02: Migrate both application paths onto the verified stackless profile
+
+The original counter now uses the installed `Symbian::Stackless` target and a
+separate modern C++ bridge. Its W32 source retains the owner's edits and the
+same count behavior. A tap schedules a 300-ms timer Future; an event-mailbox
+turn lights a marker, and Reset cancels it. One event thread checks Window
+Server statuses and timer completions before its sole request-semaphore wait.
+The bridge cancels and drains the pump before freeing callback state. The
+source and published ELF/E32 bytes remained reproducible; root and standalone
+CMake targets linked, and the expanded counter/marker/cancel/zero-exit control
+passed on ARMv5T/ARMv6 × both RM-807 emulator backends (4/4) using the
+background frontend. The root `gui_app_e32` publisher rebuilt with Apple
+Clang and its ARMv6 image passed both backends after promotion.
+
+`symbian init` now selects the Abseil Status/StatusOr and timer-Task profile by
+default. If an explicitly selected firmware has no Z-drive `libpthread.dll`,
+it emits the same source with portable CMake defaults; `--portable-runtime`
+also selects that profile. Run checks the actual E32 import list against the
+resolved firmware before launching. A modern executable aimed at E71 produced
+`FAILED_PRECONDITION` with a rebuild instruction and no new emulator session.
+The original nested CLI had obscured that status as `INTERNAL`; it now lets
+the canonical `StatusError` cross the CLI boundary. Teardown explicitly
+cancels and closes the TimerPump before destroying its mailbox/result state:
+OnReady may execute inline during close. The final SDK candidate passed a
+CLI initial-build/copied-SDK test and default-starter completion, cancellation
+and rapid-exit on ARMv5T/ARMv6 × Dynarmic/Dyncom (4/4); the full
+generated-project suite passed 17/17 before the two added ARMv5T cases passed.
+A preceding candidate passed
+real GUI starter execution on C7, E6, 6120 and E71 (4/4), selecting portable
+defaults for the two dumps without `libpthread.dll`. The final 3,100-file
+candidate and preceding visible SDK both verified against every recorded
+digest. The candidate was copied and rebased into `~/dev/symbian-sdk`; the
+preceding tree is retained at
+`~/dev/symbian-sdk-before-gui-init-migration-20261002`. Its SDK selection
+manifest was rebased and resealed so it remains selectable; the original
+manifest and digest bytes are retained under
+`.symbian/sdk-preservation-gui-init-20261002` for reconstruction. A new project also
+completed its initial build after canonical SDK promotion. Neither profile exposes
+A11 fibers, unresolved event-thread Await or genuine `thread::` primitives.
+The canonical SDK's `gui_app` ELF/E32 publisher and GUI controls passed again
+on ARMv5T/ARMv6 × Dynarmic/Dyncom after rebasing the installed target paths.
+The wider `test_gui.py` selection returned 12 passed, five skipped and one
+failure in the separate `e32_probe`: its ARM unwind index lacks the converter's
+required Symbian exception descriptor. That test does not build either migrated
+application; it remains an explicit converter/probe gate.
+
+## 2026-10-02: First ARM/Thumb fiber context prerequisite
+
+`cpp/symbian/concurrency/guest/arm_fiber_context.S` is an owned no-throw
+backend adaptation, now compiled into each SDK runtime archive. It saves
+ARM AAPCS `r4`–`r11` and return state, changes SP only within one OS thread,
+and restores the next context. A bounded 16 KiB heap stack is constructed
+with an 8-byte-aligned entry SP. The maintained C++ control keeps a
+heap-backed `std::string` and `std::unique_ptr` live across the first switch,
+resumes, destroys both normally and checks the original heap-cell count.
+The independent changed-result control exits -302. Source-linked execution
+passed 8/8 across ARMv5T/ARMv6 × Dyncom/Dynarmic; after moving the swap into
+the installed runtime archive, the same matrix passed 8/8 against a sealed
+SDK candidate. This is a context-switch proof, not an A11 fiber scheduler.
+The sealed candidate was promoted to `~/dev/symbian-sdk`; ARMv6/Dynarmic
+normal/changed controls passed again after promotion. The prior installation
+is preserved at `~/dev/symbian-sdk-before-fiber-swap-20261002`.
+There is no stack guard, floating-point context, native leave/TRAP scope
+check, join/reaper or fiber-aware mutex yet. No real OS thread migration or
+physical device operation was attempted.
+
+## 2026-10-02: Property request, bounded event dispatch and Await guard
+
+The original EUSER `RProperty` Define/Attach/Subscribe/Set/Get/Cancel/Delete
+ordinals were added to the selected proxy. A narrow platform translation unit
+owns an integer property, `TRequestStatus`, value storage and close-time
+cancellation/drainage. The modern `PropertyWatch` returns `Future<int>` and
+removes a completed entry before invoking its Promise callbacks. The guest
+control subscribes, sets a value, registers the next subscription reentrantly
+from `OnReady`, sets again, and cancels a third subscription from a worker.
+The property and timer owners share one `WaitForAnyRequest` consumer.
+The post-promotion timer/property matrix also passed 8/8 after adding a
+close-while-subscription-pending control; that close drained native completion
+and published a cancelled Future.
+
+The same control drives an `EventMailbox` with one queued turn permitted:
+worker enqueue, capacity rejection, event-thread affinity, reentrant enqueue,
+bounded one-callback dispatch and close rejection. It deliberately does not
+implement A11's pool `Post` or fiber `Submit`. ARMv5T/ARMv6 × Dyncom/Dynarmic
+normal/changed tests passed 8/8 against a sealed installed SDK candidate;
+the generated timer and Status GUI controls passed 5/5, then 6/6 including a
+copied Abseil project after promotion to the 3,100-file visible SDK. The
+preceding SDK, including four unsealed Finder files, is preserved at
+`~/dev/symbian-sdk-before-status-concurrency-20261002`.
+
+The absolute timer API now takes `absl::Time`, preserving `absl::Now()` as
+wall time. Registration converts to a relative duration once; native timer
+arms and elapsed waiting use the verified steady clock. A fake wall clock
+jump after registration did not move an accepted 15-ms timer; 24-hour
+admission/cancellation, infinite-future cancellation, negative-duration
+rejection and native microsecond slice boundaries passed. A full 24-hour
+expiry/rearm and an actual emulator clock adjustment remain untested.
+
+A later candidate makes `Future::Await(absl::Time)` return ready values or
+`FailedPrecondition` for unresolved waits until a fiber-aware Select backend
+exists. Its installed stackless matrix passed 8/8; it was promoted to the
+visible SDK, with the previous 3,100-file export preserved at
+`~/dev/symbian-sdk-before-await-guard-20261002`. ARMv6/Dynarmic
+normal/changed cases passed after promotion. A11's genuine
+`thread::Mutex`, `CondVar`, `PermanentEvent`, `MutexLock` and `SleepFor` use
+Boost fiber-aware behavior and cannot be represented honestly by the current
+OS-thread-only mutex. The C3 backend remains open.
+
+## 2026-10-02: Direct guest StatusOr concurrency and Abseil time
+
+The installed guest Abseil profile now carries actual `absl::Status` and
+`absl::StatusOr<T>` through the bounded A11-derived Future/Promise/Task,
+JoinAll, TaskGroup and timer adapter. The temporary name-shortening aliases
+were removed from the public headers and probes. The 8-case stackless and
+8-case timer matrices each passed on ARMv5T/ARMv6 × Dyncom/Dynarmic against
+`.symbian/abseil-direct-status-sdk-20261002`. A later maintained slice uses
+`absl::Time` for public absolute deadlines and `absl::Duration` for relative
+delays. It converts absolute time once at registration and retains monotonic
+waiting internally, preserving the meaning of `absl::Now()`.
+
+The first migration build failed because the probes still called the removed
+`.error()` API. After correcting those call sites, E32 conversion rejected a
+five-DLL import graph because the runtime test supplied only three proxies.
+Its selected Abseil profile now declares the real `libm` and `libc` imports.
+A subsequent timer link found an unresolved weak Cord constructor from the
+payload shim; constructing from `absl::string_view` uses the original Cord
+copying path and passed execution. These failures were retained and fixed at
+their actual boundaries, not suppressed by the converter.
+
+The Status-enabled generated project passed both emulator CPU backends and a
+deliberate model error produced the native `KErrArgument` exit (3 tests).
+The installed Abseil Status/StatusOr/Cord/map/time contract passed 9/9. The
+root ARM IDE profile initially rejected the new Abseil probe directories;
+explicit installed-Abseil object targets now configure and compile on both
+ARM profiles. A cross-thread `RChunk` owner release on its creating process
+heap and original pinned Abseil LowLevelAlloc normal/changed controls passed
+on the preceding sealed candidate. General scheduler/fiber integration and
+OS TLS are still unproven.
+
+## 2026-10-02: Clean Abseil allocator replay and named runtime exits
+
+A clean checkout at A11's pinned Abseil revision
+`5650e9cf76d3be4318d5fa3af38ee483ddfd5e4a` accepted the ordered
+`symbian-platform.patch` and `symbian-low-level-alloc.patch`; both reverse
+checks passed on the replay checkout. The tracked allocator probe linked
+against the fresh 2,597-file SDK export, converted to E32 with only EUSER,
+OpenC and pthread imports, and ran on a disposable RM-807/Dynarmic instance.
+The normal result was 0; a deliberately changed result was -286 (2/2 in the
+maintained Pytest test). It exercises a 130,000-byte block, frees it, then
+checks that arena deletion refuses an outstanding block and succeeds after
+freeing it. The earlier scratch checkout had unmaintained log and thread
+identity edits; this clean replay is evidence that neither is needed.
+
+The first maintained Pytest run made the emulator frontend exit with host
+SIGSEGV before a guest result; its temporary path was longer than macOS's
+UNIX socket path limit. A short `/tmp` session path yielded both expected
+guest results. This is a harness failure, not a ROM behavior. The runtime
+exit bridge now accepts `SymbianRuntimeExitReason` instead of an unnamed
+integer; the bridge statically checks its two process-exit categories against
+`KErrNoMemory` and `KErrArgument`. Their numeric OS outcomes remain -4/-6.
+Cross-thread page release and full Status/StatusOr closure are still unproven.
+The installed SDK's selected exit/clock/lifecycle run passed 53 guest cases;
+root CTest passed 8/8. Both 2,597-file promoted SDK and 2,596-file predecessor
+verify by digest; the copied-project test passed before and after promotion.
+The promoted SDK passed the allocator normal/changed controls again (2/2).
+
+## 2026-10-02: Page sourcing, POSIX TLS and selected C/atomic closure
+
+The pinned Abseil StatusOr link still lacks `LowLevelAlloc`, per-thread
+semaphores, graph-cycle methods and numerous C services. Its page allocator
+asks the OS for anonymous, page-aligned 64-KiB multiples and later unmaps
+whole regions. OpenC's `mmap` does not establish anonymous-map behavior, so
+enabling `ABSL_HAVE_MMAP` would hide a missing backend. The SDK now owns a
+narrow original-header `RChunk` bridge that validates `UserHal` page size,
+creates exact page-multiple process-owned chunks, checks alignment and
+committed bounds, and returns an opaque owner for explicit close. The probe
+checks invalid sizes, first/last bytes across 16 allocations and heap-cell
+balance. ARMv6/Dynarmic normal and changed-result cases pass. Same-thread
+close is the only verified ownership path; cross-thread release, exhaustion,
+handle pressure and Abseil's map/unmap bookkeeping remain open.
+
+The guest `pthread` key probe uses a real `std::thread` worker. It checks an
+independent initial key value, sets/reads the worker value, joins, observes one
+exit-destructor callback and keeps the parent's value. ARMv6/Dynarmic normal
+and changed controls pass. This supports the POSIX key path, not ELF/C++ TLS.
+The isolated Abseil relink had `__tls_get_addr` only in `GetCachedTID()`;
+the replayable platform guard selects Abseil's existing `GetTID()` fallback,
+and the relink no longer lists that symbol. The fallback currently calls
+`pthread_self()` and needs performance measurement. The patch applies to the
+clean A11-pinned source and reverses from the prepared scratch checkout.
+
+The original EUSER `__e32_atomic_swp_ord8` ordinal now belongs to the selected
+proxy and the guest checks old/new byte values twice. OpenC `strtol`,
+`strcpy`, `strcmp` and `sysconf` have an execution control in the varargs
+probe. The first run failed at link because its temporary proxy omitted
+`strcmp`; adding the genuine ordinal made the ARMv6/Dynarmic normal/changed
+tests pass. The Abseil relink still fails on missing allocation and
+synchronization methods and further C services. Candidate SDK export and a
+wider architecture/backend matrix are in progress.
+
+## 2026-10-02: Original soft-double compiler-rt reaches ARMv5T and ARMv6
+
+The isolated Abseil StatusOr guest link listed ARM double arithmetic,
+conversion and comparison ABI entries. Adding LLVM's original ARM soft-double
+assembly first failed at `movw`, which requires ARMv6T2 and is unavailable in
+both SDK target profiles. The generic LLVM C implementation avoided `movw`
+but introduced floating-environment services (`__fe_getround` and
+`__fe_raise_inexact`) that this guest runtime has not verified. A maintained
+third LLVM patch replaces four `movw` constant loads in the original ARM
+assembly with literal loads. The next Abseil link exposed four single-precision
+helpers; its original add/subtract source used ARMv6T2 `bfc`, so the same patch
+expands that bit clear into two ARMv5-safe shifts. Algorithms and symbol
+identities stay original.
+The resulting link required LLVM's original `dnan2`, `dnorm2`, `dunder`,
+`ashldi3` and `lshrdi3` helpers, now in the runtime closure.
+
+A guest ABI control executes double add/subtract/multiply/divide, ordered and
+NaN comparisons, signed/unsigned 64-bit conversions and float/double
+conversions through actual compiler-generated calls. Normal and changed-result
+controls passed 8/8 source builds on ARMv5T/ARMv6 × Dyncom/Dynarmic. This is
+a compiler-rt/runtime result, not guest Abseil Status execution. The next
+isolated StatusOr link remains a dependency gate; do not paper over allocator,
+TLS or synchronization requirements.
+
+Additional float subtraction and conversion controls passed an ARMv6/Dynarmic
+normal/changed source pair after adding original `addsf3`, `fixsfsi`,
+`fixunssfdi` and `floatundisf`, followed by 8/8 ARMv5T/ARMv6 ×
+Dyncom/Dynarmic source controls and 8/8 installed-candidate controls. The
+2,596-file candidate passed a copied-project test and root CTest 8/8, then
+was promoted to `~/dev/symbian-sdk`; its verified predecessor remains at
+`~/dev/symbian-sdk-before-softfloat-20261002`. Re-linking the pinned Abseil
+StatusOr guest contract after these runtime changes removes all floating-point
+compiler ABI undefined symbols. Even a reduced contract without
+`Status::ToString()` has
+the same unresolved allocator, TLS, synchronization, C/POSIX, wide-I/O and
+exception-base link closure. Retained logs are
+`.symbian/abseil-guest-probe/link-20261002-final.log` and
+`link-minimal-20261002.log`. This is a diagnostic, not Status execution.
+
+## 2026-10-02: Structured TaskGroup owns real timer completions
+
+The A11-derived `TaskGroup` had only a producer-completed Promise control.
+Its native integration probe now joins two short `TimerPump` Tasks, checks that
+the joined Task is initially pending and succeeds after both native statuses
+drain, then starts three longer timer Tasks and cancels the joined Task.
+Cancellation traverses `Then` -> `JoinAll` -> child Task callbacks; only the
+event thread calls native `RTimer::Cancel`, dispatches the completed statuses
+and publishes the aggregate cancelled result. The block closes the pump and
+returns to its initial heap-cell count. Initial ARMv6/Dynarmic normal and
+changed-result source cases passed (2/2), followed by 8/8 ARMv5T/ARMv6 ×
+Dyncom/Dynarmic source controls and 8/8 installed-SDK controls. This is actual
+stackless structured composition over one native request type, not fibers or a
+general native I/O adapter.
+
+## 2026-10-02: Bounded admission for native timer Tasks
+
+The first shared GUI loop made an unbounded `TimerPump` entry vector visible:
+each admitted timer owns a native handle, Promise state and cancellation
+callback until the event thread dispatches its completion. The pump now has a
+configurable pending-request limit (64 by default). At capacity,
+`ScheduleAfter`/`ScheduleAt` return an already-ready Task with an explicit
+`kResourceExhausted` result before opening another native handle. The slot is
+released only after the event thread drains the real completion, preserving
+cancel/request ownership. An additional guest control admits two timers,
+checks saturation, dispatches completion, admits a replacement, closes it and
+checks heap-cell balance. Normal and changed-result controls passed 8/8 source
+and 8/8 installed-candidate executions on ARMv5T/ARMv6 and Dynarmic/Dyncom.
+The candidate contains 2,596 digest-verified files. This limits timer admission,
+not all A11 continuation allocations or arbitrary native I/O queues. The
+temporary guest Result code should map to Abseil `ResourceExhausted` when
+guest Abseil Status is executable; public time types should likewise move to
+Abseil. The candidate's copied-project and two-backend GUI controls passed
+(3 tests), root CTest passed 8/8, and both candidate and previous canonical
+trees verified before promotion. The visible SDK now selects the candidate;
+both its seal and its predecessor's 2,596-file seal verify. The predecessor is
+retained at `~/dev/symbian-sdk-before-timer-cap-20261002`. Post-promotion
+ARMv6/Dynarmic normal and changed-result controls passed (2 tests), and the
+canonical copied-project test passed.
+
+
+## 2026-10-02: Generated GUI shares native wakeups with timer Tasks
+
+The generated CMake project now offers `SYMBIAN_ENABLE_TIMER_TASKS` (off by
+default because the selected ROM must provide `libpthread`). Its modern C++
+bridge owns `TimerPump` and Tasks; the original-SDK GUI translation unit
+continues to own the two Window Server statuses. The event thread dispatches
+ready timer completions and WS events before parking on their one shared
+request semaphore. The optional path logs on tap and on a delayed Task, and
+Clear cancels pending work. This keeps native handles and their completion
+storage inside the SDK bridge rather than in application model code.
+
+The first link exposed the selected DRTAEABI proxy's missing
+`__cxa_pure_virtual` ordinal. Adding its real ordinal, rather than a stub,
+made the profile link. RM-807 Dynarmic and Dyncom GUI tests then verified
+the immediate row, delayed row, cancellation after Clear and normal Exit.
+The default GUI passed both backends; an E71 default generated starter built
+and executed. Two E71 test attempts failed because relative SDK/importer
+paths were resolved after the test changed working directory; absolute paths
+passed. The verified 2,596-file candidate was promoted to the visible SDK,
+with the previous sealed tree retained; both digest sets verify. Canonical
+copied-project and two-backend opt-in GUI tests passed (3 tests), root CTest
+passed 8/8, and Black/Ruff, native formatting and `git diff --check` passed.
+The result does not establish full
+native I/O registration, bounded pending-task admission, Abseil time, fibers
+or arbitrary device support. Public `std::chrono` time types remain a
+temporary guest-library boundary until executable guest Abseil time is ready.
+
+## 2026-10-01: Timer requests complete A11-derived Tasks
+
+Original `RThread::RequestSignal()` signals another thread's request
+semaphore without changing a request status, provided the thread is in the
+same process. The event-thread bridge opens a process-owned handle to its own
+thread ID and keeps it alive while worker cancellation callbacks may signal.
+A11's `Future::Cancel()` remains a request: the worker only marks an atomic
+32-bit cancellation flag and coalesces a wake. The event OS thread alone calls
+`RTimer::Cancel()`, observes its final status and publishes its Task result.
+The wake handle is closed under the existing A11-derived mutex adapter, so a
+concurrent callback cannot signal a closed handle. Ready entries are removed
+before inline `OnReady` callbacks run; those callbacks can schedule another
+timer without invalidating a dispatch iteration. The pump shares the current
+thread's native request semaphore through an explicit `Park()` operation; it
+does not start another waiter or a timer worker.
+
+The first source link exposed an absent 8-bit `__atomic_store_1` helper, so
+the cancellation flag uses the already verified 32-bit atomic path. Normal
+and changed-result controls passed eight source cases before adding a
+continuation check. The formatted final source passed an ARMv6/Dynarmic
+smoke test, and the installed SDK candidate passed eight ARMv5T/ARMv6 ×
+Dyncom/Dynarmic cases. The probe includes a worker's cancellation while the
+event thread is parked behind a two-second timer and requires it to wake
+within 500 ms; it also covers an inline continuation that schedules another
+timer, multiple ready timers, close while pending and allocation balance.
+The caller still owns Window Server status inspection, and that combined UI
+loop needs actual execution tests before C1/C2 acceptance is complete.
+The formatted candidate's copied/relocated project test passed, then its
+2,596 digest-valid files were promoted to `~/dev/symbian-sdk`; the prior
+2,595-file SDK is preserved at
+`~/dev/symbian-sdk-before-timer-future-20261001`. The canonical path passed a
+further ARMv6/Dynarmic timer-Future smoke and copied-project test. Root CTest
+passed 8/8, and both ARM IDE index targets compiled the new probe.
+
+## 2026-10-01: Owned native timer request slice
+
+Original `RTimer::CreateLocal()` creates a thread-relative handle. Its
+`HighRes()` writes `KRequestPending` before submission, panics on negative
+intervals or an overlapping request, and completes through the owning
+thread's request semaphore. `Cancel()` completes an outstanding status with
+`KErrCancel`. `User::WaitForAnyRequest()` consumes that same semaphore for
+all native requests, including Window Server events. These contracts rule out
+a timer-specific background waiter or a separate competing request pump.
+
+The SDK now keeps `RTimer` and its status in one allocated bridge state, checks
+arm preconditions, and cancels/waits for completion before freeing a pending
+state. The modern `NativeTimer` owner makes the C bridge private to the SDK
+edge. A guest probe starts three overlapping timers, cancels one, closes one
+while pending, waits for the surviving completion, rearms it, and verifies
+heap-cell balance. It also rejects negative and overlapping arms and has a
+changed-result control. Eight source and eight installed-SDK ARMv5T/ARMv6 ×
+Dyncom/Dynarmic cases passed; the formatted final SDK export passed a second
+eight-case installed matrix. Its copied/relocated project test, canonical
+ARMv6/Dynarmic smoke test and root CTest 8/8 passed; both ARM IDE index
+targets built the new probe. The canonical SDK has 2,595 digest-valid files;
+its 2,594-file predecessor is preserved at
+`~/dev/symbian-sdk-before-native-timer-20261001`. The bridge has no private
+event loop. Before C1 is complete, one event-thread pump must own all status
+registration/dispatch, Window Server events, idle parking and cross-thread
+wakeups; close/cancel races and stale registrations need targeted controls.
+
+## 2026-10-01: Concurrent guest clock and libc++ thread closure
+
+The first `steady_clock` probe established single-thread progress but not
+cross-thread ordering. A new real `std::thread` probe starts both readers
+together, checks 2,048 samples per thread, then performs 128 release/acquire
+handoffs and rejects a sample earlier than the other thread's published value.
+It also checks Symbian heap-cell balance after join. Normal and deliberately
+changed-result controls passed 16 ARMv5T/ARMv6 × Dyncom/Dynarmic cases from
+source and 16 against a freshly exported installed SDK
+(`.symbian/clock-thread-source-matrix.log`,
+`.symbian/clock-thread-installed-matrix.log`). This is a bounded concurrent
+reader check, not proof of timing resolution, suspension or half-wrap behavior.
+
+Combining the clock and `std::thread` initially failed at link: an older
+SDK-owned `__throw_system_error` fallback collided with original pinned
+libc++ `system_error.cpp`. The fallback was retired from the archive and its
+obsolete file removed; original libc++ now owns the no-exceptions thread
+failure path. A second link failure exposed the real `std::this_thread::yield`
+dependency on `sched_yield`, which is ordinal 296 in the preserved OpenC
+`libcu.def`. The selected libc proxy now includes that entry. The concurrent
+guest probe executes the real ROM import on RM-807. Eight source
+`system_error` controls passed after the change
+(`.symbian/clock-thread-system-error-source.log`). Joining an empty
+`std::thread` deliberately exits the guest with -6 through original libc++'s
+no-exceptions abort path; four source and four installed negative controls
+passed (`.symbian/thread-error-source.log`,
+`.symbian/thread-error-installed.log`). No recoverable `StatusOr` is inferred.
+
+The new export has 2,594 digest-valid files. Its copied/relocated SDK project
+test passed (`.symbian/clock-thread-project-copy.log`), and an E71 generated
+starter built and executed on its named firmware
+(`.symbian/clock-thread-e71.log`). The prior visible SDK had no altered or
+unsealed files. The candidate was installed at `~/dev/symbian-sdk` through the
+SDK's path-rebasing installer; its previous 2,594-file version remains at
+`~/dev/symbian-sdk-before-clock-thread-20261001`, and both seals verify.
+The canonical path's copied/relocated project test and one ARMv6/Dynarmic
+clock-thread smoke test also passed after promotion
+(`.symbian/clock-thread-canonical-copy.log`,
+`.symbian/clock-thread-canonical-smoke.log`).
+Native `RTimer` request ownership, cancellation/draining and
+monotonic deadline scheduling remain C1 work; this test adds no scheduler or
+competing request-semaphore consumer.
+
+## 2026-10-01: Guest clocks and FastCounter rate
+
+The pinned libc++ `chrono.cpp` could not use its POSIX monotonic branch on the
+named RM-807 ROM: `clock_gettime(CLOCK_MONOTONIC)` returned `EINVAL`, including
+after a successful `CLOCK_REALTIME` call. A maintained LLVM patch now routes
+only Symbian `steady_clock` through a narrow runtime bridge. It reads
+`User::NTickCount()` and the nanokernel HAL period, falling back to the
+ordinary tick and its HAL period. A process-wide 64-bit atomic extends the
+32-bit count and clamps out-of-order cross-thread samples. The adapter assumes
+at least one sample within half of a counter wrap; long idle/suspend behavior
+and concurrent clock readers remain separate gates. `system_clock` retains the
+working original libc++ realtime path.
+
+Original `euser/us_exec.cpp` explicitly recommends `FastCounter` for profiling
+and testing, and `NTickCount` for production. It warns that fast-counter
+frequency and activation vary by device and that it can consume extra power.
+The screenshot's distinction from ordinary `TickCount` is useful for short
+benchmarks, but does not establish a portable production deadline source.
+EKA2L1 already generated NTick and FastCounter values without exposing their
+period/frequency via the corresponding kernel HAL IDs. Ordered emulator
+patches add those HAL responses and fix FastCounter's truncated integer period
+calculation (the old 30 µs period implied about 33,333 Hz while the advertised
+frequency was 32,768 Hz). A guest one-second interval probe checks the count
+against the monotonic nanokernel clock. The original emulator build succeeded.
+
+Source guest normal/changed controls passed 16 ARMv5T/ARMv6 ×
+Dyncom/Dynarmic cases (`.symbian/clock-fast-source-matrix.log`). An isolated
+SDK export first failed in the Streams profile because OpenC's `libm` alias
+macros rewrote libc++ overload names; a C++-only header adapter now suppresses
+that alias layer while retaining the original C declarations. The exported
+Streams build then succeeded. A generated project exposed another issue:
+its proxy list was also the direct linker input list, and CMake de-duplicated
+two `--as-needed` scopes so an unused `libc.dso` became mandatory. The template
+now uses one optional runtime scope, while import-image targets place
+`--as-needed` before the complete declared proxy set. The converter itself
+also assumed every declared proxy would appear in ELF `DT_NEEDED` and
+`.gnu.version_r`; it now checks the actual needed subset against the declared
+proxy catalog while retaining duplicate, identity, and unreferenced-import
+checks. This keeps selected proxies available for conversion without making
+every one a firmware dependency. The first exported clock and the corrected
+FastCounter matrices each passed eight cases. After rebuilding the editable
+native extension and re-exporting, the final installed matrix passed 16 cases
+(`.symbian/clock-fast-installed-final-matrix.log`). A copied/relocated SDK
+project and an E71 generated starter both built, and the latter executed on
+its named firmware (`.symbian/clock-sdk-project-copy6.log`,
+`.symbian/clock-e71-starter6.log`). A dedicated unused-proxy conversion control
+and the full import suite passed. Root CTest passed 8/8. The 2,594-file
+digest-valid candidate was promoted by path rebasing to `~/dev/symbian-sdk`;
+its prior 2,591-file tree remains separately preserved and verifies.
+
+## 2026-10-01: Root IDE indexing for guest probes
+
+The host root CMake profile did not own `examples/runtime_probe/chunk_bridge.cc`;
+CLion reported that the source belonged to no target and could not derive
+platform compiler information. The root CMake project now has a separate ARM
+analysis branch selected by `SYMBIAN_INDEX_GUEST_PROBES`, reached before host
+FetchContent or native targets. It configures the original guest runtime
+component and a compile-only `symbian_probe_index` aggregate with separate
+object targets for each probe project. It covers ABI, C++20, C++20 modules,
+DLL/data/lifecycle, E32, import, pointer and runtime probes. The local presets
+reject any new `examples/*_probe` directory until its indexing target is
+declared, so future probes cannot silently lose IDE ownership. They
+also select a prepared Mbed TLS source and visible SDK headers for its C probe;
+checkouts without it omit that independently supplied adaptation. A clean
+configure with Apple's `/usr/bin/clang++` revealed no `clang-scan-deps`; the
+profile now fails at configure with an explicit upstream-Clang requirement
+instead of an opaque Ninja command-not-found failure. No ARM ELF Run
+target is exposed to the host IDE. Special locale and exception
+translation-unit settings are attached to the runtime target, and the C++20
+module target uses CMake's module scanner. ARMv6 and ARMv5T local preset builds
+succeeded; an audit of both compilation databases found all 48 probe
+`.cc`/`.c`/`.cppm`/`.S` files using the
+matching `--target=armv6-none-eabi` or `--target=armv5t-none-eabi` compiler
+option. The ignored local CLion preset fixes LLVM/LLD/Ninja paths for this Mac;
+the existing host profile remains enabled. The prior `.idea/workspace.xml`
+was retained under `.symbian/clion-setup/backups/`. The live IDEA/CLion log
+then recorded CMake exit 0 for the local ARMv6 guest profile at 22:04:38
+after the expanded target graph was added.
+Editor diagnostics after that reload have not been observed directly.
+
+## 2026-10-01: Maintained classic-locale profile and Abseil link gate
+
+The original LLVM libc++ 23.1.2 locale, ios, ostream, iostream and strstream
+sources are now built in the opt-in `SYMBIAN_RUNTIME_LOCALE_STREAM` profile.
+Owned C/POSIX locale, `isblank`, `std::uncaught_exceptions()` and ARM
+`__aeabi_memmove4` adapters live in `cpp/symbian/runtime/`; the pinned LLVM
+checkout is unchanged. The locale adapter rejects invalid names, masks and
+categories with `EINVAL`, and deliberately does not claim arbitrary locales.
+The guest checked real `std::ostringstream` output and `std::locale("C")` /
+`std::locale("POSIX")`, including a changed-output control. Eight source-tree
+and eight fresh installed-SDK ARMv5T/ARMv6 × Dyncom/Dynarmic cases passed.
+The installed `Symbian::Streams` CMake target selects a separately built
+archive and matching `__config_site`; it must replace, not accompany,
+`Symbian::Runtime`. Two independent archive builds per architecture compared
+byte-for-byte. Both the prior and new SDK trees passed complete digest audits
+before promotion. The current tree has 2,535 sealed files; the 2,503-file
+predecessor is retained at `~/dev/symbian-sdk-before-streams-20261001`.
+
+An ignored pinned-Abseil `absl_statusor` cross-build now completes after
+removing Symbian from Abseil's glibc-style in-memory ELF symbol path and
+keeping Fuchsia-only zoneinfo file reading inside its platform guard. These
+two adaptations are recorded as a replayable, checkable patch at
+`research/abseil/symbian-platform.patch`; they are not shipped yet. Enabling
+libc++ wide declarations let Abseil's formatting sources
+compile, but does not establish working wide-character I/O. A guest Status/
+StatusOr link then failed on a concrete dependency closure: Abseil's
+`LowLevelAlloc` compiles empty when the platform lacks `ABSL_HAVE_MMAP`, while
+its synchronization graph still refers to that allocator; compiler-rt soft
+float helpers, 64-bit atomics, TLS, C/POSIX services and other original runtime
+symbols are also missing. The full undefined-symbol record is in
+`.symbian/abseil-guest-probe/link-locale-3d.log`. Do not supply a fake mmap
+or no-op lock: OpenC declares file-backed `mmap` but its `sys/mman.h` does
+not define `MAP_ANON`/`MAP_ANONYMOUS`, which Abseil's allocator requires.
+Validate an actual anonymous page source, likely through the native `RChunk`
+contract, and its synchronization path, then
+execute Status/StatusOr before making A11's public guest API depend on them.
+
+As a first page-source prerequisite, a narrow original-SDK `RChunk` bridge
+queries `UserHal::PageSizeInBytes`, then creates, writes, enlarges and closes
+16 process-owned local chunks, checking
+the original bytes after growth. Normal and changed-result controls passed
+eight ARMv5T/ARMv6 × Dyncom/Dynarmic executions from source and another eight
+against the canonical SDK archive with a separately generated ordinal proxy.
+This validates
+that bounded native chunk path, not the page-size, commit/decommit,
+cross-thread, asynchronous or low-level allocator contracts Abseil requires.
+
+## 2026-10-01: Imported function pointers and locale/stream prerequisite
+
+**Converter result:** A global pointer initialized to imported EUSER
+`memmove` generated both a function PLT slot and `R_ARM_ABS32` in `.rel.dyn`.
+The E32 converter now accepts only a bounded relocation to an imported
+function with a unique, validated ARM PLT entry, a zero-initialized word in
+file-backed writable data, and a matching retained `.rel.data` record. It
+writes that PLT address into the E32 data image and emits a normal E32 data
+relocation. An imported function address held in code is also accepted only
+when its symbol value names the correct PLT entry. Imported data objects,
+other `.rel.dyn` types, malformed PLT values and missing retained records
+still fail conversion. The maintained global-pointer probe passed all four
+ARMv5T/ARMv6 × Dyncom/Dynarmic executions from source, plus four using the
+existing installed SDK runtime/proxy. Two mutated ELF controls reject a
+`R_ARM_GLOB_DAT` data-object form and a false imported-symbol PLT address;
+they passed in both source and installed-SDK test settings. A fresh 2,503-file
+SDK export passed the combined 11 function-pointer/thunk execution and
+malformed-input cases, then replaced the canonical visible SDK after both
+trees passed their digest audits. The prior tree is retained at
+`~/dev/symbian-sdk-before-import-pointers-20261001`; both 2,503-file trees
+remain digest-valid and their manifests point to their actual locations.
+
+**Locale experiment:** In an ignored isolated build, the original pinned
+LLVM 23 libc++ locale/ios/ostream/iostream/strstream sources compiled with
+an SDK-owned experimental classic-C-locale API adapter, a small `isblank`
+bridge and libc++'s default rune table. After adding original source closure,
+real C imports and a no-exceptions `std::uncaught_exceptions()` hook, a guest
+`std::ostringstream` produced `"value 42"` and `std::locale("C")` named
+`"C"`. That image exited 0 on both emulator CPU backends. This is a
+prototype, not an installed runtime profile: its locale handling, imported
+C-service closure, non-classic locale failures, exception-policy boundary and
+cross-architecture tests still need promotion and negative controls before
+Abseil Status can depend on it.
+
+**Failed control:** The first stream image exited with a guest access
+violation on both backends. Disassembly identified LLD's generated
+`__ARMv5LongLdrPcThunk___aeabi_memmove`: its literal held the unrelocated
+ELF address `0x9365` and no retained relocation. A Thumb-to-Thumb helper
+removed that accidental interworking thunk and the stream probe passed.
+The converter now recognizes LLD's exact named eight-byte ARM
+`ldr pc, [pc, #-4]` thunk, validates its target in the code mapping and
+emits an E32 code relocation for its literal. Rebuilding the original ARM
+helper then made the same stream probe exit 0 on both CPU backends. A
+maintained ARM-to-Thumb thunk probe passed all four architecture/backend
+cases; a changed literal outside code was rejected before launch. Other
+linker-generated absolute thunk forms remain a gate. A successful static
+conversion alone had not proved the first image runnable. Experiment files
+and logs remain under ignored `.symbian/libcxx-locale-probe/`.
+
+**Next Abseil closure probe:** The isolated pinned Abseil
+`5650e9cf76d3be4318d5fa3af38ee483ddfd5e4a` build was reconfigured
+against the executing classic-locale/stream prototype. It progressed to
+49/142 build steps before failing. OpenC's `libm_aliases.h` first rewrote
+`nexttoward` to `nextafter`, conflicting with libc++ overloads; an ignored
+test-only math wrapper after libc++ and before OpenC removed that macro for
+the build. Remaining failures include Abseil debugging code expecting the
+Linux `link.h` ELF loader interface, `str_format` requiring disabled
+`std::wstring`/`wstring_view`, and time-zone code instantiating an unavailable
+`std::ifstream`. These are real platform and library-profile dependencies.
+No source patch or guest Abseil archive was promoted; the exact compiler log
+is `.symbian/abseil-guest-probe/build-locale-2.log`. The next adaptation must
+preserve actual Abseil behavior where used, resolve wide-character and file
+services or narrow the dependency graph with justified source changes, then
+execute Status/StatusOr on the guest before A11 can consume it.
+
+## 2026-10-01: Guest varargs and libc++ error categories
+
+**Question:** Can the guest use Clang's ARM EABI varargs and original libc++
+error categories through real firmware C imports?
+
+**Implementation:** An SDK-owned `stdarg_e.h` shadows OpenC's legacy header
+at the guest compiler include boundary. It preserves Clang's builtin
+`va_start`/`va_arg` and defines OpenC's reserved `__e32_va_list` name as the
+builtin ARM `va_list` type. The installed SDK carries the identical header.
+The runtime archive now builds original pinned LLVM libc++
+`error_category.cpp` and `system_error.cpp`. Those files use local static
+category storage and compile without PIC so the verified E32 data relocation
+pass can rebase it. Their first PIC build was correctly rejected for a
+PC-relative reference crossing code and data mappings; the failure was not
+suppressed in the converter.
+
+**Execution:** A guest calls the ROM's `libc.dll` `vsnprintf` with an integer,
+string, then enough arguments to use the stack and a 64-bit integer. A second
+guest exercises `std::make_error_code`, `generic_category`, `message` through
+`strerror_r`, and default error condition. Each has a changed-result control.
+Source-tree tests passed all 16 ARMv5T/ARMv6 × Dyncom/Dynarmic cases, and a
+fresh materialized SDK passed the same 16 cases with its prebuilt archive and
+headers. A copied-SDK application build passed. The actual C imports came
+from selected frozen ordinals; no format stub was used. The prior visible SDK
+audited clean before replacement. The new 2,503-file visible SDK and retained
+2,502-file predecessor both verify by digest; the predecessor is
+`~/dev/symbian-sdk-before-runtime-c-services-20261001`.
+The promoted canonical SDK passed four ARMv6/Dyncom normal/changed-result
+controls; root CTest passed 8/8, and formatting/lint/diff checks passed.
+An isolated pinned-Abseil cross-build with LLVM 23.1.2 now compiles its
+`absl_raw_logging_internal` target against the maintained SDK varargs header.
+This is a compile result in an ignored adapted source copy, not a guest
+Abseil Status build or execution result.
+
+**Open:** This is a bounded C ABI and C++ system-error result. Abseil's pinned
+Status closure still requires real iostream/locale support; A11's fiber,
+request-owner and cancellation backend is not built. The scratch Abseil build
+is not a passing guest library or a substitute for an execution test.
+
+## 2026-10-01: Guest completion namespace and Abseil cross-build
+
+The bounded stackless adaptation was initially exported under
+`<a11/concurrency/*.h>` as `a11::guest`. This put an incompatible
+`Result<T>` API on the same include path as A11's `absl::StatusOr<T>`
+API. The owned adaptation now uses `<symbian/concurrency/*.h>` and
+`symbian::concurrency`; the unmodified A11 snapshot retains the
+`a11::` namespace. An SDK export must merge these headers into
+`include/symbian` beside `runtime.h`, and must not publish the old
+`include/a11` alias. The SDK-owned cross-thread mutex adapter likewise
+moved from `thread::Mutex` in `<thread/boost_primitives.h>` to
+`symbian::concurrency::Mutex` in `<symbian/concurrency/mutex.h>`; A11's
+`thread::` namespace remains available for the eventual compatible backend.
+
+An isolated copied Abseil source tree exposed further concrete guest
+dependencies. The first exploratory build selected `/usr/bin/clang++`.
+A second configured build used the pinned LLVM 23.1.2 Clang and LLVM archive
+tools; after adding the real OpenC libm header directory, it still failed
+in Abseil's `OStringStream` and `int128` stream formatting because this guest
+libc++ profile has localization and iostreams disabled. OpenC's
+`stdarg_e.h` replaces Clang's builtin `va_start`
+macros with pointer-based macros even though Clang's ARM `va_list` is
+a struct. Skipping that header in the experiment clears the immediate
+compile error but does not establish variadic-call ABI safety. The
+current libc++ build disables localization, so Abseil's stream-based
+source does not have a complete `std::ostream` or stream buffer.
+Enabling localization instead reaches absent OpenC `locale_t` and
+locale functions. These scratch changes were not promoted to a
+maintained Abseil patch or claimed as an executable Status closure.
+
+**Evidence:** After moving both the completion headers and mutex shim, the
+source-tree runtime probe passed all eight normal/changed-result cases across
+ARMv5T/ARMv6 and Dyncom/Dynarmic (50.27 s). A new materialized SDK with no
+`include/a11` or `include/thread` passed the same eight cases (53.84 s); a
+copied-SDK initial application build and relocation test passed. The prior
+visible SDK audited clean before replacement. The refreshed visible SDK and
+retained predecessor each have 2,502 digest-valid files. After promotion,
+the canonical SDK passed two ARMv6/Dyncom normal/changed-result controls;
+root CTest passed 8/8 and the A11 source integrity checks 5/5. This establishes
+namespace ownership for the bounded profile, not the full A11 ABI.
+
+## 2026-10-01: A11 stackless guest completion and Abseil dependency gate
+
+**Question:** Can the pinned A11 completion path run on the bounded guest
+without a fiber scheduler or another native request consumer?
+
+**Experiment:** A direct CMake cross-build of pinned Abseil
+`5650e9cf76d3be4318d5fa3af38ee483ddfd5e4a` reached the Status closure
+but failed on unavailable libc++ streams/C++ ABI headers, Symbian signal APIs,
+platform `O_CLOEXEC` and an assumed always-lock-free 64-bit atomic. The
+experiment's build files and patched source copy remain ignored; the pinned
+upstream checkout was not edited. The
+full A11 `Future` header also requires its Boost fiber/select backend.
+
+An explicit licensed guest adaptation of the A11 pinned `future.h`,
+`parallel.h`, `inline_pump.h` and `thread/boost_primitives.h` keeps shared completion, inline
+callback/continuation semantics, cancellation request, promise abandonment
+ordered all-result fan-in, bounded reentrant pump passes and an explicit
+TaskGroup asynchronous join/cancellation. The bounded
+`symbian::concurrency::Mutex` uses the verified
+libc++ OS mutex; it cannot park fibers. This exposed missing libc++
+`mutex_destructor.cpp` and ARM `__aeabi_memclr8` calls; the runtime now builds
+the original destructor and supplies the ARM EABI aligned-clear adapter over
+the existing real `memset` import.
+
+**Evidence:** Eight normal/changed-result execution cases passed on the
+preserved RM-807 fixture across ARMv5T/ARMv6 and Dyncom/Dynarmic (47.09 s
+after the `thread::Mutex` adaptation). A fresh materialized SDK exported the
+headers and `Symbian::Stackless`; the same eight cases passed with its
+prebuilt runtime archives and selected proxies (49.14 s). That export was
+promoted to `~/dev/symbian-sdk` only after the previous canonical tree's
+2,496-file digest audit; the new 2,502-file tree and its retained predecessor
+both verify. The refreshed SDK passed 15 generated-project/source-integrity
+tests, including actual breakpoints in the bridge and model. The final
+TaskGroup cancellation routing adjustment passed two ARMv6/Dyncom source
+controls and two canonical-SDK controls after the full eight-case matrix.
+Tests cover
+cross-thread completion, immediate callbacks, cancellation before completion,
+duplicate completion, abandonment, allocation-cell balance, reverse-order
+fan-in, error retention, cancellation fan-out, empty fan-in, TaskGroup double
+finish/rejection, group cancellation and abandonment. Neither these
+tests nor the export prove general device compatibility, C1 native request
+ownership, fiber parking or the final Abseil Status ABI.
+
+## 2026-10-01: writable DLLs, C toolchain and Mbed TLS link
+
+**Question:** Can an installed SDK publish a usable C DLL, preserve its
+per-process data contract, and link actual Mbed TLS code without claiming a
+general DLL runtime?
+
+**Evidence:** The original `elf2e32` treats `EPOCALLOWDLLDATA` as a converter
+opt-in. The pinned EKA2L1 loader allocates per-process DLL storage and copies
+initialized data, clears BSS and applies data relocations. LLVM's ARM PIC mode
+uses GOT entries for default-visible mutable globals but emits cross-mapping
+PC-relative references for hidden/internal globals; the latter are rejected.
+
+**Experiments:** A frozen-export C++ probe with 4-byte initialized data and
+4-byte BSS converts, passes independent original E32 validation and executes
+twice in each of two fresh processes on both CPU backends. A changed input
+fails across the DLL import boundary. Dyncom initially fetched an unmapped
+instruction after guest process exit; an ordered source patch stops its
+interpreter when the syscall ends the current execution quantum. Both-backend
+cases then pass. A C-only CMake target builds DLL and ordinal proxy for ARMv5T
+and ARMv6, links a C consumer and converts its function import. The Mbed TLS
+adaptation builds all 80 `mbedcrypto` C objects with SDK Clang 23.1.2. A
+SHA-256 wrapper links that archive and the SDK runtime/EUSER proxy, then
+converts to a DLL. Its import metadata contains seven selected EUSER slots.
+Full Mbed TLS guest execution is not yet demonstrated. The SDK export had
+omitted the proxy header-probe resource; materialization now includes it.
+Copying an installed SDK now rebases the new C compiler path as well as the
+existing tools; a copied 2,422-file SDK manifest loaded successfully, and the
+active user SDK was restored to `~/dev/symbian-sdk` after that check.
+
+**Focus regression:** Direct GUI/runtime/debug test launchers lacked the
+background-window environment flag even though they used a nonbundle launch
+path. All three now set the flag. No EKA2L1 process was running when the user
+reported a focus steal during this turn, so its exact triggering process is
+unconfirmed; the missing flag was a concrete reproducible launch-path defect.
+
+**Remaining:** General hidden/internal writable data, import-heavy DLL
+lifetime, constructors/destructors, TLS and useful dynamic-module debugging.
+Test the Mbed TLS DLL and client with actual firmware EUSER imports before
+claiming guest execution. Continue the A11 concurrency prerequisite work.
+
 ## 2026-09-30: initial survey and engineering baseline
 
 **Question:** What already exists, and can the host supply a native starting
@@ -1574,3 +2687,939 @@ the normal editing/Run/Debug context. Its RunManager lists GUI Run and GUI Debug
 and its saved native profile is Symbian GUI GDB. Saved default selection now
 chooses GUI Run; the automatic gui_app ELF configuration is not the launcher.
 Actual toolbar interaction and the full debugger frontend remain unautomated.
+
+## 2026-10-01 — Actual A11 status port, package structure and Linux host gates
+
+**Question:** Can the tooling use A11's actual cross-language contracts and
+support a one-install SDK without making every developer rebuild a host stack?
+
+**Implementation:** Ported the actual A11 working-tree Status/StatusOr wrappers,
+interop/GIL helpers, NativeStatus binder, payload/JSON/MessagePack/UTF-8 code,
+Python status policy and HTTP tests. Recorded source hashes and A11 HEAD in
+third_party/a11/provenance.json; retained Apache notices/licenses and the exact
+payload URL. Built the original pinned pybind11_abseil canonical runtime modules,
+isolated pybind11 headers from competing Abseil installations, and supplied
+three missing direct Abseil link dependencies rather than relying on A11's
+larger core to mask them. All core/codec GTests compile without exceptions; only
+Python translation boundaries enable exceptions. JSON diagnostic reparsing was
+removed and object-key UTF-8 preflight added to satisfy this policy. Actual
+compact MessagePack and non-inverse WebSocket mapping contracts are documented
+in A11_STATUS.md, including what the port does not silently fix.
+
+Moved implementation from package __init__.py files into named modules, retaining
+public shortcuts. Serializable CMake target/session metadata uses Pydantic;
+process handles are excluded. The GDB hook moved to a dependency-free top-level
+module: importing the emulator package from GDB had otherwise loaded a native
+extension for the venv's different CPython ABI. A python -S regression and actual
+GDB batch/MI checks cover that boundary.
+
+**Linux experiment:** Adapted A11's isolated static-OpenSSL dependency bootstrap,
+loader closure audit, CMake presets and separate native/wheel CI gates. Actual
+Linux aarch64 manylinux_2_28 CPython 3.12 container built seven native CTest targets
+and an installed wheel, passing closure/resource/status checks and 62 Pytest
+cases. The bootstrap initially exposed a missing Perl Time::Piece prerequisite;
+that is now checked/installed. Testing from /src initially shadowed the installed
+package; copied tests outside the source tree establish installed imports.
+The final macOS arm64/macOS 26.0 wheel also passes its installed audit from /tmp.
+Wheel notices include A11, Abseil, JSON, pybind11, pybind11_abseil and OpenSSL.
+The Starlette/httpx deprecation warning remains visible in the copied HTTP tests.
+
+**Distribution design:** docs/DISTRIBUTION.md separates the native Python core
+from exact-version platform payload wheels containing materialized headers,
+compiler/linker, EKA2L1 and a complete debugger closure. Measured local emulator
+archive is approximately 41 MB and has no non-system absolute Mach-O dependency;
+its actual maximum minimum-OS requirement is 26.0. Copying Homebrew LLVM/GDB
+executables alone would omit large required closures. No firmware is bundled.
+Canonical pybind11_abseil co-installation/ABI ownership with A11 is a release gate.
+Only the host tooling wheel is built today; payload wheels and public publication
+are not implemented. Linux x86_64/other CPython, Qt/display/guest/GDB and a clean
+host end-to-end SDK install remain distinct gates.
+
+## 2026-10-01 — Combined root CMake, executable Run target and Qt boundaries
+
+**Experiment:** Added the real ARM gui_app target to the host CMake project with
+directory-scoped target flags/link rules. CMake expanded <CMAKE_LINKER> using the
+root native driver despite a local variable override; spelling the discovered
+ELF LLD path in the guest directory's link rule fixed the real failed links.
+ARM ELF and native Mach-O targets build in one graph; the root compilation
+commands contain the appropriate target triples independently. Root clangd
+parses/indexes the GUI with zero compiler diagnostics. Its default ExtractFunction
+tweak self-test failed on break/continue; restricting the check to ExpandAutoType
+completes with zero errors, matching the maintained walkthrough check.
+
+**Run fix:** A custom gui_app_run build target was not a CLion application.
+Replaced it with a native executable that execs the owned Python supervisor.
+The root target writes a stable build/debug/gui_app_run artifact. Saved root GUI
+Run explicitly selects it (empty application arguments), because the IDE retained
+an empty executable field for the former custom target. Root/standalone run and
+remote-debug settings are generated, preserving the root's existing host debugger
+selection. Actual launcher rendering/input/normal exit and GDB batch/MI relocation
+checks pass. UI reload/Run/debugger interaction remains distinct from terminal
+verification. No IDE authentication or accessibility settings were bypassed.
+
+The full regression initially exposed four stale hard-coded GUI artifact digests
+following legitimate owner edits. Tests now verify the publisher's current source
+hashes and actual ELF/E32 conversion, while retaining exact ROM/EUSER guards,
+independent pixel/input behavior and firmware call controls. Compiler veneer
+addresses are read from the actual disassembly; ephemeral caller locations are
+checked against mapped code bounds rather than the older app's layout.
+
+**Types:** Removed QJsonObject/QJsonDocument and internal QString state from the
+maintained GPL control adapter. Requests/records use nlohmann::json, paths and
+messages use std::string/std::filesystem; QString/QByteArray conversions occur
+at Qt APIs. The real frontend/control probe rebuild and native control tests pass.
+Ordered native serialization/export tables remain ordered for reproducibility;
+future lookup structures follow A11's Abseil choices. No new scheduler was added.
+
+## 2026-10-01 — First executable guest C++ runtime
+
+**Question:** Can real modern strings/containers use Symbian's own heap while
+preserving a strict no-exceptions application profile?
+
+**Sources:** Unmodified LLVM llvmorg-23.1.2, commit
+85ac560262434c9ccfc0c183ec22d4138ed647fb, plus already-preserved OpenC C declarations
+and selected EUSER frozen exports. The ignored LLVM checkout is pinned and clean;
+our adapters/configuration live in cpp/symbian/runtime. Future LLVM changes must
+be explicit patches under research/llvm, as EKA2L1 changes already are.
+
+**Findings:** OpenC's C99/long-long feature macros are needed by original
+libc++ string.cpp. Combining preserved SDK e32cmn placement-new declarations/
+inline definitions with libc++ <new> produces real incompatible specifications
+and duplicate definitions. Isolated SDK translation units behind a small C ABI
+solve this without modifying upstream headers. A global std::nothrow reference
+produces R_ARM_GOT_PREL and a .got table: native conversion correctly rejects it.
+A maintained rejected-global variant preserves that gate. The allocation probe
+uses a genuine local nothrow_t tag; no standard classes or discarded sections
+substitute for the required runtime machinery.
+
+**Implementation:** Generated target configuration from LLVM's original template,
+private std::__symbian ABI namespace, original assertion handler, original
+string.cpp/new_helpers.cpp, and a static Symbian heap/ABI bridge. Ordinary new
+uses User::Alloc and exits the guest with -4 on failure; nothrow returns nullptr.
+Zero sizes request a byte; TInt overflow is rejected before the SDK call. Default
+alignment is checked. Minimal reached C/compiler memory entry points are supplied,
+with memory copying routed through actual EUSER. No OpenC DLL or host libc++ is
+linked; unimplemented services are not claimed.
+
+**Execution:** Four maintained Pytest cases execute success and fatal allocation
+variants on dyncom and dynarmic using fresh digest-guarded firmware copies.
+Success checks 20 rounds of heap-backed strings and 1,024-element vector growth,
+independent arithmetic and unchanged heap allocation-cell counts after destruction.
+Oversized nothrow fails at the bridge range guard. A representable 4 MiB request
+exceeds the image's 1 MiB heap maximum and exercises actual SDK allocation failure;
+nothrow returns nullptr and ordinary new exits with -4. Native exit records and
+logs are retained; ROM/EUSER digests remain unchanged. The original Symbian
+validator accepts the published runtime image and rejects bad-CRC/negative-heap
+controls (three GTests).
+
+**Limits/next steps:** GOT, writable data/BSS, constructors/destructors, TLS,
+complete compiler-rt/C services, over-aligned allocation and new-handler behavior
+need explicit implementation/execution gates. Guest Abseil/StatusOr, maps and JSON
+need ports; the full host bridge does not supply guest runtime support. The GUI
+has not yet been converted to use this runtime. No physical-device execution
+has occurred. PLAN.md makes runtime a required next priority; docs/RUNTIME.md and
+CXX_CAVEATS.md explain the developer-facing contract and distinguish OS principles
+from work the SDK should absorb.
+
+
+## 2026-10-01: Standalone project wizard, visible SDK and actual IDE import
+
+**Question:** Can a project created outside the checkout build, resolve native
+and modern C++ headers, and launch/debug through its own selected SDK?
+
+**Implementation:** Added Pydantic project preferences/location models and
+`symbian init`, `sdk install`, `app configure/build/run`. Target SDK exports
+materialize original headers, pinned configured libc++, compiler resource/C
+headers, runtime archive and selected EUSER/WS32/GDI proxies. The visible prefix
+also carries actual Python utilities and native modules, all host-native
+notices, provenance/digests and tool wrappers. Host interpreter/packages,
+LLVM/LLD, ARM GDB, EKA2L1 and guarded private firmware remain declared external
+prerequisites. This is not the finished one-install host payload distribution.
+
+Shared project files stay relative; sdk-location.json is the ignored local
+setting. CMake includes it before project() and links Symbian::Runtime for the
+actual header/ABI configuration. Init builds initially. Package entry points
+redirect to selected SDK commands/templates. A Python bootstrap prevents an
+editable import finder from silently overriding the visible SDK package.
+SDK installation clones/rebases an active export; a direct directory move still
+requires manifest rebasing. Configure refreshes generated build/IDE files and
+preserves app sources, but custom generated-file edits need preserving first.
+
+**Runtime findings:** Real TFontSpec/DrawText needed the platform's 16-bit
+wchar_t ABI; incorrect literal length caused a native typeface panic. Original
+SDK placement-new declarations still conflict with modern libc++ <new>, so the
+model crosses a narrow C bridge into the W32 adapter. LLVM sources stay clean.
+Original compiler-rt ARM division/remainder sources and checked over-aligned
+allocation now link the -O0 model and execute in the runtime probes. Ordinary
+OOM exits -4 and nothrow returns null; no recoverable guest StatusOr claim.
+Global std::nothrow/GOT remains a rejected control. PLAN records the actual A11
+completion/stackless/pinned-fiber/worker delivery gates and the exception/GIL/
+deferred-reference conflicts that require real backend work.
+
+**Execution evidence:** Both emulator backends render original font greeting
+and one/two time rows, clear, then exit guest/frontend zero. The saved Run
+executable itself is launched from a project outside the checkout. Real ARM GDB
+stops in AppLogTime and reads date/source/backtrace. A copied visible SDK, moved
+project, relative SDK setting and initial CLI build pass; a modified copied SDK
+template proves init dispatches to that selected SDK. Modern model GTest retains
+the latest twelve rows, clears, reuses and destroys the model. Golden digests
+remain checked; no physical operation ran.
+
+**Failed controls and corrections:** A screenshot ink threshold incorrectly
+rejected antialiased font pixels and prolonged tests; use real-ink row checks
+with retained images. One dyncom Exit press was lost while an unnecessary app
+pointer-down latch was present; removing that latch restores the raw native
+per-down handling. Later success does not establish the earlier event loss's
+cause. Regression checks also rejected a cached root ELF built by an older
+Apple Clang behind the same /usr/bin/clang++ path. DWARF producer strings show
+clang-2100.0.123.102 versus clang-2100.1.1.101. Cache identity now includes actual
+compiler/linker versions; a same-path compiler-update failing control and the
+root Run/Stop/batch/MI tests pass. No reproducibility check was weakened.
+
+**Actual IDE correction:** Terminal builds and zero-error clangd checks alone
+were insufficient: the owner's new screenshot still showed an invalid Run
+configuration. IDEA logs reported JAVA_MODULE and no CMake workspace; native
+Debug chose a nonexistent bundled GDB. Generate .idea/misc.xml CMakeWorkspace,
+a CPP_MODULE descriptor/module entry and per-run SelectedDebugProfileService
+mapping, as well as the enabled preset and saved host executable. Preserve
+existing module/workspace components. Repair app, app-2 and app-3 without
+replacing user source or UID. Reopening app-3 produces actual successful CMake
+configure and RAD model 3 sources/1 weak/0 unknown (13:41:12 host log). This
+establishes IDE import, not an automated toolbar click or full debugger frontend.
+
+**Checks:** Full optional-input Pytest run: 202 pass, one inherited Starlette
+warning; subsequent project/IDE/build group: 13 pass. Root CTest: eight targets
+pass. Linux aarch64 current host build: seven CTest targets, installed wheel
+resource/closure audit and 62 installed Python cases pass. Linux guest/emulator
+and broader hosted C++20 support remain separate gates. Mac installed wheel
+includes starter/CMake/bootstrap resources and passes audit. Black/Ruff, native
+formatting excluding owner edits, stub regeneration and whitespace checks pass.
+Private logs are under .symbian/distribution-research; no generated firmware or
+runtime instances are versioned. Replay is in docs/PROJECTS.md.
+
+The current IDE also combines configure/build preset names (symbian-pic -
+symbian-pic), invalidating a Run configuration keyed only to symbian-pic.
+Use a stable ordinary `Symbian App` IDE profile with the same CMake target
+configuration, while retaining CLI presets. The saved executable from the
+actual owner app-3 also launches its emulator and exits zero with unchanged
+golden inputs. Existing open IDE state must reload the new profile metadata.
+
+The actual open IDE reload at 13:46:49 also configures the stable Symbian App
+profile successfully. The Run configuration now references that exact profile;
+SDK-debug version discovery uses the declared ARM GDB without starting a VM.
+
+## 2026-10-01: Local GOT execution and generated model allocation failure
+
+**Question:** Can the rejected global std::nothrow control become an actual
+supported image contract without dropping its GOT, relaxing failures or
+introducing Python format logic?
+
+**Baseline:** Replayed the prior four runtime cases with the prepared inputs:
+four passed, with global-nothrow correctly failing publication. Retained the
+linked failing ELF under `.symbian/runtime-got-baseline`. LLD emitted a writable
+four-byte `.got`, one retained R_ARM_GOT_PREL (0x60), and no ABS32 record for
+the generated word. The existing eager-import GOT/PLT is a separate table.
+
+**Implementation:** Native conversion accepts one aligned local `.got` up to
+4,096 bytes in the existing RX mapping. Every word must exactly equal a
+defined object/function value named by retained GOT_PREL, and each referenced
+value must have a slot. Symbol values must belong to their declared section.
+The converter emits text fixups for every slot, preserves Thumb state and
+the linked PC-relative reference words, and rejects missing/unclaimed words,
+undefined objects, unsupported symbol kinds, duplicate/malformed tables and
+retained records targeting the table itself. General writable data/BSS/TLS,
+external data imports and other GOT/dynamic contracts stay rejected.
+
+**Execution:** A new separately compiled probe constant and Thumb callback
+ensure the test really dereferences/dispatches through the GOT; the empty
+nothrow tag alone would not observe a bad argument address. Ordinary success,
+ordinary allocation failure, global-nothrow/GOT success and changed-GOT-value
+failure all execute on Dyncom and Dynarmic: eight pass, respectively reasons
+0/-4/0/-113. Logs, exits and two-build input-hashed ELF/E32 reports are retained
+under `.symbian/runtime-got-execution`. Six new native GOT GTests cover layout,
+coverage, state and rejection cases. All eight root CTest targets pass. The
+unchanged original whole-image validator accepts the new image and passes six
+corruption/contract controls (seven GTests).
+
+**Application integration:** Generated AppCreate uses `new (std::nothrow)`.
+The W32 adapter checks null, closes the window/group, releases the font and
+returns KErrNoMemory; startup then exits -4. Both CPU backends pass a real
+4 MiB request against the image's 1 MiB heap limit. The fifteen-case project
+generation/build group also passes normal pixels/input/clock/clear/exit, saved
+host launcher, SDK copy/relocation and terminal ARM GDB. Logs are under
+`.symbian/runtime-got-projects`. Later string/vector growth remains fatal on
+allocation failure. This is not a guest StatusOr allocator or IDE-button proof.
+
+**Visible SDK preservation:** All 2,408 prior SDK file digests matched before
+refresh. Prepared a fresh complete export, retained the original tree at
+`~/dev/symbian-sdk-before-local-got-20261001`, rebased/sealed/activated the new
+`~/dev/symbian-sdk`, and verified its native converter reproduces the executed
+GOT E32 bytes. Final converter hardening was synchronized with a checked native
+module replacement and resealed digests. No owner application source, UID,
+generated configuration or IDE module was rewritten. The first smoke command
+used stdin `-`, which the SDK Python bootstrap currently does not implement;
+the supported `-c` replay passes. SDK update/integrity records are retained.
+
+**Regression-input correction:** The first full optional-input run supplied
+the raw LLVM source include directory to the older standalone header-only
+experiment. That experiment's recorded input is the installed
+`/opt/homebrew/opt/llvm/include/c++/v1` plus its separate baremetal configuration;
+source headers need generated vendor files supplied by the runtime build. The
+ten-case C++20 replay with the recorded installed-header input passes. The
+failed full-run artifacts/log remain in `.symbian/runtime-got-full*`.
+That run had 206 passes, one failure and one fixture error, both for the
+header experiment's missing generated assertion handler. The corrected final
+full run passes all 208 cases with every optional input enabled and no skips
+in 181.74 seconds; one inherited Starlette deprecation warning remains visible.
+Its log is `.symbian/runtime-got-final-pytest.log`, with artifacts under
+`.symbian/runtime-got-final`. Black/Ruff, changed C++ formatting and
+`git diff --check` pass. No reproducibility or rejection check was weakened.
+
+**Integrity and limits:** Rechecked all 13,438 baseline paths/sizes/SHA-256
+values and the original archive SHA-256 unchanged, plus all 2,408 current SDK
+file digests. LLVM sources and emulator patches are unchanged. No physical
+operation ran. The archive does not identify the owner's phone, and an
+independently held offline preservation copy remains unresolved. Next runtime
+gates are writable data/BSS, global lifetime/TLS and the remaining service/library
+closure; A11 concurrency still depends on those prerequisites.
+
+## 2026-10-01: shared firmware onboarding and multiple generated-app devices
+
+**Implementation:** ROM/Z objects have portable identities derived from native
+metadata and full relative-path/hash inventories. Storage defaults to XDG data,
+with retained import/failure evidence in XDG cache. Global, SDK, project and
+command keys merge with defining-file path resolution and per-key origins.
+Explicit null clears selection; unset resumes inheritance. SDK exports no longer
+bind firmware to a workspace, and build/init do not require emulator inputs.
+Projects pin exact IDs; local aliases and offline verified bundles are supported.
+One resolver drives Run and Debug, strips ambient executive overrides and records
+actual ROM/Z/C mappings/profile. Firmware parsers remain original pinned native
+EKA2L1 implementations, in a separate GPL no-exceptions executable, not Python.
+
+**Execution evidence:** Native imports accepted C7 (RM-675), E6 (RM-609), 6120
+(RM-243), E71 (RM-346), 7610 (RH-51) and Sony Ericsson P900 across archive ROM/Z,
+ROM/RPKG and self-contained ROM forms. C7/E6/6120/E71 each pass actual CLI init,
+initial build, rendered greeting, time-row input and reason-zero native/frontend
+exit with the default executive map. The modern string/vector model runs on
+these devices without historical feature gating. EKA1 startup/import ABI is
+still absent; 7610/P900 import successfully but reject the current application
+ABI before creating run output. Existing 808 workflows still pass; its guarded
+profile is selected only for the exact verified ROM/EUSER pair.
+
+**Failures retained and corrected:** The first E71 preflight counted an empty
+QuickOffice data file named registration.rom within Z as another firmware ROM.
+The native candidate resolver now distinguishes Z data from image candidates,
+with a GTest. Initial multi-device capture loops reused one basename (correctly
+rejected ALREADY_EXISTS), then assumed scale 2. Native capture now reports logical
+width/height and actual scale, and tests wait for greeting/time ink independently
+of endpoint readiness. RM-243 rendered and logged time but stalled in DLL teardown:
+FBS opcode 0x2C had no handler and left a synchronous request pending. The separate
+replayable fbs-unsupported-request.patch returns KErrNotSupported, preserving the
+error/log instead of inventing an operation; the caller now completes teardown.
+An initial VPL attempt omitted the native installer's required roms staging
+folder; after creating it, the fresh Delight VPL import passes. Both failed VPL
+and original 6120 hang/captures remain retained. Upstream warnings/errors now go
+to retained stderr rather than disappearing behind an uninitialized logger.
+
+**Validation:** Five native GTests exercise traversal/case collision/multiple
+candidates/expansion and original RPKG reader malformed-name/truncation controls.
+The firmware acceptance group passes 26 cases. Final full optional-input Pytest:
+234 passed, one inherited Starlette warning, no skips in 335.11 seconds, artifacts
+`.symbian/firmware-full-verified`, log `.symbian/firmware-full-verified.log`.
+Eight root CTest targets pass. Explicit missing-Z returns FAILED_PRECONDITION;
+profile mismatch, tampered/extra files, alias replacement, bundle transfer,
+configuration precedence and reaped timeout are maintained controls. Original
+archive inputs were checked before/after native imports. New upstream bounds and
+FBS patches replay/reverse exactly against the pinned base; the replay record is
+`.symbian/firmware-patch-check.json`. The existing original SDK digest inventory
+has no modified or extra files before its deliberate refresh.
+
+**Limits:** Default-backend execution above is Dynarmic; the existing 808 CPU
+backend and debugger controls remain independent evidence. Import is not OS boot,
+all-device ABI support, IDE toolbar interaction or physical compatibility. Missing
+services remain real errors. Full supported headers/proxies, DLL lifetime, TLS,
+A11 concurrency and host payload closure still need their acceptance gates.
+Hardware identity and independent offline preservation remain unresolved.
+
+
+### 2026-10-01 — bounded writable EXE data/BSS and genuine A11 source staging
+
+Continued after the ROM/Z onboarding gate. Added an independent RW PT_LOAD
+transport capped at 1 MiB, initialized data/BSS header fields and typed 0x1000 /
+0x2000 fixups from either source mapping to code/data. Local code GOT slots can
+point into writable storage; PC-relative references across independently
+relocated mappings remain errors. DLL data, TLS and constructor arrays remain
+unsupported. No LLVM source changes or sections dropped to obtain acceptance.
+The new-project and runtime-probe linker scripts now emit the separate layout.
+
+The real guest probe checks 64 BSS words begin zero, initialized value 2026,
+pointers to initialized data/BSS/Thumb code, mutation and subsequent observation.
+Both CPUs exit zero; altering initialized data to 2025 exits -115 on each.
+The original success/-4/global-nothrow/-113 controls still pass. Twelve execution
+cases plus two original checksum/whole-image-validator tests pass: 14 tests in
+57.97 seconds, `.symbian/runtime-data-oracles.log` and adjacent retained builds,
+frontend logs and native exits. Four new native format/typed-fixup acceptance
+and negative tests pass; the eight root CTest targets pass. Pure-BSS transport
+has native format coverage only, separately from the real mixed-storage guest.
+
+Pinned actual A11 sources from `fcccb8cb6e1e67d7ba0822ac14cece9ee4c7091b` under
+`cpp/symbian/concurrency/upstream`, retaining exact paths/license and all 46
+source digests. Their inspected working-tree bytes matched Git. Closed 92 local
+include edges, inventory external headers, and preserve original Future/thread
+semantic tests and build declarations. The standard-library-only checker
+verifies inventory/digests/edges; five tests detect altered/missing/extra sources
+and altered graph. CMake source-check and comparison against the original Git
+pin pass (`.symbian/a11-concurrency-source-check.json`). The staged Boost backend
+is deliberately absent from the SDK link graph; this is not a built backend or
+a completed C0 gate. Upstream primitives/pool forced-unwind and boundary
+exceptions require a genuine no-exceptions backend adaptation. Guest Abseil,
+shared ownership/atomics, static lifetime, thread/TLS and native completion owner
+remain prerequisites; application async examples wait for actual execution.
+
+Visible SDK firmware refresh verified all 2,410 payload digests and preserved the
+previous tree at `~/dev/symbian-sdk-before-firmware-20261001`. Existing app-3
+resolution now reports the shared exact 808 content ID, defining layers and
+ROM/Z/C paths; no application/UID/IDE settings were regenerated. Firmware data
+is outside the SDK. `.symbian/firmware-sdk-update.json` records publication;
+`.symbian/firmware-owner-project-resolution.json` records resolution evidence.
+
+### 2026-10-01 — ARMv6 profiles, IDE compiler probe and DLL data directive
+
+New-project target selection defaults to ARMv6 and records one preference in
+`symbian-project.json`. The CMake toolchain reads it before `project()`; the
+CLI passes the same selection. Each architecture has a separately built runtime
+archive. Existing generated projects without the setting retain ARMv5T. The
+ELF attribute parser and E32 publisher validate CPU, floating-point ABI,
+Thumb generation and SIMD declarations rather than trusting requested flags.
+An unsupported image is rejected before a guest session is created. The root
+mixed host/guest CMake file API supplies `--target=armv6-none-eabi` to CLion's
+guest compiler probe; the native tooling probe remains Apple arm64. Both
+probes preprocess successfully with the saved CMake fragments, the root GUI
+build publishes an ARMv6 E32, and eight root CTest targets pass. The 28-case
+runtime matrix executes real ARMv6 `REV` and ARMv5T software variants on
+Dynarmic/Dyncom, including original format/validator controls. Retained logs:
+`.symbian/runtime-arm-matrix-verified.log`,
+`.symbian/root-architecture-compiler-probes.json`,
+`.symbian/arm-architecture-last-tests.log`, `.symbian/arm-last-ctest.log`.
+None of these proves the unidentified physical Nokia 808's CPU profile.
+
+Checked `EPOCALLOWDLLDATA` in the pinned original build tools. The MMP parser
+sets `AllowDllData`; original `elf2e32`'s `FinalizeE32Image()` rejects a DLL
+with nonzero `iDataSize` or `iBssSize` unless that option is set. Sources:
+`research/upstream/buildtools/sbsv1_os/e32toolp/makmake/mmp.pm:987` and
+`research/upstream/buildtools/toolsandutils/e32tools/elf2e32/source/e32imagefile.cpp:925`.
+The EKA2L1 process creates writable DLL static-data memory, but loader fixups,
+per-process separation and initialization/destruction still need direct
+execution tests for SDK-produced DLLs. The directive is a converter permission,
+not a substitute for those mechanisms or for EXE data relocation. Our bounded
+EXE data/BSS work requires no historical opt-in. The current converter keeps
+writable DLL data unsupported pending an actual lifecycle implementation.
+
+### 2026-10-01 — macOS emulator focus and first static-library target
+
+Direct `.app/Contents/MacOS/EKA2L1` launches took focus even after Qt
+`WA_ShowWithoutActivating`, AppKit `orderBack`, an accessory activation policy,
+`open -g`, and Qt's foreground-transform override were tried. Those failed
+trials and disposable instances are retained in `.symbian/gui-runs` and
+`.symbian/open-background-*`. Running the same pinned binary through a private
+symlink outside its `.app` bundle kept iTerm2 PID 757 frontmost during a real
+owned GUI session. The 720×1280 native screen capture completed and the child
+was reaped. `symbian.emulator.background` now creates that per-session link on
+macOS. The ordered GPL `background-window.patch` also suppresses explicit
+Qt/OpenGL focus calls for controlled sessions; pinned-base replay and
+applied-state reverse checks pass. Direct test launchers use the same path.
+The bundle trial changed only ignored build-product Info.plist, and its trial
+key was removed afterward.
+
+The user also needs new emulator windows on a desktop Space rather than over
+their full-screen IDE. The OpenGL patch now assigns a normal managed window
+with `FullScreenNone` and `FullScreenDisallowsTiling`; Apple documents
+`FullScreenAuxiliary` as joining a full-screen window's Space. Qt's show path
+suppresses initial activation but does not forbid deliberate later focus.
+This policy is implemented and replayable; visual placement with another app
+already full-screen remains unverified because switching the owner's active
+Space would disrupt their work. The 720×1280/focus check was on a desktop
+Space, not a full-screen-placement proof.
+After removing the permanent `WindowDoesNotAcceptFocus` flag to retain
+deliberate click-to-focus, the emulator rebuilt. The Dynarmic counter GUI
+render/input/exit integration passed in `.symbian/background-space-gui.log`
+(1 passed, 1 deselected, 5.06 s); `NSWorkspace.frontmostApplication` reported
+Chrome PID 60698 before, during and after that exact run.
+
+The first installed static-library helper builds ARM archives with matching
+runtime headers/ABI flags and stable source DWARF paths. Initial integration
+found Apple's host `ar`/`ranlib` produced an archive LLD could not resolve.
+The SDK now declares and wraps LLVM `ar`/`ranlib` and includes their versions in
+toolchain identity. A second failure exposed build-tree paths in archive DWARF;
+the helper maps those paths consistently. Both ARMv5T and ARMv6 tests build a
+generated application, link an archive, convert to E32 and locate its function
+in ELF/DWARF; two tests pass in `.symbian/static-library-target-tests.log`.
+General DLL loading, writable storage, module symbols and standalone library
+project UX remain separate gates.
+
+The complete optional-input suite then passed 270 tests with one inherited
+Starlette warning in 428.58 seconds (`.symbian/arm-full-background-verified.log`).
+The tested SDK export's source files matched the checkout; its 2,420 recorded
+payload digests and the old visible SDK's 2,410 digests matched before the
+visible path was replaced. The previous tree is retained at
+`~/dev/symbian-sdk-before-arm-profiles-20261001`. The installed CLI resolves
+E6, E71, 7610, C7 and 808 aliases to portable content IDs. An installed-SDK
+`symbian init` for E6/RM-609 on ARMv6 created a standalone application and
+completed its initial ELF/E32 build. The generated project records the
+portable firmware ID and visibly selects `~/dev/symbian-sdk`; resolving it
+without overrides reports the project emulator.json as firmware origin.
+The disposable project and output are retained at
+`.symbian/installed-e6-smoke*`. This is a build/selection result for E6, not
+an E6 emulator-run result; separate earlier copied-instance tests cover the
+actual guest launch.
+
+### 2026-10-01 — Bounded C++ global lifetime and Belle DLL attach
+
+The SDK runtime now retains linker constructor/finalizer arrays and supplies a
+bounded 256-entry `__cxa_atexit` registry with per-module `__dso_handle`.
+EXE startup calls initializers after `User::InitProcess` and the thread heap,
+then finalizers before exiting. The real `std::string` global probe checks two
+constructor and reverse-destructor events plus heap-cell balance. The four
+ARMv5T/ARMv6 × Dynarmic/Dyncom named-firmware runs exit zero. Allocation failure
+still exits -4; no recoverable guest StatusOr allocation API is claimed.
+
+The installed-SDK C++ DLL default uses an SDK ARM entry, linker layout,
+matching runtime archive and EUSER proxy. The first live DLL client returned
+-122: EKA's static call list contained EUSER, the new DLL entry at 0x70001000,
+and the EXE entry, but Belle SVC 0x10D was unimplemented. Mapping the existing
+`library_entry_call_start` handler at Belle's shifted 0x10D slot advanced to
+the DLL entry and exposed a real guest KERN-EXEC 3 at address 0x81C8. LLVM's
+ARM-to-Thumb branch thunk contained the unrelocated absolute target 0x81C9.
+The SDK entry now uses an explicit `R_ARM_ABS32` target word; the native E32
+image contains the code relocation at offset 24. The same guest returned
+constructor state 12 after the loader applied that fixup. The ordered GPL
+`belle-library-entry-start.patch` records the guarded emulator mapping; the
+remaining loader extension stays unimplemented.
+
+`symbian/tests/test_guest_dll_lifecycle.py` builds SDK C++ DLLs and import
+clients for both target architectures and runs them on both emulator backends.
+All eight cases passed in 42.10 seconds: normal constructor value 12 exits
+zero, and changing only the constructor to 13 exits -122. Each copied instance
+uses unchanged digest-checked RM-807 ROM/EUSER inputs. DLL detach/destruction,
+local-static guards, TLS, hidden writable globals and Mbed TLS execution remain
+unverified. Artifacts of the failure diagnosis are retained under
+`.symbian/dll-lifecycle-exec-dynarmic`; Pytest retains its copied instances.
+
+The user's renewed focus report was reproduced by ad hoc launches: a private
+nonbundle symlink plus `EKA2L1_RESEARCH_BACKGROUND_WINDOW=1` alone still changed
+the frontmost macOS application. The normal SDK launcher already also set
+`QT_MAC_DISABLE_FOREGROUND_APPLICATION_TRANSFORM=1`; the ad hoc probe had omitted
+it. With both settings, `lsappinfo front` remained the same throughout a live
+DLL execution. The shared `background_environment()` now supplies both settings
+to SDK and direct test launchers. Temporary AppKit/Qt activation experiments
+were removed from the upstream checkout; the existing ordered window patch is
+unchanged. This is a desktop-Space focus check, not a full-screen-Space proof.
+
+Follow-up acceptance: 28 guest runtime execution cases passed. Four original
+validator cases initially failed at a test-only exact BSS-size assumption:
+the C++ destructor registry adds 3,076 bytes to the prior 256-byte probe array.
+The test now checks that the probe's required minimum exists; all four original
+validator cases pass. Fourteen generated-project/static-and-dynamic-library
+tests and eight root CTest targets also pass. The 12 ordered GPL emulator patches
+apply from the pinned base in a fresh worktree and the last reverse-checks.
+The visible SDK was deliberately re-exported: its 2,427 sealed payloads and
+the prior 2,422-file backup verify without changes. A fresh constructor run
+against that visible SDK passed. No owner application source or UID changed.
+
+### 2026-10-01 — ARM wide arithmetic and dynamic DLL close
+
+The original LLVM compiler-rt ARM `__aeabi_ldivmod`/`__aeabi_uldivmod` wrappers
+were added to the guest archive alongside original `divmoddi4.c`,
+`udivmoddi4.c` and `clzsi2.c`. The first build failed on undefined `__clzsi2`;
+including that real transitive source fixed the link without an owned arithmetic
+stub. Volatile signed and unsigned 64-bit division/remainder and a changed
+expected-remainder control execute in the runtime probe. The maintained suite
+passed 32 named-firmware cases in 225.63 seconds on both ARM profiles and both
+CPU backends. Four optional original-validator cases were skipped in this run.
+
+A dynamic `RLibrary` client first exited with reason 0x410F28. ARM GDB showed
+the `Load` ordinal resolving to real ROM EUSER Thumb code at 0x804E395D, but
+returning the unchanged client `this` pointer. Retained EKA logs identified
+unimplemented Belle executive call 0x10E before the loader-server request.
+Mapping that observed slot to the emulator's existing v10 load-preparation
+hook allowed the real subsequent load, lookup, attach and detach path to run.
+The DLL publishes a setter for a client-owned destructor sink; after `Close`,
+the client reads 34 from that sink. An absent-DLL control gets KErrNotFound
+(-1) and exits -121, so the mapping is not treated as a universal load-success
+stub. The maintained 16-case constructor/dynamic-load/absent-DLL matrix passed
+in 94.21 seconds. The thirteenth GPL patch replays after the first twelve from
+the pinned EKA2L1 base and reverse-checks against the applied checkout. Local
+diagnostic logs and GDB scripts remain ignored under
+`.symbian/dll-lifecycle-dynamic-20261001/`.
+
+The four optional original checksum/whole-image validators subsequently passed
+on the new wide-arithmetic runtime images. A fresh installed SDK dynamic-DLL
+case and a fresh generated-project initial-build/copy/move case passed. Both
+old and new visible SDK trees have 2,427 verified digest-sealed files; the old
+tree is retained as `~/dev/symbian-sdk-before-wide-dll-20261001`. The new ARMv6
+archive defines all three added EABI/helper entry points.
+
+The optional Mbed TLS adaptation from the user-owned external project compiled
+its real C archive against the refreshed SDK. The maintained test built the
+E32 DLL, imported real EUSER `RLibrary` ordinals into a client, loaded the DLL
+at runtime, called `MbedSha256` through frozen ordinal 1 and checked the full
+SHA-256 digest of `abc`. Replacing `c` with `d` returned the changed-digest
+control -132. The static/guest suite passed five cases in 37.12 seconds, with
+fresh digest-checked RM-807 instances on Dynarmic and Dyncom. This does not
+claim the full Mbed TLS feature set or physical-device operation.
+
+Mimalloc was considered as a future guest allocator backend. Its documented
+per-thread heaps, concurrent frees and OS page reserve/purge behavior make a
+straight replacement of `User::Alloc` unsafe without a Symbian memory-source
+and thread-lifetime adapter. No mimalloc code or performance result was added
+here. A bounded arena experiment and measured memory/latency comparison are
+the acceptance gate before adopting it; the existing allocator remains the
+verified default.
+
+### 2026-10-01 — Native fast-lock prerequisite for A11
+
+The original Symbian `RFastLock` is a semaphore-backed fast path. Its original
+ARM source uses SWP for ARMv5 and LDREX/STREX when supported, with a kernel
+semaphore fallback on contention. A11's actual `thread::Mutex` instead wraps a
+Boost.Fiber mutex and records the owning fiber for diagnostics. Replacing that
+fiber-aware wait with blocking `RFastLock::Wait` on the UI/event OS thread would
+halt all fibers and native completions. The backend therefore needs an OS-thread
+lock and a fiber-aware park/wakeup path under A11's interface.
+
+A narrow SDK-header C++ bridge now imports the original `RFastLock` create,
+poll, wait and signal functions plus handle close. The guest checks success,
+`KErrTimedOut` while held, release/reacquisition and close. Four named-firmware
+ARM-client/backend cases passed in 71.31 seconds. The RM-807 ROM supplies the
+lock implementation in every case, so this does not independently execute an
+ARMv5 ROM's SWP implementation or a contended two-thread path. No A11 mutex or
+fiber switch is claimed yet.
+
+A direct `std::make_shared<std::string>` A11 prerequisite build failed at link
+on missing libc++ `__shared_weak_count` definitions. Original LLVM
+`libcxx/src/memory.cpp` contains these definitions, but its refcounting path
+depends on `_LIBCPP_HAS_THREADS`; the SDK's current generated config disables
+threads. Adding that translation unit alone would silently give the genuine
+A11 Future/Promise shared state the wrong thread-safety contract. The C0 gate
+therefore remains open. The staged A11 46-source/92-edge pin still verifies.
+
+The standard EUSER proxy in a fresh development SDK export now carries the
+real ROM `RLibrary` and `RFastLock` ordinals. All 2,427 exported file digests
+verified. The installed-proxy fast-lock matrix passed four ARM/backend cases
+in 68.70 seconds, and the Mbed TLS SHA-256 dynamic DLL suite passed five cases
+in 43.80 seconds. After digest-checking the previous canonical SDK, the new
+export was rebased into `~/dev/symbian-sdk`; the old tree remains under
+`~/dev/symbian-sdk-before-fast-primitives-20261001`. Both trees are digest
+valid, and a fresh generated-project build/copy/relocation test against the
+canonical SDK passed in 10.41 seconds.
+
+### 2026-10-01 — C0 32-bit compiler atomics
+
+A `std::atomic<int>` probe exposed missing `__atomic_fetch_add_4`,
+`__atomic_load_4`, `__atomic_compare_exchange_4` and `__atomic_exchange_4`
+on ARMv5T. After bridging those to the original EUSER atomic API, ARMv6 then
+exposed `__sync_fetch_and_add_4`, `__sync_val_compare_and_swap_4` and
+`__sync_lock_test_and_set_4`. The latter names are compiler builtins, so the
+bridge exports them using separate C identifiers with assembler symbol labels.
+The original `e32atomics.h` was added to the digest-pinned staged header
+manifest. The bridge uses ordered ROM add/CAS/exchange and acquire load;
+the changed-value control detects an incorrect final result. Eight guest
+execution cases passed on both ARM profiles and emulator backends in 83.77
+seconds. A fresh 2,428-file digest-valid SDK export, with all five required
+EUSER ordinals in its standard proxy, passed all eight again in 79.98 seconds.
+No parallel thread race or full libc++ thread mode was tested; A11 Future/Task
+remains gated.
+
+The 2,428-file export was promoted to the visible `~/dev/symbian-sdk` only
+after both it and the previous 2,427-file canonical tree passed digest checks.
+The previous tree remains at `~/dev/symbian-sdk-before-atomics-20261001`.
+A fresh generated-project initial-build, SDK copy and project-relocation
+test passed against the new canonical SDK in 7.42 seconds.
+The real-header GUI source-staging/link test passed with 93 aliases in
+10.75 seconds.
+An additional stricter installed-SDK run substituted the selected SDK's
+prebuilt `Symbian::Runtime` archive and installed `symbian/runtime.h` into a
+temporary runtime-probe project. All eight atomic normal/changed controls
+passed again in 85.85 seconds on both ARM profiles and emulator backends.
+The earlier 79.98-second run had selected only the installed EUSER proxy;
+this run proves the exported runtime archive also executes the bridge.
+Four default string/vector cleanup cases passed against that archive across
+both ARM targets and CPU backends in 49.80 seconds.
+
+### 2026-10-01 — Secondary-thread atomic prerequisite
+
+A first `RThread`/atomic guest probe returned -139. Retained worker logs showed
+USER 0 panic before its callback; the EXE startup had rejected secondary reason
+1. Original `kernelhwsrv/kernel/eka/euser/epoc/arm/uc_exe.cpp` instead calls
+`UserHeap::SetupThreadHeap(ETrue, info)` and the `iFunction/iPtr` callback on
+that path. Adapting the probe startup let the worker exit normally but exposed
+an unimplemented Belle SVC 0x34 in `RThread::ExitReason`. The pinned emulator
+already has a `thread_exit_reason` handler, so ordered patch 14 maps this
+observed slot to that handler. The applied-state reverse check and full
+14-patch replay from the pinned revision pass. The rebuilt emulator passes the
+ARMv5T/Dyncom control and the full eight-case ARM/profile/backend matrix
+(`8 passed, 48 deselected`, 92.65 seconds). Parent and worker each increment a
+shared atomic 2,000 times; expected 4,000 and deliberately changed 3,999
+produce distinct exits. The parent joins and checks completion, reason and
+type before releasing the stack-owned state. Generated starter startup now
+follows the same primary/secondary distinction. Thread heap teardown, TLS,
+64-bit atomic coverage and A11 scheduling remain open. The same eight cases
+passed against a fresh exported SDK's prebuilt runtime archive and standard
+38-export EUSER proxy in 65.17 seconds. A generated project built after SDK
+copy and relocation; the canonical `~/dev/symbian-sdk` was refreshed through
+the installer. Its 2,428 files and the retained prior tree at
+`~/dev/symbian-sdk-before-thread-primitives-20261001` both verify by digest.
+See the root `PERFORMANCE_CONSIDERATIONS.md` for testable cost hypotheses;
+none are measured.
+
+### 2026-10-01 — Threaded libc++ and guest exception boundary
+
+The pinned LLVM libc++ 23.1.2 `memory.cpp`, `thread.cpp`, `mutex.cpp`,
+`condition_variable.cpp` and `future.cpp` now build in a pthread-backed guest
+configuration. Bounded ownership tests exercise `unique_ptr`, `shared_ptr`,
+`weak_ptr`, expiry and allocation-cell cleanup. A `std::thread` worker joins
+after 4,000 shared atomic updates, copies/releases shared ownership and
+destroys a moved `unique_ptr`. Normal and deliberately changed-result controls
+pass on ARMv5T and ARMv6 with Dyncom and Dynarmic: 16 cases in 83.34 seconds,
+with the changed worker-ownership probe rerun as eight cases in 44.29 seconds.
+A fresh 2,496-file SDK export using its prebuilt runtime and standard
+EUSER/libpthread/drtaeabi proxies passed the same 16 cases in 74.31 seconds.
+Two installed-SDK `Symbian::Threads` target cases passed in 26.88 seconds.
+Generated-project wizard/build/copy and actual GUI clock/OOM tests also passed
+against that export. These are bounded emulator results, not a general
+pthread, TLS or cross-ROM compatibility claim.
+
+The first ownership probe emitted `R_ARM_REL32` code-to-data references to
+libc++ vtables when built as PIC. E32 code and data relocate independently, so
+the converter correctly rejected them. Compiling that source and original
+`thread.cpp` with `-fno-pic` emitted typed absolute data fixups and passed the
+controls. The installed application runtime target now supplies this option;
+the separate local-GOT control remains intact. ARMv6 also exposed an 8-bit
+compiler CAS libcall and ARMv5T a 32-bit store libcall; both now route through
+original EUSER atomic operations.
+
+A genuine `std::promise`/`std::future` link attempt failed on
+`std::exception_ptr`, `std::logic_error`, error-category and related symbols;
+its compiler/linker log is retained at `.symbian/std-future-test.log`.
+The original Symbian `elf2e32` sets E32 `iExceptionDescriptor` from the
+`Symbian$$CPP$$Exception$$Descriptor` symbol in the read-only image, with its
+low bit marking presence. `TExceptionDescriptor` contains exidx base/limit and
+read-only segment base/limit. Current SDK linker scripts discard
+`.ARM.exidx`/`.ARM.extab` and the converter leaves that header field zero.
+Enabling `-fexceptions` alone would produce a misleading, unsafe profile.
+Guest exceptions are therefore a required future opt-in capability, default
+off; host Abseil Status libraries remain exception-free. A throw/catch probe
+must prove destructor unwinding, allocation failure and both emulator CPU
+backends before any advertised support.
+
+### 2026-10-01 — Bounded EHABI metadata and the imported-data gate
+
+A Clang 23 ARMv6 typed throw emits `.ARM.extab` and `.ARM.exidx`, calls the
+original `drtaeabi` exception allocation/catch exports, and references
+`__gxx_personality_v0` plus `_ZTIi`. The pinned Symbian source exports the
+three-argument ARM EHABI `__aeabi_unwind_cpp_pr1` personality. An isolated ARM
+veneer tail-calls that genuine export; its throw semantics remain unverified.
+The veneer needed explicit four-byte alignment: the changed-result build first
+placed its ARM instruction at an unaligned address and the converter correctly
+rejected it. The ARM function symbol is now aligned and converted.
+
+The original `elf2e32` and `TExceptionDescriptor` sources guided an isolated
+linker profile retaining `.ARM.extab`/`.ARM.exidx` and a four-word descriptor
+(index base/limit, read-only segment base/limit). Native E32 conversion now
+requires the descriptor when an index exists, validates its symbol and bounds,
+sets the low-bit-marked header offset, and inspects the resulting structure.
+The read-only end sentinel receives a bounded E32 code relocation. The
+existing `R_ARM_JUMP24` import path now validates an ARM `B` to the PLT as well
+as ARM `BL`/`BLX`; this is needed by the personality veneer.
+
+A no-throw C++ catch/cleanup probe converted, passed native inspection and
+exited 0 on the preserved RM-807 emulator. The maintained normal and
+deliberately changed-result matrix passed all eight ARMv5T/ARMv6 ×
+Dyncom/Dynarmic cases in 47.61 seconds. Two ARMv6/Dyncom cases also passed
+with the installed SDK's prebuilt runtime archive. These controls establish
+unwind metadata, loader acceptance and ordinary cleanup only. A typed throw
+still produces `.rel.dyn` with `R_ARM_GLOB_DAT` for the imported `_ZTIi` data
+object; the current import resolver supports only function PLT slots. A
+maintained build-negative test now expects a specific rejection rather than
+claiming a runnable exception profile. Original LLVM libc++abi
+`cxa_personality.cpp` compiled in an experiment but required its own exception
+object/unwind ABI closure; mixing it with Symbian's `__cxa` objects would be
+unsafe without execution evidence, so it was not included. Logs and source
+objects remain under ignored `.symbian/exception-experiment/`.
+The final E32 parser also rejects an ARM_EXIDX section renamed to hide its
+required descriptor; a native GTest covers the malformed input. The last
+visible SDK export and its retained predecessor each contain 2,496
+digest-verified files. The preceding visible tree is at
+`~/dev/symbian-sdk-before-exidx-validation-20261001`.
+
+### 2026-10-01 — 64-bit atomics, native ROM operations and Dyncom STREXD
+
+A two-thread `std::atomic<std::uint64_t>` probe linked only after adding the
+observed Clang `__atomic_*_8` and `__sync_*_8` entry points. The initial
+runtime serializes 64-bit operations with one process-owned original EUSER
+`RFastLock`; 32-bit EUSER CAS initializes it. Across ARMv5T/ARMv6 clients and
+Dyncom/Dynarmic, 4,000 high-and-low-word increments, failed/successful CAS,
+exchange and the direct `__sync` controls passed eight normal/changed cases.
+The same eight cases passed against a fresh installed candidate SDK archive.
+
+Direct calls into the preserved RM-807 EUSER's 64-bit add, CAS, load and swap
+exports passed on Dynarmic but failed on Dyncom before the emulator fix. A
+changed check showed the stored high word was wrong, not just the returned
+value. In pinned EKA2L1 Dyncom, STREXD assembled the 64-bit register pair in
+`value` then passed `RM` (a register index) to `exclusive_write64`. The
+replayable GPL `dyncom-strexd-value.patch` passes `value`. A ROM-independent
+LDREXD/STREXD GTest now checks both emulator backends with a changed high-word
+control; CTest passes. After rebuilding EKA2L1, direct original-EUSER 64-bit
+probes pass on both client architectures and CPU backends. The ROM was not at
+fault for this observed failure. Pre-fix and post-fix traces remain under
+`.symbian/native-atomic64-diagnostic*.log`.
+
+The original Symbian ARM V6K 64-bit atomic source uses LDREXD/STREXD retry
+loops. Its ARM V5/V6 source instead masks interrupts around a read/modify/
+write; an EUSER export name alone therefore does not establish lock freedom
+on every device. A separate native-atomic runtime build delegates 64-bit
+operations to EUSER and passes a 12-case source matrix on the named RM-807
+fixture, including direct-ROM and `std::atomic` changed-result controls.
+This is evidence for that named ROM under EKA2L1, not other firmware or
+physical hardware.
+
+A further negative control found that Clang's ARMv6 `is_lock_free` builtin
+reports true even when the selected runtime uses `RFastLock`. libc++'s
+`__atomic/support.h` now has a narrowly guarded Symbian query to the actual
+runtime profile; the pinned LLVM edit is maintained as
+`research/llvm/symbian-libcxx-lock-free.patch`. The first attempted guard in
+`__atomic/support/gcc.h` did not affect Clang, which uses libc++'s C11
+atomic backend; this failed control led to the shared-header adaptation.
+After that correction, a source smoke passed the lock-backed, direct-EUSER
+and native-runtime paths; the final installed candidate passed 16 normal and
+changed-result executions on both client architectures and emulator CPU
+backends in 80.40 seconds. Its 2,564 sealed files all match their digests.
+The candidate was promoted to `~/dev/symbian-sdk`; the previous 2,535-file
+SDK was preserved at
+`~/dev/symbian-sdk-before-native-atomic64-20261001`. Both trees are
+digest-valid. The LLVM patch applies to clean pinned header copies and
+reverse-checks against the current checkout; the emulator patch likewise
+replays/reverses. No physical device was used.
+
+### 2026-10-01 — Non-808 EUSER atomic capability check
+
+The read-only `symbian_rom_atomic_oracle` uses EKA2L1's original ROM-image
+parser on imported, digest-pinned EUSER files from the supplied dump
+collection. ROM-image DLLs are not ordinary compressed E32 images: the first
+attempt with `parse_e32img` rejected them. The original `parse_romimg` needs
+the image mapped for the epoc10 path; an unmapped dump uses its epoc91 file
+fallback, which shares the EKA2 120-byte header layout. A diagnostic attempt
+with an unmapped epoc10 path hit the parser's null export-pointer branch; no
+upstream parser change was made. The final read-only oracle checks the export
+table and captures the first 64 bytes of each relevant function.
+
+C7-00/RM-675, E6-00/RM-609 and 808/RM-807 each have the EABI EUSER 64-bit
+atomic ordinals 2281/2329/2357/2361/2373. Their first 64 bytes for all five
+entry points are identical (concatenated SHA256
+`a424db7ad3c3947a92204bdfca244eb8d8839ada6436e7a866510905d0080422`).
+The add and CAS entries disassemble to LDREXD/STREXD retry loops, rather than
+an interrupt-masked read/modify/write. The 6120c/RM-243 and E71/RM-346 EUSER
+images have 2,228 exports; the relevant EABI ordinals are absent. This does
+not rule out every other atomic mechanism on those devices, but the SDK's
+current native EUSER profile cannot link against those ROMs.
+
+A cross-thread `std::atomic<std::uint64_t>` probe using the installed native
+archive first failed with -142 on C7 and E6 under both CPU backends. The worker
+actually exited with code 0; EKA2L1 logged unimplemented SVC 0x32 when the
+parent asked `RThread::ExitReason`. The sixteenth ordered GPL patch adds the
+observed v10 0x32 mapping to EKA2L1's existing handler. Belle's 0x34 call
+then follows from the already proven two-slot v101 shift. With this patch,
+all four C7/E6 × Dyncom/Dynarmic guest controls pass in 31.91 seconds. The
+patch reverse-checks against the applied checkout and replays after the
+previous fifteen. These are emulator results, not physical-device results.
+Raw evidence is retained at `.symbian/rom-atomic-oracle-five.log`,
+`.symbian/native64-other-rom-test*.log` and the Pytest frontend logs.
+
+### 2026-10-01 — Compiler-rt closure and libc++ hash-table execution
+
+The default guest archive now builds original LLVM compiler-rt aligned-copy,
+float-to-unsigned, soft-float arithmetic/comparison/division and 64-bit
+multiplication sources. Its bounded compiler-rt probe checks aligned copying
+and positive, negative, overflow and NaN float conversions with a changed
+result control. Eight ARMv5T/ARMv6 × Dyncom/Dynarmic source and eight
+installed-SDK cases passed; raw logs are
+`.symbian/compiler-rt-helper-source2.log` and
+`.symbian/compiler-rt-sdk-test.log`. The pinned ARM `divsf3.S` requires an
+ARMv6T2 `MLS` instruction, so the archive uses the original generic
+`divsf3.c` instead. The latter also required original `muldi3.c`; missing
+`__aeabi_lmul` was caught by the executable link, not hidden with a stub.
+
+The next original libc++ dependency was `hash.cpp` for `__next_prime`.
+`std::unordered_set<int>` now inserts 300 elements, reserves 700 buckets,
+finds and erases elements, and returns to its starting Symbian heap-cell
+count. A changed-result variant fails with -231. The source and selected
+installed-SDK matrices each passed eight architecture/backend/positive-negative
+cases (`.symbian/hash-table-source-matrix.log`,
+`.symbian/hash-table-installed-matrix.log`). The path needs the selected
+ROM's `libm.dll` `ceilf` import. Linking that proxy unconditionally caused
+an E71 generated starter to fail image conversion with an unwanted needed
+proxy. The installed CMake target now encloses only that proxy with LLD's
+`--as-needed`/`--no-as-needed`; ordinary EUSER imports retain their existing
+link behavior. The first attempt used compiler-driver `-Wl,` syntax, which
+was rejected because the project invokes `ld.lld` directly. The corrected
+template lets an E71 starter build and execute (one real-firmware test,
+`.symbian/hash-table-e71-starter3.log`). An application that actually uses
+the hash-table path still needs `libm.dll`; the SDK has not supplied a
+replacement math service on ROMs without it.
+
+After the scoped-link change, the full selected installed hash-table matrix
+passed eight cases in 44.76 seconds, retained at
+`.symbian/hash-table-installed-final-matrix.log`. A fresh export contained
+2,591 digest-valid files and passed initial build/copy/project relocation.
+The final export was installed at `~/dev/symbian-sdk` with a rebased manifest;
+its previous 2,564-file version remains at
+`~/dev/symbian-sdk-before-hash-table-20261001`, with both seals verified.
+Root macOS CTest passed eight targets. No physical-device result is inferred.
+
+### 2026-10-02 — Pinned guest Abseil Status/StatusOr and map closure
+
+Replayed clean Abseil `5650e9cf76d3be4318d5fa3af38ee483ddfd5e4a`
+with three ordered patches under `research/abseil/`. The new patch adapts
+`raw_hash_set`'s static TLS seed/counter to a process-wide atomic sequence:
+E32 does not supply ELF TLS merely because intermediate objects are ELF.
+The platform patch also narrows Abseil's compile-time byte-lock-free assertion
+for ARMv5T, where Clang emits a libcall and the SDK implements that libcall
+using original EUSER ordered operations. The actual guest atomics now include
+byte store/exchange and 32-bit sub/and/or paths. Source normal and
+changed-result atomic controls passed four selected cases. General TLS and
+concurrent hash-table behavior are still untested.
+
+The Status/StatusOr link exposed actual dependency gaps rather than optional
+stubs. A 16-bit-wide libc++ streams profile and selected frozen OpenC wide,
+stdio and math imports close the required path. Using libc++'s `exception.cpp`
+was rejected: it pulled fallback exception-pointer abort machinery rather
+than the required base exception implementation. The original pinned
+libc++abi `stdlib_exception.cpp` supplied the correct dependency. `ldexpl`,
+`nan` and `nanf` use narrow SDK ABI adapters where the frozen libm table has
+no corresponding exports; NaN bits, payload parsing and long-double equality
+were checked in the guest hash/stream contract. Source hash/stream normal and
+changed-result controls passed; the wider runtime selection passed 24 cases
+with one documented skip (200 deselected).
+
+The tracked `examples/abseil_status_probe` exercises original Abseil Status
+code/message, Cord payload set/get, StatusOr failure and success with move,
+and `flat_hash_map<std::string, int>` insertion, lookup and erase. A changed
+result returns a distinct failure. Source-replay and sealed-SDK matrices each
+passed 8/8 on RM-807: ARMv5T/ARMv6 × Dyncom/Dynarmic × normal/changed.
+The SDK candidate sealed 3,097 digest-valid files: 384 original Abseil
+headers and 43 closure archives for each architecture. It carries the source
+revision, patch digests, Apache-2.0 notice, and
+`Symbian::AbseilStatusOr` CMake target. A copied project built and converted
+with only the SDK's target headers and archives; the separate original
+`LowLevelAlloc` and generated-project relocation checks passed three cases.
+The result is a tested library subset, not Abseil time, general TLS,
+cross-thread page release, complete synchronization or A11 fibers.
+
+The candidate and previous visible SDK were audited before promotion with
+3,097/3,097 and 2,597/2,597 digest matches and no unrecorded files. The
+previous tree is retained at
+`~/dev/symbian-sdk-before-guest-abseil-20261002`; a copied, rebased
+3,097-file SDK is now at `~/dev/symbian-sdk`. All eight installed guest
+Status/StatusOr/map cases and the copied-project check passed again after
+promotion (9/9). The pristine Abseil checkout has no tracked edits; the
+platform patch apply-checks against it and the map/TLS patch reverse-checks
+against the replayed checkout. No application sources were refreshed.

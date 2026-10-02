@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+"""Bootstrap into the project-selected SDK without importing the pip package."""
+
+import json
+import os
+import sys
+from pathlib import Path
+
+project = Path(__file__).resolve().parent
+prefix = Path(json.loads((project / "sdk-location.json").read_text())["sdk"])
+if not prefix.is_absolute():
+    prefix = (project / prefix).resolve()
+if Path(sys.argv[0]).name == "sdk-debug":
+    command = prefix / "bin/python"
+    arguments = [
+        str(command),
+        "-m",
+        "symbian.emulator.launch",
+        "--project",
+        str(project),
+        "--gdb",
+        str(prefix / "bin/arm-none-eabi-gdb"),
+        *sys.argv[1:],
+    ]
+else:
+    command = prefix / "bin/symbian"
+    arguments = [
+        str(command),
+        "app",
+        "run",
+        "--project",
+        str(project),
+        *sys.argv[1:],
+    ]
+os.execv(str(command), arguments)

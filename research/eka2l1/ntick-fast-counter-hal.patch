@@ -1,0 +1,30 @@
+diff --git a/src/emu/system/src/hal.cpp b/src/emu/system/src/hal.cpp
+index 61d1fab..0b782c0 100644
+--- a/src/emu/system/src/hal.cpp
++++ b/src/emu/system/src/hal.cpp
+@@ -118,6 +118,16 @@ namespace eka2l1::epoc {
+             return epoc::error_none;
+         }
+ 
++        int ntick_period(int *a1, int *a2, const std::uint16_t device_num) {
++            *reinterpret_cast<std::uint32_t *>(a1) = 1000000 / static_cast<std::uint32_t>(epoc::NANOKERNEL_HZ);
++            return epoc::error_none;
++        }
++
++        int fast_counter_frequency(int *a1, int *a2, const std::uint16_t device_num) {
++            *reinterpret_cast<std::uint32_t *>(a1) = static_cast<std::uint32_t>(epoc::HIGH_RES_TIMER_HZ);
++            return epoc::error_none;
++        }
++
+         int hardware_floating_point(int *a1, int *a2, const std::uint16_t device_num) {
+             // Can handle NEON also
+             *a1 = floating_point_type_vfpv3;
+@@ -129,6 +139,8 @@ namespace eka2l1::epoc {
+             REGISTER_HAL_FUNC(kernel_hal_memory_info, kern_hal, memory_info);
+             REGISTER_HAL_FUNC(kernel_hal_page_size_in_bytes, kern_hal, page_size);
+             REGISTER_HAL_FUNC(kernel_hal_tick_period, kern_hal, tick_period);
++            REGISTER_HAL_FUNC(kernel_hal_ntick_period, kern_hal, ntick_period);
++            REGISTER_HAL_FUNC(kernel_hal_fast_counter_freq, kern_hal, fast_counter_frequency);
+             REGISTER_HAL_FUNC(kernel_hal_hardware_floating_point, kern_hal, hardware_floating_point);
+         }
+     };

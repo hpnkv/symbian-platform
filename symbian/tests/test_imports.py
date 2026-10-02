@@ -114,6 +114,22 @@ def test_import_converter_requires_correct_proxy_and_rejects_pic_path(imported):
     )
 
 
+def test_converter_accepts_declared_but_unused_proxy(imported, tmp_path):
+    report, proxy, _ = imported
+    definition = tmp_path / "other.def"
+    definition.write_text("EXPORTS\nOtherProbeTransform @ 641 NONAME\n")
+    other = build_import_proxy(
+        definition, ["OtherProbeTransform"], "other.dll", tmp_path / "other"
+    )
+    elf = Path(report["linked_elf"]).read_bytes()
+    assert (
+        convert_imported_executable(
+            elf, [proxy, Path(other["artifact"]).read_bytes()], 0xE0000808
+        )
+        == Path(report["artifact"]).read_bytes()
+    )
+
+
 def test_dynamic_contract_tampering_is_rejected(imported):
     report, proxy, _ = imported
     elf = Path(report["linked_elf"]).read_bytes()

@@ -212,3 +212,87 @@ before kernel teardown. Four native path/startup tests and two real-backend GUI
 render/input/normal-exit tests pass. It is never linked into the Python wheel.
 See [the replay and bounds](../../docs/EMULATOR_CONTROL.md) and
 [CLion configuration](../../docs/CLION.md).
+
+## Change organization
+
+The eighth ordered patch, `firmware-import-bounds.patch`, bounds RPKG names,
+entries and reads, rejects traversal/truncation, and validates product/ROM dump
+names before host writes. The ninth, `fbs-unsupported-request.patch`, completes
+unknown synchronous FBS requests with KErrNotSupported; RM-243 otherwise blocks
+during teardown on opcode 0x2C. Neither patch implements a missing font operation.
+Both replay/reverse exactly against the pinned source, after the existing seven.
+The tenth ordered patch, `background-window.patch`, lets SDK-owned macOS
+sessions show the Qt window without activation and makes the OpenGL context
+order it behind the current app. On macOS the OpenGL window uses managed
+desktop-Space behavior and excludes full-screen auxiliary display and tiling.
+Initial activation is suppressed without blocking later intentional focus.
+Actual full-screen-Space placement awaits a nondisruptive visual check. The SDK
+launcher also executes a private
+per-session symlink outside the `.app` bundle; that prevents macOS bundle
+activation before Qt creates a window while retaining a directly owned PID.
+The patch has independent pinned-base replay and applied-state reverse checks.
+The eleventh ordered patch, `dll-wsd-dyncom-exit.patch`, stops Dyncom fetching
+another instruction after a guest SVC kills/unmaps the current process. The
+writable-DLL fresh-process oracle exposed the stale fetch at the prior code
+mapping's end; Dynarmic already stopped. It does not relax DLL validation or
+hide a guest fault. The pinned-base apply and applied-state reverse checks pass.
+The twelfth ordered patch, `belle-library-entry-start.patch`, maps the observed
+RM-807 Belle 0x10D slot to the existing v10 library-entry-start hook. Original
+EUSER's static-call-list contract and a live three-entry call list supplied the
+mapping evidence. Eight DLL
+constructor/changed-constructor execution controls pass across both ARM
+profiles and emulator backends. The applied-state reverse check passes.
+The thirteenth ordered patch, `belle-library-load-prepare.patch`, maps the
+observed Belle 0x10E slot to EKA2L1's existing v10 load-preparation hook. The
+ROM `RLibrary::Load` wrapper calls it before the loader-server request. The
+subsequent actual load, lookup, attach, close and detach paths are checked by
+the client-owned destructor sink and a missing-DLL error control. This mapping
+does not implement new state in the existing preparation hook; the actual load
+and failure are handled later by the loader path. It does not establish every
+loader mode or DLL lifetime contract. The patch
+replays after the first twelve and reverse-checks against the applied checkout.
+The fourteenth ordered patch, `belle-thread-exit-reason.patch`, maps the
+observed Belle ROM `RThread::ExitReason` call at SVC 0x34 to the existing
+`thread_exit_reason` handler. The original v10 table omits the older slot;
+the thread probe first failed with an unimplemented 0x34 after the worker had
+exited normally. Eight parent/worker atomic guest cases now pass across both
+ARM profiles and CPU backends, including changed-result controls. The patch
+replays after the first thirteen and reverse-checks against the applied tree.
+The fifteenth ordered patch, `dyncom-strexd-value.patch`, corrects Dyncom's
+STREXD handler: it assembled the 64-bit register pair but passed only the
+low-register number to the exclusive write. A direct original EUSER 64-bit
+atomic probe failed on Dyncom and passed on Dynarmic before this correction;
+both backends now pass. `symbian_cpu_strexd` checks an independent ARM
+LDREXD/STREXD high-word update and a deliberately changed value on each
+backend without firmware. The patch applies to the clean pinned source and
+reverse-checks against the built checkout.
+The sixteenth ordered patch, `v10-thread-exit-reason.patch`, adds the observed
+v10 `RThread::ExitReason` SVC 0x32 to EKA2L1's existing handler. The E6 and
+C7 ROM wrappers call 0x32 after their worker has exited normally; before the
+patch the emulator returned an unimplemented-SVC result. Belle's 0x34 mapping
+then follows automatically from the already verified two-slot v101 shift.
+Four C7/E6 × Dyncom/Dynarmic cross-thread native-atomic controls pass after
+this mapping. The patch reverse-checks against the applied source.
+The seventeenth ordered patch, `ntick-fast-counter-hal.patch`, implements
+the existing kernel HAL IDs for nanokernel tick period and fast-counter
+frequency. EKA2L1 already generates both counters; before this patch it
+could not report their rates through the ROM's HAL interface. The eighteenth,
+`fast-counter-rate.patch`, corrects the emulated fast counter to produce
+exactly `HIGH_RES_TIMER_HZ` counts per second instead of dividing by a
+truncated integer microsecond period. A one-second guest interval comparison
+checks the counter against the measured nanokernel clock. Both patches
+reverse-check against the applied source; the rate patch also applies to
+the pinned source index without the other local edits.
+`symbian_firmware_tool` and `symbian_firmware_tests` build through the same CMake
+hook, link original archive/ROM/RPKG/VPL implementations and stay outside the
+Python wheel. Five GTests cover archive bounds/mappings and actual malformed
+RPKG handling. Upstream diagnostics go to retained stderr, separate from JSON.
+See [firmware UX and evidence](../../docs/FIRMWARE.md).
+
+Upstream emulator changes are maintained as patch files in this directory,
+against the pinned revision above. Apply the full ordered set in WALKTHROUGH.md.
+The project-tests.cmake injection adds independent tests and the maintained GPL
+control adapter from cpp/symbian/emulator; its Qt-specific calls stay at the
+boundary and internal data uses standard C++ and nlohmann::json. Keep checkouts
+and build/runtime state ignored. LLVM integration is separately documented in
+../llvm/README.md; its two maintained libc++ patches are explicit there.

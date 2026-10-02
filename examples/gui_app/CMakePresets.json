@@ -5,11 +5,11 @@
       "name": "symbian-pic",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/../../.symbian/cmake/gui-app",
-      "toolchainFile": "${sourceDir}/../../symbian/toolchain/cmake/armv5t-pic.cmake",
+      "toolchainFile": "${sourceDir}/../../symbian/toolchain/cmake/symbian-arm.cmake",
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "SYMBIAN_GUI_SDK_INCLUDE": "${sourceDir}/../../.symbian/gui-sdk/include",
-        "SYMBIAN_IMPORT_PROXIES": "${sourceDir}/../../.symbian/gui-sdk/euser/euser.dso;${sourceDir}/../../.symbian/gui-sdk/ws32/ws32.dso"
+        "SYMBIAN_TARGET_ARCH": "armv6",
+        "SYMBIAN_GUI_SDK_INCLUDE": "${sourceDir}/../../.symbian/gui-sdk/include"
       }
     }
   ],

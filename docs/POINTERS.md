@@ -47,8 +47,9 @@ remain rejected. Renaming the section or corrupting its name table is tested.
 The profile does not establish semantic safety of arbitrary hand-authored code.
 
 Internal const table declarations and the example class use hidden ELF
-visibility. This lets Clang emit local relative access instead of unsupported
-GOT_PREL references to potentially preemptible data. The normal project helper
+visibility. This lets Clang emit local relative access. Bounded GOT_PREL to
+defined local objects/functions is now supported separately (RUNTIME.md);
+external/preemptible data remains unsupported. The normal project helper
 continues to use PIC; visibility is selected in the example's declarations.
 Public function exports still use their normal visible symbols for frozen DEF
 resolution. Exceptions and RTTI are disabled; no hosted C++ runtime is linked.
@@ -57,7 +58,7 @@ Retained ABS32 in this ET_EXEC transport describes an already resolved word.
 The converter keeps that value, including ARM/Thumb state and permitted in-range
 addends, and emits a Symbian text relocation at its aligned code offset. It
 must not add the symbol value again. Undefined/external absolute pointers,
-GOT/dynamic metadata fixups, unaligned slots, duplicate fixups, out-of-range
+import GOT/dynamic metadata fixups, unaligned slots, duplicate fixups, out-of-range
 values and mismatched function state remain rejected. Pointer targets must
 stay within the code mapping; one-past-the-mapping values are not supported.
 The combined application/export relocation count is bounded to 65,535.

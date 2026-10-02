@@ -2,6 +2,18 @@
   "version": 6,
   "configurePresets": [
     {
+      "name": "host",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "SYMBIAN_BUILD_PYTHON": "OFF",
+        "BUILD_TESTING": "ON",
+        "SYMBIAN_DEPS_PREFIX": "$env{SYMBIAN_DEPS_PREFIX}",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
       "name": "debug",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/debug",
@@ -9,13 +21,70 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "SYMBIAN_BUILD_PYTHON": "OFF",
         "BUILD_TESTING": "ON"
+      },
+      "inherits": "host"
+    },
+    {
+      "name": "release",
+      "inherits": "host",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "guest-probes-armv6",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/guest-probes-armv6",
+      "toolchainFile": "${sourceDir}/symbian/toolchain/cmake/symbian-arm.cmake",
+      "cacheVariables": {
+        "SYMBIAN_INDEX_GUEST_PROBES": "ON",
+        "SYMBIAN_TARGET_ARCH": "armv6",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "guest-probes-armv5t",
+      "inherits": "guest-probes-armv6",
+      "binaryDir": "${sourceDir}/build/guest-probes-armv5t",
+      "cacheVariables": {
+        "SYMBIAN_TARGET_ARCH": "armv5t"
       }
     }
   ],
-  "buildPresets": [{"name": "debug", "configurePreset": "debug"}],
-  "testPresets": [{
-    "name": "debug",
-    "configurePreset": "debug",
-    "output": {"outputOnFailure": true}
-  }]
+  "buildPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "release",
+      "configurePreset": "release"
+    },
+    {
+      "name": "guest-probes-armv6",
+      "configurePreset": "guest-probes-armv6",
+      "targets": ["symbian_probe_index"]
+    },
+    {
+      "name": "guest-probes-armv5t",
+      "configurePreset": "guest-probes-armv5t",
+      "targets": ["symbian_probe_index"]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
 }

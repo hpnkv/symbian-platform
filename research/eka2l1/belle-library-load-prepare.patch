@@ -1,0 +1,17 @@
+diff --git a/src/emu/kernel/src/svc.cpp b/src/emu/kernel/src/svc.cpp
+--- a/src/emu/kernel/src/svc.cpp
++++ b/src/emu/kernel/src/svc.cpp
+@@ -6112,9 +6112,10 @@
+             // after ExecuteInSupervisorMode and one missing slot between
+             // ThreadStackInfo and CondVarCreate. The two intervening private
+             // operations have no independent semantic mapping yet.
+             // Belle calls the v10 library-entry-start hook at 0x10D while
+-            // walking StaticCallList. Keep the other loader extension gated.
+-            if (old_number == 0xD6 || old_number == 0xD7
+-                || old_number == 0x10D) {
++            // walking StaticCallList. Its RLibrary::Load path calls the v10
++            // load-preparation hook at 0x10E before the actual loader-server
++            // request, attach, lookup and detach operations.
++            if (old_number == 0xD6 || old_number == 0xD7) {
+                 continue;
+             }

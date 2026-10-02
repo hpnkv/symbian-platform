@@ -69,9 +69,25 @@ def test_ide_configuration_preserves_profiles_and_quotes_launcher_paths(
         '<debug-profiles><debug-profile><option name="id" value="other" />'
         "</debug-profile></debug-profiles></component></project>"
     )
+    host = root / ".idea"
+    host.mkdir()
+    (host / "workspace.xml").write_text(
+        '<project version="4"><component name="CurrentDebugProfile">'
+        '<option name="debugProfileId" value="host-lldb" /></component>'
+        '<component name="CMakeSettings"><configurations>'
+        '<configuration PROFILE_NAME="Debug" ENABLED="true" />'
+        "</configurations></component></project>"
+    )
     result = configure(root, Path(sys.executable))
     assert 'value="other"' in (idea / "debug-profiles.xml").read_text()
     assert 'name="Existing"' in (idea / "workspace.xml").read_text()
+    assert 'value="host-lldb"' in (host / "workspace.xml").read_text()
+    host_run = (host / "runConfigurations/GUI_Run.xml").read_text()
+    assert 'TARGET_NAME="gui_app_run"' in host_run
+    assert 'CONFIG_NAME="Debug"' in host_run
+    assert (
+        str(root / "build/debug/gui_app_run").replace('"', "&quot;") in host_run
+    )
     # Version discovery must work without a fixture or emulator process.
     probe = subprocess.run(
         [result["wrapper"], "--version"],
@@ -85,17 +101,21 @@ def test_ide_configuration_preserves_profiles_and_quotes_launcher_paths(
     assert not (root / ".symbian/gui-runs").exists()
 
 
-def _launch(tmp_path):
+def _launch(tmp_path, executable=None):
     log_path = tmp_path / "launcher.log"
     with log_path.open("w") as log:
         process = subprocess.Popen(
-            [
-                sys.executable,
-                "-m",
-                "symbian.emulator.launch",
-                "--root",
-                WORKSPACE,
-            ],
+            (
+                [str(executable)]
+                if executable
+                else [
+                    sys.executable,
+                    "-m",
+                    "symbian.emulator.launch",
+                    "--root",
+                    WORKSPACE,
+                ]
+            ),
             stdout=log,
             stderr=subprocess.STDOUT,
         )
@@ -116,6 +136,20 @@ def _launch(tmp_path):
     except BaseException:
         _stop(process)
         raise
+
+
+@live
+def test_root_run_target_starts_emulator_and_exits_through_sdk(tmp_path):
+    """Runs the actual host executable selected by CLion's root CMake model."""
+    launcher = Path(WORKSPACE) / "build/debug/gui_app_run"
+    assert launcher.is_file(), "Build the root gui_app_run target first"
+    process, _directory, _manifest, control = _launch(tmp_path, launcher)
+    try:
+        _frame(control, 0, "root-run", tmp_path)
+        _ready(partial(control.pointer, 296, 575, "press"))
+        assert process.wait(timeout=20) == 0
+    finally:
+        _stop(process)
 
 
 @live
@@ -228,7 +262,10 @@ def test_debug_launcher_relocates_before_source_breakpoints(tmp_path):
     assert result.returncode == 0, result.stdout + result.stderr
     assert "IDE_GUI_PC=0x7000002a" in result.stdout
     assert "count_ = 0, running_ = true" in result.stdout
-    assert "IDE_STEP_PC=0x700003b0" in result.stdout
+    draw = re.search(r"Breakpoint 2 at (0x[0-9a-f]+):", result.stdout)
+    step = re.search(r"IDE_STEP_PC=(0x[0-9a-f]+)", result.stdout)
+    assert draw and step, result.stdout
+    assert 0 < int(step[1], 16) - int(draw[1], 16) < 32
     directory = Path(re.search(r"Emulator session: ([^\n]+)", result.stderr)[1])
     mapping = json.loads((directory / "gdb-mapping.json").read_text())
     assert mapping == {"runtime_base": 0x70000000, "symbol_slide": 0x6FFF8000}
@@ -296,10 +333,31 @@ def test_debug_launcher_preserves_gdb_machine_interface(tmp_path):
         assert 'addr="0x7000002a"' in result
         result = exchange('5-data-evaluate-expression "$pc"', "5^done")
         assert 'value="0x7000002a' in result
+        # Read the actual compiler's named veneer. Its position changes when
+        # the owner edits the GUI, while the ARM interworking contract remains.
+        disassembly = subprocess.run(
+            ["/opt/homebrew/opt/llvm/bin/llvm-objdump", "-d", symbols],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=5,
+        ).stdout
+        veneer = re.search(
+            r"^([0-9a-f]+) <_ZN10RWsSessionC1Ev@plt>:",
+            disassembly,
+            re.MULTILINE,
+        )
+        assert veneer is not None
+        directory = Path(
+            re.search(
+                r"Emulator session: ([^\n]+)",
+                (tmp_path / "mi-launch.log").read_text(),
+            )[1]
+        )
+        mapping = json.loads((directory / "gdb-mapping.json").read_text())
+        expected = int(veneer[1], 16) + mapping["symbol_slide"]
         result = exchange("6-exec-step-instruction", "*stopped")
-        # Independent llvm-objdump: the source breakpoint is on a Thumb BLX
-        # to the ARM RWsSession constructor veneer at link address 0x8a50.
-        assert 'addr="0x70000a50"' in result
+        assert f'addr="{expected:#010x}"' in result
         result = exchange('7-data-evaluate-expression "$cpsr & 0x20"', "7^done")
         assert 'value="0"' in result
         exchange("8-gdb-exit", "8^exit")
