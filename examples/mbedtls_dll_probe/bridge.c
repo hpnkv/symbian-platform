@@ -1,3 +1,4 @@
+#include <mbedtls/entropy.h>
 #include <mbedtls/net_sockets.h>
 #include <mbedtls/sha256.h>
 #include <mbedtls/x509_crt.h>
@@ -98,4 +99,12 @@ __attribute__((visibility("default"))) int MbedSocketCancelProbe(void) {
     return -141;
   }
   return 0;
+}
+
+__attribute__((visibility("default"))) int MbedEntropyFailureProbe(void) {
+  extern int mbedtls_hardware_poll(void*, unsigned char*, size_t, size_t*);
+  unsigned char bytes[32] = {0};
+  size_t count = 123;
+  int result = mbedtls_hardware_poll(NULL, bytes, sizeof(bytes), &count);
+  return result == MBEDTLS_ERR_ENTROPY_SOURCE_FAILED && count == 0 ? 0 : -143;
 }

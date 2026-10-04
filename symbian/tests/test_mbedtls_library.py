@@ -92,7 +92,7 @@ def test_mbedtls_crypto_x509_links_as_e32_dll(artifacts):
     _, _, dll_build, _ = artifacts
     image = inspect_image(dll_build / "mbedcrypto_probe.dll")
     assert image["dll"] and image["architecture"] == "armv6"
-    assert [entry["ordinal"] for entry in image["exports"]] == [1, 2, 3, 4]
+    assert [entry["ordinal"] for entry in image["exports"]] == [1, 2, 3, 4, 5]
     assert all(not entry["absent"] for entry in image["exports"])
     assert [item["dll"] for item in image["imports"]] == [
         "euser.dll",
@@ -160,6 +160,12 @@ def guest_client(artifacts):
             "reinterpret_cast<SocketProbe>(library.Lookup(4));\n"
             "    result = socket_probe == nullptr ? -142 : socket_probe();\n"
             "  }\n"
+            "  if (result == 0) {\n"
+            "    using EntropyProbe = int (*)();\n"
+            "    auto entropy_probe = "
+            "reinterpret_cast<EntropyProbe>(library.Lookup(5));\n"
+            "    result = entropy_probe == nullptr ? -144 : entropy_probe();\n"
+            "  }\n"
             "  library.Close();\n"
             "  return result;\n"
             "}\n"
@@ -196,7 +202,7 @@ def guest_client(artifacts):
 def test_mbedtls_crypto_x509_executes_through_dynamic_dll(
     artifacts, guest_client, tmp_path, backend, changed, reason
 ):
-    """Checks guest crypto, UTC and certificate verification through RLibrary."""
+    """Checks guest crypto, UTC, certificates, and callbacks via RLibrary."""
     root = Path(os.environ["SYMBIAN_RUNTIME_WORKSPACE"]).resolve()
     golden = root / ".symbian/instances/delight-import-01"
     pinned = {

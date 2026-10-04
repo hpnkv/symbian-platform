@@ -1,5 +1,29 @@
 # Status
 
+2026-10-04 documentation publication: GitHub Actions run `37197271949`
+passed its strict MkDocs/two-Doxygen build and Pages deployment. The published
+Console and CLion articles, native SDK guide, original-platform Doxygen index
+and Console image asset returned HTTP 200. MkDocs uses `.html` article URLs.
+The CLion configuration image remains a labeled illustration because the owner
+declined Screen Recording access for now.
+
+2026-10-04 entropy link correction: a consumer that pulled the candidate
+`mbedtls_hardware_poll` into an E32 DLL failed to link on
+`TTrap::Trap(int&)` and `TTrap::UnTrap()`. The pinned EABI EUSER definition
+does not export these functions. Enabling the source's exception-based trap
+path would require a guest exception runtime and EHABI behavior that this SDK
+does not yet verify. The SDK guest archive now links an explicit failure
+callback; the `Math::RandomL` adapter remains in source as an unlinked
+research candidate. A fresh source export at
+`.symbian/mbedtls-safe-sdk-20261004` built and was selected as the active SDK.
+Its provenance records 1,727 Mbed TLS source files and all ARM archive
+digests; both ARMv5T and ARMv6 crypto archives define the failure callback.
+The five-case dynamic E32 DLL suite passed on the fresh SDK, including the
+failure callback through `RLibrary` on Dynarmic and Dyncom. The callback
+reports `MBEDTLS_ERR_ENTROPY_SOURCE_FAILED` and zero produced bytes.
+Secure guest entropy and authenticated guest TLS remain unverified, so
+development-agent gate 2 remains open.
+
 2026-10-04 documentation second pass: the former 1,142-line GUI source guide
 is now an overview and seven step-oriented articles; the CLion guide is an
 overview plus profile, Run/Debug and advanced articles. Two Console screenshots
@@ -19,8 +43,8 @@ Doxygen builds passed. Pages deployment of this pass is pending.
 and clears output on a leave. The SDK exporter now includes original
 `e32math.h`/`e32math.inl` and adds EUSER source ordinal 2503 to its proxy.
 The first export failed because the header's `.inl` include was absent; a
-retry at `.symbian/mbedtls-entropy-sdk-retry-20261004` built and selected the
-new active SDK. Both ARMv5T and ARMv6 crypto archives define
+retry at `.symbian/mbedtls-entropy-sdk-retry-20261004` built and was selected
+temporarily. Both ARMv5T and ARMv6 crypto archives defined
 `mbedtls_hardware_poll` and reference the Math import. No emulator execution,
 guest entropy quality/health assessment, or Nokia 808 import check has passed;
 the TLS gate remains open.

@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
+// Research candidate only. Not linked into SDK archives: EABI does not export
+// TTrap::Trap/UnTrap, and the SDK has no guest C++ exception unwinder.
 #include <e32math.h>
 
 #include "mbedtls/entropy.h"

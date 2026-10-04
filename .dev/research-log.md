@@ -1,5 +1,25 @@
 # Research log
 
+## 2026-10-04: Guest entropy EABI link boundary
+
+The new `Math::RandomL(TDes8&)` callback compiled into both ARM archives, but
+a real E32 DLL consumer linking `mbedtls_hardware_poll` failed on unresolved
+`TTrap::Trap(int&)` and `TTrap::UnTrap()`. The pinned
+`kernel/eka/eabi/euseru.def` exports `Math::RandomL` at ordinal 2503 but has
+no EABI exports for these trap methods. Original ARM and x86 GCC definitions
+do list trap exports, which is insufficient evidence for this EABI firmware.
+An isolated exception-mode compilation instead referenced `__cxa_*`,
+`__gxx_personality_v0`, and Symbian cleanup-stack functions. The SDK's guest
+exception and EHABI support is still a separate unverified gate. Therefore
+the SDK archive now uses a linkable failure callback; the leaving API adapter
+stays as an unlinked source candidate. A rebuilt ARM archive linked into the
+same E32 DLL with an entropy-probe export, confirming the import issue is
+removed. A fresh 1,727-file source SDK export then passed the five-case dynamic
+DLL suite, including the entropy failure check on both EKA2L1 CPU backends.
+Open question: what measured, error-reporting secure-random route is
+available on the named EABI firmware and emulator, and can it be exercised
+without importing unverified trap or exception machinery?
+
 ## 2026-10-04: Guided native reference and visual documentation
 
 The GUI source walkthrough was split at its actual stage boundaries into
