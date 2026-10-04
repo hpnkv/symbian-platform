@@ -1,0 +1,107 @@
+EXPORTS
+	_ZN9TInetAddrC1Emj @ 1 NONAME ; TInetAddr::TInetAddr(unsigned long, unsigned int)
+	_ZNK9TInetAddr7CmpAddrERKS_ @ 2 NONAME ; TInetAddr::CmpAddr(TInetAddr const&) const
+	_ZN9TInetAddr5InputERK7TDesC16 @ 3 NONAME ; TInetAddr::Input(TDesC16 const&)
+	_ZNK9TInetAddr5MatchERKS_ @ 4 NONAME ; TInetAddr::Match(TInetAddr const&) const
+	_ZNK9TInetAddr5MatchERKS_S1_ @ 5 NONAME ; TInetAddr::Match(TInetAddr const&, TInetAddr const&) const
+	_ZN9TInetAddr12NetBroadcastERKS_ @ 6 NONAME ; TInetAddr::NetBroadcast(TInetAddr const&)
+	_ZN9TInetAddr7NetMaskERKS_ @ 7 NONAME ; TInetAddr::NetMask(TInetAddr const&)
+	_ZN9TInetAddr3NetERKS_ @ 8 NONAME ; TInetAddr::Net(TInetAddr const&)
+	_ZNK9TInetAddr6OutputER6TDes16 @ 9 NONAME ; TInetAddr::Output(TDes16&) const
+	_ZN9TInetAddr10SetAddressEm @ 10 NONAME ; TInetAddr::SetAddress(unsigned long)
+	_ZN9TInetAddr15SubNetBroadcastERKS_S1_ @ 11 NONAME ; TInetAddr::SubNetBroadcast(TInetAddr const&, TInetAddr const&)
+	_ZN9TInetAddr6SubNetERKS_S1_ @ 12 NONAME ; TInetAddr::SubNet(TInetAddr const&, TInetAddr const&)
+	_ZN9TInetAddrC1Ev @ 13 NONAME ; TInetAddr::TInetAddr(void)
+	_ZN9TInetAddrC1ERK9TSockAddr @ 14 NONAME ; TInetAddr::TInetAddr(TSockAddr const&)
+	_ZN9TInetAddrC1Ej @ 15 NONAME ; TInetAddr::TInetAddr(unsigned int)
+	_ZNK9TInetAddr7AddressEv @ 16 NONAME ; TInetAddr::Address(void) const
+	_ZN9TInetAddr17ConvertToV4CompatEv @ 17 NONAME ; TInetAddr::ConvertToV4Compat(void)
+	_ZN9TInetAddr17ConvertToV4MappedEv @ 18 NONAME ; TInetAddr::ConvertToV4Mapped(void)
+	_ZN9TInetAddr11ConvertToV4Ev @ 19 NONAME ; TInetAddr::ConvertToV4(void)
+	_ZNK9TInetAddr9FlowLabelEv @ 20 NONAME ; TInetAddr::FlowLabel(void) const
+	_ZNK9TInetAddr10Ip6AddressEv @ 21 NONAME ; TInetAddr::Ip6Address(void) const
+	_ZNK8TIp6Addr7IsEqualERKS_ @ 22 NONAME ; TIp6Addr::IsEqual(TIp6Addr const&) const
+	_ZNK8TIp6Addr11IsLinkLocalEv @ 23 NONAME ; TIp6Addr::IsLinkLocal(void) const
+	_ZNK9TInetAddr11IsLinkLocalEv @ 24 NONAME ; TInetAddr::IsLinkLocal(void) const
+	_ZNK8TIp6Addr10IsLoopbackEv @ 25 NONAME ; TIp6Addr::IsLoopback(void) const
+	_ZNK9TInetAddr10IsLoopbackEv @ 26 NONAME ; TInetAddr::IsLoopback(void) const
+	_ZNK8TIp6Addr11IsMulticastEv @ 27 NONAME ; TIp6Addr::IsMulticast(void) const
+	_ZNK9TInetAddr11IsMulticastEv @ 28 NONAME ; TInetAddr::IsMulticast(void) const
+	_ZNK8TIp6Addr11IsSiteLocalEv @ 29 NONAME ; TIp6Addr::IsSiteLocal(void) const
+	_ZNK9TInetAddr11IsSiteLocalEv @ 30 NONAME ; TInetAddr::IsSiteLocal(void) const
+	_ZNK8TIp6Addr9IsUnicastEv @ 31 NONAME ; TIp6Addr::IsUnicast(void) const
+	_ZNK9TInetAddr9IsUnicastEv @ 32 NONAME ; TInetAddr::IsUnicast(void) const
+	_ZNK8TIp6Addr13IsUnspecifiedEv @ 33 NONAME ; TIp6Addr::IsUnspecified(void) const
+	_ZNK9TInetAddr13IsUnspecifiedEv @ 34 NONAME ; TInetAddr::IsUnspecified(void) const
+	_ZNK8TIp6Addr10IsV4CompatEv @ 35 NONAME ; TIp6Addr::IsV4Compat(void) const
+	_ZNK9TInetAddr10IsV4CompatEv @ 36 NONAME ; TInetAddr::IsV4Compat(void) const
+	_ZNK8TIp6Addr10IsV4MappedEv @ 37 NONAME ; TIp6Addr::IsV4Mapped(void) const
+	_ZNK9TInetAddr10IsV4MappedEv @ 38 NONAME ; TInetAddr::IsV4Mapped(void) const
+	_ZNK8TIp6Addr5MatchERKS_ @ 39 NONAME ; TIp6Addr::Match(TIp6Addr const&) const
+	_ZNK9TInetAddr5MatchERKS_i @ 40 NONAME ; TInetAddr::Match(TInetAddr const&, int) const
+	_ZN9TInetAddr10PrefixMaskEi @ 41 NONAME ; TInetAddr::PrefixMask(int)
+	_ZN9TInetAddr6PrefixERKS_i @ 42 NONAME ; TInetAddr::Prefix(TInetAddr const&, int)
+	_ZNK8TIp6Addr5ScopeEv @ 43 NONAME ; TIp6Addr::Scope(void) const
+	_ZN9TInetAddr10SetAddressERK8TIp6Addr @ 44 NONAME ; TInetAddr::SetAddress(TIp6Addr const&)
+	_ZN9TInetAddr12SetFlowLabelEi @ 45 NONAME ; TInetAddr::SetFlowLabel(int)
+	_ZN9TInetAddr18SetV4CompatAddressEm @ 46 NONAME ; TInetAddr::SetV4CompatAddress(unsigned long)
+	_ZN9TInetAddr18SetV4MappedAddressEm @ 47 NONAME ; TInetAddr::SetV4MappedAddress(unsigned long)
+	_ZN9TInetAddrC1ERK8TIp6Addrj @ 48 NONAME ; TInetAddr::TInetAddr(TIp6Addr const&, unsigned int)
+	_ZNK9TInetAddr5ScopeEv @ 49 NONAME ; TInetAddr::Scope(void) const
+	_ZN9TInetAddr8SetScopeEm @ 50 NONAME ; TInetAddr::SetScope(unsigned long)
+	_ZN8TE64Addr7AddrLenEv @ 51 NONAME ; TE64Addr::AddrLen(void)
+	_ZNK8TE64Addr8AddrPtrCEv @ 52 NONAME ; TE64Addr::AddrPtrC(void) const
+	_ZN8TE64Addr7AddrPtrEv @ 53 NONAME ; TE64Addr::AddrPtr(void)
+	_ZNK10TEui64Addr7AddrPtrEv @ 54 NONAME ; TEui64Addr::AddrPtr(void) const
+	_ZNK10TEui64Addr7AddressEv @ 55 NONAME ; TEui64Addr::Address(void) const
+	_ZN10TEui64Addr4CastEPK9TSockAddr @ 56 NONAME ; TEui64Addr::Cast(TSockAddr const*)
+	_ZN10TEui64Addr4CastERK9TSockAddr @ 57 NONAME ; TEui64Addr::Cast(TSockAddr const&)
+	_ZN10TEui64Addr4InitEv @ 58 NONAME ; TEui64Addr::Init(void)
+	_ZNK8TE64Addr7IsGroupEv @ 59 NONAME ; TE64Addr::IsGroup(void) const
+	_ZNK8TE64Addr11IsUniversalEv @ 60 NONAME ; TE64Addr::IsUniversal(void) const
+	_ZNK10TEui64Addr6IsZeroEv @ 61 NONAME ; TEui64Addr::IsZero(void) const
+	_ZNK8TE64Addr6IsZeroEv @ 62 NONAME ; TE64Addr::IsZero(void) const
+	_ZNK10TEui64Addr5MatchERKS_ @ 63 NONAME ; TEui64Addr::Match(TEui64Addr const&) const
+	_ZNK8TE64Addr5MatchERKS_ @ 64 NONAME ; TE64Addr::Match(TE64Addr const&) const
+	_ZNK8TE64Addr6OutputER6TDes16 @ 65 NONAME ; TE64Addr::Output(TDes16&) const
+	_ZN8TE64Addr16SetAddrFromEUI48EPKh @ 66 NONAME ; TE64Addr::SetAddrFromEUI48(unsigned char const*)
+	_ZN8TE64Addr21SetAddrRandomNZButNotERKS_ @ 67 NONAME ; TE64Addr::SetAddrRandomNZButNot(TE64Addr const&)
+	_ZN8TE64Addr15SetAddrRandomNZEv @ 68 NONAME ; TE64Addr::SetAddrRandomNZ(void)
+	_ZN8TE64Addr13SetAddrRandomEv @ 69 NONAME ; TE64Addr::SetAddrRandom(void)
+	_ZN8TE64Addr11SetAddrZeroEv @ 70 NONAME ; TE64Addr::SetAddrZero(void)
+	_ZN8TE64Addr7SetAddrEPKhj @ 71 NONAME ; TE64Addr::SetAddr(unsigned char const*, unsigned int)
+	_ZN8TE64Addr7SetAddrERKx @ 72 NONAME ; TE64Addr::SetAddr(long long const&)
+	_ZN8TE64Addr7SetAddrERKS_ @ 73 NONAME ; TE64Addr::SetAddr(TE64Addr const&)
+	_ZN10TEui64Addr10SetAddressERK8TE64Addr @ 74 NONAME ; TEui64Addr::SetAddress(TE64Addr const&)
+	_ZN8TE64Addr11SetGroupBitEi @ 75 NONAME ; TE64Addr::SetGroupBit(int)
+	_ZN8TE64Addr15SetUniversalBitEi @ 76 NONAME ; TE64Addr::SetUniversalBit(int)
+	_ZN10TEui64AddrC1Ev @ 77 NONAME ; TEui64Addr::TEui64Addr(void)
+	_ZN10TEui64AddrC1ERK9TSockAddr @ 78 NONAME ; TEui64Addr::TEui64Addr(TSockAddr const&)
+	_ZN8TE64AddrC1Ev @ 79 NONAME ; TE64Addr::TE64Addr(void)
+	_ZN8TE64AddrC1EPKhj @ 80 NONAME ; TE64Addr::TE64Addr(unsigned char const*, unsigned int)
+	_ZN8TE64AddrC1ERKx @ 81 NONAME ; TE64Addr::TE64Addr(long long const&)
+	_ZN8TE64AddrC1ERKS_ @ 82 NONAME ; TE64Addr::TE64Addr(TE64Addr const&)
+	_ZN10TEui64Addr7AddrLenEv @ 83 NONAME ; TEui64Addr::AddrLen(void)
+	_ZN9TInetAddr4InitEj @ 84 NONAME ; TInetAddr::Init(unsigned int)
+	_ZNK9TInetAddr15OutputWithScopeER6TDes16 @ 85 NONAME ; TInetAddr::OutputWithScope(TDes16&) const
+	_ZN8TE64AddrC2ERKS_ @ 86 NONAME ; TE64Addr::TE64Addr[not-in-charge](TE64Addr const&)
+	_ZN10TEui64AddrC2ERK9TSockAddr @ 87 NONAME ; TEui64Addr::TEui64Addr[not-in-charge](TSockAddr const&)
+	_ZN9TInetAddrC2ERK9TSockAddr @ 88 NONAME ; TInetAddr::TInetAddr[not-in-charge](TSockAddr const&)
+	_ZN9TInetAddrC2ERK8TIp6Addrj @ 89 NONAME ; TInetAddr::TInetAddr[not-in-charge](TIp6Addr const&, unsigned int)
+	_ZN9TInetAddrC2Ej @ 90 NONAME ; TInetAddr::TInetAddr[not-in-charge](unsigned int)
+	_ZN9TInetAddrC2Ev @ 91 NONAME ; TInetAddr::TInetAddr[not-in-charge](void)
+	_ZN10TEui64AddrC2Ev @ 92 NONAME ; TEui64Addr::TEui64Addr[not-in-charge](void)
+	_ZN8TE64AddrC2Ev @ 93 NONAME ; TE64Addr::TE64Addr[not-in-charge](void)
+	_ZN9TInetAddrC2Emj @ 94 NONAME ; TInetAddr::TInetAddr[not-in-charge](unsigned long, unsigned int)
+	_ZN8TE64AddrC2ERKx @ 95 NONAME ; TE64Addr::TE64Addr[not-in-charge](long long const&)
+	_ZN8TE64AddrC2EPKhj @ 96 NONAME ; TE64Addr::TE64Addr[not-in-charge](unsigned char const*, unsigned int)
+	_ZN9TLinkAddr10SetAddressERK6TDesC8 @ 97 NONAME
+	_ZN9TLinkAddr4CastEP9TSockAddr @ 98 NONAME
+	_ZN9TLinkAddr4CastEPK9TSockAddr @ 99 NONAME
+	_ZN9TLinkAddr4CastER9TSockAddr @ 100 NONAME
+	_ZN9TLinkAddr4CastERK9TSockAddr @ 101 NONAME
+	_ZN9TLinkAddrC1Ev @ 102 NONAME
+	_ZN9TLinkAddrC2Ev @ 103 NONAME
+	_ZNK16TSoInetRouteInfo11GetLinkAddrER9TLinkAddr @ 104 NONAME
+	_ZNK9TLinkAddr7AddressEv @ 105 NONAME
+

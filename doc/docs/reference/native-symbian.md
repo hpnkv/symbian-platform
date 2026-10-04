@@ -16,6 +16,7 @@ to original declarations alongside its [SDK C++ reference](../cpp/index.html).
 | Open a file or query a volume | `f32file.h` | [Storage API](../capabilities/apis/storage.md) |
 | Read HAL attributes or camera contracts | `hal.h`, `ecam.h` | [Device API map](../capabilities/device-apis.md) |
 | Request secure random bytes | `e32math.h` | [TLS guide](../guides/tls.md) |
+| Connect a TCP socket | `es_sock.h`, `in_sock.h` | [Native TCP client](../capabilities/apis/connectivity.md) |
 
 Open the Doxygen file list from the [original header reference](../cpp/platform/index.html)
 and search for the named class or function. For example, Window Server is the
@@ -26,7 +27,7 @@ marks a Symbian call that can leave; a `TRAP` boundary converts that failure
 into an error code. Descriptors carry length and capacity with their character
 data, so callers must use the correct 8-bit or 16-bit variant.
 
-The snapshots preserve upstream notices and are scoped to nine useful headers.
+The snapshots preserve upstream notices and are scoped to eleven useful headers.
 They are not a complete platform SDK. Some declarations need further include
 files or import proxies before they can compile in a new project. The
 [capability map](../capabilities/index.md) and [status](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md)

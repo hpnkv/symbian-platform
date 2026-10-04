@@ -1,0 +1,27 @@
+diff --git a/src/emu/services/include/services/socket/server.h b/src/emu/services/include/services/socket/server.h
+index 57f71e7..f402c50 100644
+--- a/src/emu/services/include/services/socket/server.h
++++ b/src/emu/services/include/services/socket/server.h
+@@ -235,6 +235,7 @@ namespace eka2l1 {
+         socket_reform_so_recv = 0x23,
+         socket_reform_so_recv_no_len = 0x24,
+         socket_reform_so_recv_one_or_more = 0x25,
++        socket_reform_so_recv_one_or_more_no_len = 0x26,
+         socket_reform_so_read = 0x27,
+         socket_reform_so_write = 0x28,
+         socket_reform_so_send_to = 0x29,
+diff --git a/src/emu/services/src/socket/socket.cpp b/src/emu/services/src/socket/socket.cpp
+index be0b693..46c6b76 100644
+--- a/src/emu/services/src/socket/socket.cpp
++++ b/src/emu/services/src/socket/socket.cpp
+@@ -744,6 +744,10 @@ namespace eka2l1::epoc::socket {
+                     recv(ctx, true, true, false);
+                     return;
+ 
++                case socket_reform_so_recv_one_or_more_no_len:
++                    recv(ctx, false, true, false);
++                    return;
++
+                 case socket_reform_so_ioctl:
+                     ioctl(ctx);
+                     return;

@@ -1,0 +1,19 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "symbian-pic",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/../../.symbian/cmake/connectivity-probe",
+      "toolchainFile": "$env{SYMBIAN_SDK_PREFIX}/cmake/symbian-arm.cmake",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "SYMBIAN_TARGET_ARCH": "armv6",
+        "SYMBIAN_SDK_PREFIX": "$env{SYMBIAN_SDK_PREFIX}"
+      }
+    }
+  ],
+  "buildPresets": [
+    {"name": "symbian-pic", "configurePreset": "symbian-pic"}
+  ]
+}

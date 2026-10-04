@@ -1,0 +1,38 @@
+{
+  "license": "EPL-1.0",
+  "sources": {
+    "commsfw": {
+      "url": "https://github.com/SymbianSource/oss.FCL.sf.os.commsfw",
+      "revision": "bc8ac1a6d5273cbfa7852bbb8ce27d6ddc076984"
+    },
+    "networkingsrv": {
+      "url": "https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv",
+      "revision": "b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9"
+    }
+  },
+  "headers": {
+    "es_sock.h": "commsfw/datacommsserver/esockserver/inc/ES_SOCK.H",
+    "es_sock.inl": "commsfw/datacommsserver/esockserver/inc/ES_SOCK.INL",
+    "es_sock_internal.h": "commsfw/datacommsserver/esockserver/inc/es_sock_internal.h",
+    "es_sock_internal.inl": "commsfw/datacommsserver/esockserver/inc/es_sock_internal.inl",
+    "es_sock_partner.h": "commsfw/datacommsserver/esockserver/inc/es_sock_partner.h",
+    "in_sock.h": "networkingsrv/esockapiextensions/internetsockets/inc/in_sock.h",
+    "in_sock_internal.h": "networkingsrv/esockapiextensions/internetsockets/inc/in_sock_internal.h",
+    "nifvar.h": "networkingsrv/linklayercontrol/networkinterfacemgr/inc/NIFVAR.H",
+    "nifvar_internal.h": "networkingsrv/linklayercontrol/networkinterfacemgr/inc/nifvar_internal.h",
+    "comms-infras/metacontainer.h": "commsfw/commsfwsupport/commselements/NetMeta/inc/MetaContainer.h",
+    "comms-infras/metadata.h": "commsfw/commsfwsupport/commselements/NetMeta/inc/MetaData.h",
+    "comms-infras/es_parameterset.h": "commsfw/datacommsserver/esockserver/inc/es_parameterset.h",
+    "comms-infras/es_event.h": "commsfw/datacommsserver/esockserver/inc/es_event.h",
+    "elements/metadata.h": "commsfw/commsfwsupport/commselements/NetMeta/inc/MetaData.h",
+    "elements/metadata.inl": "commsfw/commsfwsupport/commselements/NetMeta/inc/MetaData.inl",
+    "elements/metacontainer.inl": "commsfw/commsfwsupport/commselements/NetMeta/inc/MetaContainer.inl",
+    "elements/cftransportmacro.h": "commsfw/commsfwsupport/commselements/group/cftransportmacro.h",
+    "elements/h_tdeallocator.h": "commsfw/commsfwsupport/commselements/Helpers/inc/h_tdeallocator.h",
+    "elements/sd_errors.h": "commsfw/commsfwsupport/commselements/serverden/inc/sd_errors.h"
+  },
+  "definitions": {
+    "esockU.def": "commsfw/datacommsserver/esockserver/eabi/esockU.DEF",
+    "insockU.def": "networkingsrv/esockapiextensions/internetsockets/eabi/insockU.DEF"
+  }
+}

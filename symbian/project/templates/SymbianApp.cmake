@@ -184,6 +184,11 @@ foreach(component IN ITEMS system connectivity power media display sensors
       target_link_libraries(${component_target} INTERFACE
         "${SYMBIAN_SDK_PREFIX}/proxies/efsrv/efsrv.dso")
     endif()
+    if(component STREQUAL "connectivity")
+      target_link_libraries(${component_target} INTERFACE
+        "${SYMBIAN_SDK_PREFIX}/proxies/esock/esock.dso"
+        "${SYMBIAN_SDK_PREFIX}/proxies/insock/insock.dso")
+    endif()
     if(component STREQUAL "camera")
       target_link_libraries(${component_target} INTERFACE
         "${SYMBIAN_SDK_PREFIX}/proxies/ecam/ecam.dso")

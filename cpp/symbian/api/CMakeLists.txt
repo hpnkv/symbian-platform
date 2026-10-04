@@ -11,6 +11,7 @@ endif()
 
 # Each implemented capability owns its archive and native service boundary.
 add_subdirectory(system)
+add_subdirectory(connectivity)
 add_subdirectory(power)
 add_subdirectory(display)
 add_subdirectory(storage)

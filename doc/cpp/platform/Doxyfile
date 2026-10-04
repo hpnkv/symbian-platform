@@ -1,7 +1,7 @@
 # Curated original Symbian declarations, separate from the SDK-owned API index.
 DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = "Original Symbian headers"
-PROJECT_BRIEF          = "Selected EUSER, Window Server, graphics and device declarations"
+PROJECT_BRIEF          = "Selected EUSER, Window Server, networking, graphics and device declarations"
 INPUT                  = headers mainpage.md
 USE_MDFILE_AS_MAINPAGE = mainpage.md
 RECURSIVE              = NO

@@ -10,7 +10,9 @@ Every implemented capability is an independent static archive with its own
 CMake target. `Symbian::System` provides typed native counter readings;
 `Symbian::Power` and `Symbian::Display` expose HAL snapshots; and
 `Symbian::Storage` owns File Server handles for streaming reads and explicit
-writes. `Symbian::Camera` exposes a typed inventory snapshot. Other component
+writes. `Symbian::Camera` exposes a typed inventory snapshot.
+`Symbian::Connectivity` offers a bounded worker-facing TCP client through the
+original Socket Server. Other component
 directories record their boundaries but gain an
 archive and public header only when their native contracts and permissions
 have a repeatable emulator or device probe. The staged families and
@@ -26,10 +28,10 @@ ownership and state model, performance choices, and evidence still needed:
 | `Symbian::Display` | [display](display.md) |
 | `Symbian::Storage` | [storage](storage.md) |
 | `Symbian::Camera` | [camera](camera.md) |
+| `Symbian::Connectivity` | [connectivity](connectivity.md) |
 
-The [connectivity](connectivity.md), [sensors](sensors.md) and
-[media](media.md) notes describe proposed models only. No target or
-header is exported for those components yet.
+The [sensors](sensors.md) and [media](media.md) notes describe proposed models
+only. No target or header is exported for those components yet.
 
 ## Original API escape hatch
 

@@ -1,36 +1,60 @@
-# Connectivity component
+# Native TCP client
 
-**Planned, not exported:** this directory has no archive or public header yet.
+The SDK's `Symbian::Connectivity` target provides a small IPv4 TCP client.
+It uses Symbian's `RSocketServ` and `RSocket` services, which own a socket
+server session and a connected socket. Link the target in an ARM application:
 
-## Motivation and proposed modernization
+```cmake
+target_link_libraries(my_app PRIVATE Symbian::Connectivity)
+```
 
-Historical connection services expose sessions, request statuses and numeric
-bearer/state codes. An observation API should represent a connection snapshot
-with a typed state, bearer and explicitly unknown fields. It must distinguish
-"no active connection" from "the service could not be queried." Opening a
-monitor must not create an access point, enable mobile data or change radio
-state as a side effect. A move-only observer would own its native session;
-`absl::StatusOr` and an SDK `Future` would represent setup and completion.
+For a generated project's `symbian.toml`, add these two entries to its
+existing `[project].import_proxies` array so E32 conversion can map the
+original DLL ordinals:
 
-## Concurrency and cost
+```toml
+"${sdk}/proxies/esock/esock.dso",
+"${sdk}/proxies/insock/insock.dso",
+```
 
-Native notifications should be translated on the existing `EventExecutor`
-with bounded-fast work, then delivered through an explicit bounded queue.
-User parsing and policy callbacks belong on a worker. Reuse one monitor
-session for a subscription instead of polling or reconnecting on every event.
-Each completed request should expose its data immediately rather than wait
-for an entire connection history. A cancellation request must stop new
-requests promptly, cancel and drain the in-flight native request, then close
-the session. Queue capacity and overflow policy must be explicit so a slow
-consumer cannot silently grow memory.
+```cpp
+#include <array>
+#include <cstdint>
+#include "symbian/api/connectivity/tcp_client.h"
 
-## Evidence before implementation
+auto opened = symbian::api::connectivity::TcpClient::ConnectIpv4(
+    {127, 0, 0, 1}, 39094);
+if (opened.ok()) {
+  std::array<std::uint8_t, 1> request{'N'};
+  absl::Status sent = opened->Send(request);
+}
+```
 
-The prepared checkout does not yet include a connection-monitor client header
-or verified import contract. The emulator's current monitor implementation
-also returns a fixed connection count and GPRS bearer, so its output cannot
-prove actual connectivity. Service ordinals, permissions, notification
-ordering, cancellation latency and disconnect behavior need a named-firmware
-probe before this component is exported.
-Network configuration and radio control require separate authority and are
-outside the initial read-only surface.
+`ConnectIpv4` returns a move-only client. `Send` and `Receive` accept caller
+buffers up to 32 KiB and return Abseil statuses for native errors. An empty
+send succeeds; an empty receive returns zero. Keep the client, calls and
+destruction on the same worker thread. Each call waits for a native request;
+the current helper has no in-flight cancellation or deadline. It is useful
+for bounded application work and diagnostics, while the resident development
+agent still needs an asynchronous listener and cancellable TLS owner.
+
+The implementation keeps the original `RSocketServ`, `RSocket`, `TInetAddr`
+and descriptor types in a native bridge. The public header exposes ordinary
+C++ arrays, spans and statuses. The SDK includes selected original ESOCK and
+internet socket headers, plus proxies for their numbered DLL exports. See
+the [original header reference](../../reference/native-symbian.md) when an
+application needs an OS operation beyond this helper.
+
+## Evidence and limits
+
+An ARMv6 consumer linked through the exported SDK target and ran in a
+disposable RM-807 emulator instance on Dynarmic and Dyncom. The host received
+its request byte and the guest received the host reply. A wrong reply
+produced a distinct failure exit. The test kept SHA-256-pinned ROM, EUSER,
+ESOCK and INSOCK files unchanged. This establishes a bounded emulator path;
+it does not prove Nokia 808 compatibility, TLS authentication, cancellation,
+radio behavior or an application listener.
+
+The separate connection monitor discussed in the [development plan](https://github.com/hpnkv/symbian-platform/blob/main/.dev/plan.md)
+remains planned. Opening this TCP client can request network connectivity;
+it should not be used as a passive bearer observer.

@@ -83,6 +83,7 @@ From there, follow [getting started](doc/docs/getting-started.md) or open the
 | Build and inspect an E32 image | [Build an application](doc/docs/guides/building.md) |
 | Build the source SDK and touch-counter GUI | [Source walkthrough](doc/docs/guides/from-source.md) and [GUI example](doc/docs/tutorials/gui-app.md) |
 | Exercise guest C++ allocation and containers | [Runtime probe](doc/docs/tutorials/runtime-probe.md) |
+| Connect a native Symbian TCP client | [Connectivity API](doc/docs/capabilities/apis/connectivity.md) and [example](examples/connectivity_probe/) |
 | Package a private CA for one app | [TLS and CA bundles](doc/docs/guides/tls.md) |
 | Prepare firmware for local emulator work | [Firmware guide](doc/docs/guides/firmware.md) |
 | Build and test this repository | [Host build guide](doc/docs/guides/host-build.md) |
@@ -122,7 +123,9 @@ of each dependency and links to its source.
 
 The supplied RM-807 firmware has supported guarded emulator checks for GUI
 rendering and input, runtime paths, and selected Mbed TLS crypto/X.509 calls.
-Authenticated guest TLS 1.2/1.3 handshakes, secure entropy, emulator network
-transport and Nokia 808 compatibility remain open. See the
+An SDK-owned native TCP client also exchanged bytes with a host listener in
+the emulator. Authenticated guest TLS 1.2/1.3 handshakes, supported guest
+entropy, resident-agent network transport and Nokia 808 compatibility remain
+open. See the
 [status record](.dev/status.md) and [research log](.dev/research-log.md) for
 specific results and unanswered questions.

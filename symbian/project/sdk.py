@@ -581,6 +581,11 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
         shutil.copytree(
             mimalloc / "include", output / "include", dirs_exist_ok=True
         )
+        shutil.copytree(
+            workspace / "third_party/symbian-network-headers/include",
+            output / "include/platform",
+            dirs_exist_ok=True,
+        )
         startup = output / "share/symbian/runtime"
         startup.mkdir(parents=True)
         source_startup = workspace / "examples/runtime_probe"
@@ -832,6 +837,25 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                     "_ZN6TEntryC1Ev",
                     "_ZNK6TEntry8FileSizeEv",
                 ],
+            ),
+            (
+                "esock",
+                workspace / "third_party/symbian-network-headers/esockU.def",
+                [
+                    "_ZN11RSocketServ7ConnectEj",
+                    "_ZN11RSocketServC1Ev",
+                    "_ZN7RSocket4OpenER11RSocketServjjj",
+                    "_ZN7RSocket4SendERK6TDesC8jR14TRequestStatus",
+                    "_ZN7RSocket13RecvOneOrMoreER5TDes8jR14TRequestStatus",
+                    "_ZN7RSocket5CloseEv",
+                    "_ZN7RSocket7ConnectER9TSockAddrR14TRequestStatus",
+                    "_ZN7RSocketC1Ev",
+                ],
+            ),
+            (
+                "insock",
+                workspace / "third_party/symbian-network-headers/insockU.def",
+                ["_ZN9TInetAddrC1Emj"],
             ),
             (
                 "libc",
@@ -1101,6 +1125,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                 )
                 for component in (
                     "system",
+                    "connectivity",
                     "power",
                     "display",
                     "storage",
@@ -1240,6 +1265,12 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                     "abseil_patches": abseil_patches,
                     "abseil_statusor_archives": abseil_archives,
                     "mbedtls": mbedtls_provenance,
+                    "network_headers": json.loads(
+                        (
+                            workspace
+                            / "third_party/symbian-network-headers/source.json"
+                        ).read_text()
+                    ),
                     "rcomp_revision": (
                         "d3c2eadd3ff7826bdf9e1d92f447c357571af18b"
                     ),

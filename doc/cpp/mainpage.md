@@ -16,7 +16,7 @@ the generated symbol list.
 | --- | --- | --- |
 | Inspect or publish an E32 executable | `symbian::e32` in `e32.h` | Host tooling |
 | Build or inspect a SIS package | `symbian::sis` in `sis.h` | Host tooling |
-| Query supported device services | `symbian::api` display, power, storage, camera and system headers | Guest application |
+| Query supported device services | `symbian::api` connectivity, display, power, storage, camera and system headers | Guest application |
 | Schedule guest work | `symbian::concurrency` Future, Task, event executor and timer headers | Guest application |
 | Configure optional application TLS | `symbian_mbedtls` platform and socket BIO headers | Guest application |
 | Validate a development-agent envelope | `symbian::agent` frame and control headers | Host library; guest export pending |

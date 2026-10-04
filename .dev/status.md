@@ -1,5 +1,19 @@
 # Status
 
+2026-10-04 SDK native TCP client: `Symbian::Connectivity` now installs a
+move-only `TcpClient` with bounded synchronous IPv4 connect/send/receive,
+original ESOCK/INSOCK headers and frozen import proxies for both ARM profiles.
+The fresh `.symbian/connectivity-sdk-20261004` export completed, and an
+ordinary application linked the public target, converted to E32 and ran on
+disposable RM-807 instances under Dynarmic and Dyncom. A local host listener
+received `N`, the guest received `R`, and a changed host reply produced its
+expected failure (`3 passed` opt-in Pytest). Pinned ROM/EUSER/ESOCK/INSOCK
+digests remained intact. A separate EKA2L1 patch implements the missing
+ESOCK `ESoRecvOneOrMoreNoLength` opcode 38 used by the original RSocket API.
+This client has no in-flight cancellation, deadline or listener; it is not
+the resident service transport. Guest TLS handshake and Nokia 808 device
+gates remain open.
+
 2026-10-04 outbound OpenC probe: a supplemental libc import proxy generated
 from the original `libcu.def` selected `sendto` ordinal 304, then the
 previously failing DLL linked afresh. A connected guest `sendto` to the

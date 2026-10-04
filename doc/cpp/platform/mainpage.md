@@ -17,6 +17,8 @@ header.
 | Files and volumes | `f32file.h` | `RFs`, `RFile`, volume information |
 | Hardware attributes | `hal.h` | `HAL::Get`, attribute identifiers |
 | Camera framework | `ecam.h` | `CCamera` and observer contracts |
+| Socket Server | `es_sock.h` | `RSocketServ`, `RSocket`, native request cancellation |
+| Internet sockets | `in_sock.h` | `TInetAddr`, IPv4 and IPv6 protocol constants |
 
 The snapshot helps read **native, original platform capabilities**. It does not
 mean this SDK exports every symbol, that every ROM implements it, or that a
@@ -35,3 +37,8 @@ at `ff133bc50e6158bfb08cc093b0f0055321dcde99`; `ecam.h` comes from the
 [camera framework repository](https://github.com/SymbianSource/oss.FCL.sf.mw.camerasrv)
 at `ebaa78373866f90dbf706e8d4eeb59ff65f1e107`. Header filenames were
 lowercased for the documentation snapshot; contents were not edited.
+`es_sock.h` comes from the
+[commsfw repository](https://github.com/SymbianSource/oss.FCL.sf.os.commsfw)
+at `bc8ac1a6d5273cbfa7852bbb8ce27d6ddc076984`; `in_sock.h` comes from
+the [networkingsrv repository](https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv)
+at `b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9`.

@@ -21,10 +21,11 @@ SDK's C++20 standard library.
 | `sensors` | Enumerate available channels and read timestamped samples | Header/ordinal and capability checks, subscription cancellation and overflow controls |
 | `media` | Audio playback and recording with owned buffers | Audio service contracts, timing, format negotiation and cancellation |
 | `camera` | Typed ECam camera-count discovery, without activating hardware | Opening, preview and capture need a verified leave boundary and named-firmware callback, permission and buffer-lifetime evidence |
-| `connectivity` | Observe connection state through supported native services | Capability checks, service availability and timeouts; no implicit network configuration |
+| `connectivity` | Connect and exchange bounded IPv4 TCP data on a worker | Asynchronous listener, cancellation, deadlines, bearer observation and physical-device checks remain open |
 
-`system`, `power`, `display`, `storage` and `camera` have public headers and separate
-archives. The other rows are planned components, not claimed device features.
+`system`, `power`, `display`, `storage`, `camera` and `connectivity` have public
+headers and separate archives. The sensor and media rows are planned
+components, not claimed device features.
 Their separate directories reserve source boundaries; add a public header and
 archive only after a native service contract has been verified. Keep
 device-specific facts as unknown until measured. No flashing, erasure,

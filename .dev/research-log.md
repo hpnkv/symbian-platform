@@ -1,5 +1,35 @@
 # Research log
 
+## 2026-10-04: Original RSocket outbound and receive path
+
+A diagnostic DLL compiled against original `ES_SOCK.H` and `in_sock.h` with
+ordinal proxies selected from their EABI DEF files. `RSocket::Send` delivered
+one byte to a host listener through the disposable RM-807 emulator even though
+the guest OpenC `send` returned `EINVAL` and `sendto` returned `ENOSYS`. This
+separates the original Socket Server path from the OpenC wrapper problem.
+
+The public `TcpClient` uses an owning native bridge and a 32 KiB limit per
+call. Its source header closure and DEF files are physically vendored from
+SymbianSource `commsfw` revision
+`bc8ac1a6d5273cbfa7852bbb8ce27d6ddc076984` and `networkingsrv`
+revision `b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9`, retaining their
+EPL notices. A fresh SDK export built armv5t and armv6 archives and installed
+`esock`/`insock` proxies. The first ordinary consumer run hung after send:
+EKA2L1 lacked opcode 38, identified as `ESoRecvOneOrMoreNoLength` in the
+original `csock/SOCKMES.H` and `CS_CLI.CPP`. A scoped patch adds that dispatch
+case to the existing `recv(..., one_or_more=true)` handler. The rebuilt
+emulator passed public SDK send/receive tests on Dynarmic and Dyncom and a
+wrong-response control. The original platform headers are now included in
+the curated native Doxygen reference.
+
+The helper waits synchronously for each native request. It is suitable for
+bounded worker-side checks, but not for the resident agent's active-object
+listener or cancellable TLS owner. The next transport slice needs a native
+listener/accepted socket, read/write request lifetime, cancellation drainage,
+deadlines and authenticated TLS. Confirm the source DEF ordinals and network
+capability behavior on a physical Nokia 808 separately; the emulator result
+does not establish device compatibility.
+
 ## 2026-10-04: Connected TCP receive, outbound OpenC blocker
 
 With a supplemental proxy built from SymbianSource `libcu.def`, `sendto`

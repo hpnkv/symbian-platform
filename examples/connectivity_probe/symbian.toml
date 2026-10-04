@@ -1,0 +1,21 @@
+[project]
+name = "connectivity_probe"
+kind = "e32-import-experiment"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000823
+import_proxies = [
+  "${sdk}/proxies/euser/euser.dso",
+  "${sdk}/proxies/libc/libc.dso",
+  "${sdk}/proxies/libpthread/libpthread.dso",
+  "${sdk}/proxies/libm/libm.dso",
+  "${sdk}/proxies/drtaeabi/drtaeabi.dso",
+  "${sdk}/proxies/esock/esock.dso",
+  "${sdk}/proxies/insock/insock.dso",
+]
+
+[package]
+uid = 0xe0000824
+name = "Symbian Native TCP Probe"
+vendor = "Symbian research"
+executable_name = "connectivity_probe.exe"
+version = [1, 0, 0]

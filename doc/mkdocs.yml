@@ -144,7 +144,7 @@ nav:
           - Display: capabilities/apis/display.md
           - Storage: capabilities/apis/storage.md
           - Camera: capabilities/apis/camera.md
-          - Connectivity (planned): capabilities/apis/connectivity.md
+          - Connectivity: capabilities/apis/connectivity.md
           - Sensors (planned): capabilities/apis/sensors.md
           - Media (planned): capabilities/apis/media.md
       - Performance: capabilities/performance.md
