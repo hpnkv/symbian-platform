@@ -1,5 +1,5 @@
 diff --git a/src/emu/services/include/services/internet/protocols/inet.h b/src/emu/services/include/services/internet/protocols/inet.h
-index 91ca086..4b83849 100644
+index 91ca086..63321de 100644
 --- a/src/emu/services/include/services/internet/protocols/inet.h
 +++ b/src/emu/services/include/services/internet/protocols/inet.h
 @@ -28,6 +28,7 @@
@@ -10,20 +10,21 @@ index 91ca086..4b83849 100644
  #include <functional>
  #include <memory>
  #include <optional>
-@@ -208,6 +209,8 @@ namespace eka2l1::epoc::internet {
+@@ -208,6 +209,9 @@ namespace eka2l1::epoc::internet {
          bool take_available_only_;
          bool reuse_addr_ = false;
          bool reuse_addr_changed_ = false;
 +        std::atomic<bool> nonblocking_io_{false};
++        std::atomic<bool> nonblocking_read_armed_{false};
 +        std::atomic<int> nonblocking_terminal_error_{0};
  
          std::vector<char> temp_buffer_;
          epoc::socket::saddress *recv_addr_;
 diff --git a/src/emu/services/src/internet/protocols/socket.cpp b/src/emu/services/src/internet/protocols/socket.cpp
-index 56765de..7523483 100644
+index 56765de..f64eec7 100644
 --- a/src/emu/services/src/internet/protocols/socket.cpp
 +++ b/src/emu/services/src/internet/protocols/socket.cpp
-@@ -1048,6 +1048,26 @@ namespace eka2l1::epoc::internet {
+@@ -1048,6 +1048,29 @@ namespace eka2l1::epoc::internet {
          }
  
          const uv_buf_t *buf = reinterpret_cast<const uv_buf_t*>(buf_ptr);
@@ -36,21 +37,42 @@ index 56765de..7523483 100644
 +                if (stream_data_buffer_->push(buf->base, count) != count) {
 +                    nonblocking_terminal_error_.store(epoc::error_overflow);
 +                    uv_read_stop(reinterpret_cast<uv_stream_t*>(opaque_handle_));
++                    nonblocking_read_armed_.store(false);
 +                }
 +            } else {
 +                nonblocking_terminal_error_.store(bytes_read_arg == UV_EOF
 +                    ? epoc::error_eof : epoc::error_disconnected);
 +                uv_read_stop(reinterpret_cast<uv_stream_t*>(opaque_handle_));
++                nonblocking_read_armed_.store(false);
 +            }
 +            if (!nonblocking_io_.load()) {
 +                uv_read_stop(reinterpret_cast<uv_stream_t*>(opaque_handle_));
++                nonblocking_read_armed_.store(false);
 +            }
 +            return;
 +        }
          kernel_system *kern = nullptr;
  
          if (!recv_done_info_.empty()) {
-@@ -1163,7 +1183,7 @@ namespace eka2l1::epoc::internet {
+@@ -1102,6 +1125,7 @@ namespace eka2l1::epoc::internet {
+ 
+         // No need, you should stop for now
+         uv_read_stop(reinterpret_cast<uv_stream_t*>(opaque_handle_));
++        nonblocking_read_armed_.store(false);
+         kern->lock();
+ 
+         if (receive_done_cb_) {
+@@ -1138,6 +1162,9 @@ namespace eka2l1::epoc::internet {
+         });
+ 
+         if (start_err != 0) {
++            if (start_err != UV_EALREADY) {
++                nonblocking_read_armed_.store(false);
++            }
+             LOG_TRACE(SERVICE_BLUETOOTH, "Error trying to receive TCP data. Libuv's error code is {}", start_err);
+         }
+     }
+@@ -1163,7 +1190,7 @@ namespace eka2l1::epoc::internet {
          bytes_read_ = recv_size;
          read_dest_ = data;
          recv_size_ = data_size;
@@ -59,7 +81,7 @@ index 56765de..7523483 100644
          receive_done_cb_ = callback;
          recv_addr_ = addr_ptr;
  
-@@ -1204,6 +1224,18 @@ namespace eka2l1::epoc::internet {
+@@ -1204,6 +1231,18 @@ namespace eka2l1::epoc::internet {
                      return;
                  }
              }
@@ -70,7 +92,7 @@ index 56765de..7523483 100644
 +                receive_done_cb_ = nullptr;
 +                bytes_read_ = nullptr;
 +                read_dest_ = nullptr;
-+                if (!terminal) {
++                if (!terminal && !nonblocking_read_armed_.exchange(true)) {
 +                    looper_->post_task(recv_task_);
 +                }
 +                return;
@@ -78,7 +100,7 @@ index 56765de..7523483 100644
          }
          
          looper_->post_task(recv_task_);
-@@ -1324,6 +1356,20 @@ namespace eka2l1::epoc::internet {
+@@ -1324,6 +1363,20 @@ namespace eka2l1::epoc::internet {
  
      bool inet_socket::set_option(const std::uint32_t option_id, const std::uint32_t option_family,
          std::uint8_t *buffer, const std::size_t avail_size) {

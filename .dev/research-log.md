@@ -2,6 +2,17 @@
 
 ## 2026-10-04: Connected TCP receive, outbound OpenC blocker
 
+Follow-up: a tight sequence of guest `WANT_READ` retries posted many libuv
+read-start tasks, produced repeated `UV_EALREADY` traces and crashed one
+disposable emulator run. The patch now tracks whether its background read is
+armed and posts only once until completion/stop. The opt-in receive regression
+passed after rebuilding. `sendto` with an explicit peer returned 1, yet a
+host listener waiting for its byte received only a reset when the guest
+closed. Temporary `socket_socket::send` logging showed no request entered
+that service handler. This is not evidence that `sendto` transmits; the
+guest wrapper, descriptor routing and alternate service opcodes remain to
+inspect. A native `RSocket` probe remains the next differentiator.
+
 The earlier option-acceptance stub made `fcntl` succeed but left `recv`
 blocked. `research/eka2l1/belle-nonblocking-tcp.patch` now gives the pinned
 EKA2L1 internet TCP socket a background libuv read into its bounded ring,

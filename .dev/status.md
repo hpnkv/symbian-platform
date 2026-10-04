@@ -1,5 +1,15 @@
 # Status
 
+2026-10-04 emulator TCP receive stability follow-up: a repeated guest
+`WANT_READ` loop exposed duplicate `uv_read_start` submissions and one
+emulator crash in the disposable diagnostic. The scoped receive patch now
+arms one background read at a time. The opt-in connected receive/cancel
+regression passed again (`1 passed, 7 deselected`). An explicit-address
+`sendto` returned 1 but delivered no host byte before guest close; service
+instrumentation saw no `socket_socket::send` invocation. Outbound I/O and
+authenticated TLS remain open; the source of the guest OpenC behavior is
+unlocated.
+
 2026-10-04 RM-807 emulator TCP receive experiment: a scoped EKA2L1 patch
 implements `KSONonBlockingIO` for internet TCP sockets with a bounded 512 KiB
 receive ring and `KErrWouldBlock` for an empty read. An opt-in E32 DLL test
