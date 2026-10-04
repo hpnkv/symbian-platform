@@ -1,5 +1,45 @@
 # Research log
 
+## 2026-10-04: Guided native reference and visual documentation
+
+The GUI source walkthrough was split at its actual stage boundaries into
+preparation, architecture, build, emulator, debug, troubleshooting and runtime
+articles. CLion now has shorter setup, Run/Debug and advanced articles; the
+public instructions use project-relative examples instead of the maintainer's
+machine path. The Console guide has two reproducible 2880×1800 captures of
+its current frontend with a fixture context. The GUI emulator guide has two
+retained 720×1280 guest framebuffer captures, showing a pointer-driven count
+change. macOS `screencapture` returned `could not create image from display`;
+the owner declined Screen Recording access for now. The CLion visual is an
+explicitly labeled SVG configuration map, not a screenshot. Open question:
+replace it with real IDE captures if screen capture access becomes available.
+
+The SDK Doxygen landing page now explains host/guest surfaces, native error
+rules and where to start. A separate Doxygen build indexes nine original
+Symbian headers, kept apart from the SDK-owned APIs so historical declarations
+do not appear to be implemented SDK features. The tracked snapshots retain
+their EPL 1.0 notices and were copied from the pinned SymbianSource kernel,
+graphics and camera checkouts recorded on that page. The snapshot filenames
+were lowercased and contents retained. The combined strict documentation build
+passed; the platform reference emitted 827 HTML pages. Upstream annotations
+were mapped to Doxygen aliases, leaving 31 parser/documentation warnings from
+the original headers. Open question: which additional original headers help
+developers without implying unverified ROM support?
+
+## 2026-10-04: Symbian secure random candidate
+
+The pinned [EUSER source](https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/us_exec.cpp)
+documents `Math::RandomL(TDes8&)` as filling a descriptor with cryptographic
+random data and leaving with `KErrNotReady` when security cannot be assured.
+The original EUSER `.def` maps it to ordinal 2503. A guest-only C++ adapter now
+traps the leave, bounds the request to 1024 bytes and zeroizes output on
+failure. The first fresh SDK export failed to compile because `e32math.inl`
+had not been copied; the corrected export built both ARM profiles and records
+the source ordinal in its EUSER proxy. This is an ABI candidate, not runtime
+proof: the named ROM's ordinal behavior, emulator SVC implementation, random
+service health and actual entropy quality remain unmeasured. Keep failures
+closed and do not claim authenticated guest TLS from this build.
+
 ## 2026-10-04: Overview icons
 
 The published overview showed raw `:material-...:` strings in its four cards.

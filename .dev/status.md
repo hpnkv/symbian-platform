@@ -1,5 +1,30 @@
 # Status
 
+2026-10-04 documentation second pass: the former 1,142-line GUI source guide
+is now an overview and seven step-oriented articles; the CLion guide is an
+overview plus profile, Run/Debug and advanced articles. Two Console screenshots
+were rendered from the current frontend in headless Chrome with sample paths
+and no phone data; two 720×1280 counter frames came from the retained real
+EKA2L1 input test. macOS denied desktop capture from this session, and the
+owner chose not to enable Screen Recording now, so the CLion guide uses an
+explicitly labeled configuration illustration rather than an IDE screenshot.
+The SDK native API guide maps available CMake targets, headers, results and
+lifetimes. Doxygen now builds separate SDK and curated original-platform
+references; the latter contains nine unedited EPL-noticed SymbianSource header
+snapshots and generated 827 HTML pages. The local strict MkDocs and both
+Doxygen builds passed. Pages deployment of this pass is pending.
+
+2026-10-04 guest entropy candidate: a new C++ Mbed TLS adapter calls original
+`Math::RandomL(TDes8&)` under a Symbian `TRAP`, limits requests to 1024 bytes,
+and clears output on a leave. The SDK exporter now includes original
+`e32math.h`/`e32math.inl` and adds EUSER source ordinal 2503 to its proxy.
+The first export failed because the header's `.inl` include was absent; a
+retry at `.symbian/mbedtls-entropy-sdk-retry-20261004` built and selected the
+new active SDK. Both ARMv5T and ARMv6 crypto archives define
+`mbedtls_hardware_poll` and reference the Math import. No emulator execution,
+guest entropy quality/health assessment, or Nokia 808 import check has passed;
+the TLS gate remains open.
+
 2026-10-04 documentation icon repair: the MkDocs Material emoji extension now
 turns the four overview card icons into inline SVG instead of displaying their
 `:material-...:` source text. The strict combined MkDocs/Doxygen build passed;

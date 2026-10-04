@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">CLion profile and run configuration map</title>
+  <desc id="desc">A guide illustration showing the symbian-pic CMake profile, ARM build targets, GUI Run, and GUI Debug with an ARM GDB profile.</desc>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1">
+      <stop stop-color="#f7f9ff"/>
+      <stop offset="1" stop-color="#edf2fc"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#233066" flood-opacity=".10"/>
+    </filter>
+    <style>
+      text{font-family:Inter,"Noto Sans",Arial,sans-serif;fill:#17223d}
+      .heading{font-size:28px;font-weight:700}
+      .label{font-size:16px;font-weight:700}
+      .body{font-size:15px}
+      .muted{font-size:13px;fill:#5b6882}
+      .mono{font-family:"JetBrains Mono",Menlo,monospace;font-size:14px}
+      .card{fill:#fff;stroke:#cbd7ee;stroke-width:1.5;filter:url(#shadow)}
+      .pill{fill:#e8efff;stroke:#b3c5ef}
+      .line{stroke:#667bc2;stroke-width:3;fill:none;marker-end:url(#arrow)}
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M1 1 L9 5 L1 9" fill="none" stroke="#667bc2" stroke-width="2"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="630" fill="url(#background)"/>
+  <text x="48" y="63" class="heading">From source to a guest breakpoint</text>
+  <text x="48" y="92" class="muted">Configuration map from this repository · illustration, not an IDE capture</text>
+
+  <rect x="48" y="132" width="340" height="210" rx="18" class="card"/>
+  <rect x="68" y="152" width="42" height="42" rx="12" fill="#e8efff"/>
+  <path d="M79 168h20M79 176h20M79 184h12" stroke="#4054b2" stroke-width="3" stroke-linecap="round"/>
+  <text x="124" y="179" class="label">1  CMake profile</text>
+  <text x="70" y="230" class="body">Open <tspan class="mono">examples/gui_app</tspan></text>
+  <rect x="68" y="247" width="290" height="40" rx="10" class="pill"/>
+  <text x="82" y="273" class="mono">symbian-pic · ARMv6 · Ninja</text>
+  <text x="70" y="318" class="muted">Reload CMake; check ARM source indexing.</text>
+
+  <rect x="430" y="132" width="340" height="210" rx="18" class="card"/>
+  <rect x="450" y="152" width="42" height="42" rx="12" fill="#e8efff"/>
+  <path d="M462 182h20M466 178v-13l6-8 6 8v13" stroke="#4054b2" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <text x="506" y="179" class="label">2  Build targets</text>
+  <text x="452" y="229" class="mono">gui_app</text>
+  <text x="452" y="264" class="mono">gui_app_e32</text>
+  <text x="452" y="305" class="muted">ELF is converted and verified as E32.</text>
+
+  <rect x="812" y="132" width="340" height="210" rx="18" class="card"/>
+  <rect x="832" y="152" width="42" height="42" rx="12" fill="#e8efff"/>
+  <path d="m846 161 15 12-15 12z" stroke="#4054b2" stroke-width="3" stroke-linejoin="round" fill="none"/>
+  <text x="888" y="179" class="label">3  Run configuration</text>
+  <rect x="832" y="217" width="300" height="44" rx="10" fill="#eef9f3" stroke="#b4dec7"/>
+  <text x="848" y="245" class="mono" fill="#20774e">GUI Run → emulator</text>
+  <text x="834" y="304" class="muted">Starts a fresh, supervised instance.</text>
+
+  <path d="M388 237h38" class="line"/>
+  <path d="M770 237h38" class="line"/>
+  <path d="M982 346v38" class="line"/>
+
+  <rect x="430" y="390" width="722" height="166" rx="18" class="card"/>
+  <rect x="450" y="411" width="42" height="42" rx="12" fill="#e8efff"/>
+  <path d="M461 424h20M461 432h20M466 440h10" stroke="#4054b2" stroke-width="3" stroke-linecap="round"/>
+  <text x="506" y="439" class="label">4  Guest debugging</text>
+  <text x="452" y="488" class="mono">GUI Debug → Symbian GUI GDB</text>
+  <text x="452" y="522" class="body">Set a breakpoint in <tspan class="mono">GuiMain</tspan>, then Resume.</text>
+  <text x="48" y="600" class="muted">The emulator result is a development check. Physical Nokia 808 behavior remains a separate gate.</text>
+</svg>

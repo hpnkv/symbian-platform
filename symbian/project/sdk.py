@@ -538,6 +538,11 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                 / header,
                 output / "include/platform" / header,
             )
+        for header in ("e32math.h", "e32math.inl"):
+            shutil.copyfile(
+                source / "kernelhwsrv/kernel/eka/include" / header,
+                output / "include/platform" / header,
+            )
         camera_headers = (
             "ECam.h",
             "ecamdef.h",
@@ -775,6 +780,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             "_ZNK7RThread6ResumeEv",
             "_ZNK7RThread10ExitReasonEv",
             "_ZNK7RThread8ExitTypeEv",
+            "_ZN4Math7RandomLER5TDes8",
             "_ZN4User9TickCountEv",
             "_ZN4User10NTickCountEv",
             "_ZN4User11FastCounterEv",

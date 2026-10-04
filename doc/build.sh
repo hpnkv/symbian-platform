@@ -31,4 +31,14 @@ if grep -E '(^|[[:space:]])error:' "$log" >/dev/null; then
   exit 1
 fi
 test -f site/cpp/index.html
+(cd cpp/platform && doxygen Doxyfile) >"$log" 2>&1 || {
+  cat "$log" >&2
+  exit 1
+}
+cat "$log"
+if grep -E '(^|[[:space:]])error:' "$log" >/dev/null; then
+  echo "Platform Doxygen reported errors" >&2
+  exit 1
+fi
+test -f site/cpp/platform/index.html
 echo "Documentation built at $here/site"

@@ -1,5 +1,29 @@
 # Symbian Console
 
+Symbian Console is the desktop view of the same SDK commands used in a
+terminal. Use it to create a project, build an E32 executable, choose imported
+firmware, run in the emulator and prepare a SIS package. The screenshots below
+use the actual frontend with sample paths and no connected phone.
+
+## Create and select an application
+
+1. Start the Console with `uv run symbian console` from the repository root.
+2. Choose **Applications** and **Create an application**. Enter a new folder,
+   name and application UID3, then review the proposed settings.
+3. Select the created project in the sidebar. Its application page collects
+   **Build**, **Run in emulator** and **Package** in one place.
+
+![The Applications page showing Create, Build, Run and Package choices and the Create form.](../assets/screenshots/console-actions.png)
+
+*Applications page, captured from the current frontend with a sample SDK path.*
+
+![A selected Counter project with Build, Run and Package controls.](../assets/screenshots/console-application.png)
+
+*Selected project before its first build. Import compatible firmware before
+running; Package becomes available after Build.*
+
+## Launch and navigate
+
 Run `symbian console` (or `uv run symbian console`). Pass
 `--workdir /path/to/application` to start in a chosen directory; its
 `symbian.toml` is selected automatically and a local

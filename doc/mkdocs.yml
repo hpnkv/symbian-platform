@@ -101,14 +101,26 @@ nav:
   - Guides:
       - Standalone projects: guides/projects.md
       - Build an application: guides/building.md
-      - Build a source SDK: guides/from-source.md
+      - GUI source walkthrough:
+          - Overview: guides/from-source.md
+          - Prepare tools and source: guides/source-prerequisites.md
+          - Understand the example: guides/gui-architecture.md
+          - Build and inspect: guides/gui-build.md
+          - Run in the emulator: guides/gui-emulator.md
+          - Debug the guest: guides/gui-debug.md
+          - Troubleshoot: guides/gui-troubleshooting.md
+          - Guest C++ runtime: guides/guest-runtime-source.md
       - Firmware and emulator: guides/firmware.md
       - Emulator control: guides/emulator-control.md
       - Package an application: guides/packaging.md
       - TLS and CA bundles: guides/tls.md
       - Desktop console: guides/console.md
       - Connect a device: guides/device.md
-      - CLion: guides/clion.md
+      - CLion:
+          - Overview: guides/clion.md
+          - Configure profiles: guides/clion-profiles.md
+          - Run and debug: guides/clion-run-debug.md
+          - Source indexing: guides/clion-advanced.md
       - Host builds: guides/host-build.md
   - Tutorials:
       - GUI application: tutorials/gui-app.md
@@ -134,4 +146,6 @@ nav:
   - Reference:
       - SDK exports: reference/sdk.md
       - Python API: reference/python.md
+      - SDK native API guide: reference/native-sdk.md
       - C++ API: cpp.md
+      - Original Symbian headers: reference/native-symbian.md

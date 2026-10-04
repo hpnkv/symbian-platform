@@ -1,8 +1,8 @@
 # Native reference, built after MkDocs from doc/cpp/ into doc/site/cpp/.
 DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = "Symbian platform (C++)"
-PROJECT_BRIEF          = "Native application APIs, runtime and tooling"
-INPUT                  = ../../cpp/symbian mainpage.md
+PROJECT_BRIEF          = "SDK native APIs, runtime and tooling"
+INPUT                  = ../../cpp/symbian ../../third_party/mbedtls-symbian/include/symbian_mbedtls mainpage.md
 USE_MDFILE_AS_MAINPAGE = mainpage.md
 RECURSIVE              = YES
 FULL_PATH_NAMES        = YES
