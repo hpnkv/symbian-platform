@@ -898,6 +898,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                     "recv",
                     "select",
                     "send",
+                    "sendto",
                     "setsockopt",
                     "shutdown",
                     "snprintf",

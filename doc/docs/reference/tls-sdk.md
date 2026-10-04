@@ -45,7 +45,9 @@ receive callbacks before they touch the socket. A separate opt-in RM-807
 emulator patch and DLL probe now show a connected TCP receive returning
 `MBEDTLS_ERR_SSL_WANT_READ` when empty, delivering a delayed byte and refusing
 a read after cancellation. The same guest path currently returns `EINVAL` for
-`send` even before enabling nonblocking mode. Outbound I/O and TLS handshakes
+`send` even before enabling nonblocking mode. An explicit-address `sendto`
+probe with a supplemental original libc import reached the guest but returned
+`ENOSYS`. Outbound I/O and TLS handshakes
 therefore remain unverified. Guest applications
 still need a verified secure entropy source. Certificate trust policy
 belongs to the application; the SDK does not silently install a CA bundle.

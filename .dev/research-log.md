@@ -2,16 +2,28 @@
 
 ## 2026-10-04: Connected TCP receive, outbound OpenC blocker
 
+With a supplemental proxy built from SymbianSource `libcu.def`, `sendto`
+resolves to original libc export ordinal 304. The diagnostic DLL was linked
+again and its timestamp/imports checked before rerun. An explicit-address
+`sendto(fd, &byte, 1, 0, &peer, sizeof(peer))` returned `ENOSYS` (OpenC
+errno 78); the local listener saw a connection but no byte. The active SDK
+proxy lacked `sendto`; future SDK exports now select it. This does not fix
+the Belle OpenC runtime or establish outbound delivery. The original
+SymbianSource `ES_SOCK.H` is in `oss.FCL.sf.os.commsfw`, and `in_sock.h` in
+`oss.FCL.sf.os.networkingsrv`; both research checkouts are ignored. A native
+`RSocket::Send` experiment should use their ABI and a verified ESOCK import
+proxy before selecting a connectivity implementation.
+
 Follow-up: a tight sequence of guest `WANT_READ` retries posted many libuv
 read-start tasks, produced repeated `UV_EALREADY` traces and crashed one
 disposable emulator run. The patch now tracks whether its background read is
 armed and posts only once until completion/stop. The opt-in receive regression
-passed after rebuilding. `sendto` with an explicit peer returned 1, yet a
-host listener waiting for its byte received only a reset when the guest
-closed. Temporary `socket_socket::send` logging showed no request entered
-that service handler. This is not evidence that `sendto` transmits; the
-guest wrapper, descriptor routing and alternate service opcodes remain to
-inspect. A native `RSocket` probe remains the next differentiator.
+passed after rebuilding. A proposed explicit-address `sendto` diagnostic
+failed at link time (`undefined symbol: sendto`): this SDK libc proxy selects
+`send` and `recv` but omits `sendto`. The subsequent emulator runs used the
+older DLL, so they cannot say anything about `sendto` delivery. The source of
+the observed `send`/`write` `EINVAL` remains open. A verified `sendto` import
+or native `RSocket` probe can distinguish the guest wrapper from ESOCK.
 
 The earlier option-acceptance stub made `fcntl` succeed but left `recv`
 blocked. `research/eka2l1/belle-nonblocking-tcp.patch` now gives the pinned

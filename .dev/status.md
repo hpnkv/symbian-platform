@@ -1,14 +1,22 @@
 # Status
 
+2026-10-04 outbound OpenC probe: a supplemental libc import proxy generated
+from the original `libcu.def` selected `sendto` ordinal 304, then the
+previously failing DLL linked afresh. A connected guest `sendto` to the
+explicit loopback peer returned `ENOSYS` (78) and no host byte arrived.
+`symbian/project/sdk.py` now includes that original export in future SDK
+proxies, but the active SDK still needs a fresh export to contain it. The
+existing guest `send`/`write` probe returned `EINVAL` (22). Outbound TCP,
+authenticated TLS and development-agent gate 2 remain open.
+
 2026-10-04 emulator TCP receive stability follow-up: a repeated guest
 `WANT_READ` loop exposed duplicate `uv_read_start` submissions and one
 emulator crash in the disposable diagnostic. The scoped receive patch now
 arms one background read at a time. The opt-in connected receive/cancel
-regression passed again (`1 passed, 7 deselected`). An explicit-address
-`sendto` returned 1 but delivered no host byte before guest close; service
-instrumentation saw no `socket_socket::send` invocation. Outbound I/O and
-authenticated TLS remain open; the source of the guest OpenC behavior is
-unlocated.
+regression passed again (`1 passed, 7 deselected`). A proposed explicit-address
+`sendto` diagnostic did not link: the active SDK's libc proxy lacks that
+import, so later runs used the older DLL. No `sendto` runtime result is
+claimed. Outbound I/O and authenticated TLS remain open.
 
 2026-10-04 RM-807 emulator TCP receive experiment: a scoped EKA2L1 patch
 implements `KSONonBlockingIO` for internet TCP sockets with a bounded 512 KiB
