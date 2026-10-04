@@ -132,6 +132,16 @@ only when requested. The host API exposes `recent_logs(limit=8)` for this
 bounded snapshot; `logs(after=cursor)` remains available for cursor-based
 reads.
 
+The phone-initiated CLI path can read the same log without an IP address:
+
+```sh
+symbian agent listen --key-file /private/agent.key --logs
+symbian agent listen --key-file /private/agent.key --logs --after 12 --limit 8
+```
+
+Each command opens one temporary authenticated listener. `--after` is a
+process-local sequence cursor; it does not survive an agent restart.
+
 ## Verification boundary
 
 The opt-in guest suite builds against the selected SDK, launches the agent in

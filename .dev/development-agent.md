@@ -145,6 +145,13 @@ phone wire protocol. If phone-side HTTP is later required, choose a maintained
 small parser/library after checking code size, allocations, idle cost and
 platform TLS support; do not write an ad hoc HTTP parser.
 
+An [nghttp2/ngtcp2 feasibility review](research-log.md#2026-10-04-nghttp2-and-ngtcp2-for-the-resident-agent)
+found no reason to change the current agent wire protocol. A11 already uses
+nghttp2 on the host; a guest lib-only port remains an optional future HTTP/2
+capability. ngtcp2 needs a QUIC TLS integration absent from the current Mbed
+TLS guest profile, and HTTP/3 additionally needs nghttp3. These are explicit
+future capability gates, not dependencies of status, logs or files.
+
 ## Capability areas
 
 | Area | Service contract and presentation |

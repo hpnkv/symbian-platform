@@ -359,6 +359,21 @@ def _parser() -> argparse.ArgumentParser:
     listen_agent.add_argument("--listen-host", default="0.0.0.0")
     listen_agent.add_argument("--port", type=int, default=39103)
     listen_agent.add_argument("--timeout", type=float, default=20.0)
+    listen_agent.add_argument(
+        "--logs",
+        action="store_true",
+        help="Read the phone agent's bounded service log instead of status.",
+    )
+    listen_agent.add_argument(
+        "--after",
+        type=int,
+        help="With --logs, read records after this sequence cursor.",
+    )
+    listen_agent.add_argument(
+        "--limit",
+        type=int,
+        help="With --logs, return 1–8 records (default: 8).",
+    )
     configure = app.add_parser(
         "configure", help="Refresh SDK and CLion integration"
     )
@@ -652,7 +667,16 @@ def _execute(args: argparse.Namespace) -> dict:
         return doctor()
     if args.command == "agent":
         from symbian.agent import ReadOnlyAgentSession
+        from symbian.status import Code, StatusError
 
+        if (
+            args.agent_command == "listen"
+            and not args.logs
+            and (args.after is not None or args.limit is not None)
+        ):
+            raise StatusError(
+                Code.INVALID_ARGUMENT, "--after and --limit require --logs"
+            )
         session = (
             ReadOnlyAgentSession.accept(
                 args.listen_host,
@@ -670,6 +694,17 @@ def _execute(args: argparse.Namespace) -> dict:
         )
         with session as agent:
             if args.agent_command == "listen":
+                if args.logs:
+                    limit = args.limit if args.limit is not None else 8
+                    page = (
+                        agent.recent_logs(limit=limit)
+                        if args.after is None
+                        else agent.logs(after=args.after, limit=limit)
+                    )
+                    return {
+                        "peer_ip": agent.peer_ip,
+                        "logs": page.model_dump(mode="json"),
+                    }
                 return {
                     "peer_ip": agent.peer_ip,
                     "status": agent.status().model_dump(),

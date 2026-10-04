@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 from symbian import device
+from symbian.agent import AgentLogPage, AgentLogRecord, ReadOnlyAgentSession
 from symbian.cli import output
 from symbian.cli.__main__ import _parser
 from symbian.cli.__main__ import main as raw_main
@@ -83,6 +84,50 @@ def test_unknown_device_operation_is_denied(capsys):
 def test_flashing_is_not_a_command():
     with pytest.raises(SystemExit):
         main(["device", "flash"])
+
+
+def test_agent_listen_logs_uses_authenticated_session(monkeypatch, capsys):
+    calls = []
+
+    class Agent:
+        peer_ip = "192.0.2.7"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            pass
+
+        def recent_logs(self, *, limit):
+            calls.append(("recent", limit))
+            return AgentLogPage(
+                records=(AgentLogRecord(sequence=5, code=2),),
+                next_cursor=5,
+                gap=False,
+            )
+
+        def logs(self, *, after, limit):
+            calls.append(("cursor", after, limit))
+            return AgentLogPage(records=(), next_cursor=after, gap=False)
+
+    monkeypatch.setattr(
+        ReadOnlyAgentSession,
+        "accept",
+        classmethod(lambda _cls, *_args, **_kwargs: Agent()),
+    )
+    base = ["--output-format=json", "agent", "listen", "--key-file", "key"]
+    assert raw_main(base + ["--logs"]) == 0
+    result = json.loads(capsys.readouterr().out)["result"]
+    assert result["peer_ip"] == "192.0.2.7"
+    assert result["logs"]["records"][0]["sequence"] == 5
+    assert raw_main(base + ["--logs", "--after", "5", "--limit", "2"]) == 0
+    result = json.loads(capsys.readouterr().out)["result"]
+    assert result["logs"]["next_cursor"] == 5
+    assert calls == [("recent", 8), ("cursor", 5, 2)]
+    assert raw_main(base + ["--after", "5"]) == 1
+    assert json.loads(capsys.readouterr().out)["status"]["name"] == (
+        "INVALID_ARGUMENT"
+    )
 
 
 def test_missing_input_returns_structured_error(tmp_path, capsys):
