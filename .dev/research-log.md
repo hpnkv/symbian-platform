@@ -4967,3 +4967,9 @@ transport callbacks. Open questions: which Nokia 808 source yields sufficient
 randomness; how to verify UTC and trusted roots across clock changes; whether
 an authenticated TLS 1.3 handshake fits the phone's latency and memory budget;
 and how to cancel stalled socket callbacks without blocking the event thread.
+
+### 2026-10-04 — PC Suite MTP staging and resident UI follow-up
+
+The connected Nokia 808 exposes a standard still-imaging MTP interface even in PC Suite mode. Native SendObjectInfo/SendObject followed by GetObjectInfo/GetObject successfully staged and read back one checked 806 KiB agent SIS in Mass memory/Installs. A repeat call found the same digest and made no new copy. This does not show that the phone's installer will accept the package or that the agent can run, remain resident or maintain TLS through sleep. The agent still carries a public emulator test key and loopback binding; physical identity provisioning and host reachability are open. A bounded physical development-phone gate remains required before any claim of compatibility.
+
+The emulator's local BACK control leaves the service running while the UI is hidden; STOP exits cleanly in the opt-in guest test. Need separate measurement of actual phone background scheduling and idle cost. The macOS EKA2L1 movable-window patch builds, but manual drag and focus observations have not yet been recorded.

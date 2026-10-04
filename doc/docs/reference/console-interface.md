@@ -105,5 +105,8 @@ handles only presentation. CLI tasks run in children because some SDK commands
 replace their process with a tool.
 
 The console exposes existing public SDK workflows and implemented USB, AT,
-MTP and OBEX probes. OBEX currently performs a bounded Connect/Disconnect
-exchange; browsing, file transfer and SyncML remain open.
+MTP and OBEX probes. The Development Agents view calls the same checked SIS
+staging API as `symbian device install`; PC Suite MTP is available when the
+serial-matched interface is present, with writable storage verified at
+transfer time. OBEX currently performs a bounded Connect/Disconnect exchange;
+OBEX browsing and SyncML remain open.

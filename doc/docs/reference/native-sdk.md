@@ -128,6 +128,15 @@ bindings call it rather than duplicating format rules. In the
 | `symbian::analysis` | `cpp/symbian/analysis/*.h` | Read bounded ELF, attributes and checksum inputs. |
 | `symbian::emulator` | `cpp/symbian/emulator/*.h` | Native firmware/control parsing for owned emulator sessions. |
 | `symbian::agent` | `cpp/symbian/agent/frame.h`, `control.h` | Bounded length framing, inbound queue accounting and typed MessagePack control envelopes for the planned device protocol. The host `symbian::agent_frame` target is available. The guest uses the smaller `Symbian::Agent` codec. |
+| `symbian::device` | `cpp/symbian/device/usb.h` | Inspect serial-matched USB interfaces and stage one checked SIS through MTP. |
+
+`symbian::device::StageMtpSis` is a host operation. It takes a serial-derived
+anchor, checked host package path, safe content-addressed filename and expected
+SHA-256. It selects a writable MTP `Installs` folder, uploads at most 16 MiB,
+and reads the object back before returning its storage ID and object handle.
+The Python `symbian.device.mtp.stage_sis` wrapper exposes the same operation;
+`symbian.device.installation.stage_package` chooses it when no mounted staging
+volume is available. Neither API asks the handset to install the SIS.
 
 The host Python binding exposes `pack_agent_read_request`,
 `agent_control_payload_length` and `parse_agent_result_frame`. Each runs its

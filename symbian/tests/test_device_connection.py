@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from symbian.cli.__main__ import _parser
-from symbian.device import at, connection, installation, mode
+from symbian.device import at, connection, installation, mode, mtp
 from symbian.device.linux import discover_linux
 from symbian.device.policy import policy
 from symbian.status import Code, StatusError
@@ -142,6 +142,49 @@ def test_staging_is_content_checked_idempotent_and_never_claims_install(
     second = installation.stage_package(source, phone.selector, "disk7")
     assert second["copied"] is False
     assert list((mount / "Installs").glob("*.part")) == []
+
+
+def test_pc_suite_mtp_staging_uses_reusable_device_api(monkeypatch, tmp_path):
+    phone = connection.discover_from_registry(_tree(), lambda _: {})[0]
+    phone = phone.model_copy(
+        update={
+            "interfaces": (
+                connection.UsbInterface(
+                    number=0, class_code=6, subclass_code=1, protocol_code=1
+                ),
+            ),
+        }
+    )
+    assert mtp.can_stage_sis(phone)
+    monkeypatch.setattr(installation, "select", lambda _: phone)
+    monkeypatch.setattr(
+        installation,
+        "inspect_package",
+        lambda _: {"executable_name": "agent_service.exe", "uid": 1},
+    )
+    calls = []
+
+    def stage(device, source, filename, digest):
+        calls.append((device, source, filename, digest))
+        return {
+            "storage_id": 0x20001,
+            "object_handle": 23,
+            "name": filename,
+            "copied": True,
+        }
+
+    monkeypatch.setattr(mtp, "stage_sis", stage)
+    source = tmp_path / "agent_service.sis"
+    source.write_bytes(b"checked-sis")
+    result = installation.stage_package(source, phone.selector)
+    assert result["transport"] == "mtp-usb"
+    assert result["volume"] == "mtp:00020001"
+    assert result["object_handle"] == 23
+    assert result["on_device_verified"] is False
+    assert result["staged_path"].startswith("Installs/agent_service-")
+    assert calls[0][0] == phone
+    assert calls[0][2].endswith(".sis")
+    assert calls[0][3] == result["sha256"]
 
 
 def test_staging_rejects_missing_volume(monkeypatch, tmp_path):

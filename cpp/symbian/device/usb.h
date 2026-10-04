@@ -144,11 +144,40 @@ struct UsbDeviceDescriptor {
   int configuration_count = 0;
 };
 
-// A serial-derived anchor is required before accessing the selected device.
+/** Result of a checked SIS transfer to an MTP Installs folder. */
+struct MtpStageResult {
+  /// Selected writable store reported by the MTP device.
+  uint32_t storage_id = 0;
+  /// New or already matching object, usable for later read-only inspection.
+  uint32_t object_handle = 0;
+  /// Content-addressed SIS name under the store's root Installs folder.
+  std::string name;
+  /// False when an existing object passed the same readback digest check.
+  bool copied = false;
+};
+
+/** Inspect a serial-matched USB device without changing its stored files.
+ *
+ * `operation` is `map`, `mtp` or `obex`. `mtp` may return a bounded root
+ * listing; `obex` performs a Connect/Disconnect probe. No raw serial is
+ * returned. The caller must check `UsbProbe::state` for protocol outcomes.
+ */
 absl::StatusOr<UsbProbe> InspectUsb(uint16_t vendor, uint16_t product,
                                     const std::string& anchor,
                                     const std::string& operation,
                                     uint32_t limit);
+
+/** Stage one SIS on a serial-matched device, checking the readback digest.
+ *
+ * The device installer is not invoked. The transfer requires one writable MTP
+ * store with an unambiguous root Installs folder. Files larger than 16 MiB are
+ * rejected. The supplied SHA-256 binds the package to the caller's inspection.
+ */
+absl::StatusOr<MtpStageResult> StageMtpSis(uint16_t vendor, uint16_t product,
+                                           const std::string& anchor,
+                                           const std::string& package_path,
+                                           const std::string& filename,
+                                           const std::string& expected_sha256);
 
 }  // namespace symbian::device
 #endif  // SYMBIAN_DEVICE_USB_H_

@@ -166,19 +166,20 @@ On the connected 808, the native map identified MTP on interface 0 and the
 storage records (`Mass memory` and `Phone memory`), and a bounded root listing
 succeeded for both. The OBEX FTP target returned `0xA0` to Connect and,
 with its Connection ID supplied, `0xA0` to Disconnect. These observations are
-for this attachment and firmware; file transfer, SyncML, PC Suite commands,
-and debugger access have not been tested.
+for this attachment and firmware; SyncML, further PC Suite commands, and
+debugger access have not been tested.
 
 `symbian device install --project PROJECT [--device SELECTOR]` builds the
 project through its selected SDK (when it has `symbian-project.json`), makes a
 reproducible unsigned SIS, checks it with the native SIS reader, and stages it
-as `Installs/NAME-SHA256PREFIX.sis` on one selected writable volume. Pass
-`--volume diskN` if several volumes qualify. `--package FILE.sis` instead
-stages an already built SIS. Staging verifies the copied SHA-256 and is
+as `Installs/NAME-SHA256PREFIX.sis` on one selected writable volume or, in PC
+Suite mode, on a writable MTP store with an unambiguous `Installs` folder.
+Pass `--volume diskN` if several mounted volumes qualify. `--package FILE.sis`
+instead stages an already built SIS. Staging verifies the readback SHA-256 and is
 idempotent; it never overwrites different content, and it requires the package
-size plus 16 MiB of free space. The structured result state
+size plus 16 MiB of free space. MTP uploads are limited to 16 MiB. The structured result state
 is `awaiting-on-device-install`, **not** `installed`. Finish other transfers,
-safely eject the volume, and open the SIS on the handset to approve installation.
+safely eject a mounted volume, and open the SIS on the handset to approve installation.
 The handset may reject an unsigned package or unavailable imports. The SDK
 does not yet observe the phone's installer registry or launch the application,
 so user confirmation alone is not treated as automated installation evidence.
@@ -214,15 +215,25 @@ Example from the workspace:
   --project ~/dev/symbian-app-3 --device usb:0421:05d0:…
 ```
 
-The default `device install` command stages only when the handset exposes a
-writable mass-storage volume. The [Gammu configuration
+On 2026-10-04, the connected 808 exposed MTP interface 0 in PC Suite mode,
+a writable `Mass memory` store (`0x00020001`), and a root `Installs` folder.
+The SDK staged `agent_service-fec19755d808.sis` there and read back SHA-256
+`fec19755d8083fa2a1d5a12246f86874d7fef54f96cb41d2f063055a56042933`.
+A second call returned the same MTP object handle with `copied: false`.
+This proves transfer and readback for that attachment; it does not prove the
+agent installs, starts, or behaves safely on a Nokia 808. The package used a
+public emulator test certificate and has not passed the physical agent gate.
+
+The [Gammu configuration
 guide](https://docs.gammu.org/faq/config.html) describes Symbian remote access
 through an on-phone Bluetooth applet; its [`install`
 command](https://docs.gammu.org/gammu/) installs that applet rather than an
 arbitrary SDK application. An MTP product ID or USB vendor ID alone cannot
-establish an installer protocol; inspect the active interface before adding a
-transport. The PC Suite OBEX handshake is documented above; no MTP file
-transfer or direct installer session has been validated here.
+establish a writable store or installer protocol. The reusable
+`symbian.device.mtp.stage_sis` adapter and native `StageMtpSis` API re-check
+the serial anchor, interface, required operations, writable store, folder,
+free space and existing filename before writing. The device installer is
+still a separate human action.
 
 The public device model separates connection, volumes, capabilities and
 installation state. A Linux adapter now joins sysfs USB ancestors to mounted

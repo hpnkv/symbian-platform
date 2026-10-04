@@ -147,6 +147,11 @@ void BindDevice(pybind11::module_& module) {
       .def_readonly("device_class", &device::UsbDeviceDescriptor::device_class)
       .def_readonly("configuration_count",
                     &device::UsbDeviceDescriptor::configuration_count);
+  pybind11::class_<device::MtpStageResult>(module, "MtpStageResult")
+      .def_readonly("storage_id", &device::MtpStageResult::storage_id)
+      .def_readonly("object_handle", &device::MtpStageResult::object_handle)
+      .def_readonly("name", &device::MtpStageResult::name)
+      .def_readonly("copied", &device::MtpStageResult::copied);
   pybind11::class_<device::UsbPollFd>(module, "UsbPollFd")
       .def_readonly("fd", &device::UsbPollFd::fd)
       .def_readonly("events", &device::UsbPollFd::events);
@@ -169,6 +174,19 @@ void BindDevice(pybind11::module_& module) {
       pybind11::arg("vendor"), pybind11::arg("product"),
       pybind11::arg("anchor"), pybind11::arg("operation"),
       pybind11::arg("limit") = 0);
+  module.def(
+      "stage_mtp_sis_native",
+      [](uint16_t vendor, uint16_t product, const std::string& anchor,
+         const std::string& package_path, const std::string& filename,
+         const std::string& expected_sha256) {
+        return ValueWithoutGil([&] {
+          return device::StageMtpSis(vendor, product, anchor, package_path,
+                                     filename, expected_sha256);
+        });
+      },
+      pybind11::arg("vendor"), pybind11::arg("product"),
+      pybind11::arg("anchor"), pybind11::arg("package_path"),
+      pybind11::arg("filename"), pybind11::arg("expected_sha256"));
   module.def("list_usb_devices_native", [] {
     return ValueWithoutGil([] { return device::ListUsbDevices(); });
   });

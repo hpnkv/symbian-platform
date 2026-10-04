@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <fstream>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -22,6 +23,7 @@ namespace symbian::device {
 namespace {
 constexpr int kTimeoutMs = 1500;
 constexpr uint32_t kMaxContainer = 65536;
+constexpr uint32_t kMaxSisBytes = 16 * 1024 * 1024;
 
 std::string UsbError(int code) {
   return libusb_error_name(code);
@@ -248,7 +250,8 @@ uint32_t Read32(const std::vector<unsigned char>& b, size_t pos) {
 }
 
 absl::StatusOr<std::vector<unsigned char>> ReadContainer(
-    libusb_device_handle* handle, uint8_t endpoint) {
+    libusb_device_handle* handle, uint8_t endpoint,
+    uint32_t maximum = kMaxContainer) {
   std::vector<unsigned char> bytes(512);
   int length = 0;
   int result_code = libusb_bulk_transfer(handle, endpoint, bytes.data(), 512,
@@ -260,7 +263,7 @@ absl::StatusOr<std::vector<unsigned char>> ReadContainer(
     return absl::DataLossError("Short PTP container header");
   }
   const uint32_t expected = Read32(bytes, 0);
-  if (expected < 12 || expected > kMaxContainer ||
+  if (expected < 12 || expected > maximum ||
       static_cast<uint32_t>(length) > expected) {
     return absl::DataLossError("Invalid PTP container length");
   }
@@ -286,12 +289,28 @@ absl::StatusOr<std::vector<unsigned char>> ReadContainer(
 struct Reply {
   uint16_t response = 0;
   std::vector<unsigned char> data;
+  std::vector<uint32_t> params;
 };
 
-absl::StatusOr<Reply> Ptp(libusb_device_handle* handle,
-                          const Endpoints& endpoints, uint16_t opcode,
-                          uint32_t transaction_id,
-                          const std::vector<uint32_t>& params = {}) {
+absl::Status WriteBulk(libusb_device_handle* handle, uint8_t endpoint,
+                       const std::vector<unsigned char>& bytes) {
+  for (size_t offset = 0; offset < bytes.size();) {
+    int length =
+        static_cast<int>(std::min<size_t>(16384, bytes.size() - offset));
+    int sent = 0;
+    int code = libusb_bulk_transfer(
+        handle, endpoint, const_cast<unsigned char*>(bytes.data()) + offset,
+        length, &sent, kTimeoutMs);
+    if (code != 0 || sent <= 0) {
+      return absl::UnavailableError("USB PTP write: " + UsbError(code));
+    }
+    offset += static_cast<size_t>(sent);
+  }
+  return absl::OkStatus();
+}
+
+std::vector<unsigned char> PtpCommand(uint16_t opcode, uint32_t transaction_id,
+                                      const std::vector<uint32_t>& params) {
   std::vector<unsigned char> request;
   Append32(request, static_cast<uint32_t>(12 + params.size() * 4));
   Append16(request, 1);
@@ -300,14 +319,14 @@ absl::StatusOr<Reply> Ptp(libusb_device_handle* handle,
   for (uint32_t value : params) {
     Append32(request, value);
   }
-  int sent = 0;
-  int result_code =
-      libusb_bulk_transfer(handle, endpoints.out, request.data(),
-                           static_cast<int>(request.size()), &sent, kTimeoutMs);
-  if (result_code != 0 || sent != static_cast<int>(request.size())) {
-    return absl::UnavailableError("USB PTP write: " + UsbError(result_code));
-  }
-  auto first = ReadContainer(handle, endpoints.in);
+  return request;
+}
+
+absl::StatusOr<Reply> PtpResponse(libusb_device_handle* handle,
+                                  const Endpoints& endpoints, uint16_t opcode,
+                                  uint32_t transaction_id,
+                                  uint32_t max_data = kMaxContainer) {
+  auto first = ReadContainer(handle, endpoints.in, max_data);
   if (!first.ok()) {
     return first.status();
   }
@@ -330,11 +349,51 @@ absl::StatusOr<Reply> Ptp(libusb_device_handle* handle,
       return absl::DataLossError("PTP response mismatch");
     }
   }
-  if (Read16(response, 4) != 3) {
+  if (Read16(response, 4) != 3 || (response.size() - 12) % 4 != 0) {
     return absl::DataLossError("Expected PTP response");
   }
   result.response = Read16(response, 6);
+  for (size_t offset = 12; offset < response.size(); offset += 4) {
+    result.params.push_back(Read32(response, offset));
+  }
   return result;
+}
+
+absl::StatusOr<Reply> Ptp(libusb_device_handle* handle,
+                          const Endpoints& endpoints, uint16_t opcode,
+                          uint32_t transaction_id,
+                          const std::vector<uint32_t>& params = {},
+                          uint32_t max_data = kMaxContainer) {
+  auto written = WriteBulk(handle, endpoints.out,
+                           PtpCommand(opcode, transaction_id, params));
+  if (!written.ok()) {
+    return written;
+  }
+  return PtpResponse(handle, endpoints, opcode, transaction_id, max_data);
+}
+
+absl::StatusOr<Reply> PtpSend(libusb_device_handle* handle,
+                              const Endpoints& endpoints, uint16_t opcode,
+                              uint32_t transaction_id,
+                              const std::vector<uint32_t>& params,
+                              const std::vector<unsigned char>& payload) {
+  auto written = WriteBulk(handle, endpoints.out,
+                           PtpCommand(opcode, transaction_id, params));
+  if (!written.ok()) {
+    return written;
+  }
+  std::vector<unsigned char> data;
+  data.reserve(12 + payload.size());
+  Append32(data, static_cast<uint32_t>(12 + payload.size()));
+  Append16(data, 2);
+  Append16(data, opcode);
+  Append32(data, transaction_id);
+  data.insert(data.end(), payload.begin(), payload.end());
+  written = WriteBulk(handle, endpoints.out, data);
+  if (!written.ok()) {
+    return written;
+  }
+  return PtpResponse(handle, endpoints, opcode, transaction_id);
 }
 
 void AppendUtf8(std::string* text, uint32_t codepoint) {
@@ -712,6 +771,288 @@ UsbProbe Mtp(libusb_device_handle* handle,
   return result;
 }
 
+absl::Status RequireSuccess(const Reply& reply, const char* operation) {
+  if (reply.response == 0x2001) {
+    return absl::OkStatus();
+  }
+  char code[16];
+  std::snprintf(code, sizeof(code), "0x%04x", reply.response);
+  return absl::FailedPreconditionError(
+      std::string(operation) + " rejected by MTP device (" + code + ")");
+}
+
+absl::StatusOr<Reply> CheckedPtp(libusb_device_handle* handle,
+                                 const Endpoints& endpoints, uint16_t opcode,
+                                 uint32_t transaction_id,
+                                 const std::vector<uint32_t>& params = {},
+                                 uint32_t max_data = kMaxContainer) {
+  auto reply = Ptp(handle, endpoints, opcode, transaction_id, params, max_data);
+  if (!reply.ok()) {
+    return reply.status();
+  }
+  auto status = RequireSuccess(*reply, "PTP request");
+  if (!status.ok()) {
+    return status;
+  }
+  return reply;
+}
+
+absl::StatusOr<MtpObjectInfo> ReadObjectInfo(libusb_device_handle* handle,
+                                             const Endpoints& endpoints,
+                                             uint32_t transaction_id,
+                                             uint32_t object_handle) {
+  auto reply =
+      CheckedPtp(handle, endpoints, 0x1008, transaction_id, {object_handle});
+  if (!reply.ok()) {
+    return reply.status();
+  }
+  if (reply->data.size() < 52) {
+    return absl::DataLossError("Truncated MTP object info");
+  }
+  MtpObjectInfo object;
+  object.handle = object_handle;
+  object.format_code = Read16(reply->data, 4);
+  object.size_bytes = Read32(reply->data, 8);
+  Cursor cursor(reply->data);
+  auto skipped = cursor.Skip(52);
+  if (!skipped.ok()) {
+    return skipped;
+  }
+  auto name = cursor.String();
+  if (!name.ok()) {
+    return name.status();
+  }
+  object.name = *name;
+  return object;
+}
+
+absl::StatusOr<std::vector<uint32_t>> ObjectHandles(
+    libusb_device_handle* handle, const Endpoints& endpoints,
+    uint32_t transaction_id, uint32_t storage, uint32_t parent) {
+  auto reply = CheckedPtp(handle, endpoints, 0x1007, transaction_id,
+                          {storage, 0, parent});
+  if (!reply.ok()) {
+    return reply.status();
+  }
+  Cursor cursor(reply->data);
+  return cursor.Array(4);
+}
+
+void AppendPtpString(std::vector<unsigned char>* data,
+                     const std::string& value) {
+  data->push_back(static_cast<unsigned char>(value.size() + 1));
+  for (unsigned char character : value) {
+    Append16(*data, character);
+  }
+  Append16(*data, 0);
+}
+
+std::vector<unsigned char> SisObjectInfo(uint32_t storage, uint32_t parent,
+                                         uint32_t size,
+                                         const std::string& filename) {
+  std::vector<unsigned char> data;
+  Append32(data, storage);
+  Append16(data, 0x3000);  // Undefined object format; SIS has no MTP format.
+  Append16(data, 0);       // No protection flag.
+  Append32(data, size);
+  Append16(data, 0);  // No thumbnail format.
+  for (int index = 0; index < 6; ++index) {
+    Append32(data, 0);
+  }
+  Append32(data, parent);
+  Append16(data, 0);  // Not an association.
+  Append32(data, 0);
+  Append32(data, 0);
+  AppendPtpString(&data, filename);
+  data.insert(data.end(), 3,
+              0);  // Empty capture date, modified date, keywords.
+  return data;
+}
+
+std::string Sha256Hex(const std::vector<unsigned char>& bytes) {
+  unsigned char digest[SHA256_DIGEST_LENGTH];
+  SHA256(bytes.data(), bytes.size(), digest);
+  char text[SHA256_DIGEST_LENGTH * 2 + 1];
+  for (size_t i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+    std::snprintf(text + i * 2, 3, "%02x", digest[i]);
+  }
+  text[SHA256_DIGEST_LENGTH * 2] = '\0';
+  return text;
+}
+
+absl::StatusOr<MtpStageResult> StageOnHandle(
+    libusb_device_handle* handle, const libusb_config_descriptor& config,
+    const std::vector<unsigned char>& package, const std::string& filename,
+    const std::string& expected_sha256) {
+  Endpoints endpoints = FindEndpoints(config, 6, 1, 1);
+  if (endpoints.number < 0) {
+    return absl::FailedPreconditionError("No unique MTP USB interface");
+  }
+  Claim claim{handle};
+  int code = libusb_claim_interface(handle, endpoints.number);
+  if (code != 0) {
+    return absl::UnavailableError("MTP interface claim: " + UsbError(code));
+  }
+  claim.number = endpoints.number;
+  auto info_reply = CheckedPtp(handle, endpoints, 0x1001, 0);
+  if (!info_reply.ok()) {
+    return info_reply.status();
+  }
+  auto device_info = DeviceInfo(info_reply->data);
+  if (!device_info.ok()) {
+    return device_info.status();
+  }
+  for (uint32_t opcode :
+       {0x1003, 0x1004, 0x1005, 0x1007, 0x1008, 0x1009, 0x100c, 0x100d}) {
+    if (std::find(device_info->supported_operation_codes.begin(),
+                  device_info->supported_operation_codes.end(),
+                  opcode) == device_info->supported_operation_codes.end()) {
+      return absl::FailedPreconditionError(
+          "Device lacks required MTP transfer operation");
+    }
+  }
+  auto opened = CheckedPtp(handle, endpoints, 0x1002, 0, {1});
+  if (!opened.ok()) {
+    return opened.status();
+  }
+  uint32_t transaction_id = 1;
+
+  // This scope closes the session on every path, including failed transfers.
+  struct Session {
+    libusb_device_handle* handle;
+    Endpoints endpoints;
+    uint32_t* next_id;
+
+    ~Session() { Ptp(handle, endpoints, 0x1003, (*next_id)++); }
+  } session{handle, endpoints, &transaction_id};
+
+  auto stores = CheckedPtp(handle, endpoints, 0x1004, transaction_id++);
+  if (!stores.ok()) {
+    return stores.status();
+  }
+  Cursor store_cursor(stores->data);
+  auto ids = store_cursor.Array(4);
+  if (!ids.ok()) {
+    return ids.status();
+  }
+  if (ids->size() > 16) {
+    return absl::FailedPreconditionError(
+        "Too many MTP stores to select safely");
+  }
+  uint32_t selected_storage = 0;
+  uint32_t installs_handle = 0;
+  for (uint32_t id : *ids) {
+    auto reply = CheckedPtp(handle, endpoints, 0x1005, transaction_id++, {id});
+    if (!reply.ok()) {
+      return reply.status();
+    }
+    auto storage = StorageInfo(reply->data, id);
+    if (!storage.ok()) {
+      return storage.status();
+    }
+    if (storage->access_capability != 0 || !storage->free_bytes ||
+        *storage->free_bytes < package.size() + 16 * 1024 * 1024) {
+      continue;
+    }
+    auto roots =
+        ObjectHandles(handle, endpoints, transaction_id++, id, 0xffffffff);
+    if (!roots.ok()) {
+      return roots.status();
+    }
+    for (uint32_t object_id : *roots) {
+      auto object =
+          ReadObjectInfo(handle, endpoints, transaction_id++, object_id);
+      if (!object.ok()) {
+        return object.status();
+      }
+      if (object->format_code == 0x3001 && object->name == "Installs") {
+        if (installs_handle != 0) {
+          return absl::FailedPreconditionError(
+              "Several writable MTP Installs folders");
+        }
+        selected_storage = id;
+        installs_handle = object_id;
+      }
+    }
+  }
+  if (installs_handle == 0) {
+    return absl::FailedPreconditionError("No writable MTP Installs folder");
+  }
+  auto children = ObjectHandles(handle, endpoints, transaction_id++,
+                                selected_storage, installs_handle);
+  if (!children.ok()) {
+    return children.status();
+  }
+  for (uint32_t object_id : *children) {
+    auto object =
+        ReadObjectInfo(handle, endpoints, transaction_id++, object_id);
+    if (!object.ok()) {
+      return object.status();
+    }
+    if (object->name != filename) {
+      continue;
+    }
+    if (object->size_bytes != package.size()) {
+      return absl::AlreadyExistsError(
+          "Different file occupies MTP package path");
+    }
+    auto existing = CheckedPtp(handle, endpoints, 0x1009, transaction_id++,
+                               {object_id}, kMaxSisBytes + 12);
+    if (!existing.ok()) {
+      return existing.status();
+    }
+    if (Sha256Hex(existing->data) != expected_sha256) {
+      return absl::AlreadyExistsError(
+          "Different file occupies MTP package path");
+    }
+    return MtpStageResult{selected_storage, object_id, filename, false};
+  }
+  auto object_info =
+      SisObjectInfo(selected_storage, installs_handle,
+                    static_cast<uint32_t>(package.size()), filename);
+  auto declared = PtpSend(handle, endpoints, 0x100c, transaction_id++,
+                          {selected_storage, installs_handle}, object_info);
+  if (!declared.ok()) {
+    return declared.status();
+  }
+  auto status = RequireSuccess(*declared, "SendObjectInfo");
+  if (!status.ok()) {
+    return status;
+  }
+  if (declared->params.size() < 3 || declared->params[0] != selected_storage ||
+      declared->params[2] == 0) {
+    return absl::DataLossError(
+        "SendObjectInfo omitted the created object handle");
+  }
+  uint32_t created = declared->params[2];
+  auto sent = PtpSend(handle, endpoints, 0x100d, transaction_id++, {}, package);
+  if (!sent.ok()) {
+    return sent.status();
+  }
+  status = RequireSuccess(*sent, "SendObject");
+  if (!status.ok()) {
+    return status;
+  }
+  auto verified_info =
+      ReadObjectInfo(handle, endpoints, transaction_id++, created);
+  if (!verified_info.ok()) {
+    return verified_info.status();
+  }
+  if (verified_info->name != filename ||
+      verified_info->size_bytes != package.size()) {
+    return absl::DataLossError("MTP object metadata differs after upload");
+  }
+  auto readback = CheckedPtp(handle, endpoints, 0x1009, transaction_id++,
+                             {created}, kMaxSisBytes + 12);
+  if (!readback.ok()) {
+    return readback.status();
+  }
+  if (Sha256Hex(readback->data) != expected_sha256) {
+    return absl::DataLossError("MTP package readback digest differs");
+  }
+  return MtpStageResult{selected_storage, created, filename, true};
+}
+
 UsbProbe Obex(libusb_device_handle* handle,
               const libusb_config_descriptor& config) {
   UsbProbe result;
@@ -919,6 +1260,97 @@ absl::StatusOr<UsbProbe> InspectUsb(uint16_t vendor, uint16_t product,
     answer.state = "ambiguous";
   }
   return answer;
+}
+
+absl::StatusOr<MtpStageResult> StageMtpSis(uint16_t vendor, uint16_t product,
+                                           const std::string& anchor,
+                                           const std::string& package_path,
+                                           const std::string& filename,
+                                           const std::string& expected_sha256) {
+  if (anchor.size() != 24) {
+    return absl::InvalidArgumentError("USB serial anchor required");
+  }
+  if (filename.size() > 100 || filename.size() < 5 ||
+      filename.find("..") != std::string::npos ||
+      !((filename.front() >= 'a' && filename.front() <= 'z') ||
+        (filename.front() >= 'A' && filename.front() <= 'Z') ||
+        (filename.front() >= '0' && filename.front() <= '9')) ||
+      filename.substr(filename.size() - 4) != ".sis" ||
+      !std::all_of(filename.begin(), filename.end(), [](unsigned char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+               (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.';
+      })) {
+    return absl::InvalidArgumentError("Unsafe MTP SIS filename");
+  }
+  if (expected_sha256.size() != 64 ||
+      !std::all_of(expected_sha256.begin(), expected_sha256.end(), [](char c) {
+        return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+      })) {
+    return absl::InvalidArgumentError("Expected lowercase SHA-256 required");
+  }
+  std::ifstream input(package_path, std::ios::binary | std::ios::ate);
+  if (!input) {
+    return absl::NotFoundError("SIS package cannot be opened");
+  }
+  auto size = input.tellg();
+  if (size <= 0 || size > kMaxSisBytes) {
+    return absl::ResourceExhaustedError("MTP SIS must be at most 16 MiB");
+  }
+  std::vector<unsigned char> package(static_cast<size_t>(size));
+  input.seekg(0);
+  input.read(reinterpret_cast<char*>(package.data()), size);
+  if (!input || Sha256Hex(package) != expected_sha256) {
+    return absl::AbortedError("SIS changed before MTP transfer");
+  }
+  Context context;
+  int code = libusb_init(&context.value);
+  if (code != 0) {
+    return absl::UnavailableError("libusb init: " + UsbError(code));
+  }
+  DeviceList list;
+  ssize_t count = libusb_get_device_list(context.value, &list.value);
+  if (count < 0) {
+    return absl::UnavailableError("libusb list: " +
+                                  UsbError(static_cast<int>(count)));
+  }
+  libusb_device* selected = nullptr;
+  for (ssize_t index = 0; index < count; ++index) {
+    libusb_device_descriptor descriptor{};
+    if (libusb_get_device_descriptor(list.value[index], &descriptor) != 0 ||
+        descriptor.idVendor != vendor || descriptor.idProduct != product ||
+        descriptor.iSerialNumber == 0) {
+      continue;
+    }
+    Handle candidate;
+    if (libusb_open(list.value[index], &candidate.value) != 0) {
+      continue;
+    }
+    unsigned char serial[256];
+    int length = libusb_get_string_descriptor_ascii(
+        candidate.value, descriptor.iSerialNumber, serial, sizeof(serial));
+    if (length <= 0 || Anchor(vendor, serial, length) != anchor) {
+      continue;
+    }
+    if (selected != nullptr) {
+      return absl::FailedPreconditionError("Ambiguous USB serial anchor");
+    }
+    selected = list.value[index];
+  }
+  if (selected == nullptr) {
+    return absl::NotFoundError("Serial-matched USB device unavailable");
+  }
+  Handle handle;
+  code = libusb_open(selected, &handle.value);
+  if (code != 0) {
+    return absl::UnavailableError("USB device open: " + UsbError(code));
+  }
+  Config config;
+  code = libusb_get_active_config_descriptor(selected, &config.value);
+  if (code != 0) {
+    return absl::UnavailableError("USB configuration: " + UsbError(code));
+  }
+  return StageOnHandle(handle.value, *config.value, package, filename,
+                       expected_sha256);
 }
 
 }  // namespace symbian::device

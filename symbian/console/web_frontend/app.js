@@ -717,13 +717,16 @@ function renderAgents() {
   const project = state.agentProject?.project;
   const available = Boolean(project && state.agentProject?.compiler && state.agentProject?.linker);
   const cards = phones.map(phone => {
-    const canStage = (phone.capabilities || []).includes("stage-sis") && Boolean(state.agentPackage);
+    const mtpCandidate = phone.identity_basis === "usb-serial" && (phone.interfaces || []).some(item =>
+      item.class_code === 6 && item.subclass_code === 1 && item.protocol_code === 1);
+    const hasTransfer = (phone.capabilities || []).includes("stage-sis") || mtpCandidate;
+    const canStage = hasTransfer && Boolean(state.agentPackage);
     const staged = state.agentStaged[phone.selector];
     const stateLabel = staged ? "Package staged · installation unverified" : "Agent installation unknown";
     return `<section class="panel agent-card"><div class="agent-card-head"><span class="action-icon">${icon("phone")}</span><div><h2>${escapeHtml(phone.product)}</h2><p>${escapeHtml(phone.interface_profile)} · ${escapeHtml(phone.selector)}</p></div><span class="agent-badge">${escapeHtml(stateLabel)}</span></div>` +
       `<p>USB discovery cannot check whether the agent is installed. An authenticated agent connection is required before this console can show a live status.</p>` +
-      `<ol><li>Build the agent package below.</li><li>Use a writable phone storage volume to stage the SIS.</li><li>Safely eject the volume and open the SIS on the phone. Complete its installer prompts.</li></ol>` +
-      `<div class="agent-controls"><button class="button" data-agent-stage="${escapeHtml(phone.selector)}" ${canStage && !state.agentBusy ? "" : "disabled"}>${icon("upload")} Stage SIS on device</button>${!((phone.capabilities || []).includes("stage-sis")) ? '<small>A writable, verified USB storage volume is required.</small>' : !state.agentPackage ? '<small>Build a package first.</small>' : ""}</div>` +
+      `<ol><li>Build the agent package below.</li><li>Stage the SIS through PC Suite MTP or a writable USB storage volume.</li><li>Open the SIS in the phone's Installs folder and complete its installer prompts. Safely eject a mounted volume first.</li></ol>` +
+      `<div class="agent-controls"><button class="button" data-agent-stage="${escapeHtml(phone.selector)}" ${canStage && !state.agentBusy ? "" : "disabled"}>${icon("upload")} Stage agent package</button>${!hasTransfer ? '<small>Connect in PC Suite mode or mount a writable USB storage volume.</small>' : !state.agentPackage ? '<small>Build a package first.</small>' : mtpCandidate && !(phone.capabilities || []).includes("stage-sis") ? '<small>The writable MTP Installs folder is checked before transfer.</small>' : ""}</div>` +
       (staged ? `<p class="muted">${escapeHtml(staged.next_action || "Finish installation on the phone.")}</p>` : "") + `</section>`;
   }).join("");
   const build = `<section class="panel agent-build"><h2>Build the development agent</h2><p>Build an agent SIS for the current emulator profile. Physical-device compatibility and installation still need verification.</p>` +

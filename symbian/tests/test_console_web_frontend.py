@@ -206,6 +206,17 @@ vm.runInContext("state.agentPackage = '/tmp/agent_service.sis'", context);
 html = vm.runInContext('renderAgents()', context);
 if (html.includes('data-agent-stage="usb:808" disabled')) process.exit(6);
 if (html.includes('Agent installed')) process.exit(7);
+vm.runInContext(`
+  state.context.devices = [{
+    selector: 'usb:pc-suite', product: '808 PureView',
+    interface_profile: 'composite', identity_basis: 'usb-serial',
+    interfaces: [{class_code: 6, subclass_code: 1, protocol_code: 1}],
+    capabilities: ['inspect-usb']
+  }];
+`, context);
+html = vm.runInContext('renderAgents()', context);
+if (html.includes('data-agent-stage="usb:pc-suite" disabled')) process.exit(8);
+if (!html.includes('PC Suite MTP')) process.exit(9);
 """
     result = subprocess.run(
         ["node", "-e", script],

@@ -1,4 +1,4 @@
-"""Prepare SDK packages and stage them through a proven USB storage volume."""
+"""Prepare SDK packages and stage them through checked USB transports."""
 
 import hashlib
 import os
@@ -89,17 +89,22 @@ class InstallResult(BaseModel):
     state: Literal["awaiting-on-device-install"] = Field(
         description="Human installation state"
     )
-    transport: Literal["usb-mass-storage"] = Field(
+    transport: Literal["usb-mass-storage", "mtp-usb"] = Field(
         description="Staging transport"
     )
     device: str = Field(description="Selected device token")
     volume: str = Field(description="Selected host disk")
-    staged_path: Path = Field(description="Copied SIS path")
+    staged_path: str = Field(description="Host path or phone Installs path")
     sha256: str = Field(description="Checked SIS digest")
     copied: bool = Field(description="File copy completed")
     package: PackageMetadata = Field(description="Checked package metadata")
     on_device_verified: bool = Field(
         default=False, description="On-phone verification state"
+    )
+    object_handle: int | None = Field(
+        default=None,
+        description="MTP object handle when staged in PC Suite mode",
+        exclude_if=lambda value: value is None,
     )
     next_action: str = Field(description="Required human action")
     build_artifact: Path | None = Field(
@@ -169,15 +174,55 @@ def stage_package(
     if _digest(package_path) != expected:
         raise StatusError(Code.ABORTED, "Package changed during inspection")
     device = select(selector)
+    name = Path(str(metadata["executable_name"])).stem
+    if not name or not all(
+        char.isascii() and (char.isalnum() or char in "_-") for char in name
+    ):
+        raise StatusError(
+            Code.INVALID_ARGUMENT, "Unsafe executable name in SIS"
+        )
+    filename = f"{name}-{expected[:12]}.sis"
     volumes = [
         volume
         for volume in device.volumes
         if volume.stage_sis and (disk is None or volume.disk == disk)
     ]
     if not volumes:
+        if disk is None:
+            from symbian.device.mtp import can_stage_sis, stage_sis
+
+            if can_stage_sis(device):
+                staged = stage_sis(device, package_path, filename, expected)
+                if _digest(package_path) != expected:
+                    raise StatusError(
+                        Code.ABORTED, "Package changed during MTP transfer"
+                    )
+                result = InstallResult(
+                    schema_name="symbian.device-install/v1",
+                    state="awaiting-on-device-install",
+                    transport="mtp-usb",
+                    device=device.selector,
+                    volume=f"mtp:{staged['storage_id']:08x}",
+                    staged_path=f"Installs/{staged['name']}",
+                    sha256=expected,
+                    copied=staged["copied"],
+                    object_handle=staged["object_handle"],
+                    package=metadata,
+                    next_action=(
+                        "Open the SIS in the phone's Installs folder "
+                        "and accept "
+                        "its installer prompts. The SDK verified the MTP "
+                        "readback, but has not verified installation or "
+                        "execution."
+                    ),
+                )
+                return {
+                    "schema": result.schema_name,
+                    **result.model_dump(mode="json", exclude={"schema_name"}),
+                }
         raise StatusError(
             Code.FAILED_PRECONDITION,
-            "No writable Installs volume; use mass-storage mode",
+            "No writable Installs volume or eligible MTP interface",
         )
     if len(volumes) != 1:
         raise StatusError(
@@ -188,14 +233,7 @@ def stage_package(
     installs = volume.mount / "Installs"
     if not installs.is_dir() or installs.is_symlink():
         raise StatusError(Code.ABORTED, "Phone's Installs directory changed")
-    name = Path(str(metadata["executable_name"])).stem
-    if not name or not all(
-        char.isascii() and (char.isalnum() or char in "_-") for char in name
-    ):
-        raise StatusError(
-            Code.INVALID_ARGUMENT, "Unsafe executable name in SIS"
-        )
-    destination = installs / f"{name}-{expected[:12]}.sis"
+    destination = installs / filename
     if destination.exists():
         try:
             matches = (
@@ -282,7 +320,7 @@ def stage_package(
         transport="usb-mass-storage",
         device=device.selector,
         volume=volume.disk,
-        staged_path=destination,
+        staged_path=str(destination),
         sha256=expected,
         copied=copied,
         package=metadata,

@@ -1,7 +1,7 @@
 # Connect a physical device
 
-The SDK can inspect a handset over USB and stage an installable SIS on a
-writable phone volume. These are host observations: a USB product name or
+The SDK can inspect a handset over USB and stage an installable SIS through a
+writable phone volume or PC Suite MTP. These are host observations: a USB product name or
 successful file copy does not prove which firmware is running or whether an
 application will execute.
 
@@ -21,16 +21,18 @@ USB mode, list devices again because its selector may change.
 
 ## 2. Stage a package
 
-With the handset exposing a writable mass-storage volume:
+With the handset in mass-storage or PC Suite mode:
 
 ```sh
 symbian device install --project ~/dev/hello_time --device SELECTOR
 ```
 
-The command builds and checks an unsigned SIS, copies it into `Installs/` and
-verifies the copied hash. It reports `awaiting-on-device-install`. Finish
-transfers, safely eject the volume, then open the SIS on the handset and
-approve installation there. A handset may reject the package or a required
+The command builds and checks an unsigned SIS, stages it in `Installs/`, and
+verifies its SHA-256. A mounted volume is used when available; otherwise the
+SDK checks the device's writable MTP store and folder before transfer. It
+reports `awaiting-on-device-install`. For a mounted volume, finish transfers
+and safely eject it. Then open the SIS on the handset and approve installation
+there. A handset may reject the package or a required
 system import. The SDK has no automated on-phone installation or launch
 confirmation at this stage.
 
