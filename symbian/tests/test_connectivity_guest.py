@@ -39,9 +39,20 @@ def guest_image(tmp_path_factory):
     assert (sdk.prefix / "proxies/esock/esock.dso").is_file()
     assert (sdk.prefix / "proxies/insock/insock.dso").is_file()
     output = tmp_path_factory.mktemp("connectivity-guest")
+    project = output / "project"
+    shutil.copytree(ROOT / "examples/connectivity_probe", project)
+    presets = project / "CMakePresets.json"
+    data = json.loads(presets.read_text())
+    data["configurePresets"][0]["toolchainFile"] = str(
+        sdk.prefix / "cmake/symbian-arm.cmake"
+    )
+    data["configurePresets"][0]["cacheVariables"]["SYMBIAN_SDK_PREFIX"] = str(
+        sdk.prefix
+    )
+    presets.write_text(json.dumps(data))
     report = toolchain.build(
-        ROOT / "examples/connectivity_probe",
-        output,
+        project,
+        output / "build",
         str(sdk.compiler),
         str(sdk.linker),
         architecture="armv6",
@@ -61,6 +72,39 @@ def listener_image(tmp_path_factory):
         cmake_file.read_text().replace(
             "SOURCES startup.cc probe.cc",
             "SOURCES startup.cc listener_probe.cc",
+        )
+    )
+    presets = project / "CMakePresets.json"
+    data = json.loads(presets.read_text())
+    data["configurePresets"][0]["toolchainFile"] = str(
+        sdk.prefix / "cmake/symbian-arm.cmake"
+    )
+    data["configurePresets"][0]["cacheVariables"]["SYMBIAN_SDK_PREFIX"] = str(
+        sdk.prefix
+    )
+    presets.write_text(json.dumps(data))
+    report = toolchain.build(
+        project,
+        output / "build",
+        str(sdk.compiler),
+        str(sdk.linker),
+        architecture="armv6",
+    )
+    return Path(report["artifact"])
+
+
+@pytest.fixture(scope="module")
+def active_listener_image(tmp_path_factory):
+    """Builds the public active listener with the original scheduler bridge."""
+    sdk = AppSdk.load(Path(os.environ["SYMBIAN_SDK_MANIFEST"]))
+    output = tmp_path_factory.mktemp("active-connectivity-listener")
+    project = output / "project"
+    shutil.copytree(ROOT / "examples/connectivity_probe", project)
+    cmake_file = project / "CMakeLists.txt"
+    cmake_file.write_text(
+        cmake_file.read_text().replace(
+            "SOURCES startup.cc probe.cc",
+            "SOURCES startup.cc active_listener_probe.cc scheduler_bridge.cc",
         )
     )
     presets = project / "CMakePresets.json"
@@ -175,6 +219,7 @@ def test_native_tcp_listener_accepts_host_and_retains_client(
         golden / "data/drives/z/rm-807/sys/bin/insock.dll": INSOCK_808,
     }
     assert {path: _digest(path) for path in pinned} == pinned
+
     instance = tmp_path / "instance"
     shutil.copytree(golden, instance)
     guest_bin = instance / "data/drives/rm-807/c/sys/bin"
@@ -226,6 +271,76 @@ def test_native_tcp_listener_accepts_host_and_retains_client(
                         if time.monotonic() >= deadline:
                             raise
                         time.sleep(0.05)
+                assert process.wait(timeout=15) == 0
+                assert control.exit_report()["process_exits"][0]["reason"] == 0
+            finally:
+                _stop(process)
+    assert {path: _digest(path) for path in pinned} == pinned
+
+
+@pytest.mark.parametrize("backend", ["dynarmic", "dyncom"])
+def test_active_listener_rearms_and_cancels_idle_accept(
+    active_listener_image, tmp_path, backend
+):
+    """Checks two active accepts, reconnect and pending-accept cleanup."""
+    golden = ROOT / ".symbian/instances/delight-import-01"
+    pinned = {
+        golden / "data/roms/rm-807/SYM.ROM": ROM_808,
+        golden / "data/drives/z/rm-807/sys/bin/euser.dll": EUSER_808,
+        golden / "data/drives/z/rm-807/sys/bin/esock.dll": ESOCK_808,
+        golden / "data/drives/z/rm-807/sys/bin/insock.dll": INSOCK_808,
+    }
+    assert {path: _digest(path) for path in pinned} == pinned
+    instance = tmp_path / "instance"
+    shutil.copytree(golden, instance)
+    guest_bin = instance / "data/drives/rm-807/c/sys/bin"
+    guest_bin.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(active_listener_image, guest_bin / "connectivity_probe.exe")
+    (instance / "config.yml").write_text(
+        f"data-storage: data\ncpu: {backend}\ndevice: 0\nlanguage: 1\n"
+        "enable-gdb-stub: false\nlog-svc: true\n"
+    )
+    executable = ROOT / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+    with tempfile.TemporaryDirectory(
+        prefix="active-listen-", dir="/tmp"
+    ) as private:
+        control = Control(Path(private) / "control.sock")
+        env = dict(os.environ)
+        env.update(
+            EKA2L1_DATA_ROOT=str(instance),
+            EKA2L1_EXPERIMENTAL_SVC_PROFILE="rm807-113.010.1508",
+            EKA2L1_RESEARCH_CONTROL_SOCKET=str(control.endpoint),
+            **background_environment(),
+        )
+        with (tmp_path / "frontend.log").open("w") as log:
+            process = subprocess.Popen(
+                [
+                    executable_for_session(executable, Path(private)),
+                    "--device",
+                    "RM-807",
+                    "--run",
+                    "C:\\sys\\bin\\connectivity_probe.exe",
+                ],
+                env=env,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+            )
+            try:
+                for _ in range(2):
+                    deadline = time.monotonic() + 25
+                    while True:
+                        try:
+                            with socket.create_connection(
+                                ("127.0.0.1", 39099), 1
+                            ) as client:
+                                client.settimeout(5)
+                                client.sendall(b"Q")
+                                assert client.recv(1) == b"A"
+                            break
+                        except ConnectionRefusedError:
+                            if time.monotonic() >= deadline:
+                                raise
+                            time.sleep(0.05)
                 assert process.wait(timeout=15) == 0
                 assert control.exit_report()["process_exits"][0]["reason"] == 0
             finally:

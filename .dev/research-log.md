@@ -1,5 +1,26 @@
 # Research log
 
+### 2026-10-04 — active-object accept and event-thread I/O
+
+The original `CActiveScheduler` and `CActive` EUSER ordinals are now selected
+for an opaque `ActiveTcpListener`. Its native owner issues one asynchronous
+`RSocket::Accept`, delivers the completed client to an observer, and drains
+cancelled requests before closing. An ordinary SDK consumer completed two
+accept/reconnect cycles and pending-accept cancellation under both RM-807
+Dynarmic and Dyncom emulator backends. The event thread has no accept poll
+timer while waiting for a client.
+
+An initial probe rearmed accept before doing timed `TcpClient` I/O inside
+`RunL()`. Dynarmic passed, but Dyncom panicked `E32USER-CBase 46` (a stray
+scheduler signal). Moving rearm after the I/O alone did not clear it; removing
+the timer-backed synchronous calls from that active callback did. The native
+helper and documentation now say the accepted stream belongs on a worker for
+substantial I/O. The probe's untimed one-byte callback is a narrow scheduler
+contract test, not a model for a TLS server. Open question: establish safe
+cross-thread socket ownership or implement nonblocking TLS I/O on this active
+scheduler without nested synchronous waits. The emulator outcome does not
+settle Nokia 808 behavior.
+
 ### 2026-10-04 — host control integration
 
 The Python session delegates MessagePack and frame length rules to the native

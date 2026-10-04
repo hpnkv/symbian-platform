@@ -793,6 +793,18 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             "_ZN7UserHal10TickPeriodER27TTimeIntervalMicroSeconds32",
             "_ZN7UserSvr11HalFunctionEiiPvS0_",
             "_ZN11RHandleBase5CloseEv",
+            "_ZN16CActiveScheduler3AddEP7CActive",
+            "_ZN16CActiveScheduler7CurrentEv",
+            "_ZN16CActiveScheduler7InstallEPS_",
+            "_ZN16CActiveScheduler5StartEv",
+            "_ZN16CActiveScheduler4StopEv",
+            "_ZN16CActiveSchedulerC1Ev",
+            "_ZN16CActiveSchedulerD1Ev",
+            "_ZN7CActive6CancelEv",
+            "_ZN7CActive9SetActiveEv",
+            "_ZN7CActiveC2Ei",
+            "_ZN7CActiveD2Ev",
+            "_ZN7CActive10Extension_EjRPvS0_",
             "_ZN6RTimer5AfterER14TRequestStatus27TTimeIntervalMicroSeconds32",
         ]
         ws32 = gui["imports"]["ws32.dll"]["symbols"] + [

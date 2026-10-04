@@ -46,6 +46,12 @@ cancellation path and final status. In particular, the one-shot research DLL
 does not implement a resident active-object listener, distinct peer identities
 or a handset-visible pairing action.
 
+The SDK now also exports an active-object TCP accept owner. Its isolated
+two-connection emulator probe verifies rearming and cancellation of an idle
+accept. The TLS research DLL still uses its own synchronous one-connection
+listener, so the two pieces have not yet been integrated into a resident
+authenticated service.
+
 ## Host read-only session
 
 `symbian.agent.ReadOnlyAgentSession` opens an explicitly addressed TLS socket.

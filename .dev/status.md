@@ -1,5 +1,23 @@
 # Status
 
+2026-10-04 active accept slice: `Symbian::Connectivity` now includes
+`ActiveTcpListener`, an opaque public C++ owner for one original
+`CActive`/`RSocket::Accept` request. Its observer rearms explicitly and
+`Stop()` invokes native cancellation and completion drainage. The original
+`CActive` ABI remains in the private native translation unit to avoid
+collisions between original placement-new declarations and libc++ headers.
+A clean `.symbian/active-listener-sdk-20261004` export built the new
+connectivity archive for ARMv5T and ARMv6 and selected the needed original
+EUSER ordinals. An ordinary SDK consumer ran in disposable pinned RM-807
+instances under Dynarmic and Dyncom: two host connections each exchanged
+`Q`/`A`, and shutdown cancelled the idle third accept (`2 passed, 4
+deselected` targeted opt-in Pytest). The full clean-SDK connectivity run then
+passed all six cases in 46.73 seconds, including existing outbound and
+synchronous-listener controls. Strict MkDocs/two-Doxygen, Black, Ruff and
+Clang Format checks passed. This proves a small active accept primitive in
+the emulator; it is not yet integrated with TLS, a resident service, a local
+status UI or a Nokia 808 device result.
+
 2026-10-04 host read-only session: the native Python extension now binds
 bounded request framing, prefix validation and result parsing, releasing the
 GIL for native work. `symbian.agent.ReadOnlyAgentSession` provides explicit

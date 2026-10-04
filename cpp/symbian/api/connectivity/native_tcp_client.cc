@@ -180,6 +180,37 @@ extern "C" int SymbianDeviceTcpAccept(NativeTcpListener* listener,
   return SymbianDeviceTcpAcceptFor(listener, -1, output);
 }
 
+extern "C" int SymbianDeviceTcpBeginAccept(NativeTcpListener* listener,
+                                           TRequestStatus* status,
+                                           NativeTcpClient** output) {
+  if (listener == nullptr || status == nullptr || output == nullptr) {
+    return KErrArgument;
+  }
+  *output = nullptr;
+  void* memory = User::Alloc(sizeof(NativeTcpClient));
+  if (memory == nullptr) {
+    return KErrNoMemory;
+  }
+  auto* client = new (memory) NativeTcpClient;
+  client->session = listener->session;
+  ++client->session->references;
+  const TInt result = client->socket.Open(client->session->server);
+  if (result != KErrNone) {
+    SymbianDeviceTcpClose(client);
+    return result;
+  }
+  client->socket_open = true;
+  listener->socket.Accept(client->socket, *status);
+  *output = client;
+  return KErrNone;
+}
+
+extern "C" void SymbianDeviceTcpCancelAccept(NativeTcpListener* listener) {
+  if (listener != nullptr) {
+    listener->socket.CancelAccept();
+  }
+}
+
 extern "C" int SymbianDeviceTcpAcceptFor(NativeTcpListener* listener,
                                          int milliseconds,
                                          NativeTcpClient** output) {

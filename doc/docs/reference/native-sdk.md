@@ -20,7 +20,7 @@ required Abseil status/runtime profile and, where needed, an OS import proxy.
 | `Symbian::Display` | `symbian/api/display/display.h` | Read primary HAL geometry | `StatusOr`; one snapshot, separate from Window Server layout. |
 | `Symbian::Storage` | `symbian/api/storage/storage.h` | Open, read, write or copy files | Move-only handles; use and destroy on the opening thread. |
 | `Symbian::Camera` | `symbian/api/camera/camera.h` | Discover camera slots | `StatusOr`; discovery does not reserve a camera. |
-| `Symbian::Connectivity` | `symbian/api/connectivity/tcp_client.h`, `tcp_listener.h` | Connect, listen, accept and exchange bounded IPv4 TCP data | Move-only, synchronous worker owners; deadline cancellation for accept, send and receive. |
+| `Symbian::Connectivity` | `symbian/api/connectivity/tcp_client.h`, `tcp_listener.h`, `active_tcp_listener.h` | Connect, listen, accept and exchange bounded IPv4 TCP data | Synchronous worker owners plus a single-request active-object listener; deadline cancellation for blocking accept, send and receive. |
 | `Symbian::Agent` | `symbian/agent/guest_control.h` | Parse and answer bounded read-only hello/status control messages | Authenticate the TLS peer before parsing; this codec does not own a service or grant permissions. |
 
 For example, a display query can live in a small adapter:
@@ -44,6 +44,14 @@ requires an explicit create, open or replace mode. `FileCopy::Step` transfers
 one bounded chunk at a time and keeps its operation on the opening thread.
 Read the [storage guide](../capabilities/apis/storage.md) before choosing its
 file ownership pattern.
+
+An `ActiveTcpListener` requires an installed original Symbian
+`CActiveScheduler`. It holds one pending `RSocket::Accept` with no polling
+timer. Its observer receives one `TcpClient` or a typed error and explicitly
+calls `AcceptNext()` when ready for another connection. `Stop()` cancels and
+drains the pending native request before freeing the socket and session.
+Keep the observer brief; the synchronous `TcpClient` methods are intended for
+a worker thread, not for long transfers or a TLS handshake in `RunL()`.
 
 ## Guest concurrency and TLS
 

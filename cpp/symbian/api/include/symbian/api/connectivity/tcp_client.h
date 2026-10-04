@@ -17,6 +17,7 @@ namespace symbian::api::connectivity {
 
 struct NativeTcpClient;
 class TcpListener;
+class ActiveTcpListener;
 
 /**
  * @brief One connected IPv4 TCP stream backed by Symbian RSocket.
@@ -76,6 +77,7 @@ class TcpClient {
 
  private:
   friend class TcpListener;
+  friend class ActiveTcpListener;
 
   explicit TcpClient(NativeTcpClient* native) : native_(native) {}
 

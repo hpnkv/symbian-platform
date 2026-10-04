@@ -1,5 +1,6 @@
 add_library(symbian_api_connectivity STATIC
-  tcp_client.cc tcp_listener.cc native_tcp_client.cc)
+  tcp_client.cc tcp_listener.cc active_tcp_listener.cc
+  native_tcp_client.cc native_active_tcp_listener.cc)
 target_compile_features(symbian_api_connectivity PUBLIC cxx_std_20)
 target_compile_options(symbian_api_connectivity PRIVATE -fno-pic -fno-exceptions)
 target_include_directories(symbian_api_connectivity PRIVATE
