@@ -7,8 +7,14 @@ and navigation settings. Doxygen generates the C++ reference into the same
 site. Plans, logs, research notes and other internal Markdown moved under
 `.dev/`; the root README is a compact entry point. The local combined build
 passed with `doc/build.sh --strict`, including link checks, MkDocs and
-Doxygen/Graphviz. GitHub Pages workflow is prepared; deployment is not yet
-verified. The TLS development-agent gate remains open at step 2.
+Doxygen/Graphviz. The public repository is
+`https://github.com/hpnkv/symbian-platform`. GitHub Actions run
+`37196098884` passed its build and deploy jobs. The published overview,
+credits, source walkthrough and generated Doxygen index at
+`https://hpnkv.github.io/symbian-platform/` each returned HTTP 200. The
+README and introductory guides now explain E32, SIS, EKA2L1 and Window Server
+and visibly credit the external projects. The TLS development-agent gate
+remains open at step 2.
 
 2026-10-04 Mbed TLS source ownership and trust packaging: the complete port
 working tree (1,721 source/configuration/license files) now lives at

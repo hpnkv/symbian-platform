@@ -8,8 +8,14 @@ records planning or experiments. Relative links in moved pages were rewritten;
 links from the public site to internal records now point to their public GitHub
 locations. A local strict MkDocs build and Doxygen/Graphviz build pass. The
 site uses A11's visual and code settings; copied Doxygen style assets retain
-their upstream licenses. Open question: verify the Pages action and published
-URL after the first push, and review the guide structure with external users.
+their upstream licenses. The first Pages run failed because the link checker
+expected an ignored upstream research checkout in CI; the checker now treats
+that path as optional while still checking published article links. Run
+`37196098884` passed build and deployment. Four published routes, including
+the generated C++ index, returned HTTP 200. The README and new credits guide
+name EKA2L1, shinovon's mbedtls-symbian, Mbed TLS, SymbianSource,
+SymbianRevive, A11, Abseil and LLVM with their distinct roles. Open question:
+review guide terminology and onboarding flow with external developers.
 
 
 ## 2026-10-04: Vendored Mbed TLS and development-agent gate 2
