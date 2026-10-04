@@ -36,7 +36,7 @@ failure on Dynarmic and Dyncom. Its E32 import table lists EUSER, libc and
 libpthread. The expanded guest DLL also parses an explicit test PEM trust
 root, accepts its certificate for `sdk-test`, and rejects `wrong-name` and an
 expired certificate on both CPU backends. A fresh active SDK at
-`.symbian/mbedtls-transport-sdk-20261004` includes source-ordinal libc proxy
+`.symbian/mbedtls-transport-sdk-final-20261004` includes source-ordinal libc proxy
 entries for these crypto dependencies and the selected socket functions.
 Those socket symbols have not been exercised in the emulator. No guest TLS
 handshake, verified guest entropy or physical UTC, cancellable socket owner,
@@ -44,6 +44,13 @@ emulator TLS memory
 bound, or Nokia 808 connection is claimed. DEVELOPMENT_AGENT step 2 remains
 open; steps 3 and later have not started. An ARM archive or host handshake
 does not establish guest loader or Nokia 808 compatibility.
+
+A new Mbed TLS socket BIO adapter makes an attached descriptor nonblocking,
+returns WANT_READ/WANT_WRITE for retryable calls, and exposes atomic
+cancellation that stops later callbacks. The host suite passed 12/12 with
+read/write, empty-read and cancellation checks. This code was added after the
+latest SDK source export; guest socket execution and SDK distribution of this
+adapter require a fresh export and remain unverified.
 
 2026-10-04 Mbed TLS SDK integration: the default exporter now builds the
 local Mbed TLS 3.4.1 port for ARMv5T and ARMv6, installs architecture-specific

@@ -33,6 +33,13 @@ the already vendored test key was used to sign it. The SDK exporter now selects
 historical `libcu.def` ordinals for `strstr` and a bounded POSIX socket call
 set; their presence in the proxy is link metadata, not an emulator transport
 execution or a Nokia 808 ABI match.
+The source port now includes `symbian_mbedtls_socket_bio` with nonblocking
+send/receive callbacks and an atomic cancellation flag. Two host GTest cases
+pass using `socketpair`; the full host suite passes 12/12. The descriptor
+remains caller-owned and must outlive callbacks. This does not prove the
+selected libc socket ordinals run under EKA2L1, nor that network access or
+cancelled TLS handshakes work in the guest. The last SDK export predates this
+source addition, so a fresh export is required before distributing it.
 
 The former `library/symbian.c` entropy callback used C `rand()`; the vendored
 copy now fails closed. [Historical Symbian cryptography documentation](https://docs.huihoo.com/symbian/s60-5th-edition-cpp-developers-library-v2.1/GUID-35228542-8C95-4849-A73F-2B4F082F0C44/sdk/doc_source/guide/Security-subsystem-guide/Crypto/cryptography.overview.html)
