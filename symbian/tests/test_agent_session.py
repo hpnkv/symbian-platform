@@ -12,7 +12,11 @@ import msgpack
 import pytest
 
 from symbian import _native
-from symbian.agent import ReadOnlyAgentSession
+from symbian.agent import (
+    AgentLogPage,
+    AgentLogRecord,
+    ReadOnlyAgentSession,
+)
 from symbian.status import Code, StatusError, StatusException
 
 KEY_FILE = Path(__file__).parents[2] / "agent_service/test-agent.key"
@@ -118,6 +122,31 @@ def test_read_only_status_over_authenticated_socket():
     assert status.display.width_pixels == 640
     assert [request["kind"] for request in observed] == [1, 2, 6]
     assert logs.records[0].sequence == 5
+
+
+def test_recent_logs_returns_newest_bounded_page(monkeypatch):
+    """A fixed ring may require several reads to reach its newest records."""
+    observed = []
+
+    def page(_self, *, after=0, limit=8):
+        observed.append((after, limit))
+        end = min(after + limit, 18)
+        return AgentLogPage(
+            records=tuple(
+                AgentLogRecord(sequence=number, code=2)
+                for number in range(after + 1, end + 1)
+            ),
+            next_cursor=end,
+            gap=after == 0,
+        )
+
+    monkeypatch.setattr(ReadOnlyAgentSession, "logs", page)
+    session = object.__new__(ReadOnlyAgentSession)
+    recent = session.recent_logs(limit=8)
+    assert [record.sequence for record in recent.records] == list(range(11, 19))
+    assert recent.next_cursor == 18
+    assert recent.gap
+    assert observed == [(0, 8), (8, 8), (16, 8)]
 
 
 def test_phone_initiated_discovery_and_status():

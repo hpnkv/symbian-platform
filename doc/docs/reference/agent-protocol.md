@@ -87,8 +87,9 @@ Server layout.
 to eight records after a sequence cursor, a `next_cursor`, and `gap=true` if
 older records were overwritten. Codes are 1 for authentication, 2 for a status
 read, 3 for a rejected frame and 4 for session closure. Each record includes a
-severity and microseconds since this process created the ring. The times are
-not UTC and cannot be compared across process restarts.
+severity and clamped microseconds since this process created the ring. The
+times are not UTC and cannot be compared across process restarts; clock
+adjustments can affect elapsed intervals.
 
 ## Host API and CLI
 
@@ -124,6 +125,12 @@ network. The equivalent CLI command is `symbian agent listen --key-file
 /private/agent.key`; it discovers the phone without an IP argument. The public
 test key must never be used for a phone profile. The
 [emulator guide](../guides/agent-emulator.md) gives the build and launch steps.
+
+The console offers a separate **Read service events** action after a successful
+status check. It reads the newest eight events from the agent's fixed ring
+only when requested. The host API exposes `recent_logs(limit=8)` for this
+bounded snapshot; `logs(after=cursor)` remains available for cursor-based
+reads.
 
 ## Verification boundary
 

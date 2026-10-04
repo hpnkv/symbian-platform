@@ -184,6 +184,26 @@ class ConsoleWebBridge:
             "checked_at": datetime.now(timezone.utc).isoformat(),
         }
 
+    def read_agent_logs(self, selector: str) -> dict[str, Any]:
+        """Read a bounded event snapshot only when explicitly requested."""
+        from symbian.agent import ReadOnlyAgentSession
+
+        device = self._connected_phone(selector)
+        with ReadOnlyAgentSession.accept(
+            "0.0.0.0",
+            39103,
+            key_file=key_file(device),
+            timeout=20.0,
+        ) as agent:
+            page = agent.recent_logs().model_dump(mode="json")
+            peer_ip = agent.peer_ip
+        return {
+            "authenticated": True,
+            "logs": page,
+            "host": peer_ip,
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+        }
+
     def report_agent_running(self, selector: str) -> dict[str, Any]:
         """Record a selected phone owner's observation, without USB claims."""
         with self._lock:

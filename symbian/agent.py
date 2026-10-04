@@ -49,7 +49,7 @@ class AgentStatus(BaseModel):
 
 
 class AgentLogRecord(BaseModel):
-    """One service event with a process-relative monotonic timestamp."""
+    """One service event with a clamped, process-relative elapsed timestamp."""
 
     model_config = ConfigDict(frozen=True)
 
@@ -363,6 +363,30 @@ class ReadOnlyAgentSession:
         self._next_request_id += 1
         frame = _native.pack_agent_logs_request(request_id, after, limit)
         return AgentLogPage.model_validate(self._exchange(request_id, frame))
+
+    def recent_logs(self, *, limit: int = 8) -> AgentLogPage:
+        """Read the newest retained service events in bounded pages.
+
+        This walks the agent's fixed 32-record ring. A ``gap`` means earlier
+        records had already been overwritten; it is not a transport error.
+        """
+        if not 1 <= limit <= 8:
+            raise StatusError(Code.INVALID_ARGUMENT, "Invalid log limit")
+        cursor = 0
+        records: list[AgentLogRecord] = []
+        gap = False
+        for _ in range(5):
+            page = self.logs(after=cursor, limit=8)
+            gap = gap or page.gap
+            records.extend(page.records)
+            if page.next_cursor <= cursor or len(page.records) < 8:
+                return AgentLogPage(
+                    records=tuple(records[-limit:]),
+                    next_cursor=page.next_cursor,
+                    gap=gap,
+                )
+            cursor = page.next_cursor
+        raise StatusError(Code.DATA_LOSS, "Agent log cursor did not settle")
 
     def _exchange(self, request_id: int, frame: bytes) -> dict:
         deadline = time.monotonic() + self._timeout

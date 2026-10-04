@@ -6,6 +6,8 @@
 #include <algorithm>
 
 #include "absl/status/status.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace symbian::agent {
 namespace {
@@ -26,9 +28,8 @@ AgentLogSeverity SeverityFor(AgentLogCode code) {
 }  // namespace
 
 void AgentLogRing::Append(AgentLogCode code) {
-  const auto elapsed = std::chrono::steady_clock::now() - started_;
-  const auto microseconds =
-      std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+  const std::int64_t microseconds =
+      absl::ToInt64Microseconds(absl::Now() - started_);
   const std::uint64_t elapsed_us =
       microseconds > 0 ? static_cast<std::uint64_t>(microseconds) : 0;
   last_elapsed_microseconds_ = std::max(last_elapsed_microseconds_, elapsed_us);

@@ -97,7 +97,7 @@ const state = {
   firmwareInspections: {}, firmwareInspectionBusy: {}, firmwareInspectionErrors: {}, firmwareFileSearch: {},
   applicationOverview: null, applicationLoading: false, applicationError: "",
   agentProject: null, agentBusy: "", agentError: "", agentPackage: null,
-  agentPackages: {}, agentIdentities: {}, agentLive: {}, agentPairConfirmed: {},
+  agentPackages: {}, agentIdentities: {}, agentLive: {}, agentLogs: {}, agentPairConfirmed: {},
   agentOutcome: null, agentStaged: {}, agentObservations: {},
   applicationFirmware: null, applicationFirmwareBusy: false, applicationFirmwareError: "",
   applicationSelectedFirmware: "", applicationBusy: "", applicationAction: "", applicationOutcome: null, applicationBuildLog: "", applicationRunLog: "",
@@ -728,15 +728,19 @@ function renderAgents() {
     const staged = state.agentStaged[phone.selector];
     const reported = state.agentObservations[phone.selector];
     const live = state.agentLive[phone.selector];
+    const logNames = {1: "Authenticated", 2: "Status read", 3: "Frame rejected", 4: "Session closed"};
+    const logSnapshot = state.agentLogs[phone.selector];
+    const logRows = (logSnapshot?.logs?.records || []).map(record => `<tr><td>${escapeHtml(record.sequence)}</td><td>${escapeHtml(logNames[record.code] || `Event ${record.code}`)}</td><td>${escapeHtml((Number(record.elapsed_us || 0) / 1000000).toFixed(2))} s</td></tr>`).join("");
+    const logs = logSnapshot ? `<div class="agent-event-log"><h3>Service events</h3><p>Recent events from this agent process. Times are elapsed since it started.</p>${logSnapshot.logs.gap ? '<p class="muted">Older events were overwritten.</p>' : ''}<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th>Event</th><th>Elapsed</th></tr></thead><tbody>${logRows || '<tr><td colspan="3">No events retained.</td></tr>'}</tbody></table></div></div>` : "";
     const fresh = live && Date.now() - Date.parse(live.checked_at) < 30000;
     const stateLabel = fresh ? `Verified live · ${live.status.state}` : live ? "Previously verified · check again" : reported ? "Running reported · live status unchecked" : staged ? "Package staged · installation unverified" : "Agent installation unknown";
     return `<section class="panel agent-card"><div class="agent-card-head"><span class="action-icon">${icon("phone")}</span><div><h2>${escapeHtml(phone.product)}</h2><p>${escapeHtml(phone.interface_profile)} · ${escapeHtml(phone.selector)}</p></div><span class="agent-badge">${escapeHtml(stateLabel)}</span></div>` +
       (live ? `<p>Authenticated at ${escapeHtml(live.checked_at)} over Wi-Fi (${escapeHtml(live.host)}). USB discovery identifies the phone; it does not carry this status connection. Check again for a current reading.</p>` : `<p>USB discovery identifies the phone and can stage its package. The phone initiates a Wi-Fi connection to this Mac; the private pairing key authenticates the reply.</p>`) +
       (!reported && !live ? `<ol><li>Build a phone-specific agent package.</li><li>Stage the SIS through PC Suite MTP or a writable USB storage volume.</li><li>Install and open it on the phone. Compare the pairing code on its panel, then check live status on the same Wi-Fi.</li></ol>` : "") +
       `<div class="agent-controls"><button class="button" data-agent-build="${escapeHtml(phone.selector)}" ${available && !state.agentBusy ? "" : "disabled"}>${icon("build")} Build for this phone</button><button class="button" data-agent-stage="${escapeHtml(phone.selector)}" ${canStage && !state.agentBusy ? "" : "disabled"}>${icon("upload")} Stage agent package</button>${!hasTransfer ? '<small>Connect in PC Suite mode or mount a writable USB storage volume.</small>' : !prepared ? '<small>Build a phone-specific package first.</small>' : mtpCandidate && !(phone.capabilities || []).includes("stage-sis") ? '<small>The writable MTP Installs folder is checked before transfer.</small>' : ""}</div>` +
-      (prepared ? `<p>Pairing code: <strong>${escapeHtml(prepared.pairing_code)}</strong>. Check that this code appears on the agent panel on this phone. The phone discovers the console automatically on local Wi-Fi.</p><label><input type="checkbox" data-agent-pair="${escapeHtml(phone.selector)}" ${state.agentPairConfirmed[phone.selector] ? "checked" : ""}> The phone shows this code</label><div class="agent-controls"><button class="button" data-agent-verify="${escapeHtml(phone.selector)}" ${state.agentPairConfirmed[phone.selector] && !state.agentBusy ? "" : "disabled"}>Check live status</button></div>` : "") +
+      (prepared ? `<p>Pairing code: <strong>${escapeHtml(prepared.pairing_code)}</strong>. Check that this code appears on the agent panel on this phone. The phone discovers the console automatically on local Wi-Fi.</p><label><input type="checkbox" data-agent-pair="${escapeHtml(phone.selector)}" ${state.agentPairConfirmed[phone.selector] ? "checked" : ""}> The phone shows this code</label><div class="agent-controls"><button class="button" data-agent-verify="${escapeHtml(phone.selector)}" ${state.agentPairConfirmed[phone.selector] && !state.agentBusy ? "" : "disabled"}>Check live status</button>${live ? `<button class="button" data-agent-logs="${escapeHtml(phone.selector)}" ${state.agentBusy ? "disabled" : ""}>Read service events</button>` : ""}</div>` : "") +
       `<div class="agent-controls"><button class="button" data-agent-report="${escapeHtml(phone.selector)}" ${state.agentBusy ? "disabled" : ""}>${reported ? "Clear running report" : "I see the agent running"}</button><small>${reported ? "Clearing only changes this computer's record." : "Records your observation on this computer; no phone operation is sent."}</small></div>` +
-      (staged ? `<p class="muted">${escapeHtml(staged.next_action || "Finish installation on the phone.")}</p>` : "") + `</section>`;
+      (staged ? `<p class="muted">${escapeHtml(staged.next_action || "Finish installation on the phone.")}</p>` : "") + logs + `</section>`;
   }).join("");
   const build = !project || !available ? `<section class="panel agent-build"><h2>Build availability</h2><p>${!project ? 'The agent source project is unavailable in this SDK installation.' : 'Select an active SDK in the sidebar to build.'}</p></section>` : "";
   return mainHeader("Development Agents", "Build a phone-specific agent, stage its SIS over USB, then verify status over Wi-Fi.") +
@@ -748,7 +752,7 @@ function renderAgents() {
 async function buildAgent(selector) {
   if (!state.agentProject?.project || state.agentBusy) return;
   state.agentBusy = "build"; state.agentError = "";
-  delete state.agentPackages[selector]; delete state.agentLive[selector];
+  delete state.agentPackages[selector]; delete state.agentLive[selector]; delete state.agentLogs[selector];
   setWork("Building development agent…"); renderMain();
   try {
     const prepared = await window.pywebview.api.build_phone_agent(selector);
@@ -789,6 +793,18 @@ async function verifyAgent(selector) {
     appendActivity("Check development agent", "Authenticated live status", result);
     setWork("Ready");
   } catch (error) { state.agentError = String(error.message || error); setWork("Agent status check failed"); }
+  finally { state.agentBusy = ""; renderMain(); }
+}
+async function readAgentLogs(selector) {
+  if (state.agentBusy || !state.agentLive[selector]) return;
+  state.agentBusy = "logs"; state.agentError = "";
+  setWork("Reading agent events…"); renderMain();
+  try {
+    const result = await window.pywebview.api.read_agent_logs(selector);
+    state.agentLogs[selector] = result;
+    appendActivity("Read development agent events", "Authenticated event snapshot", result);
+    setWork("Ready");
+  } catch (error) { state.agentError = String(error.message || error); setWork("Agent event read failed"); }
   finally { state.agentBusy = ""; renderMain(); }
 }
 async function setAgentReport(selector) {
@@ -966,6 +982,7 @@ function bindPage() {
   document.querySelectorAll("[data-agent-stage]").forEach(button => button.addEventListener("click", () => stageAgent(button.dataset.agentStage)));
   document.querySelectorAll("[data-agent-pair]").forEach(input => input.addEventListener("change", () => { state.agentPairConfirmed[input.dataset.agentPair] = input.checked; renderMain(); }));
   document.querySelectorAll("[data-agent-verify]").forEach(button => button.addEventListener("click", () => verifyAgent(button.dataset.agentVerify)));
+  document.querySelectorAll("[data-agent-logs]").forEach(button => button.addEventListener("click", () => readAgentLogs(button.dataset.agentLogs)));
   document.querySelectorAll("[data-agent-report]").forEach(button => button.addEventListener("click", () => setAgentReport(button.dataset.agentReport)));
   document.getElementById("application-firmware")?.addEventListener("change", event => {
     state.applicationSelectedFirmware = event.target.value;

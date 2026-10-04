@@ -136,6 +136,9 @@ button:disabled { cursor: default; opacity: .52; }
 .agent-card li { margin: 4px 0; }
 .agent-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .agent-controls small { color: var(--muted); }
+.agent-event-log { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 15px; }
+.agent-event-log h3 { margin: 0 0 5px; font-size: 14px; }
+.agent-event-log p { margin: 0 0 10px; font-size: 12px; }
 .application-operations .inline-alert { display: block; margin-top: 8px; }
 .task-panel { padding: 24px 27px 25px; }
 .task-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 21px; }

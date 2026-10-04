@@ -5,11 +5,12 @@
 #define SYMBIAN_AGENT_GUEST_LOG_H_
 
 #include <array>
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 
 #include "absl/status/statusor.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace symbian::agent {
 
@@ -33,7 +34,7 @@ struct AgentLogRecord {
   std::uint64_t sequence = 0;
   AgentLogCode code = AgentLogCode::kAuthenticated;
   AgentLogSeverity severity = AgentLogSeverity::kInfo;
-  /** Microseconds since this ring was constructed; not UTC or persistent. */
+  /** Clamped microseconds since this ring was constructed; not UTC or persistent. */
   std::uint64_t elapsed_microseconds = 0;
 };
 
@@ -70,8 +71,7 @@ class AgentLogRing {
 
  private:
   std::array<AgentLogRecord, kCapacity> records_{};
-  std::chrono::steady_clock::time_point started_ =
-      std::chrono::steady_clock::now();
+  absl::Time started_ = absl::Now();
   std::uint64_t last_elapsed_microseconds_ = 0;
   std::uint64_t next_sequence_ = 1;
 };
