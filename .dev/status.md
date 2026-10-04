@@ -1,5 +1,14 @@
 # Status
 
+2026-10-04 local status UI gate: an uncommitted Window Server panel was
+compiled into the agent and exercised in the pinned Dynarmic emulator.
+Screen-device and graphics-context construction did not prevent the existing
+authenticated service test from passing. Adding window-group construction
+caused a guest `KERN-EXEC 3` access violation inside `ws32.dll`, so the panel
+was removed before packaging and pushing. The committed agent remains
+headless; local stop/disable is unverified and development-agent gate 3 is
+open. This failure says nothing about Nokia 808 behavior.
+
 2026-10-04 public build terminology: generated applications and the agent
 example now declare `e32-import`, while the builder also accepts `e32-pic`,
 `e32-dll` and `arm-object`. Existing `*-experiment` declarations retain their
