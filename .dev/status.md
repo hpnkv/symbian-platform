@@ -1,5 +1,11 @@
 # Status
 
+2026-10-04 documentation icon repair: the MkDocs Material emoji extension now
+turns the four overview card icons into inline SVG instead of displaying their
+`:material-...:` source text. The strict combined MkDocs/Doxygen build passed;
+the generated overview contains four rendered icon spans and no literal
+`material-rocket-launch` token. Published Pages deployment is pending.
+
 2026-10-04 documentation transition: developer articles now live in lowercase
 paths under `doc/docs/`, with MkDocs Material navigation and A11-matched
 Noto Sans/JetBrains Mono fonts, indigo light/dark palettes, code highlighting

@@ -1,5 +1,13 @@
 # Research log
 
+## 2026-10-04: Overview icons
+
+The published overview showed raw `:material-...:` strings in its four cards.
+MkDocs had the card Markdown but lacked `pymdownx.emoji`, which Material uses
+to convert those shortcodes into SVG. Adding that extension with Material's
+Twemoji index and SVG generator produced four SVG icon spans in the strict
+local build. Check the deployed page after the workflow completes.
+
 ## 2026-10-04: Developer documentation site
 
 The former root and `docs/` Markdown was mapped to MkDocs guides,
