@@ -181,6 +181,11 @@ foreach(component IN ITEMS system connectivity agent power media display sensors
       target_link_libraries(${component_target} INTERFACE
         "${SYMBIAN_SDK_PREFIX}/proxies/hal/hal.dso")
     endif()
+    if(component STREQUAL "display")
+      target_link_libraries(${component_target} INTERFACE
+        "${SYMBIAN_SDK_PREFIX}/proxies/ws32/ws32.dso"
+        "${SYMBIAN_SDK_PREFIX}/proxies/gdi/gdi.dso")
+    endif()
     if(component STREQUAL "storage")
       target_link_libraries(${component_target} INTERFACE
         "${SYMBIAN_SDK_PREFIX}/proxies/efsrv/efsrv.dso")

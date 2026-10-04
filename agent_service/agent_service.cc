@@ -17,22 +17,17 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "agent_certificates.h"
+#include "agent_signals.h"
 #include "symbian/agent/guest_control.h"
 #include "symbian/agent/guest_log.h"
 #include "symbian/api/connectivity/active_tcp_listener.h"
 #include "symbian/api/connectivity/tls_server.h"
 #include "symbian/api/display/display.h"
+#include "symbian/api/display/resident_panel.h"
+#include "symbian/api/system/active_service.h"
 #include "symbian/api/system/counters.h"
 #include "symbian/concurrency/worker_executor.h"
 #include "symbian/native_status.h"
-
-extern "C" void ProbeStartScheduler();
-extern "C" void ProbeStopScheduler();
-extern "C" int ProbePrepareScheduler();
-extern "C" int ProbeRequestStop();
-extern "C" void ProbeReleaseScheduler();
-extern "C" int AgentLocalUiMain(std::atomic<bool>* stop_requested);
-extern "C" int AgentRequestForeground();
 
 namespace {
 
@@ -207,17 +202,21 @@ class AgentService final
           kTlsWorkerStackBytes);
     }
     if (!listener_.AcceptNext().ok()) {
-      StopFromLocalUi();
+      StopFromEventCallback();
     }
   }
 
-  void StopFromLocalUi() {
+  void CloseListener() {
     if (stopping_) {
       return;
     }
     stopping_ = true;
     listener_.Stop();
-    ProbeStopScheduler();
+  }
+
+  void StopFromEventCallback() {
+    CloseListener();
+    symbian::api::system::StopActiveService();
   }
 
  private:
@@ -228,54 +227,59 @@ class AgentService final
   bool stopping_ = false;
 };
 
-AgentService* current_service = nullptr;
-std::atomic<bool>* current_stop_request = nullptr;
+constexpr symbian::api::display::ResidentPanelOptions kPanel{
+    .app_uid = 0xe0000a31u,
+    .property_category = agent_service::kPropertyCategory,
+    .foreground_key = agent_service::kRaisePanelKey,
+    .caption = "Development Agent",
+    .heading = "AGENT",
+    .state = "RUNNING",
+    .back_label = "BACK",
+    .stop_label = "STOP",
+};
 
 }  // namespace
 
-extern "C" bool AgentLocalStopRequested() {
-  return current_stop_request != nullptr && current_stop_request->load();
-}
-
-extern "C" void AgentStopOnScheduler() {
-  if (current_service != nullptr) {
-    current_service->StopFromLocalUi();
-  }
-}
-
-extern "C" int RunActiveProbe() {
+absl::Status RunAgentService() {
   AgentService service;
-  absl::Status start = service.Start();
-  if (!start.ok()) {
-    // A second menu launch signals the resident instance. Other failures
-    // remain startup failures rather than silently claiming a live agent.
-    if (symbian::NativeErrorFromStatus(start) == -14 &&
-        AgentRequestForeground() == 0) {
-      return 0;
-    }
-    return -301;
-  }
   std::atomic<bool> stop_requested{false};
-  const int prepared = ProbePrepareScheduler();
-  if (prepared != 0) {
-    return prepared;
-  }
-  std::thread ui_thread([&] {
-    const int ui_result = AgentLocalUiMain(&stop_requested);
-    if (ui_result != 0) {
-      stop_requested.store(true);
-    }
-    if (stop_requested.load()) {
-      ProbeRequestStop();
-    }
-  });
-  current_service = &service;
-  current_stop_request = &stop_requested;
-  ProbeStartScheduler();
+  std::thread ui_thread;
+  absl::Status panel_status = absl::OkStatus();
+  const absl::Status result = symbian::api::system::RunActiveService(
+      agent_service::kPropertyCategory, agent_service::kStopServiceKey,
+      [&] { return service.Start(); }, [&] { service.CloseListener(); },
+      [&] {
+        ui_thread = std::thread([&] {
+          panel_status =
+              symbian::api::display::RunResidentPanel(kPanel, stop_requested);
+          if (!panel_status.ok()) {
+            stop_requested.store(true);
+          }
+          if (stop_requested.load()) {
+            // The scheduler may already have stopped before this thread exits.
+            symbian::api::system::RequestActiveServiceStop(
+                agent_service::kPropertyCategory,
+                agent_service::kStopServiceKey)
+                .IgnoreError();
+          }
+        });
+      });
   stop_requested.store(true);
-  current_stop_request = nullptr;
-  current_service = nullptr;
-  ui_thread.join();
-  ProbeReleaseScheduler();
-  return 0;
+  if (ui_thread.joinable()) {
+    ui_thread.join();
+  }
+  if (!result.ok()) {
+    // A second menu launch raises the panel of the resident instance.
+    if (symbian::NativeErrorFromStatus(result) ==
+        symbian::native_error::kInUse) {
+      return symbian::api::display::RequestResidentPanelForeground(
+          agent_service::kPropertyCategory, agent_service::kRaisePanelKey);
+    }
+    return result;
+  }
+  return panel_status;
+}
+
+extern "C" int RuntimeMain() {
+  return symbian::NativeErrorFromStatus(RunAgentService());
 }

@@ -2,48 +2,57 @@
 // Licensed under the Apache License, Version 2.0.
 // The Window Server session stays on its own guest thread.
 
+#include "native_resident_panel.h"
+
 #include <atomic>
 
 #include <e32base.h>
 #include <e32property.h>
 #include <w32std.h>
 
-#include "agent_signals.h"
-
+namespace symbian::api::display {
 namespace {
 
-TInt NameAgentWindowGroup(RWindowGroup& group) {
-  // AppArc's APGWGNAM.CPP encodes status, UID, caption and document as
-  // NUL-separated UTF-16 fields. Status 0x40 marks the application ready.
-  static const TUint16 kName[] = {
-      '4', '0', 0,   'e', '0', '0', '0', '0', 'a', '3', '1', 0,   'D', 'e', 'v',
-      'e', 'l', 'o', 'p', 'm', 'e', 'n', 't', ' ', 'A', 'g', 'e', 'n', 't', 0};
-  TPtrC16 name(kName, sizeof(kName) / sizeof(kName[0]));
+TInt NameResidentWindowGroup(RWindowGroup& group,
+                             const NativeResidentPanelOptions& options) {
+  // AppArc uses NUL-separated ready status, UID, and caption fields.
+  TUint16 name_data[96] = {};
+  TInt length = 0;
+  name_data[length++] = '4';
+  name_data[length++] = '0';
+  name_data[length++] = 0;
+  for (int shift = 28; shift >= 0; shift -= 4) {
+    const unsigned digit = (options.app_uid >> shift) & 15;
+    name_data[length++] = digit < 10 ? '0' + digit : 'a' + digit - 10;
+  }
+  name_data[length++] = 0;
+  for (const char* ch = options.caption; *ch != '\0'; ++ch) {
+    if (length >= 95) {
+      return KErrArgument;
+    }
+    name_data[length++] = static_cast<unsigned char>(*ch);
+  }
+  name_data[length++] = 0;
+  TPtrC16 name(name_data, length);
   return group.SetName(name);
 }
 
 class RaisePanelProperty {
  public:
+  RaisePanelProperty(TUid category, TUint key)
+      : category_(category), key_(key) {}
+
   TInt Open() {
-    TInt result =
-        RProperty::Define(agent_service::kPropertyCategory,
-                          agent_service::kRaisePanelKey, RProperty::EInt);
+    TInt result = RProperty::Define(category_, key_, RProperty::EInt);
     if (result == KErrAlreadyExists) {
-      // A previous process can leave its definition behind after a crash.
-      result = RProperty::Delete(agent_service::kPropertyCategory,
-                                 agent_service::kRaisePanelKey);
-      if (result == KErrNone) {
-        result =
-            RProperty::Define(agent_service::kPropertyCategory,
-                              agent_service::kRaisePanelKey, RProperty::EInt);
-      }
+      result = KErrNone;  // Reuse a definition left by a previous process.
+    } else if (result == KErrNone) {
+      defined_ = true;
     }
     if (result != KErrNone) {
       return result;
     }
-    defined_ = true;
-    result = property_.Attach(agent_service::kPropertyCategory,
-                              agent_service::kRaisePanelKey);
+    result = property_.Attach(category_, key_);
     if (result != KErrNone) {
       return result;
     }
@@ -57,12 +66,13 @@ class RaisePanelProperty {
   ~RaisePanelProperty() {
     property_.Close();
     if (defined_) {
-      RProperty::Delete(agent_service::kPropertyCategory,
-                        agent_service::kRaisePanelKey);
+      RProperty::Delete(category_, key_);
     }
   }
 
  private:
+  TUid category_;
+  TUint key_;
   RProperty property_;
   bool defined_ = false;
 };
@@ -135,7 +145,8 @@ void DrawLabel(CWindowGc& gc, const char* label, TInt x, TInt y, TInt scale) {
   }
 }
 
-void Draw(CWindowGc& gc, const TSize& size) {
+void Draw(CWindowGc& gc, const TSize& size,
+          const NativeResidentPanelOptions& options) {
   gc.SetPenStyle(CGraphicsContext::ENullPen);
   gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
   gc.SetBrushColor(TRgb(0x00192332));
@@ -149,13 +160,14 @@ void Draw(CWindowGc& gc, const TSize& size) {
   gc.DrawRect(
       TRect(24, size.iHeight - 160, size.iWidth - 24, size.iHeight - 80));
   gc.SetBrushColor(TRgb(0x00ffffff));
-  DrawLabel(gc, "AGENT", 30, 30, 4);
-  DrawLabel(gc, "RUNNING", 40, 103, 3);
-  DrawLabel(gc, "BACK", 54, size.iHeight - 239, 4);
-  DrawLabel(gc, "STOP", 54, size.iHeight - 139, 4);
+  DrawLabel(gc, options.heading, 30, 30, 4);
+  DrawLabel(gc, options.state, 40, 103, 3);
+  DrawLabel(gc, options.back_label, 54, size.iHeight - 239, 4);
+  DrawLabel(gc, options.stop_label, 54, size.iHeight - 139, 4);
 }
 
-TInt RunWindow(std::atomic<bool>& stop_requested) {
+TInt RunWindow(const NativeResidentPanelOptions& options,
+               std::atomic<bool>& stop_requested) {
   RWsSession session;
   TInt result = session.Connect();
   if (result != KErrNone) {
@@ -177,7 +189,7 @@ TInt RunWindow(std::atomic<bool>& stop_requested) {
           result = group.Construct(1, ETrue);
           if (result == KErrNone) {
             // A bare RWindowGroup is invisible to AppArc task lookup.
-            result = NameAgentWindowGroup(group);
+            result = NameResidentWindowGroup(group, options);
             if (result != KErrNone) {
               group.Close();
             }
@@ -195,7 +207,9 @@ TInt RunWindow(std::atomic<bool>& stop_requested) {
               RTimer wake_timer;
               result = wake_timer.CreateLocal();
               if (result == KErrNone) {
-                RaisePanelProperty raise_panel;
+                RaisePanelProperty raise_panel(
+                    TUid::Uid(options.property_category),
+                    options.foreground_key);
                 result = raise_panel.Open();
                 if (result == KErrNone) {
                   TRequestStatus wake;
@@ -245,7 +259,7 @@ TInt RunWindow(std::atomic<bool>& stop_requested) {
                       if (redraw.Handle() == 2) {
                         window.BeginRedraw(redraw.Rect());
                         gc.Activate(window);
-                        Draw(gc, size);
+                        Draw(gc, size, options);
                         gc.Deactivate();
                         window.EndRedraw();
                       }
@@ -299,28 +313,32 @@ TInt RunWindow(std::atomic<bool>& stop_requested) {
 
 }  // namespace
 
-extern "C" int AgentLocalUiMain(std::atomic<bool>* stop_requested) {
+extern "C" int SymbianDeviceRunResidentPanel(
+    const NativeResidentPanelOptions* options, void* stop_requested) {
   CTrapCleanup* cleanup = CTrapCleanup::New();
   if (cleanup == nullptr) {
     return KErrNoMemory;
   }
-  const TInt result = RunWindow(*stop_requested);
+  const TInt result =
+      RunWindow(*options, *static_cast<std::atomic<bool>*>(stop_requested));
   delete cleanup;
   return result;
 }
 
-extern "C" int AgentRequestForeground() {
+extern "C" int SymbianDeviceRequestResidentPanelForeground(int category,
+                                                           unsigned key) {
   RProperty property;
-  TInt result = property.Attach(agent_service::kPropertyCategory,
-                                agent_service::kRaisePanelKey);
+  TInt result = property.Attach(TUid::Uid(category), key);
   if (result != KErrNone) {
     return result;
   }
   TInt sequence = 0;
   result = property.Get(sequence);
   if (result == KErrNone) {
-    result = property.Set(sequence + 1);
+    result = property.Set(sequence == KMaxTInt ? 0 : sequence + 1);
   }
   property.Close();
   return result;
 }
+
+}  // namespace symbian::api::display

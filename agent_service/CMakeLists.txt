@@ -40,7 +40,7 @@ endforeach()
 symbian_add_import_executable(agent_service
   STARTUP startup.S
   LINKER_SCRIPT image.ld
-  SOURCES startup.cc scheduler_bridge.cc agent_service.cc local_ui.cc
+  SOURCES startup.cc agent_service.cc
     sdk_entropy_rm807.cc sdk_entropy_rm807.S)
 target_include_directories(agent_service PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_compile_definitions(agent_service PRIVATE SYMBIAN_RM807_ENTROPY_PROBE=1

@@ -4,13 +4,14 @@
 #ifndef AGENT_SERVICE_AGENT_SIGNALS_H_
 #define AGENT_SERVICE_AGENT_SIGNALS_H_
 
-#include <e32std.h>
+#include <cstdint>
 
 namespace agent_service {
 
-const TUid kPropertyCategory = TUid::Uid(static_cast<TInt32>(0xe0000a31u));
-constexpr TUint kRaisePanelKey = 0x4147454e;
-constexpr TUint kStopServiceKey = 0x53544f50;
+constexpr std::int32_t kPropertyCategory =
+    static_cast<std::int32_t>(0xe0000a31u);
+constexpr std::uint32_t kRaisePanelKey = 0x4147454e;
+constexpr std::uint32_t kStopServiceKey = 0x53544f50;
 
 }  // namespace agent_service
 

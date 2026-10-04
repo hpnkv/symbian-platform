@@ -1,7 +1,8 @@
 # System component
 
 **Implemented:** `Symbian::System` exports typed readings of the system tick
-and fast counters in `<symbian/api/system/counters.h>`.
+and fast counters in `<symbian/api/system/counters.h>`, plus an active
+service loop in `<symbian/api/system/active_service.h>`.
 
 ## Motivation and modernization
 
@@ -21,8 +22,29 @@ handle. The metadata call is repeated because the public result must describe
 the current platform rather than a cached assumption. These calls are small,
 but a caller with a strict event-thread budget should measure its device.
 
+## Resident service loop
+
+`RunActiveService` installs the native active scheduler on the calling thread,
+arms a process-local stop property, and runs asynchronous service callbacks.
+The `start` callback should bind listeners before the stop property is defined;
+this lets a second application launch detect an already running instance without
+changing its signal. `on_ready` runs once the stop subscription is armed, so a
+service can safely start its user interface. A second guest thread calls
+`RequestActiveServiceStop` to shut down; a callback already on the scheduler
+thread calls `StopActiveService`. Setup and cross-thread signal failures return
+`absl::Status`; only the process entry point translates that status to a
+native exit reason.
+
+The property category and key are application-owned. Pick a stable pair and
+keep it unique. The SDK owns `CActiveScheduler` and `RProperty` lifetime, while
+the application owns its listener and worker lifetime. This helper uses the
+native active scheduler required by `ActiveTcpListener`; it does not install a
+second SDK task scheduler. See the
+[resident agent](../../reference/agent-protocol.md) for a complete use.
+
 ## Remaining work
 
 Counter wrap over long intervals and physical-phone frequencies need
-independent checks. This library deliberately provides no wall clock or timer
-subscription; those have different semantics and ownership.
+independent checks. The counter API deliberately provides no wall clock or timer
+subscription; those have different semantics and ownership. Physical-device
+validation of the service stop property is still open.

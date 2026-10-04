@@ -1,0 +1,44 @@
+// Copyright 2026 The Symbian SDK Authors.
+// Licensed under the Apache License, Version 2.0.
+
+#ifndef SYMBIAN_API_DISPLAY_RESIDENT_PANEL_H_
+#define SYMBIAN_API_DISPLAY_RESIDENT_PANEL_H_
+
+#include <atomic>
+#include <cstdint>
+
+#include "absl/status/status.h"
+
+namespace symbian::api::display {
+
+/**
+ * @brief Minimal Window Server panel for a manually started resident service.
+ *
+ * Runs on its own guest thread. BACK lowers the window group without stopping
+ * the service; STOP sets stop_requested. A second app launch can call
+ * RequestResidentPanelForeground with the same property identity. Labels use
+ * the built-in uppercase bitmap alphabet; unsupported glyphs are omitted.
+ * All strings must remain valid until RunResidentPanel returns.
+ */
+struct ResidentPanelOptions {
+  std::uint32_t app_uid = 0;
+  std::int32_t property_category = 0;
+  std::uint32_t foreground_key = 0;
+  const char* caption = "Resident service";
+  const char* heading = "SERVICE";
+  const char* state = "RUNNING";
+  const char* back_label = "BACK";
+  const char* stop_label = "STOP";
+};
+
+/** @brief Run a resident panel until STOP or an external stop request. */
+absl::Status RunResidentPanel(const ResidentPanelOptions& options,
+                              std::atomic<bool>& stop_requested);
+
+/** @brief Raise the window group owned by an existing panel instance. */
+absl::Status RequestResidentPanelForeground(std::int32_t category,
+                                            std::uint32_t key);
+
+}  // namespace symbian::api::display
+
+#endif  // SYMBIAN_API_DISPLAY_RESIDENT_PANEL_H_

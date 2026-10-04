@@ -29,6 +29,7 @@ inline constexpr int kNoMemory = -4;
 inline constexpr int kNotSupported = -5;
 inline constexpr int kArgument = -6;
 inline constexpr int kAlreadyExists = -11;
+inline constexpr int kInUse = -14;
 inline constexpr int kNotReady = -18;
 inline constexpr int kAccessDenied = -21;
 inline constexpr int kTimedOut = -33;
@@ -64,6 +65,7 @@ inline absl::Status StatusFromNativeError(int native_code,
       code = absl::StatusCode::kAlreadyExists;
       break;
     case native_error::kNotReady:
+    case native_error::kInUse:
       code = absl::StatusCode::kFailedPrecondition;
       break;
     case native_error::kAccessDenied:
