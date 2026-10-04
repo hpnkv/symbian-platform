@@ -23,9 +23,6 @@ add_library(symbian::concurrency ALIAS symbian_concurrency)
 target_compile_features(symbian_concurrency INTERFACE cxx_std_20)
 target_include_directories(symbian_concurrency INTERFACE
   "${CMAKE_CURRENT_SOURCE_DIR}/common")
-target_link_libraries(symbian_concurrency INTERFACE
-  absl::statusor absl::time absl::log absl::log_internal_check_op
-  absl::random_random)
 add_library(symbian_host_primitive_objects STATIC
   host/thread/boost_primitives.cc
   host/thread/channel_waiter_state.cc
@@ -68,7 +65,9 @@ add_custom_target(symbian_host_primitives_bundle DEPENDS "${bundle}")
 add_library(symbian_host_primitives STATIC IMPORTED GLOBAL)
 set_target_properties(symbian_host_primitives PROPERTIES
   IMPORTED_LOCATION "${bundle}"
-  INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/host")
+  INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/host"
+  INTERFACE_LINK_LIBRARIES
+    "absl::statusor;absl::time;absl::log;absl::log_internal_check_op;absl::random_random")
 add_dependencies(symbian_host_primitives symbian_host_primitives_bundle)
 target_link_libraries(symbian_concurrency INTERFACE
   symbian_host_primitives)
