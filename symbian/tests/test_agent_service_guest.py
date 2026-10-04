@@ -128,7 +128,7 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                                 == "symbian-agent"
                             )
                             assert first.state == second.state == "ready"
-                            assert first.capabilities == ("status",)
+                            assert first.capabilities == ("status", "logs")
                             assert first.system is not None
                             assert first.system.tick_period_us > 0
                             assert first.display is not None
@@ -138,6 +138,13 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                                 1,
                                 2,
                             )
+                            page = agent.logs(limit=8)
+                            assert [record.code for record in page.records] == [
+                                1,
+                                2,
+                                2,
+                            ]
+                            cursor = page.next_cursor
                         break
                     except ConnectionRefusedError:
                         if time.monotonic() >= deadline:
@@ -158,6 +165,9 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                         tls.sendall((4097).to_bytes(4, "big"))
                 with _connect() as agent:
                     assert agent.status().state == "ready"
+                    page = agent.logs(after=cursor)
+                    assert any(record.code == 3 for record in page.records)
+                    assert page.next_cursor > cursor
                 command = subprocess.run(
                     [
                         sys.executable,
@@ -184,6 +194,20 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                 )
                 assert command.returncode == 0, command.stdout + command.stderr
                 assert json.loads(command.stdout)["result"]["state"] == "ready"
+                log_args = command.args.copy()
+                log_args[4] = "logs"
+                log_args.extend(["--after", str(cursor)])
+                log_command = subprocess.run(
+                    log_args,
+                    cwd=ROOT,
+                    capture_output=True,
+                    text=True,
+                    timeout=15,
+                )
+                assert log_command.returncode == 0, (
+                    log_command.stdout + log_command.stderr
+                )
+                assert json.loads(log_command.stdout)["result"]["records"]
                 with socket.create_connection(("127.0.0.1", 39101), 10) as raw:
                     with context.wrap_socket(
                         raw, server_hostname="sdk-test"
@@ -199,6 +223,15 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                         assert time.monotonic() - started < 7.5
                 with _connect() as agent:
                     assert agent.status().state == "ready"
+                if backend == "dynarmic":
+                    for _ in range(2):
+                        with _connect() as agent:
+                            for _request in range(16):
+                                assert agent.status().state == "ready"
+                    with _connect() as agent:
+                        wrapped = agent.logs(after=0, limit=8)
+                        assert wrapped.gap
+                        assert wrapped.records[0].sequence > 1
                 assert process.poll() is None
             finally:
                 _stop(process)

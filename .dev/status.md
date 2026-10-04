@@ -1,5 +1,25 @@
 # Status
 
+2026-10-04 bounded resident service log: `Symbian::Agent` now installs the
+documented `AgentLogRing` and log-result codec. One worker owns a fixed
+32-record, process-local ring; authenticated clients read up to eight records
+after a sequence cursor and receive a `gap` flag after overwrite. The host
+native binding packs the typed logs request, `ReadOnlyAgentSession.logs()`
+returns a typed page, and `symbian agent logs` exposes it through the CLI.
+A clean `.symbian/resident-agent-log-sdk-20261004` export installed ARMv5T and
+ARMv6 agent archives and both public headers. The native codec/ring GTest and
+26 host session/CLI Pytests passed. Disposable pinned RM-807 Dynarmic and
+Dyncom runs passed authenticated status and log reads, rejected-frame event
+observation after reconnect, CLI log retrieval and the prior slow-prefix
+control (`2 passed in 37.48s`). An additional Dynarmic run filled the ring
+with 32 status requests across two capped connections and observed `gap=true`
+with a later first sequence (`1 passed, 1 deselected in 20.08s`). The final
+ARMv6 E32 has 796,688 code, 1,540 data and 69,316 BSS bytes with eight import
+DLLs; its unsigned one-file SIS SHA-256 is
+`d058ad064c947dc93c70cc24893b4a93eb61b8aacf95c92261fad09e61e2e226`.
+The ring is not OS log collection, disk persistence, streaming follow or a
+physical Nokia 808 result.
+
 2026-10-04 authenticated native status snapshots: `GuestStatusSnapshot` now
 adds only successful original-platform tick and primary HAL display readings
 to the existing bounded read-only status result. The host maps them to typed,

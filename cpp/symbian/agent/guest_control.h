@@ -10,14 +10,17 @@
 #include <string_view>
 
 #include "absl/status/statusor.h"
+#include "symbian/agent/guest_log.h"
 
 namespace symbian::agent {
 
 /** @brief One authenticated, read-only control request for the phone profile. */
 struct GuestControlRequest {
   std::uint64_t request_id = 0;
-  std::uint8_t kind = 0;  // 1: hello, 2: status.
+  std::uint8_t kind = 0;  // 1: hello, 2: status, 6: logs.
   std::uint64_t deadline_millis = 0;
+  std::uint64_t log_after = 0;
+  std::uint8_t log_limit = 0;
   // Complete MessagePack key/value pairs for unknown top-level fields.
   std::string extensions;
   std::uint8_t extension_count = 0;
@@ -39,12 +42,14 @@ struct GuestDisplaySnapshot {
 struct GuestStatusSnapshot {
   std::optional<GuestTickSnapshot> tick;
   std::optional<GuestDisplaySnapshot> display;
+  bool logs_available = false;
 };
 
 /**
  * @brief Parse a bounded MessagePack control map after TLS authentication.
  *
- * Accepts version 1 hello/status with an empty body map and up to eight
+ * Accepts version 1 hello/status with an empty body map, or logs with a
+ * bounded after/limit body, and up to eight
  * top-level fields. Unknown fields are retained byte-for-byte so a result
  * can echo them without silently discarding a future field. Invalid, nested
  * beyond four levels, duplicate and oversized inputs fail closed.
@@ -62,6 +67,10 @@ absl::StatusOr<std::string> PackGuestResult(const GuestControlRequest& request);
 /** @brief Pack status with only the native observations actually available. */
 absl::StatusOr<std::string> PackGuestResult(
     const GuestControlRequest& request, const GuestStatusSnapshot& snapshot);
+
+/** @brief Pack one bounded log page into a version-one result envelope. */
+absl::StatusOr<std::string> PackGuestLogResult(
+    const GuestControlRequest& request, const AgentLogPage& page);
 
 }  // namespace symbian::agent
 

@@ -50,6 +50,25 @@ class AgentStatus(BaseModel):
     display: AgentDisplaySnapshot | None = None
 
 
+class AgentLogRecord(BaseModel):
+    """One service-local event; unknown numeric codes remain readable."""
+
+    model_config = ConfigDict(frozen=True)
+
+    sequence: int
+    code: int
+
+
+class AgentLogPage(BaseModel):
+    """Bounded service events following a sequence cursor."""
+
+    model_config = ConfigDict(frozen=True)
+
+    records: tuple[AgentLogRecord, ...]
+    next_cursor: int
+    gap: bool
+
+
 class ReadOnlyAgentSession:
     """One TLS connection to a manually addressed read-only guest listener.
 
@@ -116,8 +135,27 @@ class ReadOnlyAgentSession:
         """Request the agent's current read-only service state."""
         request_id = self._next_request_id
         self._next_request_id += 1
-        deadline = time.monotonic() + self._timeout
         frame = _native.pack_agent_read_request(request_id, 2)
+        body = self._exchange(request_id, frame)
+        return AgentStatus.model_validate({"request_id": request_id, **body})
+
+    def logs(self, *, after: int = 0, limit: int = 8) -> AgentLogPage:
+        """Read at most eight recent service events after a cursor.
+
+        A true gap means older records were overwritten before this read.
+        The next call should use ``next_cursor``; the ring is process-local.
+        """
+        if after < 0 or not 1 <= limit <= 8:
+            raise StatusError(
+                Code.INVALID_ARGUMENT, "Invalid log cursor or limit"
+            )
+        request_id = self._next_request_id
+        self._next_request_id += 1
+        frame = _native.pack_agent_logs_request(request_id, after, limit)
+        return AgentLogPage.model_validate(self._exchange(request_id, frame))
+
+    def _exchange(self, request_id: int, frame: bytes) -> dict:
+        deadline = time.monotonic() + self._timeout
         self._set_remaining_timeout(deadline)
         self._stream.sendall(frame)
         prefix = self._receive_exact(4, deadline)
@@ -127,8 +165,7 @@ class ReadOnlyAgentSession:
         )
         if result["request_id"] != request_id or result["kind"] != 4:
             raise StatusError(Code.DATA_LOSS, "Unexpected agent result")
-        body = result["body"]
-        return AgentStatus.model_validate({"request_id": request_id, **body})
+        return result["body"]
 
     def _set_remaining_timeout(self, deadline: float) -> None:
         remaining = deadline - time.monotonic()

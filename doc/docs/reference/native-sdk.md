@@ -22,7 +22,7 @@ required Abseil status/runtime profile and, where needed, an OS import proxy.
 | `Symbian::Camera` | `symbian/api/camera/camera.h` | Discover camera slots | `StatusOr`; discovery does not reserve a camera. |
 | `Symbian::Connectivity` | `symbian/api/connectivity/tcp_client.h`, `tcp_listener.h`, `active_tcp_listener.h` | Connect, listen, accept and exchange bounded IPv4 TCP data | Synchronous worker owners plus a single-request active-object listener; deadline cancellation for blocking accept, send and receive. |
 | `Symbian::Tls` | `symbian/api/connectivity/tls_server.h` | Own a TLS server configuration and one mutually authenticated stream | Opt-in Mbed TLS link; caller supplies server identity, client CA roots and working guest entropy. Synchronous worker only. |
-| `Symbian::Agent` | `symbian/agent/guest_control.h` | Parse and answer bounded read-only hello/status control messages, with optional native snapshots | Authenticate the TLS peer before parsing; this codec does not own a service or grant permissions. |
+| `Symbian::Agent` | `symbian/agent/guest_control.h`, `guest_log.h` | Parse bounded read-only control messages and retain a 32-record service log | Authenticate the TLS peer before parsing; this codec does not own a service or grant permissions. |
 
 For example, a display query can live in a small adapter:
 
@@ -53,6 +53,11 @@ authentication, fill only successful readings and call the two-argument
 Tick counts wrap; display geometry is a HAL observation rather than Window
 Server layout. The [system](../capabilities/apis/system.md) and
 [display](../capabilities/apis/display.md) guides describe those APIs.
+`AgentLogRing` retains 32 fixed records on one worker and returns at most eight
+after a sequence cursor. `AgentLogPage.gap` signals overwritten records;
+`PackGuestLogResult` wraps that page in the same authenticated control
+envelope. See the [protocol guide](agent-protocol.md#service-local-event-log)
+for code meanings and retention.
 
 An `ActiveTcpListener` requires an installed original Symbian
 `CActiveScheduler`. It holds one pending `RSocket::Accept` with no polling

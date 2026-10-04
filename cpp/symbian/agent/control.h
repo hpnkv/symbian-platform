@@ -24,6 +24,7 @@ enum class ControlKind : std::uint8_t {
   kCancel = 3,
   kResult = 4,
   kError = 5,
+  kLogs = 6,
 };
 
 /**

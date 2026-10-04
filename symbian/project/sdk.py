@@ -623,6 +623,10 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             workspace / "cpp/symbian/agent/guest_control.h",
             output / "include/symbian/agent/guest_control.h",
         )
+        shutil.copyfile(
+            workspace / "cpp/symbian/agent/guest_log.h",
+            output / "include/symbian/agent/guest_log.h",
+        )
         shutil.copytree(
             workspace / "cpp/symbian/concurrency/common/thread",
             output / "include/thread",

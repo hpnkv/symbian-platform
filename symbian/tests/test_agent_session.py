@@ -79,6 +79,29 @@ def test_read_only_status_over_mutual_tls():
                         use_bin_type=True,
                     )
                     stream.sendall(len(response).to_bytes(4, "big") + response)
+                    prefix = _receive_exact(stream, 4)
+                    length = _native.agent_control_payload_length(prefix)
+                    request = msgpack.unpackb(
+                        _receive_exact(stream, length), raw=False
+                    )
+                    observed.append(request)
+                    response = msgpack.packb(
+                        {
+                            "v": 1,
+                            "id": request["id"],
+                            "kind": 4,
+                            "body": {
+                                "records": [
+                                    {"sequence": 5, "code": 2},
+                                    {"sequence": 6, "code": 99},
+                                ],
+                                "next_cursor": 6,
+                                "gap": False,
+                            },
+                        },
+                        use_bin_type=True,
+                    )
+                    stream.sendall(len(response).to_bytes(4, "big") + response)
         finally:
             listener.close()
 
@@ -93,6 +116,7 @@ def test_read_only_status_over_mutual_tls():
         client_key=PRIVATE_KEY,
     ) as agent:
         result = agent.status()
+        logs = agent.logs(after=4, limit=2)
     thread.join(timeout=5)
     assert not thread.is_alive()
     assert result.request_id == 1
@@ -103,9 +127,16 @@ def test_read_only_status_over_mutual_tls():
     assert result.system.tick_count == 91
     assert result.display is not None
     assert result.display.width_pixels == 640
-    assert len(observed) == 1
+    assert len(observed) == 2
     assert observed[0]["kind"] == 2
     assert observed[0]["id"] == 1
+    assert observed[1]["kind"] == 6
+    assert observed[1]["body"] == {"after": 4, "limit": 2}
+    assert logs.records[0].sequence == 5
+    assert logs.records[0].code == 2
+    assert logs.records[1].code == 99
+    assert logs.next_cursor == 6
+    assert logs.gap is False
 
 
 def test_read_only_status_has_one_aggregate_response_deadline():

@@ -2,7 +2,7 @@
 
 The planned resident service uses one protocol over an authenticated TCP
 session. Host native code owns framing and the full control envelope. A small
-guest codec answers read-only hello/status requests. The manually started
+guest codec answers read-only hello, status and recent-log requests. The manually started
 [emulator service example](https://github.com/hpnkv/symbian-platform/tree/main/examples/agent_service)
 combines the active listener, SDK worker and mutual TLS. Its fixed test key is
 public; it must never be used as a device identity.
@@ -17,7 +17,7 @@ prefix, payload and response; a peer cannot keep a worker indefinitely by
 dripping frame bytes. The host read-only session applies its requested timeout
 to the entire status exchange, including fragmented responses. The
 test constructs an ARMv6 E32 executable from the selected SDK, launches it
-manually, sends status requests, tests an oversized prefix, reconnects and
+manually, sends status and log requests, tests an oversized prefix, reconnects and
 stops the emulator. It runs both Dynarmic and Dyncom when the pinned firmware
 fixture and emulator are prepared:
 
@@ -56,15 +56,16 @@ Control messages have a separate 4 KiB ceiling. `ParseControl` validates the
 MessagePack map, version, nonzero request ID, operation kind and optional
 deadline. `PackControl` emits the same fields; unknown top-level fields are
 retained when a message is parsed and encoded again. Version one currently
-defines hello, status, cancel, result and error envelopes. The `body` remains
+defines hello, status, cancel, result, error and logs envelopes. The `body` remains
 an untrusted map until a specific operation validates it.
 
 The guest `Symbian::Agent` target installs
 `symbian/agent/guest_control.h`. `ParseGuestControl` accepts only version-one
-hello/status, a nonzero request ID, an optional unsigned deadline and an empty
-body. Its limit is 4 KiB and eight top-level fields; unknown top-level fields
+hello/status with an empty body, or logs with exactly two unsigned body fields:
+`after` and `limit` (1–8). A nonzero request ID and optional unsigned deadline
+are required. Its limit is 4 KiB and eight top-level fields; unknown top-level fields
 are preserved in the response. `PackGuestResult` responds with service name,
-`ready` state and the single `status` capability. Its snapshot overload takes
+`ready` state and the capabilities supplied by the caller. Its snapshot overload takes
 `GuestStatusSnapshot`: a successful native tick query adds `system.tick_count`
 and `system.tick_period_us`; a successful primary HAL display query adds
 `display.width_pixels` and `display.height_pixels`. Missing observations stay
@@ -72,6 +73,23 @@ absent rather than becoming guessed values. These routines parse the
 MessagePack payload after the four-byte frame prefix has been checked. They
 require an authenticated TLS peer; they do not authenticate, authorize,
 schedule or keep a listener alive.
+
+### Service-local event log
+
+`AgentLogRing` retains 32 fixed-size event codes in memory on the service's
+existing worker. It allocates no records while appending. A logs request
+returns up to eight records after a sequence cursor, a `next_cursor` for the
+next read, and `gap=true` if older records were overwritten. Cursor zero reads
+from the oldest retained record. The service records successful authentication,
+status reads, rejected frames and session closure. Codes are numeric so a host
+can retain an unknown future value: 1 authentication, 2 status read, 3 frame
+rejection and 4 session closed. The ring is cleared when the process exits.
+It does not contain operating-system logs or private application file data.
+
+The guest parser validates the complete logs body before reading the ring;
+`PackGuestLogResult` encodes one bounded page. The ring has one worker owner,
+so the example needs no new scheduler or cross-thread log lock. A future
+long-lived log stream needs its own credited flow control and cancellation.
 
 The service must authenticate before interpreting payloads, validate each
 operation body and permission grant, and give each request a deadline,
@@ -95,6 +113,8 @@ request and response, rather than resetting for each `recv` fragment.
 `AgentStatus.system` and `.display` are optional typed snapshots. The tick
 counter wraps at 32 bits and is an elapsed-time source; HAL dimensions may
 differ from Window Server layout.
+`ReadOnlyAgentSession.logs(after=cursor, limit=8)` returns a typed `AgentLogPage`.
+Use its `next_cursor` on the next call, and show the `gap` flag to the user.
 
 ```python
 from pathlib import Path
@@ -108,6 +128,8 @@ with ReadOnlyAgentSession.connect(
     client_key=Path("certs/host-key.pem"),
 ) as agent:
     print(agent.status())
+    page = agent.logs()
+    print(page.records, page.next_cursor, page.gap)
 ```
 
 This is an API example for a manually started listener; it is not a working
@@ -122,6 +144,12 @@ symbian agent status 127.0.0.1 39101 \
   --ca-bundle certs/phone-ca.pem \
   --client-certificate certs/host.pem \
   --client-key certs/host-key.pem
+
+symbian agent logs 127.0.0.1 39101 \
+  --server-name my-development-phone \
+  --ca-bundle certs/phone-ca.pem \
+  --client-certificate certs/host.pem \
+  --client-key certs/host-key.pem --after 0 --limit 8
 ```
 
 Both forms require a running agent and credentials you supplied. The

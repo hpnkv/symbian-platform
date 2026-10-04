@@ -255,6 +255,8 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
   GuestControlRequest result;
   std::uint64_t version = 0;
   unsigned seen = 0;
+  unsigned log_fields = 0;
+  bool nonempty_body = false;
   std::array<std::string_view, 8> extension_keys{};
   for (std::size_t index = 0; index < count; ++index) {
     const std::size_t start = cursor.position();
@@ -289,8 +291,30 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
     } else if (key == "body") {
       bit = 16;
       std::size_t body_items = 0;
-      if (!cursor.Map(&body_items) || body_items != 0) {
+      if (!cursor.Map(&body_items) || body_items > 2) {
         return absl::InvalidArgumentError("Unsupported control body");
+      }
+      nonempty_body = body_items != 0;
+      for (std::size_t body_index = 0; body_index < body_items; ++body_index) {
+        std::string_view body_key;
+        std::uint64_t body_value = 0;
+        if (!cursor.String(&body_key) || !cursor.Unsigned(&body_value)) {
+          return absl::InvalidArgumentError("Invalid log request body");
+        }
+        unsigned body_bit = 0;
+        if (body_key == "after") {
+          body_bit = 1;
+          result.log_after = body_value;
+        } else if (body_key == "limit" && body_value <= 8) {
+          body_bit = 2;
+          result.log_limit = static_cast<std::uint8_t>(body_value);
+        } else {
+          return absl::InvalidArgumentError("Unsupported log request field");
+        }
+        if ((log_fields & body_bit) != 0) {
+          return absl::InvalidArgumentError("Duplicate log request field");
+        }
+        log_fields |= body_bit;
       }
     } else {
       for (std::uint8_t previous = 0; previous < result.extension_count;
@@ -314,8 +338,55 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
     seen |= bit;
   }
   if (!cursor.done() || (seen & 7) != 7 || version != 1 ||
-      result.request_id == 0 || (result.kind != 1 && result.kind != 2)) {
+      result.request_id == 0 ||
+      (result.kind != 1 && result.kind != 2 && result.kind != 6) ||
+      (result.kind == 6 && (log_fields != 3 || result.log_limit == 0)) ||
+      (result.kind != 6 && nonempty_body)) {
     return absl::InvalidArgumentError("Unsupported agent control request");
+  }
+  return result;
+}
+
+absl::StatusOr<std::string> PackGuestLogResult(
+    const GuestControlRequest& request, const AgentLogPage& page) {
+  if (request.request_id == 0 || request.kind != 6 || page.count > 8 ||
+      request.extension_count > 8 ||
+      request.extensions.size() > kMaximumControlBytes) {
+    return absl::InvalidArgumentError("Invalid guest log result");
+  }
+  std::string result;
+  result.reserve(160 + page.count * 40 + request.extensions.size());
+  result.push_back(static_cast<char>(0x85 + request.extension_count));
+  WriteString(&result, "v");
+  WriteUInt(&result, 1);
+  WriteString(&result, "id");
+  WriteUInt(&result, request.request_id);
+  WriteString(&result, "kind");
+  WriteUInt(&result, 4);
+  WriteString(&result, "deadline_ms");
+  WriteUInt(&result, request.deadline_millis);
+  WriteString(&result, "body");
+  result.push_back(static_cast<char>(0x83));
+  WriteString(&result, "records");
+  result.push_back(static_cast<char>(0x90 | page.count));
+  for (std::uint8_t index = 0; index < page.count; ++index) {
+    const AgentLogRecord& record = page.records[index];
+    if (record.sequence == 0) {
+      return absl::InvalidArgumentError("Invalid log sequence");
+    }
+    result.push_back(static_cast<char>(0x82));
+    WriteString(&result, "sequence");
+    WriteUInt(&result, record.sequence);
+    WriteString(&result, "code");
+    WriteUInt(&result, static_cast<std::uint8_t>(record.code));
+  }
+  WriteString(&result, "next_cursor");
+  WriteUInt(&result, page.next_cursor);
+  WriteString(&result, "gap");
+  result.push_back(static_cast<char>(page.gap ? 0xc3 : 0xc2));
+  result.append(request.extensions);
+  if (result.size() > kMaximumControlBytes) {
+    return absl::ResourceExhaustedError("Agent log result exceeds 4 KiB");
   }
   return result;
 }
@@ -351,8 +422,11 @@ absl::StatusOr<std::string> PackGuestResult(
   WriteString(&result, "state");
   WriteString(&result, "ready");
   WriteString(&result, "capabilities");
-  result.push_back(static_cast<char>(0x91));
+  result.push_back(static_cast<char>(snapshot.logs_available ? 0x92 : 0x91));
   WriteString(&result, "status");
+  if (snapshot.logs_available) {
+    WriteString(&result, "logs");
+  }
   if (snapshot.tick) {
     WriteString(&result, "system");
     result.push_back(static_cast<char>(0x82));

@@ -135,6 +135,7 @@ _COMMAND_DESCRIPTIONS = {
         "agent",
     ): "Talk to a manually addressed, authenticated development agent.",
     ("agent", "status"): "Read the agent's current status over mutual TLS.",
+    ("agent", "logs"): "Read bounded service events after a sequence cursor.",
     (
         "device",
         "list",
@@ -334,14 +335,30 @@ def _parser() -> argparse.ArgumentParser:
     agent_commands = commands.add_parser("agent").add_subparsers(
         dest="agent_command", required=True
     )
-    agent_status = agent_commands.add_parser("status")
-    agent_status.add_argument("host")
-    agent_status.add_argument("port", type=int)
-    agent_status.add_argument("--server-name", required=True)
-    agent_status.add_argument("--ca-bundle", required=True, type=Path)
-    agent_status.add_argument("--client-certificate", required=True, type=Path)
-    agent_status.add_argument("--client-key", required=True, type=Path)
-    agent_status.add_argument("--timeout", type=float, default=5.0)
+    for name in ("status", "logs"):
+        agent_parser = agent_commands.add_parser(name)
+        agent_parser.add_argument("host")
+        agent_parser.add_argument("port", type=int)
+        agent_parser.add_argument("--server-name", required=True)
+        agent_parser.add_argument("--ca-bundle", required=True, type=Path)
+        agent_parser.add_argument(
+            "--client-certificate", required=True, type=Path
+        )
+        agent_parser.add_argument("--client-key", required=True, type=Path)
+        agent_parser.add_argument("--timeout", type=float, default=5.0)
+        if name == "logs":
+            agent_parser.add_argument(
+                "--after",
+                type=int,
+                default=0,
+                help="Return records after this sequence (default: 0).",
+            )
+            agent_parser.add_argument(
+                "--limit",
+                type=int,
+                default=8,
+                help="Return 1–8 records (default: 8).",
+            )
     configure = app.add_parser(
         "configure", help="Refresh SDK and CLion integration"
     )
@@ -643,6 +660,10 @@ def _execute(args: argparse.Namespace) -> dict:
             client_key=args.client_key,
             timeout=args.timeout,
         ) as agent:
+            if args.agent_command == "logs":
+                return agent.logs(
+                    after=args.after, limit=args.limit
+                ).model_dump()
             return agent.status().model_dump()
     if args.command == "firmware":
         from symbian.emulator.configuration import (

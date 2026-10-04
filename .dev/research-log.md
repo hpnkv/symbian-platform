@@ -1,5 +1,19 @@
 # Research log
 
+2026-10-04: The first logs slice retains four service-local event codes after
+TLS authentication: authenticated session, status read, rejected frame and
+session closed. The ring is fixed at 32 records and lives on the existing
+single worker; its sequence cursor reports an overwrite gap rather than
+silently presenting a complete history. Native host tests covered cursor
+rollover and malformed request bodies. An authenticated Dynarmic emulator
+session filled the ring and received `gap=true`, while both CPU backends read
+events after reconnect. The host model preserves an unknown numeric event
+code in a synthetic mutual-TLS response. Open questions: add a local IPC
+producer for SDK-owned applications, decide retention/privacy policy and
+measure phone memory; any live-follow stream needs credits, cancellation and
+gap events. This ring does not collect Symbian OS logs or justify broader
+read permissions.
+
 2026-10-04: Linking `Symbian::Display` into the resident agent added an eighth
 original DLL dependency (`hal.dso`). The first app ELF had eight DT_NEEDED
 entries but its project manifest listed seven import proxies, so E32

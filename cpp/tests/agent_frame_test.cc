@@ -12,6 +12,7 @@
 #include "symbian/agent/control.h"
 #include "symbian/agent/frame.h"
 #include "symbian/agent/guest_control.h"
+#include "symbian/agent/guest_log.h"
 #include "symbian/status/json_codec.h"
 
 namespace {
@@ -199,6 +200,68 @@ TEST(AgentFrame, GuestStatusIncludesOnlyAvailableNativeSnapshots) {
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_EQ(parsed->body["display"]["width_pixels"], 640);
   EXPECT_EQ(parsed->body["display"]["height_pixels"], 360);
+  snapshot.logs_available = true;
+  encoded = symbian::agent::PackGuestResult(request, snapshot);
+  ASSERT_TRUE(encoded.ok()) << encoded.status();
+  parsed = symbian::agent::ParseControl(*encoded);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_EQ(parsed->body["capabilities"],
+            nlohmann::json::array({"status", "logs"}));
+}
+
+TEST(AgentFrame, GuestLogCursorReportsOverwrittenRecords) {
+  symbian::agent::AgentLogRing ring;
+  for (int index = 0; index < 40; ++index) {
+    ring.Append(symbian::agent::AgentLogCode::kStatusRead);
+  }
+  auto first = ring.ReadAfter(0, 8);
+  ASSERT_TRUE(first.ok()) << first.status();
+  EXPECT_TRUE(first->gap);
+  ASSERT_EQ(first->count, 8);
+  EXPECT_EQ(first->records[0].sequence, 9);
+  EXPECT_EQ(first->next_cursor, 16);
+  auto second = ring.ReadAfter(first->next_cursor, 8);
+  ASSERT_TRUE(second.ok()) << second.status();
+  EXPECT_FALSE(second->gap);
+  EXPECT_EQ(second->records[0].sequence, 17);
+  auto current = ring.ReadAfter(40, 8);
+  ASSERT_TRUE(current.ok()) << current.status();
+  EXPECT_EQ(current->count, 0);
+  EXPECT_EQ(current->next_cursor, 40);
+  EXPECT_FALSE(ring.ReadAfter(0, 0).ok());
+}
+
+TEST(AgentFrame, GuestLogRequestAndResultRoundTrip) {
+  symbian::agent::ControlMessage request;
+  request.request_id = 21;
+  request.kind = symbian::agent::ControlKind::kLogs;
+  request.body = {{"after", 4}, {"limit", 2}};
+  auto encoded = symbian::agent::PackControl(request);
+  ASSERT_TRUE(encoded.ok()) << encoded.status();
+  auto guest = symbian::agent::ParseGuestControl(*encoded);
+  ASSERT_TRUE(guest.ok()) << guest.status();
+  EXPECT_EQ(guest->kind, 6);
+  EXPECT_EQ(guest->log_after, 4);
+  EXPECT_EQ(guest->log_limit, 2);
+  symbian::agent::AgentLogRing ring;
+  for (int index = 0; index < 6; ++index) {
+    ring.Append(symbian::agent::AgentLogCode::kStatusRead);
+  }
+  auto page = ring.ReadAfter(guest->log_after, guest->log_limit);
+  ASSERT_TRUE(page.ok()) << page.status();
+  auto result = symbian::agent::PackGuestLogResult(*guest, *page);
+  ASSERT_TRUE(result.ok()) << result.status();
+  auto parsed = symbian::agent::ParseControl(*result);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_EQ(parsed->body["records"].size(), 2);
+  EXPECT_EQ(parsed->body["records"][0]["sequence"], 5);
+  EXPECT_EQ(parsed->body["records"][0]["code"], 2);
+  EXPECT_EQ(parsed->body["next_cursor"], 6);
+  EXPECT_EQ(parsed->body["gap"], false);
+  request.body = {{"after", 4}};
+  encoded = symbian::agent::PackControl(request);
+  ASSERT_TRUE(encoded.ok()) << encoded.status();
+  EXPECT_FALSE(symbian::agent::ParseGuestControl(*encoded).ok());
 }
 
 TEST(AgentFrame, GuestReadOnlyRejectsMalformedAndExcessiveInput) {

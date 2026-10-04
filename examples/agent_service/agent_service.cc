@@ -7,12 +7,15 @@
 #include <array>
 #include <chrono>
 #include <cstdint>
+#include <memory>
 #include <span>
+#include <string>
 #include <string_view>
 #include <utility>
 
 #include "agent_certificates.h"
 #include "symbian/agent/guest_control.h"
+#include "symbian/agent/guest_log.h"
 #include "symbian/api/connectivity/active_tcp_listener.h"
 #include "symbian/api/connectivity/tls_server.h"
 #include "symbian/api/display/display.h"
@@ -68,6 +71,7 @@ bool WriteExactly(TlsServer& server, std::span<const std::uint8_t> input,
 
 symbian::agent::GuestStatusSnapshot ReadStatusSnapshot() {
   symbian::agent::GuestStatusSnapshot snapshot;
+  snapshot.logs_available = true;
   auto tick = symbian::api::system::ReadTickCounter();
   if (tick.ok() && tick->period.count() > 0) {
     snapshot.tick = symbian::agent::GuestTickSnapshot{
@@ -82,13 +86,20 @@ symbian::agent::GuestStatusSnapshot ReadStatusSnapshot() {
   return snapshot;
 }
 
-void Serve(TcpClient client) {
+void Serve(TcpClient client, symbian::agent::AgentLogRing& log) {
   auto server =
       TlsServer::Create(k_server_cert, k_server_key, k_server_cert,
                         symbian::api::connectivity::TlsVersion::kTls13);
   if (!server.ok() || !server->Accept(std::move(client), 10s).ok()) {
     return;
   }
+  log.Append(symbian::agent::AgentLogCode::kAuthenticated);
+
+  struct CloseLog {
+    symbian::agent::AgentLogRing& log;
+
+    ~CloseLog() { log.Append(symbian::agent::AgentLogCode::kSessionClosed); }
+  } close_log{log};
 
   for (std::size_t request_index = 0;
        request_index < kMaximumRequestsPerConnection; ++request_index) {
@@ -102,6 +113,7 @@ void Serve(TcpClient client) {
                                  (static_cast<std::uint32_t>(prefix[2]) << 8) |
                                  static_cast<std::uint32_t>(prefix[3]);
     if (length == 0 || length > kMaximumFrame) {
+      log.Append(symbian::agent::AgentLogCode::kRejectedFrame);
       return;
     }
     std::array<std::uint8_t, kMaximumFrame> payload{};
@@ -111,10 +123,21 @@ void Serve(TcpClient client) {
     auto request = symbian::agent::ParseGuestControl(std::string_view(
         reinterpret_cast<const char*>(payload.data()), length));
     if (!request.ok()) {
+      log.Append(symbian::agent::AgentLogCode::kRejectedFrame);
       return;
     }
-    auto response =
-        symbian::agent::PackGuestResult(*request, ReadStatusSnapshot());
+    absl::StatusOr<std::string> response =
+        absl::InvalidArgumentError("Invalid agent operation");
+    if (request->kind == 6) {
+      auto page = log.ReadAfter(request->log_after, request->log_limit);
+      if (!page.ok()) {
+        return;
+      }
+      response = symbian::agent::PackGuestLogResult(*request, *page);
+    } else {
+      response =
+          symbian::agent::PackGuestResult(*request, ReadStatusSnapshot());
+    }
     if (!response.ok()) {
       return;
     }
@@ -131,6 +154,9 @@ void Serve(TcpClient client) {
                       response->size()),
             deadline)) {
       return;
+    }
+    if (request->kind == 2) {
+      log.Append(symbian::agent::AgentLogCode::kStatusRead);
     }
   }
 }
@@ -152,13 +178,17 @@ class AgentService final
     if (result.ok()) {
       // The bounded queue closes a rejected client through its captured owner.
       worker_.PostFiber(
-          [client = std::move(*result)]() mutable { Serve(std::move(client)); },
+          [client = std::move(*result), log = log_]() mutable {
+            Serve(std::move(client), *log);
+          },
           kTlsWorkerStackBytes);
     }
     listener_.AcceptNext();
   }
 
  private:
+  std::shared_ptr<symbian::agent::AgentLogRing> log_ =
+      std::make_shared<symbian::agent::AgentLogRing>();
   symbian::concurrency::WorkerExecutor worker_{4};
   symbian::api::connectivity::ActiveTcpListener listener_;
 };
