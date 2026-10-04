@@ -8,6 +8,7 @@ import ssl
 import subprocess
 import tempfile
 import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -86,12 +87,16 @@ def guest_binaries(tmp_path_factory):
     for version in (12, 13):
         for mode in (0, 1, 2, 3):
             clients[(version, mode)] = build_client(sdk, build, version, mode)
+        for mode in (0, 1):
+            clients[("server", version, mode)] = build_client(
+                sdk, build, version, mode, ordinal=7, port=39098
+            )
     return dll_build / "mbedcrypto_probe.dll", clients
 
 
-def build_client(sdk, build, version, mode):
+def build_client(sdk, build, version, mode, ordinal=6, port=39095):
     """Builds one normal E32 consumer of the DLL's TLS export."""
-    project = build / f"client-{version}-{mode}"
+    project = build / f"client-{ordinal}-{version}-{mode}"
     shutil.copytree(ROOT / "examples/runtime_probe", project)
     (project / "probe.cc").write_text(
         "#include <e32std.h>\n"
@@ -101,9 +106,9 @@ def build_client(sdk, build, version, mode):
         "  TInt loaded = library.Load(KDll, KNullDesC);\n"
         "  if (loaded != KErrNone) return -210 + loaded;\n"
         "  using Probe = int (*)(int, int, int);\n"
-        "  auto probe = reinterpret_cast<Probe>(library.Lookup(6));\n"
+        f"  auto probe = reinterpret_cast<Probe>(library.Lookup({ordinal}));\n"
         "  int result = probe == nullptr ? -211 : "
-        f"probe(39095, {version}, {mode});\n"
+        f"probe({port}, {version}, {mode});\n"
         "  library.Close();\n"
         "  return result;\n"
         "}\n"
@@ -123,7 +128,7 @@ def build_client(sdk, build, version, mode):
     presets.write_text(json.dumps(data))
     report = toolchain.build(
         project,
-        build / f"build-{version}-{mode}",
+        build / f"build-{ordinal}-{version}-{mode}",
         str(sdk.compiler),
         str(sdk.linker),
         architecture="armv6",
@@ -141,6 +146,7 @@ def test_authenticated_guest_tls(guest_binaries, tmp_path, version, mode):
         golden / "data/drives/z/rm-807/sys/bin/euser.dll": EUSER_808,
     }
     assert {path: _digest(path) for path in pinned} == pinned
+
     instance = tmp_path / "instance"
     shutil.copytree(golden, instance)
     guest_bin = instance / "data/drives/rm-807/c/sys/bin"
@@ -227,4 +233,100 @@ def test_authenticated_guest_tls(guest_binaries, tmp_path, version, mode):
         assert results == [b"H"]
     else:
         assert len(results) == 1 and isinstance(results[0], ssl.SSLError)
+    assert {path: _digest(path) for path in pinned} == pinned
+
+
+@pytest.mark.parametrize("version", [12, 13])
+@pytest.mark.parametrize("mode", [0, 1])
+def test_guest_mutual_tls_listener(guest_binaries, tmp_path, version, mode):
+    """Authenticates an inbound host and rejects a missing client cert."""
+    golden = ROOT / ".symbian/instances/delight-import-01"
+    pinned = {
+        golden / "data/roms/rm-807/SYM.ROM": ROM_808,
+        golden / "data/drives/z/rm-807/sys/bin/euser.dll": EUSER_808,
+    }
+    assert {path: _digest(path) for path in pinned} == pinned
+    instance = tmp_path / "instance"
+    shutil.copytree(golden, instance)
+    guest_bin = instance / "data/drives/rm-807/c/sys/bin"
+    guest_bin.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(guest_binaries[0], guest_bin / "mbedcrypto_probe.dll")
+    shutil.copyfile(
+        guest_binaries[1][("server", version, mode)],
+        guest_bin / "runtime_probe.exe",
+    )
+    (instance / "config.yml").write_text(
+        "data-storage: data\ncpu: dynarmic\ndevice: 0\nlanguage: 1\n"
+        "enable-gdb-stub: false\nlog-svc: true\n"
+    )
+    context = ssl.create_default_context(
+        ssl.Purpose.SERVER_AUTH, cafile=str(CERTIFICATES / "server-cert.pem")
+    )
+    exact_version = (
+        ssl.TLSVersion.TLSv1_2 if version == 12 else ssl.TLSVersion.TLSv1_3
+    )
+    context.minimum_version = exact_version
+    context.maximum_version = exact_version
+    if mode == 0:
+        context.load_cert_chain(
+            CERTIFICATES / "server-cert.pem",
+            CERTIFICATES / "server-key.pem",
+        )
+    executable = ROOT / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+    with tempfile.TemporaryDirectory(
+        prefix="native-mtls-", dir="/tmp"
+    ) as private:
+        control = Control(Path(private) / "control.sock")
+        env = dict(os.environ)
+        env.update(
+            EKA2L1_DATA_ROOT=str(instance),
+            EKA2L1_EXPERIMENTAL_SVC_PROFILE="rm807-113.010.1508",
+            EKA2L1_RESEARCH_CONTROL_SOCKET=str(control.endpoint),
+            **background_environment(),
+        )
+        with (tmp_path / "frontend.log").open("w") as log:
+            process = subprocess.Popen(
+                [
+                    executable_for_session(executable, Path(private)),
+                    "--device",
+                    "RM-807",
+                    "--run",
+                    "C:\\sys\\bin\\runtime_probe.exe",
+                ],
+                env=env,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+            )
+            try:
+                deadline = time.monotonic() + 25
+                while True:
+                    try:
+                        connection = socket.create_connection(
+                            ("127.0.0.1", 39098), timeout=1
+                        )
+                        break
+                    except ConnectionRefusedError:
+                        if time.monotonic() >= deadline:
+                            raise
+                        time.sleep(0.05)
+                with connection:
+                    try:
+                        with context.wrap_socket(
+                            connection, server_hostname="sdk-test"
+                        ) as tls:
+                            tls.settimeout(5)
+                            tls.sendall(b"H")
+                            reply = tls.recv(1)
+                    except OSError:
+                        reply = b""
+                assert (reply == b"S") == (mode == 0)
+                assert process.wait(timeout=20) == 0
+                exits = control.exit_report()["process_exits"]
+                assert len(exits) == 1
+                assert exits[0]["reason"] == 0, (
+                    exits,
+                    (tmp_path / "frontend.log").read_text()[-4000:],
+                )
+            finally:
+                _stop(process)
     assert {path: _digest(path) for path in pinned} == pinned

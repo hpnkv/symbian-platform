@@ -41,8 +41,11 @@ path checks, package placement and exact current test evidence.
 The installed archives compile TLS 1.2 and 1.3. In a patched, disposable
 RM-807 emulator instance, a research DLL using native `RSocket` completed
 authenticated client handshakes and exchanged application data with a local
-server using each protocol. Wrong hostname and untrusted certificate controls
-failed verification. The opt-in entropy adapter and emulator patch are not
+server using each protocol. Wrong hostname, untrusted and expired certificate
+controls failed verification. A separate inbound fixture also required a
+client certificate for TLS 1.2/1.3. Both peers in that fixture share one local
+test certificate, so it is a transport check rather than a pairing design.
+The opt-in entropy adapter and emulator patch are not
 the default SDK configuration; cancellation, listener ownership and a
 physical-device result remain open. Follow the
 [development status](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md)

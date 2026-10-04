@@ -32,6 +32,15 @@ extern "C" int RuntimeMain() {
   if (!client->Send(response).ok()) {
     return -223;
   }
+  auto stalled = client->ReceiveFor(request, std::chrono::milliseconds(50));
+  if (stalled.ok() ||
+      stalled.status().code() != absl::StatusCode::kDeadlineExceeded) {
+    return -227;
+  }
+  const auto resumed = client->ReceiveFor(request, std::chrono::seconds(2));
+  if (!resumed.ok() || *resumed != 1 || request[0] != 'R') {
+    return -228;
+  }
   auto idle = TcpListener::ListenIpv4({127, 0, 0, 1}, 39097);
   if (!idle.ok()) {
     return -224;

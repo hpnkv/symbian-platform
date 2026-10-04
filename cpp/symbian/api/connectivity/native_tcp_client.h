@@ -13,9 +13,15 @@ extern "C" int SymbianDeviceTcpConnect(unsigned address, unsigned port,
                                        NativeTcpClient** output);
 extern "C" int SymbianDeviceTcpSend(NativeTcpClient* client,
                                     const unsigned char* bytes, int length);
+extern "C" int SymbianDeviceTcpSendFor(NativeTcpClient* client,
+                                       const unsigned char* bytes, int length,
+                                       int milliseconds);
 extern "C" int SymbianDeviceTcpReceive(NativeTcpClient* client,
                                        unsigned char* bytes, int capacity,
                                        int* received);
+extern "C" int SymbianDeviceTcpReceiveFor(NativeTcpClient* client,
+                                          unsigned char* bytes, int capacity,
+                                          int milliseconds, int* received);
 extern "C" void SymbianDeviceTcpClose(NativeTcpClient* client);
 extern "C" int SymbianDeviceTcpListen(unsigned address, unsigned port,
                                       NativeTcpListener** output);

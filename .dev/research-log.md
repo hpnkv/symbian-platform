@@ -1,5 +1,36 @@
 # Research log
 
+### 2026-10-04 — inbound authenticated TLS probe
+
+An opt-in DLL now accepts one native RSocket stream and runs the Mbed TLS
+server path with `MBEDTLS_SSL_VERIFY_REQUIRED`. A local Python/OpenSSL client
+verified the guest's fixture certificate, presented the same fixture as a
+client certificate and exchanged one application byte in TLS 1.2 and 1.3.
+When it omitted the client certificate, the guest observed handshake failure
+and the host connection reset. All twelve outbound/inbound protocol and
+certificate controls passed on the disposable emulator.
+
+This fixture uses one self-signed certificate and private key on both peers
+to isolate transport and verification mechanics. It does not establish
+distinct host/device identities, secure key generation/storage, handset-visible
+pairing, pin rotation or session authorization. The service should provision
+separate identities under a visible pairing action and reject a repeated
+fixture in any release configuration. The current server is a one-connection
+research DLL; it does not meet the resident service or idle behavior gate.
+
+### 2026-10-04 — connected request deadlines
+
+Native `RSocket::Send` and `RecvOneOrMore` requests can share the same
+`RTimer` wait/cancel/drain pattern as accept on one worker thread. After a
+50 ms receive timeout and `CancelRecv`, the same accepted socket received a
+later byte in the patched RM-807 emulator. This bounds the lifetime of the
+caller-owned descriptor buffer. Send timeout is compiled but still needs an
+emulator case that can hold the native send pending; a tiny loopback send may
+finish before any deadline. A worker deadline does not replace the planned
+active-object TLS transport: the session scheduler still needs cancellation
+requests, terminal status publication and event-thread ownership without
+polling while idle.
+
 ### 2026-10-04 — inbound RSocket and accept cancellation
 
 The original ESOCK `RSocket::Bind`, `Listen`, blank `Open`, `Accept` and

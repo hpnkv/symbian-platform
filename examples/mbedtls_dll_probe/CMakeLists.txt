@@ -25,6 +25,10 @@ string(REPLACE "\n" "\\n\"\n\"" expired_certificate_c
   "${expired_certificate}")
 file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/test_certificate.h"
   "static const char kExpiredCertificate[] = \"${expired_certificate_c}\";\n")
+file(READ "${MBEDTLS_SOURCE}/tests/fixtures/server-key.pem" test_private_key)
+string(REPLACE "\n" "\\n\"\n\"" test_private_key_c "${test_private_key}")
+file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/test_certificate.h"
+  "static const char kTestPrivateKey[] = \"${test_private_key_c}\";\n")
 
 include(SymbianApp)
 option(SYMBIAN_RM807_ENTROPY_PROBE
@@ -41,7 +45,7 @@ if(SYMBIAN_RM807_SOCKET_PROBE)
   list(APPEND probe_sources socket_probe.c)
 endif()
 if(SYMBIAN_RM807_TLS_HANDSHAKE_PROBE)
-  list(APPEND probe_sources tls_handshake.cc)
+  list(APPEND probe_sources tls_handshake.cc tls_server.cc)
 endif()
 set(probe_exports MbedSha256 MbedUtcProbe MbedVerifyCert
   MbedSocketCancelProbe MbedEntropyFailureProbe)
@@ -49,7 +53,7 @@ if(SYMBIAN_RM807_SOCKET_PROBE)
   list(APPEND probe_exports MbedConnectedSocketProbe)
 endif()
 if(SYMBIAN_RM807_TLS_HANDSHAKE_PROBE)
-  list(APPEND probe_exports MbedNativeTlsHandshakeProbe)
+  list(APPEND probe_exports MbedNativeTlsHandshakeProbe MbedNativeTlsServerProbe)
 endif()
 set(probe_export_definition "${CMAKE_CURRENT_SOURCE_DIR}/exports.def")
 if(SYMBIAN_RM807_SOCKET_PROBE)
@@ -108,5 +112,5 @@ if(SYMBIAN_RM807_SOCKET_PROBE)
 endif()
 if(SYMBIAN_RM807_TLS_HANDSHAKE_PROBE)
   target_link_options(mbedcrypto_probe_elf PRIVATE
-    --undefined=MbedNativeTlsHandshakeProbe)
+    --undefined=MbedNativeTlsHandshakeProbe --undefined=MbedNativeTlsServerProbe)
 endif()

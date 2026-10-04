@@ -219,6 +219,8 @@ def test_native_tcp_listener_accepts_host_and_retains_client(
                             client.settimeout(5)
                             client.sendall(b"Q")
                             assert client.recv(1) == b"A"
+                            time.sleep(0.15)
+                            client.sendall(b"R")
                         break
                     except ConnectionRefusedError:
                         if time.monotonic() >= deadline:

@@ -5,6 +5,7 @@
 #define SYMBIAN_API_CONNECTIVITY_TCP_CLIENT_H_
 
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -47,12 +48,31 @@ class TcpClient {
   absl::Status Send(std::span<const std::uint8_t> bytes);
 
   /**
+   * @brief Send at most 32 KiB with a 0–60 second deadline.
+   *
+   * On expiry the native send request is cancelled and drained before the
+   * caller's buffer can be released. Delivery may already have occurred;
+   * callers must use an application acknowledgement for exactly-once work.
+   */
+  absl::Status SendFor(std::span<const std::uint8_t> bytes,
+                       std::chrono::milliseconds timeout);
+
+  /**
    * @brief Receive at least one byte into a buffer of at most 32 KiB.
    *
    * The returned count is the number of bytes written. An empty span returns
    * zero. Native EOF and disconnect results are returned as statuses.
    */
   absl::StatusOr<std::size_t> Receive(std::span<std::uint8_t> bytes);
+
+  /**
+   * @brief Receive at least one byte with a 0–60 second deadline.
+   *
+   * A timeout cancels and drains the pending native read. A later read can
+   * reuse the same stream; no abandoned callback may write into @p bytes.
+   */
+  absl::StatusOr<std::size_t> ReceiveFor(std::span<std::uint8_t> bytes,
+                                         std::chrono::milliseconds timeout);
 
  private:
   friend class TcpListener;

@@ -69,7 +69,11 @@ key pinning remains possible without a CA bundle.
 Authenticated host-side TLS 1.2/1.3 tests pass. The opt-in guest TLS DLL
 checks both protocol versions with a local OpenSSL server, peer verification,
 application data, wrong-host, untrusted-certificate and expired-certificate
-rejection in each protocol version. A C++ owner with
+rejection in each protocol version. A separate research DLL listener completed
+TLS 1.2/1.3 server handshakes with a presented client certificate and rejected
+clients without one. That fixture uses the same local self-signed certificate
+and key on both sides, so it tests verification mechanics and does not provide
+agent pairing identity. A C++ owner with
 cancellable operations and a physical Nokia 808 TLS connection remain gates.
 
 An opt-in RM-807 emulator research probe now reaches Belle EUSER's secure

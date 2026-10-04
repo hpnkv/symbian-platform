@@ -851,6 +851,8 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                     "_ZN7RSocket6ListenEj",
                     "_ZN7RSocket6AcceptERS_R14TRequestStatus",
                     "_ZN7RSocket12CancelAcceptEv",
+                    "_ZN7RSocket10CancelRecvEv",
+                    "_ZN7RSocket10CancelSendEv",
                     "_ZN7RSocket4SendERK6TDesC8jR14TRequestStatus",
                     "_ZN7RSocket13RecvOneOrMoreER5TDes8jR14TRequestStatus",
                     "_ZN7RSocket5CloseEv",

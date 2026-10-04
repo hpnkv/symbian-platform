@@ -34,7 +34,11 @@ if (opened.ok()) {
 buffers up to 32 KiB and return Abseil statuses for native errors. An empty
 send succeeds; an empty receive returns zero. Keep the client, calls and
 destruction on the same worker thread. Each call waits for a native request;
-the client still has no in-flight cancellation or deadline.
+`SendFor` and `ReceiveFor` add 0–60 second deadlines. On expiry they cancel
+and drain the native request before returning a deadline status. In the
+emulator, a client reused its socket after a timed-out read and received the
+host's later byte. A send can already be delivered before its deadline fires;
+the application protocol must acknowledge work when delivery matters.
 
 ## Accept one host connection
 
@@ -56,7 +60,7 @@ native accept on expiry, and returns a deadline-exceeded status. The same
 listener can accept again afterwards. The accepted client keeps the shared
 socket-server session alive even if the listener closes. Both owners remain
 synchronous and belong on one worker thread; the resident agent still needs
-an active-object listener and a cancellable TLS read/write owner before it
+an active-object listener and a TLS owner before it
 can serve sessions while sleeping when idle.
 
 The implementation keeps the original `RSocketServ`, `RSocket`, `TInetAddr`

@@ -51,6 +51,36 @@ int OpenSession(NativeTcpSession** output) {
   return KErrNone;
 }
 
+int WaitForSocketRequest(RSocket& socket, TRequestStatus& request,
+                         int milliseconds, void (RSocket::*cancel)()) {
+  if (milliseconds < 0) {
+    User::WaitForRequest(request);
+    return request.Int();
+  }
+  RTimer timer;
+  const TInt timer_result = timer.CreateLocal();
+  if (timer_result != KErrNone) {
+    (socket.*cancel)();
+    User::WaitForRequest(request);
+    return timer_result;
+  }
+  TRequestStatus deadline;
+  timer.After(deadline, TTimeIntervalMicroSeconds32(milliseconds * 1000));
+  User::WaitForRequest(request, deadline);
+  TInt result = request.Int();
+  if (result == KRequestPending) {
+    (socket.*cancel)();
+    User::WaitForRequest(request);
+    result = KErrTimedOut;
+  }
+  timer.Cancel();
+  if (deadline.Int() == KRequestPending) {
+    User::WaitForRequest(deadline);
+  }
+  timer.Close();
+  return result;
+}
+
 }  // namespace
 
 extern "C" void SymbianDeviceTcpClose(NativeTcpClient* client) {
@@ -211,30 +241,45 @@ extern "C" int SymbianDeviceTcpAcceptFor(NativeTcpListener* listener,
 
 extern "C" int SymbianDeviceTcpSend(NativeTcpClient* client,
                                     const unsigned char* bytes, int length) {
-  if (client == nullptr || bytes == nullptr || length <= 0 || length > 32768) {
+  return SymbianDeviceTcpSendFor(client, bytes, length, -1);
+}
+
+extern "C" int SymbianDeviceTcpSendFor(NativeTcpClient* client,
+                                       const unsigned char* bytes, int length,
+                                       int milliseconds) {
+  if (client == nullptr || bytes == nullptr || length <= 0 || length > 32768 ||
+      milliseconds < -1 || milliseconds > 60000) {
     return KErrArgument;
   }
   TPtrC8 data(bytes, length);
   TRequestStatus request;
   client->socket.Send(data, 0, request);
-  User::WaitForRequest(request);
-  return request.Int();
+  return WaitForSocketRequest(client->socket, request, milliseconds,
+                              &RSocket::CancelSend);
 }
 
 extern "C" int SymbianDeviceTcpReceive(NativeTcpClient* client,
                                        unsigned char* bytes, int capacity,
                                        int* received) {
+  return SymbianDeviceTcpReceiveFor(client, bytes, capacity, -1, received);
+}
+
+extern "C" int SymbianDeviceTcpReceiveFor(NativeTcpClient* client,
+                                          unsigned char* bytes, int capacity,
+                                          int milliseconds, int* received) {
   if (client == nullptr || bytes == nullptr || capacity <= 0 ||
-      capacity > 32768 || received == nullptr) {
+      capacity > 32768 || received == nullptr || milliseconds < -1 ||
+      milliseconds > 60000) {
     return KErrArgument;
   }
   *received = 0;
   TPtr8 data(bytes, 0, capacity);
   TRequestStatus request;
   client->socket.RecvOneOrMore(data, 0, request);
-  User::WaitForRequest(request);
-  if (request.Int() != KErrNone) {
-    return request.Int();
+  const TInt result = WaitForSocketRequest(client->socket, request,
+                                           milliseconds, &RSocket::CancelRecv);
+  if (result != KErrNone) {
+    return result;
   }
   *received = data.Length();
   return KErrNone;

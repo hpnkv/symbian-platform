@@ -1,5 +1,38 @@
 # Status
 
+2026-10-04 inbound authenticated TLS research milestone: the opt-in E32
+research DLL now has a manually addressed native RSocket listener that owns
+one Mbed TLS server handshake. In a disposable pinned RM-807 Dynarmic
+instance, local host clients completed TLS 1.2 and TLS 1.3 with server
+certificate verification and a presented client certificate, then exchanged
+`H`/`S`. A host that omitted its client certificate received a rejected/reset
+connection for each protocol, while the guest exit reason confirmed the
+handshake failed. Together with the outbound controls, the full opt-in TLS
+matrix passed (`12 passed in 162.83 seconds`). The two peers use the same
+self-signed local test certificate and key; this proves verification mechanics
+for a fixture, not production identity, pairing or key custody. The DLL is a
+one-connection research probe. Resident start/stop, active-object idle
+listener, typed protocol, session grants, C++ TLS owner and physical Nokia
+808 results remain open.
+
+2026-10-04 connected native I/O deadline milestone: `TcpClient::SendFor` and
+`ReceiveFor` now issue Symbian RSocket requests with an RTimer deadline,
+cancel the pending native send/receive, and drain completion before releasing
+caller buffers. They accept 0–60 second deadlines and return typed
+deadline-exceeded statuses. A disposable RM-807 Dynarmic run held one accepted
+stream open, timed out a 50 ms receive, then delivered and read the later
+host byte on that same stream; two accept deadline cycles also completed
+(`1 passed` targeted opt-in guest test). ESOCK `CancelRecv` and `CancelSend`
+were added through preserved DEF ordinals. This proves a bounded synchronous
+worker path in the emulator, not a nonblocking active-object event loop or
+Nokia 808 device behavior. A fresh `.symbian/timed-tls-sdk-20261004` export
+contains the new header and 15 selected ESOCK ordinals for both ARM profiles.
+All four opt-in guest connectivity tests passed against it (29.00 seconds).
+Strict MkDocs/two-Doxygen, Black, Ruff and Clang Format checks passed. The full
+outbound/inbound TLS matrix also passed against this clean export (`12 passed
+in 170.49 seconds`). The standard DLL link regression passed separately
+(`1 passed, 7 opt-in skips`); no default TLS/entropy behavior was switched on.
+
 2026-10-04 inbound native TCP milestone: `Symbian::Connectivity` now exports
 move-only `TcpListener::ListenIpv4`, `Accept` and `AcceptFor` alongside
 `TcpClient`. The listener binds an explicit IPv4 address with backlog one;
