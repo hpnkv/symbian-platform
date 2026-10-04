@@ -1,5 +1,17 @@
 # Research log
 
+2026-10-04: The resident service had only been started by a dedicated Pytest
+harness. An attempt through the normal `symbian app run` path failed at CMake
+because the example preset's optional `SYMBIAN_SDK_PREFIX` environment value
+was empty, despite the launcher selecting an installed SDK compiler. The
+example now derives the prefix from that compiler in this case. The normal
+run then served separate authenticated CLI hello/status processes. Ctrl-C
+reaped the owned emulator, but only after SIGTERM exceeded the two-second
+grace and the launcher sent SIGKILL (`frontend_exit=-9`). Open question:
+provide an in-guest local stop/disable path and measure shutdown cleanup;
+reaping a disposable emulator is not evidence that the service stops cleanly
+on a phone. No startup registration or persistent listener was added.
+
 2026-10-04: The previous resident service accepted status or logs as the
 first authenticated frame, leaving no explicit boundary for version and
 limit agreement. A small hello result now gives version 1, the 4 KiB control

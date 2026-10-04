@@ -16,7 +16,8 @@ its application-linked Mbed TLS port.
 
     Use the [build guide](guides/building.md),
     [firmware guide](guides/firmware.md) and
-    [emulator controls](guides/emulator-control.md).
+    [emulator controls](guides/emulator-control.md). Try the
+    [read-only research agent](guides/agent-emulator.md) after setup.
 
 -   :material-library: **Use the SDK**
 
@@ -34,8 +35,9 @@ its application-linked Mbed TLS port.
 !!! note "Evidence boundary"
 
     Emulator results and ARM builds establish bounded development behavior.
-    They do not prove compatibility with a Nokia 808. Guest TLS handshakes,
-    secure entropy and physical-device validation remain open.
+    They do not prove compatibility with a Nokia 808. Authenticated TLS
+    handshakes pass in the emulator; phone entropy, identity and pairing
+    remain open.
 
 The [project status](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md)
 and [research log](https://github.com/hpnkv/symbian-platform/blob/main/.dev/research-log.md)

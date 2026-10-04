@@ -117,6 +117,7 @@ nav:
       - Emulator control: guides/emulator-control.md
       - Package an application: guides/packaging.md
       - TLS and CA bundles: guides/tls.md
+      - Run the research agent: guides/agent-emulator.md
       - Desktop console: guides/console.md
       - Connect a device: guides/device.md
       - CLion:

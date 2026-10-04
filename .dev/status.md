@@ -1,5 +1,19 @@
 # Status
 
+2026-10-04 ordinary emulator launch for the resident example: the research
+project now resolves its installed SDK from the selected compiler when the
+optional preset environment variable is absent. With the active negotiated
+SDK and selected pinned RM-807 fixture, `symbian app run --project
+examples/agent_service` built and launched a private instance. Separate
+`symbian agent hello` and `status` CLI processes authenticated and returned
+version/limits and a native tick/display snapshot. Ctrl-C caused the owned
+launcher to reap the emulator; `launch.json` recorded
+`inputs_unchanged=true` and the frontend process was gone. The emulator did
+not exit within the launcher's two-second terminate grace and was killed
+(`frontend_exit=-9`); this is host cleanup, not an in-guest graceful shutdown.
+The new paced guide is at `doc/docs/guides/agent-emulator.md`. This workflow
+still requires the manually selected fixture and public test identity.
+
 2026-10-04 negotiated resident read-only profile: after mutual TLS, the
 service now requires one hello before status or logs, advertises protocol
 version 1, a 4 KiB control limit, a 16-request connection limit and available

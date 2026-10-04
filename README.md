@@ -35,7 +35,8 @@ instructions; interactive Linux guest runs and debugging remain to be checked.
 | SDK | Native C++ libraries, architecture-specific CMake targets and source provenance | Link components explicitly |
 | Runtime | Selected libc++, allocation, concurrency and device API paths | Bounded guest tests; [details](doc/docs/capabilities/index.md) |
 | Packaging | Native SIS writer, metadata inspection and disposable emulator installation | Phone installation remains a separate gate |
-| TLS | Vendored Mbed TLS 3.4.1 source, static targets and project-local CA bundle packaging | Guest handshakes and secure entropy remain open |
+| TLS | Vendored Mbed TLS 3.4.1 source, static targets and project-local CA bundle packaging | Authenticated TLS 1.2/1.3 passed in the emulator; physical-device trust and entropy remain open |
+| Development agent | Manually started, authenticated read-only status and bounded service logs | Loopback-only emulator research profile; [run the example](doc/docs/guides/agent-emulator.md) |
 | Tools | Python CLI, desktop console, firmware onboarding and emulator controls | Firmware is supplied separately |
 
 An **E32 image** is the executable or DLL format loaded by Symbian. A **SIS
@@ -85,6 +86,7 @@ From there, follow [getting started](doc/docs/getting-started.md) or open the
 | Exercise guest C++ allocation and containers | [Runtime probe](doc/docs/tutorials/runtime-probe.md) |
 | Connect a native Symbian TCP client | [Connectivity API](doc/docs/capabilities/apis/connectivity.md) and [example](examples/connectivity_probe/) |
 | Package a private CA for one app | [TLS and CA bundles](doc/docs/guides/tls.md) |
+| Start the read-only development agent | [Research agent in the emulator](doc/docs/guides/agent-emulator.md) |
 | Prepare firmware for local emulator work | [Firmware guide](doc/docs/guides/firmware.md) |
 | Build and test this repository | [Host build guide](doc/docs/guides/host-build.md) |
 | Prepare a Linux host | [Provisional Linux guide](doc/docs/guides/linux.md) |
@@ -122,10 +124,10 @@ of each dependency and links to its source.
 ## Development status
 
 The supplied RM-807 firmware has supported guarded emulator checks for GUI
-rendering and input, runtime paths, and selected Mbed TLS crypto/X.509 calls.
-An SDK-owned native TCP client also exchanged bytes with a host listener in
-the emulator. Authenticated guest TLS 1.2/1.3 handshakes, supported guest
-entropy, resident-agent network transport and Nokia 808 compatibility remain
-open. See the
+rendering and input, runtime paths, native TCP, and authenticated guest TLS
+1.2/1.3 handshakes. A manually started resident agent answers read-only
+status and log requests over mutual TLS on emulator loopback. Production
+pairing, device identity, local disable controls, physical-device entropy and
+Nokia 808 compatibility remain open. See the
 [status record](.dev/status.md) and [research log](.dev/research-log.md) for
 specific results and unanswered questions.

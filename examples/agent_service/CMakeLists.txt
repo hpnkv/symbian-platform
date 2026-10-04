@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.28)
 project(agent_service LANGUAGES C CXX ASM)
 
+# The ordinary `symbian app run` path selects an SDK compiler without setting
+# the preset's optional SDK prefix environment variable.
+if(NOT SYMBIAN_SDK_PREFIX AND CMAKE_CXX_COMPILER)
+  get_filename_component(sdk_bin "${CMAKE_CXX_COMPILER}" DIRECTORY)
+  get_filename_component(SYMBIAN_SDK_PREFIX "${sdk_bin}/.." ABSOLUTE)
+endif()
 if(NOT EXISTS "${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
   message(FATAL_ERROR "Select an exported Symbian SDK")
 endif()
