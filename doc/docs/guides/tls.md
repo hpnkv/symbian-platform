@@ -38,8 +38,9 @@ path checks, package placement and exact current test evidence.
 
 The installed archives compile TLS 1.2 and 1.3 and selected guest crypto,
 clock and certificate checks run in the emulator. Guest entropy is currently
-fail-closed and connected socket I/O has an unresolved nonblocking-contract
-failure, so an authenticated guest handshake is not yet demonstrated. Do not
+fail-closed; an opt-in emulator patch demonstrates connected nonblocking
+receive and cancellation, but guest `send` still returns `EINVAL`. An
+authenticated guest handshake is not yet demonstrated. Do not
 ship a security claim based on an ARM build or a host handshake. Follow the
 [development status](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md)
 for the next verified gate.

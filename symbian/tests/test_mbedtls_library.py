@@ -3,8 +3,11 @@
 import json
 import os
 import shutil
+import socket
 import subprocess
 import tempfile
+import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -363,3 +366,142 @@ def test_rm807_secure_entropy_executes_in_emulator(
             finally:
                 _stop(process)
                 assert {path: _digest(path) for path in pinned} == pinned
+
+
+@pytest.mark.skipif(
+    not os.environ.get("SYMBIAN_RM807_SOCKET"),
+    reason="Set SYMBIAN_RM807_SOCKET for the patched socket experiment",
+)
+def test_rm807_nonblocking_receive_and_cancel_in_emulator(artifacts, tmp_path):
+    """Checks connected WANT_READ, delayed delivery and cancellation."""
+    source, sdk, _, _ = artifacts
+    root = Path(__file__).parents[2]
+    archive = artifacts[3] / "mbedtls archive" / "libmbedcrypto.a"
+    example = root / "examples/mbedtls_dll_probe"
+    dll_build = tmp_path / "socket DLL"
+    run(
+        [
+            "cmake",
+            "-S",
+            str(example),
+            "-B",
+            str(dll_build),
+            "-G",
+            "Ninja",
+            f"-DCMAKE_TOOLCHAIN_FILE={sdk.prefix}/cmake/symbian-arm.cmake",
+            f"-DSYMBIAN_SDK_PREFIX={sdk.prefix}",
+            f"-DMBEDTLS_SOURCE={source}",
+            f"-DMBEDTLS_ARCHIVE={archive}",
+            "-DSYMBIAN_RM807_SOCKET_PROBE=ON",
+        ],
+        cwd=example,
+    )
+    run(["cmake", "--build", str(dll_build)], cwd=example)
+    project = tmp_path / "client"
+    shutil.copytree(root / "examples/runtime_probe", project)
+    (project / "probe.cc").write_text(
+        "#include <e32std.h>\n"
+        '_LIT(KName, "C:\\\\sys\\\\bin\\\\mbedcrypto_probe.dll");\n'
+        'extern "C" int RuntimeMain() {\n'
+        " RLibrary library;\n"
+        " TInt loaded = library.Load(KName, KNullDesC);\n"
+        " if (loaded != KErrNone) return -160 + loaded;\n"
+        " using Probe = int (*)(int);\n"
+        " auto probe = reinterpret_cast<Probe>(library.Lookup(6));\n"
+        " TInt result = probe == nullptr ? -161 : probe(39093);\n"
+        " library.Close();\n"
+        " return result;\n"
+        "}\n"
+    )
+    proxy = str(sdk.prefix / "proxies/euser/euser.dso")
+    manifest = project / "symbian.toml"
+    manifest.write_text(
+        manifest.read_text().replace(
+            "../../.symbian/runtime-sdk/euser/euser.dso", proxy
+        )
+    )
+    presets = project / "CMakePresets.json"
+    config = json.loads(presets.read_text())
+    variables = config["configurePresets"][0]["cacheVariables"]
+    variables["SYMBIAN_PLATFORM_ROOT"] = str(root)
+    variables["SYMBIAN_IMPORT_PROXIES"] = proxy
+    presets.write_text(json.dumps(config))
+    artifact = toolchain.build(
+        project,
+        tmp_path / "client-build",
+        str(sdk.compiler),
+        str(sdk.linker),
+        architecture="armv6",
+    )["artifact"]
+    golden = root / ".symbian/instances/delight-import-01"
+    pinned = {
+        golden / "data/roms/rm-807/SYM.ROM": ROM_808,
+        golden / "data/drives/z/rm-807/sys/bin/euser.dll": EUSER_808,
+    }
+    assert {path: _digest(path) for path in pinned} == pinned
+    instance = tmp_path / "instance"
+    shutil.copytree(golden, instance)
+    guest_bin = instance / "data/drives/rm-807/c/sys/bin"
+    guest_bin.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(artifact, guest_bin / "runtime_probe.exe")
+    shutil.copyfile(
+        dll_build / "mbedcrypto_probe.dll", guest_bin / "mbedcrypto_probe.dll"
+    )
+    (instance / "config.yml").write_text(
+        "data-storage: data\ncpu: dynarmic\ndevice: 0\nlanguage: 1\n"
+        "enable-gdb-stub: false\nlog-svc: true\n"
+    )
+    results = []
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(("127.0.0.1", 39093))
+        listener.listen(1)
+
+        def deliver():
+            try:
+                listener.settimeout(25)
+                connection, _ = listener.accept()
+                with connection:
+                    time.sleep(0.2)
+                    connection.sendall(b"R")
+                    results.append("delivered")
+            except OSError as error:
+                results.append(str(error))
+
+        sender = threading.Thread(target=deliver)
+        sender.start()
+        executable = root / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+        with tempfile.TemporaryDirectory(
+            prefix="rm807-socket-", dir="/tmp"
+        ) as private:
+            control = Control(Path(private) / "control.sock")
+            env = dict(os.environ)
+            env.update(
+                EKA2L1_DATA_ROOT=str(instance),
+                EKA2L1_EXPERIMENTAL_SVC_PROFILE="rm807-113.010.1508",
+                EKA2L1_RESEARCH_CONTROL_SOCKET=str(control.endpoint),
+                **background_environment(),
+            )
+            with (tmp_path / "frontend.log").open("w") as log:
+                process = subprocess.Popen(
+                    [
+                        executable_for_session(executable, Path(private)),
+                        "--device",
+                        "RM-807",
+                        "--run",
+                        "C:\\sys\\bin\\runtime_probe.exe",
+                    ],
+                    env=env,
+                    stdout=log,
+                    stderr=subprocess.STDOUT,
+                )
+                try:
+                    assert process.wait(timeout=30) == 0
+                    assert (
+                        control.exit_report()["process_exits"][0]["reason"] == 0
+                    )
+                finally:
+                    _stop(process)
+        sender.join(timeout=2)
+    assert results == ["delivered"]
+    assert {path: _digest(path) for path in pinned} == pinned

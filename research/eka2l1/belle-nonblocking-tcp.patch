@@ -1,0 +1,101 @@
+diff --git a/src/emu/services/include/services/internet/protocols/inet.h b/src/emu/services/include/services/internet/protocols/inet.h
+index 91ca086..4b83849 100644
+--- a/src/emu/services/include/services/internet/protocols/inet.h
++++ b/src/emu/services/include/services/internet/protocols/inet.h
+@@ -28,6 +28,7 @@
+ 
+ #include <utils/des.h>
+ 
++#include <atomic>
+ #include <functional>
+ #include <memory>
+ #include <optional>
+@@ -208,6 +209,8 @@ namespace eka2l1::epoc::internet {
+         bool take_available_only_;
+         bool reuse_addr_ = false;
+         bool reuse_addr_changed_ = false;
++        std::atomic<bool> nonblocking_io_{false};
++        std::atomic<int> nonblocking_terminal_error_{0};
+ 
+         std::vector<char> temp_buffer_;
+         epoc::socket::saddress *recv_addr_;
+diff --git a/src/emu/services/src/internet/protocols/socket.cpp b/src/emu/services/src/internet/protocols/socket.cpp
+index 56765de..7523483 100644
+--- a/src/emu/services/src/internet/protocols/socket.cpp
++++ b/src/emu/services/src/internet/protocols/socket.cpp
+@@ -1048,6 +1048,26 @@ namespace eka2l1::epoc::internet {
+         }
+ 
+         const uv_buf_t *buf = reinterpret_cast<const uv_buf_t*>(buf_ptr);
++        if (recv_done_info_.empty()) {
++            if (bytes_read_arg > 0) {
++                if (!stream_data_buffer_) {
++                    stream_data_buffer_ = std::make_unique<common::ring_buffer<char, 0x80000>>();
++                }
++                const auto count = static_cast<std::size_t>(bytes_read_arg);
++                if (stream_data_buffer_->push(buf->base, count) != count) {
++                    nonblocking_terminal_error_.store(epoc::error_overflow);
++                    uv_read_stop(reinterpret_cast<uv_stream_t*>(opaque_handle_));
++                }
++            } else {
++                nonblocking_terminal_error_.store(bytes_read_arg == UV_EOF
++                    ? epoc::error_eof : epoc::error_disconnected);
++                uv_read_stop(reinterpret_cast<uv_stream_t*>(opaque_handle_));
++            }
++            if (!nonblocking_io_.load()) {
++                uv_read_stop(reinterpret_cast<uv_stream_t*>(opaque_handle_));
++            }
++            return;
++        }
+         kernel_system *kern = nullptr;
+ 
+         if (!recv_done_info_.empty()) {
+@@ -1163,7 +1183,7 @@ namespace eka2l1::epoc::internet {
+         bytes_read_ = recv_size;
+         read_dest_ = data;
+         recv_size_ = data_size;
+-        take_available_only_ = false;
++        take_available_only_ = nonblocking_io_.load();
+         receive_done_cb_ = callback;
+         recv_addr_ = addr_ptr;
+ 
+@@ -1204,6 +1224,18 @@ namespace eka2l1::epoc::internet {
+                     return;
+                 }
+             }
++            if (nonblocking_io_.load()) {
++                const int terminal = nonblocking_terminal_error_.load();
++                // ESOCK's KErrWouldBlock is -1000; OpenC maps it to EAGAIN.
++                recv_done_info_.complete(terminal ? terminal : -1000);
++                receive_done_cb_ = nullptr;
++                bytes_read_ = nullptr;
++                read_dest_ = nullptr;
++                if (!terminal) {
++                    looper_->post_task(recv_task_);
++                }
++                return;
++            }
+         }
+         
+         looper_->post_task(recv_task_);
+@@ -1324,6 +1356,20 @@ namespace eka2l1::epoc::internet {
+ 
+     bool inet_socket::set_option(const std::uint32_t option_id, const std::uint32_t option_family,
+         std::uint8_t *buffer, const std::size_t avail_size) {
++        if (option_family == epoc::socket::SOCKET_OPTION_FAMILY_BASE &&
++            protocol_ == INET_TCP_PROTOCOL_ID) {
++            if (option_id == epoc::socket::SOCKET_OPTION_ID_NON_BLOCKING_IO) {
++                if (!stream_data_buffer_) {
++                    stream_data_buffer_ = std::make_unique<common::ring_buffer<char, 0x80000>>();
++                }
++                nonblocking_io_.store(true);
++                return true;
++            }
++            if (option_id == epoc::socket::SOCKET_OPTION_ID_BLOCKING_IO) {
++                nonblocking_io_.store(false);
++                return true;
++            }
++        }
+         if (option_family == INET_INTERFACE_CONTROL_OPT_FAMILY) {
+             switch (option_id) {
+             case INET_ENUM_INTERFACES_OPT: {

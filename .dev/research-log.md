@@ -1,5 +1,29 @@
 # Research log
 
+## 2026-10-04: Connected TCP receive, outbound OpenC blocker
+
+The earlier option-acceptance stub made `fcntl` succeed but left `recv`
+blocked. `research/eka2l1/belle-nonblocking-tcp.patch` now gives the pinned
+EKA2L1 internet TCP socket a background libuv read into its bounded ring,
+returns ESOCK `KErrWouldBlock` (`-1000`) when no bytes are ready, and records
+EOF/overflow as terminal errors. The opt-in guest probe in
+`examples/mbedtls_dll_probe/socket_probe.c` passed on Dynarmic with a local
+listener: empty read mapped to Mbed TLS `WANT_READ`, a delayed `R` arrived,
+and later reads were cancelled. The test verified pinned ROM/EUSER digests.
+The patch uses the existing EKA2L1 512 KiB ring; its memory cost and mode
+switch behavior need further measurement. Dyncom, EOF, overflow and repeated
+connect/disconnect cases remain untested.
+
+A blocking `send(fd, &byte, 1, 0)` and `write(fd, &byte, 1)` both returned
+`EINVAL` in the same connected guest before `fcntl(O_NONBLOCK)`. The host TCP
+listener accepted the connection, but the emulator `socket_socket::send`
+service handler was not entered. This suggests an OpenC or descriptor bridge
+error before the emulator service; that diagnosis is an inference, not a
+located cause. A native `RSocket::Send` probe can distinguish an OpenC wrapper
+problem from a lower ESOCK path. No authenticated TLS handshake or resident
+network service is possible until outbound I/O is verified. The default SDK
+archive remains fail-closed for entropy and does not adopt this patch.
+
 ## 2026-10-04: RM-807 secure-random executive path
 
 The original `genexec.pl` enum gave `EExecMathSecureRandom = 265`, but this

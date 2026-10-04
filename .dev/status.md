@@ -1,5 +1,17 @@
 # Status
 
+2026-10-04 RM-807 emulator TCP receive experiment: a scoped EKA2L1 patch
+implements `KSONonBlockingIO` for internet TCP sockets with a bounded 512 KiB
+receive ring and `KErrWouldBlock` for an empty read. An opt-in E32 DLL test
+using the SDK socket BIO passed on a disposable Dynarmic instance: connected
+empty `recv` produced `MBEDTLS_ERR_SSL_WANT_READ`, a delayed host byte was
+delivered, and a post-cancel call returned `MBEDTLS_ERR_NET_CONN_RESET`
+(`1 passed, 7 deselected`). The pinned ROM and EUSER digests remained intact.
+An outbound one-byte guest `send` or `write` still returned OpenC `EINVAL`
+before the nonblocking option was enabled; no emulator service send request
+was observed. This is a receive-only research result, not a supported TLS
+transport or a guest TLS handshake. Development-agent gate 2 remains open.
+
 2026-10-04 RM-807 emulator secure-random experiment: the SHA-256-pinned
 `euser.dll` export at ordinal 2503 (`Math::RandomL(TDes8&)`) branches to its
 ARM veneer for SVC `0x10A`. A scoped EKA2L1 patch now handles that service

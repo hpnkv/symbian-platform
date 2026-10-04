@@ -29,15 +29,28 @@ file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/test_certificate.h"
 include(SymbianApp)
 option(SYMBIAN_RM807_ENTROPY_PROBE
   "Use the research-only RM-807 executive RNG adapter" OFF)
+option(SYMBIAN_RM807_SOCKET_PROBE
+  "Include the research-only connected receive/cancel probe" OFF)
 set(probe_sources bridge.c)
 if(SYMBIAN_RM807_ENTROPY_PROBE)
   list(APPEND probe_sources sdk_entropy_rm807.cc sdk_entropy_rm807.S)
 endif()
+if(SYMBIAN_RM807_SOCKET_PROBE)
+  list(APPEND probe_sources socket_probe.c)
+endif()
+set(probe_exports MbedSha256 MbedUtcProbe MbedVerifyCert
+  MbedSocketCancelProbe MbedEntropyFailureProbe)
+if(SYMBIAN_RM807_SOCKET_PROBE)
+  list(APPEND probe_exports MbedConnectedSocketProbe)
+endif()
+set(probe_export_definition "${CMAKE_CURRENT_SOURCE_DIR}/exports.def")
+if(SYMBIAN_RM807_SOCKET_PROBE)
+  set(probe_export_definition "${CMAKE_CURRENT_SOURCE_DIR}/exports-socket.def")
+endif()
 symbian_add_dynamic_library(mbedcrypto_probe
   SOURCES ${probe_sources}
-  EXPORT_DEFINITION exports.def UID3 0xE0000D18
-  IMPORT_SYMBOLS MbedSha256 MbedUtcProbe MbedVerifyCert MbedSocketCancelProbe
-    MbedEntropyFailureProbe
+  EXPORT_DEFINITION "${probe_export_definition}" UID3 0xE0000D18
+  IMPORT_SYMBOLS ${probe_exports}
   IMPORT_PROXIES
     "${SYMBIAN_SDK_PREFIX}/proxies/euser/euser.dso"
     "${SYMBIAN_SDK_PREFIX}/proxies/libc/libc.dso"
@@ -56,3 +69,7 @@ target_link_options(mbedcrypto_probe_elf PRIVATE
   --gc-sections --undefined=MbedSha256 --undefined=MbedUtcProbe
   --undefined=MbedVerifyCert --undefined=MbedSocketCancelProbe
   --undefined=MbedEntropyFailureProbe)
+if(SYMBIAN_RM807_SOCKET_PROBE)
+  target_link_options(mbedcrypto_probe_elf PRIVATE
+    --undefined=MbedConnectedSocketProbe)
+endif()

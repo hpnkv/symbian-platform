@@ -41,8 +41,12 @@ clock and libc imports, with an invalid-clock failure path. Its guest behavior
 has been exercised in a dynamic DLL on both emulator backends. The source port
 also includes nonblocking socket BIO callbacks with cancellation; host tests
 pass, and an emulator DLL probe verifies that cancellation stops later send and
-receive callbacks before they touch the socket. Guest socket I/O itself remains
-unverified. Guest applications
+receive callbacks before they touch the socket. A separate opt-in RM-807
+emulator patch and DLL probe now show a connected TCP receive returning
+`MBEDTLS_ERR_SSL_WANT_READ` when empty, delivering a delayed byte and refusing
+a read after cancellation. The same guest path currently returns `EINVAL` for
+`send` even before enabling nonblocking mode. Outbound I/O and TLS handshakes
+therefore remain unverified. Guest applications
 still need a verified secure entropy source. Certificate trust policy
 belongs to the application; the SDK does not silently install a CA bundle.
 The project CMake option `SYMBIAN_CA_BUNDLE` selects a PEM file inside that
@@ -70,3 +74,17 @@ on both emulator CPU backends. The normal SDK archive continues to fail closed
 for guest entropy. This experiment does not validate entropy on a phone or
 complete a guest TLS handshake. See [DEVELOPMENT_AGENT.md](https://github.com/hpnkv/symbian-platform/blob/main/.dev/development-agent.md)
 for the service rollout and [STATUS.md](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md) for current evidence.
+
+### Socket BIO API
+
+`symbian_mbedtls_socket_bio_attach` takes an already connected OpenC socket
+descriptor and requests `O_NONBLOCK`. The caller retains ownership of that
+descriptor and must close it after the TLS owner has stopped using the BIO.
+Pass the BIO to `mbedtls_ssl_set_bio` with
+`symbian_mbedtls_socket_bio_send` and
+`symbian_mbedtls_socket_bio_recv`; retry `MBEDTLS_ERR_SSL_WANT_READ` and
+`MBEDTLS_ERR_SSL_WANT_WRITE` only when the socket becomes ready. Call
+`symbian_mbedtls_socket_bio_cancel` to make later callback invocations return
+`MBEDTLS_ERR_NET_CONN_RESET`. The cancel flag does not interrupt a callback
+already inside OpenC. The opt-in emulator experiment covers receive and
+post-cancel behavior only; it is not yet a supported connected TLS transport.
