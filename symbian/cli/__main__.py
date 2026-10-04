@@ -132,6 +132,10 @@ _COMMAND_DESCRIPTIONS = {
     ("emu", "status"): "Inspect a running emulator through its control socket.",
     ("device",): "Discover USB handsets and stage application packages safely.",
     (
+        "agent",
+    ): "Talk to a manually addressed, authenticated development agent.",
+    ("agent", "status"): "Read the agent's current status over mutual TLS.",
+    (
         "device",
         "list",
     ): "List candidate Symbian handsets associated with the host.",
@@ -213,6 +217,12 @@ _OPTION_DESCRIPTIONS = {
     "variant": "ROM variant index; -1 selects the importer default.",
     "replace_alias": "Move an existing local alias to the imported identity.",
     "archive": "Preserved archive directory to create or verify.",
+    "host": "Explicit IP address or host name of the running agent.",
+    "port": "TCP port of the running agent.",
+    "server_name": "Name that must match the agent's server certificate.",
+    "ca_bundle": "PEM roots trusted for this agent connection.",
+    "client_certificate": "PEM certificate presented to the agent.",
+    "client_key": "Private key matching the client certificate.",
 }
 
 
@@ -321,6 +331,17 @@ def _parser() -> argparse.ArgumentParser:
     )
     install.add_argument("destination", type=Path)
     install.add_argument("--workspace", type=Path)
+    agent_commands = commands.add_parser("agent").add_subparsers(
+        dest="agent_command", required=True
+    )
+    agent_status = agent_commands.add_parser("status")
+    agent_status.add_argument("host")
+    agent_status.add_argument("port", type=int)
+    agent_status.add_argument("--server-name", required=True)
+    agent_status.add_argument("--ca-bundle", required=True, type=Path)
+    agent_status.add_argument("--client-certificate", required=True, type=Path)
+    agent_status.add_argument("--client-key", required=True, type=Path)
+    agent_status.add_argument("--timeout", type=float, default=5.0)
     configure = app.add_parser(
         "configure", help="Refresh SDK and CLion integration"
     )
@@ -610,6 +631,19 @@ def _execute(args: argparse.Namespace) -> dict:
 
     if args.command == "doctor":
         return doctor()
+    if args.command == "agent":
+        from symbian.agent import ReadOnlyAgentSession
+
+        with ReadOnlyAgentSession.connect(
+            args.host,
+            args.port,
+            server_name=args.server_name,
+            ca_bundle=args.ca_bundle,
+            client_certificate=args.client_certificate,
+            client_key=args.client_key,
+            timeout=args.timeout,
+        ) as agent:
+            return agent.status().model_dump()
     if args.command == "firmware":
         from symbian.emulator.configuration import (
             config_path,
@@ -1145,7 +1179,15 @@ def main(argv: list[str] | None = None) -> int:
         exit_code = 0
     except (StatusError, OSError) as error:
         if isinstance(error, OSError):
-            if isinstance(error, FileNotFoundError):
+            import ssl
+
+            if isinstance(error, ssl.SSLCertVerificationError):
+                code = Code.UNAUTHENTICATED
+            elif isinstance(error, TimeoutError):
+                code = Code.DEADLINE_EXCEEDED
+            elif isinstance(error, ConnectionRefusedError):
+                code = Code.UNAVAILABLE
+            elif isinstance(error, FileNotFoundError):
                 code = Code.NOT_FOUND
             elif isinstance(error, PermissionError):
                 code = Code.PERMISSION_DENIED
@@ -1156,7 +1198,7 @@ def main(argv: list[str] | None = None) -> int:
         exit_code = 1
     action = (
         getattr(args, f"{args.command}_command", "")
-        if args.command in ("device", "firmware", "emu", "app", "sdk")
+        if args.command in ("device", "firmware", "emu", "app", "sdk", "agent")
         else ""
     )
     formatted = render(response, args.output_format, args.command, action)

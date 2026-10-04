@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <chrono>
 #include <condition_variable>
+#include <cstdint>
 #include <cstdlib>
 #include <deque>
 #include <memory>
@@ -30,6 +31,7 @@ struct WorkerExecutor::State : std::enable_shared_from_this<State> {
   struct Job {
     Work work;
     std::shared_ptr<Promise<Unit>> done;
+    std::size_t stack_bytes = 16 * 1024;
   };
 
   explicit State(std::size_t limit) : max_outstanding(limit) {}
@@ -99,10 +101,12 @@ struct WorkerExecutor::State : std::enable_shared_from_this<State> {
         if (job.done) {
           auto done = std::move(job.done);
           fibers.push_back(std::make_unique<thread::Fiber>(
-              scheduler, [work = std::move(job.work), done]() mutable {
+              scheduler,
+              [work = std::move(job.work), done]() mutable {
                 std::move(work)();
                 done->SetValue(Unit{});
-              }));
+              },
+              job.stack_bytes));
         } else {
           std::move(job.work)();
           std::lock_guard lock(mu);
@@ -172,11 +176,15 @@ absl::Status WorkerExecutor::DispatchHandle::Post(Work work) const {
   return state->Enqueue(State::Job{std::move(work), {}});
 }
 
-Task WorkerExecutor::PostFiber(Work work) {
+Task WorkerExecutor::PostFiber(Work work, std::size_t stack_bytes) {
+  if (stack_bytes < 4096 || stack_bytes > 1024 * 1024 ||
+      stack_bytes % sizeof(std::uintptr_t) != 0) {
+    return FailedTask(absl::InvalidArgumentError("Invalid worker fiber stack"));
+  }
   auto promise = std::make_shared<Promise<Unit>>();
   Task task = promise->future();
-  absl::Status status =
-      state_->Enqueue(State::Job{std::move(work), std::move(promise)});
+  absl::Status status = state_->Enqueue(
+      State::Job{std::move(work), std::move(promise), stack_bytes});
   if (!status.ok()) {
     return FailedTask(std::move(status));
   }

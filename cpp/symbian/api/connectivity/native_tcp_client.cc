@@ -3,6 +3,7 @@
 
 #include "native_tcp_client.h"
 
+#include <e32atomics.h>
 #include <es_sock.h>
 #include <in_sock.h>
 
@@ -10,7 +11,7 @@ namespace symbian::api::connectivity {
 
 struct NativeTcpSession {
   RSocketServ server;
-  int references = 1;
+  TInt references = 1;
 };
 
 struct NativeTcpClient {
@@ -28,11 +29,16 @@ struct NativeTcpListener {
 namespace {
 
 void ReleaseSession(NativeTcpSession* session) {
-  if (session != nullptr && --session->references == 0) {
+  if (session != nullptr &&
+      __e32_atomic_add_ord32(&session->references, 0xffffffffU) == 1) {
     session->server.Close();
     session->~NativeTcpSession();
     User::Free(session);
   }
+}
+
+void RetainSession(NativeTcpSession* session) {
+  __e32_atomic_add_ord32(&session->references, 1);
 }
 
 int OpenSession(NativeTcpSession** output) {
@@ -144,6 +150,7 @@ extern "C" void SymbianDeviceTcpListenerClose(NativeTcpListener* listener) {
 }
 
 extern "C" int SymbianDeviceTcpListen(unsigned address, unsigned port,
+                                      bool share_with_workers,
                                       NativeTcpListener** output) {
   if (output == nullptr || port == 0 || port > 65535) {
     return KErrArgument;
@@ -155,6 +162,9 @@ extern "C" int SymbianDeviceTcpListen(unsigned address, unsigned port,
   }
   auto* listener = new (memory) NativeTcpListener;
   TInt result = OpenSession(&listener->session);
+  if (result == KErrNone && share_with_workers) {
+    result = listener->session->server.ShareAuto();
+  }
   if (result == KErrNone) {
     result = listener->socket.Open(listener->session->server, KAfInet,
                                    KSockStream, KProtocolInetTcp);
@@ -193,7 +203,7 @@ extern "C" int SymbianDeviceTcpBeginAccept(NativeTcpListener* listener,
   }
   auto* client = new (memory) NativeTcpClient;
   client->session = listener->session;
-  ++client->session->references;
+  RetainSession(client->session);
   const TInt result = client->socket.Open(client->session->server);
   if (result != KErrNone) {
     SymbianDeviceTcpClose(client);
@@ -225,7 +235,7 @@ extern "C" int SymbianDeviceTcpAcceptFor(NativeTcpListener* listener,
   }
   auto* client = new (memory) NativeTcpClient;
   client->session = listener->session;
-  ++client->session->references;
+  RetainSession(client->session);
   RTimer timer;
   if (milliseconds >= 0) {
     const TInt timer_result = timer.CreateLocal();

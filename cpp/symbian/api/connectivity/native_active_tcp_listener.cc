@@ -58,6 +58,7 @@ struct NativeActiveTcpListener final : CActive {
 };
 
 extern "C" int SymbianDeviceActiveTcpListen(unsigned address, unsigned port,
+                                            bool share_with_workers,
                                             void* context,
                                             NativeAcceptCallback callback,
                                             NativeActiveTcpListener** output) {
@@ -71,7 +72,8 @@ extern "C" int SymbianDeviceActiveTcpListen(unsigned address, unsigned port,
     return KErrNoMemory;
   }
   auto* active = new (memory) NativeActiveTcpListener(context, callback);
-  const int result = SymbianDeviceTcpListen(address, port, &active->listener);
+  const int result = SymbianDeviceTcpListen(address, port, share_with_workers,
+                                            &active->listener);
   if (result != KErrNone) {
     active->~NativeActiveTcpListener();
     User::Free(active);

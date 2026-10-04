@@ -16,10 +16,14 @@
 
 namespace symbian::concurrency {
 
-// An explicit one-OS-thread destination for work that may take too long on
-// the event thread. Post stays stackless; PostFiber creates a guest fiber on
-// the worker, using the same thread::Scheduler implementation as the event
-// executor. Close does not block the event thread; Finish reports drainage.
+/**
+ * @brief Bounded work destination on one guest OS thread.
+ *
+ * Use for operations too long for the event thread. Post executes without a
+ * fiber; PostFiber schedules a job on the worker's A11-derived fiber scheduler.
+ * The admission limit counts queued and active jobs. Close does not block the
+ * event thread; Finish reports drainage.
+ */
 class WorkerExecutor {
  private:
   struct State;
@@ -29,6 +33,7 @@ class WorkerExecutor {
 
   class DispatchHandle {
    public:
+    /** @brief Enqueue stackless work or return a full/closed status. */
     absl::Status Post(Work work) const;
 
    private:
@@ -47,10 +52,20 @@ class WorkerExecutor {
 
   DispatchHandle handle() const { return DispatchHandle(state_); }
 
+  /** @brief Enqueue stackless work on the single worker thread. */
   absl::Status Post(Work work) { return handle().Post(std::move(work)); }
 
-  Task PostFiber(Work work);
+  /**
+   * @brief Run one job on a bounded guest fiber hosted by this worker.
+   *
+   * Use a larger stack for native libraries with deep call chains. The stack
+   * is allocated only for the live job and may be 4 KiB to 1 MiB, aligned to
+   * a machine word. Admission still uses max_outstanding.
+   */
+  Task PostFiber(Work work, std::size_t stack_bytes = 16 * 1024);
+  /** @brief Stop accepting work while queued jobs continue to drain. */
   void Close();
+  /** @brief Close and return a task that completes after all jobs drain. */
   Task Finish();
 
  private:

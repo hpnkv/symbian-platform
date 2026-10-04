@@ -21,6 +21,7 @@ required Abseil status/runtime profile and, where needed, an OS import proxy.
 | `Symbian::Storage` | `symbian/api/storage/storage.h` | Open, read, write or copy files | Move-only handles; use and destroy on the opening thread. |
 | `Symbian::Camera` | `symbian/api/camera/camera.h` | Discover camera slots | `StatusOr`; discovery does not reserve a camera. |
 | `Symbian::Connectivity` | `symbian/api/connectivity/tcp_client.h`, `tcp_listener.h`, `active_tcp_listener.h` | Connect, listen, accept and exchange bounded IPv4 TCP data | Synchronous worker owners plus a single-request active-object listener; deadline cancellation for blocking accept, send and receive. |
+| `Symbian::Tls` | `symbian/api/connectivity/tls_server.h` | Own a TLS server configuration and one mutually authenticated stream | Opt-in Mbed TLS link; caller supplies server identity, client CA roots and working guest entropy. Synchronous worker only. |
 | `Symbian::Agent` | `symbian/agent/guest_control.h` | Parse and answer bounded read-only hello/status control messages | Authenticate the TLS peer before parsing; this codec does not own a service or grant permissions. |
 
 For example, a display query can live in a small adapter:
@@ -52,6 +53,9 @@ calls `AcceptNext()` when ready for another connection. `Stop()` cancels and
 drains the pending native request before freeing the socket and session.
 Keep the observer brief; the synchronous `TcpClient` methods are intended for
 a worker thread, not for long transfers or a TLS handshake in `RunL()`.
+If that worker owns an accepted socket, call `EnableWorkerSharing()` before
+`ListenIpv4()`; the Socket Server session must become shareable before its
+sockets open.
 
 ## Guest concurrency and TLS
 
@@ -69,6 +73,25 @@ Its default trust set is empty: an application chooses a project-local CA
 bundle or explicit pinning. The [TLS guide](../guides/tls.md) shows CMake
 configuration and the current runtime acceptance boundary. A compiled TLS
 archive is not evidence of a guest handshake.
+
+`Symbian::Tls` adds the SDK's C++ `TlsServer` owner on top of those archives.
+`Create()` parses caller-supplied PEM server credentials and client CA roots.
+Select `TlsVersion::kTls12` or `TlsVersion::kTls13` there: this Mbed TLS server
+needs one version per listener. `Accept()` requires a verified client
+certificate.
+`ReadFor()` and `WriteFor()` hold a single 32 KiB-or-smaller operation under a
+0–60 second deadline and drain a timed-out native socket request. The owner
+handles one stream at a time and resets it with `CloseSession()`. It belongs
+on a worker thread; a service must arrange cancellation, pairing and key
+custody around it. The default entropy source fails closed, so the owner
+cannot silently turn a compiled archive into a live server.
+
+Deep native call chains can exhaust the worker's normal 16 KiB fiber stack.
+`WorkerExecutor::PostFiber(work, stack_bytes)` accepts a word-aligned 4 KiB to
+1 MiB stack, allocated for the live job. The emulator agent uses 256 KiB for
+Mbed TLS. Set `max_outstanding` on the worker to cap queued plus active work;
+check the returned task for admission errors. This size is an emulator
+observation, not a measured Nokia 808 memory recommendation.
 
 ## Host format libraries
 

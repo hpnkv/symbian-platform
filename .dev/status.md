@@ -1,5 +1,67 @@
 # Status
 
+2026-10-04 resident emulator service: the manually started,
+loopback-only `examples/agent_service` now combines an original
+`CActive` accept owner, a bounded A11-derived worker fiber with a 256 KiB
+stack, the public `Symbian::Tls` owner and the `Symbian::Agent` read-only
+codec. The first worker TLS failure was an observed secondary-thread stack
+overflow; the larger fiber fixed the two-backend status and reconnect test.
+Against the cleaned `.symbian/resident-agent-verified-sdk-20261004` export,
+disposable pinned RM-807 Dynarmic and Dyncom instances each answered two
+status requests on one authenticated TLS 1.3 session, rejected a 4,097-byte
+frame prefix, then answered on a fresh session. The host `symbian agent
+status` CLI independently read the service result, and the process stayed
+alive (`2 passed in 22.33s`). One-job queue admission dropped a rapid
+reconnect; the tested service uses four bounded outstanding jobs. The public
+worker handoff probe also passed on both backends against that export (`2
+passed, 6 deselected in 16.53s`). A separate reproducible ARMv6 build
+produced an E32 with 790,156 code, 1,540 data and 69,316 BSS bytes, importing
+seven original DLLs. The unsigned one-file research SIS has SHA-256
+`664f884d07eb5b138d1c051f28a07d521cf5288c7205351055f553ea5aa0eba2`;
+its installer metadata has no boot script or application registration.
+The public
+fixture private key is emulator-only, and no handset pairing, status UI,
+measured idle power, signed package or Nokia 808 result is claimed.
+
+2026-10-04 public TLS owner: `Symbian::Tls` installs the documented
+`TlsServer` C++ owner with explicit TLS 1.2 or TLS 1.3 selection, required
+client certificate verification, caller-supplied PEM credentials and roots,
+and cancellable bounded socket I/O on a worker. Its first hybrid-version
+server configuration failed in the emulator with Mbed TLS `-0x7080`; the
+vendored server requires a single selected version. A clean SDK export at
+`.symbian/resident-agent-final-sdk-20261004` built ARMv5T and ARMv6 archives
+and linked an independent consumer. The complete opt-in emulator matrix
+passed against that export (`24 passed in 266.55 seconds`): existing outbound
+controls, raw inbound controls, and the owner’s TLS 1.2/1.3 mutual-auth
+handshakes, client-certificate rejection, framed status, and oversized-prefix
+rejection. The test identity is a public fixture. This does not prove
+production pairing, entropy quality on a physical device, or Nokia 808
+compatibility.
+
+2026-10-04 worker handoff: a clean
+`.symbian/resident-agent-final-sdk-20261004` export includes opt-in
+`ActiveTcpListener::EnableWorkerSharing()`, applied before listener socket
+creation. An ARMv6 SDK consumer accepted two host connections, posted each
+move-only client to the existing `Symbian::Stackless` worker and exchanged
+bytes in both directions under Dynarmic and Dyncom (`2 passed, 6 deselected`).
+The first version marked the session shareable after socket creation; its
+worker executed but socket I/O timed out. Pre-open sharing resolved that
+emulator failure. This is a selected RM-807 firmware/emulator result, not a
+Nokia 808 device result.
+
+2026-10-04 resident agent build checkpoint: the manually started,
+loopback-only `examples/agent_service` links public `Symbian::Connectivity`,
+`Symbian::Stackless`, `Symbian::Tls` and `Symbian::Agent` targets. Its active
+accept sleeps while idle, a four-slot worker queue owns TLS 1.3 and at most
+16 status requests per connection, and it rejects frames above 4 KiB before
+reading their payload. A reproducible ARMv6 SDK consumer build produced an
+E32 image with 789,772 code bytes, 69,316 BSS bytes and seven import DLLs.
+An unsigned research SIS was generated with only `agent_service.exe` and no
+boot-start script. The first emulator session completed the host's server
+certificate check and TLS handshake, but the status response timed out; the
+resident status/reconnect test is therefore open. The embedded certificate
+and private key are public Mbed TLS fixtures and carry no device identity.
+
 2026-10-04 active accept slice: `Symbian::Connectivity` now includes
 `ActiveTcpListener`, an opaque public C++ owner for one original
 `CActive`/`RSocket::Accept` request. Its observer rearms explicitly and

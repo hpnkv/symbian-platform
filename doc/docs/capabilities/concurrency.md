@@ -104,6 +104,11 @@ active work, and a full or closed executor reports a status. `Close` does not
 block the event thread; `Finish` reports asynchronous drainage. A fiber that
 waits forever can prevent that drainage, and the guest still lacks the A11
 shared `Post`/`PostAt` pool, cancellation tree and preemption.
+`PostFiber(work, stack_bytes)` accepts 4 KiB–1 MiB in machine-word multiples;
+its default is 16 KiB. The resident emulator TLS worker needed 256 KiB to
+avoid a guest stack overflow during handshake. A four-job admission bound
+also allowed a rapid reconnect to queue while the previous TLS session
+drained. Neither value is an idle-memory or battery measurement on a phone.
 
 The pinned full A11 **host** fiber backend can retain its selected-TU
 exception boundary: Boost primitives and pool teardown use exceptions and

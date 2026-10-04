@@ -1,0 +1,21 @@
+[project]
+name = "agent_service"
+kind = "e32-import-experiment"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000a31
+import_proxies = [
+  "${sdk}/proxies/euser/euser.dso",
+  "${sdk}/proxies/libc/libc.dso",
+  "${sdk}/proxies/libpthread/libpthread.dso",
+  "${sdk}/proxies/libm/libm.dso",
+  "${sdk}/proxies/drtaeabi/drtaeabi.dso",
+  "${sdk}/proxies/esock/esock.dso",
+  "${sdk}/proxies/insock/insock.dso",
+]
+
+[package]
+uid = 0xe0000a32
+name = "Symbian Agent Emulator Research"
+vendor = "Symbian research"
+executable_name = "agent_service.exe"
+version = [1, 0, 0]

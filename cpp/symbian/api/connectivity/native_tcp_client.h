@@ -30,6 +30,7 @@ extern "C" int SymbianDeviceTcpReceiveFor(NativeTcpClient* client,
                                           int milliseconds, int* received);
 extern "C" void SymbianDeviceTcpClose(NativeTcpClient* client);
 extern "C" int SymbianDeviceTcpListen(unsigned address, unsigned port,
+                                      bool share_with_workers,
                                       NativeTcpListener** output);
 extern "C" int SymbianDeviceTcpAccept(NativeTcpListener* listener,
                                       NativeTcpClient** output);
@@ -42,6 +43,7 @@ extern "C" int SymbianDeviceTcpBeginAccept(NativeTcpListener* listener,
 extern "C" void SymbianDeviceTcpCancelAccept(NativeTcpListener* listener);
 extern "C" void SymbianDeviceTcpListenerClose(NativeTcpListener* listener);
 extern "C" int SymbianDeviceActiveTcpListen(unsigned address, unsigned port,
+                                            bool share_with_workers,
                                             void* context,
                                             NativeAcceptCallback callback,
                                             NativeActiveTcpListener** output);

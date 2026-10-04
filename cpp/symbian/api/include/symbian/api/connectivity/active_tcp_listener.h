@@ -51,6 +51,16 @@ class ActiveTcpListener final {
   /** @brief Arm one accept after OnAccept; never starts a second in flight. */
   absl::Status AcceptNext();
 
+  /**
+   * @brief Ask the Socket Server to share its session with worker threads.
+   *
+   * Call before ListenIpv4, so the session is shared before its socket opens.
+   * Workers must finish using their clients before this listener is destroyed.
+   * Firmware that rejects shareable sessions returns a native error from
+   * ListenIpv4.
+   */
+  absl::Status EnableWorkerSharing();
+
   /** @brief Cancel/drain and close; an owner cannot be restarted afterward. */
   void Stop();
 
@@ -63,6 +73,7 @@ class ActiveTcpListener final {
   TcpAcceptObserver& observer_;
   NativeActiveTcpListener* native_ = nullptr;
   bool started_ = false;
+  bool share_with_workers_ = false;
 };
 
 }  // namespace symbian::api::connectivity

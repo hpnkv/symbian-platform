@@ -1,5 +1,40 @@
 # Research log
 
+2026-10-04: The resident worker TLS timeout was a guest secondary-thread
+stack overflow, observed as an access violation immediately below its stack
+pointer and `KERN-EXEC 3` in the disposable emulator log. A standalone TLS
+owner on the main thread had passed the same handshake. The existing
+A11-derived `WorkerExecutor::PostFiber` now accepts an explicit 4 KiB–1 MiB
+stack size; the service requests 256 KiB for its TLS job. The active listener
+plus worker completed status, repeated requests, oversized-frame rejection and
+reconnection under both Dynarmic and Dyncom. The first cleanup trial reduced
+queue admission to one job and reset a rapid reconnect while the prior TLS
+job was still draining; keeping four bounded outstanding jobs restored the
+tested behavior. This is an emulator stack/admission result, not a measured
+phone memory budget. The attempted `RSocket::Transfer` investigation was
+discarded; the service uses the pre-open shareable Socket Server session that
+had already passed bidirectional worker I/O.
+
+2026-10-04: The vendored Mbed TLS 3.4.1 server returns
+`MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE` (`-0x7080`) for a hybrid TLS 1.2/1.3
+server configuration. The raw probe pins one version and succeeds. The public
+`TlsServer::Create` now requires `TlsVersion::kTls12` or `kTls13`. A clean-SDK
+24-case emulator matrix passed both owner versions, certificate rejection,
+status framing and oversized-prefix rejection. The initial resident TLS 1.3
+session reached a host-verified handshake but did not answer status. The
+secondary-thread stack overflow described above explains that result.
+
+2026-10-04: A Socket Server session marked shareable after the active listener
+socket opened did not complete worker I/O in the emulator, although a worker
+job did execute. Calling `RSocketServ::ShareAuto()` after Connect and before
+socket Open produced two bidirectional worker connections on both CPU
+backends. The public opt-in must therefore precede ListenIpv4. Cross-thread
+behavior on a physical Nokia 808 is unknown. The service still needs a
+handset-visible local status/disable UI, persistent per-device identity,
+pairing, crash-loop backoff, idle/no-network state, signed packaging and a
+verified on-device startup policy before its stated migration gate can pass.
+
+
 ### 2026-10-04 — active-object accept and event-thread I/O
 
 The original `CActiveScheduler` and `CActive` EUSER ordinals are now selected

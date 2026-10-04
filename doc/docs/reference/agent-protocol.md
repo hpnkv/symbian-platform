@@ -1,10 +1,35 @@
 # Development-agent wire framing
 
-The planned resident service will use one protocol over an authenticated TCP
+The planned resident service uses one protocol over an authenticated TCP
 session. Host native code owns framing and the full control envelope. A small
-guest codec answers read-only hello/status requests. A one-connection research
-DLL has exercised that exchange inside the emulator; a resident service is
-still pending.
+guest codec answers read-only hello/status requests. The manually started
+[emulator service example](https://github.com/hpnkv/symbian-platform/tree/main/examples/agent_service)
+combines the active listener, SDK worker and mutual TLS. Its fixed test key is
+public; it must never be used as a device identity.
+
+## Exercise the emulator service
+
+The example binds **127.0.0.1:39101** inside a disposable RM-807 emulator
+instance, selects TLS 1.3 and allows up to 16 control requests on one
+connection. Its 4 KiB control limit is checked before reading a payload. The
+test constructs an ARMv6 E32 executable from the selected SDK, launches it
+manually, sends status requests, tests an oversized prefix, reconnects and
+stops the emulator. It runs both Dynarmic and Dyncom when the pinned firmware
+fixture and emulator are prepared:
+
+```sh
+SYMBIAN_SDK_MANIFEST="$PWD/.symbian/sdk/sdk.json" \
+SYMBIAN_AGENT_SERVICE_GUEST=1 \
+  uv run pytest symbian/tests/test_agent_service_guest.py -q
+```
+
+Replace the manifest path with the SDK you installed. This opt-in test uses
+public Mbed TLS fixtures for both peers. The service has no pairing screen,
+private device identity, boot start or signed deployment policy; keep it in
+the named research emulator instance. `WorkerExecutor::PostFiber` gives its
+Mbed TLS job a 256 KiB stack because the default stack overflowed during an
+emulator handshake. The outstanding-job cap is four, so a quick reconnect can
+wait while an old TLS session drains.
 
 ## Frame shape and limits
 
@@ -42,15 +67,14 @@ schedule or keep a listener alive.
 
 The service must authenticate before interpreting payloads, validate each
 operation body and permission grant, and give each request a deadline,
-cancellation path and final status. In particular, the one-shot research DLL
-does not implement a resident active-object listener, distinct peer identities
-or a handset-visible pairing action.
+cancellation path and final status. The emulator example does not implement
+distinct peer identities or a handset-visible pairing action.
 
-The SDK now also exports an active-object TCP accept owner. Its isolated
-two-connection emulator probe verifies rearming and cancellation of an idle
-accept. The TLS research DLL still uses its own synchronous one-connection
-listener, so the two pieces have not yet been integrated into a resident
-authenticated service.
+The SDK also exports an active-object TCP accept owner. Before moving an
+accepted socket to a worker, enable worker sharing before binding. The
+emulator service accepts loopback connections while its event thread sleeps;
+TLS and control work run on a bounded worker queue. This is a research process
+launched manually, not a paired or boot-started phone service.
 
 ## Host read-only session
 
@@ -65,7 +89,7 @@ from pathlib import Path
 from symbian.agent import ReadOnlyAgentSession
 
 with ReadOnlyAgentSession.connect(
-    "127.0.0.1", 39098,
+    "127.0.0.1", 39101,
     server_name="my-development-phone",
     ca_bundle=Path("certs/phone-ca.pem"),
     client_certificate=Path("certs/host.pem"),
@@ -78,6 +102,18 @@ This is an API example for a manually started listener; it is not a working
 pairing recipe for a Nokia 808. The emulator research test currently uses one
 self-signed fixture identity on both peers. Production use needs separate
 identities, protected key provisioning and a handset-visible pairing action.
+The CLI exposes the same read-only path:
+
+```sh
+symbian agent status 127.0.0.1 39101 \
+  --server-name my-development-phone \
+  --ca-bundle certs/phone-ca.pem \
+  --client-certificate certs/host.pem \
+  --client-key certs/host-key.pem
+```
+
+Both forms require a running agent and credentials you supplied. The
+research example's public certificate and key are for emulator tests only.
 See the
 [development-agent plan](https://github.com/hpnkv/symbian-platform/blob/main/.dev/development-agent.md)
 for the intended service gates.

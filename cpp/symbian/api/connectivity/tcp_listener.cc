@@ -20,7 +20,7 @@ absl::StatusOr<TcpListener> TcpListener::ListenIpv4(
                           (static_cast<unsigned>(address[2]) << 8) |
                           static_cast<unsigned>(address[3]);
   NativeTcpListener* native = nullptr;
-  const int result = SymbianDeviceTcpListen(packed, port, &native);
+  const int result = SymbianDeviceTcpListen(packed, port, false, &native);
   if (result != 0) {
     return symbian::StatusFromNativeError(result, "Listen on TCP socket");
   }

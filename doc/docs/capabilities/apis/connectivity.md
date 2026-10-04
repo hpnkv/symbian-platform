@@ -57,11 +57,24 @@ if (listener.ok()) {
 The listener binds only the supplied IPv4 address, with backlog one.
 `AcceptFor` accepts a 0–60 second timeout, cancels and drains a pending
 native accept on expiry, and returns a deadline-exceeded status. The same
-listener can accept again afterwards. The accepted client keeps the shared
+listener can accept again afterwards. The accepted client keeps the
 socket-server session alive even if the listener closes. Both owners remain
-synchronous and belong on one worker thread; the resident agent still needs
-an active-object listener and a TLS owner before it
-can serve sessions while sleeping when idle.
+synchronous and belong on one worker thread.
+
+## Accept while the event thread is idle
+
+`ActiveTcpListener` wraps one native `CActive` accept. Construct it on a thread
+with an installed `CActiveScheduler`, implement `TcpAcceptObserver`, and call
+`AcceptNext()` from the observer when ready for another connection. The
+pending accept does not poll. `Stop()` cancels and drains it.
+
+When the observer hands a client to an SDK worker, call
+`EnableWorkerSharing()` **before** `ListenIpv4()`. This makes the Socket Server
+session shareable before its sockets open. Keep `OnAccept()` short: post the
+move-only client to `Symbian::Stackless`'s `WorkerExecutor`, then rearm. The
+worker can call `SendFor`, `ReceiveFor`, or the `Symbian::Tls` owner. The
+[research service example](https://github.com/hpnkv/symbian-platform/tree/main/examples/agent_service)
+shows the pattern with explicit loopback binding.
 
 The implementation keeps the original `RSocketServ`, `RSocket`, `TInetAddr`
 and descriptor types in a native bridge. The public headers expose ordinary

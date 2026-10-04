@@ -30,7 +30,8 @@ absl::Status ActiveTcpListener::ListenIpv4(std::array<std::uint8_t, 4> address,
                           (static_cast<unsigned>(address[2]) << 8) |
                           static_cast<unsigned>(address[3]);
   const int result = SymbianDeviceActiveTcpListen(
-      packed, port, this, &ActiveTcpListener::OnNativeAccept, &native_);
+      packed, port, share_with_workers_, this,
+      &ActiveTcpListener::OnNativeAccept, &native_);
   if (result != 0) {
     return symbian::StatusFromNativeError(result,
                                           "Listen on active TCP socket");
@@ -47,6 +48,15 @@ absl::Status ActiveTcpListener::AcceptNext() {
   if (result != 0) {
     return symbian::StatusFromNativeError(result, "Begin active TCP accept");
   }
+  return absl::OkStatus();
+}
+
+absl::Status ActiveTcpListener::EnableWorkerSharing() {
+  if (started_ || native_ != nullptr) {
+    return absl::FailedPreconditionError(
+        "Enable worker sharing before listening");
+  }
+  share_with_workers_ = true;
   return absl::OkStatus();
 }
 

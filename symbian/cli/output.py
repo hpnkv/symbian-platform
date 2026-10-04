@@ -22,6 +22,7 @@ _TITLES = {
     "emu resolve": "Emulator configuration",
     "emu status": "Emulator status",
     "sdk install": "SDK installed",
+    "agent status": "Authenticated development agent",
 }
 
 
