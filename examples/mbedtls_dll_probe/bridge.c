@@ -1,5 +1,7 @@
 #include <mbedtls/sha256.h>
+#include <mbedtls/x509_crt.h>
 #include <symbian_mbedtls/platform.h>
+#include "test_certificate.h"
 
 __attribute__((visibility("default")))
 int MbedSha256(const unsigned char *input, unsigned size,
@@ -24,4 +26,55 @@ int MbedUtcProbe(void) {
     return -134;
   }
   return 0;
+}
+
+__attribute__((visibility("default")))
+int MbedVerifyCert(void) {
+  mbedtls_x509_crt certificate;
+  mbedtls_x509_crt trust;
+  mbedtls_x509_crt_init(&certificate);
+  mbedtls_x509_crt_init(&trust);
+  int result = mbedtls_x509_crt_parse(
+      &certificate, (const unsigned char*)kTestCertificate,
+      sizeof(kTestCertificate));
+  if (result == 0) {
+    result = mbedtls_x509_crt_parse(
+        &trust, (const unsigned char*)kTestCertificate,
+        sizeof(kTestCertificate));
+  }
+  if (result == 0) {
+    unsigned flags = 0;
+    result = mbedtls_x509_crt_verify(&certificate, &trust, NULL,
+                                     "sdk-test", &flags, NULL, NULL);
+    if (result != 0 || flags != 0) result = -136;
+  }
+  if (result == 0) {
+    unsigned flags = 0;
+    result = mbedtls_x509_crt_verify(&certificate, &trust, NULL,
+                                     "wrong-name", &flags, NULL, NULL);
+    if (result == 0 || (flags & MBEDTLS_X509_BADCERT_CN_MISMATCH) == 0)
+      result = -137;
+    else
+      result = 0;
+  }
+  if (result == 0) {
+    mbedtls_x509_crt expired;
+    mbedtls_x509_crt_init(&expired);
+    result = mbedtls_x509_crt_parse(
+        &expired, (const unsigned char*)kExpiredCertificate,
+        sizeof(kExpiredCertificate));
+    if (result == 0) {
+      unsigned flags = 0;
+      result = mbedtls_x509_crt_verify(&expired, &trust, NULL,
+                                       "sdk-test", &flags, NULL, NULL);
+      if (result == 0 || (flags & MBEDTLS_X509_BADCERT_EXPIRED) == 0)
+        result = -139;
+      else
+        result = 0;
+    }
+    mbedtls_x509_crt_free(&expired);
+  }
+  mbedtls_x509_crt_free(&trust);
+  mbedtls_x509_crt_free(&certificate);
+  return result;
 }

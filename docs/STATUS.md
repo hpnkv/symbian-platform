@@ -33,9 +33,14 @@ The guest SHA-256 DLL test now passes five cases against the active SDK: the
 declared export is retained while unused mimalloc POSIX helpers are discarded,
 and a dynamic `RLibrary` client verifies the `abc` digest and changed-input
 failure on Dynarmic and Dyncom. Its E32 import table lists EUSER, libc and
-libpthread. This establishes a bounded guest crypto call, not TLS. No guest
-TLS handshake, verified guest entropy or physical UTC,
-nonblocking socket owner, expired-certificate rejection, emulator TLS memory
+libpthread. The expanded guest DLL also parses an explicit test PEM trust
+root, accepts its certificate for `sdk-test`, and rejects `wrong-name` and an
+expired certificate on both CPU backends. A fresh active SDK at
+`.symbian/mbedtls-transport-sdk-20261004` includes source-ordinal libc proxy
+entries for these crypto dependencies and the selected socket functions.
+Those socket symbols have not been exercised in the emulator. No guest TLS
+handshake, verified guest entropy or physical UTC, cancellable socket owner,
+emulator TLS memory
 bound, or Nokia 808 connection is claimed. DEVELOPMENT_AGENT step 2 remains
 open; steps 3 and later have not started. An ARM archive or host handshake
 does not establish guest loader or Nokia 808 compatibility.

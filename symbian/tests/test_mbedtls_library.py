@@ -50,7 +50,7 @@ def artifacts(tmp_path_factory):
         cwd=source,
     )
     run(
-        ["cmake", "--build", str(archive_build), "--target", "mbedcrypto"],
+        ["cmake", "--build", str(archive_build), "--target", "mbedx509"],
         cwd=source,
     )
     archive = archive_build / "libmbedcrypto.a"
@@ -87,12 +87,12 @@ def artifacts(tmp_path_factory):
     return source, sdk, dll_build, tmp_path
 
 
-def test_mbedtls_sha256_subset_links_as_e32_dll(artifacts):
-    """Validates the converted DLL, selected imports and consumer proxy."""
+def test_mbedtls_crypto_x509_links_as_e32_dll(artifacts):
+    """Validates the crypto/X.509 DLL, imports and consumer proxy."""
     _, _, dll_build, _ = artifacts
     image = inspect_image(dll_build / "mbedcrypto_probe.dll")
     assert image["dll"] and image["architecture"] == "armv6"
-    assert [entry["ordinal"] for entry in image["exports"]] == [1, 2]
+    assert [entry["ordinal"] for entry in image["exports"]] == [1, 2, 3]
     assert all(not entry["absent"] for entry in image["exports"])
     assert [item["dll"] for item in image["imports"]] == [
         "euser.dll",
@@ -149,6 +149,11 @@ def guest_client(artifacts):
             "    auto utc = reinterpret_cast<UtcProbe>(library.Lookup(2));\n"
             "    result = utc == nullptr ? -135 : utc();\n"
             "  }\n"
+            "  if (result == 0) {\n"
+            "    using Verify = int (*)();\n"
+            "    auto verify = reinterpret_cast<Verify>(library.Lookup(3));\n"
+            "    result = verify == nullptr ? -138 : verify();\n"
+            "  }\n"
             "  library.Close();\n"
             "  return result;\n"
             "}\n"
@@ -182,10 +187,10 @@ def guest_client(artifacts):
 )
 @pytest.mark.parametrize("backend", ["dynarmic", "dyncom"])
 @pytest.mark.parametrize("changed,reason", [(False, 0), (True, -132)])
-def test_mbedtls_sha256_executes_through_dynamic_dll(
+def test_mbedtls_crypto_x509_executes_through_dynamic_dll(
     artifacts, guest_client, tmp_path, backend, changed, reason
 ):
-    """Runs real archive code through RLibrary and checks a changed input."""
+    """Checks guest crypto, UTC and certificate verification through RLibrary."""
     root = Path(os.environ["SYMBIAN_RUNTIME_WORKSPACE"]).resolve()
     golden = root / ".symbian/instances/delight-import-01"
     pinned = {

@@ -24,16 +24,25 @@ An added DLL export exercises `symbian_mbedtls_utc_gmtime_r` with 2024-01-01
 UTC, checks that 1970 is rejected, and checks that the emulated wall clock is
 above the adapter's 2020 floor. The same five-case suite passes with this
 probe on both backends; no physical clock/clock-change behavior was measured.
+The next DLL export links `mbedx509` and parses an explicit self-signed test
+root. Its guest verifier accepts `sdk-test`, rejects `wrong-name` with the
+Mbed TLS name-mismatch flag, and rejects a leaf signed by that root whose
+validity ended in 2011 with the expired flag. Five maintained cases pass on
+the rebuilt SDK. The generated expired PEM fixture contains no private key;
+the already vendored test key was used to sign it. The SDK exporter now selects
+historical `libcu.def` ordinals for `strstr` and a bounded POSIX socket call
+set; their presence in the proxy is link metadata, not an emulator transport
+execution or a Nokia 808 ABI match.
 
 The former `library/symbian.c` entropy callback used C `rand()`; the vendored
 copy now fails closed. [Historical Symbian cryptography documentation](https://docs.huihoo.com/symbian/s60-5th-edition-cpp-developers-library-v2.1/GUID-35228542-8C95-4849-A73F-2B4F082F0C44/sdk/doc_source/guide/Security-subsystem-guide/Crypto/cryptography.overview.html)
 describes legacy random and CryptoSPI APIs, but the prepared SDK has no
 verified random-service header, import or measured Nokia 808 entropy quality.
 Open questions for gate 2: which callable guest source provides sufficient
-entropy and fails visibly; how guest UTC and `gmtime_r` map across clock
-changes; which socket API supports nonblocking, cancellable completion; how to
-bound TLS allocation and cancellation; and how to prove expired-certificate
-rejection in guest TLS 1.2/1.3 handshakes. The SHA-256 link failure is resolved
+entropy and fails visibly; how guest UTC maps across physical clock changes;
+which socket API supports nonblocking, cancellable completion in the emulator;
+how to bound TLS allocation and cancellation; and how to prove full
+certificate rejection in guest TLS 1.2/1.3 handshakes. The SHA-256 link failure is resolved
 for this bounded probe; broader TLS linking and guest runtime services remain
 unverified. The
 Nokia 808 firmware/import contract and independent recovery/backup gate remain
