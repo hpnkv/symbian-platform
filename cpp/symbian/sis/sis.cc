@@ -2,13 +2,18 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
 #include <absl/status/status.h>
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
 #include <openssl/sha.h>
+#include <openssl/x509.h>
 #include <zlib.h>
 
 #include "symbian/analysis/bytes.h"
@@ -200,6 +205,12 @@ class Reader {
   const absl::Status& status() const { return status_; }
 
   bool Done() const { return position_ == bytes_.size(); }
+
+  uint32_t PeekType() const {
+    return Within(bytes_.size(), position_, 4) ? Read32(bytes_, position_) : 0;
+  }
+
+  size_t position() const { return position_; }
 
  private:
   void Fail(absl::Status status) {
@@ -429,7 +440,11 @@ absl::StatusOr<std::string> BuildFiles(
     if (!digest.ok()) {
       return digest.status();
     }
+    const std::string capabilities = index == 0 && image->capabilities != 0
+                                         ? Field(41, Word(image->capabilities))
+                                         : std::string();
     const std::string file = String(files[index].target) + String("") +
+                             capabilities +
                              Field(25, Word(1) + Field(37, *digest)) + Word(1) +
                              Word(0) + WideWord(files[index].bytes.size()) +
                              WideWord(files[index].bytes.size()) +
@@ -516,6 +531,122 @@ absl::StatusOr<std::string> BuildSvgMif(std::string_view svg) {
   return mif;
 }
 
+absl::StatusOr<std::string> SignPackage(std::string_view unsigned_package,
+                                        std::string_view certificate_pem,
+                                        std::string_view private_key_pem) {
+  if (certificate_pem.size() > 16 * 1024 ||
+      private_key_pem.size() > 16 * 1024) {
+    return absl::InvalidArgumentError("PEM signing input exceeds 16 KiB");
+  }
+  const auto inspected = InspectPackage(unsigned_package);
+  if (!inspected.ok()) {
+    return inspected.status();
+  }
+  if (inspected->signed_package) {
+    return absl::InvalidArgumentError("SIS package is already signed");
+  }
+  std::unique_ptr<BIO, decltype(&BIO_free)> certificate_input(
+      BIO_new_mem_buf(certificate_pem.data(),
+                      static_cast<int>(certificate_pem.size())),
+      BIO_free);
+  std::unique_ptr<BIO, decltype(&BIO_free)> key_input(
+      BIO_new_mem_buf(private_key_pem.data(),
+                      static_cast<int>(private_key_pem.size())),
+      BIO_free);
+  if (!certificate_input || !key_input) {
+    return absl::InternalError("OpenSSL input allocation failed");
+  }
+  std::unique_ptr<X509, decltype(&X509_free)> certificate(
+      PEM_read_bio_X509(certificate_input.get(), nullptr, nullptr, nullptr),
+      X509_free);
+  std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> key(
+      PEM_read_bio_PrivateKey(key_input.get(), nullptr, nullptr, nullptr),
+      EVP_PKEY_free);
+  if (!certificate || !key || EVP_PKEY_base_id(key.get()) != EVP_PKEY_RSA ||
+      X509_check_private_key(certificate.get(), key.get()) != 1) {
+    return absl::InvalidArgumentError(
+        "Expected matching RSA PEM certificate and key");
+  }
+  const int certificate_length = i2d_X509(certificate.get(), nullptr);
+  if (certificate_length <= 0 || certificate_length > 16 * 1024) {
+    return absl::InvalidArgumentError(
+        "X.509 certificate is too large or invalid");
+  }
+  std::string der(static_cast<size_t>(certificate_length), '\0');
+  auto* der_ptr = reinterpret_cast<unsigned char*>(der.data());
+  if (i2d_X509(certificate.get(), &der_ptr) != certificate_length) {
+    return absl::InternalError("X.509 DER serialization failed");
+  }
+  Reader root(unsigned_package.substr(16));
+  Reader contents(root.Take(12).payload);
+  const View controller_crc = contents.Take(34);
+  const View data_crc = contents.Take(35);
+  const View compressed = contents.Take(3);
+  const View data = contents.Take(30);
+  if (!root.Finish().ok() || !contents.Finish().ok() ||
+      !controller_crc.raw.size() || !data_crc.raw.size()) {
+    return absl::DataLossError("Malformed canonical SIS contents");
+  }
+  const auto raw_controller = Uncompressed(compressed.payload);
+  if (!raw_controller.ok()) {
+    return raw_controller.status();
+  }
+  // SignSIS hashes the controller payload through the install block, excluding
+  // the signature chain and trailing data index.
+  Reader payload_reader(*raw_controller);
+  const View controller_field = payload_reader.Take(13);
+  Reader fields(controller_field.payload);
+  for (uint32_t type : {14u, 16u, 15u, 17u, 19u, 28u}) {
+    fields.Take(type);
+  }
+  if (!fields.status().ok()) {
+    return fields.status();
+  }
+  const std::string_view prefix =
+      controller_field.payload.substr(0, fields.position());
+  const View index = fields.Take(40);
+  if (!fields.Finish().ok()) {
+    return fields.Finish();
+  }
+  std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> context(
+      EVP_MD_CTX_new(), EVP_MD_CTX_free);
+  if (!context ||
+      EVP_DigestSignInit(context.get(), nullptr, EVP_sha1(), nullptr,
+                         key.get()) != 1 ||
+      EVP_DigestSignUpdate(context.get(), prefix.data(), prefix.size()) != 1) {
+    return absl::InternalError("RSA SHA-1 signing setup failed");
+  }
+  size_t signature_length = 0;
+  if (EVP_DigestSignFinal(context.get(), nullptr, &signature_length) != 1 ||
+      signature_length > 1024) {
+    return absl::InternalError("RSA signature sizing failed");
+  }
+  std::string signature(signature_length, '\0');
+  if (EVP_DigestSignFinal(context.get(),
+                          reinterpret_cast<unsigned char*>(signature.data()),
+                          &signature_length) != 1) {
+    return absl::InternalError("RSA signing failed");
+  }
+  signature.resize(signature_length);
+  const std::string chain =
+      Field(39, Array(36, Field(36,
+                                Field(38, String("1.2.840.113549.1.1.5")) +
+                                    Field(37, signature),
+                                true)) +
+                    Field(22, Field(37, der)));
+  const std::string signed_controller =
+      Field(13, std::string(prefix) + chain + std::string(index.raw));
+  const std::string signed_compressed = Compressed(signed_controller);
+  std::string result(unsigned_package.substr(0, 16));
+  result += Field(12, Field(34, Half(Crc16(signed_compressed))) +
+                          std::string(data_crc.raw) + signed_compressed +
+                          std::string(data.raw));
+  if (result.size() > kMaxPackage) {
+    return absl::ResourceExhaustedError("Signed SIS exceeds size limit");
+  }
+  return result;
+}
+
 absl::StatusOr<PackageInfo> InspectPackage(std::string_view bytes) {
   if (bytes.size() > kMaxPackage) {
     return absl::ResourceExhaustedError(
@@ -551,6 +682,79 @@ absl::StatusOr<PackageInfo> InspectPackage(std::string_view bytes) {
   const auto controller_bytes = Uncompressed(compressed.payload);
   if (!controller_bytes.ok()) {
     return controller_bytes.status();
+  }
+  // A signed package differs from this writer's canonical package only by one
+  // RSA/SHA-1 certificate chain inserted immediately before the data index.
+  // Verify the chain, remove it, then run the ordinary complete inspection.
+  Reader signature_root(*controller_bytes);
+  const View signed_controller = signature_root.Take(13);
+  Reader signed_fields(signed_controller.payload);
+  for (uint32_t type : {14u, 16u, 15u, 17u, 19u, 28u}) {
+    signed_fields.Take(type);
+  }
+  if (!signed_fields.status().ok()) {
+    return signed_fields.status();
+  }
+  if (signed_fields.PeekType() == 39) {
+    const std::string_view signed_prefix =
+        signed_controller.payload.substr(0, signed_fields.position());
+    Reader chain(signed_fields.Take(39).payload);
+    const auto signature_element = Single(chain.Take(2).payload, 36);
+    if (!signature_element.ok()) {
+      return signature_element.status();
+    }
+    Reader signature(*signature_element);
+    Reader algorithm(signature.Take(38).payload);
+    const auto oid = Ascii(algorithm.Take(1).payload);
+    const View signature_blob = signature.Take(37);
+    Reader certificate_chain(chain.Take(22).payload);
+    const View certificate_blob = certificate_chain.Take(37);
+    const View data_index = signed_fields.Take(40);
+    if (!oid.ok() || *oid != "1.2.840.113549.1.1.5" ||
+        !algorithm.Finish().ok() || !signature.Finish().ok() ||
+        !certificate_chain.Finish().ok() || !chain.Finish().ok() ||
+        !signed_fields.Finish().ok() || !signature_root.Finish().ok()) {
+      return absl::DataLossError("Malformed SIS signature chain");
+    }
+    const auto* der =
+        reinterpret_cast<const unsigned char*>(certificate_blob.payload.data());
+    const auto* der_end = der + certificate_blob.payload.size();
+    std::unique_ptr<X509, decltype(&X509_free)> certificate(
+        d2i_X509(nullptr, &der,
+                 static_cast<long>(certificate_blob.payload.size())),
+        X509_free);
+    if (!certificate || der != der_end) {
+      return absl::DataLossError("Invalid SIS certificate DER");
+    }
+    std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> public_key(
+        X509_get_pubkey(certificate.get()), EVP_PKEY_free);
+    std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> verify(
+        EVP_MD_CTX_new(), EVP_MD_CTX_free);
+    if (!public_key || !verify ||
+        EVP_DigestVerifyInit(verify.get(), nullptr, EVP_sha1(), nullptr,
+                             public_key.get()) != 1 ||
+        EVP_DigestVerifyUpdate(verify.get(), signed_prefix.data(),
+                               signed_prefix.size()) != 1 ||
+        EVP_DigestVerifyFinal(verify.get(),
+                              reinterpret_cast<const unsigned char*>(
+                                  signature_blob.payload.data()),
+                              signature_blob.payload.size()) != 1) {
+      return absl::DataLossError("SIS RSA signature verification failed");
+    }
+    const std::string unsigned_controller =
+        Field(13, std::string(signed_prefix) + std::string(data_index.raw));
+    const std::string unsigned_compressed = Compressed(unsigned_controller);
+    std::string unsigned_package(bytes.substr(0, 16));
+    unsigned_package +=
+        Field(12, Field(34, Half(Crc16(unsigned_compressed))) +
+                      std::string(data_crc.raw) + unsigned_compressed +
+                      std::string(data.raw));
+    auto canonical = InspectPackage(unsigned_package);
+    if (!canonical.ok()) {
+      return canonical.status();
+    }
+    canonical->signed_package = true;
+    return canonical;
   }
   Reader controller_root(*controller_bytes);
   Reader controller(controller_root.Take(13).payload);
@@ -616,6 +820,13 @@ absl::StatusOr<PackageInfo> InspectPackage(std::string_view bytes) {
     }
     result.files.push_back({*target, 0, {}});
     file.Take(1);
+    if (file.PeekType() == 41) {
+      const View capabilities = file.Take(41);
+      if (capabilities.payload.size() != 4) {
+        return absl::DataLossError("SIS capability field must be one word");
+      }
+      result.files.back().capabilities = Read32(capabilities.payload, 0);
+    }
     Reader hash(file.Take(25).payload);
     if (hash.WordValue() != 1) {
       return absl::UnimplementedError("Unsupported SIS hash algorithm");

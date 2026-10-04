@@ -5,6 +5,8 @@
 
 #include <utility>
 
+#include <limits.h>
+
 #include "native_tcp_client.h"
 #include "symbian/native_status.h"
 
@@ -13,19 +15,16 @@ namespace {
 
 constexpr std::size_t kMaximumOperationBytes = 32 * 1024;
 
-bool ValidTimeout(absl::Duration timeout) {
-  return timeout >= absl::ZeroDuration() && timeout <= absl::Seconds(60);
-}
-
-int NativeTimeout(absl::Duration timeout) {
-  return static_cast<int>(
-      absl::ToInt64Milliseconds(absl::Ceil(timeout, absl::Milliseconds(1))));
+std::int64_t NativeDeadline(absl::Time deadline) {
+  return deadline == absl::InfiniteFuture() ? INT64_MAX
+                                            : absl::ToUnixMicros(deadline);
 }
 
 }  // namespace
 
 absl::StatusOr<TcpClient> TcpClient::ConnectIpv4(
-    std::array<std::uint8_t, 4> address, std::uint16_t port) {
+    std::array<std::uint8_t, 4> address, std::uint16_t port,
+    absl::Time deadline) {
   if (port == 0) {
     return absl::InvalidArgumentError("TCP port must be nonzero");
   }
@@ -34,7 +33,8 @@ absl::StatusOr<TcpClient> TcpClient::ConnectIpv4(
                           (static_cast<unsigned>(address[2]) << 8) |
                           static_cast<unsigned>(address[3]);
   NativeTcpClient* native = nullptr;
-  const int result = SymbianDeviceTcpConnect(packed, port, &native);
+  const int result =
+      SymbianDeviceTcpConnect(packed, port, &native, NativeDeadline(deadline));
   if (result != 0) {
     return symbian::StatusFromNativeError(result, "Connect TCP socket");
   }
@@ -56,7 +56,8 @@ TcpClient::~TcpClient() {
   SymbianDeviceTcpClose(native_);
 }
 
-absl::Status TcpClient::Send(std::span<const std::uint8_t> bytes) {
+absl::Status TcpClient::Send(std::span<const std::uint8_t> bytes,
+                             absl::Time deadline) {
   if (native_ == nullptr) {
     return absl::FailedPreconditionError("TCP socket is closed");
   }
@@ -67,33 +68,14 @@ absl::Status TcpClient::Send(std::span<const std::uint8_t> bytes) {
     return absl::OkStatus();
   }
   const int result = SymbianDeviceTcpSend(native_, bytes.data(),
-                                          static_cast<int>(bytes.size()));
+                                          static_cast<int>(bytes.size()),
+                                          NativeDeadline(deadline));
   return result == 0 ? absl::OkStatus()
                      : symbian::StatusFromNativeError(result, "Send TCP data");
 }
 
-absl::Status TcpClient::SendFor(std::span<const std::uint8_t> bytes,
-                                absl::Duration timeout) {
-  if (!ValidTimeout(timeout)) {
-    return absl::InvalidArgumentError("TCP send timeout must be 0-60000 ms");
-  }
-  if (native_ == nullptr) {
-    return absl::FailedPreconditionError("TCP socket is closed");
-  }
-  if (bytes.size() > kMaximumOperationBytes) {
-    return absl::ResourceExhaustedError("TCP send exceeds 32 KiB");
-  }
-  if (bytes.empty()) {
-    return absl::OkStatus();
-  }
-  const int result = SymbianDeviceTcpSendFor(native_, bytes.data(),
-                                             static_cast<int>(bytes.size()),
-                                             NativeTimeout(timeout));
-  return result == 0 ? absl::OkStatus()
-                     : symbian::StatusFromNativeError(result, "Send TCP data");
-}
-
-absl::StatusOr<std::size_t> TcpClient::Receive(std::span<std::uint8_t> bytes) {
+absl::StatusOr<std::size_t> TcpClient::Receive(std::span<std::uint8_t> bytes,
+                                               absl::Time deadline) {
   if (native_ == nullptr) {
     return absl::FailedPreconditionError("TCP socket is closed");
   }
@@ -105,31 +87,8 @@ absl::StatusOr<std::size_t> TcpClient::Receive(std::span<std::uint8_t> bytes) {
   }
   int received = 0;
   const int result = SymbianDeviceTcpReceive(
-      native_, bytes.data(), static_cast<int>(bytes.size()), &received);
-  if (result != 0) {
-    return symbian::StatusFromNativeError(result, "Receive TCP data");
-  }
-  return static_cast<std::size_t>(received);
-}
-
-absl::StatusOr<std::size_t> TcpClient::ReceiveFor(std::span<std::uint8_t> bytes,
-                                                  absl::Duration timeout) {
-  if (!ValidTimeout(timeout)) {
-    return absl::InvalidArgumentError("TCP receive timeout must be 0-60000 ms");
-  }
-  if (native_ == nullptr) {
-    return absl::FailedPreconditionError("TCP socket is closed");
-  }
-  if (bytes.size() > kMaximumOperationBytes) {
-    return absl::ResourceExhaustedError("TCP receive exceeds 32 KiB");
-  }
-  if (bytes.empty()) {
-    return std::size_t{0};
-  }
-  int received = 0;
-  const int result = SymbianDeviceTcpReceiveFor(
-      native_, bytes.data(), static_cast<int>(bytes.size()),
-      NativeTimeout(timeout), &received);
+      native_, bytes.data(), static_cast<int>(bytes.size()), &received,
+      NativeDeadline(deadline));
   if (result != 0) {
     return symbian::StatusFromNativeError(result, "Receive TCP data");
   }

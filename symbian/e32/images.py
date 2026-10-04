@@ -5,23 +5,33 @@ from pathlib import Path
 from symbian.native import require_native
 
 
-def convert_pic_executable(data: bytes, uid3: int) -> bytes:
+def convert_pic_executable(
+    data: bytes, uid3: int, capabilities: int = 0
+) -> bytes:
     """Converts trusted ELF with retained relocations in the native core."""
-    return require_native().convert_pic_executable(data, uid3)
+    return require_native().convert_pic_executable(data, uid3, capabilities)
 
 
 def convert_imported_executable(
-    data: bytes, proxies: list[bytes], uid3: int
+    data: bytes, proxies: list[bytes], uid3: int, capabilities: int = 0
 ) -> bytes:
     """Converts retained eager function calls using native ordinal proxies."""
-    return require_native().convert_imported_executable(data, proxies, uid3)
+    return require_native().convert_imported_executable(
+        data, proxies, uid3, capabilities
+    )
 
 
 def convert_dll(
-    data: bytes, definition: bytes, proxies: list[bytes], uid3: int
+    data: bytes,
+    definition: bytes,
+    proxies: list[bytes],
+    uid3: int,
+    capabilities: int = 0,
 ) -> bytes:
     """Converts frozen function exports and optional imports in native code."""
-    return require_native().convert_dll(data, definition, proxies, uid3)
+    return require_native().convert_dll(
+        data, definition, proxies, uid3, capabilities
+    )
 
 
 def inspect_image(path: Path) -> dict:
@@ -41,6 +51,7 @@ def inspect_image(path: Path) -> dict:
             "data_base",
             "entry_offset",
             "secure_id",
+            "capabilities",
             "dll",
             "header_size",
             "exception_descriptor_offset",

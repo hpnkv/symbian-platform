@@ -25,8 +25,8 @@ enum class TlsVersion { kTls12, kTls13 };
  * Create parses caller-supplied PEM identities and CA roots; the SDK has no
  * default trust roots or key. A caller must provide a hardware entropy adapter
  * accepted by the Mbed TLS port. Handshake requires a verified client
- * certificate. ReadFor and WriteFor keep each native socket request bounded
- * and cancel/drain it on deadline. Call only on a worker thread owning the
+ * certificate. Read and Write cancel/drain native socket requests on deadline.
+ * Call only on a worker thread owning the
  * TcpClient, never from an active scheduler callback.
  *
  * This owner handles one stream at a time. CloseSession releases it without
@@ -53,16 +53,18 @@ class TlsServer {
   TlsServer& operator=(const TlsServer&) = delete;
   ~TlsServer();
 
-  /** @brief Complete TLS 1.2/1.3 handshake with an aggregate 0–60s deadline. */
-  absl::Status Accept(TcpClient&& client, absl::Duration timeout);
+  /** @brief Complete TLS 1.2/1.3 handshake by an absolute deadline. */
+  absl::Status Accept(TcpClient&& client,
+                      absl::Time deadline = absl::InfiniteFuture());
 
   /** @brief Receive application data into at most 32 KiB. */
-  absl::StatusOr<std::size_t> ReadFor(std::span<std::uint8_t> bytes,
-                                      absl::Duration timeout);
+  absl::StatusOr<std::size_t> Read(
+      std::span<std::uint8_t> bytes,
+      absl::Time deadline = absl::InfiniteFuture());
 
   /** @brief Send at most 32 KiB of application data. */
-  absl::Status WriteFor(std::span<const std::uint8_t> bytes,
-                        absl::Duration timeout);
+  absl::Status Write(std::span<const std::uint8_t> bytes,
+                     absl::Time deadline = absl::InfiniteFuture());
 
   /** @brief Close the current stream and reset its TLS state. */
   void CloseSession();

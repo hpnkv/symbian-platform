@@ -21,8 +21,8 @@ struct NativeTcpListener;
  * ListenIpv4 binds one address and a nonzero port with backlog one. Accept
  * waits for a native request on the calling worker thread. An accepted client
  * may outlive the listener; both retain the socket-server session until their
- * own handles close. AcceptFor cancels and drains an incomplete native accept
- * when its bounded deadline expires. There is no active-object callback or
+ * own handles close. Accept cancels and drains an incomplete native accept
+ * when its deadline expires. There is no active-object callback or
  * cross-thread cancellation yet. Use this synchronous owner on a worker.
  */
 class TcpListener {
@@ -37,16 +37,14 @@ class TcpListener {
   TcpListener& operator=(const TcpListener&) = delete;
   ~TcpListener();
 
-  /** @brief Wait for one incoming TCP stream. */
-  absl::StatusOr<TcpClient> Accept();
-
   /**
-   * @brief Wait at most 60 seconds for one incoming stream.
+   * @brief Wait for one incoming stream until an absolute deadline.
    *
-   * A timeout cancels and drains the native accept before returning a
+   * Expiry cancels and drains the native accept before returning a
    * deadline-exceeded status, so the listener can safely accept again.
    */
-  absl::StatusOr<TcpClient> AcceptFor(absl::Duration timeout);
+  absl::StatusOr<TcpClient> Accept(
+      absl::Time deadline = absl::InfiniteFuture());
 
  private:
   explicit TcpListener(NativeTcpListener* native) : native_(native) {}

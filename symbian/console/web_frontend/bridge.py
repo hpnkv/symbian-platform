@@ -1,7 +1,6 @@
 """Thread-safe pywebview bridge to the typed in-memory console client."""
 
 import asyncio
-import ipaddress
 import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -164,26 +163,23 @@ class ConsoleWebBridge:
         project = Path(__file__).resolve().parents[3] / "agent_service"
         return build_package(device, Path(sdk_manifest), project)
 
-    def verify_agent_status(self, selector: str, host: str) -> dict[str, Any]:
-        """Authenticate a manually addressed Wi-Fi endpoint for one phone."""
+    def verify_agent_status(self, selector: str) -> dict[str, Any]:
+        """Discover and authenticate the selected phone over local Wi-Fi."""
         from symbian.agent import ReadOnlyAgentSession
 
         device = self._connected_phone(selector)
-        try:
-            address = ipaddress.IPv4Address(host.strip())
-        except ipaddress.AddressValueError as error:
-            raise Status(
-                code=Code.INVALID_ARGUMENT,
-                message="Enter the phone's IPv4 Wi-Fi address",
-            ).to_exception() from error
-        with ReadOnlyAgentSession.connect(
-            str(address), 39101, key_file=key_file(device), timeout=5.0
+        with ReadOnlyAgentSession.accept(
+            "0.0.0.0",
+            39103,
+            key_file=key_file(device),
+            timeout=20.0,
         ) as agent:
             snapshot = agent.status().model_dump(mode="json")
+            peer_ip = agent.peer_ip
         return {
             "authenticated": True,
             "status": snapshot,
-            "host": str(address),
+            "host": peer_ip,
             "pairing_code": pairing_code(device),
             "checked_at": datetime.now(timezone.utc).isoformat(),
         }

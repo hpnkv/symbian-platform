@@ -2,10 +2,10 @@
 
 The resident agent is a manually started, read-only service. USB discovery
 identifies a connected phone and can stage its SIS package; it does not expose
-an agent socket. The console reaches a running agent at a Wi-Fi IPv4 address
-entered by the owner. The emulator profile listens on `127.0.0.1:39101` with a
-public test key. A phone-specific build embeds a separate 32-byte key and
-listens on port `39101` on the handset's IPv4 interfaces.
+an agent socket. The emulator profile listens on `127.0.0.1:39101` with a
+public test key. A phone-specific build embeds a separate 32-byte key, sends
+keyed UDP discovery probes on the local network and connects to a responding
+console at TCP port `39103`. No host or phone IP address is stored in its SIS.
 
 The agent uses Mbed TLS **crypto primitives** for random challenges and
 HMAC-SHA256, without a TLS connection. The SDK's `Symbian::Tls` target and
@@ -21,8 +21,17 @@ anchor. It stores the key under `~/.local/share/symbian/agent-identities/`
 with owner-only permissions, outside the repository. The key is embedded in
 a phone-specific build. The handset panel displays an eight-character code
 derived from the key. The owner must compare that code with the console's card
-before checking a Wi-Fi endpoint. An authenticated reply proves possession of
+before checking live status. An authenticated reply proves possession of
 the key; the visual comparison connects that key to the phone in hand.
+
+During a status check, the console listens on UDP port `39104` and TCP port
+`39103`. The phone broadcasts `SAGD1`, a fresh eight-byte nonce and
+`HMAC-SHA256(key, "symbian-agent-discover-v1" || nonce)`. The console replies
+only after checking the MAC; its reply is `SAGR1`, the same nonce and
+`HMAC-SHA256(key, "symbian-agent-offer-v1" || nonce)`. The phone checks the
+entire reply and connects to its IPv4 sender. The console accepts a TCP peer
+only if it sent a valid discovery request during this check. Discovery and TCP
+ports are protocol constants; addresses are found anew on each status check.
 
 Before reading a control frame, the server sends `SAG1` and a fresh 32-byte
 nonce. The client replies with a fresh 32-byte nonce and
@@ -31,7 +40,7 @@ The server checks the MAC, then returns
 `HMAC-SHA256(key, "symbian-agent-server-v1" || server_nonce || client_nonce)`.
 The client checks the final proof before it sends hello. A failed or incomplete
 exchange closes the connection. A five-second deadline bounds the exchange.
-The guest obtains its nonce through the selected RM-807 entropy adapter; its
+The guest obtains its nonces through the selected RM-807 entropy adapter; its
 behavior on a physical handset remains unverified.
 
 The checked-in `agent_service/test-agent.key` is public and **emulator-only**.
@@ -51,8 +60,9 @@ Hello consumes one request slot.
 The service applies one five-second Abseil deadline to each exchange's prefix,
 payload and response. The host session uses one response deadline even if a
 peer sends fragments slowly. An active-object listener passes accepted sockets
-to a bounded SDK worker. Four jobs may be outstanding; a reconnect can wait
-while an old session drains. The service does not offer file writes, command
+to a bounded SDK worker in the emulator profile. The phone profile uses that
+worker for bounded UDP discovery and outbound TCP connection attempts. The
+service does not offer file writes, command
 execution, flashing or recovery operations.
 
 The guest `Symbian::Agent` target owns the control codec in
@@ -83,14 +93,15 @@ not UTC and cannot be compared across process restarts.
 ## Host API and CLI
 
 `ReadOnlyAgentSession` uses native bindings for MessagePack framing and typed
-Python models for results. Pass the private key used in the guest build:
+Python models for results. The direct connection API and CLI serve the emulator
+listener. Pass its test key:
 
 ```python
 from pathlib import Path
 from symbian.agent import ReadOnlyAgentSession
 
 with ReadOnlyAgentSession.connect(
-    "192.168.1.42", 39101, key_file=Path("/private/agent.key")
+    "127.0.0.1", 39101, key_file=Path("agent_service/test-agent.key")
 ) as agent:
     print(agent.status())
     page = agent.logs(after=0, limit=8)
@@ -100,13 +111,18 @@ with ReadOnlyAgentSession.connect(
 The equivalent CLI commands are:
 
 ```sh
-symbian agent hello 192.168.1.42 39101 --key-file /private/agent.key
-symbian agent status 192.168.1.42 39101 --key-file /private/agent.key
-symbian agent logs 192.168.1.42 39101 --key-file /private/agent.key \
+symbian agent hello 127.0.0.1 39101 --key-file agent_service/test-agent.key
+symbian agent status 127.0.0.1 39101 --key-file agent_service/test-agent.key
+symbian agent logs 127.0.0.1 39101 --key-file agent_service/test-agent.key \
   --after 0 --limit 8
 ```
 
-For the emulator, use `127.0.0.1` and `agent_service/test-agent.key`. The
+For a phone, the desktop console's **Check live status** opens temporary
+discovery and TCP listeners. Code using the host API directly can call
+`ReadOnlyAgentSession.accept("0.0.0.0", 39103, key_file=key)` on a trusted local
+network. The equivalent CLI command is `symbian agent listen --key-file
+/private/agent.key`; it discovers the phone without an IP argument. The public
+test key must never be used for a phone profile. The
 [emulator guide](../guides/agent-emulator.md) gives the build and launch steps.
 
 ## Verification boundary

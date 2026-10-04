@@ -877,9 +877,12 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                     "_ZN7RSocket6ListenEj",
                     "_ZN7RSocket6AcceptERS_R14TRequestStatus",
                     "_ZN7RSocket12CancelAcceptEv",
+                    "_ZN7RSocket13CancelConnectEv",
                     "_ZN7RSocket10CancelRecvEv",
                     "_ZN7RSocket10CancelSendEv",
                     "_ZN7RSocket4SendERK6TDesC8jR14TRequestStatus",
+                    "_ZN7RSocket6SendToERK6TDesC8R9TSockAddrjR14TRequestStatus",
+                    "_ZN7RSocket8RecvFromER5TDes8R9TSockAddrjR14TRequestStatus",
                     "_ZN7RSocket13RecvOneOrMoreER5TDes8jR14TRequestStatus",
                     "_ZN7RSocket5CloseEv",
                     "_ZN7RSocket7ConnectER9TSockAddrR14TRequestStatus",
@@ -889,7 +892,11 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             (
                 "insock",
                 workspace / "third_party/symbian-network-headers/insockU.def",
-                ["_ZN9TInetAddrC1Emj"],
+                [
+                    "_ZN9TInetAddrC1Emj",
+                    "_ZN9TInetAddrC1Ev",
+                    "_ZNK9TInetAddr7AddressEv",
+                ],
             ),
             (
                 "libc",

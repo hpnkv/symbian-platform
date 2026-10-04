@@ -90,6 +90,18 @@ TEST_F(SisTest, RegisteredPackageOwnsThreeVerifiedFiles) {
       absl::StatusCode::kInvalidArgument);
 }
 
+TEST_F(SisTest, ExecutableCapabilityIsMirroredInSisDescription) {
+  const auto image =
+      e32::ConvertPicExecutable(testing::Executable(), 0xe0000808, 1u << 13);
+  ASSERT_TRUE(image.ok()) << image.status();
+  const auto package = BuildPackage(*image, Options());
+  ASSERT_TRUE(package.ok()) << package.status();
+  const auto inspected = InspectPackage(*package);
+  ASSERT_TRUE(inspected.ok()) << inspected.status();
+  ASSERT_EQ(inspected->files.size(), 1);
+  EXPECT_EQ(inspected->files[0].capabilities, 1u << 13);
+}
+
 TEST_F(SisTest, LocalesAndSvgIconUseCanonicalBoundedAssets) {
   const auto icon = BuildSvgMif(
       R"(<svg xmlns="http://www.w3.org/2000/svg"><circle r="5"/></svg>)");

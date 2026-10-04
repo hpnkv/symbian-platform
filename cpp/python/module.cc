@@ -27,10 +27,12 @@ symbian::analysis::Elf32Header InspectElf32(const py::bytes& data) {
       [&] { return symbian::analysis::InspectElf32(bytes); });
 }
 
-py::bytes ConvertPicExecutable(const py::bytes& data, uint32_t uid3) {
+py::bytes ConvertPicExecutable(const py::bytes& data, uint32_t uid3,
+                               uint32_t capabilities) {
   const std::string bytes = data;
-  return py::bytes(symbian::python::ValueWithoutGil(
-      [&] { return symbian::e32::ConvertPicExecutable(bytes, uid3); }));
+  return py::bytes(symbian::python::ValueWithoutGil([&] {
+    return symbian::e32::ConvertPicExecutable(bytes, uid3, capabilities);
+  }));
 }
 
 symbian::e32::ImageInfo InspectE32(const py::bytes& data) {
@@ -41,7 +43,7 @@ symbian::e32::ImageInfo InspectE32(const py::bytes& data) {
 
 py::bytes ConvertImportedExecutable(const py::bytes& data,
                                     const std::vector<py::bytes>& proxies,
-                                    uint32_t uid3) {
+                                    uint32_t uid3, uint32_t capabilities) {
   const std::string bytes = data;
   std::vector<std::string> libraries;
   libraries.reserve(proxies.size());
@@ -49,12 +51,14 @@ py::bytes ConvertImportedExecutable(const py::bytes& data,
     libraries.emplace_back(proxy);
   }
   return py::bytes(symbian::python::ValueWithoutGil([&] {
-    return symbian::e32::ConvertImportedExecutable(bytes, libraries, uid3);
+    return symbian::e32::ConvertImportedExecutable(bytes, libraries, uid3,
+                                                   capabilities);
   }));
 }
 
 py::bytes ConvertDll(const py::bytes& data, const py::bytes& definition,
-                     const std::vector<py::bytes>& proxies, uint32_t uid3) {
+                     const std::vector<py::bytes>& proxies, uint32_t uid3,
+                     uint32_t capabilities) {
   const std::string bytes = data;
   const std::string exports = definition;
   std::vector<std::string> libraries;
@@ -63,7 +67,8 @@ py::bytes ConvertDll(const py::bytes& data, const py::bytes& definition,
     libraries.emplace_back(proxy);
   }
   return py::bytes(symbian::python::ValueWithoutGil([&] {
-    return symbian::e32::ConvertDll(bytes, exports, libraries, uid3);
+    return symbian::e32::ConvertDll(bytes, exports, libraries, uid3,
+                                    capabilities);
   }));
 }
 
@@ -123,6 +128,16 @@ symbian::sis::PackageInfo InspectSis(const py::bytes& data) {
   const std::string bytes = data;
   return symbian::python::ValueWithoutGil(
       [&] { return symbian::sis::InspectPackage(bytes); });
+}
+
+py::bytes SignSis(const py::bytes& data, const py::bytes& certificate,
+                  const py::bytes& private_key) {
+  const std::string package = data;
+  const std::string pem_certificate = certificate;
+  const std::string pem_key = private_key;
+  return py::bytes(symbian::python::ValueWithoutGil([&] {
+    return symbian::sis::SignPackage(package, pem_certificate, pem_key);
+  }));
 }
 
 std::vector<symbian::sdk::Export> ParseDef(const py::bytes& data) {
@@ -205,6 +220,7 @@ PYBIND11_MODULE(_native, module) {
       .def_readonly("data_base", &ImageInfo::data_base)
       .def_readonly("entry_offset", &ImageInfo::entry_offset)
       .def_readonly("secure_id", &ImageInfo::secure_id)
+      .def_readonly("capabilities", &ImageInfo::capabilities)
       .def_readonly("dll", &ImageInfo::dll)
       .def_readonly("header_size", &ImageInfo::header_size)
       .def_readonly("exception_descriptor_offset",
@@ -216,16 +232,18 @@ PYBIND11_MODULE(_native, module) {
       .def_readonly("data_data_relocations", &ImageInfo::data_data_relocations)
       .def_readonly("imports", &ImageInfo::imports);
   module.def("convert_pic_executable", &ConvertPicExecutable, py::arg("data"),
-             py::arg("uid3"), "Convert a restricted, retained-relocation ELF.");
+             py::arg("uid3"), py::arg("capabilities") = 0,
+             "Convert a restricted, retained-relocation ELF.");
   module.def("inspect_e32", &InspectE32, py::arg("data"),
              "Check the E32 application profile, releasing the GIL.");
   module.def(
       "convert_imported_executable", &ConvertImportedExecutable,
       py::arg("data"), py::arg("proxies"), py::arg("uid3"),
+      py::arg("capabilities") = 0,
       "Convert retained calls through eager ordinal slots, releasing the GIL.");
   module.def(
       "convert_dll", &ConvertDll, py::arg("data"), py::arg("definition"),
-      py::arg("proxies"), py::arg("uid3"),
+      py::arg("proxies"), py::arg("uid3"), py::arg("capabilities") = 0,
       "Convert frozen DLL exports and eager imports, releasing the GIL.");
   using symbian::sis::PackageOptions;
   py::class_<PackageOptions>(module, "SisPackageOptions")
@@ -238,7 +256,8 @@ PYBIND11_MODULE(_native, module) {
   py::class_<PackageInfo::EmbeddedFile>(module, "SisEmbeddedFile")
       .def_readonly("target", &PackageInfo::EmbeddedFile::target)
       .def_readonly("size", &PackageInfo::EmbeddedFile::size)
-      .def_readonly("sha1", &PackageInfo::EmbeddedFile::sha1);
+      .def_readonly("sha1", &PackageInfo::EmbeddedFile::sha1)
+      .def_readonly("capabilities", &PackageInfo::EmbeddedFile::capabilities);
   py::class_<PackageInfo>(module, "SisPackageInfo")
       .def_readonly("options", &PackageInfo::options)
       .def_readonly("executable_uid", &PackageInfo::executable_uid)
@@ -247,7 +266,8 @@ PYBIND11_MODULE(_native, module) {
       .def_readonly("target", &PackageInfo::target)
       .def_readonly("files", &PackageInfo::files)
       .def_readonly("application_registered",
-                    &PackageInfo::application_registered);
+                    &PackageInfo::application_registered)
+      .def_readonly("signed_package", &PackageInfo::signed_package);
   module.def("build_sis", &BuildSis, py::arg("data"), py::arg("uid"),
              py::arg("name"), py::arg("vendor"), py::arg("executable_name"),
              py::arg("version") = std::array<int32_t, 3>{1, 0, 0},
@@ -266,8 +286,11 @@ PYBIND11_MODULE(_native, module) {
   module.def("build_svg_mif", &BuildSvgMif, py::arg("data"),
              "Compile a bounded SVG icon into MIF, releasing the GIL.");
   module.def("inspect_sis", &InspectSis, py::arg("data"),
-             "Check the canonical unsigned SISX application package, releasing "
+             "Check the canonical SISX application package, releasing "
              "the GIL.");
+  module.def("sign_sis", &SignSis, py::arg("data"), py::arg("certificate"),
+             py::arg("private_key"),
+             "Sign the canonical SISX package, releasing the GIL.");
   using symbian::sdk::Export;
   py::class_<Export>(module, "SdkExport")
       .def_readonly("symbol", &Export::symbol)

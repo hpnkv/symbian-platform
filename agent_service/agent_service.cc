@@ -23,6 +23,7 @@
 #include "symbian/agent/guest_control.h"
 #include "symbian/agent/guest_log.h"
 #include "symbian/api/connectivity/active_tcp_listener.h"
+#include "symbian/api/connectivity/broadcast_probe.h"
 #include "symbian/api/connectivity/tcp_client.h"
 #include "symbian/api/display/display.h"
 #include "symbian/api/display/resident_panel.h"
@@ -35,10 +36,41 @@ namespace {
 
 using symbian::api::connectivity::TcpClient;
 constexpr std::uint16_t kAgentPort = 39101;
+constexpr std::uint16_t kDiscoveryPort = 39104;
+constexpr std::uint16_t kHostPort = 39103;
 constexpr std::size_t kMaximumFrame = 4096;
 constexpr std::size_t kMaximumRequestsPerConnection = 16;
 constexpr std::size_t kWorkerStackBytes = 256 * 1024;
 const absl::Duration kControlDeadline = absl::Seconds(5);
+
+enum class LinkPhase : std::uint8_t {
+  kSearching,
+  kNoOffer,
+  kProbeError,
+  kDialing,
+  kDialError,
+  kAuthenticating,
+};
+
+std::atomic<LinkPhase> link_phase{LinkPhase::kSearching};
+
+const char* AgentHeading() {
+  switch (link_phase.load()) {
+    case LinkPhase::kSearching:
+      return "SEARCH";
+    case LinkPhase::kNoOffer:
+      return "NO OFFER";
+    case LinkPhase::kProbeError:
+      return "PROBE ERR";
+    case LinkPhase::kDialing:
+      return "DIALING";
+    case LinkPhase::kDialError:
+      return "DIAL ERR";
+    case LinkPhase::kAuthenticating:
+      return "AUTH";
+  }
+  return "AGENT";
+}
 
 absl::Duration Remaining(absl::Time deadline) {
   const absl::Time now = absl::Now();
@@ -55,7 +87,7 @@ bool ReadExactly(TcpClient& client, std::span<std::uint8_t> output,
     if (remaining == absl::ZeroDuration()) {
       return false;
     }
-    auto received = client.ReceiveFor(output, remaining);
+    auto received = client.Receive(output, deadline);
     if (!received.ok() || *received == 0) {
       return false;
     }
@@ -67,8 +99,7 @@ bool ReadExactly(TcpClient& client, std::span<std::uint8_t> output,
 bool WriteExactly(TcpClient& client, std::span<const std::uint8_t> input,
                   absl::Time deadline) {
   const auto remaining = Remaining(std::move(deadline));
-  return remaining != absl::ZeroDuration() &&
-         client.SendFor(input, remaining).ok();
+  return remaining != absl::ZeroDuration() && client.Send(input, deadline).ok();
 }
 
 std::array<std::uint8_t, 32> AgentKey() {
@@ -83,6 +114,47 @@ std::array<std::uint8_t, 32> AgentKey() {
                                            nibble(hex[2 * index + 1]));
   }
   return key;
+}
+
+absl::StatusOr<std::array<std::uint8_t, 4>> DiscoverHost() {
+  std::array<std::uint8_t, 8> nonce{};
+  mbedtls_entropy_context entropy;
+  mbedtls_entropy_init(&entropy);
+  const int random_result =
+      mbedtls_entropy_func(&entropy, nonce.data(), nonce.size());
+  mbedtls_entropy_free(&entropy);
+  if (random_result != 0) {
+    return absl::UnavailableError("Agent discovery entropy unavailable");
+  }
+  const auto key = AgentKey();
+  const mbedtls_md_info_t* md = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
+  if (md == nullptr) {
+    return absl::InternalError("Agent discovery HMAC unavailable");
+  }
+  auto message = [&](std::string_view label,
+                     std::array<std::uint8_t, 32>& mac) {
+    std::array<std::uint8_t, 64> input{};
+    std::copy(label.begin(), label.end(), input.begin());
+    std::copy(nonce.begin(), nonce.end(), input.begin() + label.size());
+    return mbedtls_md_hmac(md, key.data(), key.size(), input.data(),
+                           label.size() + nonce.size(), mac.data()) == 0;
+  };
+  std::array<std::uint8_t, 45> request{};
+  std::array<std::uint8_t, 45> response{};
+  std::copy_n("SAGD1", 5, request.begin());
+  std::copy_n("SAGR1", 5, response.begin());
+  std::copy(nonce.begin(), nonce.end(), request.begin() + 5);
+  std::copy(nonce.begin(), nonce.end(), response.begin() + 5);
+  std::array<std::uint8_t, 32> request_mac{};
+  std::array<std::uint8_t, 32> response_mac{};
+  if (!message("symbian-agent-discover-v1", request_mac) ||
+      !message("symbian-agent-offer-v1", response_mac)) {
+    return absl::InternalError("Agent discovery HMAC failed");
+  }
+  std::copy(request_mac.begin(), request_mac.end(), request.begin() + 13);
+  std::copy(response_mac.begin(), response_mac.end(), response.begin() + 13);
+  return symbian::api::connectivity::BroadcastProbe(
+      kDiscoveryPort, request, response, absl::Now() + absl::Seconds(3));
 }
 
 bool Authenticate(TcpClient& client) {
@@ -250,18 +322,41 @@ class AgentService final
   AgentService() : listener_(*this) {}
 
   absl::Status Start() {
+    if (SYMBIAN_AGENT_PRIVATE_PROFILE) {
+      return worker_.Post([stop = stopping_, log = log_] {
+        while (!stop->load()) {
+          auto host = DiscoverHost();
+          if (host.ok() && !stop->load()) {
+            link_phase.store(LinkPhase::kDialing);
+            auto client = TcpClient::ConnectIpv4(
+                *host, kHostPort, absl::Now() + absl::Seconds(3));
+            if (client.ok() && !stop->load()) {
+              link_phase.store(LinkPhase::kAuthenticating);
+              Serve(std::move(*client), *log);
+            } else if (!stop->load()) {
+              link_phase.store(LinkPhase::kDialError);
+            }
+          } else if (!stop->load()) {
+            link_phase.store(host.status().code() ==
+                                     absl::StatusCode::kDeadlineExceeded
+                                 ? LinkPhase::kNoOffer
+                                 : LinkPhase::kProbeError);
+          }
+          for (int tick = 0; tick != 8 && !stop->load(); ++tick) {
+            absl::SleepFor(absl::Milliseconds(250));
+          }
+        }
+      });
+    }
     absl::Status status = listener_.EnableWorkerSharing();
     if (!status.ok()) {
       return status;
-    }
-    if (SYMBIAN_AGENT_PRIVATE_PROFILE) {
-      return listener_.ListenIpv4({0, 0, 0, 0}, kAgentPort);
     }
     return listener_.ListenIpv4({127, 0, 0, 1}, kAgentPort);
   }
 
   void OnAccept(absl::StatusOr<TcpClient> result) override {
-    if (stopping_) {
+    if (stopping_local_) {
       return;
     }
     if (result.ok()) {
@@ -278,10 +373,11 @@ class AgentService final
   }
 
   void CloseListener() {
-    if (stopping_) {
+    if (stopping_local_) {
       return;
     }
-    stopping_ = true;
+    stopping_local_ = true;
+    stopping_->store(true);
     listener_.Stop();
   }
 
@@ -295,7 +391,9 @@ class AgentService final
       std::make_shared<symbian::agent::AgentLogRing>();
   symbian::concurrency::WorkerExecutor worker_{4};
   symbian::api::connectivity::ActiveTcpListener listener_;
-  bool stopping_ = false;
+  std::shared_ptr<std::atomic<bool>> stopping_ =
+      std::make_shared<std::atomic<bool>>(false);
+  bool stopping_local_ = false;
 };
 
 constexpr symbian::api::display::ResidentPanelOptions kPanel{
@@ -307,6 +405,7 @@ constexpr symbian::api::display::ResidentPanelOptions kPanel{
     .state = SYMBIAN_AGENT_PANEL_STATE,
     .back_label = "BACK",
     .stop_label = "STOP",
+    .heading_provider = SYMBIAN_AGENT_PRIVATE_PROFILE ? AgentHeading : nullptr,
 };
 
 }  // namespace

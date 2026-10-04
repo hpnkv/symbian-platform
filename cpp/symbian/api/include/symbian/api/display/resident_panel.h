@@ -19,6 +19,9 @@ namespace symbian::api::display {
  * RequestResidentPanelForeground with the same property identity. Labels use
  * the built-in uppercase bitmap alphabet; unsupported glyphs are omitted.
  * All strings must remain valid until RunResidentPanel returns.
+ * heading_provider may return a different static label as service state
+ * changes; it is called on the panel's Window Server thread. The panel checks
+ * it on the existing wake timer and redraws only when the label changes.
  */
 struct ResidentPanelOptions {
   std::uint32_t app_uid = 0;
@@ -29,6 +32,7 @@ struct ResidentPanelOptions {
   const char* state = "RUNNING";
   const char* back_label = "BACK";
   const char* stop_label = "STOP";
+  const char* (*heading_provider)() = nullptr;
 };
 
 /** @brief Run a resident panel until STOP or an external stop request. */

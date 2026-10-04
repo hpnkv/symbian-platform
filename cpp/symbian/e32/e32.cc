@@ -732,7 +732,7 @@ absl::Status CheckEntry(std::string_view code, uint32_t entry) {
 }
 
 absl::StatusOr<std::string> ConvertExecutable(
-    std::string_view elf, uint32_t uid3,
+    std::string_view elf, uint32_t uid3, uint32_t capabilities,
     const std::vector<std::string>* proxies,
     const std::string_view* definition = nullptr) {
   if (elf.size() > 64 * 1024 * 1024) {
@@ -740,6 +740,10 @@ absl::StatusOr<std::string> ConvertExecutable(
   }
   if (uid3 < 0xe0000000 || uid3 > 0xefffffff) {
     return absl::InvalidArgumentError("Experimental unprotected UID3 required");
+  }
+  constexpr uint32_t kNetworkServices = 1U << 13;
+  if ((capabilities & ~kNetworkServices) != 0) {
+    return absl::UnimplementedError("Unsupported E32 capability");
   }
   const auto header = analysis::InspectElf32(elf);
   if (!header.ok()) {
@@ -817,7 +821,8 @@ absl::StatusOr<std::string> ConvertExecutable(
   Put32(bytes, 100, header_size);
   Put16(bytes, 120, 350);  // Foreground process priority.
   Put16(bytes, 122, header->arm.cpu_arch == 6 ? 0x2002 : 0x2001);
-  Put32(bytes, 128, uid3);  // Secure ID; no capabilities or vendor ID.
+  Put32(bytes, 128, uid3);  // Secure ID; no vendor ID.
+  Put32(bytes, 136, capabilities);
   Put32(bytes, 144, *exception_descriptor);
   Put16(bytes, 152, static_cast<uint16_t>(bitmap.size()));
   bytes[154] = bitmap.empty() ? 0 : 1;  // No holes or full bitmap.
@@ -885,22 +890,23 @@ absl::StatusOr<std::string> ConvertExecutable(
 }  // namespace
 
 absl::StatusOr<std::string> ConvertPicExecutable(std::string_view elf,
-                                                 uint32_t uid3) {
-  return ConvertExecutable(elf, uid3, nullptr);
+                                                 uint32_t uid3,
+                                                 uint32_t capabilities) {
+  return ConvertExecutable(elf, uid3, capabilities, nullptr);
 }
 
 absl::StatusOr<std::string> ConvertImportedExecutable(
     std::string_view elf, const std::vector<std::string>& proxies,
-    uint32_t uid3) {
-  return ConvertExecutable(elf, uid3, &proxies);
+    uint32_t uid3, uint32_t capabilities) {
+  return ConvertExecutable(elf, uid3, capabilities, &proxies);
 }
 
 absl::StatusOr<std::string> ConvertDll(std::string_view elf,
                                        std::string_view definition,
                                        const std::vector<std::string>& proxies,
-                                       uint32_t uid3) {
-  return ConvertExecutable(elf, uid3, proxies.empty() ? nullptr : &proxies,
-                           &definition);
+                                       uint32_t uid3, uint32_t capabilities) {
+  return ConvertExecutable(elf, uid3, capabilities,
+                           proxies.empty() ? nullptr : &proxies, &definition);
 }
 
 absl::StatusOr<ImageInfo> InspectImage(std::string_view bytes) {
@@ -934,10 +940,14 @@ absl::StatusOr<ImageInfo> InspectImage(std::string_view bytes) {
       Read32(bytes, 20) != HeaderCrc(bytes, header_size)) {
     return absl::DataLossError("Invalid E32 identity/header checksum");
   }
-  for (size_t offset : {size_t{132}, size_t{136}, size_t{140}, size_t{148}}) {
+  for (size_t offset : {size_t{132}, size_t{140}, size_t{148}}) {
     if (Read32(bytes, offset) != 0) {
-      return absl::UnimplementedError("E32 capabilities unsupported");
+      return absl::UnimplementedError("Unsupported E32 security header");
     }
+  }
+  constexpr uint32_t kNetworkServices = 1U << 13;
+  if ((Read32(bytes, 136) & ~kNetworkServices) != 0) {
+    return absl::UnimplementedError("Unsupported E32 capability");
   }
   const uint32_t descriptor = Read32(bytes, 144);
   if (descriptor != 0) {
@@ -1146,6 +1156,7 @@ absl::StatusOr<ImageInfo> InspectImage(std::string_view bytes) {
       .data_base = data_base,
       .entry_offset = Read32(bytes, 72),
       .secure_id = Read32(bytes, 128),
+      .capabilities = Read32(bytes, 136),
       .dll = dll,
       .header_size = header_size,
       .exception_descriptor_offset = descriptor & ~uint32_t{1},

@@ -97,7 +97,7 @@ const state = {
   firmwareInspections: {}, firmwareInspectionBusy: {}, firmwareInspectionErrors: {}, firmwareFileSearch: {},
   applicationOverview: null, applicationLoading: false, applicationError: "",
   agentProject: null, agentBusy: "", agentError: "", agentPackage: null,
-  agentPackages: {}, agentIdentities: {}, agentLive: {}, agentPairConfirmed: {}, agentHosts: {},
+  agentPackages: {}, agentIdentities: {}, agentLive: {}, agentPairConfirmed: {},
   agentOutcome: null, agentStaged: {}, agentObservations: {},
   applicationFirmware: null, applicationFirmwareBusy: false, applicationFirmwareError: "",
   applicationSelectedFirmware: "", applicationBusy: "", applicationAction: "", applicationOutcome: null, applicationBuildLog: "", applicationRunLog: "",
@@ -731,10 +731,10 @@ function renderAgents() {
     const fresh = live && Date.now() - Date.parse(live.checked_at) < 30000;
     const stateLabel = fresh ? `Verified live · ${live.status.state}` : live ? "Previously verified · check again" : reported ? "Running reported · live status unchecked" : staged ? "Package staged · installation unverified" : "Agent installation unknown";
     return `<section class="panel agent-card"><div class="agent-card-head"><span class="action-icon">${icon("phone")}</span><div><h2>${escapeHtml(phone.product)}</h2><p>${escapeHtml(phone.interface_profile)} · ${escapeHtml(phone.selector)}</p></div><span class="agent-badge">${escapeHtml(stateLabel)}</span></div>` +
-      (live ? `<p>Authenticated at ${escapeHtml(live.checked_at)} over Wi-Fi (${escapeHtml(live.host)}). USB discovery identifies the phone; it does not carry this status connection. Check again for a current reading.</p>` : `<p>USB discovery identifies the phone and can stage its package. Live status uses the phone's Wi-Fi address and a private key embedded in this phone's agent build.</p>`) +
-      (!reported && !live ? `<ol><li>Build a phone-specific agent package.</li><li>Stage the SIS through PC Suite MTP or a writable USB storage volume.</li><li>Install and open it on the phone. Compare the pairing code on its panel, then enter the phone's Wi-Fi IPv4 address.</li></ol>` : "") +
+      (live ? `<p>Authenticated at ${escapeHtml(live.checked_at)} over Wi-Fi (${escapeHtml(live.host)}). USB discovery identifies the phone; it does not carry this status connection. Check again for a current reading.</p>` : `<p>USB discovery identifies the phone and can stage its package. The phone initiates a Wi-Fi connection to this Mac; the private pairing key authenticates the reply.</p>`) +
+      (!reported && !live ? `<ol><li>Build a phone-specific agent package.</li><li>Stage the SIS through PC Suite MTP or a writable USB storage volume.</li><li>Install and open it on the phone. Compare the pairing code on its panel, then check live status on the same Wi-Fi.</li></ol>` : "") +
       `<div class="agent-controls"><button class="button" data-agent-build="${escapeHtml(phone.selector)}" ${available && !state.agentBusy ? "" : "disabled"}>${icon("build")} Build for this phone</button><button class="button" data-agent-stage="${escapeHtml(phone.selector)}" ${canStage && !state.agentBusy ? "" : "disabled"}>${icon("upload")} Stage agent package</button>${!hasTransfer ? '<small>Connect in PC Suite mode or mount a writable USB storage volume.</small>' : !prepared ? '<small>Build a phone-specific package first.</small>' : mtpCandidate && !(phone.capabilities || []).includes("stage-sis") ? '<small>The writable MTP Installs folder is checked before transfer.</small>' : ""}</div>` +
-      (prepared ? `<p>Pairing code: <strong>${escapeHtml(prepared.pairing_code)}</strong>. Check that this code appears on the agent panel on this phone.</p><label><input type="checkbox" data-agent-pair="${escapeHtml(phone.selector)}" ${state.agentPairConfirmed[phone.selector] ? "checked" : ""}> The phone shows this code</label><div class="agent-controls"><input class="input" data-agent-host="${escapeHtml(phone.selector)}" aria-label="Phone Wi-Fi IPv4 address" placeholder="Phone Wi-Fi IPv4 address" value="${escapeHtml(state.agentHosts[phone.selector] || "")}"><button class="button" data-agent-verify="${escapeHtml(phone.selector)}" ${state.agentPairConfirmed[phone.selector] && !state.agentBusy ? "" : "disabled"}>Check live status</button></div>` : "") +
+      (prepared ? `<p>Pairing code: <strong>${escapeHtml(prepared.pairing_code)}</strong>. Check that this code appears on the agent panel on this phone. The phone discovers the console automatically on local Wi-Fi.</p><label><input type="checkbox" data-agent-pair="${escapeHtml(phone.selector)}" ${state.agentPairConfirmed[phone.selector] ? "checked" : ""}> The phone shows this code</label><div class="agent-controls"><button class="button" data-agent-verify="${escapeHtml(phone.selector)}" ${state.agentPairConfirmed[phone.selector] && !state.agentBusy ? "" : "disabled"}>Check live status</button></div>` : "") +
       `<div class="agent-controls"><button class="button" data-agent-report="${escapeHtml(phone.selector)}" ${state.agentBusy ? "disabled" : ""}>${reported ? "Clear running report" : "I see the agent running"}</button><small>${reported ? "Clearing only changes this computer's record." : "Records your observation on this computer; no phone operation is sent."}</small></div>` +
       (staged ? `<p class="muted">${escapeHtml(staged.next_action || "Finish installation on the phone.")}</p>` : "") + `</section>`;
   }).join("");
@@ -781,13 +781,10 @@ async function stageAgent(selector) {
 }
 async function verifyAgent(selector) {
   if (!state.agentPairConfirmed[selector] || state.agentBusy) return;
-  const input = [...document.querySelectorAll("[data-agent-host]")].find(item => item.dataset.agentHost === selector);
-  const host = input?.value.trim() || "";
-  state.agentHosts[selector] = host;
   state.agentBusy = "verify"; state.agentError = ""; delete state.agentLive[selector];
   setWork("Checking agent over Wi-Fi…"); renderMain();
   try {
-    const result = await window.pywebview.api.verify_agent_status(selector, host);
+    const result = await window.pywebview.api.verify_agent_status(selector);
     state.agentLive[selector] = result;
     appendActivity("Check development agent", "Authenticated live status", result);
     setWork("Ready");
@@ -968,7 +965,6 @@ function bindPage() {
   document.querySelectorAll("[data-agent-build]").forEach(button => button.addEventListener("click", () => buildAgent(button.dataset.agentBuild)));
   document.querySelectorAll("[data-agent-stage]").forEach(button => button.addEventListener("click", () => stageAgent(button.dataset.agentStage)));
   document.querySelectorAll("[data-agent-pair]").forEach(input => input.addEventListener("change", () => { state.agentPairConfirmed[input.dataset.agentPair] = input.checked; renderMain(); }));
-  document.querySelectorAll("[data-agent-host]").forEach(input => input.addEventListener("input", () => { state.agentHosts[input.dataset.agentHost] = input.value; }));
   document.querySelectorAll("[data-agent-verify]").forEach(button => button.addEventListener("click", () => verifyAgent(button.dataset.agentVerify)));
   document.querySelectorAll("[data-agent-report]").forEach(button => button.addEventListener("click", () => setAgentReport(button.dataset.agentReport)));
   document.getElementById("application-firmware")?.addEventListener("change", event => {

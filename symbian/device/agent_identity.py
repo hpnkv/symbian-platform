@@ -17,6 +17,7 @@ from pathlib import Path
 
 from symbian import packaging, toolchain
 from symbian.device.connection import ConnectedDevice
+from symbian.packaging.signing import create_self_signed_identity
 from symbian.project.sdk import AppSdk
 from symbian.status import Code, StatusError
 
@@ -101,7 +102,7 @@ def read_identity(device: ConnectedDevice, project: Path) -> dict | None:
             raise ValueError("Agent package is too large")
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
         if (
-            metadata["schema"] == "symbian.agent-profile/v1"
+            metadata["schema"] == "symbian.agent-profile/v2"
             and metadata["key_sha256"]
             == hashlib.sha256(key_file(device).read_bytes()).hexdigest()
             and metadata["package_sha256"]
@@ -142,11 +143,18 @@ def build_package(
             "SYMBIAN_AGENT_PAIRING_CODE": pairing_code(device),
         },
     )
+    certificate, private_key = create_self_signed_identity(
+        identity_dir(device), "Symbian Development Agent"
+    )
     packaged = packaging.package(
-        project, Path(built["artifact"]), output / "package"
+        project,
+        Path(built["artifact"]),
+        output / "package",
+        signing_certificate=certificate,
+        signing_key=private_key,
     )
     profile = {
-        "schema": "symbian.agent-profile/v1",
+        "schema": "symbian.agent-profile/v2",
         "key_sha256": hashlib.sha256(key.read_bytes()).hexdigest(),
         "package_sha256": packaged["sha256"],
     }

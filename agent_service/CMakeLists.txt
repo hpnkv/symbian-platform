@@ -22,7 +22,7 @@ endforeach()
 # The RM-807 entropy adapter has emulator evidence only; a phone-specific
 # build remains an explicitly unverified physical profile.
 set(SYMBIAN_AGENT_PRIVATE_KEY_FILE "" CACHE FILEPATH
-  "32-byte private agent key; required for a Wi-Fi listener")
+  "32-byte private agent key; required for a phone profile")
 if(NOT SYMBIAN_AGENT_PRIVATE_KEY_FILE AND
     NOT SYMBIAN_EMULATOR_RM807_AGENT AND NOT SYMBIAN_INDEX_GUEST_PROBES)
   message(FATAL_ERROR "Public-key builds require the RM-807 emulator profile")

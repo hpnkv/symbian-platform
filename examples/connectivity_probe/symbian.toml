@@ -3,6 +3,7 @@ name = "connectivity_probe"
 kind = "e32-import-experiment"
 cmake_preset = "symbian-pic"
 uid3 = 0xe0000823
+capabilities = ["NetworkServices"]
 import_proxies = [
   "${sdk}/proxies/euser/euser.dso",
   "${sdk}/proxies/libc/libc.dso",

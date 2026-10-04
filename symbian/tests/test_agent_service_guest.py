@@ -85,6 +85,59 @@ def _connect(timeout=10.0):
     )
 
 
+@pytest.mark.skipif(
+    not os.environ.get("SYMBIAN_AGENT_PRIVATE_GUEST_KEY_FILE"),
+    reason="Requires an ephemeral private guest key",
+)
+def test_private_agent_discovers_host(service_image, tmp_path):
+    """A private guest connects outward after keyed local discovery."""
+    golden = ROOT / ".symbian/instances/delight-import-01"
+    instance = tmp_path / "instance"
+    shutil.copytree(golden, instance)
+    guest_bin = instance / "data/drives/rm-807/c/sys/bin"
+    guest_bin.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(service_image, guest_bin / "agent_service.exe")
+    (instance / "config.yml").write_text(
+        "data-storage: data\ncpu: dynarmic\ndevice: 0\nlanguage: 1\n"
+        "enable-gdb-stub: false\nlog-svc: true\n"
+    )
+    executable = ROOT / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+    with tempfile.TemporaryDirectory(
+        prefix="agent-outbound-", dir="/tmp"
+    ) as name:
+        env = dict(os.environ)
+        env.update(
+            EKA2L1_DATA_ROOT=str(instance),
+            EKA2L1_EXPERIMENTAL_SVC_PROFILE="rm807-113.010.1508",
+            **background_environment(),
+        )
+        with (tmp_path / "frontend.log").open("w") as log:
+            process = subprocess.Popen(
+                [
+                    executable_for_session(executable, Path(name)),
+                    "--device",
+                    "RM-807",
+                    "--run",
+                    "C:\\sys\\bin\\agent_service.exe",
+                ],
+                env=env,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+            )
+            try:
+                with ReadOnlyAgentSession.accept(
+                    "0.0.0.0",
+                    39103,
+                    key_file=Path(
+                        os.environ["SYMBIAN_AGENT_PRIVATE_GUEST_KEY_FILE"]
+                    ),
+                    timeout=25,
+                ) as agent:
+                    assert agent.status().state == "ready"
+            finally:
+                _stop(process)
+
+
 @pytest.mark.parametrize("action", ["stop", "background"])
 def test_local_window_controls(service_image, tmp_path, action):
     """The guest panel stops locally or leaves the service running."""

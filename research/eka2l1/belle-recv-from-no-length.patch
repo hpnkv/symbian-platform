@@ -1,0 +1,15 @@
+diff --git a/src/emu/services/src/socket/socket.cpp b/src/emu/services/src/socket/socket.cpp
+--- a/src/emu/services/src/socket/socket.cpp
++++ b/src/emu/services/src/socket/socket.cpp
+@@ -793,7 +793,11 @@ namespace eka2l1::epoc::socket {
+                 case socket_reform_so_recv_from:
+                     recv(ctx, true, true, true);
+                     return;
+
++                case socket_reform_so_recv_from_no_len:
++                    recv(ctx, false, true, true);
++                    return;
++
+                 case socket_reform_so_accept:
+                     accept(ctx);
+                     return;

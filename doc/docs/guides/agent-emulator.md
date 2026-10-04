@@ -70,21 +70,24 @@ its limit.
 
 Open `symbian console` and choose **Development Agents**. With an active SDK
 selected, **Build for this phone** compiles and packages a phone-specific agent
-with a private key stored outside the repository. A
+with a private protocol key and a separate self-signing key stored outside the
+repository. A
 connected USB phone appears both beneath **Devices** in the sidebar and as a
 card in **Development Agents**. **Stage agent package** transfers the checked
 SIS to `Installs` through a writable mounted volume or the phone's MTP
 interface in PC Suite mode. The SDK reads the staged bytes back to verify the
 hash. Safely eject a mounted volume, then complete the installer prompts on
-the phone.
+the phone. Self-signing checks the package's origin and integrity, but the
+handset can still reject it under its own installation policy.
 
 USB detection and SIS staging cannot establish that the service installed or
 started. The phone-specific panel shows an eight-character pairing code;
-compare it with the console card before checking status. Enter the phone's
-Wi-Fi IPv4 address and choose **Check live status**. Only a valid response from
-the phone-specific key earns the **Verified live** label. This protocol
+compare it with the console card before checking status. On the same local
+Wi-Fi, choose **Check live status**. The agent discovers the console, connects
+to it and proves possession of its phone-specific key. Only an authenticated
+response earns the **Verified live** label. This protocol
 authenticates the peer but does not encrypt traffic; use a trusted local
-network. A failed check does not prove the agent is absent: address, network,
+network. A failed check does not prove the agent is absent: discovery, network,
 installer or guest entropy may be at fault. Nokia 808 compatibility remains a
 separate physical-device gate.
 

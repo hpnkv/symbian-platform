@@ -41,6 +41,20 @@ TEST(E32Test, ConvertsSupportedExecutableWithStableIdentity) {
   EXPECT_EQ(*result, *ConvertPicExecutable(Executable(), 0xe0000808));
 }
 
+TEST(E32Test, OptsInToNetworkServicesCapability) {
+  constexpr uint32_t kNetworkServices = 1U << 13;
+  const auto image =
+      ConvertPicExecutable(Executable(), 0xe0000808, kNetworkServices);
+  ASSERT_TRUE(image.ok()) << image.status();
+  EXPECT_EQ(Read32(*image, 136), kNetworkServices);
+  const auto inspected = InspectImage(*image);
+  ASSERT_TRUE(inspected.ok()) << inspected.status();
+  EXPECT_EQ(inspected->capabilities, kNetworkServices);
+  EXPECT_EQ(
+      ConvertPicExecutable(Executable(), 0xe0000808, 1U << 10).status().code(),
+      absl::StatusCode::kUnimplemented);
+}
+
 TEST(E32Test, RejectsRenamedArmExceptionIndexWithoutDescriptor) {
   auto elf = Executable();
   Put32(elf, 160, 0x70000001);  // SHT_ARM_EXIDX without .ARM.exidx name.

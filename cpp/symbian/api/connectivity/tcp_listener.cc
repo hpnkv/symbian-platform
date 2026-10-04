@@ -5,6 +5,8 @@
 
 #include <utility>
 
+#include <limits.h>
+
 #include "native_tcp_client.h"
 #include "symbian/native_status.h"
 
@@ -42,31 +44,15 @@ TcpListener::~TcpListener() {
   SymbianDeviceTcpListenerClose(native_);
 }
 
-absl::StatusOr<TcpClient> TcpListener::Accept() {
+absl::StatusOr<TcpClient> TcpListener::Accept(absl::Time deadline) {
   if (native_ == nullptr) {
     return absl::FailedPreconditionError("TCP listener is closed");
   }
   NativeTcpClient* client = nullptr;
-  const int result = SymbianDeviceTcpAccept(native_, &client);
-  if (result != 0) {
-    return symbian::StatusFromNativeError(result, "Accept TCP stream");
-  }
-  return TcpClient(client);
-}
-
-absl::StatusOr<TcpClient> TcpListener::AcceptFor(absl::Duration timeout) {
-  if (native_ == nullptr) {
-    return absl::FailedPreconditionError("TCP listener is closed");
-  }
-  if (timeout < absl::ZeroDuration() || timeout > absl::Seconds(60)) {
-    return absl::InvalidArgumentError("TCP accept timeout must be 0-60000 ms");
-  }
-  NativeTcpClient* client = nullptr;
-  const int result = SymbianDeviceTcpAcceptFor(
-      native_,
-      static_cast<int>(absl::ToInt64Milliseconds(
-          absl::Ceil(timeout, absl::Milliseconds(1)))),
-      &client);
+  const int result = SymbianDeviceTcpAccept(native_, &client,
+                                            deadline == absl::InfiniteFuture()
+                                                ? INT64_MAX
+                                                : absl::ToUnixMicros(deadline));
   if (result != 0) {
     return symbian::StatusFromNativeError(result, "Accept TCP stream");
   }

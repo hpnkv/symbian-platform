@@ -59,6 +59,17 @@ def build_executable(
     uid3 = options.get("uid3")
     if type(uid3) is not int or not 0xE0000000 <= uid3 <= 0xEFFFFFFF:
         raise StatusError(Code.INVALID_ARGUMENT, "Experimental UID3 required")
+    capability_names = options.get("capabilities", [])
+    if (
+        not isinstance(capability_names, list)
+        or any(name != "NetworkServices" for name in capability_names)
+        or len(capability_names) != len(set(capability_names))
+    ):
+        raise StatusError(
+            Code.INVALID_ARGUMENT,
+            "Only the NetworkServices process capability is supported",
+        )
+    capabilities = (1 << 13) if capability_names else 0
     preset = options.get("cmake_preset", "symbian-pic")
     if not isinstance(preset, str) or not re.fullmatch(
         r"[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}", preset
@@ -139,13 +150,17 @@ def build_executable(
     def convert(data: bytes) -> bytes:
         if dll:
             return convert_dll(
-                data, definition_bytes, list(proxy_bytes.values()), uid3
+                data,
+                definition_bytes,
+                list(proxy_bytes.values()),
+                uid3,
+                capabilities,
             )
         if imported:
             return convert_imported_executable(
-                data, list(proxy_bytes.values()), uid3
+                data, list(proxy_bytes.values()), uid3, capabilities
             )
-        return convert_pic_executable(data, uid3)
+        return convert_pic_executable(data, uid3, capabilities)
 
     output.mkdir(parents=True, exist_ok=True)
     primary = output / "cmake"

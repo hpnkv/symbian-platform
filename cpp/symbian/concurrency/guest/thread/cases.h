@@ -12,6 +12,7 @@
 #include <type_traits>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/time/time.h"
 #include "thread/boost_primitives.h"
 
 namespace thread {
@@ -39,9 +40,9 @@ struct Selector {
     return true;
   }
 
-  // The caller holds mu. The accepted wall deadline was converted before
-  // registration; successive waits use only monotonic elapsed time.
-  bool WaitForPickFor(absl::Duration remaining);
+  // The caller holds mu. Convert the wall deadline once; successive waits
+  // use only monotonic elapsed time.
+  bool WaitForPick(absl::Time deadline = absl::InfiniteFuture());
 
   Mutex mu;
   CondVar cv;

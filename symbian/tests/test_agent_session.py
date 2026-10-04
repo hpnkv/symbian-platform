@@ -2,6 +2,7 @@
 
 import hashlib
 import hmac
+import secrets
 import socket
 import threading
 import time
@@ -117,6 +118,88 @@ def test_read_only_status_over_authenticated_socket():
     assert status.display.width_pixels == 640
     assert [request["kind"] for request in observed] == [1, 2, 6]
     assert logs.records[0].sequence == 5
+
+
+def test_phone_initiated_discovery_and_status():
+    """A keyed probe locates the host without storing either IP address."""
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    observed = []
+
+    def phone():
+        time.sleep(0.1)
+        nonce = secrets.token_bytes(8)
+        digest = hmac.digest(
+            KEY, b"symbian-agent-discover-v1" + nonce, hashlib.sha256
+        )
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as discovery:
+            discovery.settimeout(3)
+            discovery.sendto(b"SAGD1" + nonce + digest, ("127.0.0.1", 39104))
+            reply, _ = discovery.recvfrom(64)
+            expected = hmac.digest(
+                KEY, b"symbian-agent-offer-v1" + nonce, hashlib.sha256
+            )
+            assert reply == b"SAGR1" + nonce + expected
+        with socket.create_connection(("127.0.0.1", port)) as stream:
+            _authenticate(stream)
+            for body in (
+                {
+                    "protocol_version": 1,
+                    "maximum_control_bytes": 4096,
+                    "maximum_requests": 16,
+                    "capabilities": ["status"],
+                },
+                {
+                    "service": "symbian-agent",
+                    "state": "ready",
+                    "capabilities": ["status"],
+                },
+            ):
+                request = _request(stream)
+                observed.append(request)
+                _reply(stream, request, body)
+
+    thread = threading.Thread(target=phone, daemon=True)
+    thread.start()
+    with ReadOnlyAgentSession.accept(
+        "127.0.0.1", port, key_file=KEY_FILE, timeout=5
+    ) as agent:
+        status = agent.status()
+    thread.join(timeout=3)
+    assert not thread.is_alive()
+    assert status.state == "ready"
+    assert [item["kind"] for item in observed] == [1, 2]
+
+
+def test_wrong_discovery_key_does_not_get_host_offer():
+    """A broadcast without the paired key receives no endpoint reply."""
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    observed = []
+
+    def phone():
+        time.sleep(0.05)
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as discovery:
+            discovery.settimeout(0.25)
+            discovery.sendto(
+                b"SAGD1" + bytes(8) + bytes(32), ("127.0.0.1", 39104)
+            )
+            try:
+                observed.append(discovery.recvfrom(64))
+            except TimeoutError:
+                pass
+
+    thread = threading.Thread(target=phone, daemon=True)
+    thread.start()
+    with pytest.raises(StatusError) as error:
+        ReadOnlyAgentSession.accept(
+            "127.0.0.1", port, key_file=KEY_FILE, timeout=0.35
+        )
+    thread.join(timeout=1)
+    assert error.value.code == Code.DEADLINE_EXCEEDED
+    assert observed == []
 
 
 def test_rejects_wrong_server_proof_before_control_frames():

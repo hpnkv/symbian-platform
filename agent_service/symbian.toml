@@ -3,6 +3,7 @@ name = "agent_service"
 kind = "e32-import"
 cmake_preset = "symbian-pic"
 uid3 = 0xe0000a31
+capabilities = ["NetworkServices"]
 import_proxies = [
   "${sdk}/proxies/euser/euser.dso",
   "${sdk}/proxies/libc/libc.dso",
@@ -21,7 +22,7 @@ uid = 0xe0000a32
 name = "Symbian Development Agent"
 vendor = "Symbian SDK"
 executable_name = "agent_service.exe"
-version = [1, 0, 3]
+version = [1, 0, 8]
 
 [application]
 caption = "Development Agent"

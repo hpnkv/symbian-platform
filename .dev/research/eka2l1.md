@@ -31,6 +31,7 @@ git -C research/upstream/kernelhwsrv checkout 0c3208650587ac0230aed8a74e9bddb528
 git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/instance-root.patch
 git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/runtime-probe.patch
 git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/guest-debug-step.patch
+git -C research/upstream/EKA2L1 apply ../../../research/eka2l1/belle-recv-from-no-length.patch
 ```
 
 If the checkout already exists, verify its revision and patch before building;

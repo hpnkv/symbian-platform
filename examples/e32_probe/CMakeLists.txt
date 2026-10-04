@@ -6,3 +6,5 @@ symbian_add_pic_executable(e32_probe
   STARTUP startup.S
   LINKER_SCRIPT image.ld
   SOURCES probe.cc)
+target_compile_options(e32_probe PRIVATE
+  -fno-unwind-tables -fno-asynchronous-unwind-tables)

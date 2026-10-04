@@ -31,6 +31,9 @@ symbian_add_pic_executable(e32_probe
 The helper applies ARMv5T/AAPCS settings, target headers, PIC, disabled
 exceptions and RTTI, and the selected linker. The linker keeps relocations
 for native E32 conversion. A tracked linker script defines image layout.
+The converter writes the process security header too. Declare
+`capabilities = ["NetworkServices"]` in `[project]` only when the application
+needs guest network sockets. See [project configuration](project-configuration.md).
 
 ## Configure and verify
 

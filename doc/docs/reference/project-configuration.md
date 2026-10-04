@@ -47,6 +47,30 @@ own UI. Unsupported language tags fail during packaging. The exact set of accept
 [development status](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md)
 records validation evidence.
 
+## Process network capability
+
+An application using guest sockets can request the Symbian `NetworkServices`
+process capability in its `[project]` table:
+
+```toml
+capabilities = ["NetworkServices"]
+```
+
+The E32 converter records this capability in the image security header. The
+SDK currently rejects other capability names; an omitted list leaves the
+header mask at zero. The SIS packager copies the executable's capability mask
+into its file description, which the Symbian installer compares with the E32
+header. A capability bit does not sign a SIS.
+
+To sign an application package, use a matching PEM certificate and RSA private
+key with `symbian package --signing-certificate CERT --signing-key KEY` plus
+the usual `--project`, `--artifact` and `--output` arguments. The native
+inspector verifies the signature and each packaged file. Keep signing keys
+outside the project and source control. The desktop console creates a private
+per-phone self-signed identity for the development agent. The phone's installer
+still decides whether to grant installation, so test the package on the actual
+device.
+
 ## Installed SDK layout
 
 | Directory | What an application uses |

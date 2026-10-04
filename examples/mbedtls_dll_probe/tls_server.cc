@@ -8,6 +8,7 @@
 #include <span>
 #include <string>
 
+#include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy.h"
@@ -28,14 +29,14 @@ using symbian::api::connectivity::TcpListener;
 int Send(void* context, const unsigned char* bytes, size_t length) {
   auto* client = static_cast<TcpClient*>(context);
   const auto result =
-      client->SendFor(std::span(bytes, length), absl::Seconds(5));
+      client->Send(std::span(bytes, length), absl::Now() + absl::Minutes(1));
   return result.ok() ? static_cast<int>(length) : MBEDTLS_ERR_NET_SEND_FAILED;
 }
 
 int Receive(void* context, unsigned char* bytes, size_t capacity) {
   auto* client = static_cast<TcpClient*>(context);
-  const auto result =
-      client->ReceiveFor(std::span(bytes, capacity), absl::Seconds(5));
+  const auto result = client->Receive(std::span(bytes, capacity),
+                                      absl::Now() + absl::Minutes(1));
   return result.ok() ? static_cast<int>(*result) : MBEDTLS_ERR_NET_RECV_FAILED;
 }
 
@@ -165,7 +166,7 @@ extern "C" __attribute__((visibility("default"))) int MbedNativeTlsServerProbe(
   if (!listener.ok()) {
     return -242;
   }
-  auto client = listener->AcceptFor(absl::Seconds(10));
+  auto client = listener->Accept(absl::Now() + absl::Seconds(10));
   if (!client.ok()) {
     return -243;
   }

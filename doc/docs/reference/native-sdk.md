@@ -98,16 +98,15 @@ archive is not evidence of a guest handshake.
 Select `TlsVersion::kTls12` or `TlsVersion::kTls13` there: this Mbed TLS server
 needs one version per listener. `Accept()` requires a verified client
 certificate.
-`ReadFor()` and `WriteFor()` hold a single 32 KiB-or-smaller operation under a
-0–60 second deadline and drain a timed-out native socket request. The owner
+`Read()` and `Write()` hold a single 32 KiB-or-smaller operation under an
+absolute deadline and drain an expired native socket request. The owner
 handles one stream at a time and resets it with `CloseSession()`. It belongs
 on a worker thread; a service must arrange cancellation, pairing and key
 custody around it. The default entropy source fails closed, so the owner
 cannot silently turn a compiled archive into a live server.
-For a framed control request, pass the remaining time from one monotonic
-request deadline into every `ReadFor()` and `WriteFor()` call. Per-call
-timeouts alone let a peer extend the exchange by sending one byte before each
-new timeout.
+For a framed control request, pass one absolute request deadline into every
+`Read()` and `Write()` call. Creating a new deadline per call lets a peer extend
+the exchange by sending one byte before each expiry.
 
 Deep native call chains can exhaust the worker's normal 16 KiB fiber stack.
 `WorkerExecutor::PostFiber(work, stack_bytes)` accepts a word-aligned 4 KiB to

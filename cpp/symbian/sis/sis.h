@@ -30,10 +30,12 @@ struct PackageInfo {
     std::string target;
     uint32_t size = 0;
     std::string sha1;
+    uint32_t capabilities = 0;
   };
 
   std::vector<EmbeddedFile> files;
   bool application_registered = false;
+  bool signed_package = false;
 };
 
 struct ApplicationFile {
@@ -62,6 +64,12 @@ absl::StatusOr<std::string> BuildApplicationPackage(
 
 // Wraps a bounded project SVG in a deterministic, gzip-backed MIF icon.
 absl::StatusOr<std::string> BuildSvgMif(std::string_view svg);
+
+// Sign a canonical package with a PEM RSA key and matching X.509
+// certificate. The private key is never stored in the resulting SIS.
+absl::StatusOr<std::string> SignPackage(std::string_view unsigned_package,
+                                        std::string_view certificate_pem,
+                                        std::string_view private_key_pem);
 
 // Bounded inspection of exactly the canonical profile above. Verifies UID,
 // controller/data CRCs, SHA-1 payload hash and native E32 checks. Other SIS

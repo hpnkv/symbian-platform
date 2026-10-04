@@ -30,8 +30,10 @@ internal::CaseStateArray MakeCaseStates(std::size_t count) {
 
 }  // namespace
 
-bool internal::Selector::WaitForPickFor(absl::Duration remaining) {
-  const bool infinite = remaining == absl::InfiniteDuration();
+bool internal::Selector::WaitForPick(absl::Time deadline) {
+  const bool infinite = deadline == absl::InfiniteFuture();
+  absl::Duration remaining =
+      infinite ? absl::InfiniteDuration() : deadline - absl::Now();
   const absl::Duration accepted = remaining;
   const auto start = std::chrono::steady_clock::now();
   while (picked_case_index == kNonePicked) {
@@ -80,8 +82,7 @@ int SelectUntil(absl::Time deadline, const CaseArray& cases) {
   {
     MutexLock lock(&selector->mu);
     if (selector->picked_case_index == internal::Selector::kNonePicked) {
-      expired =
-          !selector->WaitForPickFor(enqueue ? remaining : absl::ZeroDuration());
+      expired = !selector->WaitForPick(enqueue ? deadline : absl::Now());
       if (expired) {
         selector->picked_case_index = static_cast<int>(cases.size());
       }

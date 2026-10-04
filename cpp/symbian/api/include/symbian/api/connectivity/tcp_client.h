@@ -23,15 +23,21 @@ class ActiveTcpListener;
  * @brief One connected IPv4 TCP stream backed by Symbian RSocket.
  *
  * Connect, Send and Receive wait for native request completion. Use this
- * worker-facing helper on one thread, including destruction; it is not an
- * active-object transport and provides no in-flight cancellation. The native
+ * worker-facing helper on one thread, including destruction. A finite
+ * deadline cancels and drains a pending native request on expiry. The native
  * socket session and handle close when the object is destroyed.
  */
 class TcpClient {
  public:
-  /** @brief Open an RSocketServ session and connect to four IPv4 octets. */
+  /**
+   * @brief Connect to four IPv4 octets by an absolute deadline.
+   *
+   * InfiniteFuture waits until the native request completes. A finite
+   * deadline cancels and drains the connect request on expiry.
+   */
   static absl::StatusOr<TcpClient> ConnectIpv4(
-      std::array<std::uint8_t, 4> address, std::uint16_t port);
+      std::array<std::uint8_t, 4> address, std::uint16_t port,
+      absl::Time deadline = absl::InfiniteFuture());
 
   TcpClient(TcpClient&& other) noexcept;
   TcpClient& operator=(TcpClient&& other) noexcept;
@@ -40,40 +46,26 @@ class TcpClient {
   ~TcpClient();
 
   /**
-   * @brief Complete one native send request of at most 32 KiB.
+   * @brief Complete one native send request of at most 32 KiB by a deadline.
    *
    * The caller keeps @p bytes alive until this method returns. An empty span
-   * succeeds without a socket request. This synchronous API does not report
-   * partial progress; use a separate asynchronous owner for credited streams.
+   * succeeds without a socket request. Expiry cancels and drains the pending
+   * send. Delivery may already have occurred; use an application acknowledgement
+   * when it matters. This synchronous API does not report partial progress.
    */
-  absl::Status Send(std::span<const std::uint8_t> bytes);
-
-  /**
-   * @brief Send at most 32 KiB with a 0–60 second deadline.
-   *
-   * On expiry the native send request is cancelled and drained before the
-   * caller's buffer can be released. Delivery may already have occurred;
-   * callers must use an application acknowledgement for exactly-once work.
-   */
-  absl::Status SendFor(std::span<const std::uint8_t> bytes,
-                       absl::Duration timeout);
+  absl::Status Send(std::span<const std::uint8_t> bytes,
+                    absl::Time deadline = absl::InfiniteFuture());
 
   /**
    * @brief Receive at least one byte into a buffer of at most 32 KiB.
    *
    * The returned count is the number of bytes written. An empty span returns
-   * zero. Native EOF and disconnect results are returned as statuses.
+   * zero. Native EOF and disconnect results are returned as statuses. On
+   * expiry the pending read is cancelled and drained; the stream can be reused.
    */
-  absl::StatusOr<std::size_t> Receive(std::span<std::uint8_t> bytes);
-
-  /**
-   * @brief Receive at least one byte with a 0–60 second deadline.
-   *
-   * A timeout cancels and drains the pending native read. A later read can
-   * reuse the same stream; no abandoned callback may write into @p bytes.
-   */
-  absl::StatusOr<std::size_t> ReceiveFor(std::span<std::uint8_t> bytes,
-                                         absl::Duration timeout);
+  absl::StatusOr<std::size_t> Receive(
+      std::span<std::uint8_t> bytes,
+      absl::Time deadline = absl::InfiniteFuture());
 
  private:
   friend class TcpListener;

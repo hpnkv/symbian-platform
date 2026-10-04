@@ -74,7 +74,7 @@ def test_rotated_key_hides_package_built_for_previous_key(
     (output / "profile.json").write_text(
         json.dumps(
             {
-                "schema": "symbian.agent-profile/v1",
+                "schema": "symbian.agent-profile/v2",
                 "key_sha256": hashlib.sha256(key.read_bytes()).hexdigest(),
                 "package_sha256": hashlib.sha256(
                     package.read_bytes()

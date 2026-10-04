@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import secrets
+import select
 import socket
 import time
 from pathlib import Path
@@ -80,7 +81,7 @@ class AgentHello(BaseModel):
 
 
 class ReadOnlyAgentSession:
-    """One authenticated connection to a read-only guest listener.
+    """One authenticated connection to a read-only guest agent.
 
     The session authenticates both peers with a private 32-byte key and fresh
     nonces. The channel has no confidentiality; use a trusted local network.
@@ -88,6 +89,7 @@ class ReadOnlyAgentSession:
 
     def __init__(self, stream: socket.socket, timeout: float):
         self._stream = stream
+        self.peer_ip = stream.getpeername()[0]
         self._timeout = timeout
         self._next_request_id = 1
         self.hello: AgentHello | None = None
@@ -130,6 +132,108 @@ class ReadOnlyAgentSession:
             raise StatusError(
                 Code.UNAVAILABLE, f"Agent endpoint unavailable: {error}"
             ) from error
+        return cls.from_socket(raw, key_file=key_file, timeout=timeout)
+
+    @classmethod
+    def accept(
+        cls,
+        listen_host: str,
+        port: int,
+        *,
+        expected_peer: str | None = None,
+        key_file: Path,
+        timeout: float = 20.0,
+    ) -> Self:
+        """Wait for a phone-initiated connection and authenticate its key.
+
+        A keyed UDP discovery exchange locates this listener without a stored
+        address. The optional expected peer is checked before TCP handshake.
+        Both listeners are scoped to one status attempt and always close.
+        """
+        if not 0 < port < 65536 or timeout <= 0:
+            raise StatusError(Code.INVALID_ARGUMENT, "Invalid agent listener")
+        key = key_file.read_bytes()
+        if len(key) != 32:
+            raise StatusError(Code.INVALID_ARGUMENT, "Invalid agent key")
+        deadline = time.monotonic() + timeout
+        discovered: set[str] = set()
+        try:
+            with (
+                socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener,
+                socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as discovery,
+            ):
+                listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                listener.bind((listen_host, port))
+                listener.listen(4)
+                discovery.bind((listen_host, 39104))
+                while True:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        break
+                    ready, _, _ = select.select(
+                        [listener, discovery], [], [], remaining
+                    )
+                    if discovery in ready:
+                        packet, peer = discovery.recvfrom(64)
+                        if len(packet) == 45 and packet[:5] == b"SAGD1":
+                            nonce = packet[5:13]
+                            expected = hmac.digest(
+                                key,
+                                b"symbian-agent-discover-v1" + nonce,
+                                hashlib.sha256,
+                            )
+                            if hmac.compare_digest(packet[13:], expected):
+                                if (
+                                    expected_peer is None
+                                    or peer[0] == expected_peer
+                                ):
+                                    discovered.add(peer[0])
+                                    proof = hmac.digest(
+                                        key,
+                                        b"symbian-agent-offer-v1" + nonce,
+                                        hashlib.sha256,
+                                    )
+                                    discovery.sendto(
+                                        b"SAGR1" + nonce + proof, peer
+                                    )
+                    if listener in ready:
+                        raw, peer = listener.accept()
+                        if peer[0] not in discovered:
+                            raw.close()
+                            continue
+                        return cls.from_socket(
+                            raw,
+                            key_file=key_file,
+                            timeout=min(5.0, remaining),
+                        )
+        except OSError as error:
+            raise StatusError(
+                Code.UNAVAILABLE, f"Agent listener unavailable: {error}"
+            ) from error
+        raise StatusError(
+            Code.DEADLINE_EXCEEDED,
+            (
+                "Phone discovered this host but did not connect within "
+                f"{timeout:g}s"
+                if discovered
+                else f"No keyed phone discovery arrived within {timeout:g}s"
+            ),
+        )
+
+    @classmethod
+    def from_socket(
+        cls, raw: socket.socket, *, key_file: Path, timeout: float = 5.0
+    ) -> Self:
+        """Authenticate the agent on an already connected TCP socket."""
+        if timeout <= 0:
+            raw.close()
+            raise StatusError(Code.INVALID_ARGUMENT, "Invalid agent timeout")
+        key = key_file.read_bytes()
+        if len(key) != 32:
+            raw.close()
+            raise StatusError(
+                Code.INVALID_ARGUMENT, "Agent key must contain 32 bytes"
+            )
         try:
             raw.settimeout(timeout)
             deadline = time.monotonic() + timeout

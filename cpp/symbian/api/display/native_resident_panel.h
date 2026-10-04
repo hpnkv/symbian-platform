@@ -15,11 +15,12 @@ struct NativeResidentPanelOptions {
   const char* state;
   const char* back_label;
   const char* stop_label;
+  const char* (*heading_provider)();
 };
 
 extern "C" int SymbianDeviceRunResidentPanel(
     const NativeResidentPanelOptions* options, void* stop_requested);
 extern "C" int SymbianDeviceRequestResidentPanelForeground(int category,
-                                                              unsigned key);
+                                                           unsigned key);
 
 #endif  // SYMBIAN_API_DISPLAY_NATIVE_RESIDENT_PANEL_H_

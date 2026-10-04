@@ -23,4 +23,14 @@ _E32Startup:
 .Lhalt:
   b .Lhalt        // If exit unexpectedly returns, do not run past code.
 .size _E32Startup, . - _E32Startup
+.section .rodata.symbian_exception, "a", %progbits
+.balign 4
+.global Symbian$$CPP$$Exception$$Descriptor
+.type Symbian$$CPP$$Exception$$Descriptor, %object
+Symbian$$CPP$$Exception$$Descriptor:
+  .word __symbian_exidx_start
+  .word __symbian_exidx_end
+  .word __symbian_code_start
+  .word __ro_end
+.size Symbian$$CPP$$Exception$$Descriptor, 16
 .section .note.GNU-stack, "", %progbits

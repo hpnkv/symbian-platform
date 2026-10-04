@@ -9,6 +9,7 @@
 #include <string_view>
 #include <utility>
 
+#include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "symbian/agent/guest_control.h"
 #include "symbian/api/connectivity/tcp_listener.h"
@@ -22,7 +23,8 @@ using symbian::api::connectivity::TlsServer;
 int ReadExactly(TlsServer* server, std::span<std::uint8_t> bytes) {
   std::size_t offset = 0;
   while (offset < bytes.size()) {
-    auto count = server->ReadFor(bytes.subspan(offset), absl::Seconds(5));
+    auto count =
+        server->Read(bytes.subspan(offset), absl::Now() + absl::Seconds(5));
     if (!count.ok() || *count == 0) {
       return -281;
     }
@@ -32,7 +34,7 @@ int ReadExactly(TlsServer* server, std::span<std::uint8_t> bytes) {
 }
 
 int WriteExactly(TlsServer* server, std::span<const std::uint8_t> bytes) {
-  return server->WriteFor(bytes, absl::Seconds(5)).ok() ? 0 : -282;
+  return server->Write(bytes, absl::Now() + absl::Seconds(5)).ok() ? 0 : -282;
 }
 
 int ServeStatus(TlsServer* server, bool oversized) {
@@ -90,7 +92,7 @@ extern "C" __attribute__((visibility("default"))) int MbedOwnedTlsServerProbe(
   if (!listener.ok()) {
     return -271;
   }
-  auto client = listener->AcceptFor(absl::Seconds(10));
+  auto client = listener->Accept(absl::Now() + absl::Seconds(10));
   if (!client.ok()) {
     return -272;
   }
@@ -101,7 +103,8 @@ extern "C" __attribute__((visibility("default"))) int MbedOwnedTlsServerProbe(
   if (!server.ok()) {
     return -273;
   }
-  auto handshake = server->Accept(std::move(*client), absl::Seconds(10));
+  auto handshake =
+      server->Accept(std::move(*client), absl::Now() + absl::Seconds(10));
   if (mode == 1) {
     return handshake.ok() ? -274 : 0;
   }

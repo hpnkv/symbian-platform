@@ -1,4 +1,4 @@
-"""Host policy for the canonical unsigned SISX application package."""
+"""Host policy for the canonical SISX application package."""
 
 import hashlib
 import json
@@ -41,14 +41,25 @@ def inspect_package(path: Path) -> dict:
         }
     )
     result["application_registered"] = info.application_registered
+    result["signed_package"] = info.signed_package
     result["files"] = [
-        {field: getattr(file, field) for field in ("target", "size", "sha1")}
+        {
+            field: getattr(file, field)
+            for field in ("target", "size", "sha1", "capabilities")
+        }
         for file in info.files
     ]
     return result
 
 
-def package(project: Path, artifact: Path, output: Path) -> dict:
+def package(
+    project: Path,
+    artifact: Path,
+    output: Path,
+    *,
+    signing_certificate: Path | None = None,
+    signing_key: Path | None = None,
+) -> dict:
     """Packages one E32 application using the project's package table.
 
     Args:
@@ -125,8 +136,30 @@ def package(project: Path, artifact: Path, output: Path) -> dict:
             return native.build_sis(data, **options)
         return native.build_application_sis(data, assets, **options)
 
-    first = build()
-    if first != build():
+    if (signing_certificate is None) != (signing_key is None):
+        raise StatusError(
+            Code.INVALID_ARGUMENT,
+            "Both signing certificate and key are required",
+        )
+    certificate = (
+        _read_bounded(signing_certificate, 16 * 1024)
+        if signing_certificate is not None
+        else None
+    )
+    private_key = (
+        _read_bounded(signing_key, 16 * 1024)
+        if signing_key is not None
+        else None
+    )
+
+    def build_final() -> bytes:
+        unsigned = build()
+        if certificate is None or private_key is None:
+            return unsigned
+        return native.sign_sis(unsigned, certificate, private_key)
+
+    first = build_final()
+    if first != build_final():
         raise StatusError(Code.DATA_LOSS, "Repeated SIS generation differs")
     if manifest.read_bytes() != manifest_bytes or artifact.read_bytes() != data:
         raise StatusError(Code.ABORTED, "Package inputs changed")
@@ -142,6 +175,12 @@ def package(project: Path, artifact: Path, output: Path) -> dict:
             raise StatusError(
                 Code.ABORTED, "Application asset changed while packaging"
             )
+    if signing_certificate is not None and signing_key is not None:
+        if (
+            _read_bounded(signing_certificate, 16 * 1024) != certificate
+            or _read_bounded(signing_key, 16 * 1024) != private_key
+        ):
+            raise StatusError(Code.ABORTED, "Signing identity changed")
     path = output / f"{Path(options['executable_name']).stem}.sis"
     report_path = output / "package-report.json"
     if path.resolve() in (artifact, manifest) or report_path.resolve() in (
@@ -177,7 +216,8 @@ def package(project: Path, artifact: Path, output: Path) -> dict:
         "sis": inspect_package(path),
         "reproducible": True,
         "reproducibility_scope": "two native writer calls on this host",
-        "unsigned": True,
+        "unsigned": certificate is None,
+        "signed": certificate is not None,
         "symbian_loader_verified": False,
         "runtime_verified": False,
         "limitations": [
@@ -185,7 +225,7 @@ def package(project: Path, artifact: Path, output: Path) -> dict:
             "No SIS scripts or package dependencies",
             "Imported DLL implementations must already exist in the target",
             "Fixed 2004-01-01 timestamp, uncompressed streams, ASCII metadata",
-            "SHA-1 is legacy file integrity; no certificate or signing policy",
+            "SHA-1 is legacy integrity; signing does not establish phone trust",
             "Phone installation and matched Belle runtime remain unverified",
         ],
     }

@@ -162,12 +162,18 @@ def verify_probe(artifact: Path, oracles_build: Path, output: Path) -> dict:
     output = output.resolve()
     data = artifact.read_bytes()
     metadata = inspect_image(artifact)
+    descriptor = metadata["exception_descriptor_offset"]
+    expected_relocations = (
+        [descriptor + offset for offset in (0, 4, 8, 12)]
+        if descriptor
+        else []
+    )
     if (
         metadata["uid3"] != 0xE0000808
         or metadata["entry_offset"] != 0
         or metadata["dll"]
         or metadata["imports"]
-        or metadata["code_relocations"]
+        or metadata["code_relocations"] != expected_relocations
     ):
         raise StatusError(
             Code.INVALID_ARGUMENT, "Oracles require a maintained integer probe"

@@ -131,11 +131,10 @@ _COMMAND_DESCRIPTIONS = {
     ("emu", "configure"): "Save emulator settings at one configuration level.",
     ("emu", "status"): "Inspect a running emulator through its control socket.",
     ("device",): "Discover USB handsets and stage application packages safely.",
-    (
-        "agent",
-    ): "Talk to a manually addressed, authenticated development agent.",
+    ("agent",): "Read an authenticated development agent over local TCP.",
     ("agent", "hello"): "Read the negotiated agent protocol profile.",
-    ("agent", "status"): "Read the agent's current status over mutual TLS.",
+    ("agent", "status"): "Read the agent's current status over keyed TCP.",
+    ("agent", "listen"): "Discover and authenticate a phone-initiated agent.",
     ("agent", "logs"): "Read bounded service events after a sequence cursor.",
     (
         "device",
@@ -355,6 +354,11 @@ def _parser() -> argparse.ArgumentParser:
                 default=8,
                 help="Return 1–8 records (default: 8).",
             )
+    listen_agent = agent_commands.add_parser("listen")
+    listen_agent.add_argument("--key-file", required=True, type=Path)
+    listen_agent.add_argument("--listen-host", default="0.0.0.0")
+    listen_agent.add_argument("--port", type=int, default=39103)
+    listen_agent.add_argument("--timeout", type=float, default=20.0)
     configure = app.add_parser(
         "configure", help="Refresh SDK and CLion integration"
     )
@@ -531,13 +535,15 @@ def _parser() -> argparse.ArgumentParser:
     build.add_argument("--linker", default="ld.lld")
     build.add_argument("--architecture", choices=("armv6", "armv5t"))
     package = commands.add_parser(
-        "package", help="Build an unsigned SISX application package"
+        "package", help="Build a SISX application package"
     )
     package.add_argument("--project", type=Path, default=Path.cwd())
     package.add_argument("--artifact", type=Path, required=True)
     package.add_argument(
         "--output", type=Path, default=Path(".symbian/package")
     )
+    package.add_argument("--signing-certificate", type=Path)
+    package.add_argument("--signing-key", type=Path)
     inspect = commands.add_parser(
         "inspect", help="Inspect native format metadata"
     )
@@ -647,12 +653,27 @@ def _execute(args: argparse.Namespace) -> dict:
     if args.command == "agent":
         from symbian.agent import ReadOnlyAgentSession
 
-        with ReadOnlyAgentSession.connect(
-            args.host,
-            args.port,
-            key_file=args.key_file,
-            timeout=args.timeout,
-        ) as agent:
+        session = (
+            ReadOnlyAgentSession.accept(
+                args.listen_host,
+                args.port,
+                key_file=args.key_file,
+                timeout=args.timeout,
+            )
+            if args.agent_command == "listen"
+            else ReadOnlyAgentSession.connect(
+                args.host,
+                args.port,
+                key_file=args.key_file,
+                timeout=args.timeout,
+            )
+        )
+        with session as agent:
+            if args.agent_command == "listen":
+                return {
+                    "peer_ip": agent.peer_ip,
+                    "status": agent.status().model_dump(),
+                }
             if args.agent_command == "hello":
                 return agent.negotiate().model_dump()
             if args.agent_command == "logs":
@@ -1077,22 +1098,37 @@ def _execute(args: argparse.Namespace) -> dict:
 
             sdk = ProjectConfiguration.load(args.project.resolve()).sdk
             if os.environ.get("SYMBIAN_ACTIVE_SDK") != str(sdk.prefix):
-                os.execv(
+                command = [
                     str(sdk.prefix / "bin/symbian"),
-                    [
-                        str(sdk.prefix / "bin/symbian"),
-                        "package",
-                        "--project",
-                        str(args.project.resolve()),
-                        "--artifact",
-                        str(args.artifact.resolve()),
-                        "--output",
-                        str(args.output.resolve()),
-                        "--output-format",
-                        args.output_format,
-                    ],
-                )
-        return packaging.package(args.project, args.artifact, args.output)
+                    "package",
+                    "--project",
+                    str(args.project.resolve()),
+                    "--artifact",
+                    str(args.artifact.resolve()),
+                    "--output",
+                    str(args.output.resolve()),
+                    "--output-format",
+                    args.output_format,
+                ]
+                if args.signing_certificate is not None:
+                    command.extend(
+                        [
+                            "--signing-certificate",
+                            str(args.signing_certificate.resolve()),
+                        ]
+                    )
+                if args.signing_key is not None:
+                    command.extend(
+                        ["--signing-key", str(args.signing_key.resolve())]
+                    )
+                os.execv(command[0], command)
+        return packaging.package(
+            args.project,
+            args.artifact,
+            args.output,
+            signing_certificate=args.signing_certificate,
+            signing_key=args.signing_key,
+        )
     if args.command == "inspect":
         from symbian.sdk import inspect_proxy
 

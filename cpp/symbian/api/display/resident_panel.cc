@@ -19,7 +19,7 @@ absl::Status RunResidentPanel(const ResidentPanelOptions& options,
   const NativeResidentPanelOptions native{
       options.app_uid,    options.property_category, options.foreground_key,
       options.caption,    options.heading,           options.state,
-      options.back_label, options.stop_label};
+      options.back_label, options.stop_label,        options.heading_provider};
   return symbian::StatusFromNativeError(
       SymbianDeviceRunResidentPanel(&native, &stop_requested),
       "Resident panel");

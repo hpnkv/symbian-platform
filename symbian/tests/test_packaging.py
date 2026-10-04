@@ -3,12 +3,13 @@
 import json
 import os
 import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
 
 from symbian import packaging, toolchain
-from symbian._native import build_sis, inspect_e32, inspect_sis
+from symbian._native import build_sis, inspect_e32, inspect_sis, sign_sis
 from symbian.packaging.verification import verify_package
 from symbian.status import Code, StatusError
 from symbian.tests.cli_json import main
@@ -92,6 +93,60 @@ def test_native_boundary_retains_checksum_failure_status(image):
     with pytest.raises(StatusError) as caught:
         inspect_sis(data[:-1])
     assert caught.value.code == Code.DATA_LOSS
+
+
+def test_self_signed_package_verifies_signature_and_rejects_tampering(
+    image, tmp_path
+):
+    openssl = shutil.which("openssl")
+    if openssl is None:
+        pytest.skip("OpenSSL command required for signing fixture")
+    certificate = tmp_path / "signing.cer"
+    key = tmp_path / "signing.key"
+    subprocess.run(
+        [
+            openssl,
+            "req",
+            "-x509",
+            "-newkey",
+            "rsa:2048",
+            "-sha256",
+            "-nodes",
+            "-days",
+            "1",
+            "-subj",
+            "/CN=Test Package",
+            "-keyout",
+            str(key),
+            "-out",
+            str(certificate),
+        ],
+        check=True,
+        capture_output=True,
+    )
+    unsigned = build_sis(
+        image.read_bytes(), 0xE0000809, "Probe", "Research", "probe.exe"
+    )
+    signed = sign_sis(unsigned, certificate.read_bytes(), key.read_bytes())
+    assert not inspect_sis(unsigned).signed_package
+    assert inspect_sis(signed).signed_package
+    assert (
+        inspect_sis(signed).executable_sha1
+        == inspect_sis(unsigned).executable_sha1
+    )
+    with pytest.raises(StatusError):
+        inspect_sis(signed[:-1])
+    with pytest.raises(StatusError):
+        sign_sis(unsigned, certificate.read_bytes(), b"wrong key")
+    report = packaging.package(
+        PROJECT,
+        image,
+        tmp_path / "signed-package",
+        signing_certificate=certificate,
+        signing_key=key,
+    )
+    assert report["signed"] and not report["unsigned"]
+    assert packaging.inspect_package(Path(report["artifact"]))["signed_package"]
 
 
 def test_unknown_package_field_is_not_ignored(image, tmp_path):

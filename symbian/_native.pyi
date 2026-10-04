@@ -41,6 +41,7 @@ __all__: list[str] = [
     "inspect_import_proxy",
     "inspect_sis",
     "parse_def",
+    "sign_sis",
     "status_code_from_http",
     "status_code_from_websocket",
     "status_code_to_http",
@@ -124,6 +125,8 @@ class E32ImageInfo:
     def imports(self) -> list[E32ImportBlock]: ...
     @property
     def secure_id(self) -> int: ...
+    @property
+    def capabilities(self) -> int: ...
     @property
     def uid3(self) -> int: ...
 
@@ -212,6 +215,8 @@ class SdkExport:
 
 class SisEmbeddedFile:
     @property
+    def capabilities(self) -> int: ...
+    @property
     def sha1(self) -> str: ...
     @property
     def size(self) -> int: ...
@@ -221,6 +226,8 @@ class SisEmbeddedFile:
 class SisPackageInfo:
     @property
     def application_registered(self) -> bool: ...
+    @property
+    def signed_package(self) -> bool: ...
     @property
     def executable_sha1(self) -> str: ...
     @property
@@ -375,6 +382,7 @@ def convert_dll(
     definition: bytes,
     proxies: collections.abc.Sequence[bytes],
     uid3: typing.SupportsInt | typing.SupportsIndex,
+    capabilities: typing.SupportsInt | typing.SupportsIndex = 0,
 ) -> bytes:
     """
     Convert frozen DLL exports and eager imports, releasing the GIL.
@@ -384,13 +392,16 @@ def convert_imported_executable(
     data: bytes,
     proxies: collections.abc.Sequence[bytes],
     uid3: typing.SupportsInt | typing.SupportsIndex,
+    capabilities: typing.SupportsInt | typing.SupportsIndex = 0,
 ) -> bytes:
     """
     Convert retained calls through eager ordinal slots, releasing the GIL.
     """
 
 def convert_pic_executable(
-    data: bytes, uid3: typing.SupportsInt | typing.SupportsIndex
+    data: bytes,
+    uid3: typing.SupportsInt | typing.SupportsIndex,
+    capabilities: typing.SupportsInt | typing.SupportsIndex = 0,
 ) -> bytes:
     """
     Convert a restricted, retained-relocation ELF.
@@ -423,8 +434,11 @@ def inspect_import_proxy(data: bytes) -> ProxyInfo:
 
 def inspect_sis(data: bytes) -> SisPackageInfo:
     """
-    Check the canonical unsigned SISX application package, releasing the GIL.
+    Check the canonical SISX application package, releasing the GIL.
     """
+
+def sign_sis(data: bytes, certificate: bytes, private_key: bytes) -> bytes:
+    """Sign a canonical SISX package, releasing the GIL."""
 
 def parse_def(data: bytes) -> list[SdkExport]:
     """

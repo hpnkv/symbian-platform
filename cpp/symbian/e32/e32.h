@@ -40,6 +40,7 @@ struct ImageInfo {
   uint32_t data_base = 0;
   uint32_t entry_offset = 0;
   uint32_t secure_id = 0;
+  uint32_t capabilities = 0;
   bool dll = false;
   uint32_t header_size = 0;
   // Code-relative offset of the verified Symbian EHABI descriptor, or zero.
@@ -67,7 +68,8 @@ struct ImageInfo {
 // detect stripped relocations or absolute addresses hand-written in code.
 // UID3 must be in the experimental unprotected 0xe0000000..0xefffffff range.
 absl::StatusOr<std::string> ConvertPicExecutable(std::string_view elf,
-                                                 uint32_t uid3);
+                                                 uint32_t uid3,
+                                                 uint32_t capabilities = 0);
 
 // Eager function imports from validated ordinal proxies, retained call relocs,
 // one RX load containing GOT/PLT and dynamic metadata; optional bounded RW
@@ -76,7 +78,7 @@ absl::StatusOr<std::string> ConvertPicExecutable(std::string_view elf,
 // Link with --emit-relocs and the import layout; all imports have zero addends.
 absl::StatusOr<std::string> ConvertImportedExecutable(
     std::string_view elf, const std::vector<std::string>& proxies,
-    uint32_t uid3);
+    uint32_t uid3, uint32_t capabilities = 0);
 
 // Frozen function exports from a trusted retained-relocation EKA2 PIC image.
 // Emits count word, complete ordinal table, absence bitmap and code relocations
@@ -85,7 +87,8 @@ absl::StatusOr<std::string> ConvertImportedExecutable(
 absl::StatusOr<std::string> ConvertDll(std::string_view elf,
                                        std::string_view definition,
                                        const std::vector<std::string>& proxies,
-                                       uint32_t uid3);
+                                       uint32_t uid3,
+                                       uint32_t capabilities = 0);
 
 // Checks bounds, UID checksum, header CRC and this supported profile only.
 // Other E32 profiles return Unimplemented, not a general validity verdict.

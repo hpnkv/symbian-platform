@@ -4,7 +4,6 @@
 #include "symbian/api/connectivity/tls_server.h"
 
 #include <algorithm>
-#include <chrono>
 #include <cstdlib>
 #include <new>
 #include <optional>
@@ -12,6 +11,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/time/clock.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/net_sockets.h"
@@ -25,19 +25,6 @@ namespace {
 
 constexpr std::size_t kMaximumPemBytes = 262144;
 constexpr std::size_t kMaximumIoBytes = 32768;
-
-absl::Status ValidateTimeout(absl::Duration timeout) {
-  if (timeout < absl::ZeroDuration() || timeout > absl::Seconds(60)) {
-    return absl::InvalidArgumentError("TLS deadline must be 0-60000 ms");
-  }
-  return absl::OkStatus();
-}
-
-std::chrono::steady_clock::time_point SteadyDeadline(absl::Duration timeout) {
-  const auto rounded = absl::Ceil(timeout, absl::Milliseconds(1));
-  return std::chrono::steady_clock::now() +
-         std::chrono::milliseconds(absl::ToInt64Milliseconds(rounded));
-}
 
 absl::Status TlsError(std::string_view operation, int code) {
   return absl::UnavailableError(std::string(operation) + ": " +
@@ -67,23 +54,18 @@ struct TlsServer::Impl {
     mbedtls_pk_free(&private_key);
   }
 
-  absl::StatusOr<absl::Duration> Remaining() {
-    const auto now = std::chrono::steady_clock::now();
-    if (now >= deadline) {
+  absl::Status CheckDeadline() const {
+    if (deadline != absl::InfiniteFuture() && absl::Now() >= deadline) {
       return absl::DeadlineExceededError("TLS operation deadline expired");
     }
-    const auto remaining =
-        std::chrono::duration_cast<std::chrono::milliseconds>(deadline - now);
-    return absl::Milliseconds(
-        std::max(remaining, std::chrono::milliseconds(1)).count());
+    return absl::OkStatus();
   }
 
   static int Send(void* context, const unsigned char* bytes,
                   std::size_t length) {
     auto* self = static_cast<Impl*>(context);
-    auto remaining = self->Remaining();
-    if (!remaining.ok()) {
-      self->io_status = remaining.status();
+    self->io_status = self->CheckDeadline();
+    if (!self->io_status.ok()) {
       return MBEDTLS_ERR_NET_SEND_FAILED;
     }
     if (length > kMaximumIoBytes) {
@@ -91,7 +73,7 @@ struct TlsServer::Impl {
       return MBEDTLS_ERR_NET_SEND_FAILED;
     }
     self->io_status =
-        self->client->SendFor(std::span(bytes, length), *remaining);
+        self->client->Send(std::span(bytes, length), self->deadline);
     return self->io_status.ok() ? static_cast<int>(length)
                                 : MBEDTLS_ERR_NET_SEND_FAILED;
   }
@@ -99,13 +81,12 @@ struct TlsServer::Impl {
   static int Receive(void* context, unsigned char* bytes,
                      std::size_t capacity) {
     auto* self = static_cast<Impl*>(context);
-    auto remaining = self->Remaining();
-    if (!remaining.ok()) {
-      self->io_status = remaining.status();
+    self->io_status = self->CheckDeadline();
+    if (!self->io_status.ok()) {
       return MBEDTLS_ERR_NET_RECV_FAILED;
     }
-    auto count = self->client->ReceiveFor(
-        std::span(bytes, std::min(capacity, kMaximumIoBytes)), *remaining);
+    auto count = self->client->Receive(
+        std::span(bytes, std::min(capacity, kMaximumIoBytes)), self->deadline);
     if (!count.ok()) {
       self->io_status = count.status();
       return MBEDTLS_ERR_NET_RECV_FAILED;
@@ -122,7 +103,7 @@ struct TlsServer::Impl {
   mbedtls_x509_crt client_roots;
   mbedtls_pk_context private_key;
   std::optional<TcpClient> client;
-  std::chrono::steady_clock::time_point deadline;
+  absl::Time deadline = absl::InfiniteFuture();
   absl::Status io_status;
   bool connected = false;
 };
@@ -217,16 +198,12 @@ TlsServer::~TlsServer() {
   }
 }
 
-absl::Status TlsServer::Accept(TcpClient&& client, absl::Duration timeout) {
-  absl::Status valid = ValidateTimeout(timeout);
-  if (!valid.ok()) {
-    return valid;
-  }
+absl::Status TlsServer::Accept(TcpClient&& client, absl::Time deadline) {
   if (impl_ == nullptr || impl_->client) {
     return absl::FailedPreconditionError("TLS server already has a stream");
   }
   impl_->client.emplace(std::move(client));
-  impl_->deadline = SteadyDeadline(timeout);
+  impl_->deadline = deadline;
   impl_->io_status = absl::OkStatus();
   int status = mbedtls_ssl_setup(&impl_->ssl, &impl_->config);
   if (status != 0) {
@@ -259,16 +236,12 @@ absl::Status TlsServer::Accept(TcpClient&& client, absl::Duration timeout) {
   return absl::DeadlineExceededError("TLS handshake retry limit reached");
 }
 
-absl::StatusOr<std::size_t> TlsServer::ReadFor(std::span<std::uint8_t> bytes,
-                                               absl::Duration timeout) {
-  absl::Status valid = ValidateTimeout(timeout);
-  if (!valid.ok()) {
-    return valid;
-  }
+absl::StatusOr<std::size_t> TlsServer::Read(std::span<std::uint8_t> bytes,
+                                            absl::Time deadline) {
   if (!connected() || bytes.empty() || bytes.size() > kMaximumIoBytes) {
     return absl::FailedPreconditionError("TLS read needs a live 1-32 KiB span");
   }
-  impl_->deadline = SteadyDeadline(timeout);
+  impl_->deadline = deadline;
   impl_->io_status = absl::OkStatus();
   for (int attempt = 0; attempt < 64; ++attempt) {
     const int count = mbedtls_ssl_read(&impl_->ssl, bytes.data(), bytes.size());
@@ -290,17 +263,13 @@ absl::StatusOr<std::size_t> TlsServer::ReadFor(std::span<std::uint8_t> bytes,
   return absl::DeadlineExceededError("TLS read retry limit reached");
 }
 
-absl::Status TlsServer::WriteFor(std::span<const std::uint8_t> bytes,
-                                 absl::Duration timeout) {
-  absl::Status valid = ValidateTimeout(timeout);
-  if (!valid.ok()) {
-    return valid;
-  }
+absl::Status TlsServer::Write(std::span<const std::uint8_t> bytes,
+                              absl::Time deadline) {
   if (!connected() || bytes.empty() || bytes.size() > kMaximumIoBytes) {
     return absl::FailedPreconditionError(
         "TLS write needs a live 1-32 KiB span");
   }
-  impl_->deadline = SteadyDeadline(timeout);
+  impl_->deadline = deadline;
   impl_->io_status = absl::OkStatus();
   std::size_t written = 0;
   for (int attempt = 0; attempt < 64 && written < bytes.size(); ++attempt) {

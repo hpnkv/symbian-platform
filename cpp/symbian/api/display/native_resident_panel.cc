@@ -81,10 +81,14 @@ const unsigned char* Glyph(char letter) {
   static const unsigned char a[7] = {14, 17, 17, 31, 17, 17, 17};
   static const unsigned char b[7] = {30, 17, 17, 30, 17, 17, 30};
   static const unsigned char c[7] = {15, 16, 16, 16, 16, 16, 15};
+  static const unsigned char d[7] = {30, 17, 17, 17, 17, 17, 30};
   static const unsigned char e[7] = {31, 16, 16, 30, 16, 16, 31};
+  static const unsigned char f[7] = {31, 16, 16, 30, 16, 16, 16};
   static const unsigned char g[7] = {15, 16, 16, 23, 17, 17, 15};
+  static const unsigned char h[7] = {17, 17, 17, 31, 17, 17, 17};
   static const unsigned char i[7] = {31, 4, 4, 4, 4, 4, 31};
   static const unsigned char k[7] = {17, 18, 20, 24, 20, 18, 17};
+  static const unsigned char l[7] = {16, 16, 16, 16, 16, 16, 31};
   static const unsigned char n[7] = {17, 25, 21, 19, 17, 17, 17};
   static const unsigned char o[7] = {14, 17, 17, 17, 17, 17, 14};
   static const unsigned char p[7] = {30, 17, 17, 30, 16, 16, 16};
@@ -99,14 +103,22 @@ const unsigned char* Glyph(char letter) {
       return b;
     case 'C':
       return c;
+    case 'D':
+      return d;
     case 'E':
       return e;
+    case 'F':
+      return f;
     case 'G':
       return g;
+    case 'H':
+      return h;
     case 'I':
       return i;
     case 'K':
       return k;
+    case 'L':
+      return l;
     case 'N':
       return n;
     case 'O':
@@ -145,8 +157,15 @@ void DrawLabel(CWindowGc& gc, const char* label, TInt x, TInt y, TInt scale) {
   }
 }
 
+const char* Heading(const NativeResidentPanelOptions& options) {
+  const char* dynamic = options.heading_provider == nullptr
+                            ? nullptr
+                            : options.heading_provider();
+  return dynamic == nullptr ? options.heading : dynamic;
+}
+
 void Draw(CWindowGc& gc, const TSize& size,
-          const NativeResidentPanelOptions& options) {
+          const NativeResidentPanelOptions& options, const char* heading) {
   gc.SetPenStyle(CGraphicsContext::ENullPen);
   gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
   gc.SetBrushColor(TRgb(0x00192332));
@@ -160,7 +179,7 @@ void Draw(CWindowGc& gc, const TSize& size,
   gc.DrawRect(
       TRect(24, size.iHeight - 160, size.iWidth - 24, size.iHeight - 80));
   gc.SetBrushColor(TRgb(0x00ffffff));
-  DrawLabel(gc, options.heading, 30, 30, 4);
+  DrawLabel(gc, heading, 30, 30, 4);
   DrawLabel(gc, options.state, 40, 103, 3);
   DrawLabel(gc, options.back_label, 54, size.iHeight - 239, 4);
   DrawLabel(gc, options.stop_label, 54, size.iHeight - 139, 4);
@@ -220,6 +239,7 @@ TInt RunWindow(const NativeResidentPanelOptions& options,
                   wake_timer.After(wake, 5000000);
                   window.Invalidate();
                   session.Flush();
+                  const char* shown_heading = options.heading;
                   while (!stop_requested.load()) {
                     User::WaitForAnyRequest();
                     if (events != KRequestPending) {
@@ -259,7 +279,8 @@ TInt RunWindow(const NativeResidentPanelOptions& options,
                       if (redraw.Handle() == 2) {
                         window.BeginRedraw(redraw.Rect());
                         gc.Activate(window);
-                        Draw(gc, size, options);
+                        shown_heading = Heading(options);
+                        Draw(gc, size, options, shown_heading);
                         gc.Deactivate();
                         window.EndRedraw();
                       }
@@ -268,6 +289,9 @@ TInt RunWindow(const NativeResidentPanelOptions& options,
                       }
                     }
                     if (wake != KRequestPending && !stop_requested.load()) {
+                      if (Heading(options) != shown_heading) {
+                        window.Invalidate();
+                      }
                       wake_timer.After(wake, 5000000);
                     }
                     if (raise != KRequestPending) {

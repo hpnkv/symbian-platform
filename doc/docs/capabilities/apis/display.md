@@ -32,6 +32,11 @@ A second app launch may call `RequestResidentPanelForeground` to bring the
 existing view back. Run the panel on a separate guest thread so the service
 thread can continue accepting connections. This is a small built-in UI, with a
 limited bitmap alphabet and fixed layout, rather than a general widget kit.
+An optional `heading_provider` supplies a static label for changing service
+state. The panel calls it on the Window Server thread and checks for a new
+label on its existing wake timer, redrawing only after a change. Return
+immutable strings that remain valid until the panel closes; share the state
+with a worker through an atomic value.
 
 ## Remaining work
 
