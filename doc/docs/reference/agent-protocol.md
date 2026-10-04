@@ -12,6 +12,10 @@ public; it must never be used as a device identity.
 The example binds **127.0.0.1:39101** inside a disposable RM-807 emulator
 instance, selects TLS 1.3 and allows up to 16 control requests on one
 connection. Its 4 KiB control limit is checked before reading a payload. The
+service gives each control exchange one five-second monotonic deadline across
+prefix, payload and response; a peer cannot keep a worker indefinitely by
+dripping frame bytes. The host read-only session applies its requested timeout
+to the entire status exchange, including fragmented responses. The
 test constructs an ARMv6 E32 executable from the selected SDK, launches it
 manually, sends status requests, tests an oversized prefix, reconnects and
 stops the emulator. It runs both Dynarmic and Dyncom when the pinned firmware
@@ -82,7 +86,8 @@ launched manually, not a paired or boot-started phone service.
 It requires a CA PEM for the server and a client certificate/key; the server
 name is checked separately from the address. It sends a status request using
 the native control/frame bindings, rejects an oversized prefix before reading
-the payload and returns a typed `AgentStatus`.
+the payload and returns a typed `AgentStatus`. Its timeout covers the whole
+request and response, rather than resetting for each `recv` fragment.
 
 ```python
 from pathlib import Path

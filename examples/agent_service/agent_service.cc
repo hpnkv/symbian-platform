@@ -3,6 +3,7 @@
 // Manually started, loopback-only, emulator research agent. The bundled
 // certificate is a public test fixture and has no device security value.
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstdint>
@@ -28,10 +29,26 @@ constexpr std::uint16_t kAgentPort = 39101;
 constexpr std::size_t kMaximumFrame = 4096;
 constexpr std::size_t kMaximumRequestsPerConnection = 16;
 constexpr std::size_t kTlsWorkerStackBytes = 256 * 1024;
+constexpr auto kControlDeadline = 5s;
 
-bool ReadExactly(TlsServer& server, std::span<std::uint8_t> output) {
+std::chrono::milliseconds Remaining(
+    std::chrono::steady_clock::time_point deadline) {
+  const auto now = std::chrono::steady_clock::now();
+  if (now >= deadline) {
+    return 0ms;
+  }
+  return std::max(1ms, std::chrono::duration_cast<std::chrono::milliseconds>(
+                           deadline - now));
+}
+
+bool ReadExactly(TlsServer& server, std::span<std::uint8_t> output,
+                 std::chrono::steady_clock::time_point deadline) {
   while (!output.empty()) {
-    auto received = server.ReadFor(output, 5s);
+    const auto remaining = Remaining(deadline);
+    if (remaining == 0ms) {
+      return false;
+    }
+    auto received = server.ReadFor(output, remaining);
     if (!received.ok() || *received == 0) {
       return false;
     }
@@ -40,9 +57,11 @@ bool ReadExactly(TlsServer& server, std::span<std::uint8_t> output) {
   return true;
 }
 
-bool WriteExactly(TlsServer& server, std::span<const std::uint8_t> input) {
+bool WriteExactly(TlsServer& server, std::span<const std::uint8_t> input,
+                  std::chrono::steady_clock::time_point deadline) {
   // TlsServer::WriteFor writes the entire input or returns an error.
-  return server.WriteFor(input, 5s).ok();
+  const auto remaining = Remaining(deadline);
+  return remaining != 0ms && server.WriteFor(input, remaining).ok();
 }
 
 void Serve(TcpClient client) {
@@ -55,8 +74,9 @@ void Serve(TcpClient client) {
 
   for (std::size_t request_index = 0;
        request_index < kMaximumRequestsPerConnection; ++request_index) {
+    const auto deadline = std::chrono::steady_clock::now() + kControlDeadline;
     std::array<std::uint8_t, 4> prefix{};
-    if (!ReadExactly(*server, prefix)) {
+    if (!ReadExactly(*server, prefix, deadline)) {
       return;
     }
     const std::uint32_t length = (static_cast<std::uint32_t>(prefix[0]) << 24) |
@@ -67,7 +87,7 @@ void Serve(TcpClient client) {
       return;
     }
     std::array<std::uint8_t, kMaximumFrame> payload{};
-    if (!ReadExactly(*server, std::span(payload).first(length))) {
+    if (!ReadExactly(*server, std::span(payload).first(length), deadline)) {
       return;
     }
     auto request = symbian::agent::ParseGuestControl(std::string_view(
@@ -85,10 +105,12 @@ void Serve(TcpClient client) {
         static_cast<std::uint8_t>(count >> 16),
         static_cast<std::uint8_t>(count >> 8),
         static_cast<std::uint8_t>(count)};
-    if (!WriteExactly(*server, response_prefix) ||
-        !WriteExactly(*server, std::span(reinterpret_cast<const std::uint8_t*>(
-                                             response->data()),
-                                         response->size()))) {
+    if (!WriteExactly(*server, response_prefix, deadline) ||
+        !WriteExactly(
+            *server,
+            std::span(reinterpret_cast<const std::uint8_t*>(response->data()),
+                      response->size()),
+            deadline)) {
       return;
     }
   }

@@ -1,5 +1,19 @@
 # Status
 
+2026-10-04 bounded agent control deadline: each emulator service control
+exchange now uses one five-second monotonic deadline across prefix, payload
+and response, passing the remaining budget into the public TLS owner's
+cancel/drain I/O. The host `ReadOnlyAgentSession.status()` similarly uses one
+caller-selected deadline across send and fragmented receives. A local mutual
+TLS drip-response control passed, and the opt-in resident test passed both
+Dynarmic and Dyncom (`2 passed in 29.39s`), including a three-byte slow
+prefix that the guest closed within the aggregate bound and a subsequent
+successful authenticated reconnect. This does not establish cancellation of
+arbitrary long-running operations or a Nokia 808 timing budget. The refreshed
+ARMv6 E32 has 790,476 code, 1,540 data and 69,316 BSS bytes with seven import
+DLLs; its unsigned one-file research SIS has SHA-256
+`9b415621b3f28bfb08c91ab2c616d7f3b1362bffd3e2405bbb694e9ec9eb88c5`.
+
 2026-10-04 resident emulator service: the manually started,
 loopback-only `examples/agent_service` now combines an original
 `CActive` accept owner, a bounded A11-derived worker fiber with a 256 KiB

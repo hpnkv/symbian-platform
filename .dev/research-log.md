@@ -1,5 +1,16 @@
 # Research log
 
+2026-10-04: Per-call `ReadFor(..., 5s)` allowed a peer to refresh the wait by
+delivering another byte just before each deadline. The resident read-only
+control loop now measures one monotonic five-second budget across a complete
+request and response; the host uses one caller-selected budget for its status
+exchange. An authenticated host sent three prefix bytes two seconds apart.
+The guest closed before the final byte on both emulator CPU backends and then
+accepted a new authenticated status session. The host drip-response test also
+expired at its aggregate deadline. A future protocol needs per-request
+cancellation and terminal outcomes for operations longer than status; this
+test covers only bounded read-only control frames.
+
 2026-10-04: The resident worker TLS timeout was a guest secondary-thread
 stack overflow, observed as an access violation immediately below its stack
 pointer and `KERN-EXEC 3` in the disposable emulator log. A standalone TLS

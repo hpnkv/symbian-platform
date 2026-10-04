@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import socket
 import ssl
+import time
 from pathlib import Path
 from typing import Self
 
@@ -37,8 +38,9 @@ class ReadOnlyAgentSession:
     is sent. One session performs synchronous requests with a socket timeout.
     """
 
-    def __init__(self, stream: ssl.SSLSocket):
+    def __init__(self, stream: ssl.SSLSocket, timeout: float):
         self._stream = stream
+        self._timeout = timeout
         self._next_request_id = 1
 
     @classmethod
@@ -78,7 +80,7 @@ class ReadOnlyAgentSession:
         except BaseException:
             raw.close()
             raise
-        return cls(stream)
+        return cls(stream, timeout)
 
     def __enter__(self) -> Self:
         return self
@@ -94,21 +96,30 @@ class ReadOnlyAgentSession:
         """Request the agent's current read-only service state."""
         request_id = self._next_request_id
         self._next_request_id += 1
+        deadline = time.monotonic() + self._timeout
         frame = _native.pack_agent_read_request(request_id, 2)
+        self._set_remaining_timeout(deadline)
         self._stream.sendall(frame)
-        prefix = self._receive_exact(4)
+        prefix = self._receive_exact(4, deadline)
         length = _native.agent_control_payload_length(prefix)
         result = _native.parse_agent_result_frame(
-            prefix + self._receive_exact(length)
+            prefix + self._receive_exact(length, deadline)
         )
         if result["request_id"] != request_id or result["kind"] != 4:
             raise StatusError(Code.DATA_LOSS, "Unexpected agent result")
         body = result["body"]
         return AgentStatus.model_validate({"request_id": request_id, **body})
 
-    def _receive_exact(self, length: int) -> bytes:
+    def _set_remaining_timeout(self, deadline: float) -> None:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("Agent request deadline expired")
+        self._stream.settimeout(remaining)
+
+    def _receive_exact(self, length: int, deadline: float) -> bytes:
         data = bytearray()
         while len(data) < length:
+            self._set_remaining_timeout(deadline)
             chunk = self._stream.recv(length - len(data))
             if not chunk:
                 raise StatusError(Code.UNAVAILABLE, "Agent connection closed")

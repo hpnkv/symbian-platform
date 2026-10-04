@@ -179,6 +179,21 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                 )
                 assert command.returncode == 0, command.stdout + command.stderr
                 assert json.loads(command.stdout)["result"]["state"] == "ready"
+                with socket.create_connection(("127.0.0.1", 39101), 10) as raw:
+                    with context.wrap_socket(
+                        raw, server_hostname="sdk-test"
+                    ) as tls:
+                        started = time.monotonic()
+                        for _ in range(3):
+                            tls.sendall(b"\x00")
+                            time.sleep(2)
+                        try:
+                            assert tls.recv(1) == b""
+                        except (ssl.SSLError, ConnectionResetError):
+                            pass
+                        assert time.monotonic() - started < 7.5
+                with _connect() as agent:
+                    assert agent.status().state == "ready"
                 assert process.poll() is None
             finally:
                 _stop(process)

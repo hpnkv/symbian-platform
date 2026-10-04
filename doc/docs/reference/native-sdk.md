@@ -85,6 +85,10 @@ handles one stream at a time and resets it with `CloseSession()`. It belongs
 on a worker thread; a service must arrange cancellation, pairing and key
 custody around it. The default entropy source fails closed, so the owner
 cannot silently turn a compiled archive into a live server.
+For a framed control request, pass the remaining time from one monotonic
+request deadline into every `ReadFor()` and `WriteFor()` call. Per-call
+timeouts alone let a peer extend the exchange by sending one byte before each
+new timeout.
 
 Deep native call chains can exhaust the worker's normal 16 KiB fiber stack.
 `WorkerExecutor::PostFiber(work, stack_bytes)` accepts a word-aligned 4 KiB to
