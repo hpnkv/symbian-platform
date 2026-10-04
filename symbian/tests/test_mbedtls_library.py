@@ -265,3 +265,101 @@ def test_mbedtls_crypto_x509_executes_through_dynamic_dll(
             finally:
                 _stop(process)
                 assert {path: _digest(path) for path in pinned} == pinned
+
+
+@pytest.fixture(scope="module")
+def rm807_entropy_dll(artifacts):
+    """Builds the opt-in ROM-specific entropy adapter, never the default SDK."""
+    source, sdk, _, output = artifacts
+    example = Path(__file__).parents[2] / "examples/mbedtls_dll_probe"
+    dll_build = output / "rm807 entropy DLL"
+    archive = output / "mbedtls archive" / "libmbedcrypto.a"
+    run(
+        [
+            "cmake",
+            "-S",
+            str(example),
+            "-B",
+            str(dll_build),
+            "-G",
+            "Ninja",
+            f"-DCMAKE_TOOLCHAIN_FILE={sdk.prefix}/cmake/symbian-arm.cmake",
+            f"-DSYMBIAN_SDK_PREFIX={sdk.prefix}",
+            f"-DMBEDTLS_SOURCE={source}",
+            f"-DMBEDTLS_ARCHIVE={archive}",
+            "-DSYMBIAN_RM807_ENTROPY_PROBE=ON",
+        ],
+        cwd=example,
+    )
+    run(["cmake", "--build", str(dll_build)], cwd=example)
+    return dll_build / "mbedcrypto_probe.dll"
+
+
+@pytest.mark.skipif(
+    not os.environ.get("SYMBIAN_RM807_ENTROPY"),
+    reason="Set SYMBIAN_RM807_ENTROPY for the patched named-ROM experiment",
+)
+@pytest.mark.parametrize("backend", ["dynarmic", "dyncom"])
+def test_rm807_secure_entropy_executes_in_emulator(
+    rm807_entropy_dll, guest_client, tmp_path, backend
+):
+    """Checks a ROM-specific SVC route with a patched disposable emulator."""
+    root = Path(os.environ["SYMBIAN_RUNTIME_WORKSPACE"]).resolve()
+    golden = root / ".symbian/instances/delight-import-01"
+    pinned = {
+        golden / "data/roms/rm-807/SYM.ROM": ROM_808,
+        golden / "data/drives/z/rm-807/sys/bin/euser.dll": EUSER_808,
+    }
+    assert {path: _digest(path) for path in pinned} == pinned
+    instance = tmp_path / "instance"
+    shutil.copytree(golden, instance)
+    guest_bin = instance / "data/drives/rm-807/c/sys/bin"
+    guest_bin.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(
+        guest_client[False]["artifact"], guest_bin / "runtime_probe.exe"
+    )
+    shutil.copyfile(rm807_entropy_dll, guest_bin / "mbedcrypto_probe.dll")
+    (instance / "config.yml").write_text(
+        f"data-storage: data\ncpu: {backend}\ndevice: 0\nlanguage: 1\n"
+        "enable-gdb-stub: false\nlog-svc: true\n"
+    )
+    executable = root / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+    with tempfile.TemporaryDirectory(
+        prefix="rm807-entropy-", dir="/tmp"
+    ) as private:
+        control = Control(Path(private) / "control.sock")
+        env = dict(os.environ)
+        env.update(
+            EKA2L1_DATA_ROOT=str(instance),
+            EKA2L1_EXPERIMENTAL_SVC_PROFILE="rm807-113.010.1508",
+            EKA2L1_RESEARCH_CONTROL_SOCKET=str(control.endpoint),
+            **background_environment(),
+        )
+        with (tmp_path / "frontend.log").open("w") as log:
+            process = subprocess.Popen(
+                [
+                    executable_for_session(executable, Path(private)),
+                    "--device",
+                    "RM-807",
+                    "--run",
+                    "C:\\sys\\bin\\runtime_probe.exe",
+                ],
+                env=env,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+            )
+            try:
+                assert process.wait(timeout=30) == 0
+                exits = control.exit_report()["process_exits"]
+                (tmp_path / "exits.json").write_text(json.dumps(exits))
+                assert exits == [
+                    {
+                        "uid": 0xE0000813,
+                        "name": "runtime_probe[e0000813]0001",
+                        "type": 0,
+                        "reason": 0,
+                    }
+                ]
+            finally:
+                _stop(process)
+                assert {path: _digest(path) for path in pinned} == pinned

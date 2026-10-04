@@ -61,5 +61,12 @@ key pinning remains possible without a CA bundle.
 Authenticated host-side TLS 1.2/1.3 tests pass. Guest DLL checks now cover
 SHA-256, UTC conversion, explicit trust, wrong-host rejection and expiry
 rejection. A guest TLS handshake and physical Nokia 808 TLS
-connection remain acceptance gates. See [DEVELOPMENT_AGENT.md](https://github.com/hpnkv/symbian-platform/blob/main/.dev/development-agent.md)
+connection remain acceptance gates.
+
+An opt-in RM-807 emulator research probe now reaches Belle EUSER's secure
+random executive call through an ARM-state adapter. A local EKA2L1 patch
+supplies that call from libuv's host OS random source, and the DLL probe passed
+on both emulator CPU backends. The normal SDK archive continues to fail closed
+for guest entropy. This experiment does not validate entropy on a phone or
+complete a guest TLS handshake. See [DEVELOPMENT_AGENT.md](https://github.com/hpnkv/symbian-platform/blob/main/.dev/development-agent.md)
 for the service rollout and [STATUS.md](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md) for current evidence.

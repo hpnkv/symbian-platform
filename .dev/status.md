@@ -1,5 +1,18 @@
 # Status
 
+2026-10-04 RM-807 emulator secure-random experiment: the SHA-256-pinned
+`euser.dll` export at ordinal 2503 (`Math::RandomL(TDes8&)`) branches to its
+ARM veneer for SVC `0x10A`. A scoped EKA2L1 patch now handles that service
+only in the Belle v101 dispatch profile, using libuv's host OS CSPRNG and
+returning `KErrNotReady` on source failure. An opt-in E32 DLL adapter invokes
+the same call without EABI trap imports and clears output on failure. The real
+DLL/`RLibrary` consumer passed on the disposable RM-807 instance under both
+Dynarmic and Dyncom (`2 passed, 5 deselected`), checking two 32-byte outputs
+and preserved ROM/EUSER digests. The default SDK archive still links its
+fail-closed entropy callback. These tests do not establish phone entropy
+quality, a Nokia 808 import/ABI result, connected socket behavior or an
+authenticated TLS handshake. Agent gate 2 remains open.
+
 2026-10-04 resident-agent protocol boundary: `cpp/symbian/agent` now has a native
 incremental four-byte network-order length codec with a hard 64 KiB frame
 ceiling. It rejects zero/oversized lengths before payload allocation, stops

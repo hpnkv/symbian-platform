@@ -106,5 +106,26 @@ __attribute__((visibility("default"))) int MbedEntropyFailureProbe(void) {
   unsigned char bytes[32] = {0};
   size_t count = 123;
   int result = mbedtls_hardware_poll(NULL, bytes, sizeof(bytes), &count);
+#ifdef SYMBIAN_RM807_ENTROPY_PROBE
+  if (result != 0 || count != sizeof(bytes)) return -143;
+  size_t invalid_count = 123;
+  if (mbedtls_hardware_poll(NULL, bytes, 0, &invalid_count) !=
+          MBEDTLS_ERR_ENTROPY_SOURCE_FAILED ||
+      invalid_count != 0) {
+    return -146;
+  }
+  unsigned char next[32] = {0};
+  size_t next_count = 0;
+  result = mbedtls_hardware_poll(NULL, next, sizeof(next), &next_count);
+  if (result != 0 || next_count != sizeof(next)) return -145;
+  int any_nonzero = 0;
+  int any_difference = 0;
+  for (size_t i = 0; i < sizeof(bytes); ++i) {
+    any_nonzero |= bytes[i] != 0;
+    any_difference |= bytes[i] != next[i];
+  }
+  return any_nonzero && any_difference ? 0 : -147;
+#else
   return result == MBEDTLS_ERR_ENTROPY_SOURCE_FAILED && count == 0 ? 0 : -143;
+#endif
 }

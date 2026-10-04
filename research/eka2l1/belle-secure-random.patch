@@ -1,0 +1,69 @@
+--- a/src/emu/kernel/CMakeLists.txt
++++ b/src/emu/kernel/CMakeLists.txt
+@@ -95,5 +95,6 @@
+         epocloader
+         epocmem
+         epoctiming
++        uv_a
+         re2::re2
+-        )
+\ No newline at end of file
++        )
+--- a/src/emu/kernel/src/svc.cpp
++++ b/src/emu/kernel/src/svc.cpp
+@@ -48,6 +48,7 @@
+ #include <utils/system.h>
+ 
+ #include <ctime>
++#include <uv.h>
+ #include <utils/err.h>
+ 
+ namespace eka2l1::epoc {
+@@ -3495,6 +3496,37 @@
+         return eka2l1::random();
+     }
+ 
++    // Belle's EUSER Math::RandomL wrapper calls this executive service.
++    // Unlike Math::Random, it must report an unavailable random source.
++    BRIDGE_FUNC(std::int32_t, math_secure_random, epoc::desc8 *output) {
++        if (!output || !output->is_valid_descriptor()) {
++            return epoc::error_argument;
++        }
++        const auto kind = output->get_descriptor_type();
++        if (kind != epoc::des_type::ptr && kind != epoc::des_type::buf &&
++            kind != epoc::des_type::ptr_to_buf) {
++            return epoc::error_argument;
++        }
++        const std::uint32_t length = output->get_length();
++        if (length > 1024 || length > output->get_max_length(kern->crr_process())) {
++            return epoc::error_argument;
++        }
++        if (length == 0) {
++            return epoc::error_none;
++        }
++        char *bytes = output->get_pointer(kern->crr_process());
++        if (!bytes) {
++            return epoc::error_argument;
++        }
++        // libuv's synchronous path uses the host OS cryptographic source and
++        // returns an error if that source is unavailable.
++        if (uv_random(nullptr, nullptr, bytes, length, 0, nullptr) != 0) {
++            std::memset(bytes, 0, length);
++            return epoc::error_not_ready;
++        }
++        return epoc::error_none;
++    }
++
+     BRIDGE_FUNC(void, add_event, epoc::raw_event *evt) {
+         if (!evt) {
+             LOG_ERROR(KERNEL, "Event to add is null, ignored");
+@@ -6127,6 +6159,9 @@
+                 : old_number < 0xD7 ? old_number + 2 : old_number + 1;
+             result.emplace(number, handler);
+         }
++        // The named RM-807 EUSER Math::RandomL wrapper reaches SWI 0x10A.
++        result.emplace(0x10A, eka2l1::hle::epoc_import_func{
++            eka2l1::hle::bridge(&math_secure_random), "math_secure_random"});
+         // Belle's ROM RThread::ExitReason wrapper calls 0x34, shifted from
+         // the v10 0x32 slot by the two observed earlier insertions.
+         return result;

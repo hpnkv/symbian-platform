@@ -1,5 +1,30 @@
 # Research log
 
+## 2026-10-04: RM-807 secure-random executive path
+
+The original `genexec.pl` enum gave `EExecMathSecureRandom = 265`, but this
+named Belle EUSER ROM uses an inserted dispatch slot: its `Math::RandomL`
+export at ordinal 2503 reaches the ARM SVC `0x10A` veneer. The pinned EUSER
+digest is `3cec7e1546f8ed0cf64a73fece9fdd8fe6e4976535ddffd18b7068c19c01357b`.
+The EKA2L1 v101 map lacked a handler for that number. A scoped patch
+(`research/eka2l1/belle-secure-random.patch`) adds one using libuv's existing
+host OS CSPRNG, validates a writable descriptor and 1024-byte ceiling,
+returns `KErrNotReady` and clears bytes on a host-random failure. libuv's
+source contract guarantees an all-or-error fill; its synchronous call can
+block if the host entropy source stalls, so latency remains to measure.
+
+The opt-in DLL adapter in `examples/mbedtls_dll_probe` uses an ARM-state
+veneer because Thumb SVC immediates cannot encode `0x10A`. It passes a
+`TPtr8` to the original executive ABI, checks the native result, zeroizes on
+failure and sets the Mbed TLS produced-byte count only after success. The
+default archive still selects `sdk_entropy_fail.c`; no generic SDK behavior
+was changed. Two disposable guest tests passed on Dynarmic/Dyncom via the
+real EUSER/RLibrary path. The test compares two draws and nonzero bytes but
+cannot itself certify cryptographic quality. Physical firmware, EUSER imports,
+clock, network and TLS still require separate verification. A useful next
+step is a failure-injection test for the emulator handler and bounded latency
+measurement before proposing this as a supported SDK entropy path.
+
 ## 2026-10-04: Resident wire framing boundary
 
 The frame codec enforces the 64 KiB per-frame budget before payload allocation;
