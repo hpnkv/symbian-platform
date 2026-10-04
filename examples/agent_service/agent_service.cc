@@ -15,6 +15,8 @@
 #include "symbian/agent/guest_control.h"
 #include "symbian/api/connectivity/active_tcp_listener.h"
 #include "symbian/api/connectivity/tls_server.h"
+#include "symbian/api/display/display.h"
+#include "symbian/api/system/counters.h"
 #include "symbian/concurrency/worker_executor.h"
 
 extern "C" void ProbeStartScheduler();
@@ -64,6 +66,22 @@ bool WriteExactly(TlsServer& server, std::span<const std::uint8_t> input,
   return remaining != 0ms && server.WriteFor(input, remaining).ok();
 }
 
+symbian::agent::GuestStatusSnapshot ReadStatusSnapshot() {
+  symbian::agent::GuestStatusSnapshot snapshot;
+  auto tick = symbian::api::system::ReadTickCounter();
+  if (tick.ok() && tick->period.count() > 0) {
+    snapshot.tick = symbian::agent::GuestTickSnapshot{
+        tick->count, static_cast<std::uint64_t>(tick->period.count())};
+  }
+  auto display = symbian::api::display::ReadPrimaryDisplayGeometry();
+  if (display.ok() && display->width_pixels > 0 && display->height_pixels > 0) {
+    snapshot.display = symbian::agent::GuestDisplaySnapshot{
+        static_cast<std::uint32_t>(display->width_pixels),
+        static_cast<std::uint32_t>(display->height_pixels)};
+  }
+  return snapshot;
+}
+
 void Serve(TcpClient client) {
   auto server =
       TlsServer::Create(k_server_cert, k_server_key, k_server_cert,
@@ -95,7 +113,8 @@ void Serve(TcpClient client) {
     if (!request.ok()) {
       return;
     }
-    auto response = symbian::agent::PackGuestResult(*request);
+    auto response =
+        symbian::agent::PackGuestResult(*request, ReadStatusSnapshot());
     if (!response.ok()) {
       return;
     }

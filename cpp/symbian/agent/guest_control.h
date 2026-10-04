@@ -5,6 +5,7 @@
 #define SYMBIAN_AGENT_GUEST_CONTROL_H_
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -20,6 +21,24 @@ struct GuestControlRequest {
   // Complete MessagePack key/value pairs for unknown top-level fields.
   std::string extensions;
   std::uint8_t extension_count = 0;
+};
+
+/** @brief Native tick reading exposed only after peer authentication. */
+struct GuestTickSnapshot {
+  std::uint32_t count = 0;
+  std::uint64_t period_microseconds = 0;
+};
+
+/** @brief Primary HAL display dimensions, if the platform reports them. */
+struct GuestDisplaySnapshot {
+  std::uint32_t width_pixels = 0;
+  std::uint32_t height_pixels = 0;
+};
+
+/** @brief Optional, point-in-time native observations in a status response. */
+struct GuestStatusSnapshot {
+  std::optional<GuestTickSnapshot> tick;
+  std::optional<GuestDisplaySnapshot> display;
 };
 
 /**
@@ -39,6 +58,10 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(std::string_view payload);
  * permission; the caller must have authenticated the TLS peer first.
  */
 absl::StatusOr<std::string> PackGuestResult(const GuestControlRequest& request);
+
+/** @brief Pack status with only the native observations actually available. */
+absl::StatusOr<std::string> PackGuestResult(
+    const GuestControlRequest& request, const GuestStatusSnapshot& snapshot);
 
 }  // namespace symbian::agent
 

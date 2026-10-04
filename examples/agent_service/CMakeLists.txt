@@ -7,7 +7,7 @@ endif()
 include(SymbianPic)
 include("${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
 foreach(required_target Symbian::Connectivity Symbian::Agent Symbian::Tls
-    Symbian::Stackless)
+    Symbian::Stackless Symbian::System Symbian::Display)
   if(NOT TARGET ${required_target})
     message(FATAL_ERROR "Selected SDK lacks ${required_target}")
   endif()
@@ -41,5 +41,5 @@ target_compile_definitions(agent_service PRIVATE SYMBIAN_RM807_ENTROPY_PROBE=1
   MBEDTLS_STATIC MBEDTLS_SSL_PROTO_TLS1_3 SYMBIAN_MBEDTLS_GUEST=1
   MBEDTLS_USER_CONFIG_FILE="symbian_mbedtls/config.h")
 target_link_libraries(agent_service PRIVATE Symbian::Connectivity Symbian::Agent
-  Symbian::Tls Symbian::Stackless)
+  Symbian::Tls Symbian::Stackless Symbian::System Symbian::Display)
 target_link_options(agent_service PRIVATE --gc-sections)

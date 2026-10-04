@@ -64,7 +64,11 @@ The guest `Symbian::Agent` target installs
 hello/status, a nonzero request ID, an optional unsigned deadline and an empty
 body. Its limit is 4 KiB and eight top-level fields; unknown top-level fields
 are preserved in the response. `PackGuestResult` responds with service name,
-`ready` state and the single `status` capability. These routines parse the
+`ready` state and the single `status` capability. Its snapshot overload takes
+`GuestStatusSnapshot`: a successful native tick query adds `system.tick_count`
+and `system.tick_period_us`; a successful primary HAL display query adds
+`display.width_pixels` and `display.height_pixels`. Missing observations stay
+absent rather than becoming guessed values. These routines parse the
 MessagePack payload after the four-byte frame prefix has been checked. They
 require an authenticated TLS peer; they do not authenticate, authorize,
 schedule or keep a listener alive.
@@ -88,6 +92,9 @@ name is checked separately from the address. It sends a status request using
 the native control/frame bindings, rejects an oversized prefix before reading
 the payload and returns a typed `AgentStatus`. Its timeout covers the whole
 request and response, rather than resetting for each `recv` fragment.
+`AgentStatus.system` and `.display` are optional typed snapshots. The tick
+counter wraps at 32 bits and is an elapsed-time source; HAL dimensions may
+differ from Window Server layout.
 
 ```python
 from pathlib import Path

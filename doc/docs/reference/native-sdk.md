@@ -22,7 +22,7 @@ required Abseil status/runtime profile and, where needed, an OS import proxy.
 | `Symbian::Camera` | `symbian/api/camera/camera.h` | Discover camera slots | `StatusOr`; discovery does not reserve a camera. |
 | `Symbian::Connectivity` | `symbian/api/connectivity/tcp_client.h`, `tcp_listener.h`, `active_tcp_listener.h` | Connect, listen, accept and exchange bounded IPv4 TCP data | Synchronous worker owners plus a single-request active-object listener; deadline cancellation for blocking accept, send and receive. |
 | `Symbian::Tls` | `symbian/api/connectivity/tls_server.h` | Own a TLS server configuration and one mutually authenticated stream | Opt-in Mbed TLS link; caller supplies server identity, client CA roots and working guest entropy. Synchronous worker only. |
-| `Symbian::Agent` | `symbian/agent/guest_control.h` | Parse and answer bounded read-only hello/status control messages | Authenticate the TLS peer before parsing; this codec does not own a service or grant permissions. |
+| `Symbian::Agent` | `symbian/agent/guest_control.h` | Parse and answer bounded read-only hello/status control messages, with optional native snapshots | Authenticate the TLS peer before parsing; this codec does not own a service or grant permissions. |
 
 For example, a display query can live in a small adapter:
 
@@ -45,6 +45,14 @@ requires an explicit create, open or replace mode. `FileCopy::Step` transfers
 one bounded chunk at a time and keeps its operation on the opening thread.
 Read the [storage guide](../capabilities/apis/storage.md) before choosing its
 file ownership pattern.
+
+`GuestStatusSnapshot` groups optional tick and display readings for the agent
+codec. Query `Symbian::System` and `Symbian::Display` on a worker after TLS
+authentication, fill only successful readings and call the two-argument
+`PackGuestResult`. The one-argument overload preserves the basic result.
+Tick counts wrap; display geometry is a HAL observation rather than Window
+Server layout. The [system](../capabilities/apis/system.md) and
+[display](../capabilities/apis/display.md) guides describe those APIs.
 
 An `ActiveTcpListener` requires an installed original Symbian
 `CActiveScheduler`. It holds one pending `RSocket::Accept` with no polling

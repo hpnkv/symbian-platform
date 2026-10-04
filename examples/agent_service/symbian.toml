@@ -11,6 +11,7 @@ import_proxies = [
   "${sdk}/proxies/drtaeabi/drtaeabi.dso",
   "${sdk}/proxies/esock/esock.dso",
   "${sdk}/proxies/insock/insock.dso",
+  "${sdk}/proxies/hal/hal.dso",
 ]
 
 [package]

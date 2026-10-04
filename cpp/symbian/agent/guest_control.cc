@@ -322,6 +322,11 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
 
 absl::StatusOr<std::string> PackGuestResult(
     const GuestControlRequest& request) {
+  return PackGuestResult(request, GuestStatusSnapshot{});
+}
+
+absl::StatusOr<std::string> PackGuestResult(
+    const GuestControlRequest& request, const GuestStatusSnapshot& snapshot) {
   if (request.request_id == 0 || (request.kind != 1 && request.kind != 2) ||
       request.extension_count > 8 ||
       request.extensions.size() > kMaximumControlBytes) {
@@ -339,7 +344,8 @@ absl::StatusOr<std::string> PackGuestResult(
   WriteString(&result, "deadline_ms");
   WriteUInt(&result, request.deadline_millis);
   WriteString(&result, "body");
-  result.push_back(static_cast<char>(0x83));
+  result.push_back(static_cast<char>(0x83 + snapshot.tick.has_value() +
+                                     snapshot.display.has_value()));
   WriteString(&result, "service");
   WriteString(&result, "symbian-agent");
   WriteString(&result, "state");
@@ -347,6 +353,22 @@ absl::StatusOr<std::string> PackGuestResult(
   WriteString(&result, "capabilities");
   result.push_back(static_cast<char>(0x91));
   WriteString(&result, "status");
+  if (snapshot.tick) {
+    WriteString(&result, "system");
+    result.push_back(static_cast<char>(0x82));
+    WriteString(&result, "tick_count");
+    WriteUInt(&result, snapshot.tick->count);
+    WriteString(&result, "tick_period_us");
+    WriteUInt(&result, snapshot.tick->period_microseconds);
+  }
+  if (snapshot.display) {
+    WriteString(&result, "display");
+    result.push_back(static_cast<char>(0x82));
+    WriteString(&result, "width_pixels");
+    WriteUInt(&result, snapshot.display->width_pixels);
+    WriteString(&result, "height_pixels");
+    WriteUInt(&result, snapshot.display->height_pixels);
+  }
   result.append(request.extensions);
   if (result.size() > kMaximumControlBytes) {
     return absl::ResourceExhaustedError("Agent result exceeds 4 KiB");

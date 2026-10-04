@@ -1,5 +1,21 @@
 # Status
 
+2026-10-04 authenticated native status snapshots: `GuestStatusSnapshot` now
+adds only successful original-platform tick and primary HAL display readings
+to the existing bounded read-only status result. The host maps them to typed,
+optional `AgentTickSnapshot` and `AgentDisplaySnapshot` fields. A clean SDK
+export at `.symbian/resident-agent-snapshot-sdk-20261004` built the updated
+guest codec for both ARM profiles. Host codec GTest and mutual-TLS Python
+tests passed. The resident ARMv6 consumer needed an explicit `hal.dso` import
+proxy for display; after adding it, disposable RM-807 Dynarmic and Dyncom
+instances returned nonempty tick periods and positive primary display sizes,
+then passed repeat status, CLI, malformed-frame, slow-prefix and reconnect
+controls (`2 passed in 37.39s`). Values are snapshots and do not establish
+Window Server layout, physical-device behavior or a stable uptime clock. The
+final ARMv6 E32 has 792,592 code, 1,540 data and 69,316 BSS bytes with eight
+imports; its unsigned one-file SIS has SHA-256
+`ac1ff54f86ec71401c709ddcae789cd295d99285d597d0c0f938fa9ab90aa4da`.
+
 2026-10-04 bounded agent control deadline: each emulator service control
 exchange now uses one five-second monotonic deadline across prefix, payload
 and response, passing the remaining budget into the public TLS owner's

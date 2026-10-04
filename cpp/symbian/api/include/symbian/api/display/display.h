@@ -10,22 +10,28 @@
 
 namespace symbian::api::display {
 
-// Primary display geometry reported by HAL. Window Server layout and rotation
-// can differ from these hardware dimensions.
+/**
+ * @brief Primary display geometry reported by the native HAL.
+ *
+ * Window Server layout and rotation can differ from these dimensions.
+ */
 struct DisplayGeometry {
-  // Current horizontal size in pixels.
+  /** @brief Current horizontal size in pixels. */
   int width_pixels = 0;
-  // Current vertical size in pixels.
+  /** @brief Current vertical size in pixels. */
   int height_pixels = 0;
-  // Physical horizontal size in twips, if published by this profile.
+  /** @brief Physical horizontal size in twips, when reported. */
   std::optional<int> width_twips;
-  // Physical vertical size in twips, if published by this profile.
+  /** @brief Physical vertical size in twips, when reported. */
   std::optional<int> height_twips;
 };
 
-// Queries the primary display without owning a Window Server connection.
-// This is a snapshot, not an orientation-change subscription. Run it on a
-// worker if the event thread must stay bounded-fast.
+/**
+ * @brief Query primary HAL geometry without a Window Server connection.
+ *
+ * This is a snapshot, not an orientation-change subscription. Use a worker
+ * when the event thread must stay responsive.
+ */
 absl::StatusOr<DisplayGeometry> ReadPrimaryDisplayGeometry();
 
 }  // namespace symbian::api::display

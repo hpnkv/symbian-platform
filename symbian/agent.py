@@ -19,6 +19,24 @@ from symbian import _native
 from symbian.status import Code, StatusError
 
 
+class AgentTickSnapshot(BaseModel):
+    """Native tick count and its platform-reported microsecond period."""
+
+    model_config = ConfigDict(frozen=True)
+
+    tick_count: int
+    tick_period_us: int
+
+
+class AgentDisplaySnapshot(BaseModel):
+    """Primary HAL dimensions, which may differ from Window Server layout."""
+
+    model_config = ConfigDict(frozen=True)
+
+    width_pixels: int
+    height_pixels: int
+
+
 class AgentStatus(BaseModel):
     """Verified read-only status returned by the guest agent profile."""
 
@@ -28,6 +46,8 @@ class AgentStatus(BaseModel):
     service: str
     state: str
     capabilities: tuple[str, ...]
+    system: AgentTickSnapshot | None = None
+    display: AgentDisplaySnapshot | None = None
 
 
 class ReadOnlyAgentSession:

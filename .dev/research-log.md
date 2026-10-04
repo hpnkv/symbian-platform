@@ -1,5 +1,15 @@
 # Research log
 
+2026-10-04: Linking `Symbian::Display` into the resident agent added an eighth
+original DLL dependency (`hal.dso`). The first app ELF had eight DT_NEEDED
+entries but its project manifest listed seven import proxies, so E32
+conversion correctly rejected the incomplete metadata. Adding the HAL proxy
+let the normal installed-SDK consumer build. The native HAL display query and
+system tick query both returned usable values under Dynarmic and Dyncom; the
+agent omits either nested snapshot if its API fails on another profile.
+Primary HAL size is not a Window Server layout claim. The tick wraps at 32
+bits and is not a UTC clock. Physical-device availability remains unknown.
+
 2026-10-04: Per-call `ReadFor(..., 5s)` allowed a peer to refresh the wait by
 delivering another byte just before each deadline. The resident read-only
 control loop now measures one monotonic five-second budget across a complete

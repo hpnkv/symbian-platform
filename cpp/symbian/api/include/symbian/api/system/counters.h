@@ -11,30 +11,35 @@
 
 namespace symbian::api::system {
 
-// A reading of the native system tick counter. The count wraps at 32 bits;
-// subtract nearby readings with unsigned arithmetic to include one wrap.
+/**
+ * @brief Native 32-bit elapsed-time tick and its measured period.
+ *
+ * The count wraps. Subtract nearby readings with unsigned arithmetic to
+ * include one wrap; this is not a wall clock or a long-term uptime value.
+ */
 struct TickReading {
-  // Native tick count sampled after the period lookup.
+  /** @brief Native tick count sampled after the period lookup. */
   std::uint32_t count = 0;
-  // Duration of one tick reported by the current native platform.
+  /** @brief Duration of one tick reported by the current platform. */
   std::chrono::microseconds period{0};
 };
 
-// A reading of the native high-resolution counter. Its frequency is a device
-// property, not an assumed constant. The count wraps at 32 bits.
+/** @brief Native 32-bit fast counter and platform-reported frequency. */
 struct FastCounterReading {
-  // Native fast-counter count sampled after the frequency lookup.
+  /** @brief Counter value sampled after the frequency lookup. */
   std::uint32_t count = 0;
-  // Native counter ticks per second.
+  /** @brief Native ticks per second; do not assume a fixed device value. */
   std::uint32_t ticks_per_second = 0;
 };
 
-// Reads the native system tick and its period. This is an elapsed-time source,
-// not a wall clock; readings far enough apart to wrap need another time source.
+/** @brief Read the native system tick and its period, or a typed OS error. */
 absl::StatusOr<TickReading> ReadTickCounter();
 
-// Reads the native fast counter and its frequency. Counter availability and
-// resolution depend on the actual device or emulator profile.
+/**
+ * @brief Read the fast counter and its frequency, or a typed OS error.
+ *
+ * Availability and resolution depend on the device or emulator profile.
+ */
 absl::StatusOr<FastCounterReading> ReadFastCounter();
 
 }  // namespace symbian::api::system

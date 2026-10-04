@@ -66,6 +66,14 @@ def test_read_only_status_over_mutual_tls():
                                 "service": "symbian-agent",
                                 "state": "ready",
                                 "capabilities": ["status"],
+                                "system": {
+                                    "tick_count": 91,
+                                    "tick_period_us": 1000,
+                                },
+                                "display": {
+                                    "width_pixels": 640,
+                                    "height_pixels": 360,
+                                },
                             },
                         },
                         use_bin_type=True,
@@ -91,6 +99,10 @@ def test_read_only_status_over_mutual_tls():
     assert result.service == "symbian-agent"
     assert result.state == "ready"
     assert result.capabilities == ("status",)
+    assert result.system is not None
+    assert result.system.tick_count == 91
+    assert result.display is not None
+    assert result.display.width_pixels == 640
     assert len(observed) == 1
     assert observed[0]["kind"] == 2
     assert observed[0]["id"] == 1

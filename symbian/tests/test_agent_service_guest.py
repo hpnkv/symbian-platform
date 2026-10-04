@@ -129,6 +129,11 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                             )
                             assert first.state == second.state == "ready"
                             assert first.capabilities == ("status",)
+                            assert first.system is not None
+                            assert first.system.tick_period_us > 0
+                            assert first.display is not None
+                            assert first.display.width_pixels > 0
+                            assert first.display.height_pixels > 0
                             assert (first.request_id, second.request_id) == (
                                 1,
                                 2,

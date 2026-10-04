@@ -179,6 +179,28 @@ TEST(AgentFrame, GuestReadOnlyResultMatchesHostControlEnvelope) {
   EXPECT_EQ(host->extensions, request.extensions);
 }
 
+TEST(AgentFrame, GuestStatusIncludesOnlyAvailableNativeSnapshots) {
+  symbian::agent::GuestControlRequest request;
+  request.request_id = 3;
+  request.kind = 2;
+  symbian::agent::GuestStatusSnapshot snapshot;
+  snapshot.tick = symbian::agent::GuestTickSnapshot{91, 1000};
+  auto encoded = symbian::agent::PackGuestResult(request, snapshot);
+  ASSERT_TRUE(encoded.ok()) << encoded.status();
+  auto parsed = symbian::agent::ParseControl(*encoded);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_EQ(parsed->body["system"]["tick_count"], 91);
+  EXPECT_EQ(parsed->body["system"]["tick_period_us"], 1000);
+  EXPECT_FALSE(parsed->body.contains("display"));
+  snapshot.display = symbian::agent::GuestDisplaySnapshot{640, 360};
+  encoded = symbian::agent::PackGuestResult(request, snapshot);
+  ASSERT_TRUE(encoded.ok()) << encoded.status();
+  parsed = symbian::agent::ParseControl(*encoded);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_EQ(parsed->body["display"]["width_pixels"], 640);
+  EXPECT_EQ(parsed->body["display"]["height_pixels"], 360);
+}
+
 TEST(AgentFrame, GuestReadOnlyRejectsMalformedAndExcessiveInput) {
   for (const nlohmann::json& value : {
            nlohmann::json{{"v", 1}, {"id", 0}, {"kind", 1}},
