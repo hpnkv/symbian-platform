@@ -22,5 +22,9 @@ live under `doc/docs/`, while project plans and experiment logs live under
 The Console screenshots under `doc/docs/assets/screenshots/` are rendered from
 the current frontend with sample paths and no connected phone. On macOS with
 headless Chrome, refresh them with `uv run python doc/capture_console.py`.
-The CLion workflow image is explicitly an illustration because macOS Screen
-Recording was unavailable to this documentation session.
+The `clion-*.png` screenshots are cropped captures of the prepared
+`examples/gui_app` project in IntelliJ IDEA with the CLion plugin on macOS.
+They show CMake, Run and debugger configuration, not guest execution.
+Refreshing them requires Screen Recording permission; keep other windows,
+desktop notifications and private paths outside the final crops. The older
+`clion-workflow.svg` remains a separate configuration illustration.

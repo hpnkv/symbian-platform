@@ -6,10 +6,11 @@ headers and source using the same compiler settings as the build. A saved Run
 configuration launches the example through the SDK's emulator supervisor;
 a separate Remote Debug configuration attaches ARM GDB to the guest.
 
-![A configuration map from the CMake profile to ARM build targets, GUI Run and GUI Debug.](../assets/diagrams/clion-workflow.svg)
+![The GUI example open in IntelliJ IDEA with the CLion plugin: source tree, ARM profile and GUI Run control.](../assets/screenshots/clion-project.png)
 
-*Configuration map derived from this repository. It is an illustration of the
-required choices, not a capture of CLion's interface.*
+*The prepared GUI example in IntelliJ IDEA with the CLion plugin. The toolbar
+shows the selected ARM CMake profile and saved GUI Run configuration. The IDE
+capture shows configuration and source indexing, not a running guest.*
 
 | Step | Guide | What to check |
 | --- | --- | --- |

@@ -1,114 +1,47 @@
-# Building E32 applications with CMake
+# Build and inspect an application
 
-An E32 file is the executable image loaded by Symbian. The build starts with
-ordinary C++ and CMake: Ninja runs the compiler and linker, then the platform
-converter writes E32 and checks its metadata. A separate packaging step can
-place the image and application resources in an installable SIS file. The
-[getting started guide](../getting-started.md) introduces these pieces.
+A Symbian application build produces an ARM **ELF** with debug symbols and an
+**E32** image that the Symbian loader reads. CMake and Ninja compile the source;
+the SDK's converter checks the linked ELF and writes E32. A **SIS** installer is
+a separate packaging result.
 
-The E32 build path uses CMake presets, Ninja and Clang/LLD. CMake owns the source
-graph and compilation database; the platform's native library converts the
-linked ELF to E32. This currently supports import-free PIC executables with
-one RX segment. Selected SDK function imports and guarded Belle GUI/container
-execution now pass; writable data, general constructors and full runtime ABI
-coverage remain open. See RUNTIME.md for the maintained libc++ subset. The one-executable package path is documented in PACKAGING.md.
-Internal code-pointer relocations and named RELRO tables are now supported;
-POINTERS.md demonstrates const callbacks, C++ virtual dispatch and packaging.
-The separate `e32-import-experiment` profile supports eager function imports and
-ROMless development DLL tests. The `e32-dll-experiment` profile emits frozen
-function exports and their relocations; see IMPORTS.md for both constraints.
+## 1. Build the starter
 
-Copy examples/e32_probe as a starting point. symbian.toml selects the CMake
-target and preset and supplies its experimental UID:
-
-```toml
-[project]
-name = "e32_probe"
-kind = "e32-pic-experiment"
-cmake_preset = "symbian-pic"
-uid3 = 0xe0000808
-```
-
-The name must match an executable target. Declare sources, startup and the
-linker script in CMakeLists.txt. The previous source/startup/linker_script TOML
-fields are rejected to avoid silently ignoring a second source graph.
-
-```cmake
-cmake_minimum_required(VERSION 3.28)
-project(my_probe LANGUAGES CXX ASM)
-
-include(SymbianPic)
-symbian_add_pic_executable(e32_probe
-  STARTUP startup.S
-  LINKER_SCRIPT image.ld
-  SOURCES probe.cc algorithm.cc)
-```
-
-The helper accepts multiple source files within the project. It compiles C++20
-as Thumb ARMv5T/AAPCS soft-float with PIC, exceptions and RTTI disabled, no host
-headers and no hosted runtime. Startup assembly uses ARM instructions. The
-toolchain invokes ld.lld directly, retains relocation records and rejects
-undefined symbols. The linker script is a tracked link dependency.
-
-CMakePresets.json must contain the selected configure preset using Ninja.
-The example has a matching build preset. The CLI supplies the installed
-toolchain/module location, compiler, linker and output tree, so a copied project
-also works with the installed Python wheel. For a new project, a preset can be:
-
-```json
-{
-  "version": 6,
-  "configurePresets": [{
-    "name": "symbian-pic",
-    "generator": "Ninja",
-    "binaryDir": "${sourceDir}/.symbian/build"
-  }],
-  "buildPresets": [{
-    "name": "symbian-pic",
-    "configurePreset": "symbian-pic"
-  }]
-}
-```
-
-Build the checked ELF/E32 pair:
+After [creating a project](projects.md), run:
 
 ```sh
-uv run symbian build --project examples/e32_probe --output .symbian/e32-probe
+symbian app build --project ~/dev/hello_time
 ```
 
-The primary tree remains at .symbian/e32-probe/cmake. Ninja reuses its object
-files and tracks local header edits. A second fresh tree is built to compare
-ELF and E32 bytes before publishing the output pair. That comparison proves
-repeatability on this host/toolchain; it is not a hermetic-build attestation.
-Build reports use symbian.e32-pic-experiment/v2 and retain the actual CMake
-compile groups, link fragments, tool versions, input hashes and both build logs.
-They keep Belle loader/runtime verification false.
+The project selects the installed SDK and architecture. Build output and logs
+stay in its ignored `.symbian/` directory. A missing import, unsupported
+relocation or incompatible target setting fails the build instead of creating
+an apparently usable image.
 
-For an incremental ELF-only build after configuring:
+## 2. Inspect the output
+
+Use the E32 path reported by the build:
 
 ```sh
-cmake --build .symbian/e32-probe/cmake --target e32_probe
+symbian inspect --format e32 /path/to/hello_time.exe
 ```
 
-This updates the ELF in the CMake tree. Run symbian build again to convert,
-check reproducibility and publish the E32. The root compile_commands.json is
-copied from CMake and points to the retained tree and actual object paths:
+Inspect reports image metadata; it does not execute the application. Keep the
+ELF as well: its DWARF symbols let ARM GDB map guest addresses back to your
+source. The [GUI source walkthrough](gui-build.md) shows concrete ELF and E32
+paths for the maintained example.
+
+## 3. Check it in an emulator
+
+Import a local ROM/Z using the [firmware guide](firmware.md), then run:
 
 ```sh
-clangd --check=examples/e32_probe/probe.cc \
-  --compile-commands-dir=.symbian/e32-probe
+symbian app run --project ~/dev/hello_time
 ```
 
-With the pinned research oracles built, validate the maintained probe:
+An ARM ELF or converted E32 passing structural checks does not prove that the
+Symbian loader accepts it. Emulator execution provides a separate, bounded
+check. Nokia 808 compatibility still needs on-device evidence.
 
-```sh
-uv run symbian toolchain verify-probe .symbian/e32-probe/e32_probe.exe
-```
-
-That command checks this specific probe with the historical validator, CPU
-backends and ROMless emulator process harness. It is not a general application
-test command. SDK/package/runtime work must pass the remaining project plan gates.
-
-Host tooling/wheel and Linux instructions are in [HOST_BUILD.md](host-build.md).
-The root CMake project exposes the prepared ARM GUI alongside native tooling;
-see [CLION.md](clion.md).
+For a custom source graph, linker script, reproducibility report or low-level
+PIC probe, continue to the [E32 build pipeline](../reference/e32-build-pipeline.md).

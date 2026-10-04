@@ -1,5 +1,34 @@
 # Status
 
+2026-10-04 paced documentation revision: Getting started now leads through host tools, a small standalone application, build inspection and local firmware setup. The former long project, firmware, emulator, debug, runtime, Console, device and TLS guides were split into task pages and named capability/reference articles. Four cropped real CLion/IntelliJ screenshots illustrate project source, CMake profile, Run choices and debugger profiles; the stray unsaved IDE edit was excluded from the published crop and reverted in source. The strict MkDocs/two-Doxygen build and local link check pass. This is a documentation result, not guest execution evidence.
+
+2026-10-04 connected-socket prerequisite experiment: an extra guest DLL
+export opened `socket(AF_INET, SOCK_STREAM, 0)` and tried to attach the
+nonblocking Mbed TLS BIO. Both named RM-807 emulator backends exited `-146`:
+socket creation succeeded, but `fcntl(F_SETFL, O_NONBLOCK)` failed. Their logs
+reported unhandled EKA2L1 ESock base option family 1/id 4, the nonblocking
+option. The temporary six-export run finished 3 passed/2 failed; the two
+failures were the normal clients on Dynarmic and Dyncom. The experimental
+export and test call were removed, preserving the maintained five-export
+passing suite. Connected socket callbacks and TLS handshakes remain open;
+no physical-device behavior is inferred from this emulator gap.
+
+2026-10-04 IDE guide images: macOS screen capture is now permitted. Four
+cropped, actual captures from the prepared `examples/gui_app` project in
+IntelliJ IDEA with the CLion plugin show the indexed source/project tree, the
+enabled local ARM CMake preset, saved GUI Run/GUI Debug choices and the separate
+host LLDB/guest GDB profile selector. The terminal was restored to the
+foreground after each capture. The CLion overview, profile and Run/Debug
+articles now include these images with role-specific captions. The earlier
+SVG remains available but is no longer used as a substitute for IDE captures.
+These screenshots establish visible IDE configuration, not a guest run.
+
+2026-10-04 EKA1 planning only: `.dev/eka1-plan.md` scopes a single opt-in,
+no-UI process probe on one named EKA1 firmware fixture using current tools
+where the ABI permits. It adds no dependency and changes no EKA1 Run behavior;
+the existing EKA1 rejection remains the correct preflight result. Application
+startup, emulator execution and device compatibility remain open.
+
 2026-10-04 documentation publication: GitHub Actions run `37197271949`
 passed its strict MkDocs/two-Doxygen build and Pages deployment. The published
 Console and CLion articles, native SDK guide, original-platform Doxygen index

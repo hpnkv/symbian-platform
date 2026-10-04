@@ -6,10 +6,14 @@ EKA2L1 is the emulator that runs the guest Symbian executable and exposes an
 ARM GDB connection for source debugging. **GUI Debug** uses that connection;
 the host debugger for the launcher is a different profile.
 
-![The CMake profile, build targets, GUI Run and GUI Debug relationship.](../assets/diagrams/clion-workflow.svg)
+The saved configurations appear in the IDE toolbar once `configure-ide` has
+generated the local project settings:
 
-*Configuration illustration derived from this repository; it is not an IDE
-screenshot.*
+![The IntelliJ IDEA CLion plugin run selector showing GUI Run and GUI Debug.](../assets/screenshots/clion-run-configurations.png)
+
+*Choose **GUI Run** to launch the guest through the supervisor. Choose
+**GUI Debug** for the guest GDB connection. The `gui_app` entry is the ordinary
+CMake target and has a different role.*
 
 ## Run the counter
 
@@ -36,6 +40,12 @@ compatibility.
 2. Select **GUI Debug** and its **Symbian GUI GDB** native debug profile.
    **GUI Host LLDB** follows the macOS launcher and cannot stop in ARM guest
    C++.
+
+   ![The IDE profile selector showing the enabled ARM CMake profile, GUI Host LLDB and Symbian GUI GDB.](../assets/screenshots/clion-debug-profiles.png)
+
+   *The debug profile selector is separate from the GUI Run/Debug configuration
+   selector. This capture still has host LLDB selected; switch to **Symbian
+   GUI GDB** before guest debugging.*
 3. Press **Debug**. The supervisor publishes the current E32, starts a halted
    instance and waits for the emulator's loopback GDB stub. The saved Remote
    Debug configuration connects to `127.0.0.1:24689`.

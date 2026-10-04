@@ -1,5 +1,56 @@
 # Research log
 
+## 2026-10-04: Transport and entropy boundary follow-up
+
+The pinned EKA2L1 base socket returns false for `KSONonBlockingIO` (family 1/id 4), while its `KSOBlockingIO` case is itself a success stub. The internet socket uses asynchronous libuv send/receive requests, but the selected guest OpenC `fcntl(F_SETFL, O_NONBLOCK)` path still fails before the TLS BIO can attach. A one-line option-acceptance patch would not establish POSIX nonblocking `recv` or `send`; the next acceptance control must observe WANT_READ/WANT_WRITE and cancellation against a connected disposable guest socket. No emulator patch was applied in this pass.
+
+The original EUSER source also defines non-leaving `Math::Random(TDes8&)`, but documents its output as possibly **not cryptographically secure** and discards the `Exec::MathSecureRandom` error. That route cannot replace the fail-closed Mbed TLS entropy callback. `Math::RandomL` preserves `KErrNotReady`, yet the EABI guest currently lacks the trap symbols needed by the adapter. `Exec::MathSecureRandom` is an internal executive interface explicitly marked subject to change; direct use would need an exact firmware ABI and emulator contract before consideration. Guest entropy, connected transport and authenticated TLS 1.2/1.3 handshakes therefore remain open; development-agent gate 2 cannot advance.
+
+## 2026-10-04: Guest POSIX socket nonblocking option
+
+A temporary sixth DLL export called guest `socket(AF_INET, SOCK_STREAM, 0)`,
+then `symbian_mbedtls_socket_bio_attach`. Normal RLibrary clients on both
+Dynarmic and Dyncom exited `-146` (attach failure); changed-digest controls
+still exited at their expected earlier SHA check. The EKA2L1 log on both
+backends said `Unhandled base option family 1 (id 4)` followed by `Fail to set
+value of socket option!`. The pinned emulator defines id 4 as
+`SOCKET_OPTION_ID_NON_BLOCKING_IO`, while its base socket setter handles only
+id 5 (`BLOCKING_IO`). This separates successful guest socket creation from
+unverified nonblocking transport. The six-export temporary suite was 3
+passed/2 failed; its source/test changes were removed after the diagnostic.
+The [Nokia RSocket reference](https://cortex.p.gen.nz/nokia/symbian/Nokia%20Symbian%20Belle%20Developers'%20Library/GUID-C6E5F800-0637-419E-8FE5-1EBB40E725AA/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html)
+documents `KSONonBlockingIO` and warns that a write-flowed-off send can still
+complete with `KErrNone` for compatibility. That behavior needs an explicit
+transport test; option acceptance alone is insufficient.
+
+Open question: can EKA2L1 implement id 4 with the same observable nonblocking
+receive/send semantics as the selected Symbian OpenC/EUSER path? Merely
+returning success from `set_option` would conceal a blocking call and is not
+an acceptable callback test. Inspect the original socket option contract and
+the guest libc translation, then test WANT_READ/WANT_WRITE, in-flight
+cancellation and connected I/O in a disposable emulator instance. This finding
+does not establish an issue on a Nokia 808.
+
+## 2026-10-04: Real IDE captures and minimal EKA1 planning
+
+With macOS Screen Recording available, `screencapture` captured the prepared
+`examples/gui_app` window in IntelliJ IDEA with its CLion plugin. The captures
+show the source tree, active local ARM CMake preset, generated GUI Run/Debug
+configuration selector and independent host LLDB versus guest GDB selector.
+They were cropped to exclude the desktop dock and unrelated notifications;
+the terminal regained focus after each capture. These are configuration
+screenshots, not evidence of a successful debug session. The earlier
+configuration SVG is no longer the guide's primary visual.
+
+The EKA1 plan is intentionally narrower than general application support:
+first establish one named firmware's entry/import ABI, then attempt a no-UI
+process entry and recorded exit using the existing compiler, publisher and
+emulator resolver. Firmware import for 7610/P900 already works; the EKA2
+starter still rejects EKA1 before run output. Open questions are the exact
+EKA1 executable/header and EUSER startup contracts, and whether the current
+Clang/LLD/native converter can satisfy them without a new toolchain. No EKA1
+code or dependency was added.
+
 ## 2026-10-04: Guest entropy EABI link boundary
 
 The new `Math::RandomL(TDes8&)` callback compiled into both ARM archives, but

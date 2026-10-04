@@ -127,6 +127,7 @@ nav:
       - Runtime probe: tutorials/runtime-probe.md
   - Capabilities:
       - What is available: capabilities/index.md
+      - Firmware compatibility: capabilities/firmware.md
       - C++ usage: capabilities/cpp.md
       - C++20: capabilities/cpp20.md
       - Guest runtime: capabilities/runtime.md
@@ -145,6 +146,17 @@ nav:
       - Performance: capabilities/performance.md
   - Reference:
       - SDK exports: reference/sdk.md
+      - Project configuration: reference/project-configuration.md
+      - Native library targets: reference/project-libraries.md
+      - E32 build pipeline: reference/e32-build-pipeline.md
+      - Firmware configuration: reference/firmware-configuration.md
+      - Firmware import and preservation: reference/firmware-import.md
+      - Research emulator build: reference/emulator-source-build.md
+      - Guest debugging details: reference/guest-debugging.md
+      - Guest runtime research: reference/guest-runtime-research.md
+      - USB device transport: reference/device-usb.md
+      - Desktop console interface: reference/console-interface.md
+      - Mbed TLS SDK integration: reference/tls-sdk.md
       - Python API: reference/python.md
       - SDK native API guide: reference/native-sdk.md
       - C++ API: cpp.md

@@ -41,6 +41,12 @@ checkout.
    rather than a macOS target. The expected compiler database is
    `.symbian/cmake/gui-app/compile_commands.json` for the shared preset.
 
+![CMake settings showing an enabled Symbian ARM local preset in the prepared IntelliJ IDEA CLion plugin project.](../assets/screenshots/clion-cmake-profile.png)
+
+*In the prepared project, the local `clion-arm` preset is enabled under
+**Settings → Build, Execution, Deployment → CMake**. On a new checkout, enable
+the shared `symbian-pic` preset instead unless you have created a local preset.*
+
 The SDK profile also publishes `gui_app_e32` for E32 output. Building an ELF
 alone checks compilation and linking; the E32 conversion and emulator run are
 separate steps. The [GUI build guide](gui-build.md) explains those artifacts.
