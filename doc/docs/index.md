@@ -40,3 +40,9 @@ its application-linked Mbed TLS port.
 The [project status](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md)
 and [research log](https://github.com/hpnkv/symbian-platform/blob/main/.dev/research-log.md)
 record exact evidence and unanswered questions.
+
+This work uses [EKA2L1](https://github.com/EKA2L1/EKA2L1) for emulator
+checks and vendors the full
+[mbedtls-symbian](https://github.com/shinovon/mbedtls-symbian) port for optional
+application TLS. See [community credits](credits.md) for the other projects
+and preserved platform sources that make the SDK possible.

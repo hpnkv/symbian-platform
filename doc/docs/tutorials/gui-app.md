@@ -1,5 +1,11 @@
 # Native Window Server GUI application
 
+Symbian's Window Server is the system service that owns visible windows and
+delivers redraw and pointer events to applications. This example is a small
+touch counter so you can follow the complete path from a C++ event handler to
+an E32 app and a rendered emulator window. EKA2L1 supplies the emulator; the
+firmware files used for the maintained checks are provided separately.
+
 Build a touch counter with original public Symbian headers, modern Clang/LLD,
 the installed SDK's `Symbian::Stackless` runtime and the native E32 converter.
 Each increment schedules a 300-ms timer Future that lights a small marker;

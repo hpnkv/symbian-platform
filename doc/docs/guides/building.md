@@ -1,5 +1,11 @@
 # Building E32 applications with CMake
 
+An E32 file is the executable image loaded by Symbian. The build starts with
+ordinary C++ and CMake: Ninja runs the compiler and linker, then the platform
+converter writes E32 and checks its metadata. A separate packaging step can
+place the image and application resources in an installable SIS file. The
+[getting started guide](../getting-started.md) introduces these pieces.
+
 The E32 build path uses CMake presets, Ninja and Clang/LLD. CMake owns the source
 graph and compilation database; the platform's native library converts the
 linked ELF to E32. This currently supports import-free PIC executables with

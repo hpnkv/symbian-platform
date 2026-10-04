@@ -4,6 +4,21 @@ The host tools use Python, CMake, Ninja, Clang/LLD and GTest. The first
 object-format probe needs no firmware or target SDK. Emulator runs require
 firmware supplied separately.
 
+## A few names you will see
+
+| Name | Role in a Symbian application workflow |
+| --- | --- |
+| E32 | The executable or DLL image the Symbian loader opens |
+| SIS | An installable package containing an app and its resources |
+| ROM/Z | System software and read-only files supplied by a device firmware image |
+| [EKA2L1](https://github.com/EKA2L1/EKA2L1) | A community emulator for testing selected Symbian behavior without a phone |
+| Window Server | The system service a GUI app uses to create windows and receive redraw and input events |
+
+The usual path is **C++ source → ARM build → E32 image → SIS package → emulator
+check**. Each step has its own output and validation. A successful emulator
+check is useful development evidence; physical compatibility is measured
+separately.
+
 ## Install the host tools
 
 ```sh

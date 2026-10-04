@@ -10,6 +10,7 @@ SITE_SOURCE = ROOT / "doc/docs"
 LOCAL_LINK = re.compile(r"\]\(([^)]+)\)")
 EXTERNAL = ("http:", "https:", "mailto:", "data:", "#")
 GENERATED = {"cpp/index.html"}
+LOCAL_RESEARCH = ROOT / "research/upstream"
 
 
 def main() -> int:
@@ -29,6 +30,8 @@ def main() -> int:
             if page == SITE_SOURCE / "cpp.md" and path in GENERATED:
                 continue
             resolved = (page.parent / path).resolve()
+            if resolved.is_relative_to(LOCAL_RESEARCH):
+                continue  # Private/ignored upstream checkout is optional in CI.
             if not resolved.exists():
                 errors.append(f"{page.relative_to(ROOT)}: missing {target}")
             elif page.is_relative_to(SITE_SOURCE) and not resolved.is_relative_to(

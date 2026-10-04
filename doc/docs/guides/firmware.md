@@ -1,5 +1,11 @@
 # ROM / drive Z and device selection
 
+[EKA2L1](https://github.com/EKA2L1/EKA2L1) is the community Symbian emulator
+used by this project. It needs device system material for firmware-specific
+checks. Symbian calls its read-only system drive **Z:**; this guide explains
+how a local ROM/Z selection enters a disposable emulator instance. The SDK
+and an application can still be built without firmware.
+
 Firmware is separately supplied private data. A visible SDK and a generated
 application can be installed and built without it. Neither declares a Nokia
 808 ROM location. Run and Debug use the same resolver and a fresh copy of the

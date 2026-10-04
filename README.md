@@ -18,9 +18,11 @@ pass does **not** establish Nokia 808 compatibility.
 ## In this README
 
 - [Capabilities](#capabilities)
+- [How the build works](#how-the-build-works)
 - [Start here](#start-here)
 - [Examples and workflows](#examples-and-workflows)
 - [Documentation map](#documentation-map)
+- [Community foundations](#community-foundations)
 - [Development status](#development-status)
 
 ## Capabilities
@@ -34,14 +36,32 @@ pass does **not** establish Nokia 808 compatibility.
 | TLS | Vendored Mbed TLS 3.4.1 source, static targets and project-local CA bundle packaging | Guest handshakes and secure entropy remain open |
 | Tools | Python CLI, desktop console, firmware onboarding and emulator controls | Firmware is supplied separately |
 
+An **E32 image** is the executable or DLL format loaded by Symbian. A **SIS
+package** is the installable container for an application and its resources.
+The [GUI example](doc/docs/tutorials/gui-app.md) uses Symbian's **Window
+Server**, the system service that manages windows, drawing and input events.
+
 The [capability map](doc/docs/capabilities/index.md) distinguishes implemented
 features from planned APIs. The [generated C++ reference](doc/docs/cpp.md)
 lists native declarations; its companion guides explain support limits.
 
+## How the build works
+
+The application starts as C++ source and a CMake project. Clang produces ARM
+objects, the platform tools produce an E32 image, and the packager can place
+that image in a SIS file. [EKA2L1](https://github.com/EKA2L1/EKA2L1) is the
+community Symbian emulator used for disposable runtime checks. It runs with
+firmware and system files supplied separately; it is a testing environment,
+not a substitute for a phone result.
+
+The [build guide](doc/docs/guides/building.md) walks through each artifact.
+The [emulator guide](doc/docs/guides/firmware.md) explains where firmware fits.
+
 ## Start here
 
-Install the host dependencies, then check the toolchain. The object probe does
-not require firmware or an installed target SDK.
+Install the host dependencies, then check the toolchain. `uv` creates the
+Python environment and runs the `symbian` command. The first ARM object probe
+does not require firmware or an installed target SDK.
 
 ```sh
 uv sync
@@ -78,6 +98,21 @@ firmware, upstream checkouts and emulator state stay outside version control.
 - [Engineering records](.dev/plan.md) hold plans, experiments, status and
   unresolved questions. They are public project records rather than API
   documentation.
+
+## Community foundations
+
+This repository builds on work by several projects. Their code and original
+licenses remain attributed in the source and SDK provenance.
+
+| Project | Contribution here |
+| --- | --- |
+| [EKA2L1](https://github.com/EKA2L1/EKA2L1) | Symbian emulator used for bounded loader, runtime and GUI tests |
+| [mbedtls-symbian](https://github.com/shinovon/mbedtls-symbian) and [Mbed TLS](https://github.com/Mbed-TLS/mbedtls) | Symbian TLS port and upstream cryptographic library; the full port source is vendored and adapted for this SDK |
+| [SymbianSource](https://github.com/SymbianSource) and [SymbianRevive](https://github.com/SymbianRevive) | Preserved platform sources, headers and build-tool references |
+| [A11](https://github.com/hpnkv/a11), [Abseil](https://github.com/abseil/abseil-cpp) and [LLVM](https://github.com/llvm/llvm-project) | Concurrency reference, status/runtime libraries and modern ARM compilation |
+
+The [credits and provenance guide](doc/docs/credits.md) gives the exact role
+of each dependency and links to its source.
 
 ## Development status
 

@@ -1,5 +1,13 @@
 # Mbed TLS in the application SDK
 
+This SDK builds its TLS libraries from the complete, locally vendored
+[mbedtls-symbian](https://github.com/shinovon/mbedtls-symbian) source port,
+which adapts the upstream [Mbed TLS](https://github.com/Mbed-TLS/mbedtls)
+project for Symbian. Link the library only in applications that need it. A
+TLS session uses a certificate to authenticate its peer and needs a trusted
+entropy source for cryptographic randomness; the latter remains an open guest
+runtime gate.
+
 The default SDK export builds the vendored
 `third_party/mbedtls-symbian` port for ARMv5T and ARMv6. The repository
 contains its CMake project, source files, public and private headers, tests,

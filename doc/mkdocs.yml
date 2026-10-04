@@ -94,6 +94,7 @@ plugins:
 nav:
   - Overview: index.md
   - Getting started: getting-started.md
+  - Community credits: credits.md
   - Guides:
       - Standalone projects: guides/projects.md
       - Build an application: guides/building.md
