@@ -9,8 +9,12 @@ if(NOT MBEDTLS_ARCHIVE OR NOT EXISTS "${MBEDTLS_ARCHIVE}")
 endif()
 get_filename_component(mbedtls_archive_dir "${MBEDTLS_ARCHIVE}" DIRECTORY)
 set(mbedx509_archive "${mbedtls_archive_dir}/libmbedx509.a")
+set(mbedtls_archive "${mbedtls_archive_dir}/libmbedtls.a")
 if(NOT EXISTS "${mbedx509_archive}")
   message(FATAL_ERROR "The matching ARM libmbedx509.a is required")
+endif()
+if(NOT EXISTS "${mbedtls_archive}")
+  message(FATAL_ERROR "The matching ARM libmbedtls.a is required")
 endif()
 file(READ "${MBEDTLS_SOURCE}/tests/fixtures/server-cert.pem" test_certificate)
 string(REPLACE "\n" "\\n\"\n\"" test_certificate_c "${test_certificate}")
@@ -26,7 +30,7 @@ include(SymbianApp)
 symbian_add_dynamic_library(mbedcrypto_probe
   SOURCES bridge.c
   EXPORT_DEFINITION exports.def UID3 0xE0000D18
-  IMPORT_SYMBOLS MbedSha256 MbedUtcProbe MbedVerifyCert
+  IMPORT_SYMBOLS MbedSha256 MbedUtcProbe MbedVerifyCert MbedSocketCancelProbe
   IMPORT_PROXIES
     "${SYMBIAN_SDK_PREFIX}/proxies/euser/euser.dso"
     "${SYMBIAN_SDK_PREFIX}/proxies/libc/libc.dso"
@@ -34,9 +38,9 @@ symbian_add_dynamic_library(mbedcrypto_probe
 target_include_directories(mbedcrypto_probe_elf PRIVATE
   "${MBEDTLS_SOURCE}/include" "${CMAKE_CURRENT_BINARY_DIR}")
 target_link_libraries(mbedcrypto_probe_elf PRIVATE
-  "${mbedx509_archive}" "${MBEDTLS_ARCHIVE}")
+  "${mbedtls_archive}" "${mbedx509_archive}" "${MBEDTLS_ARCHIVE}")
 # The runtime archive contains optional mimalloc POSIX helpers that Belle does
 # not import. Retain the declared DLL export while discarding unused helpers.
 target_link_options(mbedcrypto_probe_elf PRIVATE
   --gc-sections --undefined=MbedSha256 --undefined=MbedUtcProbe
-  --undefined=MbedVerifyCert)
+  --undefined=MbedVerifyCert --undefined=MbedSocketCancelProbe)

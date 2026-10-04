@@ -38,7 +38,9 @@ Symbian's system `ssl.dll`. The port supplies a UTC adapter using the SDK's
 clock and libc imports, with an invalid-clock failure path. Its guest behavior
 has been exercised in a dynamic DLL on both emulator backends. The source port
 also includes nonblocking socket BIO callbacks with cancellation; host tests
-pass, while guest socket execution remains unverified. Guest applications
+pass, and an emulator DLL probe verifies that cancellation stops later send and
+receive callbacks before they touch the socket. Guest socket I/O itself remains
+unverified. Guest applications
 still need a verified secure entropy source. Certificate trust policy
 belongs to the application; the SDK does not silently install a CA bundle.
 The project CMake option `SYMBIAN_CA_BUNDLE` selects a PEM file inside that

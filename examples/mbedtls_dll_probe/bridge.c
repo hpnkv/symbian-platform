@@ -1,16 +1,17 @@
+#include <mbedtls/net_sockets.h>
 #include <mbedtls/sha256.h>
 #include <mbedtls/x509_crt.h>
 #include <symbian_mbedtls/platform.h>
+#include <symbian_mbedtls/socket_bio.h>
+
 #include "test_certificate.h"
 
-__attribute__((visibility("default")))
-int MbedSha256(const unsigned char *input, unsigned size,
-               unsigned char *output) {
+__attribute__((visibility("default"))) int MbedSha256(
+    const unsigned char* input, unsigned size, unsigned char* output) {
   return mbedtls_sha256(input, size, output, 0);
 }
 
-__attribute__((visibility("default")))
-int MbedUtcProbe(void) {
+__attribute__((visibility("default"))) int MbedUtcProbe(void) {
   const time_t known = (time_t)1704067200;  // 2024-01-01 00:00:00 UTC.
   const time_t invalid = (time_t)0;
   struct tm converted;
@@ -28,53 +29,73 @@ int MbedUtcProbe(void) {
   return 0;
 }
 
-__attribute__((visibility("default")))
-int MbedVerifyCert(void) {
+__attribute__((visibility("default"))) int MbedVerifyCert(void) {
   mbedtls_x509_crt certificate;
   mbedtls_x509_crt trust;
   mbedtls_x509_crt_init(&certificate);
   mbedtls_x509_crt_init(&trust);
-  int result = mbedtls_x509_crt_parse(
-      &certificate, (const unsigned char*)kTestCertificate,
-      sizeof(kTestCertificate));
+  int result = mbedtls_x509_crt_parse(&certificate,
+                                      (const unsigned char*)kTestCertificate,
+                                      sizeof(kTestCertificate));
   if (result == 0) {
-    result = mbedtls_x509_crt_parse(
-        &trust, (const unsigned char*)kTestCertificate,
-        sizeof(kTestCertificate));
+    result =
+        mbedtls_x509_crt_parse(&trust, (const unsigned char*)kTestCertificate,
+                               sizeof(kTestCertificate));
   }
   if (result == 0) {
     unsigned flags = 0;
-    result = mbedtls_x509_crt_verify(&certificate, &trust, NULL,
-                                     "sdk-test", &flags, NULL, NULL);
-    if (result != 0 || flags != 0) result = -136;
+    result = mbedtls_x509_crt_verify(&certificate, &trust, NULL, "sdk-test",
+                                     &flags, NULL, NULL);
+    if (result != 0 || flags != 0) {
+      result = -136;
+    }
   }
   if (result == 0) {
     unsigned flags = 0;
-    result = mbedtls_x509_crt_verify(&certificate, &trust, NULL,
-                                     "wrong-name", &flags, NULL, NULL);
-    if (result == 0 || (flags & MBEDTLS_X509_BADCERT_CN_MISMATCH) == 0)
+    result = mbedtls_x509_crt_verify(&certificate, &trust, NULL, "wrong-name",
+                                     &flags, NULL, NULL);
+    if (result == 0 || (flags & MBEDTLS_X509_BADCERT_CN_MISMATCH) == 0) {
       result = -137;
-    else
+    } else {
       result = 0;
+    }
   }
   if (result == 0) {
     mbedtls_x509_crt expired;
     mbedtls_x509_crt_init(&expired);
-    result = mbedtls_x509_crt_parse(
-        &expired, (const unsigned char*)kExpiredCertificate,
-        sizeof(kExpiredCertificate));
+    result = mbedtls_x509_crt_parse(&expired,
+                                    (const unsigned char*)kExpiredCertificate,
+                                    sizeof(kExpiredCertificate));
     if (result == 0) {
       unsigned flags = 0;
-      result = mbedtls_x509_crt_verify(&expired, &trust, NULL,
-                                       "sdk-test", &flags, NULL, NULL);
-      if (result == 0 || (flags & MBEDTLS_X509_BADCERT_EXPIRED) == 0)
+      result = mbedtls_x509_crt_verify(&expired, &trust, NULL, "sdk-test",
+                                       &flags, NULL, NULL);
+      if (result == 0 || (flags & MBEDTLS_X509_BADCERT_EXPIRED) == 0) {
         result = -139;
-      else
+      } else {
         result = 0;
+      }
     }
     mbedtls_x509_crt_free(&expired);
   }
   mbedtls_x509_crt_free(&trust);
   mbedtls_x509_crt_free(&certificate);
   return result;
+}
+
+__attribute__((visibility("default"))) int MbedSocketCancelProbe(void) {
+  symbian_mbedtls_socket_bio bio = {0, 0};
+  unsigned char byte = 0;
+  if (symbian_mbedtls_socket_bio_attach(&bio, -1) == 0) {
+    return -140;
+  }
+  bio.fd = 0;
+  symbian_mbedtls_socket_bio_cancel(&bio);
+  if (symbian_mbedtls_socket_bio_send(&bio, &byte, 1) !=
+          MBEDTLS_ERR_NET_CONN_RESET ||
+      symbian_mbedtls_socket_bio_recv(&bio, &byte, 1) !=
+          MBEDTLS_ERR_NET_CONN_RESET) {
+    return -141;
+  }
+  return 0;
 }

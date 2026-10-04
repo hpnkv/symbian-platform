@@ -4,7 +4,20 @@
 turns the four overview card icons into inline SVG instead of displaying their
 `:material-...:` source text. The strict combined MkDocs/Doxygen build passed;
 the generated overview contains four rendered icon spans and no literal
-`material-rocket-launch` token. Published Pages deployment is pending.
+`material-rocket-launch` token. GitHub Actions run `37196505812` passed its
+build and deploy jobs; the live overview contains four SVG card icons and no
+literal Material icon shortcode.
+
+2026-10-04 TLS transport follow-up: a fresh source export at
+`.symbian/mbedtls-socket-sdk-20261004` is selected as the active SDK. It ships
+`sdk_socket_bio.c` and its public header in the copied vendor tree and
+both ARMv5T and ARMv6 `libmbedtls.a` archives define all four BIO functions.
+The expanded dynamic DLL probe imports the BIO object from the three-archive
+set and passed five tests on the fresh SDK, including Dynarmic and Dyncom runs
+for normal and changed-digest clients. It confirms that a cancelled BIO
+returns `MBEDTLS_ERR_NET_CONN_RESET` from send and receive before socket I/O.
+It does not exercise a connected guest socket, in-flight cancellation, secure
+guest entropy, or a guest TLS handshake. Development-agent gate 2 remains open.
 
 2026-10-04 documentation transition: developer articles now live in lowercase
 paths under `doc/docs/`, with MkDocs Material navigation and A11-matched

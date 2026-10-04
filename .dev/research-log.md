@@ -6,7 +6,24 @@ The published overview showed raw `:material-...:` strings in its four cards.
 MkDocs had the card Markdown but lacked `pymdownx.emoji`, which Material uses
 to convert those shortcodes into SVG. Adding that extension with Material's
 Twemoji index and SVG generator produced four SVG icon spans in the strict
-local build. Check the deployed page after the workflow completes.
+local build. Run `37196505812` deployed the change; the live overview contains
+four SVG icon spans and no literal shortcodes.
+
+## 2026-10-04: Guest BIO cancellation probe
+
+A fresh source SDK export includes the BIO source/header and ARMv5T/ARMv6
+archive symbols. The test DLL now links all three Mbed TLS archives and exposes
+a fourth ordinal that cancels a BIO before calling send and receive. Both
+callbacks return `MBEDTLS_ERR_NET_CONN_RESET` without invoking guest socket
+I/O. The five-case DLL suite passed on Dynarmic and Dyncom with the fresh SDK.
+Open questions: does the named firmware support nonblocking libc socket calls
+through these ordinals; can the callback be cancelled while a TLS operation is
+in progress; which guest API supplies verified secure entropy; can the emulator
+complete authenticated TLS 1.2 and TLS 1.3 handshakes with bounded memory?
+The [upstream EUSER source](https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/us_exec.cpp)
+describes `Math::RandomL(TDes8&)` as a cryptographic random request that leaves
+with `KErrNotReady` if it cannot guarantee security, but
+the imported firmware contract and emulator implementation are still unknown.
 
 ## 2026-10-04: Developer documentation site
 

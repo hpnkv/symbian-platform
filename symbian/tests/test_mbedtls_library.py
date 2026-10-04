@@ -50,7 +50,7 @@ def artifacts(tmp_path_factory):
         cwd=source,
     )
     run(
-        ["cmake", "--build", str(archive_build), "--target", "mbedx509"],
+        ["cmake", "--build", str(archive_build), "--target", "mbedtls"],
         cwd=source,
     )
     archive = archive_build / "libmbedcrypto.a"
@@ -92,7 +92,7 @@ def test_mbedtls_crypto_x509_links_as_e32_dll(artifacts):
     _, _, dll_build, _ = artifacts
     image = inspect_image(dll_build / "mbedcrypto_probe.dll")
     assert image["dll"] and image["architecture"] == "armv6"
-    assert [entry["ordinal"] for entry in image["exports"]] == [1, 2, 3]
+    assert [entry["ordinal"] for entry in image["exports"]] == [1, 2, 3, 4]
     assert all(not entry["absent"] for entry in image["exports"])
     assert [item["dll"] for item in image["imports"]] == [
         "euser.dll",
@@ -153,6 +153,12 @@ def guest_client(artifacts):
             "    using Verify = int (*)();\n"
             "    auto verify = reinterpret_cast<Verify>(library.Lookup(3));\n"
             "    result = verify == nullptr ? -138 : verify();\n"
+            "  }\n"
+            "  if (result == 0) {\n"
+            "    using SocketProbe = int (*)();\n"
+            "    auto socket_probe = "
+            "reinterpret_cast<SocketProbe>(library.Lookup(4));\n"
+            "    result = socket_probe == nullptr ? -142 : socket_probe();\n"
             "  }\n"
             "  library.Close();\n"
             "  return result;\n"
