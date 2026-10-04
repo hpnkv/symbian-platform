@@ -11,13 +11,13 @@ Run `symbian console` (or `uv run symbian console`). Pass
 separate desktop process and returns the terminal immediately. For startup
 diagnostics, run `python -m symbian.console.web_frontend.app` in a terminal.
 The desktop shell uses pywebview: WKWebView on macOS and WebView2 on Windows.
-The Linux x86_64 package includes the PySide6 renderer. The manylinux aarch64
-wheel does not install that renderer because PySide6 could not be resolved in
-the CI audit environment; the Console GUI remains unverified there. The
-launcher can use the legacy Tk frontend when pywebview is absent and Tk is
-installed, but that route has not been checked on Linux aarch64. The HTML,
-CSS and JavaScript are bundled locally. No browser tab, listening port or
-remote content is needed.
+The Linux x86_64 package includes the PySide6 renderer on Python 3.11–3.13.
+The manylinux aarch64 wheels and Linux Python 3.14 wheel do not install that
+renderer because PySide6 could not be resolved in those CI audit environments;
+the Console GUI remains unverified there. The launcher can use the legacy Tk
+frontend when pywebview is absent and Tk is installed, but that route has not
+been checked on Linux aarch64. The HTML, CSS and JavaScript are bundled
+locally. No browser tab, listening port or remote content is needed.
 
 The light interface groups all 38 public SDK actions by purpose:
 

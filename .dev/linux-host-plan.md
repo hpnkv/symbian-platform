@@ -35,8 +35,11 @@ Symbian and third-party licenses.
    breakpoint with the available `arm-none-eabi-gdb` or `gdb-multiarch`. Keep
    host debugger and ARM guest debugger profiles distinct. Measure process and
    symbol relocation behavior in the IDE, not only in its saved XML.
-5. Open the Console through the Linux PySide6 renderer, navigate and build a
-   project, then run a supervised emulator session. Test USB discovery and
+5. On x86_64 with Python 3.11–3.13, open the Console through the Linux PySide6
+   renderer, navigate and build a project, then run a supervised emulator
+   session. On aarch64 or Python 3.14, first select and verify a renderer on a
+   real host: the manylinux_2_28 wheels omit PySide6 where CI cannot resolve
+   a compatible build. Test USB discovery and
    bounded read-only protocols with a connected Linux handset separately.
    Physical Symbian application compatibility remains a separate on-device
    gate under the existing device policy.

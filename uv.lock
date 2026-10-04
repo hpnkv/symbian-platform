@@ -2,7 +2,8 @@ version = 1
 revision = 3
 requires-python = ">=3.11"
 resolution-markers = [
-    "python_full_version >= '3.12' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "python_full_version >= '3.14' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "python_full_version >= '3.12' and python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'linux'",
     "python_full_version >= '3.12' and platform_machine != 'x86_64' and sys_platform == 'linux'",
     "python_full_version >= '3.12' and sys_platform != 'linux'",
     "python_full_version < '3.12' and platform_machine == 'x86_64' and sys_platform == 'linux'",
@@ -1510,8 +1511,8 @@ dependencies = [
     { name = "msgpack" },
     { name = "pydantic" },
     { name = "pygments" },
-    { name = "pywebview", marker = "platform_machine == 'x86_64' or sys_platform != 'linux'" },
-    { name = "pywebview", extra = ["pyside6"], marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
+    { name = "pywebview", marker = "(python_full_version < '3.14' and platform_machine == 'x86_64') or sys_platform != 'linux'" },
+    { name = "pywebview", extra = ["pyside6"], marker = "python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'linux'" },
 ]
 
 [package.dev-dependencies]
@@ -1534,8 +1535,8 @@ requires-dist = [
     { name = "msgpack", specifier = ">=1,<2" },
     { name = "pydantic", specifier = ">=2.12,<3" },
     { name = "pygments", specifier = ">=2.18,<3" },
-    { name = "pywebview", marker = "platform_machine == 'x86_64' or sys_platform != 'linux'", specifier = "==6.2.1" },
-    { name = "pywebview", extras = ["pyside6"], marker = "platform_machine == 'x86_64' and sys_platform == 'linux'", specifier = "==6.2.1" },
+    { name = "pywebview", marker = "(python_full_version < '3.14' and platform_machine == 'x86_64') or sys_platform != 'linux'", specifier = "==6.2.1" },
+    { name = "pywebview", extras = ["pyside6"], marker = "python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'linux'", specifier = "==6.2.1" },
 ]
 
 [package.metadata.requires-dev]

@@ -14,8 +14,8 @@ dependencies = [
     "httpx>=0.28,<1",
     "msgpack>=1,<2",
     "pygments>=2.18,<3",
-    "pywebview==6.2.1 ; sys_platform != 'linux' or platform_machine == 'x86_64'",
-    "pywebview[pyside6]==6.2.1 ; sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "pywebview==6.2.1 ; sys_platform != 'linux' or (platform_machine == 'x86_64' and python_version < '3.14')",
+    "pywebview[pyside6]==6.2.1 ; sys_platform == 'linux' and platform_machine == 'x86_64' and python_version < '3.14'",
 ]
 
 [project.scripts]

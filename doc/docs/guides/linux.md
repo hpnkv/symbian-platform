@@ -7,9 +7,9 @@ Console visual check or physical-device run. Use the evidence levels in the
 [status record](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md)
 when interpreting a result.
 
-On Linux aarch64, the host wheel does not bring a verified Console GUI
-renderer: the CI environment could not resolve PySide6. Use the command-line
-tools there until a renderer is tested on a real host.
+On Linux aarch64 and Linux Python 3.14, the host wheel does not bring a
+verified Console GUI renderer: the CI environment could not resolve PySide6.
+Use the command-line tools there until a renderer is tested on a real host.
 
 ## 1. Prepare the host
 
