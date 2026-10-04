@@ -13,8 +13,13 @@ The project-local CA option packages a bounded PEM resource with a recorded
 digest and no default roots. The new UTC adapter uses the SDK's
 `clock_gettime`/`gmtime_r` imports and rejects values before 2020; the host
 test passes and the ARM archive defines both required Mbed TLS symbols.
-Host TLS 1.2/1.3 verification tests pass, while a guest SHA-256 DLL link fails
-on unresolved mimalloc `realpath`/`pathconf`.
+Host TLS 1.2/1.3 verification tests pass. The first guest SHA-256 DLL link
+failed on unused mimalloc `realpath`/`pathconf` references. Retaining the
+declared export and collecting unused sections removed those references; the
+converted DLL explicitly imports EUSER, libc and libpthread. The maintained
+five-case suite now passes, including dynamic `RLibrary` execution and a
+changed-digest control on Dynarmic and Dyncom. This is guest SHA-256 execution,
+not guest TLS or evidence of Nokia 808 loader compatibility.
 
 The former `library/symbian.c` entropy callback used C `rand()`; the vendored
 copy now fails closed. [Historical Symbian cryptography documentation](https://docs.huihoo.com/symbian/s60-5th-edition-cpp-developers-library-v2.1/GUID-35228542-8C95-4849-A73F-2B4F082F0C44/sdk/doc_source/guide/Security-subsystem-guide/Crypto/cryptography.overview.html)
@@ -24,8 +29,9 @@ Open questions for gate 2: which callable guest source provides sufficient
 entropy and fails visibly; how guest UTC and `gmtime_r` map across clock
 changes; which socket API supports nonblocking, cancellable completion; how to
 bound TLS allocation and cancellation; and how to prove expired-certificate
-rejection in guest TLS 1.2/1.3 handshakes. The current runtime link failure
-must be fixed and rerun before any guest transport result is credible. The
+rejection in guest TLS 1.2/1.3 handshakes. The SHA-256 link failure is resolved
+for this bounded probe; broader TLS linking and guest runtime services remain
+unverified. The
 Nokia 808 firmware/import contract and independent recovery/backup gate remain
 unverified; no phone installation or later development-agent gate was started.
 

@@ -95,8 +95,12 @@ def test_mbedtls_sha256_subset_links_as_e32_dll(artifacts):
     assert len(image["exports"]) == 1
     assert image["exports"][0]["ordinal"] == 1
     assert not image["exports"][0]["absent"]
-    assert [item["dll"] for item in image["imports"]] == ["euser.dll"]
-    assert any(slot["ordinal"] == 609 for slot in image["imports"][0]["slots"])
+    assert [item["dll"] for item in image["imports"]] == [
+        "euser.dll",
+        "libc.dll",
+        "libpthread.dll",
+    ]
+    assert any(slot["ordinal"] == 641 for slot in image["imports"][0]["slots"])
     proxy = inspect_proxy(
         dll_build / "mbedcrypto_probe-import/mbedcrypto_probe.dso"
     )

@@ -27,9 +27,12 @@ four-file SIS with the exact PEM bytes; the focused native SIS case and two
 Python CA tests passed. SDK-wide trust was not changed. The historical
 `rand()` guest entropy example was replaced by an explicit failure result.
 
-The guest SHA-256 DLL test against the new SDK did **not** pass: the final
-link reported unresolved `realpath` and `pathconf` references from the current
-mimalloc runtime archive. No guest TLS handshake, verified guest entropy/UTC,
+The guest SHA-256 DLL test now passes five cases against the active SDK: the
+declared export is retained while unused mimalloc POSIX helpers are discarded,
+and a dynamic `RLibrary` client verifies the `abc` digest and changed-input
+failure on Dynarmic and Dyncom. Its E32 import table lists EUSER, libc and
+libpthread. This establishes a bounded guest crypto call, not TLS. No guest
+TLS handshake, verified guest entropy/UTC,
 nonblocking socket owner, expired-certificate rejection, emulator TLS memory
 bound, or Nokia 808 connection is claimed. DEVELOPMENT_AGENT step 2 remains
 open; steps 3 and later have not started. An ARM archive or host handshake
