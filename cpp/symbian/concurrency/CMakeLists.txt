@@ -8,8 +8,16 @@ set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost 1.82 CONFIG REQUIRED COMPONENTS fiber context)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 get_filename_component(host_compiler_dir "${CMAKE_CXX_COMPILER}" DIRECTORY)
-find_program(SYMBIAN_HOST_LLVM_AR NAMES llvm-ar
-  HINTS "${host_compiler_dir}" /opt/homebrew/opt/llvm/bin REQUIRED)
+find_program(SYMBIAN_HOST_ARCHIVE_MERGER NAMES llvm-ar
+  HINTS "${host_compiler_dir}" /opt/homebrew/opt/llvm/bin)
+# GNU ar also supports the MRI -M script used by bundle_static.py. Linux
+# manylinux images need not ship LLVM just to merge host static archives.
+if(NOT SYMBIAN_HOST_ARCHIVE_MERGER AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
+  set(SYMBIAN_HOST_ARCHIVE_MERGER "${CMAKE_AR}")
+endif()
+if(NOT SYMBIAN_HOST_ARCHIVE_MERGER)
+  message(FATAL_ERROR "Install llvm-ar to merge host static archives")
+endif()
 add_library(symbian_concurrency INTERFACE)
 add_library(symbian::concurrency ALIAS symbian_concurrency)
 target_compile_features(symbian_concurrency INTERFACE cxx_std_20)
@@ -40,7 +48,7 @@ get_filename_component(concurrency_workspace
   "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
 add_custom_command(OUTPUT "${bundle}"
   COMMAND "${Python3_EXECUTABLE}" "${concurrency_workspace}/scripts/bundle_static.py"
-    --ar "${SYMBIAN_HOST_LLVM_AR}" --output "${bundle}"
+    --ar "${SYMBIAN_HOST_ARCHIVE_MERGER}" --output "${bundle}"
     --library "$<TARGET_FILE:symbian_host_primitive_objects>"
     --library "$<TARGET_FILE:Boost::fiber>"
     --library "$<TARGET_FILE:Boost::context>"

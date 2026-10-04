@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def main() -> None:
-    """Merges archives through LLVM ar's portable MRI command interface."""
+    """Merges archives through the LLVM/GNU ar MRI command interface."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ar", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
