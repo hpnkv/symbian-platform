@@ -2,7 +2,7 @@
 
 This guide starts the SDK's read-only development agent in a disposable
 EKA2L1 instance. EKA2L1 emulates Symbian software on a desktop host. The
-example uses a **public test certificate and key**, binds only to the
+example uses a **public test key**, binds only to the
 emulator's loopback address and is for the pinned RM-807 emulator profile.
 It is not a device-pairing procedure.
 
@@ -32,7 +32,7 @@ The command builds the ARMv6 application against the active SDK, copies the
 selected firmware into a private disposable instance and launches
 `agent_service.exe`. It prints the session directory when the emulator starts.
 The service listens at `127.0.0.1:39101` through an active-object accept
-request. Its TLS and control work runs on the SDK's bounded worker. The
+request. Authentication and control work run on the SDK's bounded worker. The
 application menu registers it as **Development Agent**. The local panel shows
 **RUNNING** while the service accepts connections.
 
@@ -46,21 +46,18 @@ been measured.
 
 ## Read the negotiated profile
 
-In a second terminal at the repository root, use the example's public fixture
-identity. These paths are part of the source tree:
+In a second terminal at the repository root, use the example's public test
+key. This key is part of the source tree and has no device-security value:
 
 ```sh
 symbian agent hello 127.0.0.1 39101 \
-  --server-name sdk-test \
-  --ca-bundle third_party/mbedtls-symbian/tests/fixtures/server-cert.pem \
-  --client-certificate third_party/mbedtls-symbian/tests/fixtures/server-cert.pem \
-  --client-key third_party/mbedtls-symbian/tests/fixtures/server-key.pem
+  --key-file agent_service/test-agent.key
 ```
 
 The result should show version 1, a 4 KiB control limit, 16 requests per
-connection and `status`/`logs`. The host checks the server certificate name
-and chain, presents the client certificate, then performs hello before any
-read request. The fixture key provides **test authentication mechanics only**;
+connection and `status`/`logs`. The host and guest prove possession of the
+same key using fresh challenges, then perform hello before any read request.
+The fixture key provides **test authentication mechanics only**;
 anyone with the repository can possess it.
 
 Run the same command with `hello` changed to `status` for a native tick and
@@ -72,7 +69,8 @@ its limit.
 ## Prepare a SIS in the desktop console
 
 Open `symbian console` and choose **Development Agents**. With an active SDK
-selected, **Build agent package** compiles and packages this example. A
+selected, **Build for this phone** compiles and packages a phone-specific agent
+with a private key stored outside the repository. A
 connected USB phone appears both beneath **Devices** in the sidebar and as a
 card in **Development Agents**. **Stage agent package** transfers the checked
 SIS to `Installs` through a writable mounted volume or the phone's MTP
@@ -81,11 +79,14 @@ hash. Safely eject a mounted volume, then complete the installer prompts on
 the phone.
 
 USB detection and SIS staging cannot establish that the service installed or
-started. If you see the panel running on your phone, choose **I see the agent
-running** to record your observation. The card will label it as a reported
-state; a live authenticated connection is still unavailable over this USB
-mode. This agent package has only passed emulator tests and is not a
-validated Nokia 808 release.
+started. The phone-specific panel shows an eight-character pairing code;
+compare it with the console card before checking status. Enter the phone's
+Wi-Fi IPv4 address and choose **Check live status**. Only a valid response from
+the phone-specific key earns the **Verified live** label. This protocol
+authenticates the peer but does not encrypt traffic; use a trusted local
+network. A failed check does not prove the agent is absent: address, network,
+installer or guest entropy may be at fault. Nokia 808 compatibility remains a
+separate physical-device gate.
 
 ## Stop and inspect
 
@@ -96,5 +97,5 @@ does not behave as expected. The package includes application-menu
 registration and local BACK/STOP controls; it has no boot-start script.
 
 An emulator run proves only this selected guest/host path. The Nokia 808 still
-needs a separate physical-device gate, identity provisioning, local pairing,
-permission controls and idle-power measurements.
+needs a separate physical-device gate, installation and network checks, local
+pairing confirmation, permission controls and idle-power measurements.

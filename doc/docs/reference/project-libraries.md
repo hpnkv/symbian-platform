@@ -50,7 +50,9 @@ checks their exact DLL dependencies.
 ## Mbed TLS
 
 The SDK physically includes the Mbed TLS adaptation's headers and source.
-Applications link its installed native targets and opt into a project-local
+`Symbian::Crypto` links the cryptographic primitives without a TLS stream;
+`Symbian::Tls` adds the C++ server and TLS/X.509 archives. Applications link
+these installed native targets explicitly and opt into a project-local
 CA bundle. Follow the [TLS guide](../guides/tls.md) for the current build and
 runtime boundary. Authenticated TLS 1.2/1.3 handshakes now pass in a patched
 emulator profile; the physical-device and cancellable owner gates remain open.

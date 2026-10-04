@@ -160,6 +160,7 @@ def build_executable(
             **tools,
             import_proxies=proxies,
             architecture=architecture,
+            cmake_variables=options.get("_cmake_variables"),
         )
 
     target = configure(primary)

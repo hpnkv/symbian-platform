@@ -2,6 +2,7 @@
 
 import json
 import re
+from collections.abc import Mapping
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
@@ -102,6 +103,7 @@ def configure(
     linker: str,
     import_proxies: tuple[Path, ...] = (),
     architecture: str = "armv6",
+    cmake_variables: Mapping[str, str] | None = None,
 ) -> Target:
     """Configures a Ninja tree and reads CMake's declared executable graph."""
     query = tree / ".cmake/api/v1/query/client-symbian-platform"
@@ -120,6 +122,14 @@ def configure(
     archive_tools = (
         {"ar": str(ar), "ranlib": str(ranlib)} if ar.is_file() else {}
     )
+    variables = cmake_variables or {}
+    if any(
+        not re.fullmatch(r"[A-Z][A-Z0-9_]{0,63}", name)
+        or not value
+        or any(character in value for character in "\0\r\n;")
+        for name, value in variables.items()
+    ):
+        raise StatusError(Code.INVALID_ARGUMENT, "Invalid CMake cache variables")
     identity = json.dumps(
         {
             "architecture": architecture,
@@ -127,6 +137,7 @@ def configure(
             "compiler_version": run([compiler, "--version"], cwd=project),
             "linker": linker,
             "linker_version": run([linker, "--version"], cwd=project),
+            "cmake_variables": dict(sorted(variables.items())),
             **archive_tools,
             **{
                 f"{name}_version": run([path, "--version"], cwd=project)
@@ -179,6 +190,7 @@ def configure(
             "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
             "-DSYMBIAN_IMPORT_PROXIES="
             + ";".join(str(path) for path in import_proxies),
+            *(f"-D{name}={value}" for name, value in sorted(variables.items())),
         ],
         cwd=project,
     )

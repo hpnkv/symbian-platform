@@ -1,14 +1,11 @@
-"""Authenticated, manually addressed read-only development-agent sessions.
-
-This narrow client works with the emulator research listener. It requires an
-explicit CA and client identity, and uses native bindings for wire formatting.
-Pairing, discovery and persistent device identity are later service work.
-"""
+"""Authenticated, manually addressed read-only development-agent sessions."""
 
 from __future__ import annotations
 
+import hashlib
+import hmac
+import secrets
 import socket
-import ssl
 import time
 from pathlib import Path
 from typing import Self
@@ -83,14 +80,13 @@ class AgentHello(BaseModel):
 
 
 class ReadOnlyAgentSession:
-    """One TLS connection to a manually addressed read-only guest listener.
+    """One authenticated connection to a read-only guest listener.
 
-    The caller supplies an explicit CA, client certificate and key. TLS checks
-    the requested server name and certificate chain before any control frame
-    is sent. One session performs synchronous requests with a socket timeout.
+    The session authenticates both peers with a private 32-byte key and fresh
+    nonces. The channel has no confidentiality; use a trusted local network.
     """
 
-    def __init__(self, stream: ssl.SSLSocket, timeout: float):
+    def __init__(self, stream: socket.socket, timeout: float):
         self._stream = stream
         self._timeout = timeout
         self._next_request_id = 1
@@ -102,44 +98,102 @@ class ReadOnlyAgentSession:
         host: str,
         port: int,
         *,
-        server_name: str,
-        ca_bundle: Path,
-        client_certificate: Path,
-        client_key: Path,
+        key_file: Path,
         timeout: float = 5.0,
     ) -> Self:
-        """Authenticate both TLS peers and open one read-only session.
+        """Authenticate both peers and open one read-only session.
 
         Args:
             host: Explicit IP address or host name; discovery is not active.
             port: Port on which the guest is already listening.
-            server_name: Certificate name to validate independently of host.
-            ca_bundle: Project-local PEM trust roots for this connection.
-            client_certificate: PEM identity presented to the guest.
-            client_key: Private key matching ``client_certificate``.
+            key_file: Private 32-byte pairing key embedded in the guest build.
             timeout: Deadline in seconds for each socket operation.
 
         Returns:
             Connected session. Close it or use it as a context manager.
         """
-        if not server_name or not 0 < port < 65536 or timeout <= 0:
+        if not host or not 0 < port < 65536 or timeout <= 0:
             raise StatusError(Code.INVALID_ARGUMENT, "Invalid agent endpoint")
-        context = ssl.create_default_context(cafile=str(ca_bundle))
-        context.load_cert_chain(str(client_certificate), str(client_key))
-        raw = socket.create_connection((host, port), timeout=timeout)
+        key = key_file.read_bytes()
+        if len(key) != 32:
+            raise StatusError(
+                Code.INVALID_ARGUMENT, "Agent key must contain 32 bytes"
+            )
         try:
-            stream = context.wrap_socket(raw, server_hostname=server_name)
-            stream.settimeout(timeout)
+            raw = socket.create_connection((host, port), timeout=timeout)
+        except TimeoutError as error:
+            raise StatusError(
+                Code.DEADLINE_EXCEEDED,
+                f"TCP port {port} at {host} did not answer within {timeout:g}s",
+            ) from error
+        except OSError as error:
+            raise StatusError(
+                Code.UNAVAILABLE, f"Agent endpoint unavailable: {error}"
+            ) from error
+        try:
+            raw.settimeout(timeout)
+            deadline = time.monotonic() + timeout
+            phase = "challenge"
+            challenge = cls._read_exact(raw, 36, deadline)
+            if challenge[:4] != b"SAG1":
+                raise StatusError(
+                    Code.UNAUTHENTICATED, "Invalid agent challenge"
+                )
+            server_nonce = challenge[4:]
+            client_nonce = secrets.token_bytes(32)
+            nonces = server_nonce + client_nonce
+            raw.sendall(
+                client_nonce
+                + hmac.digest(
+                    key, b"symbian-agent-client-v1" + nonces, hashlib.sha256
+                )
+            )
+            phase = "server proof"
+            proof = cls._read_exact(raw, 32, deadline)
+            expected = hmac.digest(
+                key, b"symbian-agent-server-v1" + nonces, hashlib.sha256
+            )
+            if not hmac.compare_digest(proof, expected):
+                raise StatusError(
+                    Code.UNAUTHENTICATED, "Agent identity did not match"
+                )
+        except TimeoutError as error:
+            raw.close()
+            raise StatusError(
+                Code.DEADLINE_EXCEEDED,
+                f"Agent {phase} timed out after TCP connected",
+            ) from error
+        except OSError as error:
+            raw.close()
+            raise StatusError(
+                Code.UNAVAILABLE, f"Agent connection failed: {error}"
+            ) from error
         except BaseException:
             raw.close()
             raise
-        session = cls(stream, timeout)
+        session = cls(raw, timeout)
         try:
             session.negotiate()
         except BaseException:
             session.close()
             raise
         return session
+
+    @staticmethod
+    def _read_exact(
+        stream: socket.socket, count: int, deadline: float
+    ) -> bytes:
+        result = bytearray()
+        while len(result) < count:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError("Agent authentication deadline expired")
+            stream.settimeout(remaining)
+            part = stream.recv(count - len(result))
+            if not part:
+                raise StatusError(Code.UNAVAILABLE, "Agent connection closed")
+            result.extend(part)
+        return bytes(result)
 
     def negotiate(self) -> AgentHello:
         """Verify the guest's version, limits and supported operations once."""
@@ -168,7 +222,7 @@ class ReadOnlyAgentSession:
         self.close()
 
     def close(self) -> None:
-        """Release the TLS connection and its underlying socket."""
+        """Release the underlying socket."""
         self._stream.close()
 
     def status(self) -> AgentStatus:

@@ -231,6 +231,10 @@ This proves transfer and readback for that attachment; it does not prove the
 agent installs, starts, or behaves safely on a Nokia 808. The package used a
 public emulator test certificate and has not passed the physical agent gate.
 
+Current phone-specific agent builds use a private key and a Wi-Fi status
+channel. The transfer results above concern older packages; they remain
+transfer evidence only. See the [agent protocol](agent-protocol.md).
+
 Later on 2026-10-04, a stage request returned MTP response `0x2002` for
 `GetObjectInfo` handle `0x010000af` in `Installs`. The phone briefly left USB
 discovery, then reappeared. The current agent SIS was staged as

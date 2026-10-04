@@ -21,8 +21,9 @@ required Abseil status/runtime profile and, where needed, an OS import proxy.
 | `Symbian::Storage` | `symbian/api/storage/storage.h` | Open, read, write or copy files | Move-only handles; use and destroy on the opening thread. |
 | `Symbian::Camera` | `symbian/api/camera/camera.h` | Discover camera slots | `StatusOr`; discovery does not reserve a camera. |
 | `Symbian::Connectivity` | `symbian/api/connectivity/tcp_client.h`, `tcp_listener.h`, `active_tcp_listener.h` | Connect, listen, accept and exchange bounded IPv4 TCP data | Synchronous worker owners plus a single-request active-object listener; deadline cancellation for blocking accept, send and receive. |
+| `Symbian::Crypto` | `mbedtls/md.h`, `mbedtls/entropy.h` | Use opt-in Mbed TLS cryptographic primitives without a TLS socket | Links only `libmbedcrypto`; applications own key storage and entropy policy. |
 | `Symbian::Tls` | `symbian/api/connectivity/tls_server.h` | Own a TLS server configuration and one mutually authenticated stream | Opt-in Mbed TLS link; caller supplies server identity, client CA roots and working guest entropy. Synchronous worker only. |
-| `Symbian::Agent` | `symbian/agent/guest_control.h`, `guest_log.h` | Parse bounded read-only control messages and retain a 32-record service log | Authenticate the TLS peer before parsing; this codec does not own a service or grant permissions. |
+| `Symbian::Agent` | `symbian/agent/guest_control.h`, `guest_log.h` | Parse bounded read-only control messages and retain a 32-record service log | Authenticate the peer before parsing; this codec does not own a service or grant permissions. |
 
 For example, a display query can live in a small adapter:
 
@@ -145,8 +146,8 @@ volume is available. Neither API asks the handset to install the SIS.
 The host Python binding exposes `pack_agent_read_request`,
 `agent_control_payload_length` and `parse_agent_result_frame`. Each runs its
 native validation with the GIL released. The
-[read-only host session](agent-protocol.md#host-read-only-session) wraps them
-with explicit mutual TLS and a typed result; application code does not need to
+[read-only host session](agent-protocol.md#host-api-and-cli) wraps them
+with a keyed challenge response and a typed result; application code does not need to
 decode MessagePack itself.
 
 These calls use `absl::Status` or `absl::StatusOr`; an unsupported format

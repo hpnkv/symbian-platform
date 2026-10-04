@@ -12,30 +12,54 @@ if(NOT EXISTS "${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
 endif()
 include(SymbianPic)
 include("${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
-foreach(required_target Symbian::Connectivity Symbian::Agent Symbian::Tls
+foreach(required_target Symbian::Connectivity Symbian::Agent Symbian::Crypto
     Symbian::Stackless Symbian::System Symbian::Display)
   if(NOT TARGET ${required_target})
     message(FATAL_ERROR "Selected SDK lacks ${required_target}")
   endif()
 endforeach()
 
-# This service remains validated only in the pinned RM-807 emulator profile.
-# Its public TLS fixture is suitable only for loopback development sessions.
-if(NOT SYMBIAN_EMULATOR_RM807_AGENT AND NOT SYMBIAN_INDEX_GUEST_PROBES)
-  message(FATAL_ERROR "Set SYMBIAN_EMULATOR_RM807_AGENT=ON for the emulator")
+# The RM-807 entropy adapter has emulator evidence only; a phone-specific
+# build remains an explicitly unverified physical profile.
+set(SYMBIAN_AGENT_PRIVATE_KEY_FILE "" CACHE FILEPATH
+  "32-byte private agent key; required for a Wi-Fi listener")
+if(NOT SYMBIAN_AGENT_PRIVATE_KEY_FILE AND
+    NOT SYMBIAN_EMULATOR_RM807_AGENT AND NOT SYMBIAN_INDEX_GUEST_PROBES)
+  message(FATAL_ERROR "Public-key builds require the RM-807 emulator profile")
 endif()
-set(SYMBIAN_AGENT_TEST_CERTIFICATE_DIR
-  "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/mbedtls-symbian/tests/fixtures"
-  CACHE PATH "Public, emulator-only TLS fixture")
-set(fixture_dir "${SYMBIAN_AGENT_TEST_CERTIFICATE_DIR}")
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/agent_certificates.h" "")
-foreach(part server-cert server-key)
-  file(READ "${fixture_dir}/${part}.pem" pem)
-  string(REPLACE "\n" "\\n\"\n\"" quoted_pem "${pem}")
-  string(REPLACE "-" "_" identifier "${part}")
-  file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/agent_certificates.h"
-    "static const char k_${identifier}[] = \"${quoted_pem}\";\n")
-endforeach()
+if(SYMBIAN_AGENT_PRIVATE_KEY_FILE)
+  file(SIZE "${SYMBIAN_AGENT_PRIVATE_KEY_FILE}" key_size)
+  if(NOT key_size EQUAL 32)
+    message(FATAL_ERROR "Agent key must contain exactly 32 bytes")
+  endif()
+  file(READ "${SYMBIAN_AGENT_PRIVATE_KEY_FILE}" agent_key_hex HEX)
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${SYMBIAN_AGENT_PRIVATE_KEY_FILE}")
+  file(SHA256 "${SYMBIAN_AGENT_PRIVATE_KEY_FILE}" actual_key_sha256)
+  if(SYMBIAN_AGENT_KEY_SHA256 AND
+      NOT actual_key_sha256 STREQUAL SYMBIAN_AGENT_KEY_SHA256)
+    message(FATAL_ERROR "Agent key changed during this build")
+  endif()
+  if(agent_key_hex STREQUAL
+      "e388b273d3df70fdfddafce1fb3f1681d8116baee784ebbf542855501f7d916a")
+    message(FATAL_ERROR "The public emulator key cannot be used on Wi-Fi")
+  endif()
+  string(LENGTH "${SYMBIAN_AGENT_PAIRING_CODE}" pairing_code_length)
+  if(NOT pairing_code_length EQUAL 8 OR
+      NOT SYMBIAN_AGENT_PAIRING_CODE MATCHES "^[ABCEGIKNOPRSTU]+$")
+    message(FATAL_ERROR "Set the 8-character agent pairing code")
+  endif()
+  set(agent_private_profile 1)
+  set(agent_panel_state "PAIR ${SYMBIAN_AGENT_PAIRING_CODE}")
+else()
+  # Public emulator fixture. Never listen outside loopback with this key.
+  set(agent_key_hex
+    "e388b273d3df70fdfddafce1fb3f1681d8116baee784ebbf542855501f7d916a")
+  set(agent_private_profile 0)
+  set(agent_panel_state "RUNNING")
+endif()
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/agent_key.h"
+  "#pragma once\n#define SYMBIAN_AGENT_KEY_HEX \"${agent_key_hex}\"\n#define SYMBIAN_AGENT_PRIVATE_PROFILE ${agent_private_profile}\n#define SYMBIAN_AGENT_PANEL_STATE \"${agent_panel_state}\"\n")
 
 symbian_add_import_executable(agent_service
   STARTUP startup.S
@@ -44,8 +68,8 @@ symbian_add_import_executable(agent_service
     sdk_entropy_rm807.cc sdk_entropy_rm807.S)
 target_include_directories(agent_service PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_compile_definitions(agent_service PRIVATE SYMBIAN_RM807_ENTROPY_PROBE=1
-  MBEDTLS_STATIC MBEDTLS_SSL_PROTO_TLS1_3 SYMBIAN_MBEDTLS_GUEST=1
+  MBEDTLS_STATIC SYMBIAN_MBEDTLS_GUEST=1
   MBEDTLS_USER_CONFIG_FILE="symbian_mbedtls/config.h")
 target_link_libraries(agent_service PRIVATE Symbian::Connectivity Symbian::Agent
-  Symbian::Tls Symbian::Stackless Symbian::System Symbian::Display)
+  Symbian::Crypto Symbian::Stackless Symbian::System Symbian::Display)
 target_link_options(agent_service PRIVATE --gc-sections)

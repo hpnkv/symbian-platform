@@ -45,13 +45,13 @@ ordinary user-approved application deployment.
 
 | Transport | Discovery | Connection |
 | --- | --- | --- |
-| Wi-Fi | Advertise `_symbian-dev._tcp.local` with DNS-SD only while the WLAN interface has an address. Host browsing uses mDNS, plus manual IP/host entry for networks that suppress multicast. | Authenticate over an encrypted TCP channel. Reconnect after address changes using the paired device key, never a cached IP alone. |
+| Wi-Fi | Advertise `_symbian-dev._tcp.local` with DNS-SD only while the WLAN interface has an address. Host browsing uses mDNS, plus manual IP/host entry for networks that suppress multicast. | Authenticate over the agent's keyed TCP protocol. It currently provides no confidentiality; keep it on a trusted local network. Reconnect after address changes using the paired device key, never a cached IP alone. |
 | USB | Observe physical USB descriptors, mode and interfaces through the SDK's libusb inventory. Probe only a verified service endpoint or an IP-over-USB interface if the phone actually presents one. | Carry the same authenticated protocol over a suitable bulk/serial or IP transport. Do not claim that PC Suite MTP/OBEX interfaces are arbitrary application endpoints. |
 
-Discovery announces protocol versions, a transient endpoint, a stable public
-key fingerprint and a short display name. It does not expose private device
-data before pairing. Host and phone agree on identity by a generated device
-key, with the USB serial and model only as supporting evidence. A reconnecting
+Discovery may eventually announce protocol versions, a transient endpoint and
+a short display name. It must not expose private device data or the shared key.
+Host and phone agree on identity through the device-specific key and a
+handset-visible code, with the USB serial and model as supporting evidence. A reconnecting
 phone with the same key retains selection and trust; a matching model, USB
 port, address or name alone does not. Key rotation and factory reset require
 fresh user confirmation. The host displays transport, last-seen time and
@@ -64,15 +64,14 @@ interface availability must be measured on the intended handset and mode.
 
 ## Pairing, trust and permissions
 
-The first connection requires a handset-visible pairing action and a
-short-code/fingerprint comparison in the host SDK. Pin each peer's public key
-and negotiate an authenticated encrypted channel. The default SDK ships the
-application-linked Mbed TLS 3.4.1 port for TLS 1.2 and 1.3; use it as the
-phone-side candidate, with verified entropy, UTC, certificate validation and
-socket callbacks. Its static libraries are linked only by applications that
-request them. Until a guest TLS handshake and physical-phone connection pass,
-the agent must not advertise an encrypted transport. A version or crypto
-mismatch fails closed. USB is not implicitly trusted.
+The first connection requires a handset-visible code comparison in the host
+SDK. The initial read-only agent uses per-device secret-key HMAC challenges
+over TCP. It does not claim encryption or protection against observation of
+status data on the network. The default SDK still ships the application-linked
+Mbed TLS 3.4.1 port for TLS 1.2 and 1.3; applications opt into that target and
+their own project-local trust roots. The agent links only crypto primitives.
+A version or authentication mismatch fails closed. USB is not implicitly
+trusted.
 
 Authorize by operation and scope: read diagnostics, read/write an approved
 workspace, deploy ordinary apps, send input, and attach to an owned debug
@@ -233,8 +232,8 @@ reimplement transport behavior.
    the ordinary signed SIS on the **development** phone through the verified
    user-approved installer path, initially launch it manually, and confirm
    process startup, shutdown, local UI, permissions and idle memory/wakeups on
-   the handset. Repeat authenticated TLS 1.2/1.3 and idle-memory checks on
-   the phone before enabling the Wi-Fi service. Pair through a handset-visible
+   the handset. Verify guest entropy, the agent's authenticated handshake and
+   idle-memory behavior on the phone before enabling regular Wi-Fi use. Pair through a handset-visible
    action, verify the read-only
    host handshake, and test cable removal, Wi-Fi loss, sleep/wake and a crashed
    service. Only then enable the verified boot-start mechanism; measure idle

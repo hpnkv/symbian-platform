@@ -204,6 +204,13 @@ foreach(component IN ITEMS system connectivity agent power media display sensors
 endforeach()
 
 # The C++ TLS owner is opt-in and keeps Mbed TLS out of plain TCP projects.
+set(crypto_archive
+  "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/mbedtls/lib/libmbedcrypto.a")
+if(EXISTS "${crypto_archive}")
+  add_library(SymbianCrypto STATIC IMPORTED)
+  set_target_properties(SymbianCrypto PROPERTIES IMPORTED_LOCATION "${crypto_archive}")
+  add_library(Symbian::Crypto ALIAS SymbianCrypto)
+endif()
 set(tls_archive
   "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_api_tls.a")
 if(EXISTS "${tls_archive}" AND TARGET Symbian::Connectivity)

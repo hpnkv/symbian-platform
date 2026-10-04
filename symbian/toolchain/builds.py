@@ -150,6 +150,7 @@ def build(
     linker: str = "ld.lld",
     *,
     architecture: str | None = None,
+    cmake_variables: dict[str, str] | None = None,
 ) -> dict:
     """Builds a declared object or E32 application and its clangd database."""
     project = project.resolve()
@@ -180,6 +181,8 @@ def build(
         from symbian.toolchain.architecture import target
 
         options = {**options, "architecture": target(architecture).architecture}
+    if cmake_variables:
+        options = {**options, "_cmake_variables": cmake_variables}
     name = options.get("name")
     filename = options.get("source")
     if not isinstance(name, str) or not re.fullmatch(

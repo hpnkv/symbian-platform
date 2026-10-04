@@ -3,8 +3,6 @@
 import json
 import os
 import shutil
-import socket
-import ssl
 import subprocess
 import sys
 import tempfile
@@ -27,7 +25,7 @@ from symbian.project.sdk import AppSdk
 from symbian.status import Code, StatusError
 
 ROOT = Path(__file__).parents[2]
-CERTIFICATES = ROOT / "third_party/mbedtls-symbian/tests/fixtures"
+TEST_KEY = ROOT / "agent_service/test-agent.key"
 ESOCK_808 = "555a8c00ced78b7350f9f08f510c8e742cdc328f1f2780420c813b1fe2eb4a08"
 INSOCK_808 = "d619f48a95b16aa89b3f34b813c3182d9440f80a6f23cead49b9f3aa988e9110"
 
@@ -52,17 +50,26 @@ def service_image(tmp_path_factory):
     data = json.loads(presets.read_text())
     cache = data["configurePresets"][0]["cacheVariables"]
     cache["SYMBIAN_SDK_PREFIX"] = str(sdk.prefix)
-    cache["SYMBIAN_AGENT_TEST_CERTIFICATE_DIR"] = str(CERTIFICATES)
     data["configurePresets"][0]["toolchainFile"] = str(
         sdk.prefix / "cmake/symbian-arm.cmake"
     )
     presets.write_text(json.dumps(data))
+    private_key = os.environ.get("SYMBIAN_AGENT_PRIVATE_GUEST_KEY_FILE")
+    variables = None
+    if private_key:
+        variables = {
+            "SYMBIAN_AGENT_PRIVATE_KEY_FILE": private_key,
+            "SYMBIAN_AGENT_PAIRING_CODE": os.environ[
+                "SYMBIAN_AGENT_PRIVATE_GUEST_PAIRING_CODE"
+            ],
+        }
     report = toolchain.build(
         project,
         output / "build",
         str(sdk.compiler),
         str(sdk.linker),
         architecture="armv6",
+        cmake_variables=variables,
     )
     return Path(report["artifact"])
 
@@ -71,10 +78,9 @@ def _connect(timeout=10.0):
     return ReadOnlyAgentSession.connect(
         "127.0.0.1",
         39101,
-        server_name="sdk-test",
-        ca_bundle=CERTIFICATES / "server-cert.pem",
-        client_certificate=CERTIFICATES / "server-cert.pem",
-        client_key=CERTIFICATES / "server-key.pem",
+        key_file=Path(
+            os.environ.get("SYMBIAN_AGENT_PRIVATE_GUEST_KEY_FILE", TEST_KEY)
+        ),
         timeout=timeout,
     )
 
@@ -125,8 +131,11 @@ def test_local_window_controls(service_image, tmp_path, action):
                         with _connect() as agent:
                             assert agent.status().state == "ready"
                         break
-                    except ConnectionRefusedError:
-                        if time.monotonic() >= deadline:
+                    except StatusError as error:
+                        if (
+                            error.code != Code.UNAVAILABLE
+                            or time.monotonic() >= deadline
+                        ):
                             raise
                         time.sleep(0.05)
                 seen = False
@@ -271,32 +280,28 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                             )
                             cursor = page.next_cursor
                         break
-                    except ConnectionRefusedError:
-                        if time.monotonic() >= deadline:
+                    except StatusError as error:
+                        if (
+                            error.code != Code.UNAVAILABLE
+                            or time.monotonic() >= deadline
+                        ):
                             raise
                         time.sleep(0.05)
 
-                context = ssl.create_default_context(
-                    cafile=str(CERTIFICATES / "server-cert.pem")
-                )
-                context.load_cert_chain(
-                    CERTIFICATES / "server-cert.pem",
-                    CERTIFICATES / "server-key.pem",
-                )
-                with socket.create_connection(("127.0.0.1", 39101), 10) as raw:
-                    with context.wrap_socket(
-                        raw, server_hostname="sdk-test"
-                    ) as tls:
-                        tls.sendall((4097).to_bytes(4, "big"))
-                with socket.create_connection(("127.0.0.1", 39101), 10) as raw:
-                    with context.wrap_socket(
-                        raw, server_hostname="sdk-test"
-                    ) as tls:
-                        tls.sendall(_native.pack_agent_read_request(1, 2))
-                        try:
-                            assert tls.recv(1) == b""
-                        except (ssl.SSLError, ConnectionResetError):
-                            pass
+                wrong_key = tmp_path / "wrong-agent.key"
+                wrong_key.write_bytes(bytes(32))
+                with pytest.raises(StatusError):
+                    ReadOnlyAgentSession.connect(
+                        "127.0.0.1", 39101, key_file=wrong_key
+                    )
+                with _connect() as agent:
+                    agent._stream.sendall((4097).to_bytes(4, "big"))
+                with _connect() as agent:
+                    agent._stream.sendall(_native.pack_agent_read_request(1, 1))
+                    try:
+                        assert agent._stream.recv(1) == b""
+                    except ConnectionResetError:
+                        pass
                 with _connect() as agent:
                     assert agent.status().state == "ready"
                     page = agent.logs(after=cursor)
@@ -316,14 +321,12 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                         "status",
                         "127.0.0.1",
                         "39101",
-                        "--server-name",
-                        "sdk-test",
-                        "--ca-bundle",
-                        str(CERTIFICATES / "server-cert.pem"),
-                        "--client-certificate",
-                        str(CERTIFICATES / "server-cert.pem"),
-                        "--client-key",
-                        str(CERTIFICATES / "server-key.pem"),
+                        "--key-file",
+                        str(
+                            os.environ.get(
+                                "SYMBIAN_AGENT_PRIVATE_GUEST_KEY_FILE", TEST_KEY
+                            )
+                        ),
                         "--output-format=json",
                     ],
                     cwd=ROOT,
@@ -365,19 +368,16 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                     log_command.stdout + log_command.stderr
                 )
                 assert json.loads(log_command.stdout)["result"]["records"]
-                with socket.create_connection(("127.0.0.1", 39101), 10) as raw:
-                    with context.wrap_socket(
-                        raw, server_hostname="sdk-test"
-                    ) as tls:
-                        started = time.monotonic()
-                        for _ in range(3):
-                            tls.sendall(b"\x00")
-                            time.sleep(2)
-                        try:
-                            assert tls.recv(1) == b""
-                        except (ssl.SSLError, ConnectionResetError):
-                            pass
-                        assert time.monotonic() - started < 7.5
+                with _connect() as agent:
+                    started = time.monotonic()
+                    for _ in range(3):
+                        agent._stream.sendall(b"\x00")
+                        time.sleep(2)
+                    try:
+                        assert agent._stream.recv(1) == b""
+                    except ConnectionResetError:
+                        pass
+                    assert time.monotonic() - started < 7.5
                 with _connect() as agent:
                     assert agent.status().state == "ready"
                 if backend == "dynarmic":

@@ -340,12 +340,7 @@ def _parser() -> argparse.ArgumentParser:
         agent_parser = agent_commands.add_parser(name)
         agent_parser.add_argument("host")
         agent_parser.add_argument("port", type=int)
-        agent_parser.add_argument("--server-name", required=True)
-        agent_parser.add_argument("--ca-bundle", required=True, type=Path)
-        agent_parser.add_argument(
-            "--client-certificate", required=True, type=Path
-        )
-        agent_parser.add_argument("--client-key", required=True, type=Path)
+        agent_parser.add_argument("--key-file", required=True, type=Path)
         agent_parser.add_argument("--timeout", type=float, default=5.0)
         if name == "logs":
             agent_parser.add_argument(
@@ -655,10 +650,7 @@ def _execute(args: argparse.Namespace) -> dict:
         with ReadOnlyAgentSession.connect(
             args.host,
             args.port,
-            server_name=args.server_name,
-            ca_bundle=args.ca_bundle,
-            client_certificate=args.client_certificate,
-            client_key=args.client_key,
+            key_file=args.key_file,
             timeout=args.timeout,
         ) as agent:
             if args.agent_command == "hello":

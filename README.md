@@ -126,8 +126,10 @@ of each dependency and links to its source.
 The supplied RM-807 firmware has supported guarded emulator checks for GUI
 rendering and input, runtime paths, native TCP, and authenticated guest TLS
 1.2/1.3 handshakes. A manually started resident agent answers read-only
-status and log requests over mutual TLS on emulator loopback. Production
-pairing, device identity, local disable controls, physical-device entropy and
+status and log requests over an authenticated, unencrypted socket on emulator
+loopback. The SDK's Mbed TLS support remains available to applications.
+Phone-specific agent packaging and a Wi-Fi status check are implemented, while
+on-device installation, local pairing confirmation, physical-device entropy and
 Nokia 808 compatibility remain open. See the
 [status record](.dev/status.md) and [research log](.dev/research-log.md) for
 specific results and unanswered questions.

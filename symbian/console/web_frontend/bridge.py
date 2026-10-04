@@ -1,8 +1,10 @@
 """Thread-safe pywebview bridge to the typed in-memory console client."""
 
 import asyncio
+import ipaddress
 import json
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from threading import RLock
@@ -47,6 +49,12 @@ from symbian.console.web_frontend.models import (
     SyntaxSpan,
     UsbInventoryItem,
     UsbTopology,
+)
+from symbian.device.agent_identity import (
+    build_package,
+    key_file,
+    pairing_code,
+    read_identity,
 )
 from symbian.device.agent_observation import (
     clear_report,
@@ -130,6 +138,54 @@ class ConsoleWebBridge:
             "profile": "emulator",
             "compiler": compiler,
             "linker": linker,
+        }
+
+    def _connected_phone(self, selector: str) -> ConnectedDevice:
+        with self._lock:
+            device = next(
+                (item for item in self._devices if item.selector == selector),
+                None,
+            )
+        if device is None:
+            raise Status(
+                code=Code.NOT_FOUND, message="Selected phone is unavailable"
+            ).to_exception()
+        return device
+
+    def build_phone_agent(self, selector: str) -> dict[str, Any]:
+        """Create one phone-bound agent package with a private pairing key."""
+        device = self._connected_phone(selector)
+        with self._lock:
+            sdk_manifest = self._context.sdk_manifest if self._context else None
+        if sdk_manifest is None:
+            raise Status(
+                code=Code.FAILED_PRECONDITION, message="Select an SDK first"
+            ).to_exception()
+        project = Path(__file__).resolve().parents[3] / "agent_service"
+        return build_package(device, Path(sdk_manifest), project)
+
+    def verify_agent_status(self, selector: str, host: str) -> dict[str, Any]:
+        """Authenticate a manually addressed Wi-Fi endpoint for one phone."""
+        from symbian.agent import ReadOnlyAgentSession
+
+        device = self._connected_phone(selector)
+        try:
+            address = ipaddress.IPv4Address(host.strip())
+        except ipaddress.AddressValueError as error:
+            raise Status(
+                code=Code.INVALID_ARGUMENT,
+                message="Enter the phone's IPv4 Wi-Fi address",
+            ).to_exception() from error
+        with ReadOnlyAgentSession.connect(
+            str(address), 39101, key_file=key_file(device), timeout=5.0
+        ) as agent:
+            snapshot = agent.status().model_dump(mode="json")
+        return {
+            "authenticated": True,
+            "status": snapshot,
+            "host": str(address),
+            "pairing_code": pairing_code(device),
+            "checked_at": datetime.now(timezone.utc).isoformat(),
         }
 
     def report_agent_running(self, selector: str) -> dict[str, Any]:
@@ -232,6 +288,13 @@ class ConsoleWebBridge:
             )
         result = snapshot.model_dump(mode="json")
         result["agent_observations"] = read_for_devices(context.devices)
+        project = Path(__file__).resolve().parents[3] / "agent_service"
+        result["agent_identities"] = {
+            device.selector: identity
+            for device in context.devices
+            if device.identity_basis == "usb-serial"
+            if (identity := read_identity(device, project)) is not None
+        }
         return result
 
     def get_application_overview(self) -> dict[str, Any]:

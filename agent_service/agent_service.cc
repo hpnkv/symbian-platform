@@ -1,7 +1,6 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
-// Manually started, loopback-only development agent. The bundled certificate
-// is a public test fixture and has no physical-device security value.
+// Manually started development agent. Public-key emulator builds bind loopback.
 
 #include <algorithm>
 #include <array>
@@ -16,12 +15,15 @@
 
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "agent_certificates.h"
+#include "agent_key.h"
 #include "agent_signals.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/md.h"
+#include "mbedtls/platform_util.h"
 #include "symbian/agent/guest_control.h"
 #include "symbian/agent/guest_log.h"
 #include "symbian/api/connectivity/active_tcp_listener.h"
-#include "symbian/api/connectivity/tls_server.h"
+#include "symbian/api/connectivity/tcp_client.h"
 #include "symbian/api/display/display.h"
 #include "symbian/api/display/resident_panel.h"
 #include "symbian/api/system/active_service.h"
@@ -32,11 +34,10 @@
 namespace {
 
 using symbian::api::connectivity::TcpClient;
-using symbian::api::connectivity::TlsServer;
 constexpr std::uint16_t kAgentPort = 39101;
 constexpr std::size_t kMaximumFrame = 4096;
 constexpr std::size_t kMaximumRequestsPerConnection = 16;
-constexpr std::size_t kTlsWorkerStackBytes = 256 * 1024;
+constexpr std::size_t kWorkerStackBytes = 256 * 1024;
 const absl::Duration kControlDeadline = absl::Seconds(5);
 
 absl::Duration Remaining(absl::Time deadline) {
@@ -47,14 +48,14 @@ absl::Duration Remaining(absl::Time deadline) {
   return std::max(absl::Milliseconds(1), std::move(deadline) - now);
 }
 
-bool ReadExactly(TlsServer& server, std::span<std::uint8_t> output,
+bool ReadExactly(TcpClient& client, std::span<std::uint8_t> output,
                  absl::Time deadline) {
   while (!output.empty()) {
     const auto remaining = Remaining(deadline);
     if (remaining == absl::ZeroDuration()) {
       return false;
     }
-    auto received = server.ReadFor(output, remaining);
+    auto received = client.ReceiveFor(output, remaining);
     if (!received.ok() || *received == 0) {
       return false;
     }
@@ -63,12 +64,83 @@ bool ReadExactly(TlsServer& server, std::span<std::uint8_t> output,
   return true;
 }
 
-bool WriteExactly(TlsServer& server, std::span<const std::uint8_t> input,
+bool WriteExactly(TcpClient& client, std::span<const std::uint8_t> input,
                   absl::Time deadline) {
-  // TlsServer::WriteFor writes the entire input or returns an error.
   const auto remaining = Remaining(std::move(deadline));
   return remaining != absl::ZeroDuration() &&
-         server.WriteFor(input, remaining).ok();
+         client.SendFor(input, remaining).ok();
+}
+
+std::array<std::uint8_t, 32> AgentKey() {
+  constexpr char hex[] = SYMBIAN_AGENT_KEY_HEX;
+  auto nibble = [](char digit) -> std::uint8_t {
+    return digit >= 'a' ? static_cast<std::uint8_t>(digit - 'a' + 10)
+                        : static_cast<std::uint8_t>(digit - '0');
+  };
+  std::array<std::uint8_t, 32> key{};
+  for (std::size_t index = 0; index < key.size(); ++index) {
+    key[index] = static_cast<std::uint8_t>((nibble(hex[2 * index]) << 4) |
+                                           nibble(hex[2 * index + 1]));
+  }
+  return key;
+}
+
+bool Authenticate(TcpClient& client) {
+  constexpr std::string_view kClientLabel = "symbian-agent-client-v1";
+  constexpr std::string_view kServerLabel = "symbian-agent-server-v1";
+  std::array<std::uint8_t, 32> nonce{};
+  mbedtls_entropy_context entropy;
+  mbedtls_entropy_init(&entropy);
+  const int random_result =
+      mbedtls_entropy_func(&entropy, nonce.data(), nonce.size());
+  mbedtls_entropy_free(&entropy);
+  if (random_result != 0) {
+    return false;
+  }
+  const absl::Time deadline = absl::Now() + kControlDeadline;
+  std::array<std::uint8_t, 36> challenge{};
+  challenge[0] = 'S';
+  challenge[1] = 'A';
+  challenge[2] = 'G';
+  challenge[3] = '1';
+  std::copy(nonce.begin(), nonce.end(), challenge.begin() + 4);
+  if (!WriteExactly(client, challenge, deadline)) {
+    return false;
+  }
+  std::array<std::uint8_t, 64> reply{};
+  if (!ReadExactly(client, reply, deadline)) {
+    return false;
+  }
+  const mbedtls_md_info_t* md = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
+  if (md == nullptr) {
+    return false;
+  }
+  const auto key = AgentKey();
+  auto digest = [&](std::string_view label,
+                    std::array<std::uint8_t, 32>& result) {
+    std::array<std::uint8_t, 96> message{};
+    std::copy(label.begin(), label.end(), message.begin());
+    std::copy(nonce.begin(), nonce.end(), message.begin() + label.size());
+    std::copy_n(reply.begin(), 32, message.begin() + label.size() + 32);
+    return mbedtls_md_hmac(md, key.data(), key.size(), message.data(),
+                           label.size() + 64, result.data()) == 0;
+  };
+  std::array<std::uint8_t, 32> expected{};
+  if (!digest(kClientLabel, expected)) {
+    return false;
+  }
+  std::uint8_t difference = 0;
+  for (std::size_t index = 0; index < expected.size(); ++index) {
+    difference |= expected[index] ^ reply[32 + index];
+  }
+  if (difference != 0) {
+    return false;
+  }
+  std::array<std::uint8_t, 32> proof{};
+  const bool authenticated =
+      digest(kServerLabel, proof) && WriteExactly(client, proof, deadline);
+  mbedtls_platform_zeroize(reply.data(), reply.size());
+  return authenticated;
 }
 
 symbian::agent::GuestStatusSnapshot ReadStatusSnapshot() {
@@ -90,11 +162,7 @@ symbian::agent::GuestStatusSnapshot ReadStatusSnapshot() {
 }
 
 void Serve(TcpClient client, symbian::agent::AgentLogRing& log) {
-  auto server =
-      TlsServer::Create(k_server_cert, k_server_key, k_server_cert,
-                        symbian::api::connectivity::TlsVersion::kTls13);
-  if (!server.ok() ||
-      !server->Accept(std::move(client), absl::Seconds(10)).ok()) {
+  if (!Authenticate(client)) {
     return;
   }
   log.Append(symbian::agent::AgentLogCode::kAuthenticated);
@@ -110,7 +178,7 @@ void Serve(TcpClient client, symbian::agent::AgentLogRing& log) {
        request_index < kMaximumRequestsPerConnection; ++request_index) {
     const absl::Time deadline = absl::Now() + kControlDeadline;
     std::array<std::uint8_t, 4> prefix{};
-    if (!ReadExactly(*server, prefix, deadline)) {
+    if (!ReadExactly(client, prefix, deadline)) {
       return;
     }
     const std::uint32_t length = (static_cast<std::uint32_t>(prefix[0]) << 24) |
@@ -122,7 +190,7 @@ void Serve(TcpClient client, symbian::agent::AgentLogRing& log) {
       return;
     }
     std::array<std::uint8_t, kMaximumFrame> payload{};
-    if (!ReadExactly(*server, std::span(payload).first(length), deadline)) {
+    if (!ReadExactly(client, std::span(payload).first(length), deadline)) {
       return;
     }
     auto request = symbian::agent::ParseGuestControl(std::string_view(
@@ -160,9 +228,9 @@ void Serve(TcpClient client, symbian::agent::AgentLogRing& log) {
         static_cast<std::uint8_t>(count >> 16),
         static_cast<std::uint8_t>(count >> 8),
         static_cast<std::uint8_t>(count)};
-    if (!WriteExactly(*server, response_prefix, deadline) ||
+    if (!WriteExactly(client, response_prefix, deadline) ||
         !WriteExactly(
-            *server,
+            client,
             std::span(reinterpret_cast<const std::uint8_t*>(response->data()),
                       response->size()),
             deadline)) {
@@ -186,6 +254,9 @@ class AgentService final
     if (!status.ok()) {
       return status;
     }
+    if (SYMBIAN_AGENT_PRIVATE_PROFILE) {
+      return listener_.ListenIpv4({0, 0, 0, 0}, kAgentPort);
+    }
     return listener_.ListenIpv4({127, 0, 0, 1}, kAgentPort);
   }
 
@@ -199,7 +270,7 @@ class AgentService final
           [client = std::move(*result), log = log_]() mutable {
             Serve(std::move(client), *log);
           },
-          kTlsWorkerStackBytes);
+          kWorkerStackBytes);
     }
     if (!listener_.AcceptNext().ok()) {
       StopFromEventCallback();
@@ -233,7 +304,7 @@ constexpr symbian::api::display::ResidentPanelOptions kPanel{
     .foreground_key = agent_service::kRaisePanelKey,
     .caption = "Development Agent",
     .heading = "AGENT",
-    .state = "RUNNING",
+    .state = SYMBIAN_AGENT_PANEL_STATE,
     .back_label = "BACK",
     .stop_label = "STOP",
 };

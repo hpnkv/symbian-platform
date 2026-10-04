@@ -230,9 +230,9 @@ if (!navigation.innerHTML.includes('data-nav-device="usb:808"')) {
 if (!navigation.innerHTML.includes('Development Agents')) process.exit(2);
 let html = vm.runInContext('renderAgents()', context);
 if (!html.includes('Agent installation unknown')) process.exit(3);
-if (!html.includes('Build agent package')) process.exit(4);
+if (!html.includes('Build for this phone')) process.exit(4);
 if (!html.includes('data-agent-stage="usb:808" disabled')) process.exit(5);
-vm.runInContext("state.agentPackage = '/tmp/agent_service.sis'", context);
+vm.runInContext("state.agentPackages['usb:808'] = {package: '/tmp/agent_service.sis', pairing_code: '1234ABCD'}", context);
 html = vm.runInContext('renderAgents()', context);
 if (html.includes('data-agent-stage="usb:808" disabled')) process.exit(6);
 if (html.includes('Agent installed')) process.exit(7);
@@ -245,14 +245,17 @@ vm.runInContext(`
   }];
 `, context);
 html = vm.runInContext('renderAgents()', context);
-if (html.includes('data-agent-stage="usb:pc-suite" disabled')) process.exit(8);
+if (!html.includes('data-agent-stage="usb:pc-suite" disabled')) process.exit(8);
+vm.runInContext("state.agentPackages['usb:pc-suite'] = {package: '/tmp/agent_service.sis', pairing_code: '1234ABCD'}", context);
+html = vm.runInContext('renderAgents()', context);
+if (html.includes('data-agent-stage="usb:pc-suite" disabled')) process.exit(13);
 if (!html.includes('PC Suite MTP')) process.exit(9);
 vm.runInContext(`state.agentObservations = {'usb:pc-suite': {
   identity_anchor: 'sample', reported_at: '2026-10-04T20:00:00+00:00',
   state: 'running-reported'
 }}`, context);
 html = vm.runInContext('renderAgents()', context);
-if (!html.includes('Running reported · live status unavailable')) {
+if (!html.includes('Running reported · live status unchecked')) {
   process.exit(10);
 }
 if (!html.includes('Clear running report')) process.exit(11);
