@@ -8,12 +8,50 @@
 
 namespace symbian::api::connectivity {
 
-struct NativeTcpClient {
+struct NativeTcpSession {
   RSocketServ server;
+  int references = 1;
+};
+
+struct NativeTcpClient {
+  NativeTcpSession* session = nullptr;
   RSocket socket;
-  bool server_open = false;
   bool socket_open = false;
 };
+
+struct NativeTcpListener {
+  NativeTcpSession* session = nullptr;
+  RSocket socket;
+  bool socket_open = false;
+};
+
+namespace {
+
+void ReleaseSession(NativeTcpSession* session) {
+  if (session != nullptr && --session->references == 0) {
+    session->server.Close();
+    session->~NativeTcpSession();
+    User::Free(session);
+  }
+}
+
+int OpenSession(NativeTcpSession** output) {
+  void* memory = User::Alloc(sizeof(NativeTcpSession));
+  if (memory == nullptr) {
+    return KErrNoMemory;
+  }
+  auto* session = new (memory) NativeTcpSession;
+  const TInt result = session->server.Connect();
+  if (result != KErrNone) {
+    session->~NativeTcpSession();
+    User::Free(session);
+    return result;
+  }
+  *output = session;
+  return KErrNone;
+}
+
+}  // namespace
 
 extern "C" void SymbianDeviceTcpClose(NativeTcpClient* client) {
   if (client == nullptr) {
@@ -22,9 +60,7 @@ extern "C" void SymbianDeviceTcpClose(NativeTcpClient* client) {
   if (client->socket_open) {
     client->socket.Close();
   }
-  if (client->server_open) {
-    client->server.Close();
-  }
+  ReleaseSession(client->session);
   client->~NativeTcpClient();
   User::Free(client);
 }
@@ -40,13 +76,12 @@ extern "C" int SymbianDeviceTcpConnect(unsigned address, unsigned port,
     return KErrNoMemory;
   }
   auto* client = new (memory) NativeTcpClient;
-  TInt result = client->server.Connect();
+  TInt result = OpenSession(&client->session);
   if (result != KErrNone) {
     SymbianDeviceTcpClose(client);
     return result;
   }
-  client->server_open = true;
-  result = client->socket.Open(client->server, KAfInet, KSockStream,
+  result = client->socket.Open(client->session->server, KAfInet, KSockStream,
                                KProtocolInetTcp);
   if (result != KErrNone) {
     SymbianDeviceTcpClose(client);
@@ -58,6 +93,114 @@ extern "C" int SymbianDeviceTcpConnect(unsigned address, unsigned port,
   client->socket.Connect(peer, request);
   User::WaitForRequest(request);
   result = request.Int();
+  if (result != KErrNone) {
+    SymbianDeviceTcpClose(client);
+    return result;
+  }
+  *output = client;
+  return KErrNone;
+}
+
+extern "C" void SymbianDeviceTcpListenerClose(NativeTcpListener* listener) {
+  if (listener == nullptr) {
+    return;
+  }
+  if (listener->socket_open) {
+    listener->socket.Close();
+  }
+  ReleaseSession(listener->session);
+  listener->~NativeTcpListener();
+  User::Free(listener);
+}
+
+extern "C" int SymbianDeviceTcpListen(unsigned address, unsigned port,
+                                      NativeTcpListener** output) {
+  if (output == nullptr || port == 0 || port > 65535) {
+    return KErrArgument;
+  }
+  *output = nullptr;
+  void* memory = User::Alloc(sizeof(NativeTcpListener));
+  if (memory == nullptr) {
+    return KErrNoMemory;
+  }
+  auto* listener = new (memory) NativeTcpListener;
+  TInt result = OpenSession(&listener->session);
+  if (result == KErrNone) {
+    result = listener->socket.Open(listener->session->server, KAfInet,
+                                   KSockStream, KProtocolInetTcp);
+    if (result == KErrNone) {
+      listener->socket_open = true;
+      TInetAddr local(address, port);
+      result = listener->socket.Bind(local);
+      if (result == KErrNone) {
+        result = listener->socket.Listen(1);
+      }
+    }
+  }
+  if (result != KErrNone) {
+    SymbianDeviceTcpListenerClose(listener);
+    return result;
+  }
+  *output = listener;
+  return KErrNone;
+}
+
+extern "C" int SymbianDeviceTcpAccept(NativeTcpListener* listener,
+                                      NativeTcpClient** output) {
+  return SymbianDeviceTcpAcceptFor(listener, -1, output);
+}
+
+extern "C" int SymbianDeviceTcpAcceptFor(NativeTcpListener* listener,
+                                         int milliseconds,
+                                         NativeTcpClient** output) {
+  if (listener == nullptr || output == nullptr || milliseconds < -1 ||
+      milliseconds > 60000) {
+    return KErrArgument;
+  }
+  *output = nullptr;
+  void* memory = User::Alloc(sizeof(NativeTcpClient));
+  if (memory == nullptr) {
+    return KErrNoMemory;
+  }
+  auto* client = new (memory) NativeTcpClient;
+  client->session = listener->session;
+  ++client->session->references;
+  RTimer timer;
+  if (milliseconds >= 0) {
+    const TInt timer_result = timer.CreateLocal();
+    if (timer_result != KErrNone) {
+      SymbianDeviceTcpClose(client);
+      return timer_result;
+    }
+  }
+  TInt result = client->socket.Open(client->session->server);
+  if (result == KErrNone) {
+    client->socket_open = true;
+    TRequestStatus request;
+    listener->socket.Accept(client->socket, request);
+    if (milliseconds < 0) {
+      User::WaitForRequest(request);
+      result = request.Int();
+    } else {
+      TRequestStatus deadline;
+      timer.After(deadline, TTimeIntervalMicroSeconds32(milliseconds * 1000));
+      User::WaitForRequest(request, deadline);
+      if (request.Int() == KRequestPending) {
+        listener->socket.CancelAccept();
+        User::WaitForRequest(request);
+        result = KErrTimedOut;
+      } else {
+        result = request.Int();
+      }
+      timer.Cancel();
+      if (deadline.Int() == KRequestPending) {
+        User::WaitForRequest(deadline);
+      }
+    }
+  }
+  if (milliseconds >= 0) {
+    timer.Close();
+  }
   if (result != KErrNone) {
     SymbianDeviceTcpClose(client);
     return result;

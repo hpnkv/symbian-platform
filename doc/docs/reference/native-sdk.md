@@ -20,7 +20,7 @@ required Abseil status/runtime profile and, where needed, an OS import proxy.
 | `Symbian::Display` | `symbian/api/display/display.h` | Read primary HAL geometry | `StatusOr`; one snapshot, separate from Window Server layout. |
 | `Symbian::Storage` | `symbian/api/storage/storage.h` | Open, read, write or copy files | Move-only handles; use and destroy on the opening thread. |
 | `Symbian::Camera` | `symbian/api/camera/camera.h` | Discover camera slots | `StatusOr`; discovery does not reserve a camera. |
-| `Symbian::Connectivity` | `symbian/api/connectivity/tcp_client.h` | Connect and exchange bounded IPv4 TCP data | Move-only, synchronous worker owner; no in-flight cancellation. |
+| `Symbian::Connectivity` | `symbian/api/connectivity/tcp_client.h`, `tcp_listener.h` | Connect, listen, accept and exchange bounded IPv4 TCP data | Move-only, synchronous worker owners; deadline cancellation for accept. |
 
 For example, a display query can live in a small adapter:
 

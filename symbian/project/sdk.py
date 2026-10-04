@@ -788,6 +788,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             "_ZN7UserHal10TickPeriodER27TTimeIntervalMicroSeconds32",
             "_ZN7UserSvr11HalFunctionEiiPvS0_",
             "_ZN11RHandleBase5CloseEv",
+            "_ZN6RTimer5AfterER14TRequestStatus27TTimeIntervalMicroSeconds32",
         ]
         ws32 = gui["imports"]["ws32.dll"]["symbols"] + [
             "_ZN15CWsScreenDevice11ReleaseFontEP5CFont",
@@ -845,6 +846,11 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                     "_ZN11RSocketServ7ConnectEj",
                     "_ZN11RSocketServC1Ev",
                     "_ZN7RSocket4OpenER11RSocketServjjj",
+                    "_ZN7RSocket4OpenER11RSocketServ",
+                    "_ZN7RSocket4BindER9TSockAddr",
+                    "_ZN7RSocket6ListenEj",
+                    "_ZN7RSocket6AcceptERS_R14TRequestStatus",
+                    "_ZN7RSocket12CancelAcceptEv",
                     "_ZN7RSocket4SendERK6TDesC8jR14TRequestStatus",
                     "_ZN7RSocket13RecvOneOrMoreER5TDes8jR14TRequestStatus",
                     "_ZN7RSocket5CloseEv",

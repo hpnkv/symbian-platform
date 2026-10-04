@@ -1,5 +1,23 @@
 # Research log
 
+### 2026-10-04 — inbound RSocket and accept cancellation
+
+The original ESOCK `RSocket::Bind`, `Listen`, blank `Open`, `Accept` and
+`CancelAccept` exports and EUSER `RTimer::After` were absent from the selected
+SDK import proxies. Their preserved DEF ordinals have now been selected; no
+SDK-wide network or trust default changed. The EKA2L1 internet socket backend
+already implements bind/listen/accept/cancel, and a disposable RM-807 guest
+received a host loopback connection and completed two native accept deadline
+cycles. The accepted socket survived destruction of its listener because both
+retain their session until close.
+
+The service still needs an active-object listener that has no polling worker
+while idle, cancellation and deadlines for connected reads/writes and the TLS
+BIO, bounded session/accounting state, and an authenticated read-only protocol
+response. The synchronous helper is a proven transport primitive, not the
+resident agent itself. A physical phone may expose different binding and
+bearer behavior; measure that separately.
+
 ### 2026-10-04 — native guest TLS handshake boundary
 
 The guest TLS DLL first crashed because its translation unit did not use the

@@ -7,6 +7,7 @@
 namespace symbian::api::connectivity {
 
 struct NativeTcpClient;
+struct NativeTcpListener;
 
 extern "C" int SymbianDeviceTcpConnect(unsigned address, unsigned port,
                                        NativeTcpClient** output);
@@ -16,6 +17,14 @@ extern "C" int SymbianDeviceTcpReceive(NativeTcpClient* client,
                                        unsigned char* bytes, int capacity,
                                        int* received);
 extern "C" void SymbianDeviceTcpClose(NativeTcpClient* client);
+extern "C" int SymbianDeviceTcpListen(unsigned address, unsigned port,
+                                      NativeTcpListener** output);
+extern "C" int SymbianDeviceTcpAccept(NativeTcpListener* listener,
+                                      NativeTcpClient** output);
+extern "C" int SymbianDeviceTcpAcceptFor(NativeTcpListener* listener,
+                                         int milliseconds,
+                                         NativeTcpClient** output);
+extern "C" void SymbianDeviceTcpListenerClose(NativeTcpListener* listener);
 
 }  // namespace symbian::api::connectivity
 

@@ -1,5 +1,24 @@
 # Status
 
+2026-10-04 inbound native TCP milestone: `Symbian::Connectivity` now exports
+move-only `TcpListener::ListenIpv4`, `Accept` and `AcceptFor` alongside
+`TcpClient`. The listener binds an explicit IPv4 address with backlog one;
+accepted clients share a reference-counted RSocketServ session and outlive the
+listener safely on the same worker thread. `AcceptFor` uses a native RTimer,
+calls `CancelAccept` on deadline, drains both requests, and maps `KErrTimedOut`
+to a deadline status. An ordinary ARMv6 SDK consumer built against a staged
+archive/proxy and ran in a disposable Dynarmic RM-807 instance: the host
+connected to guest loopback, exchanged `Q`/`A`, and the guest then completed
+two 50 ms accept timeouts on another listener (`1 passed`). Original EUSER,
+ESOCK and INSOCK import ordinals are selected from preserved DEF files.
+The clean `.symbian/listener-sdk-20261004` export contains the header and
+13 selected ESOCK plus 79 selected EUSER proxy symbols. All four opt-in
+connectivity emulator tests passed against that fresh SDK: two outbound CPU
+backends, one wrong-reply control and the inbound/deadline test. The listener
+is synchronous and does not yet provide an idle
+active-object service or cancellable TLS reads/writes. No Nokia 808 device
+compatibility follows from this emulator result.
+
 2026-10-04 authenticated guest TLS research milestone: an opt-in E32 DLL
 linked the public `Symbian::Connectivity` RSocket client to the vendored Mbed
 TLS 3.4.1 archives, the checked guest UTC adapter, and a scoped RM-807 secure
