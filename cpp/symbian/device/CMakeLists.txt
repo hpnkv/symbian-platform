@@ -18,7 +18,7 @@ add_library(symbian_device STATIC usb.cc)
 add_library(symbian::device ALIAS symbian_device)
 target_include_directories(symbian_device PUBLIC ${PROJECT_SOURCE_DIR}/cpp
   PRIVATE ${SYMBIAN_LIBUSB_INCLUDE_DIR})
-target_link_libraries(symbian_device PUBLIC absl::statusor symbian::concurrency
+target_link_libraries(symbian_device PUBLIC absl::statusor absl::log symbian::concurrency
   OpenSSL::Crypto Threads::Threads PRIVATE ${SYMBIAN_LIBUSB_STATIC})
 if(APPLE)
   target_link_libraries(symbian_device PRIVATE "-framework IOKit" "-framework CoreFoundation"

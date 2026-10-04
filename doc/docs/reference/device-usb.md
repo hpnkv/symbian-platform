@@ -206,6 +206,13 @@ automated on-phone installer adapter. Application execution remains a
 user-observed check; no device log, process trace or OS/RM identity was
 collected.
 
+If the phone lists an `Installs` child but refuses its metadata, the MTP
+stager skips that unreadable handle. It reports the count as
+`unreadable_children` when nonzero, uses a digest-derived filename to avoid
+replacing another package, and still requires a complete readback match for
+the selected SIS. A USB disconnect can clear stale MTP listings; retry after
+the device reappears in `symbian device list`.
+
 Example from the workspace:
 
 ```sh
@@ -223,6 +230,14 @@ A second call returned the same MTP object handle with `copied: false`.
 This proves transfer and readback for that attachment; it does not prove the
 agent installs, starts, or behaves safely on a Nokia 808. The package used a
 public emulator test certificate and has not passed the physical agent gate.
+
+Later on 2026-10-04, a stage request returned MTP response `0x2002` for
+`GetObjectInfo` handle `0x010000af` in `Installs`. The phone briefly left USB
+discovery, then reappeared. The current agent SIS was staged as
+`agent_service-647bc74a5ba2.sis`; readback matched SHA-256
+`647bc74a5ba2de61ac08d49e6195ab22d570ff461ab258d804e7b50c7d26d8cd`.
+A repeat returned `copied: false` for the same handle. No phone installation
+or execution was verified by these transfer checks.
 
 The [Gammu configuration
 guide](https://docs.gammu.org/faq/config.html) describes Symbian remote access

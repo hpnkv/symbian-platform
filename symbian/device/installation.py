@@ -106,6 +106,11 @@ class InstallResult(BaseModel):
         description="MTP object handle when staged in PC Suite mode",
         exclude_if=lambda value: value is None,
     )
+    unreadable_children: int = Field(
+        default=0,
+        description="Existing Installs handles whose metadata MTP rejected",
+        exclude_if=lambda value: value == 0,
+    )
     next_action: str = Field(description="Required human action")
     build_artifact: Path | None = Field(
         default=None,
@@ -207,6 +212,7 @@ def stage_package(
                     sha256=expected,
                     copied=staged["copied"],
                     object_handle=staged["object_handle"],
+                    unreadable_children=staged.get("unreadable_children", 0),
                     package=metadata,
                     next_action=(
                         "Open the SIS in the phone's Installs folder "

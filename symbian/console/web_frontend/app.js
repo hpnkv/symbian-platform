@@ -774,7 +774,11 @@ async function stageAgent(selector) {
     state.agentOutcome = outcome;
     appendActivity("Stage development agent SIS", "Awaiting phone installer", outcome);
     setWork("Ready");
-  } catch (error) { state.agentError = String(error.message || error); setWork("Agent staging failed"); }
+  } catch (error) {
+    state.agentError = String(error.message || error);
+    appendActivity("Stage development agent SIS", state.agentError, {error: state.agentError});
+    setWork(`Agent staging failed: ${state.agentError}`);
+  }
   finally { state.agentBusy = ""; renderMain(); }
 }
 async function setAgentReport(selector) {

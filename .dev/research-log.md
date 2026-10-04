@@ -1,5 +1,21 @@
 # Research log
 
+2026-10-04: The connected 808's MTP `Installs` listing included handle
+`0x010000af`, but `GetObjectInfo` returned `0x2002` for it. The handset then
+briefly vanished from USB discovery and reappeared. A later upload and
+digest-checked readback passed, and a repeat reused the verified object; no
+unreadable entry was encountered on those successful calls. The host now
+skips metadata-rejected existing children because the package filename is
+content-addressed and upload is followed by exact readback. Open question:
+whether the rejected handle was stale after phone-side file removal, and
+whether this MTP implementation can retain a persistent inaccessible name
+collision. Do not infer installer or agent execution state from staging.
+The macOS background EKA2L1 window required accessory activation policy in
+addition to all-Spaces, full-screen-auxiliary and floating behavior to stay
+visible over a full-screen terminal without stealing focus. Its effect on
+other macOS Space/window configurations remains unmeasured; Linux focus
+behavior remains provisional.
+
 2026-10-04: Public project declarations used `e32-*-experiment` as the only
 accepted E32 kinds, so generated application manifests inherited a temporary
 label. New short kinds produce short report schemas and artifact kinds; old

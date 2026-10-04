@@ -81,7 +81,9 @@ run and do not launch the preserved firmware baseline directly:
     ```
 
 The root holds `config.yml`, device data, writable drives and logs. On macOS, a direct manual launch may become the foreground app; the SDK
-Run supervisor uses a separate background-window policy. Linux window focus
+Run supervisor uses an accessory window in its maintained EKA2L1 patch. The
+window can remain visible over a full-screen terminal, accept dragging, and
+leave that terminal frontmost. Linux window focus
 and managed GUI input remain unverified. The supervisor still owns and cleans
 up its disposable process. Return to
 [Run the GUI example](../guides/gui-emulator.md) for the application task.

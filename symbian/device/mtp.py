@@ -43,7 +43,8 @@ def stage_sis(
         sha256: Expected lowercase SHA-256 digest of the SIS bytes.
 
     Returns:
-        Storage ID, object handle, filename and whether bytes were uploaded.
+        Storage ID, object handle, filename, upload state and number of
+        pre-existing handles whose metadata the phone refused to return.
     """
     if not can_stage_sis(device):
         raise StatusError(
@@ -63,4 +64,5 @@ def stage_sis(
         "object_handle": result.object_handle,
         "name": result.name,
         "copied": result.copied,
+        "unreadable_children": result.unreadable_children,
     }

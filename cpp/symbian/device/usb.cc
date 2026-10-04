@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include <absl/log/log.h>
 #include <absl/status/status.h>
 #include <libusb.h>
 #include <openssl/sha.h>
@@ -781,6 +782,27 @@ absl::Status RequireSuccess(const Reply& reply, const char* operation) {
       std::string(operation) + " rejected by MTP device (" + code + ")");
 }
 
+const char* PtpOperationName(uint16_t opcode) {
+  switch (opcode) {
+    case 0x1001:
+      return "GetDeviceInfo";
+    case 0x1002:
+      return "OpenSession";
+    case 0x1004:
+      return "GetStorageIDs";
+    case 0x1005:
+      return "GetStorageInfo";
+    case 0x1007:
+      return "GetObjectHandles";
+    case 0x1008:
+      return "GetObjectInfo";
+    case 0x1009:
+      return "GetObject";
+    default:
+      return "request";
+  }
+}
+
 absl::StatusOr<Reply> CheckedPtp(libusb_device_handle* handle,
                                  const Endpoints& endpoints, uint16_t opcode,
                                  uint32_t transaction_id,
@@ -790,8 +812,12 @@ absl::StatusOr<Reply> CheckedPtp(libusb_device_handle* handle,
   if (!reply.ok()) {
     return reply.status();
   }
-  auto status = RequireSuccess(*reply, "PTP request");
+  char operation[64];
+  std::snprintf(operation, sizeof(operation), "MTP %s (0x%04x)",
+                PtpOperationName(opcode), opcode);
+  auto status = RequireSuccess(*reply, operation);
   if (!status.ok()) {
+    LOG(WARNING) << status;
     return status;
   }
   return reply;
@@ -801,10 +827,20 @@ absl::StatusOr<MtpObjectInfo> ReadObjectInfo(libusb_device_handle* handle,
                                              const Endpoints& endpoints,
                                              uint32_t transaction_id,
                                              uint32_t object_handle) {
-  auto reply =
-      CheckedPtp(handle, endpoints, 0x1008, transaction_id, {object_handle});
+  auto reply = Ptp(handle, endpoints, 0x1008, transaction_id, {object_handle});
   if (!reply.ok()) {
     return reply.status();
+  }
+  char context[64];
+  std::snprintf(context, sizeof(context), "MTP GetObjectInfo handle 0x%08x",
+                object_handle);
+  if (reply->response == 0x2002) {
+    return absl::NotFoundError(std::string(context) +
+                               " returned response 0x2002");
+  }
+  auto status = RequireSuccess(*reply, context);
+  if (!status.ok()) {
+    return status;
   }
   if (reply->data.size() < 52) {
     return absl::DataLossError("Truncated MTP object info");
@@ -841,8 +877,8 @@ absl::StatusOr<std::vector<uint32_t>> ObjectHandles(
 void AppendPtpString(std::vector<unsigned char>* data,
                      const std::string& value) {
   data->push_back(static_cast<unsigned char>(value.size() + 1));
-  for (unsigned char character : value) {
-    Append16(*data, character);
+  for (char character : value) {
+    Append16(*data, static_cast<unsigned char>(character));
   }
   Append16(*data, 0);
 }
@@ -902,8 +938,8 @@ absl::StatusOr<MtpStageResult> StageOnHandle(
   if (!device_info.ok()) {
     return device_info.status();
   }
-  for (uint32_t opcode :
-       {0x1003, 0x1004, 0x1005, 0x1007, 0x1008, 0x1009, 0x100c, 0x100d}) {
+  for (uint32_t opcode : std::array<uint32_t, 8>{
+           0x1003, 0x1004, 0x1005, 0x1007, 0x1008, 0x1009, 0x100c, 0x100d}) {
     if (std::find(device_info->supported_operation_codes.begin(),
                   device_info->supported_operation_codes.end(),
                   opcode) == device_info->supported_operation_codes.end()) {
@@ -923,7 +959,9 @@ absl::StatusOr<MtpStageResult> StageOnHandle(
     Endpoints endpoints;
     uint32_t* next_id;
 
-    ~Session() { Ptp(handle, endpoints, 0x1003, (*next_id)++); }
+    ~Session() {
+      Ptp(handle, endpoints, 0x1003, (*next_id)++).status().IgnoreError();
+    }
   } session{handle, endpoints, &transaction_id};
 
   auto stores = CheckedPtp(handle, endpoints, 0x1004, transaction_id++);
@@ -983,10 +1021,17 @@ absl::StatusOr<MtpStageResult> StageOnHandle(
   if (!children.ok()) {
     return children.status();
   }
+  uint32_t unreadable_children = 0;
   for (uint32_t object_id : *children) {
     auto object =
         ReadObjectInfo(handle, endpoints, transaction_id++, object_id);
     if (!object.ok()) {
+      if (object.status().code() == absl::StatusCode::kNotFound) {
+        LOG(WARNING) << "Skipping unreadable MTP Installs child: "
+                     << object.status();
+        ++unreadable_children;
+        continue;
+      }
       return object.status();
     }
     if (object->name != filename) {
@@ -1005,7 +1050,10 @@ absl::StatusOr<MtpStageResult> StageOnHandle(
       return absl::AlreadyExistsError(
           "Different file occupies MTP package path");
     }
-    return MtpStageResult{selected_storage, object_id, filename, false};
+    LOG(INFO) << "MTP SIS already verified by readback: " << filename
+              << ", object handle " << object_id;
+    return MtpStageResult{selected_storage, object_id, filename, false,
+                          unreadable_children};
   }
   auto object_info =
       SisObjectInfo(selected_storage, installs_handle,
@@ -1050,7 +1098,10 @@ absl::StatusOr<MtpStageResult> StageOnHandle(
   if (Sha256Hex(readback->data) != expected_sha256) {
     return absl::DataLossError("MTP package readback digest differs");
   }
-  return MtpStageResult{selected_storage, created, filename, true};
+  LOG(INFO) << "MTP SIS upload verified by readback: " << filename
+            << ", object handle " << created;
+  return MtpStageResult{selected_storage, created, filename, true,
+                        unreadable_children};
 }
 
 UsbProbe Obex(libusb_device_handle* handle,

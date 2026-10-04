@@ -178,6 +178,7 @@ def test_pc_suite_mtp_staging_uses_reusable_device_api(monkeypatch, tmp_path):
             "object_handle": 23,
             "name": filename,
             "copied": True,
+            "unreadable_children": 1,
         }
 
     monkeypatch.setattr(mtp, "stage_sis", stage)
@@ -187,6 +188,7 @@ def test_pc_suite_mtp_staging_uses_reusable_device_api(monkeypatch, tmp_path):
     assert result["transport"] == "mtp-usb"
     assert result["volume"] == "mtp:00020001"
     assert result["object_handle"] == 23
+    assert result["unreadable_children"] == 1
     assert result["on_device_verified"] is False
     assert result["staged_path"].startswith("Installs/agent_service-")
     assert calls[0][0] == phone

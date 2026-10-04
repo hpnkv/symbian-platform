@@ -1,6 +1,7 @@
 #include <array>
 #include <string>
 
+#include <absl/log/initialize.h>
 #include <absl/status/status.h>
 #include <absl/status/statusor.h>
 #include <pybind11/pybind11.h>
@@ -148,6 +149,7 @@ symbian::sdk::ProxyInfo InspectProxy(const py::bytes& data) {
 }  // namespace
 
 PYBIND11_MODULE(_native, module) {
+  absl::InitializeLog();
   symbian::python::BindAgent(module);
   symbian::python::InstallPythonSchedulerParkGuard();
   symbian::python::BindConcurrencyInterop(module);

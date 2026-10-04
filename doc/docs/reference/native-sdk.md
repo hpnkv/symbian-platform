@@ -134,6 +134,10 @@ bindings call it rather than duplicating format rules. In the
 anchor, checked host package path, safe content-addressed filename and expected
 SHA-256. It selects a writable MTP `Installs` folder, uploads at most 16 MiB,
 and reads the object back before returning its storage ID and object handle.
+The result also counts pre-existing `Installs` children whose metadata the
+phone refused to return. Those entries are skipped without deletion; a new
+upload still requires a matching readback digest. MTP failures and skipped
+handles are reported through Abseil `LOG()` in the host library.
 The Python `symbian.device.mtp.stage_sis` wrapper exposes the same operation;
 `symbian.device.installation.stage_package` chooses it when no mounted staging
 volume is available. Neither API asks the handset to install the SIS.

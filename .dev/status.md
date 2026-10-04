@@ -1,5 +1,25 @@
 # Status
 
+2026-10-04 PC Suite agent staging and desktop window follow-up: the GUI's
+generic staging failure was reproduced through `symbian device install` on the
+connected 808. MTP `GetObjectInfo` for `Installs` child `0x010000af` returned
+`0x2002`; the host now names failed MTP operations, logs through Abseil,
+skips an unreadable pre-existing child without deleting it, and reports a
+nonzero skip count. The console retains the specific failure in its activity
+and work status. After the handset briefly left and returned to USB
+discovery, the SDK uploaded
+`Installs/agent_service-647bc74a5ba2.sis` to writable store `0x00020001`.
+MTP readback matched SHA-256
+`647bc74a5ba2de61ac08d49e6195ab22d570ff461ab258d804e7b50c7d26d8cd`;
+a repeat returned the same object handle `0x010000b1` with `copied: false`.
+This verified transfer, not installation or execution on the Nokia 808. The
+skip branch was not observed on the successful call after reconnection.
+Thirty-one focused host/frontend tests passed. On macOS, the maintained
+EKA2L1 patch uses an accessory window for background launches. A live
+disposable emulator remained visible after iTerm took focus and accepted a
+mouse drag from `(474, 234)` to `(531, 270)` while iTerm stayed frontmost.
+This is a host window behavior observation, not guest or phone compatibility.
+
 2026-10-04 local status UI gate: an uncommitted Window Server panel was
 compiled into the agent and exercised in the pinned Dynarmic emulator.
 Screen-device and graphics-context construction did not prevent the existing

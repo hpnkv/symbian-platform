@@ -65,6 +65,7 @@ target_include_directories(symbian_python BEFORE PRIVATE "${abseil_SOURCE_DIR}")
 target_link_libraries(symbian_python PRIVATE symbian::sis symbian::sdk
                       symbian::status symbian::concurrency symbian::device
                       symbian::agent_frame
+                      absl::log_initialize
                       pybind11_abseil::status_casters)
 target_compile_features(symbian_python PRIVATE cxx_std_20)
 # Only Python boundary translation units enable exceptions. Hide static vendor

@@ -151,7 +151,9 @@ void BindDevice(pybind11::module_& module) {
       .def_readonly("storage_id", &device::MtpStageResult::storage_id)
       .def_readonly("object_handle", &device::MtpStageResult::object_handle)
       .def_readonly("name", &device::MtpStageResult::name)
-      .def_readonly("copied", &device::MtpStageResult::copied);
+      .def_readonly("copied", &device::MtpStageResult::copied)
+      .def_readonly("unreadable_children",
+                    &device::MtpStageResult::unreadable_children);
   pybind11::class_<device::UsbPollFd>(module, "UsbPollFd")
       .def_readonly("fd", &device::UsbPollFd::fd)
       .def_readonly("events", &device::UsbPollFd::events);

@@ -154,6 +154,8 @@ struct MtpStageResult {
   std::string name;
   /// False when an existing object passed the same readback digest check.
   bool copied = false;
+  /// Existing child handles whose metadata the device refused to return.
+  uint32_t unreadable_children = 0;
 };
 
 /** Inspect a serial-matched USB device without changing its stored files.
