@@ -51,7 +51,7 @@ esac
 version=3.5.9
 libusb_version=1.0.30
 boost_version=1.90.0
-stamp="${prefix}/.symbian-deps-v4-${host_os}-${arch}-${version}-${libusb_version}-${boost_version}${deployment_tag}"
+stamp="${prefix}/.symbian-deps-v5-${host_os}-${arch}-${version}-${libusb_version}-${boost_version}${deployment_tag}"
 if [[ -f "${stamp}" && -f "${prefix}/lib/libcrypto.a" &&
       -f "${prefix}/lib/libusb-1.0.a" &&
       -f "${prefix}/lib/libboost_fiber.a" &&
@@ -126,7 +126,8 @@ download_and_extract \
   fea36f34f9156400209595e300840767ab1a385ede1dc7ee893015aea9c6dbaf
 (
   cd "${work}/libusb-${libusb_version}"
-  ./configure --prefix="${prefix}" --libdir="${prefix}/lib" \
+  CFLAGS="-fPIC ${CFLAGS:-}" ./configure \
+    --prefix="${prefix}" --libdir="${prefix}/lib" \
     --disable-shared --enable-static --disable-udev
   make -j "${jobs}"
   make install
