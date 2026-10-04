@@ -264,13 +264,13 @@ TEST(AgentFrame, GuestLogRequestAndResultRoundTrip) {
   auto guest = symbian::agent::ParseGuestControl(*encoded);
   ASSERT_TRUE(guest.ok()) << guest.status();
   EXPECT_EQ(guest->kind, 6);
-  EXPECT_EQ(guest->log_after, 4);
-  EXPECT_EQ(guest->log_limit, 2);
+  EXPECT_EQ(guest->page_after, 4);
+  EXPECT_EQ(guest->page_limit, 2);
   symbian::agent::AgentLogRing ring;
   for (int index = 0; index < 6; ++index) {
     ring.Append(symbian::agent::AgentLogCode::kStatusRead);
   }
-  auto page = ring.ReadAfter(guest->log_after, guest->log_limit);
+  auto page = ring.ReadAfter(guest->page_after, guest->page_limit);
   ASSERT_TRUE(page.ok()) << page.status();
   auto result = symbian::agent::PackGuestLogResult(*guest, *page);
   ASSERT_TRUE(result.ok()) << result.status();
@@ -287,6 +287,50 @@ TEST(AgentFrame, GuestLogRequestAndResultRoundTrip) {
   encoded = symbian::agent::PackControl(request);
   ASSERT_TRUE(encoded.ok()) << encoded.status();
   EXPECT_FALSE(symbian::agent::ParseGuestControl(*encoded).ok());
+}
+
+TEST(AgentFrame, GuestWorkspacePageIsScopedAndBounded) {
+  symbian::agent::ControlMessage request;
+  request.request_id = 31;
+  request.kind = symbian::agent::ControlKind::kWorkspaceList;
+  request.body = {{"after", 3}, {"limit", 2}};
+  auto encoded = symbian::agent::PackControl(request);
+  ASSERT_TRUE(encoded.ok()) << encoded.status();
+  auto guest = symbian::agent::ParseGuestControl(*encoded);
+  ASSERT_TRUE(guest.ok()) << guest.status();
+  EXPECT_EQ(guest->kind, 7);
+  EXPECT_EQ(guest->page_after, 3);
+  EXPECT_EQ(guest->page_limit, 2);
+
+  symbian::agent::GuestFilePage page;
+  page.count = 1;
+  page.next_offset = 4;
+  page.more = false;
+  page.entries[0] = {.name = std::string(40, 'x') + "-\xc3\xa9.txt",
+                     .is_directory = false,
+                     .is_read_only = true,
+                     .size_bytes = 17};
+  auto result = symbian::agent::PackGuestWorkspaceResult(*guest, page);
+  ASSERT_TRUE(result.ok()) << result.status();
+  auto parsed = symbian::agent::ParseControl(*result);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_EQ(parsed->body["entries"][0]["name"], page.entries[0].name);
+  EXPECT_EQ(parsed->body["entries"][0]["size_bytes"], 17);
+  EXPECT_EQ(parsed->body["entries"][0]["read_only"], true);
+  EXPECT_EQ(parsed->body["next_offset"], 4);
+
+  request.body = {{"path", "C:\\\\sys\\bin"}, {"limit", 2}};
+  encoded = symbian::agent::PackControl(request);
+  ASSERT_TRUE(encoded.ok()) << encoded.status();
+  EXPECT_FALSE(symbian::agent::ParseGuestControl(*encoded).ok());
+  auto hello = symbian::agent::PackGuestHelloResult(
+      symbian::agent::GuestControlRequest{.request_id = 1, .kind = 1}, true, 16,
+      true);
+  ASSERT_TRUE(hello.ok()) << hello.status();
+  parsed = symbian::agent::ParseControl(*hello);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_EQ(parsed->body["capabilities"],
+            nlohmann::json::array({"status", "logs", "workspace-list"}));
 }
 
 TEST(AgentFrame, GuestReadOnlyRejectsMalformedAndExcessiveInput) {

@@ -15,6 +15,7 @@ import_proxies = [
   "${sdk}/proxies/hal/hal.dso",
   "${sdk}/proxies/ws32/ws32.dso",
   "${sdk}/proxies/gdi/gdi.dso",
+  "${sdk}/proxies/efsrv/efsrv.dso",
 ]
 
 [package]

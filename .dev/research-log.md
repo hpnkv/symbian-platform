@@ -5060,6 +5060,16 @@ A subsequent owner screenshot shows the actual desktop console card rendering `V
 
 A repeat of the opt-in Dynarmic resident-agent lifecycle test passed after adding a `recent_logs()` assertion to its authenticated status/log session. It exercises emulator status, wrong-key rejection, malformed-frame recovery and reconnect, but has no phone power or kernel instrumentation. The physical reboot remains unexplained and should not be interpreted through this emulator pass.
 
+## 2026-10-04 — workspace listing gate
+
+The next agent increment adds only a fixed-root, read-only workspace listing
+to the existing authenticated session. A missing directory is intended to
+read as empty; that branch has not yet been exercised in the emulator and
+native `KErrPathNotFound` mapping needs checking. Pagination is offset-based,
+so concurrent directory changes are not a snapshot. The 256-entry scan bound
+limits guest work per request. No Nokia 808 build of this increment has been
+installed while the earlier phone reboot is unexplained.
+
 ## 2026-10-04 — nghttp2 and ngtcp2 for the resident agent
 
 The owner asked whether these libraries can serve the development-agent transport. The worktree is clean at pushed commit `0264821` before this review. A11's host HTTP stack already links static `libnghttp2` through `pkg-config` and wraps its byte-oriented callbacks in its own HTTP/2 connection and event loop. This Mac has libnghttp2 1.70.0 and a static archive. [nghttp2's upstream requirements](https://github.com/nghttp2/nghttp2#requirements) say its C library can be built alone without the application programs' TLS, libev, zlib and c-ares dependencies. Its [programmer's guide](https://nghttp2.org/documentation/programmers-guide.html) says the library performs no socket I/O; the caller supplies transport and lifecycle. Thus a future optional guest HTTP/2 client or server is plausible, but guest ARM compilation, ALPN over the SDK's Mbed TLS port, binary size, heap use, callbacks and cancellation are **not yet tested**. The resident agent presently speaks a small authenticated control protocol and has no HTTP interoperability need, so adding nghttp2 now would expand its protocol and memory surface without satisfying the next files/logs gate.

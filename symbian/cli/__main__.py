@@ -335,44 +335,78 @@ def _parser() -> argparse.ArgumentParser:
     agent_commands = commands.add_parser("agent").add_subparsers(
         dest="agent_command", required=True
     )
-    for name in ("hello", "status", "logs"):
+    for name in ("hello", "status", "logs", "files"):
         agent_parser = agent_commands.add_parser(name)
-        agent_parser.add_argument("host")
-        agent_parser.add_argument("port", type=int)
-        agent_parser.add_argument("--key-file", required=True, type=Path)
-        agent_parser.add_argument("--timeout", type=float, default=5.0)
-        if name == "logs":
+        agent_parser.add_argument("host", help="Agent host address.")
+        agent_parser.add_argument("port", type=int, help="Agent TCP port.")
+        agent_parser.add_argument(
+            "--key-file",
+            required=True,
+            type=Path,
+            help="Private agent pairing key file.",
+        )
+        agent_parser.add_argument(
+            "--timeout",
+            type=float,
+            default=5.0,
+            help="Connection timeout in seconds (default: 5).",
+        )
+        if name in ("logs", "files"):
             agent_parser.add_argument(
                 "--after",
                 type=int,
                 default=0,
-                help="Return records after this sequence (default: 0).",
+                help="Read after this sequence or offset (default: 0).",
             )
             agent_parser.add_argument(
                 "--limit",
                 type=int,
                 default=8,
-                help="Return 1–8 records (default: 8).",
+                help="Return 1–8 records or entries (default: 8).",
             )
     listen_agent = agent_commands.add_parser("listen")
-    listen_agent.add_argument("--key-file", required=True, type=Path)
-    listen_agent.add_argument("--listen-host", default="0.0.0.0")
-    listen_agent.add_argument("--port", type=int, default=39103)
-    listen_agent.add_argument("--timeout", type=float, default=20.0)
+    listen_agent.add_argument(
+        "--key-file",
+        required=True,
+        type=Path,
+        help="Private agent pairing key file.",
+    )
+    listen_agent.add_argument(
+        "--listen-host",
+        default="0.0.0.0",
+        help="Local address for the temporary listener.",
+    )
+    listen_agent.add_argument(
+        "--port",
+        type=int,
+        default=39103,
+        help="Local TCP port (default: 39103).",
+    )
+    listen_agent.add_argument(
+        "--timeout",
+        type=float,
+        default=20.0,
+        help="Discovery and connection timeout in seconds (default: 20).",
+    )
     listen_agent.add_argument(
         "--logs",
         action="store_true",
         help="Read the phone agent's bounded service log instead of status.",
     )
     listen_agent.add_argument(
+        "--files",
+        action="store_true",
+        help="List only the agent-owned workspace root.",
+    )
+    listen_agent.add_argument(
         "--after",
         type=int,
-        help="With --logs, read records after this sequence cursor.",
+        help="With --logs or --files, read after this cursor or offset.",
     )
     listen_agent.add_argument(
         "--limit",
         type=int,
-        help="With --logs, return 1–8 records (default: 8).",
+        help="With --logs or --files, return 1–8 items (default: 8).",
     )
     configure = app.add_parser(
         "configure", help="Refresh SDK and CLion integration"
@@ -557,8 +591,16 @@ def _parser() -> argparse.ArgumentParser:
     package.add_argument(
         "--output", type=Path, default=Path(".symbian/package")
     )
-    package.add_argument("--signing-certificate", type=Path)
-    package.add_argument("--signing-key", type=Path)
+    package.add_argument(
+        "--signing-certificate",
+        type=Path,
+        help="PEM certificate for signing the package.",
+    )
+    package.add_argument(
+        "--signing-key",
+        type=Path,
+        help="Private key matching the signing certificate.",
+    )
     inspect = commands.add_parser(
         "inspect", help="Inspect native format metadata"
     )
@@ -669,14 +711,18 @@ def _execute(args: argparse.Namespace) -> dict:
         from symbian.agent import ReadOnlyAgentSession
         from symbian.status import Code, StatusError
 
-        if (
-            args.agent_command == "listen"
-            and not args.logs
-            and (args.after is not None or args.limit is not None)
-        ):
-            raise StatusError(
-                Code.INVALID_ARGUMENT, "--after and --limit require --logs"
-            )
+        if args.agent_command == "listen":
+            if args.logs and args.files:
+                raise StatusError(
+                    Code.INVALID_ARGUMENT, "Choose --logs or --files"
+                )
+            if not (args.logs or args.files) and (
+                args.after is not None or args.limit is not None
+            ):
+                raise StatusError(
+                    Code.INVALID_ARGUMENT,
+                    "--after and --limit require --logs or --files",
+                )
         session = (
             ReadOnlyAgentSession.accept(
                 args.listen_host,
@@ -705,6 +751,16 @@ def _execute(args: argparse.Namespace) -> dict:
                         "peer_ip": agent.peer_ip,
                         "logs": page.model_dump(mode="json"),
                     }
+                if args.files:
+                    limit = args.limit if args.limit is not None else 8
+                    page = agent.workspace_list(
+                        after=args.after if args.after is not None else 0,
+                        limit=limit,
+                    )
+                    return {
+                        "peer_ip": agent.peer_ip,
+                        "workspace": page.model_dump(mode="json"),
+                    }
                 return {
                     "peer_ip": agent.peer_ip,
                     "status": agent.status().model_dump(),
@@ -713,6 +769,10 @@ def _execute(args: argparse.Namespace) -> dict:
                 return agent.negotiate().model_dump()
             if args.agent_command == "logs":
                 return agent.logs(
+                    after=args.after, limit=args.limit
+                ).model_dump()
+            if args.agent_command == "files":
+                return agent.workspace_list(
                     after=args.after, limit=args.limit
                 ).model_dump()
             return agent.status().model_dump()

@@ -52,9 +52,10 @@ No key is sent over USB discovery or the agent socket.
 Each control frame starts with a four-byte unsigned length in network byte
 order and exactly that many MessagePack bytes. Zero and lengths above 4 KiB
 are rejected before the payload is read. The first authenticated request must
-be hello. Status or logs sent first, or a repeated hello, closes the session.
+be hello. Any other request sent first, or a repeated hello, closes the session.
 The hello result declares protocol version 1, the 4 KiB limit, a cap of 16
-requests per connection, and the available `status` and `logs` operations.
+requests per connection, and the available `status`, `logs` and
+`workspace-list` operations.
 Hello consumes one request slot.
 
 The service applies one five-second Abseil deadline to each exchange's prefix,
@@ -66,9 +67,10 @@ service does not offer file writes, command
 execution, flashing or recovery operations.
 
 The guest `Symbian::Agent` target owns the control codec in
-`symbian/agent/guest_control.h`. It accepts only version-one hello/status with
-an empty body, or logs with exactly unsigned `after` and `limit` fields;
-`limit` must be 1–8. Unknown top-level fields survive a parse/encode cycle.
+`symbian/agent/guest_control.h`. It accepts version-one hello/status with an
+empty body, or logs and workspace listing with exactly unsigned `after` and
+`limit` fields; `limit` must be 1–8. Unknown top-level fields survive a
+parse/encode cycle.
 The codec validates MessagePack after the socket owner checks framing and
 authentication. It does not own the listener, permission policy or scheduler.
 The C++ declarations and return types are in the
@@ -91,6 +93,17 @@ severity and clamped microseconds since this process created the ring. The
 times are not UTC and cannot be compared across process restarts; clock
 adjustments can affect elapsed intervals.
 
+### Agent workspace
+
+`workspace-list` enumerates only the agent's own
+`C:\private\e0000a31\workspace\` directory. The request cannot supply a
+path. Each page contains at most eight immediate child names, directory and
+read-only flags, byte sizes, a `next_offset`, and a `more` flag. The listing
+stops at 256 entries; offsets at or beyond that bound are rejected. A missing
+workspace is empty. Pages are not a snapshot, so files
+changed during pagination can shift their offsets. The agent does not read file
+contents or expose arbitrary device paths.
+
 ## Host API and CLI
 
 `ReadOnlyAgentSession` uses native bindings for MessagePack framing and typed
@@ -107,6 +120,8 @@ with ReadOnlyAgentSession.connect(
     print(agent.status())
     page = agent.logs(after=0, limit=8)
     print(page.records, page.next_cursor, page.gap)
+    workspace = agent.workspace_list(after=0, limit=8)
+    print(workspace.entries, workspace.next_offset, workspace.more)
 ```
 
 The equivalent CLI commands are:
@@ -115,6 +130,8 @@ The equivalent CLI commands are:
 symbian agent hello 127.0.0.1 39101 --key-file agent_service/test-agent.key
 symbian agent status 127.0.0.1 39101 --key-file agent_service/test-agent.key
 symbian agent logs 127.0.0.1 39101 --key-file agent_service/test-agent.key \
+  --after 0 --limit 8
+symbian agent files 127.0.0.1 39101 --key-file agent_service/test-agent.key \
   --after 0 --limit 8
 ```
 
@@ -137,6 +154,7 @@ The phone-initiated CLI path can read the same log without an IP address:
 ```sh
 symbian agent listen --key-file /private/agent.key --logs
 symbian agent listen --key-file /private/agent.key --logs --after 12 --limit 8
+symbian agent listen --key-file /private/agent.key --files
 ```
 
 Each command opens one temporary authenticated listener. `--after` is a

@@ -21,6 +21,7 @@
 #include "mbedtls/md.h"
 #include "mbedtls/platform_util.h"
 #include "symbian/agent/guest_control.h"
+#include "symbian/agent/guest_files.h"
 #include "symbian/agent/guest_log.h"
 #include "symbian/api/connectivity/active_tcp_listener.h"
 #include "symbian/api/connectivity/broadcast_probe.h"
@@ -218,6 +219,7 @@ bool Authenticate(TcpClient& client) {
 symbian::agent::GuestStatusSnapshot ReadStatusSnapshot() {
   symbian::agent::GuestStatusSnapshot snapshot;
   snapshot.logs_available = true;
+  snapshot.workspace_available = true;
   auto tick = symbian::api::system::ReadTickCounter();
   if (tick.ok() && tick->period > absl::ZeroDuration()) {
     snapshot.tick = symbian::agent::GuestTickSnapshot{
@@ -280,13 +282,23 @@ void Serve(TcpClient client, symbian::agent::AgentLogRing& log) {
         absl::InvalidArgumentError("Invalid agent operation");
     if (request->kind == 1) {
       response = symbian::agent::PackGuestHelloResult(
-          *request, true, kMaximumRequestsPerConnection);
+          *request, true, kMaximumRequestsPerConnection, true);
     } else if (request->kind == 6) {
-      auto page = log.ReadAfter(request->log_after, request->log_limit);
+      auto page = log.ReadAfter(request->page_after, request->page_limit);
       if (!page.ok()) {
         return;
       }
       response = symbian::agent::PackGuestLogResult(*request, *page);
+    } else if (request->kind == 7) {
+      if (request->page_after >= 256) {
+        return;
+      }
+      auto page = symbian::agent::ReadWorkspacePage(
+          static_cast<std::uint16_t>(request->page_after), request->page_limit);
+      if (!page.ok()) {
+        return;
+      }
+      response = symbian::agent::PackGuestWorkspaceResult(*request, *page);
     } else {
       response =
           symbian::agent::PackGuestResult(*request, ReadStatusSnapshot());

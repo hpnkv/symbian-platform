@@ -10,6 +10,7 @@
 #include <string_view>
 
 #include "absl/status/statusor.h"
+#include "symbian/agent/guest_files.h"
 #include "symbian/agent/guest_log.h"
 
 namespace symbian::agent {
@@ -17,10 +18,10 @@ namespace symbian::agent {
 /** @brief One authenticated, read-only control request for the phone profile. */
 struct GuestControlRequest {
   std::uint64_t request_id = 0;
-  std::uint8_t kind = 0;  // 1: hello, 2: status, 6: logs.
+  std::uint8_t kind = 0;  // 1: hello, 2: status, 6: logs, 7: workspace list.
   std::uint64_t deadline_millis = 0;
-  std::uint64_t log_after = 0;
-  std::uint8_t log_limit = 0;
+  std::uint64_t page_after = 0;
+  std::uint8_t page_limit = 0;
   // Complete MessagePack key/value pairs for unknown top-level fields.
   std::string extensions;
   std::uint8_t extension_count = 0;
@@ -43,6 +44,7 @@ struct GuestStatusSnapshot {
   std::optional<GuestTickSnapshot> tick;
   std::optional<GuestDisplaySnapshot> display;
   bool logs_available = false;
+  bool workspace_available = false;
 };
 
 /**
@@ -71,11 +73,15 @@ absl::StatusOr<std::string> PackGuestResult(
 /** @brief Advertise the bounded version-one read-only service profile. */
 absl::StatusOr<std::string> PackGuestHelloResult(
     const GuestControlRequest& request, bool logs_available,
-    std::uint8_t maximum_requests);
+    std::uint8_t maximum_requests, bool workspace_available = false);
 
 /** @brief Pack one bounded log page into a version-one result envelope. */
 absl::StatusOr<std::string> PackGuestLogResult(
     const GuestControlRequest& request, const AgentLogPage& page);
+
+/** @brief Pack a bounded agent-private workspace directory page. */
+absl::StatusOr<std::string> PackGuestWorkspaceResult(
+    const GuestControlRequest& request, const GuestFilePage& page);
 
 }  // namespace symbian::agent
 

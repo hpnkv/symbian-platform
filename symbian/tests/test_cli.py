@@ -8,7 +8,12 @@ from types import SimpleNamespace
 import pytest
 
 from symbian import device
-from symbian.agent import AgentLogPage, AgentLogRecord, ReadOnlyAgentSession
+from symbian.agent import (
+    AgentLogPage,
+    AgentLogRecord,
+    AgentWorkspacePage,
+    ReadOnlyAgentSession,
+)
 from symbian.cli import output
 from symbian.cli.__main__ import _parser
 from symbian.cli.__main__ import main as raw_main
@@ -28,7 +33,7 @@ def test_application_commands_use_application_help(capsys):
     assert raw_main([]) == 0
     help_text = capsys.readouterr().out
     assert "Build an ARM/E32 application executable" in help_text
-    assert "Build an unsigned SISX application package" in help_text
+    assert "Build a SISX application package" in help_text
     assert "Build an ARM/E32 experiment" not in help_text
 
 
@@ -110,6 +115,10 @@ def test_agent_listen_logs_uses_authenticated_session(monkeypatch, capsys):
             calls.append(("cursor", after, limit))
             return AgentLogPage(records=(), next_cursor=after, gap=False)
 
+        def workspace_list(self, *, after, limit):
+            calls.append(("workspace", after, limit))
+            return AgentWorkspacePage(entries=(), next_offset=after, more=False)
+
     monkeypatch.setattr(
         ReadOnlyAgentSession,
         "accept",
@@ -123,7 +132,10 @@ def test_agent_listen_logs_uses_authenticated_session(monkeypatch, capsys):
     assert raw_main(base + ["--logs", "--after", "5", "--limit", "2"]) == 0
     result = json.loads(capsys.readouterr().out)["result"]
     assert result["logs"]["next_cursor"] == 5
-    assert calls == [("recent", 8), ("cursor", 5, 2)]
+    assert raw_main(base + ["--files", "--after", "2"]) == 0
+    result = json.loads(capsys.readouterr().out)["result"]
+    assert result["workspace"]["next_offset"] == 2
+    assert calls == [("recent", 8), ("cursor", 5, 2), ("workspace", 2, 8)]
     assert raw_main(base + ["--after", "5"]) == 1
     assert json.loads(capsys.readouterr().out)["status"]["name"] == (
         "INVALID_ARGUMENT"

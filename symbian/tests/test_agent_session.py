@@ -87,7 +87,7 @@ def test_read_only_status_over_authenticated_socket():
                         "protocol_version": 1,
                         "maximum_control_bytes": 4096,
                         "maximum_requests": 16,
-                        "capabilities": ["status", "logs"],
+                        "capabilities": ["status", "logs", "workspace-list"],
                     },
                     {
                         "service": "symbian-agent",
@@ -100,6 +100,18 @@ def test_read_only_status_over_authenticated_socket():
                         "records": [{"sequence": 5, "code": 2}],
                         "next_cursor": 5,
                         "gap": False,
+                    },
+                    {
+                        "entries": [
+                            {
+                                "name": "café.txt",
+                                "directory": False,
+                                "read_only": True,
+                                "size_bytes": 17,
+                            }
+                        ],
+                        "next_offset": 1,
+                        "more": False,
                     },
                 ):
                     request = _request(stream)
@@ -115,13 +127,16 @@ def test_read_only_status_over_authenticated_socket():
     ) as agent:
         status = agent.status()
         logs = agent.logs(after=4)
+        workspace = agent.workspace_list()
     thread.join(timeout=5)
     assert not thread.is_alive()
     assert status.state == "ready"
     assert status.system.tick_count == 91
     assert status.display.width_pixels == 640
-    assert [request["kind"] for request in observed] == [1, 2, 6]
+    assert [request["kind"] for request in observed] == [1, 2, 6, 7]
     assert logs.records[0].sequence == 5
+    assert workspace.entries[0].name == "café.txt"
+    assert workspace.entries[0].size_bytes == 17
 
 
 def test_recent_logs_returns_newest_bounded_page(monkeypatch):

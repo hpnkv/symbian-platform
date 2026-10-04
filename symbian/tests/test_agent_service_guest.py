@@ -259,6 +259,9 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
     guest_bin = instance / "data/drives/rm-807/c/sys/bin"
     guest_bin.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(service_image, guest_bin / "agent_service.exe")
+    workspace = instance / "data/drives/rm-807/c/private/e0000a31/workspace"
+    workspace.mkdir(parents=True, exist_ok=True)
+    (workspace / "hello.txt").write_text("agent workspace fixture\n")
     (instance / "config.yml").write_text(
         f"data-storage: data\ncpu: {backend}\ndevice: 0\nlanguage: 1\n"
         "enable-gdb-stub: false\nlog-svc: true\n"
@@ -299,7 +302,11 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                                 == "symbian-agent"
                             )
                             assert first.state == second.state == "ready"
-                            assert first.capabilities == ("status", "logs")
+                            assert first.capabilities == (
+                                "status",
+                                "logs",
+                                "workspace-list",
+                            )
                             assert first.system is not None
                             assert first.system.tick_period_us > 0
                             assert first.display is not None
@@ -337,6 +344,11 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                                 record.sequence for record in recent.records
                             ] == [record.sequence for record in page.records]
                             assert recent.next_cursor == cursor
+                            workspace_page = agent.workspace_list()
+                            assert [
+                                entry.name for entry in workspace_page.entries
+                            ] == ["hello.txt"]
+                            assert not workspace_page.more
                         break
                     except StatusError as error:
                         if (

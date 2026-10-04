@@ -13,7 +13,7 @@ endif()
 include(SymbianPic)
 include("${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
 foreach(required_target Symbian::Connectivity Symbian::Agent Symbian::Crypto
-    Symbian::Stackless Symbian::System Symbian::Display)
+    Symbian::Stackless Symbian::System Symbian::Display Symbian::Storage)
   if(NOT TARGET ${required_target})
     message(FATAL_ERROR "Selected SDK lacks ${required_target}")
   endif()
@@ -64,12 +64,12 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/agent_key.h"
 symbian_add_import_executable(agent_service
   STARTUP startup.S
   LINKER_SCRIPT image.ld
-  SOURCES startup.cc agent_service.cc
-    sdk_entropy_rm807.cc sdk_entropy_rm807.S)
+  SOURCES startup.cc agent_service.cc sdk_entropy_rm807.cc sdk_entropy_rm807.S)
 target_include_directories(agent_service PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_compile_definitions(agent_service PRIVATE SYMBIAN_RM807_ENTROPY_PROBE=1
   MBEDTLS_STATIC SYMBIAN_MBEDTLS_GUEST=1
   MBEDTLS_USER_CONFIG_FILE="symbian_mbedtls/config.h")
 target_link_libraries(agent_service PRIVATE Symbian::Connectivity Symbian::Agent
-  Symbian::Crypto Symbian::Stackless Symbian::System Symbian::Display)
+  Symbian::Crypto Symbian::Stackless Symbian::System Symbian::Display
+  Symbian::Storage)
 target_link_options(agent_service PRIVATE --gc-sections)

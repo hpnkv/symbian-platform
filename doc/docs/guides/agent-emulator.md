@@ -55,7 +55,7 @@ symbian agent hello 127.0.0.1 39101 \
 ```
 
 The result should show version 1, a 4 KiB control limit, 16 requests per
-connection and `status`/`logs`. The host and guest prove possession of the
+connection and `status`/`logs`/`workspace-list`. The host and guest prove possession of the
 same key using fresh challenges, then perform hello before any read request.
 The fixture key provides **test authentication mechanics only**;
 anyone with the repository can possess it.
@@ -65,6 +65,21 @@ display snapshot, or to `logs` for a page of service-local events. Use
 `symbian agent logs --help` for the sequence cursor and page limit. The
 [protocol reference](../reference/agent-protocol.md) describes each field and
 its limit.
+
+## Inspect the agent workspace
+
+To list files directly inside the agent's private workspace, run:
+
+```sh
+symbian agent files 127.0.0.1 39101 \
+  --key-file agent_service/test-agent.key
+```
+
+An empty result is expected until the agent creates files there. The request
+cannot name another directory or read file contents. Use `--after` and
+`--limit` to page through at most eight entries at a time. The
+[protocol reference](../reference/agent-protocol.md#agent-workspace) explains
+the 256-entry bound and what happens if the directory changes mid-listing.
 
 ## Prepare a SIS in the desktop console
 

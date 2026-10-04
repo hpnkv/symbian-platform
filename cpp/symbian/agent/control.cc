@@ -13,7 +13,7 @@ namespace {
 
 bool ValidKind(std::uint64_t kind) {
   return kind >= static_cast<std::uint64_t>(ControlKind::kHello) &&
-         kind <= static_cast<std::uint64_t>(ControlKind::kLogs);
+         kind <= static_cast<std::uint64_t>(ControlKind::kWorkspaceList);
 }
 
 absl::StatusOr<std::uint64_t> UnsignedField(const nlohmann::json& object,

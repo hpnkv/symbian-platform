@@ -69,6 +69,27 @@ class AgentLogPage(BaseModel):
     gap: bool
 
 
+class AgentWorkspaceEntry(BaseModel):
+    """One name in the agent-owned workspace root."""
+
+    model_config = ConfigDict(frozen=True)
+
+    name: str
+    directory: bool
+    read_only: bool
+    size_bytes: int | None = None
+
+
+class AgentWorkspacePage(BaseModel):
+    """A bounded, read-only workspace listing; offsets are not snapshots."""
+
+    model_config = ConfigDict(frozen=True)
+
+    entries: tuple[AgentWorkspaceEntry, ...]
+    next_offset: int
+    more: bool
+
+
 class AgentHello(BaseModel):
     """Limits and read-only operations agreed before issuing requests."""
 
@@ -387,6 +408,34 @@ class ReadOnlyAgentSession:
                 )
             cursor = page.next_cursor
         raise StatusError(Code.DATA_LOSS, "Agent log cursor did not settle")
+
+    def workspace_list(
+        self, *, after: int = 0, limit: int = 8
+    ) -> AgentWorkspacePage:
+        """List only the agent's private workspace root, one bounded page.
+
+        Concurrent directory changes can shift offset pages. No arbitrary
+        device path or write operation is exposed by this method.
+        """
+        if (
+            self.hello is None
+            or "workspace-list" not in self.hello.capabilities
+        ):
+            raise StatusError(
+                Code.FAILED_PRECONDITION, "Workspace listing unavailable"
+            )
+        if self._next_request_id > self.hello.maximum_requests:
+            raise StatusError(
+                Code.RESOURCE_EXHAUSTED, "Session request cap reached"
+            )
+        if not 0 <= after < 256 or not 1 <= limit <= 8:
+            raise StatusError(Code.INVALID_ARGUMENT, "Invalid workspace page")
+        request_id = self._next_request_id
+        self._next_request_id += 1
+        frame = _native.pack_agent_workspace_request(request_id, after, limit)
+        return AgentWorkspacePage.model_validate(
+            self._exchange(request_id, frame)
+        )
 
     def _exchange(self, request_id: int, frame: bytes) -> dict:
         deadline = time.monotonic() + self._timeout

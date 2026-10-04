@@ -63,6 +63,28 @@ py::bytes PackAgentLogsRequest(std::uint64_t request_id, std::uint64_t after,
   return py::bytes(frame);
 }
 
+py::bytes PackAgentWorkspaceRequest(std::uint64_t request_id,
+                                    std::uint64_t after, int limit) {
+  auto frame = ValueWithoutGil([&]() -> absl::StatusOr<std::string> {
+    if (request_id == 0 || after > 256 || limit < 1 || limit > 8) {
+      return absl::InvalidArgumentError("Invalid workspace page");
+    }
+    agent::ControlMessage message;
+    message.request_id = request_id;
+    message.kind = agent::ControlKind::kWorkspaceList;
+    message.body = {{"after", after}, {"limit", limit}};
+    auto payload = agent::PackControl(message);
+    if (!payload.ok()) {
+      return payload.status();
+    }
+    return agent::EncodeFrame(
+        std::span(reinterpret_cast<const std::uint8_t*>(payload->data()),
+                  payload->size()),
+        agent::kMaximumControlBytes);
+  });
+  return py::bytes(frame);
+}
+
 py::dict ParseAgentResultFrame(const py::bytes& input) {
   const std::string bytes = input;
   auto result = ValueWithoutGil([&]() -> absl::StatusOr<agent::ControlMessage> {
@@ -121,6 +143,9 @@ void BindAgent(py::module_& module) {
   module.def("pack_agent_logs_request", &PackAgentLogsRequest,
              py::arg("request_id"), py::arg("after"), py::arg("limit") = 8,
              "Pack a bounded, read-only agent log cursor request.");
+  module.def("pack_agent_workspace_request", &PackAgentWorkspaceRequest,
+             py::arg("request_id"), py::arg("after") = 0, py::arg("limit") = 8,
+             "Pack a bounded, read-only agent workspace listing request.");
   module.def(
       "parse_agent_result_frame", &ParseAgentResultFrame, py::arg("frame"),
       "Parse one complete bounded result frame with native MessagePack.");

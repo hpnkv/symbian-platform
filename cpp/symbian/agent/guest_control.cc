@@ -233,7 +233,16 @@ void WriteUInt(std::string* result, std::uint64_t value) {
 }
 
 void WriteString(std::string* result, std::string_view value) {
-  result->push_back(static_cast<char>(0xa0 | value.size()));
+  if (value.size() <= 31) {
+    result->push_back(static_cast<char>(0xa0 | value.size()));
+  } else if (value.size() <= 255) {
+    result->push_back(static_cast<char>(0xd9));
+    result->push_back(static_cast<char>(value.size()));
+  } else {
+    result->push_back(static_cast<char>(0xda));
+    result->push_back(static_cast<char>(value.size() >> 8));
+    result->push_back(static_cast<char>(value.size()));
+  }
   result->append(value);
 }
 
@@ -255,7 +264,7 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
   GuestControlRequest result;
   std::uint64_t version = 0;
   unsigned seen = 0;
-  unsigned log_fields = 0;
+  unsigned page_fields = 0;
   bool nonempty_body = false;
   std::array<std::string_view, 8> extension_keys{};
   for (std::size_t index = 0; index < count; ++index) {
@@ -299,22 +308,22 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
         std::string_view body_key;
         std::uint64_t body_value = 0;
         if (!cursor.String(&body_key) || !cursor.Unsigned(&body_value)) {
-          return absl::InvalidArgumentError("Invalid log request body");
+          return absl::InvalidArgumentError("Invalid page request body");
         }
         unsigned body_bit = 0;
         if (body_key == "after") {
           body_bit = 1;
-          result.log_after = body_value;
+          result.page_after = body_value;
         } else if (body_key == "limit" && body_value <= 8) {
           body_bit = 2;
-          result.log_limit = static_cast<std::uint8_t>(body_value);
+          result.page_limit = static_cast<std::uint8_t>(body_value);
         } else {
-          return absl::InvalidArgumentError("Unsupported log request field");
+          return absl::InvalidArgumentError("Unsupported page request field");
         }
-        if ((log_fields & body_bit) != 0) {
-          return absl::InvalidArgumentError("Duplicate log request field");
+        if ((page_fields & body_bit) != 0) {
+          return absl::InvalidArgumentError("Duplicate page request field");
         }
-        log_fields |= body_bit;
+        page_fields |= body_bit;
       }
     } else {
       for (std::uint8_t previous = 0; previous < result.extension_count;
@@ -339,9 +348,11 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
   }
   if (!cursor.done() || (seen & 7) != 7 || version != 1 ||
       result.request_id == 0 ||
-      (result.kind != 1 && result.kind != 2 && result.kind != 6) ||
-      (result.kind == 6 && (log_fields != 3 || result.log_limit == 0)) ||
-      (result.kind != 6 && nonempty_body)) {
+      (result.kind != 1 && result.kind != 2 && result.kind != 6 &&
+       result.kind != 7) ||
+      ((result.kind == 6 || result.kind == 7) &&
+       (page_fields != 3 || result.page_limit == 0)) ||
+      (result.kind != 6 && result.kind != 7 && nonempty_body)) {
     return absl::InvalidArgumentError("Unsupported agent control request");
   }
   return result;
@@ -395,6 +406,58 @@ absl::StatusOr<std::string> PackGuestLogResult(
   return result;
 }
 
+absl::StatusOr<std::string> PackGuestWorkspaceResult(
+    const GuestControlRequest& request, const GuestFilePage& page) {
+  if (request.request_id == 0 || request.kind != 7 || page.count > 8 ||
+      request.extension_count > 8 ||
+      request.extensions.size() > kMaximumControlBytes) {
+    return absl::InvalidArgumentError("Invalid workspace list result");
+  }
+  std::string result;
+  result.reserve(256 + request.extensions.size());
+  result.push_back(static_cast<char>(0x85 + request.extension_count));
+  WriteString(&result, "v");
+  WriteUInt(&result, 1);
+  WriteString(&result, "id");
+  WriteUInt(&result, request.request_id);
+  WriteString(&result, "kind");
+  WriteUInt(&result, 4);
+  WriteString(&result, "deadline_ms");
+  WriteUInt(&result, request.deadline_millis);
+  WriteString(&result, "body");
+  result.push_back(static_cast<char>(0x83));
+  WriteString(&result, "entries");
+  result.push_back(static_cast<char>(0x90 | page.count));
+  for (std::uint8_t index = 0; index < page.count; ++index) {
+    const GuestFileEntry& entry = page.entries[index];
+    if (entry.name.empty() || entry.name.size() > 1024) {
+      return absl::InvalidArgumentError("Invalid workspace entry name");
+    }
+    result.push_back(static_cast<char>(0x84));
+    WriteString(&result, "name");
+    WriteString(&result, entry.name);
+    WriteString(&result, "directory");
+    result.push_back(static_cast<char>(entry.is_directory ? 0xc3 : 0xc2));
+    WriteString(&result, "read_only");
+    result.push_back(static_cast<char>(entry.is_read_only ? 0xc3 : 0xc2));
+    WriteString(&result, "size_bytes");
+    if (entry.size_bytes) {
+      WriteUInt(&result, *entry.size_bytes);
+    } else {
+      result.push_back(static_cast<char>(0xc0));
+    }
+  }
+  WriteString(&result, "next_offset");
+  WriteUInt(&result, page.next_offset);
+  WriteString(&result, "more");
+  result.push_back(static_cast<char>(page.more ? 0xc3 : 0xc2));
+  result.append(request.extensions);
+  if (result.size() > kMaximumControlBytes) {
+    return absl::ResourceExhaustedError("Workspace result exceeds 4 KiB");
+  }
+  return result;
+}
+
 absl::StatusOr<std::string> PackGuestResult(
     const GuestControlRequest& request) {
   return PackGuestResult(request, GuestStatusSnapshot{});
@@ -402,7 +465,7 @@ absl::StatusOr<std::string> PackGuestResult(
 
 absl::StatusOr<std::string> PackGuestHelloResult(
     const GuestControlRequest& request, bool logs_available,
-    std::uint8_t maximum_requests) {
+    std::uint8_t maximum_requests, bool workspace_available) {
   if (request.request_id == 0 || request.kind != 1 || maximum_requests == 0 ||
       request.extension_count > 8 ||
       request.extensions.size() > kMaximumControlBytes) {
@@ -428,10 +491,14 @@ absl::StatusOr<std::string> PackGuestHelloResult(
   WriteString(&result, "maximum_requests");
   WriteUInt(&result, maximum_requests);
   WriteString(&result, "capabilities");
-  result.push_back(static_cast<char>(logs_available ? 0x92 : 0x91));
+  result.push_back(
+      static_cast<char>(0x91 + logs_available + workspace_available));
   WriteString(&result, "status");
   if (logs_available) {
     WriteString(&result, "logs");
+  }
+  if (workspace_available) {
+    WriteString(&result, "workspace-list");
   }
   result.append(request.extensions);
   if (result.size() > kMaximumControlBytes) {
@@ -466,10 +533,14 @@ absl::StatusOr<std::string> PackGuestResult(
   WriteString(&result, "state");
   WriteString(&result, "ready");
   WriteString(&result, "capabilities");
-  result.push_back(static_cast<char>(snapshot.logs_available ? 0x92 : 0x91));
+  result.push_back(static_cast<char>(0x91 + snapshot.logs_available +
+                                     snapshot.workspace_available));
   WriteString(&result, "status");
   if (snapshot.logs_available) {
     WriteString(&result, "logs");
+  }
+  if (snapshot.workspace_available) {
+    WriteString(&result, "workspace-list");
   }
   if (snapshot.tick) {
     WriteString(&result, "system");

@@ -1,5 +1,19 @@
 # Status
 
+2026-10-04 resident agent workspace listing: the guest now offers authenticated,
+read-only pagination of its own private workspace root through the existing
+control session. Requests cannot name a path or read contents; each page has
+at most eight immediate children and enumeration stops at 256 entries. A clean
+ARMv5T/ARMv6 SDK export at `.symbian/agent-workspace-sdk-20261004` includes
+the new public header and agent archive. The agent built from that exported
+SDK after declaring the Storage `efsrv` import proxy. Host codec GTest passed
+14 cases; 32 host CLI/session Pytests passed; strict MkDocs passed. The opt-in
+RM-807 emulator test placed `hello.txt` in a disposable agent data cage and
+read it over an authenticated session on Dynarmic and Dyncom (`2 passed, 3
+deselected in 28.78s`). This is emulator behavior only. The installed 1.0.8
+Nokia 808 agent does not contain this operation; the reported reboot remains
+unexplained, so no new handset deployment was attempted.
+
 2026-10-04 PC Suite agent staging and desktop window follow-up: the GUI's
 generic staging failure was reproduced through `symbian device install` on the
 connected 808. MTP `GetObjectInfo` for `Installs` child `0x010000af` returned
