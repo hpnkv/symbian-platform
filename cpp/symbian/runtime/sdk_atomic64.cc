@@ -61,6 +61,15 @@ void Write(volatile void* pointer, TUint64 value) {
 
 }  // namespace
 
+extern "C" void SymbianRuntimeAtomicLock() {
+  EnsureLock();
+  state.lock.Wait();
+}
+
+extern "C" void SymbianRuntimeAtomicUnlock() {
+  state.lock.Signal();
+}
+
 extern "C" TUint64 SymbianRuntimeAtomic64Load(const volatile void* pointer) {
   Guard guard;
   return Read(pointer);

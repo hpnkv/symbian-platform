@@ -1,0 +1,9 @@
+#include "mbedtls_common.mmh"
+
+TARGET		  mbedtls.lib
+TARGETTYPE	  LIB
+UID 0 0
+
+MACRO MBEDTLS_STATIC
+
+SYSTEMINCLUDE \epoc32\include\libc

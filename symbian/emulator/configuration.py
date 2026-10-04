@@ -82,7 +82,17 @@ def sdk_prefix(project: Path | None, sdk: Path | None) -> Path | None:
     if project is not None and (project / "sdk-location.json").is_file():
         from symbian.project.configuration import ProjectConfiguration
 
-        location = ProjectConfiguration.load(project).sdk_location
+        if (project / "symbian-project.json").is_file():
+            location = ProjectConfiguration.load(project).sdk_location
+        else:
+            declared = Path(
+                json.loads((project / "sdk-location.json").read_text())["sdk"]
+            )
+            location = (
+                declared
+                if declared.is_absolute()
+                else (project / declared).resolve()
+            )
         return location
     from symbian.project.sdk import discover_sdk
 

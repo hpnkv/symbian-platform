@@ -9,15 +9,39 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
+#include "symbian/concurrency/bounded_channel.h"
 #include "symbian/concurrency/event_mailbox.h"
 #include "symbian/concurrency/future.h"
 #include "symbian/concurrency/task_group.h"
 #include "thread/channel.h"
+#include "thread/select.h"
+#include "thread/selectables.h"
 
 namespace {
 
-TEST(ConcurrencyTest, ChannelDrainsAndRetainsRejectedMoveOnlyValue) {
+TEST(ConcurrencyTest, A11ChannelKeepsSelectableReaderWriterInterface) {
   thread::Channel<std::unique_ptr<int>> channel(1);
+  auto value = std::make_unique<int>(17);
+  EXPECT_EQ(thread::Select({channel.writer()->OnWrite(std::move(value))}), 0);
+  EXPECT_FALSE(value);
+  EXPECT_EQ(channel.length(), 1);
+  std::unique_ptr<int> received;
+  bool read_ok = false;
+  EXPECT_EQ(thread::Select({channel.reader()->OnRead(&received, &read_ok)}), 0);
+  EXPECT_TRUE(read_ok);
+  ASSERT_TRUE(received);
+  EXPECT_EQ(*received, 17);
+  EXPECT_TRUE(
+      channel.writer()->WriteUnlessCancelled(std::make_unique<int>(19)));
+  EXPECT_TRUE(channel.reader()->Read(&received));
+  ASSERT_TRUE(received);
+  EXPECT_EQ(*received, 19);
+  channel.writer()->Close();
+  EXPECT_FALSE(channel.reader()->Read(&received));
+}
+
+TEST(ConcurrencyTest, ChannelDrainsAndRetainsRejectedMoveOnlyValue) {
+  symbian::concurrency::BoundedChannel<std::unique_ptr<int>> channel(1);
   auto first = std::make_unique<int>(7);
   auto rejected = std::make_unique<int>(11);
   ASSERT_TRUE(channel.TryWrite(std::move(first)).ok());
@@ -38,7 +62,7 @@ TEST(ConcurrencyTest, ChannelDrainsAndRetainsRejectedMoveOnlyValue) {
 }
 
 TEST(ConcurrencyTest, ChannelCloseWakesBlockedWriter) {
-  thread::Channel<int> channel(1);
+  symbian::concurrency::BoundedChannel<int> channel(1);
   ASSERT_TRUE(channel.Write(1).ok());
   absl::Status write_result;
   std::thread writer([&] { write_result = channel.Write(2); });
@@ -88,6 +112,30 @@ TEST(ConcurrencyTest, FutureTaskGroupAndMailboxSharePortableLayer) {
   EXPECT_EQ(calls, (std::vector<int>{1, 2}));
   EXPECT_EQ(mailbox.DispatchReady(2), 1);
   EXPECT_EQ(calls, (std::vector<int>{1, 2, 3}));
+}
+
+TEST(ConcurrencyTest, ReadyThenRunsInlineAndPropagatesStatus) {
+  bool ran = false;
+  auto ready = symbian::concurrency::ReadyFuture(41);
+  auto continued = symbian::concurrency::Then(
+      ready, [&](const absl::StatusOr<int>& value) -> absl::StatusOr<int> {
+        ran = true;
+        return *value + 1;
+      });
+  EXPECT_TRUE(ran);
+  ASSERT_TRUE(continued.IsReady());
+  ASSERT_TRUE(continued.ResultIfReady()->ok());
+  EXPECT_EQ(**continued.ResultIfReady(), 42);
+
+  auto failed = symbian::concurrency::FailedFuture<int>(
+      absl::CancelledError("upstream cancelled"));
+  auto propagated = symbian::concurrency::Then(
+      failed, [](const absl::StatusOr<int>& value) -> absl::StatusOr<int> {
+        return value;
+      });
+  ASSERT_TRUE(propagated.IsReady());
+  EXPECT_EQ(propagated.ResultIfReady()->status().code(),
+            absl::StatusCode::kCancelled);
 }
 
 TEST(ConcurrencyTest, CondVarUsesA11TimeoutConvention) {

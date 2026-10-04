@@ -1,12 +1,238 @@
 # Status
 
+2026-10-04 Mbed TLS source ownership and trust packaging: the complete port
+working tree (1,721 source/configuration/license files) now lives at
+`third_party/mbedtls-symbian`, including its CMake project and required
+third-party sources. Default SDK export builds that tree with no sibling
+checkout dependency and installs an inspectable copy at
+`source/mbedtls-symbian`. The derived, sealed active SDK is
+`.symbian/mbedtls-ca-sdk-20261004` (5,302 digested files); its provenance
+records the source copy SHA-256
+`754a1c1101308adc572d75fa927f7fe9e854a57e940d65919083cdf835d75695`
+and all six rebuilt archive hashes. Independent C consumers configured and
+built on ARMv5T and ARMv6 against this SDK's architecture-matched
+`MbedTLS::mbedtls` target; a plain target had no TLS link. The vendored host
+suite passed 10/10, including authenticated TLS 1.2/1.3 application-data,
+wrong-hostname rejection and an invalid-UTC adapter case, using host entropy
+and time. The guest archive now defines `symbian_mbedtls_time` and
+`mbedtls_platform_gmtime_r` through the SDK clock/libc imports; guest UTC
+execution and physical clock correctness remain unverified.
+
+`SYMBIAN_CA_BUNDLE` now selects only a project-local PEM file. CMake rejects
+outside/missing or oversized files and exposes the packaged path; packaging
+validates each certificate, rejects other PEM content, embeds the selected
+bundle as an application resource, and records its SHA-256. An unset option
+includes no roots. A rebuilt native boundary generated and re-inspected a
+four-file SIS with the exact PEM bytes; the focused native SIS case and two
+Python CA tests passed. SDK-wide trust was not changed. The historical
+`rand()` guest entropy example was replaced by an explicit failure result.
+
+The guest SHA-256 DLL test against the new SDK did **not** pass: the final
+link reported unresolved `realpath` and `pathconf` references from the current
+mimalloc runtime archive. No guest TLS handshake, verified guest entropy/UTC,
+nonblocking socket owner, expired-certificate rejection, emulator TLS memory
+bound, or Nokia 808 connection is claimed. DEVELOPMENT_AGENT step 2 remains
+open; steps 3 and later have not started. An ARM archive or host handshake
+does not establish guest loader or Nokia 808 compatibility.
+
+2026-10-04 Mbed TLS SDK integration: the default exporter now builds the
+local Mbed TLS 3.4.1 port for ARMv5T and ARMv6, installs architecture-specific
+static CMake packages plus public headers and Apache-2.0 notice, and records
+archive digests/source state in SDK provenance. A staged SDK copy was populated
+from fresh Release builds: both architectures compiled all three archives and
+configured/built a consumer that found the matching `MbedTLS::mbedtls` target.
+The exporter helper itself subsequently rebuilt and installed both packages
+in `.symbian/mbedtls-export-helper-test-20261004`; its SDK manifest loaded,
+and an independent consumer compiled both targets on each architecture. The
+consumer's `plain` target had no Mbed TLS dependency. This is compile
+and packaging evidence; guest TLS 1.2/1.3 handshakes, entropy/time services,
+certificate validation and physical-phone connections remain unverified.
+The complete from-source install then passed at
+`.symbian/mbedtls-default-sdk-20261004` and became the active SDK. Its
+manifest, headers, license, provenance and six archive digests verified;
+independent consumers compiled against both architecture packages.
+An ordinary SDK copy/install also passed; a consumer found and compiled
+against the relocated ARMv6 package. The from-source installation remains
+selected as the active SDK.
+An SDK-preparation simulation without compiler wrappers confirmed that the
+exporter must pass both matching LLVM compilers; after that correction, all
+three ARMv6 archives built with Clang 23.1.2 for C and C++.
+Cloning a pre-TLS SDK now fails with a clear `FAILED_PRECONDITION`, requiring a
+source export instead of silently producing another incomplete default bundle.
+
+2026-10-04 emulator controls: SDK-owned macOS background emulator windows now
+place the complete emulator menu bar inside the window, covering IDE Run/Debug
+and automated GUI sessions. Foreground launches retain the macOS application
+menu. The maintained EKA2L1 patch reverses cleanly, the patched `eka2l1_qt`
+target rebuilt, and the live RM-807 GUI render/input/exit test passed on
+Dynarmic and Dyncom (2/2). A live 896-by-754 window was observed through
+CoreGraphics; macOS denied window image capture from this shell, so visual
+confirmation of the menu remains open.
+
 The initial technical survey is in RESEARCH.md. The owner has one Nokia 808;
-exact physical identity, installed firmware and recovery method remain unknown.
+its AT modem reports RM-807 and firmware revision 113.010.1508, while product
+code, independent firmware verification and recovery method remain unknown.
 The supplied Delight RM-807 archive provides preserved emulator ROM/Z material;
 guarded disposable tests now verify real GUI pixels, pointer-driven redraws,
 reset and normal zero guest/frontend exit on both macOS CPU backends.
 
 Latest 2026-10-02 development checkpoint:
+
+* `symbian console` now starts a wxWidgets frontend using native desktop
+  controls on macOS and Windows. It has six purpose-based sidebar sections,
+  rounded grouped content surfaces and higher-contrast guidance; guided views
+  for all 38 public CLI workflows, USB inventory and bounded AT/MTP/PC Suite
+  OBEX probes. Its FastAPI/httpx API remains in-process with no network
+  listener. A live macOS wx event-loop check loaded all 38 actions and the
+  connected 808; long forms measured a 903-pixel scroll extent inside a
+  590-pixel viewport. The 57 focused console/CLI/device tests passed, as did
+  a clean-installed macOS ARM64 wheel audit with wxPython 4.2.4. A live
+  `symbian console` invocation returned in 0.12 seconds and left the wx GUI
+  running. No new physical-device protocol run was claimed from this GUI
+  check; see [CONSOLE.md](CONSOLE.md).
+
+* The native console status bar now shows a green bullet, phone name, USB IDs
+  and interface profile only while a selected phone is observed. An idle
+  disconnect clears the device field. Active device work and a saved USB mode
+  baseline show amber pending status through temporary disconnection; a
+  failed request is marked unverified until the next inventory result. Three
+  state tests brought the focused console/CLI/device suite to 60 passing.
+
+* `device info` now presents the connected 808's interfaces by USB-standard
+  role and device-declared name, with endpoint counts, alternate settings,
+  host driver and exact serial-port association. Its human view uses terminal
+  color while redirected output remains plain; JSON retains the numeric
+  descriptors. Live IOService names include MTP, PC Suite Services, SyncML,
+  Haptics Bridge, UsbPnComm and LCIF. Interface 0 is still-imaging/PTP class
+  labeled `MTP`; interfaces 1–2 are CDC ACM control/data, with the observed
+  AT port under interface 2. The named PC Suite OBEX pair was later validated by a Connect/Disconnect
+  exchange; other named channels remain descriptor evidence.
+  Old mode tickets compare only stable numeric fields, so descriptive metadata
+  does not manufacture a USB transition.
+
+* `device info` now issues bounded read-only `AT`, `+GCAP`, `+CGMI`, `+CGMM`
+  and `+CGMR` on the observed 808 PC Suite USB candidate's CDC ACM port;
+  `--no-protocol` omits this probe. The physical phone returned `OK`,
+  `+GCAP: +CGSM,+DS,+W`, Nokia 808 PureView, and revision
+  `113.010.1508 2013-01-02 RM-807 (c) Nokia`. The CLI labels the parsed
+  revision/date/RM as AT-reported identity. This establishes basic modem
+  commands on that interface, not PC Suite protocol, OS build, phone logs or
+  debugger access. The probe has fixed commands, one-second exchange limits,
+  a 4 KiB response bound, and suppresses serial-like identity responses.
+
+* Physical USB inspection now exposes exact interface descriptors, a
+  serial-derived mode-stable anchor, and host serial-port paths. The owner
+  switched the connected 808 from mass storage to PC Suite mode. IOService
+  then showed `0421:05d1` at the same location, 18 interfaces, no mounted
+  volume, and `/dev/cu.usbmodem141202`, versus prior `0421:05d0` and one
+  `08/06/50` interface. The new `device mode begin/verify` workflow records a
+  private baseline and checks same-serial re-enumeration; it cannot verify
+  PC Suite protocol access or device debugging without a handshake. Ten
+  device Pytests pass, including changed-product, impostor and Linux
+  descriptor controls. A live begin/verify check correctly returned
+  `unchanged`; a real ticketed transition was not captured because the
+  handset was switched before the command existed.
+
+* A fresh mimalloc-default ARMv6 `gui_app` compiled reproducibly and packaged
+  with application registration and localized resources. The 17-case native
+  GUI package verifier passed. The unsigned SIS SHA-256 is
+  `be5ab91b933af743113dd1bba74c3edb626129cbcc04427ba3aec4a0d86ddcad`.
+  One connected Nokia `808 PureView` USB descriptor had a USB-ancestor-linked
+  writable FAT32 volume. The SIS copied and hash-verified at
+  `Installs/gui_app-be5ab91b933a.sis`, then `disk4` ejected cleanly. The
+  state is `awaiting-on-device-install`: no on-phone installer approval or
+  application launch was observed. RM code, firmware and OS remain unknown.
+
+* Mimalloc v3.5.3 is now the default guest allocator in both the standard and
+  streams runtime archives of a fresh local SDK. Its pinned headers and MIT
+  license ship with the SDK; the original allocator remains available by
+  configuring `SYMBIAN_RUNTIME_MIMALLOC=OFF`. The separate native 64-bit
+  atomic archive still uses that original allocator because the mimalloc port
+  uses the portable atomic lock for generic operations and the native EUSER
+  exports are not verified for every ROM. The mimalloc backend builds from pinned ignored
+  sources with disconnected `RChunk` reserve/commit/decommit and pthread
+  thread cleanup. The 8 MiB virtual arena option commits pages on demand; a
+  cross-thread diagnostic held about 580 KiB after collection and two 512 KiB
+  reuse bursts stayed within the probe's backing limits. A default 64 MiB
+  total virtual reservation budget bounds this optional phone profile, and
+  the guest checks its failure path. ARMv5T/ARMv6 ×
+  Dyncom/Dynarmic functional guest runs passed 4/4. A warmed allocation burst
+  was slower than the safe default heap on both CPU backends (Dyncom
+  12,048 versus 1,595 fast-counter ticks; Dynarmic 12,058 versus 380).
+  Follow-up instrumentation found only two `RChunk` reserves and three commits across
+  the warmed burst, but 33,027 pthread TLS lookups. A single-thread cache
+  ablation cut the mimalloc burst to 629 ticks; it was removed because it
+  cannot serve multiple worker threads. Imported pthread TLS lookup is the
+  measured bottleneck in this emulator profile. A fixed 256-slot native-ID
+  cache now serves explicitly entered threads; collisions and unregistered
+  threads use the original pthread keys. Writes always update pthread TLS.
+  Main and guest worker threads have paired entry/exit; raw `RThread` stays
+  uncached because this firmware skips its pthread exit destructor. The safe
+  warmed burst measured 817 ticks on Dyncom and 116 on Dynarmic, versus the
+  default heap's 1,595 and 380. The optional source profile passed the full
+  ARMv5T/ARMv6 guest probe on both backends, including raw and managed thread
+  exit, cross-thread free and bounded reuse. A fresh ignored installed SDK
+  candidate linked the event executor and passed ARMv6/Dyncom and Dynarmic.
+  A combined mimalloc stream-runtime and installed guest fiber image passed
+  the full event, worker, native-thread and base allocation probe on both
+  backends. That integration exposed and fixed tiny C++ `new` alignment.
+  The new installed SDK passed the standard and event/worker guest probes on
+  ARMv5T/ARMv6 and Dyncom/Dynarmic (8/8), including direct `<mimalloc.h>`
+  calls, cross-thread free and managed cache cleanup. GUI rendering and input
+  passed on both backends (2/2); copied-SDK and moved-project builds passed.
+  Its 3,148 payload digests match. Emulator ticks establish neither phone nor
+  application latency, and the memory-pressure comparison remains open.
+
+* Cross-thread C++ destruction now frees through the allocating Symbian
+  `RHeap`. Each allocation holds an `RAllocator::Open` lease until its direct
+  `Free`/`Close`, so the producer may still be running or may already have
+  exited. The process-owned `RChunk` page bridge likewise pins the heap that
+  holds its handle metadata. An explicit private-heap `RThread` probe checks
+  both directions, freeing while the producer remains alive, page close after
+  producer exit, and heap-cell balance. Its normal/changed controls passed
+  8/8 across ARMv5T/ARMv6 and Dyncom/Dynarmic; the event executor matrix
+  passed 8/8 on the same candidate. The 3,135-file SDK digest audit, GUI
+  link, generated-project SDK copy/relocation and root CTest 10/10 passed.
+  The candidate remains local; no physical-device or allocator latency claim
+  follows from these functional tests. The per-allocation lease and native
+  heap lock still have a cost. This bridge remains the explicit
+  `SYMBIAN_RUNTIME_MIMALLOC=OFF` compatibility profile.
+
+* Guest callers can now opt into worker placement. `ThenOnWorker` posts a
+  stackless transform and copies the ready result on the worker; inline
+  `Then`/`OnReady` semantics remain unchanged. `PostFiber` creates a fiber
+  on that worker's own scheduler. `EventExecutor::workers()` lazily provides
+  one shared worker, and direct `WorkerExecutor` construction remains possible.
+  The cap covers queued and active work; close is nonblocking and `Finish`
+  reports drainage. Installed-SDK guest normal/changed controls passed 8/8
+  across both ARM targets and emulator backends, including worker affinity,
+  fiber sleep, queue saturation and asynchronous finish. The GUI linked and
+  generated-project copy/relocation passed. No callback is preempted; a
+  non-yielding worker task can delay other worker work, and an uncompleted
+  fiber can keep `Finish` pending. This is an explicit guest placement API,
+  not yet A11's shared `Post`/`PostAt` pool.
+  The guest-only `future.ThenOnWorker(event_executor, transform)` member now
+  selects the event owner's lazy worker; a closed executor returns a failed
+  Future. The final installed-SDK candidate passed its 8/8 guest matrix,
+  has 3,135 verified payload files, and passed GUI link, generated-project
+  relocation, root CTest 10/10 and the pinned host source/test checks.
+
+* Guest `thread::Case`, `PermanentEvent`, `Select` and `SelectUntil` now
+  compile into `Symbian::Fibers`. A fresh installed-SDK candidate passed the
+  event executor probe 8/8 across ARMv5T/ARMv6, Dyncom/Dynarmic and
+  normal/changed controls. A further 8/8 run asserted event-OS-thread
+  affinity for the property continuation, completion callback and waiting
+  fiber. The probe includes immediate and timed selection,
+  worker notification, competing events and repeated timeout cleanup. The
+  GUI linked against the candidate, and the generated-project initial-build,
+  copied-SDK and moved-project check passed. Continuations run on the event
+  OS thread without a worker context switch; fiber ready snapshots now
+  reuse storage across yields. There is no enforced short-work limit:
+  compute-bound callbacks can indefinitely delay native service, despite the
+  per-source count budget. Selectable channel cases, rendezvous, cancellation
+  cases and full A11 tests remain open. The candidate is not yet the visible
+  SDK, and these are emulator results only. Its 3,133 payload digests verify;
+  root CTest passed 10/10 and the three original A11 host executables passed.
 
 * The first shared guest event owner now dispatches RTimer, real
   RProperty::Subscribe results, the bounded event mailbox and ready fibers
@@ -21,11 +247,11 @@ Latest 2026-10-02 development checkpoint:
   A dedicated guest normal/changed-result probe passed 8/8 across ARMv5T/
   ARMv6 and both backends; it checked a real property value, timer, fiber
   Await/sleep, cancellation, repeated asynchronous TaskGroup Finish, the
-  structured owner's success/close/timeout/error paths, cross-thread event
-  dispatch and heap-cell balance. This remains a bounded event executor, not
-  full A11 `thread::` parity: native request ownership is still split between
-  the existing adapters, A11 Select/fiber trees/pools are open, and no phone
-  result is claimed.
+  structured owner's success/close/timeout/error and destruction-before-drain
+  paths, cross-thread event dispatch and heap-cell balance. This remains a
+  bounded event executor, not full A11 `thread::` parity: native request
+  ownership is still split between the existing adapters, selectable channel
+  cases, A11 fiber trees/pools are open, and no phone result is claimed.
 
 * The SDK exception policy now follows A11: native targets default to
   `-fno-exceptions`, with explicitly selected implementation translation units
@@ -1340,3 +1566,304 @@ It was promoted through the SDK installer's path rebasing to
 `~/dev/symbian-sdk-before-hash-table-20261001`. Both trees verify all sealed
 file digests. Root macOS CTest passed eight targets. The public PyPI payload
 closure and broader guest Abseil/A11 execution remain open.
+
+### 2026-10-02 PC Suite host USB transport
+
+The connected Nokia 808 in owner-selected PC Suite mode was inspected with a
+statically linked libusb 1.0.30 host extension. The default `device info` map
+now includes endpoint directions/types and CDC unions. Opt-in AT battery and
+signal codes, a read-only MTP session with two reported storage records and
+bounded root listing, and a PC Suite OBEX Connect/Disconnect handshake were
+observed. Both OBEX responses were `0xA0` after Disconnect included the
+server-issued Connection ID. A low-level Python binding exposes synchronous
+and queued asynchronous control/bulk/interrupt transfers with an explicit event
+pump; the Connect/Disconnect sequence was repeated through that binding.
+`otool -L` showed no dynamic libusb dependency; the wheel also packages the
+static archive, header, and LGPL text for the host SDK. The installed wheel
+audit passed, and the matching source distribution includes the new native
+transport source and the pinned libusb build recipe. These observations do
+not establish file transfer, SyncML, PC Suite command semantics, or debugger
+access. See `docs/DEVICE.md` for the opt-in commands and `docs/RESEARCH_LOG.md`
+for the experiment record. Focused device and CLI tests passed (37); the
+full Python suite remains red in toolchain/image and verification cases
+(165 passed, 356 skipped, 7 failed, 39 errors).
+
+The host USB binding now returns typed native records and exposes A11-backed
+transfer Futures through `AsyncUsbSession`. Python inspection and transfer
+results are Pydantic models with documented fields and omitted unobserved
+defaults. On the connected 808, typed descriptor, MTP, AT, and OBEX probes
+retained their prior observed results; an awaited control read returned two
+bytes, a pending interrupt Future cancelled, and the Future-driven OBEX
+handshake returned `0xA0` to Connect and Disconnect. The focused device, CLI,
+and model suite passed 44 tests. Bare `symbian` now prints top-level help
+and exits successfully. Terminal help uses colour and clear section/option
+emphasis; redirected help remains plain text. The wheel built, a clean virtualenv loaded
+the typed native list API and Pydantic models, and its installed audit passed.
+The matching source distribution contains the new native and Python sources.
+
+Application-facing CLI help, Python docstrings, native binding descriptions,
+SIS comments, and build guides now call application builds and packages
+"applications". Existing `*-experiment` manifest kinds and report schemas
+remain unchanged. Focused CLI and device tests passed (40). The project-build
+and toolchain tests had 8 passes and 3 existing ARM unwind descriptor failures;
+the wording changes did not touch that conversion path.
+The rebuilt wheel passed its installed audit in a clean virtualenv, including
+the updated native binding descriptions; the matching source archive built.
+
+### 2026-10-02 Console interaction and device reconciliation
+
+The desktop console now uses a shared sidebar and status bar for resolved
+workspace, application, SDK and phone state. Application and firmware wizards
+can skip optional pages, while additional settings remain available on demand.
+Technical text uses a borderless native frame and host-derived font sizes.
+Supported-phone views refresh on a five-second inventory cycle; a redacted
+serial identity preserves selection across reconnects and mode changes, while
+port-only identity is cleared after an observed disconnect. Stale phone probe
+results are removed. `symbian console` launches a detached GUI process and
+returns to the terminal. Focused console and device tests passed (27); a
+hidden Tk smoke check loaded all five tabs and observed one selected phone.
+The USB inspector, Protocols and Activity now scroll inside fixed side/status
+chrome. Phone map and protocol results are cached by selector and applied
+immediately when revisiting a phone; read-only USB mapping refreshes behind
+the cached view. Profiling on this host measured CLI import at 0.147 s,
+catalog at 0.001 s, USB inventory at 0.008 s, and the initial phone context
+at 0.977 s. A USB-signature discovery cache reduced repeated unchanged
+context calls to 0.004–0.005 s, with full revalidation after 20 seconds.
+Focused console/device tests passed (28); a hidden Tk smoke check confirmed
+the Protocols scrollbar appears for overflow at a 1000×620 window.
+The expanded console, CLI and device suite passed 57 tests. The macOS ARM64
+wheel rebuilt with the console modules, passed an installed-wheel audit in a
+clean Python 3.12 environment, and that installation loaded 38 tasks and one
+connected phone through the in-memory client.
+An actual `uv run symbian console` invocation returned in 0.12 seconds with
+exit code zero; the detached GUI child remained running. The wheel was rebuilt
+and re-audited after the final scroll and device-label changes.
+The generic Home/Tasks browser was removed. Six main tabs now group the 38
+actions by application, firmware, emulator, SDK, device and activity purpose;
+SDK and Devices have focused inner sections. A hidden Tk check verified every
+action appears exactly once, all tab sections mount, and cached tab switches
+completed in 0.0002–0.001 seconds on this host. The bridge now cancels its
+scheduled drain callback during shutdown.
+Guided action sections were also placed in scrollable viewports, so a long
+review or result can be reached without moving the fixed sidebar/status bar.
+After this navigation change, the 57 focused console/CLI/device tests still
+passed, and the rebuilt wheel passed the installed audit again.
+Technical result viewers now request 14 lines and ask their enclosing viewport
+to reveal them when expanded. A hidden Tk layout check measured a 211-pixel
+technical text area and a scrolled outer viewport with the scrollbar visible.
+The empty action-form canvas observed on the no-input `doctor` action was
+removed. No-input actions now present a direct run button; other forms fit
+their actual content up to a 280-pixel cap and scroll only when needed. Hidden
+Tk checks confirmed the doctor form container is absent, application inputs
+use the capped scroll area, and direct doctor execution produced its outcome.
+After this form change, the 57 focused tests still passed, and the rebuilt
+wheel passed its installed audit in the clean Python 3.12 environment.
+The GUI now retains the Aqua control theme with native selected-content blue,
+a contrasting sidebar, white content surfaces and alternating table/action
+rows. Hidden Tk checks confirmed the Aqua theme, selected colour `#0064e1`,
+row tags, and touchpad wheel routing from an input to its form and then the
+outer view at the form's edge.
+
+### 2026-10-02 — desktop console frontend revision
+
+- `symbian console` now selects a pywebview desktop shell, with bundled local assets and the existing FastAPI/httpx in-memory service. macOS uses WKWebView; Windows uses WebView2; Linux receives the PySide6 renderer dependency. wxPython is no longer a package dependency or launcher choice. The CLI still detaches from the terminal.
+- Six icon-led sidebar sections and compact tabs replace nested subnavigation. Action cards use task icons and omit repeated section labels. Guided forms, cached view state, background context refresh, status indication, dedicated USB/protocol views and technical details remain available. The USB table uses named class labels, and inspected phone interfaces appear as a separate interpreted table.
+- A live Cocoa smoke check loaded 38 actions and one connected 808 and navigated Devices/SDK tabs without JavaScript errors. The focused console tests passed (21), JavaScript syntax and Python lint/format checks passed, and the built wheel contained all local frontend assets. No device protocol request was made for this UI revision; Windows/Linux visual testing remains open.
+- The follow-up presentation pass replaced nested sidebar entries with three-tab strips inside SDK tools and Devices, added consistent action and protocol icons, removed repeated section labels and an empty no-input form hint, and tightened action-card spacing. A live Cocoa check exercised tab navigation and a host-only doctor action. The final built wheel passed a clean installed-wheel audit; 21 focused Pytests, Ruff, Black and JavaScript syntax checks passed. `uv run symbian console` returned in 0.12 seconds and opened the WebKit-backed desktop process.
+
+### 2026-10-02 — integrated console inspection
+
+- Firmware now displays its imported catalog immediately, with search, selected-record details and source settings in a contextual right sidebar. Import, Inspect, Export and source probing open while the catalog stays visible. Emulator settings, host readiness and connected-phone inventory likewise load as live views alongside their related actions. All other action results have a bounded structured presentation; large firmware manifests expose a searchable file index before optional raw JSON.
+- Required inputs are ordered before optional source settings, and simple actions run without a redundant review page. The optional-settings control no longer skips required steps. A live macOS check showed seven imported identities, an Export form prefilled with `e6`, an inspected firmware file search, effective emulator cards and the connected 808 card. No new phone protocol transaction or export was run. Twenty-two focused tests, Black, Ruff and JavaScript syntax passed; the rebuilt wheel passed its clean installed audit.
+
+### 2026-10-02 — inline optional application settings
+
+- The Create application form now uses an inline **Optional settings** disclosure in place of the vague **Configure more…** action. SDK, build and emulator inputs remain in the form, and Review stays visible. Legacy Tk and wx fallback buttons use the same label. A catalog-driven JavaScript render check verified those groups and the Review action; 22 focused Pytests and JavaScript syntax passed. The rebuilt macOS wheel passed its installed-wheel audit.
+
+### 2026-10-02 — selected firmware inspection pane
+
+- Firmware inspection is now driven by catalog selection instead of a separate action card. The catalog occupies the left side and the selected identity's device details, searchable manifest, provenance and raw JSON occupy the right. Inspection is read-only, runs in the background and caches each identity's result. Source settings remain accessible beneath the catalog. The raw JSON viewer now highlights only JSON, with no unrelated language selector.
+- A hidden WKWebView check loaded seven imported identities, selected E6-00 automatically, indexed 13,186 files and measured the two pane columns at 323 and 611 pixels. The old Inspect action and language selector were absent. Twenty-two console Pytests, JavaScript syntax and the rebuilt installed-wheel audit passed. No phone protocol operation was run.
+
+### 2026-10-02 — live selection and faster device status
+
+- The Current selection sidebar now offers folder pickers for the working directory, application and SDK, plus a connected-phone selector. It shows full effective paths and updates automatically. The chosen working directory is passed to isolated CLI children; project and SDK selections feed context-aware form defaults. Clearing a selected phone suppresses automatic re-selection.
+- A serial-free native USB topology observation runs every 750 ms, independently of the SDK command worker. On a changed topology it requests authoritative context reconciliation; if the selected vendor/product disappears, it suppresses the idle green status immediately while keeping pending work amber. A simulated removal in hidden WKWebView cleared the green status and displayed “Checking USB connection…” before the slower context request returned. A second live check observed the status sequence Refreshing firmware → Reading firmware details → Ready. Fifty-nine console, CLI and device Pytests, Ruff, Black and JavaScript syntax passed. No physical disconnect was performed.
+
+### 2026-10-02 — console application selection
+
+- The application picker and context discovery now accept `symbian.toml` as well as `symbian-project.json`. This permits selecting the checked-in `examples/gui_app` source project and keeps generated/legacy JSON projects selectable. JSON-only SDK settings are read only when that file exists. A focused bridge test selected `gui_app` and a JSON-only fixture; 59 console, CLI and device tests passed with Black and Ruff checks. The rebuilt wheel passed its installed-wheel audit, and the packaged manifest helper recognized `gui_app`.
+
+### 2026-10-02 — C++20 app code and compact device cards
+
+- `gui_app/app.cc` now directly uses `std::thread` and `std::make_shared` to run its existing Window Server loop on one owned event thread and return its result. The historical SDK adapter moved to `window_server.cc` because its placement-new declarations conflict with libc++ headers. The event thread creates its own cleanup stack; visual behavior and the stackless timer stay the same. The published E32 build was reproducible, the host GUI model test passed, the two preserved RM-807 GUI emulator replays passed, and all four opt-in debugger cases passed.
+- Console device cards now reserve a small image column beside the device name, USB identity and interfaces. An attributed transparent Nokia 808 photograph appears only for identified 808 PureViews; other supported models use the generic SVG. The image is bundled locally with the WebKit page. A JavaScript render check confirmed one 808 image and two generic fallbacks; 59 focused Python tests and the rebuilt installed-wheel audit passed.
+
+### 2026-10-02 — selected application workspace and build repair
+
+- `symbian console --workdir PATH` now starts the detached desktop process in that directory, selects a project there when it has `symbian.toml`, and prefers its local `.symbian/app-sdk/sdk.json`. The selected SDK manifest is also passed into isolated command children. The Applications sidebar shows a compact indented entry for the selected project, using a bounded, project-local manifest icon when available.
+- The application view reads TOML identity, architecture, UID3, caption, package name and current executable. It offers Build, emulator Run with an imported-firmware selector, and Package after an executable exists. Standalone TOML projects now use the shared emulator launcher with their selected source directory and SDK. The launcher remains responsible for ownership and stopping the emulator process.
+- A `gui_app` build from the application directory initially failed only the independent ELF equality check: the two converted E32 executables had the same SHA-256, but DWARF `DW_AT_comp_dir` contained different nested CMake paths. Stable compilation directories in the GUI and generated-project CMake flags repaired the check without relaxing it. Fresh `gui_app` and generated-project builds returned `reproducible: true`, packaging produced `gui_app.sis`, and a standalone `session(project=gui_app)` reached READY and closed cleanly on imported RM-807 firmware. Twenty-seven focused Console tests passed, including a JavaScript initial-render regression check; this session check proves emulator startup, not a full UI interaction replay.
+
+### 2026-10-02 — application and device view refinements
+
+- An explicitly supplied `symbian console --workdir` now opens the selected application view when its TOML identity validates; the first paint shows a small loading state until context and project details arrive. On macOS, the launcher finds the invoking terminal's window through its process ancestry and places the detached WebKit window on that display. A local ancestry probe selected display 1 for the current terminal.
+- The application view now uses the declared caption as its heading, with identity facts in one compact card. The build control uses a spanner icon, live tool output is copied to a private bounded-read log, and CMake compile groups appear as one compact disclosure instead of nested cards. A real reproducible `gui_app` build returned JSON success and wrote 334,031 bytes of tool output to the live log. The log integration test observed its first line while the child process was still running.
+- EKA1 firmware entries are disabled for an EKA2 application run. Console Run requests a foreground emulator window and passes the console display index; the maintained EKA2L1 patch positions and activates that window. The patched emulator target rebuilt successfully. A direct foreground `gui_app` run opened its EKA2L1 window on display 1 at CoreGraphics bounds `(-58, -1035, 902, 725)` and reported it on screen; the supervisor was deliberately stopped after observing the window. The USB interface result view now uses short expandable rows, while firmware browsing defaults to a selected connected phone's matching model and retains a manual firmware choice. The Nokia 808 portrait was replaced with a transparent crop of the image supplied by the user. Thirty focused Console tests, JavaScript syntax, Black and Ruff passed. Window stacking above an actual console and cross-platform monitor behavior still need a human visual check.
+- While a build runs, its tool log is expanded. The same log becomes a collapsed disclosure as soon as the result arrives, leaving the concise Build complete card prominent; the full log remains available on demand. The final focused suite still passed 30 tests.
+
+### 2026-10-02 — GUI Run host debugger repair
+
+- The IDE's Debug action on GUI Run failed before launch because it selected a nonexistent bundled GDB for macOS. The local IDE generator now supplies a host LLDB debug profile and selects it when generating GUI Run settings; the separate ARM GDB profile remains for GUI Debug. Both ignored `.idea` project windows were regenerated with the new profile.
+- `/usr/bin/lldb` launched the native `gui_app_run` launcher, stopped at `main` (`launcher.cc:10`) and showed a source backtrace; the process was killed before starting the emulator. The ARM GDB wrapper reported GNU GDB 17.2. Two focused IDE configuration tests, Ruff and Black passed. The still-open IDE retained its former GDB selection in memory after the XML update, as the owner's next screenshot confirmed. Select GUI Host LLDB in its debug-profile toolbar or reopen the project before using Debug. The ARM guest requires GUI Debug with Symbian GUI GDB selected.
+
+### 2026-10-02 — live application Run output
+
+- The selected application's Run action now expands a live output panel during build, launch and emulator execution. The console captures SDK tool and launcher diagnostics incrementally and reads a bounded tail of the owned emulator's `frontend.log`; the panel collapses after the run and remains available. The session log path is passed through a private sidecar and checked against the selected project's run directory before reading.
+- A real `gui_app` emulator run showed tool output before completion and 11,807 bytes of frontend output while the process was still active; the combined console reader returned both. That verification run was stopped after the log check. Thirty-three console/frontend tests, Ruff, Black and JavaScript syntax checks passed.
+
+### 2026-10-02 — IDE debugger selection state corrected
+
+- The owner's next GUI Run Debug attempt still chose the nonexistent bundled GDB even after restarting the IDE. Inspection of the installed CLion 2026.2 plugin showed that its active debugger is persisted in `SelectedDebugProfileService`, keyed by run configuration and CMake profile. The prior generator had written an obsolete `CurrentDebugProfile` component while the actual GUI Run key still pointed to an empty non-shared GDB profile.
+- The generator now replaces only GUI Run's active selection with the host LLDB profile ID in the actual service state, preserving other targets' choices. Both ignored IDE project workspaces were regenerated and show GUI Run mapped to the installed LLDB profile. Focused configuration tests cover an existing broken GDB mapping and unrelated debugger preservation. An already-open IDE can retain service state in memory; its live Debug action still needs a reload or toolbar selection to confirm the repaired mapping.
+- A subsequent live Debug attempt still used `.symbian/clion-setup/gui-gdb` for `GUI Run`, then rejected the macOS `gui_app_run` executable as an unknown format. That confirms the still-open IDE kept its old debugger choice; it does not indicate a malformed host executable. `file` identifies the target as arm64 Mach-O, and `/usr/bin/lldb` launched it, stopped at `launcher.cc:10` and showed a source backtrace. The saved root and dedicated `SelectedDebugProfileService` entries both resolve `GUI Run` to `/usr/bin/lldb`; an IDE project reload or explicit GUI Host LLDB selection is required to replace the live cached choice.
+- With **GUI Host LLDB** visibly selected, a live IDE Debug session started and paused at `_dyld_start` after the launcher `exec` into Python. The IDE log recorded its LLDB frontend, and the traced Python supervisor was present. The owner clicked **Resume Program** in the Debug tool window and confirmed that the emulator ran. This is LLDB's default stop-on-exec behavior, not a launch failure. Guest source debugging remains the separate **GUI Debug** / **Symbian GUI GDB** path.
+- The owner confirmed the missed breakpoint was in Symbian application C++ while the selected configuration was **GUI Run** with host LLDB. The generated IDE state now also binds **GUI Debug** to the ARM GDB profile in both root and standalone projects. The backend was exercised on the current GUI build: `GuiMain` and `DrawGui` source breakpoints hit, and the GDB machine interface relocated a breakpoint set before remote connection, then stopped and stepped in guest code. Four focused configuration/live tests passed; their old literal instruction-address expectations were replaced with assertions against the current build's breakpoint addresses. The owner selected **GUI Debug** / **Symbian GUI GDB** and confirmed the live IDE stopped at the guest breakpoint. The IDE log recorded `GUI Debug` launching the generated GDB wrapper in MI mode; full stack unwinding remains unverified.
+### 2026-10-04 — A11 channel interface correction
+
+- Host `<thread/channel.h>` now uses the pinned A11 header and waiter state.
+  The guest `<thread/channel.h>` has A11's public `Reader`, `Writer` and
+  `Channel` signatures, including selectable read/write cases,
+  `WriteUnlessCancelled`, `length()` and zero-capacity rendezvous.
+  `EventMailbox` instead uses `symbian::concurrency::BoundedChannel` for its
+  fallible, nonblocking enqueue and idempotent shutdown behavior.
+- The focused host concurrency test passed, and the guest channel probe passed
+  all eight ARMv5T/ARMv6 × Dyncom/Dynarmic normal/changed cases, covering
+  buffered transfer, rendezvous, competing cases, timeout, cancellation and
+  losing-case ownership. The A11 source pin check verified 46 sources and 92
+  includes. A fresh `.symbian/a11-channel-sdk-final-20261004` export contains
+  matching guest headers, both ARM fiber archives and verified digest entries;
+  the full eight-case guest matrix passed against that export. The rebuilt
+  host channel and fiber tests passed 2/2. Full A11 concurrency parity is still
+  open: fiber trees, joining, shared pool scheduling, structured futures and
+  original test mapping.
+
+### 2026-10-04 — component device API foundation
+
+- Added `cpp/symbian/api/` with separate source boundaries for system,
+  connectivity, power, media, display, sensors, camera and storage. Each
+  implemented component is an independent opt-in `Symbian::<Component>`
+  archive; the SDK does not create targets for planned components without an
+  archive. The API rules and verification sequence are in `docs/DEVICE_API.md`.
+- The first implemented component, `Symbian::System`, reads native tick and
+  fast counters with their reported period or frequency and returns typed
+  `absl::StatusOr` results. A host GTest passed native-error and zero-metadata
+  cases. The packaged API probe passed all eight ARMv5T/ARMv6 ×
+  Dyncom/Dynarmic normal/changed emulator cases. The fresh SDK export at
+  `.symbian/device-components-sdk-20261004` contains both archives, its public
+  header and verified digest entries.
+- At this checkpoint, connectivity, power, media, display, sensors, camera
+  and storage have component directories and plans only. Their native
+  contracts and device behavior remain unverified; no physical-device API
+  test was performed.
+
+### 2026-10-04 — HAL and File Server device components
+
+- Added separate `Symbian::Power`, `Symbian::Display` and `Symbian::Storage`
+  archives and modern public headers. Power reports independently optional
+  power-good, external-supply and qualitative battery fields; it never guesses
+  a percentage or charging state. Display reports positive primary HAL pixel
+  geometry with optional twips. Both keep legacy HAL headers behind native
+  bridge translation units.
+- Storage provides move-only read-only file and directory owners. Reads write
+  directly into a caller span and directory entries stream one at a time.
+  Each owner closes its File Server session and subsession; its lifetime stays
+  on the opening worker thread. File offsets beyond the initial 2 GiB profile,
+  writes, subscriptions and cross-thread session ownership are not claimed.
+- The fresh `.symbian/device-api-final-sdk-20261004` export packages the four
+  component archives for ARMv5T and ARMv6, HAL/File Server proxies and public
+  headers. Seventeen checked assets match SDK digests; all four public headers
+  match source. The host device API GTest passed. Its packaged guest probe
+  ran successfully in all eight ARM architecture × Dyncom/Dynarmic ×
+  normal/changed event-executor cases; the changed control belongs to the
+  event executor, not the new device APIs.
+  On the RM-807 emulator fixture, a read of `Z:\sys\bin\euser.dll` was denied
+  by the platform; a read of `Z:\resource\psui.r01` and a streamed resource
+  directory entry succeeded. No physical Nokia 808 behavior is established.
+- Connectivity, sensors and media remain planned rather than exported.
+  Native service contracts, permissions, buffer ownership and cancellation
+  still need their own evidence before exposing those APIs.
+
+### 2026-10-04 — explicit storage writes and incremental copying
+
+- `Symbian::Storage` now adds a move-only `WritableFile` with explicit
+  create/open/replace modes, positional writes from caller memory, and File
+  Server `Flush`. `CreateDirectories` is a separate operation. The public
+  header does not require `RFs`, `RFile`, `RDir`, descriptors or `User::`.
+  Original platform headers and import proxies remain available to an
+  application that explicitly opts into native API translation units.
+- `FileCopy` owns one reusable 32 KiB buffer. `Step()` performs at most one
+  read and write and returns partial progress; `Cancel()` atomically requests
+  a stop before a subsequent request. `DirectoryReader::Next()` yields one
+  entry per call, and its `Cancel()` stops at the next checkpoint. This bounds
+  work and memory *per step*, not the
+  wall-clock latency of an in-flight synchronous File Server request.
+  Verified native asynchronous cancellation and drainage remain open work.
+- Eight host device API GTests passed, including explicit replacement,
+  progressive copy and cancellation before another chunk. A packaged guest
+  probe created and flushed a private `C:` file, read it back and copied it
+  through `FileCopy`; all eight ARMv5T/ARMv6 × Dyncom/Dynarmic ×
+  normal/changed executor cases passed in disposable emulator copies. This
+  does not establish physical-device write behavior or hardware durability.
+- The candidate connectivity monitor remains unexported: the prepared client
+  header/import contract is missing, and the emulator server currently
+  reports a fixed connection count and bearer rather than observed state.
+- Final export `.symbian/device-api-final-stream-sdk-20261004` packages both
+  storage archives with the allocation-before-replacement correction. All
+  3,271 SDK asset digests matched; a fresh ARMv5T/Dyncom guest probe passed
+  with that exact export. The full eight-case matrix passed immediately before
+  the allocation-order-only correction.
+- The subsequent `.symbian/device-api-cancel-sdk-20261004` export adds
+  `DirectoryReader::Cancel()` to the packaged public header and archives.
+  Its 3,271 asset digests matched, the packaged storage header matched source,
+  and a fresh ARMv5T/Dyncom guest probe passed.
+
+### 2026-10-04 — SD analysis and camera discovery
+
+- Root `SD_STORAGE.md` records software opportunities for SD filesystem
+  throughput: fewer larger I/O calls, drive-reported buffer hints, deliberate
+  cache modes, pre-sizing and flush placement. These are hypotheses pending
+  controlled measurements on a physical removable card; the current 32 KiB
+  copy step stays as a responsive default.
+- `Symbian::Camera` exports `DiscoverCameras` with a typed count and explicit
+  native errors. It does not reserve, power on or capture from a camera.
+- Nine host device API GTests passed. The camera SDK export at
+  `.symbian/device-api-camera-sdk-20261004` packages ARMv5T and ARMv6
+  archives, ECam headers and the `CamerasAvailable` import stub. All 3,307
+  packaged asset digests matched. A packaged
+  ARMv5T/Dyncom guest probe passed with runtime discovery. This first export
+  does not establish physical camera or SD throughput behavior.
+- A candidate `InspectCamera` was removed before export: its `CCamera::New2L`
+  leave-catching path first produced unresolved `TTrap` symbols under the
+  wrong leave mode. The exception-based ARM EABI mode linked after adding
+  frozen `drtaeabi` imports, but ELF-to-E32 conversion then rejected its
+  imported C++ type-info vtable because that path only accepts function
+  imports. Opening without a proven converted leave boundary would be unsafe.
+
+### 2026-10-04 — development service design
+
+- Root `DEVELOPMENT_AGENT.md` defines a staged on-device service and host
+  integration for USB/Wi-Fi discovery, authenticated sessions, scoped file
+  transfer, logs, process control, screen, ordinary app deployment and user
+  process debugging. It is a design, not a running service. Its resident idle
+  behavior and actual USB/WLAN capability need on-phone measurement.
+- Recovery and flashing are explicitly absent from the service protocol and
+  remain under the separate human-governed broker required by `PLAN.md`.
+- An A11 reference pass refined the protocol design: keep `WireStream`
+  lifecycle and `ChunkStoreReader`/`ChunkStoreWriter` backpressure concepts,
+  but start with a one-session, 64 KiB frame and 256 KiB inbound phone profile.
+  HTTP remains a host-side console API rather than a phone-side dependency.
+- The plan now has an explicit emulator-to-development-phone gate: a verified
+  ordinary SIS and read-only authenticated handshake precede manual install,
+  on-phone idle/recovery checks and later boot-start enablement. This gate has
+  not been executed.

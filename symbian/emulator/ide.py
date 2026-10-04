@@ -1,19 +1,106 @@
-"""Local Run/Remote Debug configuration for the prepared GUI experiment."""
+"""Local Run/Remote Debug configuration for the prepared GUI application."""
 
 import os
 import shlex
+import shutil
 import sys
 import uuid
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from pydantic import BaseModel, ConfigDict, Field
+
 from symbian.status import Code, StatusError
+
+
+class _DebugProfileStamp(BaseModel):
+    """Run configuration and CMake profile identifying a debugger choice."""
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    run_configuration: str = Field(
+        alias="##RUN_CONFIGURATION##",
+        description="IDE run configuration identifier",
+    )
+    cmake: str | None = Field(
+        default=None,
+        description="IDE CMake build profile identifier when applicable",
+        exclude_if=lambda value: value is None,
+    )
+
+
+class _DebugProfileChoice(BaseModel):
+    """IDE debug profile chosen for one run/CMake profile combination."""
+
+    model_config = ConfigDict(extra="allow")
+
+    first: _DebugProfileStamp = Field(description="IDE profile group stamp")
+    second: str = Field(description="Selected debugger profile ID")
+
+
+class _DebugProfileSelection(BaseModel):
+    """Serialized state of CLion's active debug profile service."""
+
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+
+    profile_id_by_stamp: list[_DebugProfileChoice] = Field(
+        default_factory=list,
+        alias="profileIdByStamp",
+        description="Per run configuration debugger selections",
+        exclude_if=lambda value: not value,
+    )
+    modification_count: int = Field(
+        default=0,
+        alias="modificationCount",
+        description="IDE state revision counter",
+        exclude_if=lambda value: value == 0,
+    )
 
 
 def _write(path: Path, element: ET.Element) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     ET.indent(element, space="  ")
     ET.ElementTree(element).write(path, encoding="utf-8", xml_declaration=True)
+
+
+def _select_debugger(
+    workspace: ET.Element,
+    stamp: _DebugProfileStamp,
+    profile_id: str,
+) -> None:
+    """Choose a debugger in CLion's actual per-target state."""
+    component = workspace.find(
+        "./component[@name='SelectedDebugProfileService']"
+    )
+    if component is None:
+        component = ET.SubElement(
+            workspace, "component", name="SelectedDebugProfileService"
+        )
+    try:
+        selection = _DebugProfileSelection.model_validate_json(
+            component.text or "{}"
+        )
+    except ValueError as error:
+        raise StatusError(
+            Code.DATA_LOSS, "Invalid IDE debug-profile selection state"
+        ) from error
+    matches = [
+        choice
+        for choice in selection.profile_id_by_stamp
+        if choice.first == stamp
+    ]
+    if len(matches) == 1 and matches[0].second == profile_id:
+        return
+    selection.profile_id_by_stamp = [
+        choice
+        for choice in selection.profile_id_by_stamp
+        if choice.first != stamp
+    ]
+    selection.profile_id_by_stamp.append(
+        _DebugProfileChoice(first=stamp, second=profile_id)
+    )
+    selection.modification_count += 1
+    component.text = selection.model_dump_json(by_alias=True, indent=2)
 
 
 def configure(root: Path, gdb: Path, python: Path | None = None) -> dict:
@@ -57,6 +144,22 @@ def configure(root: Path, gdb: Path, python: Path | None = None) -> dict:
     )
     wrapper.chmod(0o755)
     profile_id = str(uuid.uuid5(uuid.NAMESPACE_URL, str(root) + "/gui-gdb"))
+    host_debugger_path = (
+        "/usr/bin/lldb"
+        if sys.platform == "darwin"
+        else shutil.which("lldb") or shutil.which("gdb")
+    )
+    host_debugger = (
+        Path(host_debugger_path) if host_debugger_path is not None else None
+    )
+    host_profile_type = (
+        "lldb"
+        if host_debugger is not None and host_debugger.name == "lldb"
+        else "gdb"
+    )
+    host_profile_id = str(
+        uuid.uuid5(uuid.NAMESPACE_URL, str(root) + "/gui-host-debugger")
+    )
     for project in (root, root / "examples/gui_app"):
         idea = project / ".idea"
         profile = "clion-arm"
@@ -154,11 +257,32 @@ def configure(root: Path, gdb: Path, python: Path | None = None) -> dict:
         if entries is None:
             entries = ET.SubElement(component, "debug-profiles")
         for entry in list(entries):
-            if (
-                entry.find(f"option[@name='id'][@value='{profile_id}']")
+            if any(
+                entry.find(f"option[@name='id'][@value='{entry_id}']")
                 is not None
+                for entry_id in (profile_id, host_profile_id)
             ):
                 entries.remove(entry)
+        if host_debugger is not None and host_debugger.is_file():
+            host_entry = ET.SubElement(entries, "debug-profile")
+            host_profile_name = (
+                "GUI Host LLDB"
+                if host_profile_type == "lldb"
+                else "GUI Host GDB"
+            )
+            for name, value in (
+                ("id", host_profile_id),
+                ("type", host_profile_type),
+                ("name", host_profile_name),
+            ):
+                ET.SubElement(host_entry, "option", name=name, value=value)
+            host_settings = ET.SubElement(host_entry, "settings")
+            ET.SubElement(
+                host_settings,
+                "option",
+                name="executable",
+                value=str(host_debugger),
+            )
         entry = ET.SubElement(entries, "debug-profile")
         for name, value in (
             ("id", profile_id),
@@ -170,28 +294,39 @@ def configure(root: Path, gdb: Path, python: Path | None = None) -> dict:
         ET.SubElement(settings, "option", name="executable", value=str(wrapper))
         ET.SubElement(settings, "option", name="workingDir", value=str(root))
         _write(profiles_path, profiles)
-        # The dedicated GUI project can select its guest debugger. Preserve
-        # the root project's existing host-debugger selection.
+        # CLion 2026.2 stores debugger selection per run configuration,
+        # not in CurrentDebugProfile. GUI Run launches a host process;
+        # GUI Debug attaches to the guest ARM process.
         workspace = idea / "workspace.xml"
-        if project != root and workspace.exists():
+        if workspace.exists():
             state = ET.parse(workspace).getroot()
-            current = state.find("./component[@name='CurrentDebugProfile']")
-            if current is None:
-                current = ET.SubElement(
-                    state, "component", name="CurrentDebugProfile"
+            if host_debugger is not None and host_debugger.is_file():
+                _select_debugger(
+                    state,
+                    _DebugProfileStamp(
+                        run_configuration="CMake Application.GUI Run",
+                        cmake=f"CMakeBuildProfile:{profile}",
+                    ),
+                    host_profile_id,
                 )
-            current.clear()
-            current.set("name", "CurrentDebugProfile")
-            ET.SubElement(
-                current, "option", name="debugProfileId", value=profile_id
+            _select_debugger(
+                state,
+                _DebugProfileStamp(run_configuration="Remote Debug.GUI Debug"),
+                profile_id,
             )
-            manager = state.find("./component[@name='RunManager']")
-            if manager is None:
-                manager = ET.SubElement(state, "component", name="RunManager")
-            manager.set("selected", "CMake Application.GUI Run")
+            if project != root:
+                manager = state.find("./component[@name='RunManager']")
+                if manager is None:
+                    manager = ET.SubElement(
+                        state, "component", name="RunManager"
+                    )
+                manager.set("selected", "CMake Application.GUI Run")
             _write(workspace, state)
     return {
         "wrapper": str(wrapper),
         "debug_profile": "Symbian GUI GDB",
+        "host_debug_profile": (
+            "GUI Host LLDB" if host_profile_type == "lldb" else "GUI Host GDB"
+        ),
         "projects": [str(root), str(root / "examples/gui_app")],
     }

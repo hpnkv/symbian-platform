@@ -1,0 +1,8 @@
+PRJ_PLATFORMS
+DEFAULT
+
+PRJ_EXPORTS
+
+PRJ_MMPFILES
+libssl2_static.mmp
+libssl2_dll.mmp

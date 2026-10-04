@@ -19,6 +19,8 @@
 
 namespace thread {
 
+struct Case;
+
 class Fiber {
  public:
   using Work = absl::AnyInvocable<void() &&>;
@@ -41,6 +43,7 @@ class Fiber {
   // Cancellation is cooperative: work can inspect Current()->Cancelled().
   void Cancel() noexcept;
   bool Cancelled() const noexcept;
+  Case OnCancel() const;
   bool Finished() const noexcept;
 
   // Must be called on the creating OS thread. A wrong-thread join returns
@@ -55,6 +58,11 @@ class Fiber {
   std::unique_ptr<Impl> impl_;
 };
 
+}  // namespace thread
+
+namespace thread {
+bool Cancelled();
+Case OnCancel();
 }  // namespace thread
 
 #endif  // THREAD_FIBER_H_

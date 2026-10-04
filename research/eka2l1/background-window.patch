@@ -33,15 +33,43 @@ diff --git a/src/emu/qt/src/mainwindow.cpp b/src/emu/qt/src/mainwindow.cpp
 index 5e4005c..6de4c7d 100644
 --- a/src/emu/qt/src/mainwindow.cpp
 +++ b/src/emu/qt/src/mainwindow.cpp
-@@ -1735,6 +1735,11 @@ void main_window::on_action_check_for_update_triggered() {
+@@ -71,12 +71,14 @@
+ #include <QDropEvent>
+ #include <QEventLoop>
+ #include <QFileDialog>
++#include <QGuiApplication>
+ #include <QFuture>
+ #include <QFutureWatcher>
+ #include <QInputDialog>
+ #include <QMessageBox>
+ #include <QProgressDialog>
+ #include <QSettings>
++#include <QScreen>
+ #include <QLineEdit>
+ #include <QThreadPool>
+ #include <QtConcurrent/QtConcurrent>
+@@ -1735,6 +1737,24 @@ void main_window::on_action_check_for_update_triggered() {
  }
  
  void main_window::load_and_show() {
 +    // SDK-owned test and Run sessions have a supervisor and should leave the
 +    // developer's terminal/IDE active when their window first appears.
 +    if (qEnvironmentVariable("EKA2L1_RESEARCH_BACKGROUND_WINDOW") == "1") {
++        // A background macOS process has no usable application menu bar.
++        // Keep every emulator menu in the window for tests and IDE sessions.
++        ui_->menu_bar->setNativeMenuBar(false);
 +        setAttribute(Qt::WA_ShowWithoutActivating);
 +    }
++    bool screen_index_valid = false;
++    const int screen_index = qEnvironmentVariableIntValue("SYMBIAN_CONSOLE_SCREEN_INDEX", &screen_index_valid);
++    const QList<QScreen*> screens = QGuiApplication::screens();
++    if (screen_index_valid && screen_index >= 0 && screen_index < screens.size()) {
++        move(screens[screen_index]->availableGeometry().topLeft() + QPoint(48, 48));
++    }
      show();
++    if (qEnvironmentVariable("SYMBIAN_CONSOLE_FOREGROUND_EMULATOR") == "1") {
++        raise();
++        activateWindow();
++    }
      if (applist_) {
          applist_->request_reload();

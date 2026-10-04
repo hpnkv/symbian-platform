@@ -453,18 +453,42 @@ CPU backends, using real pinned source. A matched installed profile exposes
 each ARM target. It uses the wide-enabled `Symbian::Streams` runtime, not the
 default archive. The original `LowLevelAlloc` uses an SDK `RChunk` page backend:
 a 130,000-byte allocation, free, and explicit arena deletion pass a bounded
-guest control. This does not verify memory pressure, cross-thread page release,
-all Abseil components, or general ELF/C++ TLS.
+guest control. An explicit private-heap thread probe now verifies
+cross-thread page-owner close after the creating thread exits. This does not
+verify memory pressure, all Abseil components, or general ELF/C++ TLS.
 A separate original-SDK `RChunk` probe passes bounded create, write, grow and
 close controls on both ARM targets and emulator CPU backends, from source and
-against the installed runtime archive. Page commit/decommit, cross-thread
-ownership remain open.
+against the installed runtime archive. Page commit/decommit and broader
+cross-thread ownership remain open.
 
-An internal `SymbianRuntimePageCreate`/`Close` bridge now creates exact-sized,
+An internal `SymbianRuntimePageCreate`/`Close` bridge creates exact-sized,
 page-aligned, process-owned `RChunk` storage, retains the handle in opaque
 metadata, validates errors before publication and releases the handle and
-metadata together. Its first same-thread guest controls pass; cross-thread
-closing, mmap-style lookup and memory pressure remain unverified. A separate
+metadata together. It pins the metadata's originating `RHeap` until close,
+and private-heap cross-thread close passes the installed-SDK guest matrix.
+The default `SYMBIAN_RUNTIME_MIMALLOC=ON` profile builds pinned mimalloc
+v3.5.3 sources with a separate disconnected `RChunk` reserve/commit/decommit
+bridge, process-owned handle table and pthread thread cleanup. It selects an
+8 MiB virtual arena reserve and a default 64 MiB total chunk address budget,
+committing backing only as requested. The latter is configurable through
+`SYMBIAN_MIMALLOC_ADDRESS_BUDGET_MIB` (16–512). Functional
+private-heap cross-thread and bounded reuse controls passed the named RM-807
+guest on both ARM targets and emulator CPU backends. A bounded native-ID cache
+avoids the measured OpenC pthread lookup on explicitly managed threads; the
+main and guest worker threads pair cache entry and exit. Colliding or
+unregistered threads use the original pthread keys, and every key write is
+mirrored there. Direct `RThread::Create` threads must stay unregistered unless
+their owner pairs entry and exit: this firmware did not run their pthread
+exit destructor. The warmed emulator burst measured 817/116 ticks on
+Dyncom/Dynarmic with the cache, versus 1,595/380 for the default heap.
+The new installed SDK includes the pinned mimalloc headers, its MIT license,
+and compiled implementations in both standard and streams runtime archives.
+The original `RHeap` bridge remains selectable with
+`SYMBIAN_RUNTIME_MIMALLOC=OFF`; the separate native 64-bit atomic archive uses
+that bridge until its EUSER imports and generic-atomic fallback are resolved.
+The mimalloc source build requires `SYMBIAN_MIMALLOC_SOURCE` to name
+the pinned ignored checkout and is incompatible with the unverified native
+64-bit atomic profile. A separate
 `pthread` key probe checks worker isolation and a thread-exit destructor.
 This does not establish general C++ `thread_local`, ELF TLS relocations or DLL
 TLS destruction. A pinned Abseil guard avoids one `__tls_get_addr` dependency

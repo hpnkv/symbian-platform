@@ -47,6 +47,9 @@ def artifacts(tmp_path_factory):
             for item in inspect_proxy(Path(native_proxy))["exports"]
         }
         assert {
+            "_ZN10RAllocator4OpenEv",
+            "_ZN10RAllocator5CloseEv",
+            "_ZN4User9AllocatorEv",
             "_ZN9RFastLock11CreateLocalE10TOwnerType",
             "_ZN9RFastLock4WaitEv",
             "_ZN9RFastLock4PollEv",
@@ -77,8 +80,11 @@ def artifacts(tmp_path_factory):
                 "_ZN4User4ExitEi",
                 "_ZN4User9InvariantEv",
                 "_ZN8UserHeap15SetupThreadHeapEiR24SStdEpocThreadCreateInfo",
+                "_ZN10RAllocator4OpenEv",
+                "_ZN10RAllocator5CloseEv",
                 "_ZN4User5AllocEi",
                 "_ZN4User4FreeEPv",
+                "_ZN4User9AllocatorEv",
                 "_ZN4User15CountAllocCellsEv",
                 "memcpy",
                 "memmove",

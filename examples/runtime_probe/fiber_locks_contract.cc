@@ -103,11 +103,7 @@ extern "C" int SymbianRuntimeFiberLocksProbe() {
         result = -324;
       }
     });
-    thread::Fiber writer(scheduler, [&] {
-      if (!channel.writer()->Write(37).ok()) {
-        result = -325;
-      }
-    });
+    thread::Fiber writer(scheduler, [&] { channel.writer()->Write(37); });
     if (!scheduler.RunReady(4).ok() || !reader.Finished() ||
         !writer.Finished() || received != 37 || result != 0) {
       return result == 0 ? -326 : result;

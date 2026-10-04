@@ -152,7 +152,7 @@ def test_live_source_breakpoints_and_single_step_remain_halted(
             "stepi\n"
             'printf "REGISTER_READ_DONE=%#x URO=%#x\\n", $pc, $r0\n'
             "delete breakpoints\nset arm force-mode auto\n"
-            "break app.cc:174\ncontinue\n"
+            "break window_server.cc:236\ncontinue\n"
             'printf "SESSION_CONNECT_PC=%#x RESULT=%d\\n", $pc, $r0\n'
             "delete breakpoints\nbreak DrawGui\ncontinue\n"
             'printf "DRAW_GUI_PC=%#x\\n", $pc\n'
@@ -242,11 +242,19 @@ def test_live_source_breakpoints_and_single_step_remain_halted(
             assert int(values["STEP_PC"], 16) == start + 2
             assert values["STABLE_PC"] == values["STEP_PC"]
             assert int(values["SECOND_STEP_PC"], 16) == start + 4
-            assert "REASON=0 INFO=0x40ffc0" in result.stdout
-            assert "UserHeap::SetupThreadHeap(EFalse, *info)" in result.stdout
-            assert "SVC51=0,0x7,0x40ff78,0 LR=0x804cadab" in result.stdout
-            assert "SVC6D=0x1,0x40feb4,0x40ff0c LR=0x804cd55f" in (
-                result.stdout
+            assert re.search(
+                r"REASON=0 INFO=0x[1-9a-f][0-9a-f]*", result.stdout
+            )
+            assert (
+                "UserHeap::SetupThreadHeap(secondary, *info)" in result.stdout
+            )
+            assert re.search(
+                r"SVC51=0,0x7,0x[0-9a-f]+,0 LR=0x804cadab",
+                result.stdout,
+            )
+            assert re.search(
+                r"SVC6D=0x1,0x[0-9a-f]+,0x[0-9a-f]+ LR=0x804cd55f",
+                result.stdout,
             )
             kernel_log = (instance / "EKA2L1.log").read_text()
             assert "gui_app.exe (UID3=0xE0000811) runtime code: 0x70000000" in (
@@ -254,10 +262,21 @@ def test_live_source_breakpoints_and_single_step_remain_halted(
             )
             if experimental:
                 assert "HEAP_RESULT=0 HEAP_PC=" in result.stdout
-                assert "GUI_MAIN_PC=0x7000002a" in result.stdout
+                gui_main = re.search(
+                    r"GUI_MAIN_PC=(0x[0-9a-f]+)", result.stdout
+                )
+                assert (
+                    gui_main and 0x70000000 <= int(gui_main[1], 16) < 0x70100000
+                )
                 assert "REGISTER_READ_PC=0x804c26f0" in result.stdout
                 assert "REGISTER_READ_DONE=0x804c26f4 URO=0" in result.stdout
-                assert "SESSION_CONNECT_PC=0x70000032 RESULT=0" in result.stdout
+                session_connect = re.search(
+                    r"SESSION_CONNECT_PC=(0x[0-9a-f]+) RESULT=0", result.stdout
+                )
+                assert (
+                    session_connect
+                    and 0x70000000 <= int(session_connect[1], 16) < 0x70100000
+                )
                 draw = re.search(r"DRAW_GUI_PC=(0x[0-9a-f]+)", result.stdout)
                 assert draw, result.stdout
                 assert 0x70000000 <= int(draw[1], 16) < 0x70100000

@@ -5,7 +5,7 @@ and IDE Run/Debug integration, see [Standalone projects](PROJECTS.md).
 
 The root CMake project now includes the prepared ARM GUI alongside native
 utilities and tests. Its compilation database supplies the real ARM triple,
-macros and SDK headers for `examples/gui_app/app.cc`, while tooling sources keep
+macros and SDK headers for `examples/gui_app/window_server.cc`, while tooling sources keep
 native flags. The standalone GUI project remains available.
 The root GUI now defaults to ARMv6 and its CMake file API records an explicit
 `--target=armv6-none-eabi` flag. This lets CLion probe the guest compiler with
@@ -61,9 +61,8 @@ path in its Executable field. No firmware/emulator arguments belong there.
 
 Root Run and Remote Debug configurations are installed in ignored `.idea`
 files. Root **GUI Debug** uses the **Symbian GUI GDB** debug profile; select it
-before guest debugging and restore the host debugger profile for native tests.
-The generator preserves the root's existing current debugger selection because
-this IDE version selects debug profiles at project scope.
+before guest debugging. **GUI Run** uses **GUI Host LLDB**; the IDE remembers
+the choice per run configuration and CMake profile.
 
 | Source | Compilation database |
 | --- | --- |
@@ -113,9 +112,11 @@ reload. This confirms target membership in the actual IDE, beyond terminal
 configure/build and the zero-error clangd check. Select **clion-arm** in the
 GUI project window when editing the app; the repository window now has a combined host/guest target graph.
 
-The remote debugger frontend and detailed editor inspections remain untested.
-The IDE control endpoint and desktop automation were unavailable for
-authenticated UI interaction; their authorization settings were left unchanged.
+The owner has since confirmed a guest source breakpoint stop through the live
+**GUI Debug** frontend. Detailed editor inspections and full stack unwinding
+remain untested. The IDE control endpoint and desktop automation were
+unavailable for authenticated UI interaction; their authorization settings
+were left unchanged.
 Private evidence is in `.symbian/clion-setup/ide-model.log` and `target.json`.
 
 ```sh
@@ -132,8 +133,8 @@ cd /Users/helena/dev/symbian/examples/gui_app
    the local `clion-arm` profile on this prepared machine. On a fresh checkout
    use the shared `symbian-pic` profile. If absent, use **Load CMake Presets**.
    Disable an automatically created host `Debug` profile for this GUI project.
-3. Reload CMake. `gui_app` should appear as a target; `app.cc`, `startup.cc` and
-   `startup.S` now belong to it. The preset selects the actual ARM toolchain,
+3. Reload CMake. `gui_app` should appear as a target; `app.cc`,
+   `window_server.cc`, `startup.cc` and `startup.S` belong to it. The preset selects the actual ARM toolchain,
    C++20, staged SDK includes and the two frozen import proxies.
 
 CLion imports presets as profiles which may initially be disabled. See
@@ -184,12 +185,17 @@ source directory, enabled profile and CMake errors before clearing caches.
 Use the **GUI project window**, opened at `examples/gui_app`, with the
 `clion-arm` CMake profile. Its local run configurations are now installed:
 
-* Select **GUI Run**, then click **Run**. This is a native CLion CMake run
+* Select **GUI Run** and click **Run**. This is a native CLion CMake run
   configuration with an explicit host Python launcher, so no registered Python
   SDK is required. The launcher builds the current source into ELF/E32, copies
   the preserved golden into a fresh instance and runs the counter. The guest's
   Exit button completes a normal exit; IDE Stop reaps only this owned frontend.
-* Select **GUI Debug** and the native debug profile **Symbian GUI GDB**, then
+  Debugging this configuration with **GUI Host LLDB** follows only the macOS
+  launcher into Python. It cannot stop at breakpoints in Symbian application
+  C++. LLDB can pause at `_dyld_start` after the launcher calls `exec`; use
+  **Resume Program** if inspecting the host launcher.
+* To stop at a Symbian application breakpoint, select **GUI Debug** and the
+  native debug profile **Symbian GUI GDB**, then
   click **Debug**. This is CLion Remote Debug with the ARM GDB supervisor as
   its debugger executable and `127.0.0.1:24689` as its target. It builds/publishes
   before connection, starts a fresh halted instance, waits for its listener and
@@ -198,12 +204,13 @@ Use the **GUI project window**, opened at `examples/gui_app`, with the
   is absent, reopen the GUI project to load its local settings.
 
 The IDE version in use enables native Debug Profiles separately from toolchains.
-The installed `.idea/debug-profiles.xml` provides the supervisor there; setting
-only the older Remote Debug configuration's debugger field is insufficient.
-The dedicated GUI project's saved current profile selects Symbian GUI GDB;
-the repository project's existing host-debugger selection is preserved. Run
-and Debug use different run configurations. Debugging GUI Run would debug the
-host launcher rather than the ARM guest.
+The installed `.idea/debug-profiles.xml` provides both debugger profiles there;
+setting only the older Remote Debug configuration's debugger field is
+insufficient. The generated `SelectedDebugProfileService` state assigns
+**GUI Host LLDB** to GUI Run and **Symbian GUI GDB** to GUI Debug while
+preserving selections for other targets. The IDE remembers debugger choices
+per run configuration and CMake profile; changing an obsolete
+`CurrentDebugProfile` component does not change the debugger it launches.
 
 The GDB hook relocates symbols after remote connection using the actual kernel
 mapping and the native parser's link-time code base, before IDE breakpoints.
@@ -228,8 +235,9 @@ cd /Users/helena/dev/symbian
 uv run symbian emu configure-ide
 ```
 
-This installs the GUI configurations and supervisor, preserving other native
-debug profiles. It replaces the generated GUI Run/GUI Debug configurations.
+This installs the GUI configurations, supervisor and host/guest debug profiles,
+preserving other native debug profiles. It replaces the generated GUI Run/GUI
+Debug configurations.
 It saves GUI Run as the dedicated GUI project's default selection. It does not
 configure the SDK inputs or import the CMake profile. The foreground
 Run command can also be exercised outside the IDE:
@@ -241,8 +249,8 @@ uv run python -m symbian.emulator.launch --root /Users/helena/dev/symbian
 Real integration checks exercise rendering/input/normal exit, cancellation and
 child reaping, occupied debug ports, relocated source breakpoints/variables,
 and the GDB machine interface including instruction stepping across Thumb/ARM.
-The actual IDE target model is verified; clicking the IDE toolbar and its
-complete debugger frontend/stack unwinding remain separate, unautomated checks.
+The actual IDE target model and a guest source breakpoint stop in its Debug
+frontend are verified. Full IDE stack unwinding remains a separate check.
 
 ## Keep retained runtime data out of project analysis
 
@@ -314,8 +322,10 @@ continue
 
 The slide is runtime code base minus ELF segment base. Recalculate it for a
 changed mapping; do not assume the fixture's number applies to another build.
-Clear stale breakpoints if CLion placed them before symbol relocation. Source
-breakpoints, variables and instruction stepping pass the standalone ARM GDB
-regression. CLion's debugger frontend and full stack unwinding remain untested.
+The GDB machine-interface regression confirms a breakpoint placed before
+remote connection is relocated and hit after attach. Source breakpoints,
+variables and instruction stepping pass the standalone ARM GDB regression;
+the owner also confirmed a live IDE guest source breakpoint stop. Full IDE
+stack unwinding remains untested.
 The guest ELF is an ARM symbol file; a normal macOS Run configuration cannot
 execute it. The macOS EKA2L1 process and the guest are separate debug targets.

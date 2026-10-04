@@ -8,6 +8,7 @@
 #include <pybind11_abseil/status_casters.h>
 
 #include "python/concurrency_interop.h"
+#include "python/device_bindings.h"
 #include "python/status_interop.h"
 #include "symbian/analysis/elf.h"
 #include "symbian/e32/e32.h"
@@ -148,6 +149,7 @@ symbian::sdk::ProxyInfo InspectProxy(const py::bytes& data) {
 PYBIND11_MODULE(_native, module) {
   symbian::python::InstallPythonSchedulerParkGuard();
   symbian::python::BindConcurrencyInterop(module);
+  symbian::python::BindDevice(module);
   py::google::ImportStatusModule();
   symbian::python::BindStatus(module);
   using symbian::analysis::Elf32Header;
@@ -187,7 +189,7 @@ PYBIND11_MODULE(_native, module) {
       .def_readonly("dll", &ImportBlock::dll)
       .def_readonly("slots", &ImportBlock::slots);
   py::class_<ImageInfo>(module, "E32ImageInfo",
-                        "Experimental E32 metadata; no runtime verdict.")
+                        "E32 application metadata; no runtime verdict.")
       .def_readonly("uid3", &ImageInfo::uid3)
       .def_readonly("header_crc", &ImageInfo::header_crc)
       .def_readonly("flags", &ImageInfo::flags)
@@ -212,7 +214,7 @@ PYBIND11_MODULE(_native, module) {
   module.def("convert_pic_executable", &ConvertPicExecutable, py::arg("data"),
              py::arg("uid3"), "Convert a restricted, retained-relocation ELF.");
   module.def("inspect_e32", &InspectE32, py::arg("data"),
-             "Check the experimental E32 profile, releasing the GIL.");
+             "Check the E32 application profile, releasing the GIL.");
   module.def(
       "convert_imported_executable", &ConvertImportedExecutable,
       py::arg("data"), py::arg("proxies"), py::arg("uid3"),
@@ -242,11 +244,11 @@ PYBIND11_MODULE(_native, module) {
       .def_readonly("files", &PackageInfo::files)
       .def_readonly("application_registered",
                     &PackageInfo::application_registered);
-  module.def(
-      "build_sis", &BuildSis, py::arg("data"), py::arg("uid"), py::arg("name"),
-      py::arg("vendor"), py::arg("executable_name"),
-      py::arg("version") = std::array<int32_t, 3>{1, 0, 0},
-      "Build the canonical unsigned SISX experiment, releasing the GIL.");
+  module.def("build_sis", &BuildSis, py::arg("data"), py::arg("uid"),
+             py::arg("name"), py::arg("vendor"), py::arg("executable_name"),
+             py::arg("version") = std::array<int32_t, 3>{1, 0, 0},
+             "Build the canonical unsigned SISX application package, releasing "
+             "the GIL.");
   module.def("build_registered_sis", &BuildRegisteredSis, py::arg("data"),
              py::arg("registration"), py::arg("caption"), py::arg("uid"),
              py::arg("name"), py::arg("vendor"), py::arg("executable_name"),
@@ -259,9 +261,9 @@ PYBIND11_MODULE(_native, module) {
              "Build a localized application SISX, releasing the GIL.");
   module.def("build_svg_mif", &BuildSvgMif, py::arg("data"),
              "Compile a bounded SVG icon into MIF, releasing the GIL.");
-  module.def(
-      "inspect_sis", &InspectSis, py::arg("data"),
-      "Check the canonical unsigned SISX experiment, releasing the GIL.");
+  module.def("inspect_sis", &InspectSis, py::arg("data"),
+             "Check the canonical unsigned SISX application package, releasing "
+             "the GIL.");
   using symbian::sdk::Export;
   py::class_<Export>(module, "SdkExport")
       .def_readonly("symbol", &Export::symbol)

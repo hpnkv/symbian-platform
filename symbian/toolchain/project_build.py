@@ -1,4 +1,4 @@
-"""CMake file API and Ninja orchestration for ARM experiment projects."""
+"""CMake file API and Ninja orchestration for ARM application projects."""
 
 import json
 import re

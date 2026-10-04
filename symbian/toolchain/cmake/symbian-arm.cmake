@@ -40,6 +40,14 @@ set(CMAKE_C_LINK_EXECUTABLE
     "<CMAKE_LINKER> -m armelf --target1-abs --no-undefined --emit-relocs --build-id=none <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
 
+# Each Mbed TLS export carries one architecture's static archives. Merely
+# making the package discoverable does not add it to an application's link.
+if(SYMBIAN_SDK_PREFIX AND EXISTS
+    "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/mbedtls/lib/cmake/MbedTLS/MbedTLSConfig.cmake")
+  list(PREPEND CMAKE_PREFIX_PATH
+    "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/mbedtls")
+endif()
+
 # Programs run on the host; libraries/headers/packages must come from the target.
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)

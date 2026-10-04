@@ -1,0 +1,16 @@
+#include "mbedtls_common.mmh"
+
+TARGET		  mbedtls_tls13.dll
+TARGETTYPE	  DLL
+UID			 0x1000008d 0x20292B6B
+
+DEFFILE mbedtls.def
+
+SYSTEMINCLUDE \epoc32\include\stdapis
+MACRO SYMBIAN_OE_POSIX_SIGNALS
+MACRO PIPS
+
+LIBRARY libc.lib
+LIBRARY libpthread.lib
+
+MACRO MBEDTLS_SSL_PROTO_TLS1_3

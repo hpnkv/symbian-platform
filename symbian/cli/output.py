@@ -13,6 +13,7 @@ _TITLES = {
     "package": "SIS package",
     "device list": "Connected devices",
     "device info": "USB device information",
+    "device mode": "USB mode observation",
     "device policy": "Device operation policy",
     "device install": "SIS staged for on-device installation",
     "firmware list": "Imported firmware",
@@ -132,6 +133,216 @@ def _device_list(result: dict) -> str:
     return "\n".join(lines)
 
 
+def _device_info(result: dict) -> str:
+    """Present functions before raw interface numbers and probe details."""
+    device = result["device"]
+    name = " ".join(
+        part
+        for part in (device.get("manufacturer"), device.get("product"))
+        if part
+    )
+    lines = [
+        _style("USB device information", "1;36"),
+        _style(name or "Unknown device", "1")
+        + " "
+        + _style(
+            f"[{device['vendor_id']:04x}:{device['product_id']:04x}]",
+            "2",
+        ),
+        f"{_style('Selector:', '36')} {device['selector']}",
+        f"{_style('USB profile:', '36')} {device['interface_profile']}",
+    ]
+    if device.get("identity_anchor"):
+        lines.append(
+            f"{_style('Identity anchor:', '36')} "
+            f"{device['identity_anchor']} "
+            f"({_scalar(device.get('identity_basis'))})"
+        )
+    if device.get("capabilities"):
+        lines.append(
+            f"{_style('Host capabilities:', '36')} "
+            + ", ".join(device["capabilities"])
+        )
+    interfaces = device.get("interfaces", [])
+    lines.append(_style(f"USB interfaces ({len(interfaces)})", "1;36"))
+    for item in interfaces:
+        declared = item.get("declared_name")
+        title = declared or item.get("function", "Unclassified interface")
+        meaning = item.get("function") if declared else None
+        codes = (
+            f"{item['class_code']:02x}/{item['subclass_code']:02x}/"
+            f"{item['protocol_code']:02x}"
+        )
+        title_color = "1;32" if item.get("host_serial_port") else "1"
+        lines.append(
+            "  "
+            + _style(f"{item['number']:>2}", "2")
+            + "  "
+            + _style(title, title_color)
+            + (f" — {meaning}" if meaning and meaning != title else "")
+            + " "
+            + _style(f"[{codes}]", "2")
+        )
+        details = []
+        if item.get("endpoint_count") is not None:
+            count = item["endpoint_count"]
+            details.append(f"{count} endpoint{'s' if count != 1 else ''}")
+        if item.get("alternate_setting") is not None:
+            details.append(f"alternate {item['alternate_setting']}")
+        if item.get("host_driver"):
+            details.append(f"macOS driver {item['host_driver']}")
+        if item.get("host_serial_port"):
+            details.append(
+                "serial port " + _style(item["host_serial_port"], "32")
+            )
+        if details:
+            lines.append("      " + _style("; ".join(details), "2"))
+    for volume in device.get("volumes", []):
+        lines.append(
+            _style("Storage:", "1;36")
+            + f" {volume['mount']} ({volume['disk']}, "
+            f"{_scalar(volume.get('filesystem'))})"
+        )
+    if not device.get("volumes"):
+        lines.append(f"{_style('Mounted storage:', '36')} None")
+    usb_map = result.get("usb_map")
+    if usb_map:
+        lines.append(
+            f"{_style('USB function map:', '1;36')} "
+            + _style(
+                usb_map["state"],
+                "32" if usb_map["state"] == "observed" else "33",
+            )
+        )
+        for union in usb_map.get("cdc_unions", []):
+            slaves = ", ".join(str(value) for value in union["slaves"])
+            lines.append(
+                f"  CDC union: master {union['master']} → subordinate {slaves}"
+            )
+        for interface in usb_map.get("interfaces", []):
+            endpoints = interface["endpoints"]
+            if not endpoints:
+                continue
+            path = ", ".join(
+                f"{endpoint['transfer']} {endpoint['direction']} "
+                f"0x{endpoint['address']:02x}"
+                for endpoint in endpoints
+            )
+            lines.append(
+                f"  Interface {interface['number']} alternate "
+                f"{interface['alternate_setting']}: {path}"
+            )
+    mtp = result.get("mtp_probe")
+    if mtp:
+        lines.append(
+            f"{_style('MTP probe:', '1;36')} "
+            + _style(
+                mtp["state"], "32" if mtp["state"] == "connected" else "33"
+            )
+        )
+        info = mtp.get("device_info", {})
+        if info:
+            lines.append(
+                f"  {info.get('manufacturer', '')} {info.get('model', '')} "
+                f"{info.get('device_version', '')}".strip()
+            )
+        for storage in mtp.get("storage", []):
+            lines.append(
+                f"  Storage 0x{storage['id']:08x}: "
+                f"{storage.get('description', storage.get('error', 'unknown'))}"
+            )
+            if "root_object_count" in storage:
+                lines.append(
+                    f"    Root objects: {storage['root_object_count']} "
+                    f"(showing {len(storage.get('root_objects', []))})"
+                )
+                for item in storage.get("root_objects", []):
+                    lines.append(
+                        "      "
+                        + _style(item.get("name", "unknown"), "32")
+                        + f" [0x{item['handle']:08x}]"
+                    )
+    obex = result.get("obex_probe")
+    if obex:
+        lines.append(
+            f"{_style('PC Suite OBEX:', '1;36')} "
+            + _style(
+                obex["state"], "32" if obex["state"] == "connected" else "33"
+            )
+        )
+        if "response_code" in obex:
+            lines.append(f"  Response: 0x{obex['response_code']:02x}")
+        if "disconnected" in obex:
+            lines.append(f"  Disconnected: {obex['disconnected']}")
+    if result.get("pc_suite_usb_candidate"):
+        lines.append(
+            f"{_style('PC Suite USB layout:', '36')} "
+            + _style("candidate", "33")
+        )
+    probe = result.get("protocol_probe")
+    if probe:
+        state_color = "32" if probe["state"] == "at-ready" else "33"
+        lines.append(
+            f"{_style('AT probe:', '36')} "
+            + _style(probe["state"], state_color)
+        )
+        for key, reply in probe.get("queries", {}).items():
+            if (
+                key in ("manufacturer", "model", "revision")
+                and result.get("reported_identity")
+                and reply.get("value")
+            ):
+                continue
+            label = "AT capabilities" if key == "capabilities" else _label(key)
+            if reply.get("value"):
+                lines.append(
+                    f"  {_style(label + ':', '36')} " f"{reply['value']}"
+                )
+            else:
+                lines.append(
+                    f"  {_style(label + ':', '36')} "
+                    + _style(reply["state"], "33")
+                )
+        for key, reply in probe.get("status_queries", {}).items():
+            label = _label(key)
+            if reply.get("value"):
+                values = ", ".join(
+                    f"{_label(part)} "
+                    + (
+                        "unavailable"
+                        if key == "signal" and value == 99
+                        else str(value)
+                    )
+                    for part, value in reply["value"].items()
+                )
+                lines.append(f"  {_style(label + ':', '36')} {values}")
+            else:
+                lines.append(
+                    f"  {_style(label + ':', '36')} "
+                    + _style(reply["state"], "33")
+                )
+    reported = result.get("reported_identity")
+    if reported:
+        lines.append(_style("Phone-reported identity", "1;36"))
+        for key in (
+            "manufacturer",
+            "model",
+            "firmware_revision",
+            "firmware_date",
+            "rm_code",
+        ):
+            label = "RM code" if key == "rm_code" else _label(key)
+            lines.append(
+                f"  {_style(label + ':', '36')} "
+                f"{_scalar(reported.get(key))}"
+            )
+        lines.append(
+            f"  {_style('Source:', '36')} {reported.get('source', 'Unknown')}"
+        )
+    lines.append(f"{_style('Scope:', '36')} {result['scope']}")
+    return "\n".join(lines)
+
+
 def render(
     response: dict, output_format: str, command: str, action: str = ""
 ) -> str:
@@ -154,6 +365,8 @@ def render(
     result = response.get("result")
     if command == "device" and action == "list":
         return _device_list(result)
+    if command == "device" and action == "info":
+        return _device_info(result)
     if result is None:
         return "Done."
     title = _TITLES.get(" ".join(part for part in (command, action) if part))

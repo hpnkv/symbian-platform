@@ -7,6 +7,32 @@ extern "C" void SymbianRuntimeThreadYield() {
   User::After(TTimeIntervalMicroSeconds32(1000));
 }
 
+#ifdef SYMBIAN_RUNTIME_MIMALLOC
+extern "C" void SymbianRuntimeThreadCacheEnter();
+extern "C" void SymbianRuntimeThreadCacheLeave();
+
+namespace {
+struct ManagedCallbacks {
+  void* state;
+  int (*worker)(void*);
+  int (*parent)(void*);
+};
+
+int ManagedWorker(void* opaque) {
+  auto& callbacks = *static_cast<ManagedCallbacks*>(opaque);
+  SymbianRuntimeThreadCacheEnter();
+  const int result = callbacks.worker(callbacks.state);
+  SymbianRuntimeThreadCacheLeave();
+  return result;
+}
+
+int ManagedParent(void* opaque) {
+  auto& callbacks = *static_cast<ManagedCallbacks*>(opaque);
+  return callbacks.parent(callbacks.state);
+}
+}  // namespace
+#endif
+
 extern "C" int SymbianRuntimeRunThread(void* state, int (*worker)(void*),
                                        int (*parent)(void*)) {
   _LIT(KThreadName, "SdkAtomicProbe");
@@ -39,3 +65,11 @@ extern "C" int SymbianRuntimeRunThread(void* state, int (*worker)(void*),
   }
   return 0;
 }
+
+#ifdef SYMBIAN_RUNTIME_MIMALLOC
+extern "C" int SymbianRuntimeRunManagedThread(void* state, int (*worker)(void*),
+                                              int (*parent)(void*)) {
+  ManagedCallbacks callbacks{state, worker, parent};
+  return SymbianRuntimeRunThread(&callbacks, ManagedWorker, ManagedParent);
+}
+#endif

@@ -1,0 +1,12 @@
+@PACKAGE_INIT@
+if(NOT @SYMBIAN_MBEDTLS_HOST@)
+  if(NOT CMAKE_SYSTEM_NAME STREQUAL "Generic" OR
+     NOT SYMBIAN_TARGET_ARCH STREQUAL "@SYMBIAN_TARGET_ARCH@")
+    message(FATAL_ERROR "This OpenSSL compatibility package requires @SYMBIAN_TARGET_ARCH@ Symbian")
+  endif()
+  if(NOT TARGET Symbian::Runtime)
+    include(SymbianApp)
+  endif()
+endif()
+include("${CMAKE_CURRENT_LIST_DIR}/OpenSSLCompatTargets.cmake")
+check_required_components(OpenSSLCompat)

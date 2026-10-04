@@ -2,15 +2,20 @@
 
 For generated applications, visible SDK installation, relative project settings
 and IDE Run/Debug integration, see [Standalone projects](docs/PROJECTS.md).
+The default SDK export includes opt-in Mbed TLS 1.2/1.3 static packages for
+both ARM profiles; see [TLS in the SDK](docs/MBEDTLS.md).
 
-Build reproducible ARM objects and experimental E32 executables/DLLs on macOS, and
+For a desktop interface to SDK workflows, USB inspection and device protocol
+probes, run `uv run symbian console`. See [Symbian Console](docs/CONSOLE.md).
+
+Build reproducible ARM objects, E32 application executables and DLLs on macOS, and
 preserve existing firmware/ROM material in verifiable host-side archives.
 ARMv6 is the default, with ARMv5T available; firmware profiles include several
 Symbian devices and do not live inside generated projects. The first E32
 experiment passes historical
 image validation, CPU, ROMless installation and emulator process tests.
-Full Belle runtime compatibility remains unverified; a guarded experiment now
-renders and operates the GUI against supplied RM-807 firmware on both backends.
+Full Belle runtime compatibility remains unverified; a guarded GUI application now
+renders and operates against supplied RM-807 firmware on both backends.
 See docs/STATUS.md.
 
 The native touch counter in [examples/gui_app](examples/gui_app) now has a full
@@ -48,7 +53,7 @@ metadata through the native parser, compares bytes, and writes an object, report
 and compilation database. It requires neither an SDK nor a target linker. Set
 clangd's `--compile-commands-dir=.symbian/build` for the object example.
 
-The E32 experiment uses CMake presets and Ninja, and additionally requires an
+The E32 application build uses CMake presets and Ninja, and additionally requires an
 ARM ELF linker (`brew install lld`). It links ARM startup to Thumb C++, preserves
 relocations with LLD, converts in the native core, and compares two CMake
 ELF/E32 builds. The primary tree remains usable for incremental compilation;
@@ -147,7 +152,9 @@ C++20 language, named-module and selected library experiments are documented in
 [docs/CXX20.md](docs/CXX20.md), with maintained examples and loader evidence.
 
 Application guidance: [CXX_CAVEATS.md](CXX_CAVEATS.md). The guest runtime
-subset and tests are in [docs/RUNTIME.md](docs/RUNTIME.md). Runtime cost
+subset and tests are in [docs/RUNTIME.md](docs/RUNTIME.md). The planned
+system, power, display and storage device components are in
+[docs/DEVICE_API.md](docs/DEVICE_API.md). Runtime cost
 hypotheses and measurement gates are in
 [PERFORMANCE_CONSIDERATIONS.md](PERFORMANCE_CONSIDERATIONS.md); the one-install
 distribution design is in [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md).

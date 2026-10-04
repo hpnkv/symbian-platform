@@ -1,0 +1,67 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 28,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "symbian-debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/symbian-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "SYMBIAN_TARGET_ARCH": "armv6"
+      }
+    },
+    {
+      "name": "symbian-armv5t",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/symbian-armv5t",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "SYMBIAN_TARGET_ARCH": "armv5t"
+      }
+    },
+    {
+      "name": "host-debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/host-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "SYMBIAN_MBEDTLS_HOST": "ON",
+        "SYMBIAN_MBEDTLS_TESTS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "symbian-debug",
+      "configurePreset": "symbian-debug",
+      "jobs": 6
+    },
+    {
+      "name": "symbian-armv5t",
+      "configurePreset": "symbian-armv5t",
+      "jobs": 6
+    },
+    {
+      "name": "host-debug",
+      "configurePreset": "host-debug",
+      "jobs": 6
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "host-debug",
+      "configurePreset": "host-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

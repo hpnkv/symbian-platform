@@ -226,6 +226,11 @@ sessions show the Qt window without activation and makes the OpenGL context
 order it behind the current app. On macOS the OpenGL window uses managed
 desktop-Space behavior and excludes full-screen auxiliary display and tiling.
 Initial activation is suppressed without blocking later intentional focus.
+Background macOS processes cannot reliably expose Qt's native application
+menu. The same patch keeps the complete File, Emulation, View, Control,
+Bluetooth and Help menus inside SDK-owned background windows, including IDE
+Debug and automated GUI tests. Foreground console and ordinary `.app` launches
+retain the native macOS menu.
 Actual full-screen-Space placement awaits a nondisruptive visual check. The SDK
 launcher also executes a private
 per-session symlink outside the `.app` bundle; that prevents macOS bundle

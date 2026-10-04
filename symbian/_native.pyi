@@ -66,7 +66,7 @@ class E32ExportSlot:
 
 class E32ImageInfo:
     """
-    Experimental E32 metadata; no runtime verdict.
+    E32 application metadata; no runtime verdict.
     """
 
     @property
@@ -345,7 +345,7 @@ def build_sis(
     ] = [1, 0, 0],
 ) -> bytes:
     """
-    Build the canonical unsigned SISX experiment, releasing the GIL.
+    Build the canonical unsigned SISX application package, releasing the GIL.
     """
 
 def build_svg_mif(data: bytes) -> bytes:
@@ -391,7 +391,7 @@ def generate_import_proxy(
 
 def inspect_e32(data: bytes) -> E32ImageInfo:
     """
-    Check the experimental E32 profile, releasing the GIL.
+    Check the E32 application profile, releasing the GIL.
     """
 
 def inspect_elf32(data: bytes) -> Elf32Header:
@@ -406,7 +406,7 @@ def inspect_import_proxy(data: bytes) -> ProxyInfo:
 
 def inspect_sis(data: bytes) -> SisPackageInfo:
     """
-    Check the canonical unsigned SISX experiment, releasing the GIL.
+    Check the canonical unsigned SISX application package, releasing the GIL.
     """
 
 def parse_def(data: bytes) -> list[SdkExport]:

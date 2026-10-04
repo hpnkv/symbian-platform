@@ -12,9 +12,11 @@
 #include <utility>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "symbian/concurrency/event_mailbox.h"
 #include "symbian/concurrency/property_watch.h"
 #include "symbian/concurrency/timer_pump.h"
+#include "symbian/concurrency/worker_executor.h"
 #include "thread/fiber.h"
 
 namespace symbian::concurrency {
@@ -98,6 +100,20 @@ class EventExecutor {
 
   thread::Scheduler& fibers() { return scheduler_; }
 
+  // Lazily create one shared worker for explicit compute placement. The
+  // event thread calls this during setup; ordinary DispatchReady turns never
+  // create an OS thread or offload callbacks implicitly.
+  absl::StatusOr<WorkerExecutor*> workers() {
+    std::lock_guard lock(dispatch_mu_);
+    if (!opened_ || closed_) {
+      return absl::FailedPreconditionError("Event executor is closed");
+    }
+    if (!worker_) {
+      worker_ = std::make_unique<WorkerExecutor>();
+    }
+    return worker_.get();
+  }
+
   // Bound each source independently. Call again when HasReady() is true;
   // native and mailbox adapters resignal when a turn leaves work behind.
   absl::Status DispatchReady(std::size_t budget = 64) {
@@ -144,6 +160,9 @@ class EventExecutor {
     if (property_) {
       property_->Close();
       property_.reset();
+    }
+    if (worker_) {
+      worker_->Close();
     }
     if (fiber_alarm_.valid()) {
       fiber_alarm_.Cancel();
@@ -212,6 +231,7 @@ class EventExecutor {
   std::mutex dispatch_mu_;
   std::shared_ptr<EventMailbox> mailbox_;
   std::unique_ptr<PropertyWatch> property_;
+  std::unique_ptr<WorkerExecutor> worker_;
   Task fiber_alarm_;
   std::chrono::steady_clock::time_point fiber_deadline_ =
       std::chrono::steady_clock::time_point::max();

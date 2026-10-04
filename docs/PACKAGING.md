@@ -1,4 +1,4 @@
-# Experimental SISX packages
+# Packaging E32 applications as SISX
 
 The native writer packages one validated E32 executable, including eager imports. The output
 is an unsigned SISX-format `.sis` file for ordinary installation, with separate

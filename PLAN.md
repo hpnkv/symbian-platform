@@ -1551,6 +1551,24 @@ remain open gates.
 
 The emulator remains the default.
 
+The proposed resident development service follows the migration gate in
+[`DEVELOPMENT_AGENT.md`](DEVELOPMENT_AGENT.md): prepare and fault-test its
+minimal authenticated, read-only service in disposable emulator instances.
+The default SDK now builds the vendored Mbed TLS port for both ARM profiles as
+opt-in static targets and includes its source tree. A per-project CMake CA
+bundle setting packages only selected roots and records their digest; an unset
+project gets no bundled roots. Phone-side entropy, UTC, certificate, socket
+and authenticated TLS 1.2/1.3 handshake gates precede Wi-Fi service
+availability. See [docs/MBEDTLS.md](docs/MBEDTLS.md). After
+those checks,
+verify its ARM image and ordinary SIS; then manually install it on the
+development phone with an independently held offline baseline. Prove local
+disable/uninstall, startup, permissions, idle cost and connection-loss
+behavior on that handset before enabling boot start or adding file transfer,
+deployment and debugging. An emulator pass or ELF build alone does not
+authorize or establish this phone result. Keep the preservation phone out of
+the first service installation.
+
 The first 2026-10-02 slice has a serial-redacted USB/volume inventory and an
 SDK-build/native-SIS-checked mass-storage staging command. It reports
 `awaiting-on-device-install`; a storage copy does not prove installer acceptance

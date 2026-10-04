@@ -1,8 +1,48 @@
 include(SymbianPic)
 get_filename_component(SYMBIAN_SDK_PREFIX
   "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+set(SYMBIAN_CA_BUNDLE "" CACHE STRING
+    "Project PEM CA bundle; empty means no packaged trust roots")
+if(SYMBIAN_CA_BUNDLE)
+  if(IS_ABSOLUTE "${SYMBIAN_CA_BUNDLE}")
+    set(symbian_ca_candidate "${SYMBIAN_CA_BUNDLE}")
+  else()
+    set(symbian_ca_candidate
+      "${CMAKE_SOURCE_DIR}/${SYMBIAN_CA_BUNDLE}")
+  endif()
+  file(REAL_PATH "${symbian_ca_candidate}" symbian_ca_bundle)
+  cmake_path(IS_PREFIX CMAKE_SOURCE_DIR "${symbian_ca_bundle}" NORMALIZE
+    symbian_ca_inside_project)
+  if(NOT symbian_ca_inside_project OR NOT EXISTS "${symbian_ca_bundle}" OR
+     IS_DIRECTORY "${symbian_ca_bundle}")
+    message(FATAL_ERROR "SYMBIAN_CA_BUNDLE must name a project PEM file")
+  endif()
+  file(SIZE "${symbian_ca_bundle}" symbian_ca_size)
+  if(symbian_ca_size EQUAL 0 OR symbian_ca_size GREATER 262144)
+    message(FATAL_ERROR "SYMBIAN_CA_BUNDLE must be 1..262144 bytes")
+  endif()
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${symbian_ca_bundle}")
+  file(SHA256 "${symbian_ca_bundle}" SYMBIAN_CA_BUNDLE_SHA256)
+  set(SYMBIAN_CA_BUNDLE "${symbian_ca_bundle}" CACHE STRING
+      "Project PEM CA bundle; empty means no packaged trust roots" FORCE)
+  file(STRINGS "${CMAKE_SOURCE_DIR}/symbian.toml" symbian_executable_line
+    REGEX "^executable_name[ \t]*=[ \t]*\"[A-Za-z][A-Za-z0-9_-]*\\.exe\"[ \t]*$")
+  if(NOT symbian_executable_line OR
+     NOT symbian_executable_line MATCHES "\"([A-Za-z][A-Za-z0-9_-]*)\\.exe\"")
+    message(FATAL_ERROR "SYMBIAN_CA_BUNDLE needs symbian.toml executable_name")
+  endif()
+  set(SYMBIAN_CA_BUNDLE_PACKAGED_PATH
+    "\\resource\\apps\\${CMAKE_MATCH_1}_ca.pem")
+  message(STATUS "Project CA bundle SHA-256: ${SYMBIAN_CA_BUNDLE_SHA256}")
+endif()
 if(NOT DEFINED SYMBIAN_TARGET_ARCH)
   set(SYMBIAN_TARGET_ARCH armv6)
+endif()
+if(EXISTS
+    "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/mbedtls/lib/cmake/MbedTLS/MbedTLSConfig.cmake")
+  list(PREPEND CMAKE_PREFIX_PATH
+    "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/mbedtls")
 endif()
 set(runtime_archive "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_guest_runtime.a")
 if(NOT EXISTS "${runtime_archive}")
@@ -24,7 +64,8 @@ target_include_directories(SymbianRuntime SYSTEM INTERFACE
   "${SYMBIAN_SDK_PREFIX}/include/posix4")
 target_compile_definitions(SymbianRuntime INTERFACE
   _UNICODE __GCC32__ __GCCV3__ __EABI__ __EPOC32__ __MARM__ __MARM_ARMV5__
-  __SYMBIAN32__ __LONG_LONG_SUPPORTED _POSIX_C_SOURCE=200112L)
+  __SYMBIAN32__ __LONG_LONG_SUPPORTED _POSIX_C_SOURCE=200112L
+  SYMBIAN_RUNTIME_MIMALLOC=1)
 target_compile_options(SymbianRuntime INTERFACE
   -fno-pic -fshort-wchar -fvisibility=hidden -fno-exceptions
   $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
@@ -47,6 +88,8 @@ if(optional_runtime_proxies)
   target_link_libraries(SymbianRuntime INTERFACE
     --as-needed ${optional_runtime_proxies} --no-as-needed)
 endif()
+target_link_libraries(SymbianRuntime INTERFACE
+  "${SYMBIAN_SDK_PREFIX}/proxies/libpthread/libpthread.dso")
 
 # Uses the ROM's 64-bit atomic entry points. This archive replaces the
 # default runtime archive; select it only with a firmware whose EUSER exports
@@ -61,6 +104,9 @@ if(EXISTS "${native64_archive}" AND EXISTS "${native64_proxy}")
   foreach(property INTERFACE_INCLUDE_DIRECTORIES
       INTERFACE_COMPILE_DEFINITIONS INTERFACE_COMPILE_OPTIONS)
     get_target_property(value SymbianRuntime ${property})
+    if(property STREQUAL "INTERFACE_COMPILE_DEFINITIONS")
+      list(REMOVE_ITEM value SYMBIAN_RUNTIME_MIMALLOC=1)
+    endif()
     set_target_properties(SymbianNativeAtomics64 PROPERTIES ${property} "${value}")
   endforeach()
   target_link_libraries(SymbianNativeAtomics64 INTERFACE
@@ -93,7 +139,7 @@ if(EXISTS "${stream_archive}" AND EXISTS "${stream_libc_proxy}")
   target_compile_definitions(SymbianStreams INTERFACE
     _UNICODE __GCC32__ __GCCV3__ __EABI__ __EPOC32__ __MARM__ __MARM_ARMV5__
     __SYMBIAN32__ __LONG_LONG_SUPPORTED _POSIX_C_SOURCE=200112L
-    _LIBCPP_PROVIDES_DEFAULT_RUNE_TABLE)
+    _LIBCPP_PROVIDES_DEFAULT_RUNE_TABLE SYMBIAN_RUNTIME_MIMALLOC=1)
   target_compile_options(SymbianStreams INTERFACE
     -fno-pic -fshort-wchar -fvisibility=hidden -fno-exceptions
     $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
@@ -111,6 +157,40 @@ endif()
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/SymbianAbseil.cmake")
   include("${CMAKE_CURRENT_LIST_DIR}/SymbianAbseil.cmake")
 endif()
+
+# Each verified device capability is a separate opt-in archive. Absent
+# archives create no target, so a project cannot accidentally link a planned
+# but unimplemented device facility.
+foreach(component IN ITEMS system connectivity power media display sensors
+                           camera storage)
+  set(component_archive
+    "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_api_${component}.a")
+  if(EXISTS "${component_archive}" AND TARGET Symbian::AbseilStatusOr)
+    string(SUBSTRING "${component}" 0 1 component_initial)
+    string(TOUPPER "${component_initial}" component_initial)
+    string(SUBSTRING "${component}" 1 -1 component_rest)
+    set(component_name "${component_initial}${component_rest}")
+    set(component_target "SymbianApi${component_name}")
+    add_library(${component_target} STATIC IMPORTED)
+    set_target_properties(${component_target} PROPERTIES
+      IMPORTED_LOCATION "${component_archive}")
+    target_link_libraries(${component_target} INTERFACE
+      Symbian::AbseilStatusOr)
+    if(component STREQUAL "power" OR component STREQUAL "display")
+      target_link_libraries(${component_target} INTERFACE
+        "${SYMBIAN_SDK_PREFIX}/proxies/hal/hal.dso")
+    endif()
+    if(component STREQUAL "storage")
+      target_link_libraries(${component_target} INTERFACE
+        "${SYMBIAN_SDK_PREFIX}/proxies/efsrv/efsrv.dso")
+    endif()
+    if(component STREQUAL "camera")
+      target_link_libraries(${component_target} INTERFACE
+        "${SYMBIAN_SDK_PREFIX}/proxies/ecam/ecam.dso")
+    endif()
+    add_library(Symbian::${component_name} ALIAS ${component_target})
+  endif()
+endforeach()
 
 set(thread_proxy "${SYMBIAN_SDK_PREFIX}/proxies/libpthread/libpthread.dso")
 set(cxxabi_proxy "${SYMBIAN_SDK_PREFIX}/proxies/drtaeabi/drtaeabi.dso")

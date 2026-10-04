@@ -13,6 +13,9 @@ dependencies = [
     "fastapi>=0.115,<1",
     "httpx>=0.28,<1",
     "msgpack>=1,<2",
+    "pygments>=2.18,<3",
+    "pywebview==6.2.1",
+    "pywebview[pyside6]==6.2.1 ; sys_platform == 'linux'",
 ]
 
 [project.scripts]

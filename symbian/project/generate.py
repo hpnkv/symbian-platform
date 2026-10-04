@@ -304,6 +304,7 @@ if(SYMBIAN_ENABLE_TIMER_TASKS)
 endif()
 target_link_options({name} PRIVATE --gc-sections)
 target_compile_options({name} PRIVATE -g -gdwarf-4
+  -fdebug-compilation-dir=/symbian-build/app
   -fdebug-prefix-map=${{CMAKE_BINARY_DIR}}=/symbian-build/app
   $<$<COMPILE_LANGUAGE:CXX>:-O0>)
 """

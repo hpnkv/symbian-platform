@@ -7,11 +7,75 @@ import tempfile
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from symbian.device.connection import select
 from symbian.packaging import inspect_package, package
 from symbian.status import Code, StatusError
+
+
+class PackageFile(BaseModel):
+    """One checked file entry from a native SIS package."""
+
+    model_config = ConfigDict(frozen=True)
+
+    target: str = Field(description="SIS target path")
+    size: int = Field(description="Uncompressed file size")
+    sha1: str = Field(description="File content digest")
+
+
+class PackageMetadata(BaseModel):
+    """Checked SIS metadata returned by the native package inspector."""
+
+    model_config = ConfigDict(frozen=True)
+
+    uid: int = Field(description="Application UID")
+    name: str = Field(
+        default="",
+        description="Application name",
+        exclude_if=lambda value: not value,
+    )
+    vendor: str = Field(
+        default="",
+        description="Package vendor",
+        exclude_if=lambda value: not value,
+    )
+    executable_name: str = Field(description="Executable filename")
+    version: tuple[int, int, int] | None = Field(
+        default=None,
+        description="Package version",
+        exclude_if=lambda value: value is None,
+    )
+    executable_uid: int | None = Field(
+        default=None,
+        description="Executable UID",
+        exclude_if=lambda value: value is None,
+    )
+    executable_size: int | None = Field(
+        default=None,
+        description="Executable byte count",
+        exclude_if=lambda value: value is None,
+    )
+    executable_sha1: str = Field(
+        default="",
+        description="Executable digest",
+        exclude_if=lambda value: not value,
+    )
+    target: str = Field(
+        default="",
+        description="Installation target path",
+        exclude_if=lambda value: not value,
+    )
+    application_registered: bool = Field(
+        default=False,
+        description="Application menu registration present",
+        exclude_if=lambda value: value is False,
+    )
+    files: tuple[PackageFile, ...] = Field(
+        default=(),
+        description="Checked package files",
+        exclude_if=lambda value: not value,
+    )
 
 
 class InstallResult(BaseModel):
@@ -19,20 +83,40 @@ class InstallResult(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    schema_name: Literal["symbian.device-install/v1"]
-    state: Literal["awaiting-on-device-install"]
-    transport: Literal["usb-mass-storage"]
-    device: str
-    volume: str
-    staged_path: Path
-    sha256: str
-    copied: bool
-    package: dict
-    on_device_verified: bool = False
-    next_action: str
-    build_artifact: Path | None = None
-    host_package: Path | None = None
-    build_sha256: str | None = None
+    schema_name: Literal["symbian.device-install/v1"] = Field(
+        description="Result schema"
+    )
+    state: Literal["awaiting-on-device-install"] = Field(
+        description="Human installation state"
+    )
+    transport: Literal["usb-mass-storage"] = Field(
+        description="Staging transport"
+    )
+    device: str = Field(description="Selected device token")
+    volume: str = Field(description="Selected host disk")
+    staged_path: Path = Field(description="Copied SIS path")
+    sha256: str = Field(description="Checked SIS digest")
+    copied: bool = Field(description="File copy completed")
+    package: PackageMetadata = Field(description="Checked package metadata")
+    on_device_verified: bool = Field(
+        default=False, description="On-phone verification state"
+    )
+    next_action: str = Field(description="Required human action")
+    build_artifact: Path | None = Field(
+        default=None,
+        description="Built executable path",
+        exclude_if=lambda value: value is None,
+    )
+    host_package: Path | None = Field(
+        default=None,
+        description="Host SIS path",
+        exclude_if=lambda value: value is None,
+    )
+    build_sha256: str | None = Field(
+        default=None,
+        description="Built executable digest",
+        exclude_if=lambda value: value is None,
+    )
 
 
 def _digest(path: Path) -> str:

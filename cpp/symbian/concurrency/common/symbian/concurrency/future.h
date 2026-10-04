@@ -26,6 +26,10 @@
 
 namespace symbian::concurrency {
 
+#if defined(__SYMBIAN32__)
+class EventExecutor;
+#endif
+
 struct Unit {
   friend bool operator==(Unit, Unit) = default;
 };
@@ -231,6 +235,14 @@ class Future {
     callback(*ready);
   }
 
+  // Guest-only opt-in placement. Include event_executor.h at the call site.
+  // Then() and OnReady() keep their inline A11 behavior.
+#if defined(__SYMBIAN32__)
+  template <typename Fn>
+  auto ThenOnWorker(EventExecutor& executor, Fn transform) const -> Future<
+      typename std::invoke_result_t<Fn, const absl::StatusOr<T>&>::value_type>;
+#endif
+
  private:
   explicit Future(std::shared_ptr<internal::FutureState<T>> state)
       : state_(std::move(state)) {}
@@ -270,6 +282,12 @@ auto Then(const Future<T>& future, Fn transform) -> Future<
     typename std::invoke_result_t<Fn, const absl::StatusOr<T>&>::value_type> {
   using U =
       typename std::invoke_result_t<Fn, const absl::StatusOr<T>&>::value_type;
+  if (auto ready = future.ResultIfReady()) {
+    Promise<U> promise;
+    Future<U> continued = promise.future();
+    promise.SetResult(transform(*ready));
+    return continued;
+  }
   auto promise = std::make_shared<Promise<U>>();
   Future<U> continued = promise->future();
   promise->SetCancellationCallback([future] { future.Cancel(); });

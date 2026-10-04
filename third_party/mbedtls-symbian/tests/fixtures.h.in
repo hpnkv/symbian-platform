@@ -1,0 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
+#pragma once
+constexpr char kTestCertificate[] = R"pem(@test_certificate@)pem";
+constexpr char kTestPrivateKey[] = R"pem(@test_key@)pem";

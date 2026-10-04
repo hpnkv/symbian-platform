@@ -72,7 +72,7 @@ def _build_runtime_variant(
     compiler: Path,
     linker: Path,
     *,
-    profile: Literal["streams", "native_atomic64"],
+    profile: Literal["default", "streams", "native_atomic64"],
 ) -> tuple[bytes, bytes]:
     """Builds a complete alternate runtime twice in isolated CMake trees."""
     cmake = shutil.which("cmake")
@@ -109,6 +109,8 @@ def _build_runtime_variant(
                     + ("ON" if profile == "streams" else "OFF"),
                     "-DSYMBIAN_RUNTIME_NATIVE_ATOMIC64="
                     + ("ON" if profile == "native_atomic64" else "OFF"),
+                    "-DSYMBIAN_RUNTIME_MIMALLOC="
+                    + ("OFF" if profile == "native_atomic64" else "ON"),
                     "-DSYMBIAN_IMPORT_PROXIES="
                     + str(workspace / ".symbian/runtime-sdk/euser/euser.dso"),
                     "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
@@ -264,6 +266,170 @@ def _build_abseil(
     return archives_by_architecture, patch_digests
 
 
+def _export_mbedtls_source(source: Path, output: Path) -> dict[str, object]:
+    """Copy the vendored port sources without Git, caches or build products."""
+    excluded = {
+        ".git",
+        ".idea",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".symbian",
+        "__pycache__",
+        "build",
+        "install",
+    }
+    relative_paths = sorted(
+        path.relative_to(source)
+        for path in source.rglob("*")
+        if path.is_file()
+        and not any(part in excluded for part in path.relative_to(source).parts)
+    )
+    destination = output / "source/mbedtls-symbian"
+    digest = hashlib.sha256()
+    for relative in relative_paths:
+        original = source / relative
+        if not original.is_file() or not original.resolve().is_relative_to(
+            source
+        ):
+            raise StatusError(
+                Code.FAILED_PRECONDITION,
+                "Mbed TLS source input is missing or escapes vendor tree: "
+                f"{relative}",
+            )
+        target = destination / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(original, target)
+        content = target.read_bytes()
+        if content != original.read_bytes():
+            raise StatusError(
+                Code.ABORTED, "Mbed TLS source changed during export"
+            )
+        digest.update(relative.as_posix().encode("utf-8"))
+        digest.update(hashlib.sha256(content).digest())
+    return {
+        "sdk_path": "source/mbedtls-symbian",
+        "file_count": len(relative_paths),
+        "sha256": digest.hexdigest(),
+    }
+
+
+def _build_mbedtls(
+    workspace: Path,
+    output: Path,
+    compiler: Path,
+    linker: Path,
+    archive_tools: dict[str, Path],
+) -> dict[str, object]:
+    """Installs architecture-specific static TLS packages into the SDK.
+
+    The vendored port has its own CMake targets. An application links TLS only
+    when it explicitly requests a target.
+    """
+    source = (workspace / "third_party/mbedtls-symbian").resolve()
+    if (
+        not (source / "CMakeLists.txt").is_file()
+        or not (source / "include/symbian_mbedtls/config.h").is_file()
+    ):
+        raise StatusError(
+            Code.NOT_FOUND,
+            "Default SDK requires vendored third_party/mbedtls-symbian",
+        )
+    cmake_tool = shutil.which("cmake")
+    ninja_tool = shutil.which("ninja")
+    if cmake_tool is None or ninja_tool is None:
+        raise StatusError(Code.NOT_FOUND, "CMake and Ninja are required")
+    archives = {}
+    for architecture in ("armv5t", "armv6"):
+        with tempfile.TemporaryDirectory(
+            prefix=f"symbian-mbedtls-{architecture}-"
+        ) as temporary:
+            build = Path(temporary) / "build"
+            package = output / "lib" / architecture / "mbedtls"
+            run(
+                [
+                    cmake_tool,
+                    "-S",
+                    str(source),
+                    "-B",
+                    str(build),
+                    "-G",
+                    "Ninja",
+                    f"-DSYMBIAN_SDK_PREFIX={output}",
+                    f"-DSYMBIAN_TARGET_ARCH={architecture}",
+                    f"-DCMAKE_C_COMPILER={compiler.parent / 'clang'}",
+                    f"-DCMAKE_CXX_COMPILER={compiler}",
+                    f"-DCMAKE_LINKER={linker}",
+                    f"-DCMAKE_AR={archive_tools['llvm-ar']}",
+                    f"-DCMAKE_RANLIB={archive_tools['llvm-ranlib']}",
+                    f"-DCMAKE_MAKE_PROGRAM={ninja_tool}",
+                    "-DCMAKE_BUILD_TYPE=Release",
+                    "-DSYMBIAN_MBEDTLS_TLS13=ON",
+                    "-DSYMBIAN_MBEDTLS_OPENSSL_COMPAT=OFF",
+                    "-DSYMBIAN_MBEDTLS_TESTS=OFF",
+                    "-DSYMBIAN_MBEDTLS_GUEST_PROBE=OFF",
+                    "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+                ],
+                cwd=workspace,
+                timeout=120,
+            )
+            run(
+                [cmake_tool, "--build", str(build), "-j", "6"],
+                cwd=workspace,
+                timeout=600,
+            )
+            run(
+                [cmake_tool, "--install", str(build), "--prefix", str(package)],
+                cwd=workspace,
+                timeout=120,
+            )
+            names = ("libmbedcrypto.a", "libmbedx509.a", "libmbedtls.a")
+            if not all((package / "lib" / name).is_file() for name in names):
+                raise StatusError(
+                    Code.DATA_LOSS,
+                    f"Incomplete Mbed TLS package for {architecture}",
+                )
+            archives[architecture] = {
+                name: hashlib.sha256(
+                    (package / "lib" / name).read_bytes()
+                ).hexdigest()
+                for name in names
+            }
+    # Keep the public C headers at the ordinary SDK include root as well as in
+    # the relocatable CMake packages for direct, non-CMake consumers.
+    shutil.copytree(
+        output / "lib/armv6/mbedtls/include",
+        output / "include",
+        dirs_exist_ok=True,
+    )
+    source_inputs = [source / "CMakeLists.txt"]
+    for directory in ("cmake", "include", "library"):
+        source_inputs.extend(
+            path
+            for path in (source / directory).rglob("*")
+            if path.is_file()
+            and (
+                path.suffix in (".c", ".h", ".cmake", ".in")
+                or path.name == "CMakeLists.txt"
+            )
+        )
+    source_digest = hashlib.sha256()
+    for path in sorted(source_inputs):
+        source_digest.update(str(path.relative_to(source)).encode())
+        source_digest.update(hashlib.sha256(path.read_bytes()).digest())
+    source_export = _export_mbedtls_source(source, output)
+    upstream = json.loads((source / "SOURCE_PROVENANCE.json").read_text())
+    return {
+        "source": str(source),
+        "port_revision": upstream["port_revision"],
+        "source_input_sha256": source_digest.hexdigest(),
+        "source_export": source_export,
+        "version": "3.4.1",
+        "protocols": ["TLS 1.2", "TLS 1.3"],
+        "guest_tls_connection_verified": False,
+        "archives": archives,
+    }
+
+
 def prepare(workspace: Path, output: Path) -> AppSdk:
     """Exports target headers/runtime/proxies without source-tree symlinks.
 
@@ -278,7 +444,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
     workspace, output = workspace.resolve(), output.absolute()
     if any(
         output.resolve().is_relative_to(workspace / name)
-        for name in ("research", "cpp", "symbian", "examples")
+        for name in ("research", "cpp", "symbian", "examples", "third_party")
     ):
         raise StatusError(
             Code.INVALID_ARGUMENT, "SDK output overlaps source inputs"
@@ -294,6 +460,21 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
     if not c_compiler.is_file():
         raise StatusError(
             Code.NOT_FOUND, f"Matching LLVM C compiler: {c_compiler}"
+        )
+    mimalloc = workspace / "research/upstream/mimalloc"
+    mimalloc_revision = "d4881d338125e1cb7c47ba4cfb398d6f7c0c8d45"
+    if not (mimalloc / "include/mimalloc.h").is_file():
+        raise StatusError(
+            Code.NOT_FOUND,
+            f"Prepare the pinned mimalloc checkout at {mimalloc}",
+        )
+    if run(["git", "rev-parse", "HEAD"], cwd=mimalloc) != mimalloc_revision:
+        raise StatusError(
+            Code.FAILED_PRECONDITION, "Mimalloc revision mismatch"
+        )
+    if run(["git", "status", "--porcelain"], cwd=mimalloc):
+        raise StatusError(
+            Code.FAILED_PRECONDITION, "Mimalloc source checkout is modified"
         )
     archive_tools = {}
     for name in ("llvm-ar", "llvm-ranlib"):
@@ -317,6 +498,12 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             architecture=architecture,
         )
         runtimes[architecture] = runtime
+    default_runtimes = {
+        architecture: _build_runtime_variant(
+            workspace, architecture, compiler, linker, profile="default"
+        )
+        for architecture in ("armv5t", "armv6")
+    }
     stream_runtimes = {
         architecture: _build_runtime_variant(
             workspace, architecture, compiler, linker, profile="streams"
@@ -344,6 +531,36 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
         shutil.copytree(
             workspace / ".symbian/gui-sdk/include", output / "include/platform"
         )
+        for header in ("hal.h", "hal_data.h"):
+            shutil.copyfile(
+                workspace
+                / "research/upstream/kernelhwsrv/halservices/hal/inc"
+                / header,
+                output / "include/platform" / header,
+            )
+        camera_headers = (
+            "ECam.h",
+            "ecamdef.h",
+            "ecamconst.h",
+            "ECamUids.hrh",
+            "ecamuidsconst.hrh",
+            "ecamuidsdef.hrh",
+        )
+        camera_source = (
+            workspace
+            / "research/upstream/mm/imagingandcamerafws/camerafw/Include"
+        )
+        for header in camera_headers:
+            shutil.copyfile(
+                camera_source / header,
+                output / "include/platform" / header,
+            )
+        # ECam.h names this include in lower case; preserve it on case-sensitive
+        # SDK hosts as well as the upstream-cased original file.
+        shutil.copyfile(
+            camera_source / "ECamUids.hrh",
+            output / "include/platform/ecamuids.hrh",
+        )
         shutil.copyfile(
             workspace
             / "research/upstream/appsupport/appfw/apparchitecture/inc"
@@ -360,6 +577,9 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
         shutil.copytree(openc / "libc/inc", output / "include/libc")
         shutil.copytree(openc / "libpthread/inc", output / "include/pthread")
         shutil.copytree(openc / "include/posix4", output / "include/posix4")
+        shutil.copytree(
+            mimalloc / "include", output / "include", dirs_exist_ok=True
+        )
         startup = output / "share/symbian/runtime"
         startup.mkdir(parents=True)
         source_startup = workspace / "examples/runtime_probe"
@@ -384,6 +604,11 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
         )
         shutil.copytree(
             workspace / "cpp/symbian/concurrency/guest/symbian",
+            output / "include/symbian",
+            dirs_exist_ok=True,
+        )
+        shutil.copytree(
+            workspace / "cpp/symbian/api/include/symbian",
             output / "include/symbian",
             dirs_exist_ok=True,
         )
@@ -444,9 +669,8 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
         for architecture, built in runtimes.items():
             library = output / "lib" / architecture
             library.mkdir()
-            shutil.copyfile(
-                built / "cmake/runtime/libsymbian_guest_runtime.a",
-                library / "libsymbian_guest_runtime.a",
+            library.joinpath("libsymbian_guest_runtime.a").write_bytes(
+                default_runtimes[architecture][0]
             )
             library.joinpath("libsymbian_guest_runtime_streams.a").write_bytes(
                 stream_runtimes[architecture][0]
@@ -467,6 +691,13 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                     Code.DATA_LOSS,
                     "Native atomic runtime configuration differs from default",
                 )
+            if (
+                default_runtimes[architecture][1]
+                != (config / "__config_site").read_bytes()
+            ):
+                raise StatusError(
+                    Code.DATA_LOSS, "Default runtime configurations differ"
+                )
             for name in ("__config_site", "__assertion_handler"):
                 if (built / "cmake/runtime/include" / name).read_bytes() != (
                     config / name
@@ -475,14 +706,15 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                         Code.DATA_LOSS,
                         "Target runtime header configurations differ",
                     )
-        shutil.copyfile(
-            runtime / "cmake/runtime/libsymbian_guest_runtime.a",
-            output / "lib/libsymbian_guest_runtime.a",
+        (output / "lib/libsymbian_guest_runtime.a").write_bytes(
+            default_runtimes["armv5t"][0]
         )
         gui = json.loads(
             (workspace / "research/gui_app/source-profile.json").read_text()
         )
         euser = gui["imports"]["euser.dll"]["symbols"] + [
+            "_ZN10RAllocator4OpenEv",
+            "_ZN10RAllocator5CloseEv",
             "_ZN4User5AllocEi",
             "_ZN4User4FreeEPv",
             "_ZN4User9AllocatorEv",
@@ -493,6 +725,9 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             "_ZN5TTime8HomeTimeEv",
             "_ZNK5TTime8DateTimeEv",
             "_ZN7TPtrC16C1EPKti",
+            "_ZN6TPtrC8C1EPKhi",
+            "_ZNK7TDesC163PtrEv",
+            "_ZN5TPtr8C1EPhii",
             "_ZN8RLibrary4LoadERK7TDesC16S2_",
             "_ZN8RLibrary5CloseEv",
             "_ZNK8RLibrary6LookupEi",
@@ -514,8 +749,11 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             "__e32_atomic_swp_ord8",
             "_ZN7UserHal15PageSizeInBytesERi",
             "_ZN6RChunk11CreateLocalEii10TOwnerType",
+            "_ZN6RChunk23CreateDisconnectedLocalEiii10TOwnerType",
             "_ZNK6RChunk4BaseEv",
             "_ZNK6RChunk4SizeEv",
+            "_ZNK6RChunk6CommitEii",
+            "_ZNK6RChunk8DecommitEii",
             "_ZN4User5AfterE27TTimeIntervalMicroSeconds32",
             "_ZN4User14WaitForRequestER14TRequestStatus",
             "_ZN4User17WaitForAnyRequestEv",
@@ -559,6 +797,39 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                 "gdi",
                 source / "graphics/graphicsdeviceinterface/gdi/eabi/GDI2U.def",
                 ["_ZN9TFontSpecC1ERK7TDesC16i"],
+            ),
+            (
+                "hal",
+                source / "kernelhwsrv/halservices/hal/eabi/halu.def",
+                ["_ZN3HAL3GetEN7HALData10TAttributeERi"],
+            ),
+            (
+                "ecam",
+                source / "mm/imagingandcamerafws/camerafw/eabi/ecamU.def",
+                ["_ZN7CCamera16CamerasAvailableEv"],
+            ),
+            (
+                "efsrv",
+                source
+                / "kernelhwsrv/userlibandfileserver/fileserver/eabi/efsrvu.def",
+                [
+                    "_ZN3RFs7ConnectEi",
+                    "_ZN3RFs5CloseEv",
+                    "_ZN5RFile4OpenER3RFsRK7TDesC16j",
+                    "_ZN5RFile5CloseEv",
+                    "_ZNK5RFile4SizeERi",
+                    "_ZNK5RFile4ReadEiR5TDes8",
+                    "_ZN3RFs8MkDirAllERK7TDesC16",
+                    "_ZN5RFile5FlushEv",
+                    "_ZN5RFile5WriteEiRK6TDesC8",
+                    "_ZN5RFile6CreateER3RFsRK7TDesC16j",
+                    "_ZN5RFile7ReplaceER3RFsRK7TDesC16j",
+                    "_ZN4RDir4OpenER3RFsRK7TDesC16j",
+                    "_ZN4RDir5CloseEv",
+                    "_ZNK4RDir4ReadER6TEntry",
+                    "_ZN6TEntryC1Ev",
+                    "_ZNK6TEntry8FileSizeEv",
+                ],
             ),
             (
                 "libc",
@@ -785,6 +1056,55 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                     build_tree / "libsymbian_guest_fiber.a",
                     output / "lib" / architecture / "libsymbian_guest_fiber.a",
                 )
+        for architecture in ("armv5t", "armv6"):
+            with tempfile.TemporaryDirectory(
+                prefix=f"symbian-device-api-{architecture}-"
+            ) as temporary:
+                build_tree = Path(temporary) / "build"
+                run(
+                    [
+                        cmake_tool,
+                        "-S",
+                        str(workspace / "cpp/symbian/api"),
+                        "-B",
+                        str(build_tree),
+                        "-G",
+                        "Ninja",
+                        f"-DSYMBIAN_SDK_PREFIX={output}",
+                        f"-DSYMBIAN_TARGET_ARCH={architecture}",
+                        "-DCMAKE_TOOLCHAIN_FILE="
+                        f"{output / 'cmake/symbian-arm.cmake'}",
+                        f"-DCMAKE_CXX_COMPILER={compiler}",
+                        f"-DCMAKE_LINKER={linker}",
+                        f"-DCMAKE_AR={archive_tools['llvm-ar']}",
+                        f"-DCMAKE_RANLIB={archive_tools['llvm-ranlib']}",
+                        f"-DCMAKE_MAKE_PROGRAM={ninja_tool}",
+                        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+                    ],
+                    cwd=workspace,
+                )
+                for component in (
+                    "system",
+                    "power",
+                    "display",
+                    "storage",
+                    "camera",
+                ):
+                    target = f"symbian_api_{component}"
+                    run(
+                        [
+                            cmake_tool,
+                            "--build",
+                            str(build_tree),
+                            "--target",
+                            target,
+                        ],
+                        cwd=workspace,
+                    )
+                    shutil.copyfile(
+                        build_tree / component / f"lib{target}.a",
+                        output / "lib" / architecture / f"lib{target}.a",
+                    )
         with tempfile.TemporaryDirectory(
             prefix="symbian-host-concurrency-"
         ) as temporary:
@@ -824,8 +1144,15 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                 build_tree / "concurrency/libsymbian_host_primitives.a",
                 host_library / "libsymbian_host_primitives.a",
             )
+        mbedtls_provenance = _build_mbedtls(
+            workspace, output, compiler, linker, archive_tools
+        )
         licenses = output / "licenses"
         licenses.mkdir()
+        shutil.copyfile(
+            Path(mbedtls_provenance["source"]) / "LICENSE",
+            licenses / "MbedTLS-Apache-2.0.txt",
+        )
         shutil.copyfile(libcxx / "LICENSE.TXT", licenses / "LLVM-libcxx.txt")
         shutil.copyfile(
             workspace / "research/upstream/abseil-cpp/LICENSE",
@@ -838,6 +1165,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             workspace / "third_party/boost/LICENSE_1_0.txt",
             licenses / "Boost-BSL-1.0.txt",
         )
+        shutil.copyfile(mimalloc / "LICENSE", licenses / "mimalloc-MIT.txt")
         shutil.copyfile(
             source / "llvm-project/compiler-rt/LICENSE.TXT",
             licenses / "LLVM-compiler-rt.txt",
@@ -878,11 +1206,24 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                     ],
                     "llvm_revision": "85ac560262434c9ccfc0c183ec22d4138ed647fb",
                     "llvm_tag": "llvmorg-23.1.2",
+                    "mimalloc_revision": mimalloc_revision,
+                    "mimalloc_runtime_archives": {
+                        architecture: hashlib.sha256(
+                            (
+                                output
+                                / "lib"
+                                / architecture
+                                / "libsymbian_guest_runtime.a"
+                            ).read_bytes()
+                        ).hexdigest()
+                        for architecture in ("armv5t", "armv6")
+                    },
                     "abseil_revision": (
                         "5650e9cf76d3be4318d5fa3af38ee483ddfd5e4a"
                     ),
                     "abseil_patches": abseil_patches,
                     "abseil_statusor_archives": abseil_archives,
+                    "mbedtls": mbedtls_provenance,
                     "rcomp_revision": (
                         "d3c2eadd3ff7826bdf9e1d92f447c357571af18b"
                     ),
@@ -1083,6 +1424,7 @@ def install_tools(sdk: AppSdk) -> AppSdk:
         "nlohmann-json-LICENSE",
         "pybind11-LICENSE",
         "pybind11_abseil-LICENSE",
+        "libusb-COPYING",
     )
     for name in notices:
         if not (licenses / name).is_file():
@@ -1121,6 +1463,18 @@ def install_tools(sdk: AppSdk) -> AppSdk:
         target = tools / package / original.name
         if not target.exists():
             shutil.copyfile(original, target)
+    host_assets = Path(native.__file__).parent / "host"
+    for name in ("libusb-1.0.a", "include/libusb.h"):
+        source = host_assets / name
+        if not source.is_file():
+            raise StatusError(
+                Code.FAILED_PRECONDITION,
+                "Reinstall the SDK host package to include static libusb: "
+                + name,
+            )
+        target = prefix / "lib/host" / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, target)
     shutil.copytree(licenses, prefix / "licenses/host", dirs_exist_ok=True)
     shutil.copytree(licenses, tools / "symbian/licenses", dirs_exist_ok=True)
     (prefix / "libexec").mkdir(exist_ok=True)
@@ -1227,6 +1581,20 @@ def install(destination: Path, workspace: Path | None = None) -> AppSdk:
         sdk = install_tools(prepare(workspace, destination))
     else:
         original = AppSdk.load(discover_sdk())
+        if any(
+            not (
+                original.prefix
+                / "lib"
+                / architecture
+                / "mbedtls/lib/cmake/MbedTLS/MbedTLSConfig.cmake"
+            ).is_file()
+            for architecture in original.architectures
+        ):
+            raise StatusError(
+                Code.FAILED_PRECONDITION,
+                "Selected SDK predates the default Mbed TLS bundle; "
+                "install with --workspace to export current source inputs",
+            )
         if destination.is_relative_to(original.prefix):
             raise StatusError(
                 Code.INVALID_ARGUMENT, "SDK destination overlaps source"

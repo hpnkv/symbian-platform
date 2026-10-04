@@ -75,6 +75,15 @@ TEST(ConcurrencyFiberTest, CooperativeCancelRunsCppCleanupAndPinsOwner) {
   EXPECT_EQ(destructed.load(std::memory_order_relaxed), 1);
 }
 
+TEST(ConcurrencyFiberTest, CancellationIsSelectable) {
+  int selected = -1;
+  thread::Fiber waiter(
+      [&] { selected = thread::Select({thread::OnCancel()}); });
+  waiter.Cancel();
+  EXPECT_TRUE(waiter.Join().ok());
+  EXPECT_EQ(selected, 0);
+}
+
 TEST(ConcurrencyFiberTest, FutureAwaitParksAnSdkFiber) {
   symbian::concurrency::Promise<int> promise;
   auto future = promise.future();

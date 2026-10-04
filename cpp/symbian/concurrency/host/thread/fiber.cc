@@ -14,6 +14,7 @@
 #include <boost/fiber/fiber.hpp>
 
 #include "thread/executor.h"
+#include "thread/selectables.h"
 
 namespace thread {
 namespace {
@@ -32,7 +33,8 @@ struct Fiber::Impl {
         }) {}
 
   std::thread::id thread_id;
-  std::atomic<bool> cancelled{false};
+  std::atomic<bool> cancellation_sent{false};
+  PermanentEvent cancellation;
   std::atomic<bool> finished{false};
   boost::fibers::fiber fiber;
 };
@@ -51,11 +53,17 @@ Fiber::~Fiber() {
 }
 
 void Fiber::Cancel() noexcept {
-  impl_->cancelled.store(true, std::memory_order_release);
+  if (!impl_->cancellation_sent.exchange(true, std::memory_order_acq_rel)) {
+    impl_->cancellation.Notify();
+  }
 }
 
 bool Fiber::Cancelled() const noexcept {
-  return impl_->cancelled.load(std::memory_order_acquire);
+  return impl_->cancellation.HasBeenNotified();
+}
+
+Case Fiber::OnCancel() const {
+  return impl_->cancellation.OnEvent();
 }
 
 bool Fiber::Finished() const noexcept {
@@ -76,6 +84,16 @@ absl::Status Fiber::Join() {
 
 Fiber* Fiber::Current() noexcept {
   return current_fiber;
+}
+
+bool Cancelled() {
+  Fiber* fiber = Fiber::Current();
+  return fiber != nullptr && fiber->Cancelled();
+}
+
+Case OnCancel() {
+  Fiber* fiber = Fiber::Current();
+  return fiber == nullptr ? NonSelectableCase() : fiber->OnCancel();
 }
 
 }  // namespace thread

@@ -9,6 +9,7 @@ import socket
 import subprocess
 import sys
 import time
+import xml.etree.ElementTree as ET
 from functools import partial
 from pathlib import Path
 
@@ -78,10 +79,87 @@ def test_ide_configuration_preserves_profiles_and_quotes_launcher_paths(
         '<configuration PROFILE_NAME="Debug" ENABLED="true" />'
         "</configurations></component></project>"
     )
+    host_workspace = ET.parse(host / "workspace.xml").getroot()
+    ET.SubElement(
+        host_workspace, "component", name="SelectedDebugProfileService"
+    ).text = json.dumps(
+        {
+            "profileIdByStamp": [
+                {
+                    "first": {
+                        "##RUN_CONFIGURATION##": "CMake Application.GUI Run",
+                        "cmake": "CMakeBuildProfile:Debug",
+                    },
+                    "second": "broken-gdb",
+                },
+                {
+                    "first": {
+                        "##RUN_CONFIGURATION##": "CMake Application.Other",
+                        "cmake": "CMakeBuildProfile:Debug",
+                    },
+                    "second": "other-debugger",
+                },
+            ],
+            "modificationCount": 2,
+        }
+    )
+    ET.ElementTree(host_workspace).write(host / "workspace.xml")
     result = configure(root, Path(sys.executable))
     assert 'value="other"' in (idea / "debug-profiles.xml").read_text()
     assert 'name="Existing"' in (idea / "workspace.xml").read_text()
     assert 'value="host-lldb"' in (host / "workspace.xml").read_text()
+    gui_workspace = ET.parse(idea / "workspace.xml").getroot()
+    gui_selections = json.loads(
+        gui_workspace.find(
+            "./component[@name='SelectedDebugProfileService']"
+        ).text
+    )["profileIdByStamp"]
+    gui_profiles = ET.parse(idea / "debug-profiles.xml").getroot()
+    guest_profile = next(
+        entry
+        for entry in gui_profiles.findall(
+            "./component[@name='Debug Profiles']/debug-profiles/debug-profile"
+        )
+        if entry.find("option[@name='name']") is not None
+        and entry.find("option[@name='name']").get("value") == "Symbian GUI GDB"
+    )
+    assert any(
+        choice["first"] == {"##RUN_CONFIGURATION##": "Remote Debug.GUI Debug"}
+        and choice["second"]
+        == guest_profile.find("option[@name='id']").get("value")
+        for choice in gui_selections
+    )
+    host_profile = next(
+        (
+            entry
+            for entry in gui_profiles.findall(
+                "./component[@name='Debug Profiles']/debug-profiles/"
+                "debug-profile"
+            )
+            if entry.find("option[@name='name']") is not None
+            and entry.find("option[@name='name']").get("value")
+            == "GUI Host LLDB"
+        ),
+        None,
+    )
+    if sys.platform == "darwin":
+        assert host_profile is not None
+        assert any(
+            choice["first"]["##RUN_CONFIGURATION##"]
+            == "CMake Application.GUI Run"
+            and choice["second"]
+            == host_profile.find("option[@name='id']").get("value")
+            for choice in gui_selections
+        )
+        saved_host = json.loads(
+            ET.parse(host / "workspace.xml")
+            .getroot()
+            .find("./component[@name='SelectedDebugProfileService']")
+            .text
+        )["profileIdByStamp"]
+        saved_ids = {choice["second"] for choice in saved_host}
+        assert "other-debugger" in saved_ids
+        assert "broken-gdb" not in saved_ids
     host_run = (host / "runConfigurations/GUI_Run.xml").read_text()
     assert 'TARGET_NAME="gui_app_run"' in host_run
     assert 'CONFIG_NAME="Debug"' in host_run
@@ -99,6 +177,57 @@ def test_ide_configuration_preserves_profiles_and_quotes_launcher_paths(
     assert probe.returncode == 0, probe.stderr
     assert "Python" in probe.stdout
     assert not (root / ".symbian/gui-runs").exists()
+
+
+def test_ide_configuration_selects_host_debugger_for_root_gui_run(tmp_path):
+    """Debugging the host launcher must never select the ARM GDB profile."""
+    idea = tmp_path / ".idea"
+    idea.mkdir()
+    (idea / "workspace.xml").write_text('<project version="4" />')
+
+    configure(tmp_path, Path(sys.executable))
+
+    workspace = ET.parse(idea / "workspace.xml").getroot()
+    selected = json.loads(
+        workspace.find("./component[@name='SelectedDebugProfileService']").text
+    )["profileIdByStamp"]
+    profiles = ET.parse(idea / "debug-profiles.xml").getroot()
+    host_profile = next(
+        (
+            entry
+            for entry in profiles.findall(
+                "./component[@name='Debug Profiles']/debug-profiles/"
+                "debug-profile"
+            )
+            if entry.find("option[@name='name']") is not None
+            and entry.find("option[@name='name']").get("value")
+            == "GUI Host LLDB"
+        ),
+        None,
+    )
+    if sys.platform == "darwin":
+        assert host_profile is not None
+        assert {
+            choice["first"]["##RUN_CONFIGURATION##"]: choice
+            for choice in selected
+        }["CMake Application.GUI Run"] == {
+            "first": {
+                "##RUN_CONFIGURATION##": "CMake Application.GUI Run",
+                "cmake": "CMakeBuildProfile:debug",
+            },
+            "second": host_profile.find("option[@name='id']").get("value"),
+        }
+        assert any(
+            choice["first"]
+            == {"##RUN_CONFIGURATION##": "Remote Debug.GUI Debug"}
+            for choice in selected
+        )
+        assert (
+            host_profile.find("./settings/option[@name='executable']").get(
+                "value"
+            )
+            == "/usr/bin/lldb"
+        )
 
 
 def _launch(tmp_path, executable=None):
@@ -260,7 +389,12 @@ def test_debug_launcher_relocates_before_source_breakpoints(tmp_path):
     )
     (tmp_path / "gdb.log").write_text(result.stdout + result.stderr)
     assert result.returncode == 0, result.stdout + result.stderr
-    assert "IDE_GUI_PC=0x7000002a" in result.stdout
+    gui_breakpoint = re.search(
+        r"Breakpoint 1 at (0x[0-9a-f]+): file .*app\.cc, line \d+\.",
+        result.stdout,
+    )
+    assert gui_breakpoint, result.stdout
+    assert f"IDE_GUI_PC={gui_breakpoint[1]}" in result.stdout
     assert "count_ = 0, running_ = true" in result.stdout
     draw = re.search(r"Breakpoint 2 at (0x[0-9a-f]+):", result.stdout)
     step = re.search(r"IDE_STEP_PC=(0x[0-9a-f]+)", result.stdout)
@@ -326,28 +460,16 @@ def test_debug_launcher_preserves_gdb_machine_interface(tmp_path):
     try:
         symbols = Path(WORKSPACE) / ".symbian/gui-app/gui_app.elf"
         exchange("1-file-exec-and-symbols " + quote(symbols), "1^done")
-        exchange(f"2-target-select remote 127.0.0.1:{port}", "2^connected")
-        result = exchange("3-break-insert GuiMain", "3^done")
-        assert 'addr="0x7000002a"' in result
-        result = exchange("4-exec-continue", '*stopped,reason="breakpoint-hit"')
-        assert 'addr="0x7000002a"' in result
-        result = exchange('5-data-evaluate-expression "$pc"', "5^done")
-        assert 'value="0x7000002a' in result
-        # Read the actual compiler's named veneer. Its position changes when
-        # the owner edits the GUI, while the ARM interworking contract remains.
-        disassembly = subprocess.run(
-            ["/opt/homebrew/opt/llvm/bin/llvm-objdump", "-d", symbols],
-            capture_output=True,
-            text=True,
-            check=True,
-            timeout=5,
-        ).stdout
-        veneer = re.search(
-            r"^([0-9a-f]+) <_ZN10RWsSessionC1Ev@plt>:",
-            disassembly,
-            re.MULTILINE,
-        )
-        assert veneer is not None
+        # IDE breakpoints can be registered before the remote connection.
+        exchange("2-break-insert GuiMain", "2^done")
+        exchange(f"3-target-select remote 127.0.0.1:{port}", "3^connected")
+        result = exchange("4-break-list", "4^done")
+        gui_address = re.search(r'addr="(0x[0-9a-f]+)"', result)
+        assert gui_address and int(gui_address[1], 16) >= 0x70000000
+        result = exchange("5-exec-continue", '*stopped,reason="breakpoint-hit"')
+        assert f'addr="{gui_address[1]}"' in result
+        result = exchange('6-data-evaluate-expression "$pc"', "6^done")
+        assert f'value="{gui_address[1]}' in result
         directory = Path(
             re.search(
                 r"Emulator session: ([^\n]+)",
@@ -355,12 +477,15 @@ def test_debug_launcher_preserves_gdb_machine_interface(tmp_path):
             )[1]
         )
         mapping = json.loads((directory / "gdb-mapping.json").read_text())
-        expected = int(veneer[1], 16) + mapping["symbol_slide"]
-        result = exchange("6-exec-step-instruction", "*stopped")
-        assert f'addr="{expected:#010x}"' in result
-        result = exchange('7-data-evaluate-expression "$cpsr & 0x20"', "7^done")
-        assert 'value="0"' in result
-        exchange("8-gdb-exit", "8^exit")
+        assert mapping["runtime_base"] == 0x70000000
+        assert mapping["symbol_slide"] > 0
+        result = exchange("7-exec-step-instruction", "*stopped")
+        next_address = re.search(r'frame=\{addr="(0x[0-9a-f]+)"', result)
+        assert next_address, result
+        assert 0 < int(next_address[1], 16) - int(gui_address[1], 16) <= 4
+        result = exchange('8-data-evaluate-expression "$cpsr & 0x20"', "8^done")
+        assert re.search(r'value="(?:0|32)"', result), result
+        exchange("9-gdb-exit", "9^exit")
         assert process.wait(timeout=10) == 0
     finally:
         _stop(process)

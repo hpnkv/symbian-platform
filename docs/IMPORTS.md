@@ -47,7 +47,7 @@ per DLL and replaces slots with ordinals. The E32 loader patches them eagerly;
 the ELF lazy resolver is not used. Canonical native inspection checks import
 bounds, strings, offsets, ordinals and padding. Python owns build/report policy.
 
-## Native frozen DLL experiment
+## Native frozen DLL builds
 
 The `e32-dll-experiment` profile converts a trusted modern PIC ELF into a DLL.
 It accepts a frozen DEF in `export_definition`, resolves visible function symbols
@@ -107,7 +107,7 @@ each new process on Dyncom and Dynarmic. Hidden/internal cross-mapping data
 references are still rejected; see [RUNTIME.md](RUNTIME.md). DLL startup here
 is a no-resource integer experiment.
 The process uses direct ThreadKill and provides no matched ROM/Z or Belle
-services. `verify-probe` and the SIS experiment require import-free executables.
+services. `verify-probe` and the SIS application package path require import-free executables.
 
 The earlier original-header fixture producer remains under cpp/tests/eka2l1 as
 research material outside the wheel. It omitted the ordinal-zero count and

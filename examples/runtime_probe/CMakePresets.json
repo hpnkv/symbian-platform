@@ -8,6 +8,7 @@
       "toolchainFile": "${sourceDir}/../../symbian/toolchain/cmake/symbian-arm.cmake",
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "SYMBIAN_RUNTIME_MIMALLOC": "OFF",
         "SYMBIAN_IMPORT_PROXIES": "${sourceDir}/../../.symbian/runtime-sdk/euser/euser.dso"
       }
     }

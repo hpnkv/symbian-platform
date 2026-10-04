@@ -2,6 +2,9 @@
 // The ROM provides the operations and their inter-thread ordering. Keep the
 // original SDK header separate from modern libc++ headers.
 #include <e32atomics.h>
+#ifdef SYMBIAN_RUNTIME_MIMALLOC
+#include <cstring>
+#endif
 
 static_assert(sizeof(TUint32) == 4);
 static_assert(sizeof(TUint8) == 1);
@@ -34,6 +37,34 @@ extern "C" bool SymbianRuntimeAtomic64CompareExchange(volatile void* pointer,
                                                       TUint64 desired);
 extern "C" TUint64 SymbianRuntimeAtomic64FetchAdd(volatile void* pointer,
                                                   TUint64 value);
+#ifdef SYMBIAN_RUNTIME_MIMALLOC
+extern "C" void SymbianRuntimeAtomicLock();
+extern "C" void SymbianRuntimeAtomicUnlock();
+
+extern "C" void SymbianAtomicLoadGeneric(size_t size,
+                                         const volatile void* pointer,
+                                         void* result,
+                                         int) asm("__atomic_load");
+
+extern "C" void SymbianAtomicLoadGeneric(size_t size,
+                                         const volatile void* pointer,
+                                         void* result, int) {
+  SymbianRuntimeAtomicLock();
+  std::memcpy(result, const_cast<const void*>(pointer), size);
+  SymbianRuntimeAtomicUnlock();
+}
+
+extern "C" void SymbianAtomicStoreGeneric(size_t size, volatile void* pointer,
+                                          const void* value,
+                                          int) asm("__atomic_store");
+
+extern "C" void SymbianAtomicStoreGeneric(size_t size, volatile void* pointer,
+                                          const void* value, int) {
+  SymbianRuntimeAtomicLock();
+  std::memcpy(const_cast<void*>(pointer), value, size);
+  SymbianRuntimeAtomicUnlock();
+}
+#endif
 
 #ifdef SYMBIAN_RUNTIME_NATIVE_ATOMIC64
 extern "C" TUint64 SymbianRuntimeAtomic64Load(const volatile void* pointer) {
@@ -231,6 +262,16 @@ extern "C" TUint64 SymbianAtomicFetchAdd8(volatile void* pointer, TUint64 value,
                                           int) {
   return SymbianRuntimeAtomic64FetchAdd(pointer, value);
 }
+
+#ifdef SYMBIAN_RUNTIME_MIMALLOC
+extern "C" TUint64 SymbianAtomicFetchSub8(volatile void* pointer, TUint64 value,
+                                          int) asm("__atomic_fetch_sub_8");
+
+extern "C" TUint64 SymbianAtomicFetchSub8(volatile void* pointer, TUint64 value,
+                                          int) {
+  return SymbianRuntimeAtomic64FetchAdd(pointer, TUint64{0} - value);
+}
+#endif
 
 extern "C" TUint64 SymbianSyncFetchAndAdd8(
     volatile void* pointer, TUint64 value) asm("__sync_fetch_and_add_8");

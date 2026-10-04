@@ -58,6 +58,32 @@ target_link_libraries(symbian_concurrency_test PRIVATE
 symbian_native_library(symbian_concurrency_test)
 add_test(NAME symbian_concurrency_test COMMAND symbian_concurrency_test)
 set_tests_properties(symbian_concurrency_test PROPERTIES TIMEOUT 15)
+
+# Compile the device-facing C++ adapter against the same runtime bridge
+# declarations exported by the target SDK, with deterministic host fakes.
+set(device_api_test_include "${CMAKE_BINARY_DIR}/device_api_test_include")
+file(MAKE_DIRECTORY "${device_api_test_include}/symbian")
+configure_file("${CMAKE_SOURCE_DIR}/cpp/symbian/runtime/abi.h"
+  "${device_api_test_include}/symbian/runtime.h" COPYONLY)
+add_executable(symbian_device_api_test device_api_test.cc
+  "${CMAKE_SOURCE_DIR}/cpp/symbian/api/system/counters.cc"
+  "${CMAKE_SOURCE_DIR}/cpp/symbian/api/power/power.cc"
+  "${CMAKE_SOURCE_DIR}/cpp/symbian/api/display/display.cc"
+  "${CMAKE_SOURCE_DIR}/cpp/symbian/api/storage/storage.cc"
+  "${CMAKE_SOURCE_DIR}/cpp/symbian/api/camera/camera.cc")
+target_include_directories(symbian_device_api_test PRIVATE
+  "${CMAKE_SOURCE_DIR}/cpp/symbian/api/include"
+  "${CMAKE_SOURCE_DIR}/cpp/symbian/api/power"
+  "${CMAKE_SOURCE_DIR}/cpp/symbian/api/display"
+  "${CMAKE_SOURCE_DIR}/cpp/symbian/api/storage"
+  "${CMAKE_SOURCE_DIR}/cpp/symbian/api/camera"
+  "${CMAKE_SOURCE_DIR}/cpp/symbian/concurrency/guest"
+  "${device_api_test_include}")
+target_link_libraries(symbian_device_api_test PRIVATE
+  absl::statusor absl::status absl::cord absl::strings GTest::gtest_main)
+symbian_native_library(symbian_device_api_test)
+add_test(NAME symbian_device_api_test COMMAND symbian_device_api_test)
+set_tests_properties(symbian_device_api_test PROPERTIES TIMEOUT 15)
 if(TARGET symbian_host_primitives)
   add_executable(symbian_concurrency_fiber_test concurrency_fiber_test.cc)
   target_link_libraries(symbian_concurrency_fiber_test PRIVATE

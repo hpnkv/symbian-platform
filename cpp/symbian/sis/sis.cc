@@ -93,7 +93,7 @@ absl::StatusOr<std::string> Digest(std::string_view bytes) {
 absl::Status CheckOptions(const PackageOptions& options) {
   if (options.uid < 0xe0000000 || options.uid > 0xefffffff) {
     return absl::InvalidArgumentError(
-        "SIS experiment requires an unprotected experimental UID");
+        "SIS application package requires an unprotected experimental UID");
   }
   for (std::string_view text :
        {std::string_view(options.name), std::string_view(options.vendor)}) {
@@ -341,6 +341,7 @@ absl::StatusOr<std::string> BuildFiles(
     }
     std::string previous;
     bool icon_seen = false;
+    bool ca_seen = false;
     for (size_t index = 1; index < assets.size(); ++index) {
       const auto& asset = assets[index];
       if (index == 1) {
@@ -368,6 +369,20 @@ absl::StatusOr<std::string> BuildFiles(
         }
         icon_seen = true;
         continue;
+      }
+      if (asset.target == "!:\\resource\\apps\\" + stem + "_ca.pem") {
+        if (ca_seen || icon_seen || asset.bytes.empty() ||
+            asset.bytes.size() > 262144 ||
+            !asset.bytes.starts_with("-----BEGIN CERTIFICATE-----") ||
+            asset.bytes.find("-----END CERTIFICATE-----") ==
+                std::string::npos) {
+          return absl::InvalidArgumentError("Invalid project CA bundle");
+        }
+        ca_seen = true;
+        continue;
+      }
+      if (ca_seen) {
+        return absl::InvalidArgumentError("Locale follows CA bundle");
       }
       if (!asset.target.starts_with(local_target + ".r") ||
           asset.target.size() != local_target.size() + 4 ||
@@ -503,7 +518,8 @@ absl::StatusOr<std::string> BuildSvgMif(std::string_view svg) {
 
 absl::StatusOr<PackageInfo> InspectPackage(std::string_view bytes) {
   if (bytes.size() > kMaxPackage) {
-    return absl::ResourceExhaustedError("SIS experiment exceeds size limit");
+    return absl::ResourceExhaustedError(
+        "SIS application package exceeds size limit");
   }
   if (bytes.size() < 16) {
     return absl::DataLossError("Truncated SIS UID header");
@@ -683,7 +699,8 @@ absl::StatusOr<PackageInfo> InspectPackage(std::string_view bytes) {
   }
   if (*canonical != bytes) {
     return absl::UnimplementedError(
-        "SIS fields are outside the canonical unsigned experiment profile");
+        "SIS fields are outside the canonical unsigned application package "
+        "profile");
   }
   result.executable_uid = Read32(payloads[0], 8);
   result.executable_size = result.files[0].size;

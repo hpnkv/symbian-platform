@@ -1,0 +1,41 @@
+// SPDX-License-Identifier: Apache-2.0
+#include "vectors.h"
+
+#include <string.h>
+
+#include "mbedtls/aes.h"
+#include "mbedtls/sha256.h"
+
+int SymbianMbedTlsKnownAnswers(void) {
+  const unsigned char key[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
+                                 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
+                                 0x0c, 0x0d, 0x0e, 0x0f};
+  const unsigned char plain[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55,
+                                   0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb,
+                                   0xcc, 0xdd, 0xee, 0xff};
+  unsigned char cipher[16] = {0x69, 0xc4, 0xe0, 0xd8, 0x6a, 0x7b, 0x04, 0x30,
+                              0xd8, 0xcd, 0xb7, 0x80, 0x70, 0xb4, 0xc5, 0x5a};
+  const unsigned char digest[32] = {
+      0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea, 0x41, 0x41, 0x40,
+      0xde, 0x5d, 0xae, 0x22, 0x23, 0xb0, 0x03, 0x61, 0xa3, 0x96, 0x17,
+      0x7a, 0x9c, 0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad};
+#ifdef SYMBIAN_MBEDTLS_CHANGED_VECTOR
+  cipher[0] ^= 1;
+#endif
+  unsigned char output[32];
+  mbedtls_aes_context aes;
+  mbedtls_aes_init(&aes);
+  int result = mbedtls_aes_setkey_enc(&aes, key, 128);
+  if (result == 0) {
+    result = mbedtls_aes_crypt_ecb(&aes, MBEDTLS_AES_ENCRYPT, plain, output);
+  }
+  mbedtls_aes_free(&aes);
+  if (result != 0 || memcmp(output, cipher, sizeof(cipher)) != 0) {
+    return -121;
+  }
+  result = mbedtls_sha256((const unsigned char*)"abc", 3, output, 0);
+  if (result != 0 || memcmp(output, digest, sizeof(digest)) != 0) {
+    return -122;
+  }
+  return 0;
+}

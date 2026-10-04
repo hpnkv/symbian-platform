@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Adapted from A11's bootstrap: this synchronous SDK currently needs only
-# OpenSSL as a prebuilt dependency. CMake pins the header/source dependencies.
+# Adapted from A11's bootstrap: the host SDK needs static OpenSSL and
+# libusb archives. CMake pins the remaining header/source dependencies.
 set -euo pipefail
 prefix=${SYMBIAN_DEPS_PREFIX:?Set SYMBIAN_DEPS_PREFIX to an isolated prefix}
 arch=${SYMBIAN_WHEEL_ARCH:-$(uname -m)}
@@ -33,8 +33,9 @@ case "${host_os}:${arch}" in
 esac
 # Include host OS, architecture, version and deployment floor in the cache key.
 version=3.5.9
-stamp="${prefix}/.symbian-deps-v1-${host_os}-${arch}-${version}${deployment_tag}"
-if [[ -f "${stamp}" && -f "${prefix}/lib/libcrypto.a" ]]; then exit 0; fi
+libusb_version=1.0.30
+stamp="${prefix}/.symbian-deps-v2-${host_os}-${arch}-${version}-${libusb_version}${deployment_tag}"
+if [[ -f "${stamp}" && -f "${prefix}/lib/libcrypto.a" && -f "${prefix}/lib/libusb-1.0.a" ]]; then exit 0; fi
 jobs=${CMAKE_BUILD_PARALLEL_LEVEL:-4}
 work=$(mktemp -d "${TMPDIR:-/tmp}/symbian-wheel-deps.XXXXXX")
 trap 'rm -rf "${work}"' EXIT
@@ -98,6 +99,18 @@ download_and_extract   "https://github.com/openssl/openssl/releases/download/ope
   make -j "${jobs}"
   make install_sw
 )
+download_and_extract \
+  "https://github.com/libusb/libusb/releases/download/v${libusb_version}/libusb-${libusb_version}.tar.bz2" \
+  libusb.tar.bz2 \
+  fea36f34f9156400209595e300840767ab1a385ede1dc7ee893015aea9c6dbaf
+(
+  cd "${work}/libusb-${libusb_version}"
+  ./configure --prefix="${prefix}" --libdir="${prefix}/lib" \
+    --disable-shared --enable-static --disable-udev
+  make -j "${jobs}"
+  make install
+)
 mkdir -p "${prefix}/share"
+cp "${work}/libusb-${libusb_version}/COPYING" "${prefix}/COPYING"
 cp "${work}/openssl-${version}/LICENSE.txt" "${prefix}/share/symbian-OpenSSL-LICENSE"
 touch "${stamp}"

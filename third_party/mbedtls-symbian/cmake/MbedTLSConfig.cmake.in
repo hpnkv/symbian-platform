@@ -1,0 +1,13 @@
+@PACKAGE_INIT@
+# SDK selection belongs to the consuming project, never to this installed prefix.
+if(NOT @SYMBIAN_MBEDTLS_HOST@)
+  if(NOT CMAKE_SYSTEM_NAME STREQUAL "Generic" OR
+     NOT SYMBIAN_TARGET_ARCH STREQUAL "@SYMBIAN_TARGET_ARCH@")
+    message(FATAL_ERROR "This Mbed TLS package requires the @SYMBIAN_TARGET_ARCH@ Symbian toolchain")
+  endif()
+  if(NOT TARGET Symbian::Runtime)
+    include(SymbianApp)
+  endif()
+endif()
+include("${CMAKE_CURRENT_LIST_DIR}/MbedTLSTargets.cmake")
+check_required_components(MbedTLS)

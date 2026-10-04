@@ -1,0 +1,6 @@
+*.o
+libmbed*
+*.sln
+*.vcxproj
+
+# Generated upstream sources are included in the vendored, reproducible port.

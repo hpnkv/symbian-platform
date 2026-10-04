@@ -1,0 +1,7 @@
+{
+  "port_repository": "https://github.com/shinovon/mbedtls-symbian",
+  "port_revision": "41f1d75faf8e0b87261977fdc7a4b8218a2ac20b",
+  "upstream_mbedtls_version": "3.4.1",
+  "license": "Apache-2.0",
+  "note": "Vendored working tree includes local Symbian SDK adaptations; sdk provenance records the complete materialized source digest."
+}

@@ -162,7 +162,7 @@ def session(
     """Builds and launches one fixture copy, retaining logs and reaping it.
 
     Args:
-        root: Prepared repository workspace; this is a bounded GUI experiment.
+        root: Prepared repository workspace for this bounded GUI application.
         debug: Starts the guest halted at its loopback GDB listener.
         port: Reserved configuration port for the IDE's remote connection.
 
@@ -177,12 +177,23 @@ def session(
     compiler, linker = "/usr/bin/clang++", "/opt/homebrew/bin/ld.lld"
     if project is not None:
         from symbian.project.configuration import ProjectConfiguration
-        from symbian.project.sdk import AppSdk
+        from symbian.project.sdk import AppSdk, discover_sdk
 
         project = project.resolve()
-        configuration = ProjectConfiguration.load(project)
-        sdk = configuration.sdk
-        AppSdk.load(sdk.prefix / "sdk.json")
+        generated = (project / "symbian-project.json").is_file()
+        if generated:
+            configuration = ProjectConfiguration.load(project)
+            sdk = configuration.sdk
+            port = configuration.preferences.port
+        else:
+            location = project / "sdk-location.json"
+            if location.is_file():
+                sdk_path = Path(json.loads(location.read_text())["sdk"])
+                if not sdk_path.is_absolute():
+                    sdk_path = (project / sdk_path).resolve()
+                sdk = AppSdk.load(discover_sdk(sdk_path))
+            else:
+                sdk = AppSdk.load(discover_sdk())
         compiler, linker = str(sdk.compiler), str(sdk.linker)
         source, build = project, project / ".symbian/build"
         headers = sdk.prefix / "include/platform"
@@ -190,7 +201,6 @@ def session(
             "project"
         ]
         name, uid = options["name"], options["uid3"]
-        port = configuration.preferences.port
     if not source.is_dir():
         raise StatusError(
             Code.FAILED_PRECONDITION, f"Application source missing: {source}"
@@ -258,6 +268,9 @@ def session(
     directory = Path(
         tempfile.mkdtemp(prefix="debug-" if debug else "run-", dir=output)
     )
+    run_session_path = os.environ.get("SYMBIAN_CONSOLE_RUN_SESSION_PATH")
+    if run_session_path:
+        Path(run_session_path).write_text(str(directory), encoding="utf-8")
     instance = directory / "instance"
     shutil.copytree(golden, instance)
     target = instance / firmware.device.c_drive / "sys/bin" / f"{name}.exe"
@@ -292,8 +305,12 @@ def session(
             env.update(
                 EKA2L1_DATA_ROOT=str(instance),
                 EKA2L1_RESEARCH_CONTROL_SOCKET=str(endpoint),
-                **background_environment(),
             )
+            if env.get("SYMBIAN_CONSOLE_FOREGROUND_EMULATOR") == "1":
+                env.pop("EKA2L1_RESEARCH_BACKGROUND_WINDOW", None)
+                env.pop("QT_MAC_DISABLE_FOREGROUND_APPLICATION_TRANSFORM", None)
+            else:
+                env.update(background_environment())
             if profile != "default":
                 env["EKA2L1_EXPERIMENTAL_SVC_PROFILE"] = profile
             launch_executable = executable_for_session(executable, directory)

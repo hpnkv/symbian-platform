@@ -93,6 +93,18 @@ inherited cancellation and an absolute deadline. Its asynchronous join waits
 for child and deadline-alarm drainage. It is a bounded native-request owner,
 not the complete A11 fiber tree or executor.
 
+The guest also has an explicit `WorkerExecutor` for work known to be too long
+for the event thread. `EventExecutor::workers()` lazily provides one shared
+worker for that event owner. `future.ThenOnWorker(event_executor, transform)`
+selects it; the lower-level `ThenOn(future, worker, transform)` keeps a
+continuation stackless and performs its result copy and transformation on the
+worker; `Then` and `OnReady` remain inline. `PostFiber` creates a fiber on
+the worker's own `thread::Scheduler`. The configured cap covers queued and
+active work, and a full or closed executor reports a status. `Close` does not
+block the event thread; `Finish` reports asynchronous drainage. A fiber that
+waits forever can prevent that drainage, and the guest still lacks the A11
+shared `Post`/`PostAt` pool, cancellation tree and preemption.
+
 The pinned full A11 **host** fiber backend can retain its selected-TU
 exception boundary: Boost primitives and pool teardown use exceptions and
 forced unwind, while the rest of the native library defaults to exceptions
@@ -102,18 +114,34 @@ The pinned A11
 source retains `thread::` and `a11::`; guest synchronization and channels now
 also use `thread::`, while the staged Future/Task owner remains under
 `symbian::concurrency`. No competing scheduler is introduced here.
-The common `<thread/channel.h>` exposes `thread::Channel<T>` with bounded FIFO reads/writes, close
-drainage and nonblocking status operations. `EventMailbox` uses the latter so
-it cannot block the event thread. The guest `thread::Mutex`, `MutexLock` and
+The common `<thread/channel.h>` now carries the pinned A11 public
+`thread::Channel<T>` interface on hosts; the guest adaptation has the same
+reader/writer, selection, rendezvous, cancellation-aware write and one-time
+close signatures. SDK mailboxes instead use the separately named
+`symbian::concurrency::BoundedChannel<T>` for nonblocking status operations,
+idempotent close and discard. `EventMailbox` uses that queue so enqueue cannot
+block the event thread. The guest `thread::Mutex`, `MutexLock` and
 `CondVar` are exposed by `<thread/boost_primitives.h>`. Fiber contention and
 condition waits cooperatively switch to other ready fibers; timed waits use
 the verified monotonic clock. `thread::SchedulerPolicy` supplies custom ready
-ordering and a wake hook for the event executor. A11 `Select`, zero-capacity
-rendezvous, cancellation trees, joining and `PermanentEvent` remain open.
+ordering and a wake hook for the event executor. Guest `Case`,
+`PermanentEvent`, `AlwaysSelectableCase`, `NonSelectableCase`, `Select` and
+`SelectUntil` now use one selector and intrusive waiter registration protocol.
+Notification chooses at most one case under the selector lock, unlinks event
+waiters under the event lock, then wakes fibers after releasing both locks.
+A shared selector lifetime prevents a late notifier from signaling a
+destroyed condition variable. The guest rotates the first case rather than
+using A11's random order. A finite wall deadline is converted once and
+elapsed waiting uses a monotonic clock. The installed-SDK probe covers
+immediate readiness, expired and timed selection, repeated timeout cleanup,
+cross-thread notification and competing events on both ARM targets and both
+emulator backends. The channel probe also covers buffered and zero-capacity
+transfers, competing cases, losing-case ownership, timeout and direct
+cancellation. Cancellation trees and joining remain open.
 Guest `SleepFor` parks a fiber; outside one it blocks an OS worker and must
-stay off the event thread. The closed-write path returns `absl::Status` rather than
-throwing under the default no-exceptions profile. These differences are
-intentional, explicit guest adaptations, not full host A11 compatibility.
+stay off the event thread. A11's channel closed-write check remains fatal in
+the no-exceptions guest profile; callers needing fallible writes use the
+separate SDK mailbox queue. This is not full host A11 compatibility.
 Both backends match A11's `CondVar` boolean convention: true means timeout.
 The guest condition-variable destructor comes from pinned LLVM libc++.
 Normal and changed-result guest controls passed 16/16 across both ARM

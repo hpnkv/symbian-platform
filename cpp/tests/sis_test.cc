@@ -125,6 +125,30 @@ TEST_F(SisTest, LocalesAndSvgIconUseCanonicalBoundedAssets) {
             absl::StatusCode::kInvalidArgument);
 }
 
+TEST_F(SisTest, ProjectCaBundleIsBoundedAndRoundTrips) {
+  const std::string prefix = "!:\\resource\\apps\\probe";
+  std::vector<ApplicationFile> assets = {
+      {"!:\\private\\10003a3f\\import\\apps\\probe_reg.rsc",
+       Resource(0x101f8021, 0xe0000808)},
+      {prefix + "_loc.rsc", Resource(0, 0)},
+      {prefix + "_ca.pem",
+       "-----BEGIN CERTIFICATE-----\nQQ==\n-----END CERTIFICATE-----\n"},
+  };
+  const auto package = BuildApplicationPackage(image_, assets, Options());
+  ASSERT_TRUE(package.ok()) << package.status();
+  const auto info = InspectPackage(*package);
+  ASSERT_TRUE(info.ok()) << info.status();
+  ASSERT_EQ(info->files.size(), 4);
+  EXPECT_EQ(info->files.back().target, prefix + "_ca.pem");
+  assets.back().target = "!:\\resource\\apps\\other_ca.pem";
+  EXPECT_EQ(BuildApplicationPackage(image_, assets, Options()).status().code(),
+            absl::StatusCode::kInvalidArgument);
+  assets.back().target = prefix + "_ca.pem";
+  assets.back().bytes.resize(262145, 'x');
+  EXPECT_EQ(BuildApplicationPackage(image_, assets, Options()).status().code(),
+            absl::StatusCode::kInvalidArgument);
+}
+
 TEST_F(SisTest, RejectsEveryTruncationAndSingleByteMutation) {
   for (size_t i = 0; i < package_.size(); ++i) {
     EXPECT_FALSE(InspectPackage(std::string_view(package_).substr(0, i)).ok())

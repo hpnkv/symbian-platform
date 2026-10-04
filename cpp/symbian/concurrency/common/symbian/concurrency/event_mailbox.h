@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "absl/status/status.h"
-#include "thread/channel.h"
+#include "symbian/concurrency/bounded_channel.h"
 
 namespace symbian::concurrency {
 
@@ -70,7 +70,7 @@ class EventMailbox {
 
  private:
   std::function<void()> wake_;
-  thread::Channel<std::function<void()>> queue_;
+  BoundedChannel<std::function<void()>> queue_;
 };
 
 }  // namespace symbian::concurrency

@@ -20,6 +20,7 @@ target_link_libraries(symbian_concurrency INTERFACE
   absl::random_random)
 add_library(symbian_host_primitive_objects STATIC
   host/thread/boost_primitives.cc
+  host/thread/channel_waiter_state.cc
   host/thread/executor.cc
   host/thread/fiber.cc
   host/thread/select.cc
@@ -28,6 +29,8 @@ add_library(symbian_host_primitive_objects STATIC
   host/thread/thread_pool.cc)
 target_include_directories(symbian_host_primitive_objects PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/host")
+target_include_directories(symbian_host_primitive_objects PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/common")
 target_link_libraries(symbian_host_primitive_objects PRIVATE
   Boost::fiber Boost::context absl::status absl::log
   absl::log_internal_check_op absl::random_random)

@@ -1,4 +1,4 @@
-"""CMake/Ninja experimental link and native E32 conversion orchestration."""
+"""CMake/Ninja link and native E32 application conversion orchestration."""
 
 import hashlib
 import json

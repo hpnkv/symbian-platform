@@ -2,14 +2,52 @@
 
 import argparse
 import json
+import re
+from types import SimpleNamespace
 
 import pytest
 
 from symbian import device
+from symbian.cli import output
 from symbian.cli.__main__ import _parser
 from symbian.cli.__main__ import main as raw_main
 from symbian.cli.output import render
 from symbian.tests.cli_json import main
+
+
+def test_bare_cli_shows_top_level_help(capsys):
+    assert raw_main([]) == 0
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert "usage: symbian" in captured.out
+    assert "device" in captured.out
+
+
+def test_application_commands_use_application_help(capsys):
+    assert raw_main([]) == 0
+    help_text = capsys.readouterr().out
+    assert "Build an ARM/E32 application executable" in help_text
+    assert "Build an unsigned SISX application package" in help_text
+    assert "Build an ARM/E32 experiment" not in help_text
+
+
+def test_help_colours_commands_and_nested_options(monkeypatch, capsys):
+    monkeypatch.setenv("CLICOLOR_FORCE", "1")
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    assert raw_main([]) == 0
+    root_help = capsys.readouterr().out
+    assert "\x1b[1;36musage:\x1b[0m" in root_help
+    assert "\x1b[1;32mdoctor\x1b[0m" in root_help
+
+    with pytest.raises(SystemExit) as exit_info:
+        raw_main(["device", "info", "--help"])
+    assert exit_info.value.code == 0
+    nested_help = capsys.readouterr().out
+    assert "\x1b[1;32m--mtp\x1b[0m" in nested_help
+
+    monkeypatch.setenv("NO_COLOR", "1")
+    assert raw_main([]) == 0
+    assert "\x1b[" not in capsys.readouterr().out
 
 
 def test_doctor_does_not_claim_target_readiness(capsys):
@@ -158,6 +196,50 @@ def test_long_recommendations_are_separate_lines():
     assert "  1. Import separately" in human
     assert "  2. Preserve artifacts" in human
     assert "  3. Build an application" in human
+
+
+def test_device_info_human_names_functions_and_respects_terminal_color(
+    monkeypatch,
+):
+    response = {
+        "status": {"code": 0, "name": "OK", "message": ""},
+        "result": {
+            "device": {
+                "manufacturer": "Nokia",
+                "product": "808 PureView",
+                "vendor_id": 0x0421,
+                "product_id": 0x05D1,
+                "selector": "usb:0421:05d1:example",
+                "interface_profile": "composite",
+                "interfaces": [
+                    {
+                        "number": 0,
+                        "class_code": 6,
+                        "subclass_code": 1,
+                        "protocol_code": 1,
+                        "declared_name": "MTP",
+                        "function": "Still imaging / PTP transport",
+                        "endpoint_count": 3,
+                        "alternate_setting": 0,
+                    }
+                ],
+                "volumes": [],
+            },
+            "scope": "USB descriptors",
+        },
+    }
+    monkeypatch.setenv("TERM", "xterm")
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.setattr(
+        output.sys, "stdout", SimpleNamespace(isatty=lambda: True)
+    )
+    human = render(response, "human", "device", "info")
+    plain = re.sub(r"\x1b\[[0-9;]*m", "", human)
+    assert "MTP — Still imaging / PTP transport" in plain
+    assert "3 endpoints; alternate 0" in plain
+    assert "\x1b[1;36mUSB interfaces" in human
+    monkeypatch.setenv("NO_COLOR", "1")
+    assert "\x1b[" not in render(response, "human", "device", "info")
 
 
 def test_every_cli_command_and_option_has_help_text():

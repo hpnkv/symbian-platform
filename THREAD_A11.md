@@ -50,8 +50,9 @@ guest no-exceptions fiber or swallow it on the host.
 Current guest implementation is intentionally narrower: `guest/thread/fiber.*`
 provides a manually pumped, one-OS-thread scheduler and 16 KiB heap stacks;
 `guest/thread/boost_primitives.h` parks fibers for mutex, condition and sleep
-operations. Shared `common/thread/channel.h` is a bounded FIFO, not A11's
-selectable/rendezvous channel. TimerPump, PropertyWatch and EventMailbox own
+operations. Guest `thread::Channel` now has selectable cases and zero-capacity
+rendezvous with A11's public signatures; SDK mailboxes use a distinct fallible
+`symbian::concurrency::BoundedChannel`. TimerPump, PropertyWatch and EventMailbox own
 some native requests and callbacks, but are not one general A11 executor.
 The guest fiber probe passed ARMv5T/ARMv6 × Dyncom/Dynarmic normal and changed
 controls; it did **not** run the original A11 tests. The pinned A11 host
@@ -72,8 +73,8 @@ tests outside that snapshot where their current source proves a contract.
 | Contract | Present guest evidence | Required parity gate |
 | --- | --- | --- |
 | Mutex, condition, sleep | Cooperative contention, timeout, worker signal | Original handoff/timeout/yield cases, races, lock ownership, no blocked event OS thread |
-| Channel | Bounded FIFO/close and one fiber transfer | Selectable read/write, losing-case value preservation, zero-capacity rendezvous, cancellation and waiter drainage |
-| Selection/events | None in guest | A11 `Case`, `PermanentEvent`, `Select`/`SelectUntil`, simultaneous readiness, timeout/cancel unregister, no stale waiter |
+| Channel | Selectable buffered/rendezvous transfers, losing-case value preservation, timeout and direct cancellation in guest matrix; host A11 header test | Wider race stress, waiter drainage and original A11 test mapping |
+| Selection/events | Guest `Case`, `PermanentEvent`, `Select`/`SelectUntil`; installed-SDK immediate, timeout, worker notification and competing-event controls pass | Channel and cancellation cases, simultaneous readiness, timeout/cancel unregister, no stale waiter under race stress |
 | Fiber lifecycle | Yield/sleep/finish | Root/child trees, inherited cancellation, join/detach/reap, move-only captures, thread-exit placeholders, deterministic cleanup |
 | Shared execution | Explicitly pumped event scheduler only | `Post`/`PostAt` stackless pool, `Submit`/`Schedule` fiber pool, bounded shutdown, idle wake and worker failure behavior |
 | Structured futures | Bounded staged `symbian::concurrency` profile | Original `a11::Future`/`Promise`/`Task`, `Await`, `Then`, `AwaitAll`, `ThenAfterWaiting`, inline/reentrant completion, abandonment, cancellation ownership |
@@ -90,6 +91,20 @@ until cross-thread fiber migration and its allocator/TLS implications have
 separate proof. Record that backend difference while preserving functional
 `Submit`/`Schedule` behavior.
 
+The guest C++ allocation bridge now records and pins the creating `RHeap` per
+allocation, so a consumer may free directly across private thread heaps while
+the producer is alive or after it exits. The `RChunk` page owner likewise pins
+the heap holding its metadata. This is a lifetime and correctness gate, not a
+fiber-migration result. An optional disconnected-`RChunk` mimalloc v3.5.3
+backend now passes the private-heap and bounded reuse guest controls. A
+bounded native per-thread cache eliminates its measured OpenC pthread lookup
+on explicitly managed threads; the warmed emulator burst is faster than the
+original heap on both CPU backends. Raw native threads stay on pthread TLS
+unless their owner pairs cache entry and exit. The standard and streams SDK
+archives now select mimalloc by default, with `SYMBIAN_RUNTIME_MIMALLOC=OFF`
+retaining the original heap. Phone latency and memory-pressure evidence remain
+open under the `PLAN.md` allocator gates.
+
 ## First executable vertical slice
 
 The next session should deliver this slice before expanding the whole API
@@ -104,11 +119,10 @@ their results, mailbox callbacks, Window Server events and ready fibers in
 bounded turns. The service and timer adapters must own their statuses,
 buffers, handles, cancellation and final result through drainage. Make an
 explicit event-affinity dispatch operation; do not repurpose `thread::Post`
-for it. Preserve the existing guest `thread::Channel<T>`-backed EventMailbox;
-when A11's selectable channel replaces the staged channel, recheck its
-nonblocking enqueue, close and drain behavior before retaining it as the
-mailbox backend. No second scheduler or native request-semaphore consumer is
-allowed.
+for it. Preserve the guest EventMailbox. Its fallible nonblocking queue is
+now a separate `symbian::concurrency::BoundedChannel<T>`; A11's selectable
+`thread::Channel<T>` keeps its original public signatures and close semantics.
+No second scheduler or native request-semaphore consumer is allowed.
 
 Add a structured owner that starts a timer task and a property-watch task,
 passes its cancellation and absolute deadline to both, and returns an
@@ -126,6 +140,48 @@ SDK. Only after this slice passes should the broader A11 Select/tree/pool
 work advance. This slice is not, by itself, full A11 parity.
 
 ## Architecture and work order
+
+### Event-thread work on one core
+
+The dispatcher runs native completion handling, inline `OnReady`
+continuations, event mailbox callbacks and ready guest fibers on its existing
+OS thread. Their work is currently unrestricted: any one callback or fiber
+can be compute-bound and hold the event thread indefinitely. A fiber switch
+stays within that thread; a timer or property completion can therefore resume
+an event-affine continuation in the same dispatch turn without handing it to a
+worker. `Post`/`PostAt` still mean the
+shared worker pool once the A11 guest pool is implemented. The guest now has
+an explicit, one-worker `WorkerExecutor`: `EventExecutor::workers()` creates
+it lazily, `future.ThenOnWorker(event_executor, transform)` chooses that
+worker and keeps the transform stackless, and `worker.PostFiber(work)` starts
+a fiber on the worker's own scheduler. Compute-heavy work should be submitted
+explicitly; it must never be inferred from a callback and silently moved, because that
+would change affinity and ordering. On a one-core device, that explicit
+worker handoff costs an OS context switch. Keep the pool bounded, batch its
+work and coalesce wakes so the switch buys useful compute time.
+
+Bound each event source's work per turn, check native statuses before parking,
+and resignal when work remains. A callback or fiber runs cooperatively; the
+dispatcher cannot preempt arbitrary C++ code. Therefore an application that
+performs unbounded compute in an event callback can still delay input and
+native completion. The present per-source count budget does not bound time
+spent inside one callback. Measure this with an emulator control that
+saturates one worker while timer, property and Window Server events arrive; assert bounded
+latency and progress, and verify event-local continuations stay on the event
+OS thread. Track dispatcher turns, runnable depth and worker handoffs before
+claiming a one-core performance policy. Avoid per-yield allocations and
+callbacks under synchronization locks. Channel selection, timer wake and
+future completion should publish state once, wake once and let the dispatcher
+drain several ready tasks per park cycle.
+
+`Then` and `Future::OnReady` retain pinned A11 inline behavior.
+`ThenOnWorker` is an opt-in guest extension; its readiness callback enqueues only a Future
+handle, while result copying and transformation happen on the worker. A
+full or closed worker completes the returned Future with an error. The worker
+caps queued and active work together. Its `Close` requests asynchronous
+drainage and `Finish` exposes a Task; a fiber that waits forever can keep
+that task pending because guest cancellation trees are still absent. This
+does not provide a preemption guarantee or complete A11 pool semantics.
 
 ### 0. Freeze one semantic baseline
 

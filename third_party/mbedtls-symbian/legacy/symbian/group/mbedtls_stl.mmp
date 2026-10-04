@@ -1,0 +1,11 @@
+#include "mbedtls_common.mmh"
+
+TARGET		  mbedtls_stlib.dll
+TARGETTYPE	  DLL
+UID			 0x1000008d 0x20292B6B
+
+DEFFILE mbedtls_stlib.def
+
+SYSTEMINCLUDE \epoc32\include\libc
+
+LIBRARY estlib.lib

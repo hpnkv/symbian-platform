@@ -1,6 +1,8 @@
-"""Entry point for read-only research and experimental host builds."""
+"""Entry point for read-only research and Symbian application builds."""
 
 import argparse
+import os
+import re
 import sys
 from pathlib import Path
 
@@ -11,6 +13,70 @@ from symbian.emulator.configuration import (
     option_arguments,
     options,
 )
+
+
+def _help_colour_enabled() -> bool:
+    """Use terminal colour unless the user or terminal disables it."""
+    if "NO_COLOR" in os.environ or os.environ.get("TERM") == "dumb":
+        return False
+    return sys.stdout.isatty() or os.environ.get("CLICOLOR_FORCE") not in (
+        None,
+        "0",
+    )
+
+
+def _help_style(value: str, code: str) -> str:
+    """Wrap one help fragment in ANSI style when colour is active."""
+    return f"\x1b[{code}m{value}\x1b[0m"
+
+
+class StyledArgumentParser(argparse.ArgumentParser):
+    """Keep argparse help structure and colour its visible hierarchy."""
+
+    def add_subparsers(self, **arguments):
+        arguments.setdefault("parser_class", type(self))
+        return super().add_subparsers(**arguments)
+
+    def format_help(self) -> str:
+        plain_help = super().format_help()
+        if not _help_colour_enabled():
+            return plain_help
+        styled_lines = []
+        for line in plain_help.splitlines(keepends=True):
+            if line.startswith("usage: "):
+                line = _help_style("usage:", "1;36") + line[len("usage:") :]
+            elif (
+                line.strip()
+                and not line[0].isspace()
+                and line.rstrip().endswith(":")
+            ):
+                line = _help_style(line.rstrip(), "1;36") + "\n"
+            elif line.strip() == self.description:
+                line = _help_style(line.rstrip(), "1") + "\n"
+            elif line.strip() == self.epilog:
+                line = _help_style(line.rstrip(), "2") + "\n"
+            else:
+                action = re.match(r"^(  +)(\S.*?)( {2,})(\S.*)$", line)
+                if action is not None:
+                    line = (
+                        action.group(1)
+                        + _help_style(action.group(2), "1;32")
+                        + action.group(3)
+                        + action.group(4)
+                        + ("\n" if line.endswith("\n") else "")
+                    )
+            styled_lines.append(line)
+        return "".join(styled_lines)
+
+
+class SymbianHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
+    """Show meaningful defaults without repeating absent flag values."""
+
+    def _get_help_string(self, action: argparse.Action) -> str:
+        if action.default is None or action.default is False:
+            return action.help or ""
+        return super()._get_help_string(action)
+
 
 _COMMAND_DESCRIPTIONS = {
     (): "Build software, inspect inputs, and manage devices and emulators.",
@@ -81,10 +147,11 @@ _COMMAND_DESCRIPTIONS = {
     (
         "inspect",
     ): "Read ELF, E32, SIS, or import-proxy metadata from a local file.",
-    ("build",): "Build an ARM/E32 executable experiment.",
+    ("build",): "Build an ARM/E32 application executable.",
     ("package",): "Package an application executable and resources into a SIS.",
     ("preserve",): "Create or verify digested copies of research inputs.",
-    ("toolchain",): "Build and validate target-format experiments.",
+    ("toolchain",): "Build and validate ARM/E32 application artifacts.",
+    ("console",): "Open the graphical SDK and device console.",
 }
 
 _OPTION_DESCRIPTIONS = {
@@ -153,10 +220,8 @@ def _add_output_format(
     parser: argparse.ArgumentParser, path: tuple[str, ...] = ()
 ) -> None:
     """Adds presentation and descriptive help at every command level."""
-    parser.formatter_class = (
-        lambda prog: argparse.ArgumentDefaultsHelpFormatter(
-            prog, max_help_position=32, width=96
-        )
+    parser.formatter_class = lambda prog: SymbianHelpFormatter(
+        prog, max_help_position=32, width=96
     )
     parser.description = _COMMAND_DESCRIPTIONS.get(
         path,
@@ -205,9 +270,17 @@ def _add_output_format(
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="symbian")
+    parser = StyledArgumentParser(prog="symbian")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("doctor", help="Report host tools and target readiness")
+    console = commands.add_parser(
+        "console", help="Open the graphical SDK and device console"
+    )
+    console.add_argument(
+        "--workdir",
+        type=Path,
+        help="Working directory for project and SDK discovery",
+    )
     init = commands.add_parser(
         "init", help="Create a complete hello-time app project"
     )
@@ -417,14 +490,16 @@ def _parser() -> argparse.ArgumentParser:
             command.add_argument("x", type=int)
             command.add_argument("y", type=int)
             command.add_argument("action", choices=("press", "release"))
-    build = commands.add_parser("build", help="Build an ARM/E32 experiment")
+    build = commands.add_parser(
+        "build", help="Build an ARM/E32 application executable"
+    )
     build.add_argument("--project", type=Path, default=Path.cwd())
     build.add_argument("--output", type=Path, default=Path(".symbian/build"))
     build.add_argument("--compiler", default="clang++")
     build.add_argument("--linker", default="ld.lld")
     build.add_argument("--architecture", choices=("armv6", "armv5t"))
     package = commands.add_parser(
-        "package", help="Build an unsigned SISX experiment"
+        "package", help="Build an unsigned SISX application package"
     )
     package.add_argument("--project", type=Path, default=Path.cwd())
     package.add_argument("--artifact", type=Path, required=True)
@@ -466,6 +541,54 @@ def _parser() -> argparse.ArgumentParser:
         "info", help="Inspect USB descriptors and mounted storage"
     )
     info.add_argument("--device")
+    info.add_argument(
+        "--no-protocol",
+        action="store_true",
+        help="Show host USB evidence without querying the CDC ACM port",
+    )
+    info.add_argument(
+        "--usb-map",
+        action="store_true",
+        help="Compatibility alias; the USB map is always included",
+    )
+    info.add_argument(
+        "--at-status",
+        action="store_true",
+        help="Query battery and signal codes from the AT modem port",
+    )
+    info.add_argument(
+        "--mtp",
+        action="store_true",
+        help="Read MTP device and storage information",
+    )
+    info.add_argument(
+        "--mtp-list",
+        type=int,
+        metavar="LIMIT",
+        default=0,
+        help="Also list up to LIMIT root object handles per MTP storage",
+    )
+    info.add_argument(
+        "--obex-connect",
+        action="store_true",
+        help="Attempt and close a PC Suite OBEX session",
+    )
+    mode_commands = device_commands.add_parser(
+        "mode", help="Observe a human-selected USB mode transition"
+    ).add_subparsers(dest="mode_command", required=True)
+    mode_begin = mode_commands.add_parser(
+        "begin", help="Save the current USB mode as a verification baseline"
+    )
+    mode_begin.add_argument("--device", help="Exact selector from device list")
+    mode_begin.add_argument(
+        "--ticket", required=True, type=Path, help="New private baseline file"
+    )
+    mode_verify = mode_commands.add_parser(
+        "verify", help="Check the phone after its USB mode changes"
+    )
+    mode_verify.add_argument(
+        "--ticket", required=True, type=Path, help="Saved baseline file"
+    )
     install_app = device_commands.add_parser(
         "install",
         help="Build, package and stage a SIS for on-phone installation",
@@ -674,6 +797,23 @@ def _execute(args: argparse.Namespace) -> dict:
         from symbian.project.configuration import ProjectConfiguration
 
         project = args.project.resolve()
+        if (
+            args.app_command == "run"
+            and not (project / "symbian-project.json").is_file()
+        ):
+            from symbian.emulator.launch import main as launch
+            from symbian.status import Code, StatusError
+
+            result = launch(
+                ["--project", str(project), *option_arguments(args)],
+                raise_errors=True,
+            )
+            if result:
+                raise StatusError(
+                    Code.CANCELLED if result == 130 else Code.INTERNAL,
+                    f"Emulator supervisor exited {result}",
+                )
+            return {"frontend_exit": result}
         configuration = ProjectConfiguration.load(project)
         if args.app_command == "configure":
             from symbian.project.generate import configure_project
@@ -928,7 +1068,34 @@ def _execute(args: argparse.Namespace) -> dict:
     if args.device_command == "list":
         return list_devices()
     if args.device_command == "info":
-        return inspect_device(args.device)
+        if args.at_status and args.no_protocol:
+            from symbian.status import Code, StatusError
+
+            raise StatusError(
+                Code.INVALID_ARGUMENT,
+                "--at-status requires the protocol probe",
+            )
+        if args.mtp_list < 0 or args.mtp_list > 128:
+            from symbian.status import Code, StatusError
+
+            raise StatusError(
+                Code.INVALID_ARGUMENT, "--mtp-list must be 0..128"
+            )
+        return inspect_device(
+            args.device,
+            probe_protocol=not args.no_protocol,
+            usb_map=args.usb_map,
+            at_status=args.at_status,
+            mtp=args.mtp,
+            mtp_list=args.mtp_list,
+            obex_connect=args.obex_connect,
+        )
+    if args.device_command == "mode":
+        from symbian.device.mode import begin, verify
+
+        if args.mode_command == "begin":
+            return begin(args.ticket, args.device)
+        return verify(args.ticket)
     from symbian.device.installation import install
 
     return install(
@@ -943,7 +1110,22 @@ def _execute(args: argparse.Namespace) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     """Emits human or canonical JSON output and returns a process exit code."""
-    args = _parser().parse_args(argv)
+    parser = _parser()
+    arguments = sys.argv[1:] if argv is None else argv
+    if not arguments:
+        parser.print_help()
+        return 0
+    args = parser.parse_args(arguments)
+    if args.command == "console":
+        try:
+            from symbian.console.launcher import launch_detached
+            from symbian.status import StatusException
+
+            launch_detached(args.workdir)
+            return 0
+        except (OSError, ImportError, StatusException) as error:
+            print(f"Console unavailable: {error}", file=sys.stderr)
+            return 1
     if args.command == "doctor":
         # Diagnostics must still work before the native wheel is installed.
         response = {

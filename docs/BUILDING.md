@@ -1,4 +1,4 @@
-# Experimental CMake projects
+# Building E32 applications with CMake
 
 The E32 build path uses CMake presets, Ninja and Clang/LLD. CMake owns the source
 graph and compilation database; the platform's native library converts the

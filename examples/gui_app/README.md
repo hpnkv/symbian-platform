@@ -1,11 +1,13 @@
-# Native Window Server GUI experiment
+# Native Window Server GUI application
 
 Build a touch counter with original public Symbian headers, modern Clang/LLD,
 the installed SDK's `Symbian::Stackless` runtime and the native E32 converter.
 Each increment schedules a 300-ms timer Future that lights a small marker;
-Reset cancels pending work. A narrow `async_bridge.cc` keeps the original
-Window Server headers out of modern C++ code, while one event-thread loop
-owns Window Server and timer request completion. The selected ROM needs
+Reset cancels pending work. `app.cc` visibly uses `std::make_shared` and
+`std::thread` to own the Window Server event thread and carry its exit result
+back to process startup. `window_server.cc` keeps original Symbian headers out
+of that modern C++ translation unit. The event thread owns its own cleanup
+stack, Window Server session and timer request completion. The selected ROM needs
 `libpthread.dll`. Select an installed SDK through the active global SDK,
 `SYMBIAN_SDK_MANIFEST`, or an ignored local `sdk-location.json` containing
 `{"sdk": "/path/to/sdk"}`. See the complete root

@@ -16,6 +16,14 @@ option(SYMBIAN_RUNTIME_LOCALE_STREAM
   "Build the bounded classic-C locale and iostream runtime profile" OFF)
 option(SYMBIAN_RUNTIME_NATIVE_ATOMIC64
   "Use original EUSER lock-free 64-bit operations (verified ROM required)" OFF)
+option(SYMBIAN_RUNTIME_MIMALLOC
+  "Build the RChunk-backed mimalloc allocation profile" ON)
+set(SYMBIAN_MIMALLOC_SOURCE
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../../research/upstream/mimalloc" CACHE PATH
+  "Pinned mimalloc source checkout used to build the runtime")
+if(SYMBIAN_RUNTIME_MIMALLOC AND SYMBIAN_RUNTIME_NATIVE_ATOMIC64)
+  message(FATAL_ERROR "The mimalloc profile requires the portable 64-bit atomic bridge")
+endif()
 if(SYMBIAN_RUNTIME_LOCALE_STREAM)
   set(_LIBCPP_HAS_LOCALIZATION 1)
   # Abseil's formatting dependency instantiates std::wstring and
@@ -84,6 +92,38 @@ add_library(symbian_guest_runtime STATIC
   "${SYMBIAN_LIBCXX_SOURCE}/src/future.cpp"
   "${SYMBIAN_LIBCXX_SOURCE}/src/error_category.cpp"
   "${SYMBIAN_LIBCXX_SOURCE}/src/system_error.cpp")
+if(SYMBIAN_RUNTIME_MIMALLOC)
+  set(SYMBIAN_MIMALLOC_ADDRESS_BUDGET_MIB 64 CACHE STRING
+      "Maximum mimalloc RChunk address reservation in MiB")
+  if(SYMBIAN_MIMALLOC_ADDRESS_BUDGET_MIB LESS 16 OR
+     SYMBIAN_MIMALLOC_ADDRESS_BUDGET_MIB GREATER 512)
+    message(FATAL_ERROR "SYMBIAN_MIMALLOC_ADDRESS_BUDGET_MIB must be 16..512")
+  endif()
+  math(EXPR mimalloc_address_budget
+       "${SYMBIAN_MIMALLOC_ADDRESS_BUDGET_MIB} * 1048576")
+  if(NOT EXISTS "${SYMBIAN_MIMALLOC_SOURCE}/include/mimalloc.h")
+    message(FATAL_ERROR "SYMBIAN_MIMALLOC_SOURCE needs the pinned mimalloc checkout")
+  endif()
+  set(mimalloc_sources
+    alloc.c alloc-aligned.c alloc-posix.c arena.c bitmap.c heap.c init.c
+    libc.c options.c os.c page.c page-map.c prim/prim-tls.c random.c
+    sample-guarded.c sample-profile.c stats.c subproc.c theap.c
+    threadlocal.c)
+  list(TRANSFORM mimalloc_sources PREPEND "${SYMBIAN_MIMALLOC_SOURCE}/src/")
+  target_sources(symbian_guest_runtime PRIVATE ${mimalloc_sources}
+    mimalloc_prim.c sdk_mimalloc_pages.cc sdk_mimalloc_tls.cc)
+  set_source_files_properties(${mimalloc_sources} mimalloc_prim.c
+    PROPERTIES COMPILE_OPTIONS
+      "-include;${CMAKE_CURRENT_SOURCE_DIR}/mimalloc_port.h;-fno-pic"
+      COMPILE_DEFINITIONS "MI_DEBUG=0;NDEBUG=1")
+  set_source_files_properties(sdk_mimalloc_pages.cc sdk_mimalloc_tls.cc
+    PROPERTIES COMPILE_OPTIONS -fno-pic)
+  target_include_directories(symbian_guest_runtime SYSTEM PRIVATE
+    "${SYMBIAN_MIMALLOC_SOURCE}/include")
+  target_compile_definitions(symbian_guest_runtime PRIVATE
+    SYMBIAN_RUNTIME_MIMALLOC=1 MI_DEFAULT_ARENA_RESERVE=8192
+    SYMBIAN_MIMALLOC_ADDRESS_BUDGET_BYTES=${mimalloc_address_budget})
+endif()
 target_sources(symbian_guest_runtime PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/../concurrency/guest/arm_fiber_context.S"
   "${SYMBIAN_LIBCXX_SOURCE}/src/hash.cpp"

@@ -4,6 +4,7 @@
 #ifndef SYMBIAN_GUEST_THREAD_FIBER_H_
 #define SYMBIAN_GUEST_THREAD_FIBER_H_
 
+#include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -25,6 +26,8 @@ namespace thread {
 class Fiber;
 class Mutex;
 class CondVar;
+class PermanentEvent;
+struct Case;
 void FiberEntry();
 
 // Application-provided ordering and event-loop wake integration. Both hooks
@@ -100,6 +103,10 @@ class Fiber {
     return finished_;
   }
 
+  void Cancel();
+  bool Cancelled() const noexcept;
+  Case OnCancel() const;
+
   static Fiber* Current() noexcept;
   static void Yield();
   static void SleepFor(absl::Duration duration);
@@ -111,6 +118,8 @@ class Fiber {
   friend void FiberEntry();
   Scheduler& scheduler_;
   Work work_;
+  std::unique_ptr<PermanentEvent> cancellation_;
+  std::atomic<bool> cancel_requested_{false};
   std::unique_ptr<std::uintptr_t[]> stack_;
   std::uintptr_t stack_sp_ = 0;
   bool queued_ = false;   // guarded by Scheduler::mu_
@@ -119,6 +128,9 @@ class Fiber {
   std::chrono::steady_clock::time_point deadline_ =
       std::chrono::steady_clock::time_point::max();
 };
+
+bool Cancelled();
+Case OnCancel();
 
 }  // namespace thread
 

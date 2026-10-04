@@ -6,6 +6,8 @@
 // have conflicting exception specifications and inline definitions.
 extern "C" void* SymbianRuntimeAllocate(unsigned int size);
 extern "C" void SymbianRuntimeFree(void* pointer);
+// Opaque identity for verifying distinct native thread heaps in guest tests.
+extern "C" void* SymbianRuntimeHeapIdentity();
 // Process exit codes use the corresponding Symbian error values. Keep the
 // runtime's fatal cases named even in translation units without e32std.h.
 enum class SymbianRuntimeExitReason : int {
@@ -15,6 +17,11 @@ enum class SymbianRuntimeExitReason : int {
 extern "C" [[noreturn]] void SymbianRuntimeExit(
     SymbianRuntimeExitReason reason);
 extern "C" int SymbianRuntimeAllocationCells();
+extern "C" void SymbianRuntimeCollectAllocations();
+// Pair on native worker entry/exit. The default heap backend needs no state;
+// mimalloc uses this scope for a fast thread-local cache and explicit teardown.
+extern "C" void SymbianRuntimeThreadCacheEnter();
+extern "C" void SymbianRuntimeThreadCacheLeave();
 // Process-owned, page-aligned backing for low-level allocators. The opaque
 // owner must outlive every access to the returned pages and be closed once.
 struct SymbianRuntimePageOwner;

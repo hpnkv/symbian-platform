@@ -1,4 +1,4 @@
-"""Experimental ARM object builds with explicit compatibility limits."""
+"""ARM application object builds with explicit compatibility limits."""
 
 import hashlib
 import json
@@ -151,7 +151,7 @@ def build(
     *,
     architecture: str | None = None,
 ) -> dict:
-    """Builds a declared object or E32 experiment and its clangd database."""
+    """Builds a declared object or E32 application and its clangd database."""
     project = project.resolve()
     try:
         manifest = tomllib.loads(
@@ -170,7 +170,7 @@ def build(
     ):
         raise StatusError(
             Code.UNIMPLEMENTED,
-            "Only ARM object and E32 PIC/import/DLL experiments are supported",
+            "Only ARM object and E32 application/DLL builds are supported",
         )
     if architecture is not None:
         from symbian.toolchain.architecture import target

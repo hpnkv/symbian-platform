@@ -5,6 +5,10 @@
 
 #include "abi.h"
 
+#ifdef SYMBIAN_RUNTIME_ALLOC_BENCH
+extern "C" int SymbianRuntimeAllocBench();
+#endif
+
 extern "C" const int RuntimeGotValue;
 extern "C" int RuntimeGotFunction(int value);
 extern "C" unsigned int RuntimeReverseBytes(unsigned int value);
@@ -61,6 +65,12 @@ extern "C" int SymbianRuntimeFiberLocksProbe();
 #ifdef SYMBIAN_RUNTIME_EVENT_EXECUTOR
 extern "C" int SymbianRuntimeEventExecutorProbe();
 #endif
+#ifdef SYMBIAN_RUNTIME_DEVICE_API
+extern "C" int SymbianRuntimeDeviceApiProbe();
+#endif
+#ifdef SYMBIAN_RUNTIME_MIMALLOC_SDK_PROBE
+extern "C" int SymbianRuntimeMimallocSdkProbe();
+#endif
 #ifdef SYMBIAN_RUNTIME_THREAD_ERROR
 extern "C" int SymbianRuntimeThreadErrorProbe();
 #endif
@@ -100,8 +110,21 @@ extern "C" int RuntimeCheckInitializers();
 #endif
 
 extern "C" int RuntimeMain() {
+#ifdef SYMBIAN_RUNTIME_ALLOC_BENCH
+  return SymbianRuntimeAllocBench();
+#endif
+#ifdef SYMBIAN_RUNTIME_DEVICE_API
+  if (int result = SymbianRuntimeDeviceApiProbe(); result != 0) {
+    return result;
+  }
+#endif
 #ifdef SYMBIAN_RUNTIME_EVENT_EXECUTOR
   if (int result = SymbianRuntimeEventExecutorProbe(); result != 0) {
+    return result;
+  }
+#endif
+#ifdef SYMBIAN_RUNTIME_MIMALLOC_SDK_PROBE
+  if (int result = SymbianRuntimeMimallocSdkProbe(); result != 0) {
     return result;
   }
 #endif
@@ -379,9 +402,17 @@ extern "C" int RuntimeMain() {
     return -105;
   }
   volatile size_t exhausted = 4 * 1024 * 1024;
-  if (::operator new(exhausted, nothrow) != nullptr) {
+  void* large = ::operator new(exhausted, nothrow);
+#ifdef SYMBIAN_RUNTIME_MIMALLOC
+  if (large == nullptr) {
     return -108;
   }
+  ::operator delete(large);
+#else
+  if (large != nullptr) {
+    return -108;
+  }
+#endif
   return SymbianRuntimeAllocationCells() == before ? 0 : -106;
 #endif
 }

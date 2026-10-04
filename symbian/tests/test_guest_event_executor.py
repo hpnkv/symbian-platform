@@ -34,7 +34,9 @@ def images(tmp_path_factory):
     output = tmp_path_factory.mktemp("event-executor-builds")
     proxies = [
         (sdk / "proxies" / name / f"{name}.dso").read_bytes()
-        for name in ("euser", "libc", "libpthread", "libm", "drtaeabi")
+        for name in ("euser", "libc", "libpthread", "libm", "drtaeabi", "hal")
+        + (("efsrv",) if (sdk / "proxies/efsrv/efsrv.dso").exists() else ())
+        + (("ecam",) if (sdk / "proxies/ecam/ecam.dso").exists() else ())
     ]
     result = {}
     for architecture in ("armv5t", "armv6"):
@@ -57,6 +59,7 @@ def images(tmp_path_factory):
                     "-DSYMBIAN_IMPORT_PROXIES="
                     f"{sdk / 'proxies/euser/euser.dso'}",
                     "-DSYMBIAN_RUNTIME_EVENT_EXECUTOR=ON",
+                    "-DSYMBIAN_RUNTIME_DEVICE_API=ON",
                     "-DSYMBIAN_RUNTIME_CHANGED_EVENT_EXECUTOR="
                     + ("ON" if changed else "OFF"),
                 ],

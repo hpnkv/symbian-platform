@@ -1,0 +1,11 @@
+find_package(GTest CONFIG REQUIRED)
+include(GoogleTest)
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/server-cert.pem" test_certificate)
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/server-key.pem" test_key)
+configure_file(fixtures.h.in fixtures.h @ONLY)
+add_executable(crypto_test crypto_test.cc tls_test.cc vectors.c
+  ../library/sdk_heap.c ../library/sdk_time.c)
+target_link_libraries(crypto_test PRIVATE MbedTLS::mbedtls GTest::gtest_main)
+target_include_directories(crypto_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_compile_options(crypto_test PRIVATE -fno-exceptions)
+gtest_discover_tests(crypto_test)

@@ -23,9 +23,8 @@ from symbian.project.sdk import AppSdk
 from symbian.sdk import inspect_proxy
 
 pytestmark = pytest.mark.skipif(
-    not os.environ.get("SYMBIAN_MBEDTLS_SOURCE")
-    or not os.environ.get("SYMBIAN_APP_SDK"),
-    reason="Set SYMBIAN_MBEDTLS_SOURCE and SYMBIAN_APP_SDK",
+    not os.environ.get("SYMBIAN_APP_SDK"),
+    reason="Set SYMBIAN_APP_SDK",
 )
 
 
@@ -33,7 +32,7 @@ pytestmark = pytest.mark.skipif(
 def artifacts(tmp_path_factory):
     """Builds the real C archive and SDK DLL once for format and guest tests."""
     tmp_path = tmp_path_factory.mktemp("mbedtls-dll")
-    source = Path(os.environ["SYMBIAN_MBEDTLS_SOURCE"]).resolve()
+    source = Path(__file__).parents[2] / "third_party/mbedtls-symbian"
     sdk = AppSdk.load(Path(os.environ["SYMBIAN_APP_SDK"]))
     archive_build = tmp_path / "mbedtls archive"
     run(

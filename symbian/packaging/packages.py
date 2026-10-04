@@ -1,4 +1,4 @@
-"""Host policy for the canonical unsigned SISX experiment."""
+"""Host policy for the canonical unsigned SISX application package."""
 
 import hashlib
 import json
@@ -6,6 +6,8 @@ import tomllib
 from pathlib import Path
 
 from symbian.native import require_native
+from symbian.packaging.ca_bundle import digest as ca_digest
+from symbian.packaging.ca_bundle import selected_bundle
 from symbian.packaging.registration import compile_registration
 from symbian.status import Code, StatusError
 
@@ -47,11 +49,11 @@ def inspect_package(path: Path) -> dict:
 
 
 def package(project: Path, artifact: Path, output: Path) -> dict:
-    """Packages one experimental E32 using the project's package table.
+    """Packages one E32 application using the project's package table.
 
     Args:
         project: Directory containing symbian.toml with a package table.
-        artifact: Native converter's validated experimental E32 executable.
+        artifact: Native converter's validated E32 application executable.
         output: Directory for a SIS file and a structured evidence report.
 
     Returns:
@@ -104,6 +106,19 @@ def package(project: Path, artifact: Path, output: Path) -> dict:
     )
 
     assets, asset_hashes = resources if resources is not None else (None, {})
+    ca_bundle = selected_bundle(project, artifact)
+    if ca_bundle is not None:
+        if assets is None:
+            raise StatusError(
+                Code.INVALID_ARGUMENT,
+                "CA bundle requires an [application] registration",
+            )
+        ca_path, ca_data = ca_bundle
+        stem = Path(options["executable_name"]).stem
+        target = f"!:\\resource\\apps\\{stem}_ca.pem"
+        insertion = len(assets) - int(assets[-1][0].endswith(".mif"))
+        assets.insert(insertion, (target, ca_data))
+        asset_hashes[str(ca_path.relative_to(project))] = ca_digest(ca_data)
 
     def build() -> bytes:
         if resources is None:
@@ -118,12 +133,14 @@ def package(project: Path, artifact: Path, output: Path) -> dict:
     for relative_path, digest in asset_hashes.items():
         source = (project / relative_path).resolve()
         if not source.is_relative_to(project) or not source.is_file():
-            raise StatusError(Code.ABORTED, "Icon input moved while packaging")
+            raise StatusError(
+                Code.ABORTED, "Application asset moved while packaging"
+            )
         with source.open("rb") as stream:
             current = stream.read(1024 * 1024 + 1)
         if hashlib.sha256(current).hexdigest() != digest:
             raise StatusError(
-                Code.ABORTED, "Icon input changed while packaging"
+                Code.ABORTED, "Application asset changed while packaging"
             )
     path = output / f"{Path(options['executable_name']).stem}.sis"
     report_path = output / "package-report.json"
@@ -145,6 +162,18 @@ def package(project: Path, artifact: Path, output: Path) -> dict:
         "manifest": str(manifest),
         "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
         "application_asset_sha256": asset_hashes,
+        "ca_bundle": (
+            {
+                "source": str(ca_bundle[0]),
+                "target": (
+                    "!:\\resource\\apps\\"
+                    f"{Path(options['executable_name']).stem}_ca.pem"
+                ),
+                "sha256": ca_digest(ca_bundle[1]),
+            }
+            if ca_bundle is not None
+            else None
+        ),
         "sis": inspect_package(path),
         "reproducible": True,
         "reproducibility_scope": "two native writer calls on this host",

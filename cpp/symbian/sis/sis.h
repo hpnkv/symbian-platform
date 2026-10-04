@@ -41,10 +41,10 @@ struct ApplicationFile {
   std::string bytes;
 };
 
-// Deterministic unsigned SISX, English, one validated experimental E32 EXE,
+// Deterministic unsigned SISX, English, one validated E32 application EXE,
 // ordinary installation to !:\sys\bin. No scripts, dependencies or signature.
 // Printable ASCII metadata, experimental UID range and <=16 MiB payload only.
-// This is a format experiment, not an authorization to install on hardware.
+// This application package format does not authorize installation on hardware.
 absl::StatusOr<std::string> BuildPackage(std::string_view executable,
                                          const PackageOptions& options);
 

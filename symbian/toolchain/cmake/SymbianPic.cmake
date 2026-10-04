@@ -14,7 +14,7 @@ endfunction()
 
 function(symbian_add_import_executable target)
   if(NOT SYMBIAN_IMPORT_PROXIES)
-    message(FATAL_ERROR "Import experiment requires SYMBIAN_IMPORT_PROXIES")
+    message(FATAL_ERROR "Imported application requires SYMBIAN_IMPORT_PROXIES")
   endif()
   symbian_add_pic_executable(${target} ${ARGN})
   # A project declares every proxy the converter may recognize. Only used

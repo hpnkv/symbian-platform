@@ -16,6 +16,13 @@ void* Allocate(size_t size) noexcept {
   if (size > static_cast<size_t>(std::numeric_limits<int>::max())) {
     return nullptr;
   }
+#ifdef SYMBIAN_RUNTIME_MIMALLOC
+  // Mimalloc may use a smaller size class with weaker alignment for tiny
+  // requests. C++ new must still honor max_align_t, including new(0).
+  if (size < alignof(std::max_align_t)) {
+    size = alignof(std::max_align_t);
+  }
+#endif
   return SymbianRuntimeAllocate(size == 0 ? 1 : size);
 }
 

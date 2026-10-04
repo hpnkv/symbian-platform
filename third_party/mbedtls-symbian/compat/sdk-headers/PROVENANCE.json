@@ -1,0 +1,12 @@
+{
+  "libm_aliases.h": {
+    "source": "SymbianSource/oss.FCL.sf.os.ossrv",
+    "path": "genericopenlibs/openenvcore/libm/include/libm_aliases.h",
+    "sha256": "d0f7603dfae3e37f8a448f1500a06d88726f15d1425d35f20b2e0783c3497fc1"
+  },
+  "signgam.h": {
+    "source": "SymbianSource/oss.FCL.sf.os.ossrv",
+    "path": "genericopenlibs/openenvcore/libm/include/signgam.h",
+    "sha256": "58c4e46c7d982bcc9d88c71470d910399e4bc33d330968f79bf4b19bb0540bde"
+  }
+}

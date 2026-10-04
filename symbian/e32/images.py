@@ -1,4 +1,4 @@
-"""Policy-free access to the experimental native E32 format utilities."""
+"""Policy-free access to the native E32 application format utilities."""
 
 from pathlib import Path
 

@@ -5,7 +5,13 @@ import os
 import re
 from pathlib import Path
 
-from symbian.device.connection import ConnectedDevice, Volume
+from symbian.device.connection import (
+    ConnectedDevice,
+    UsbInterface,
+    Volume,
+    _safe_interface_name,
+    interface_profile,
+)
 from symbian.status import Code, StatusError
 
 
@@ -14,6 +20,69 @@ def _read(path: Path) -> str | None:
         return path.read_text(encoding="utf-8").strip()
     except (OSError, UnicodeError):
         return None
+
+
+def _hex_byte(path: Path) -> int | None:
+    value = _read(path)
+    try:
+        number = int(value, 16) if value is not None else None
+    except ValueError:
+        return None
+    return number if number is not None and 0 <= number <= 255 else None
+
+
+def _decimal_byte(path: Path) -> int | None:
+    value = _read(path)
+    try:
+        number = int(value, 10) if value is not None else None
+    except ValueError:
+        return None
+    return number if number is not None and 0 <= number <= 255 else None
+
+
+def _interfaces(entry: Path) -> tuple[UsbInterface, ...]:
+    found = []
+    for path in entry.parent.glob(f"{entry.name}:*"):
+        values = tuple(
+            _hex_byte(path / name)
+            for name in (
+                "bInterfaceNumber",
+                "bInterfaceClass",
+                "bInterfaceSubClass",
+                "bInterfaceProtocol",
+            )
+        )
+        if any(value is None for value in values):
+            continue
+        found.append(
+            UsbInterface(
+                configuration=_hex_byte(path / "bConfigurationValue"),
+                number=values[0],
+                class_code=values[1],
+                subclass_code=values[2],
+                protocol_code=values[3],
+                alternate_setting=_decimal_byte(path / "bAlternateSetting"),
+                endpoint_count=_hex_byte(path / "bNumEndpoints"),
+                declared_name=_safe_interface_name(_read(path / "interface")),
+            )
+        )
+    return tuple(
+        sorted(
+            set(found),
+            key=lambda item: (
+                item.configuration if item.configuration is not None else -1,
+                item.number,
+                (
+                    item.alternate_setting
+                    if item.alternate_setting is not None
+                    else -1
+                ),
+                item.class_code,
+                item.subclass_code,
+                item.protocol_code,
+            ),
+        )
+    )
 
 
 def _mounts(path: Path) -> dict[str, Path]:
@@ -111,6 +180,10 @@ def discover_linux(
         digest = hashlib.sha256(
             f"{vendor:04x}:{product:04x}:{identity}".encode()
         ).hexdigest()[:16]
+        anchor = hashlib.sha256(
+            f"{vendor:04x}:{identity}".encode()
+        ).hexdigest()[:24]
+        interfaces = _interfaces(entry)
         found.append(
             ConnectedDevice(
                 selector=f"usb:{vendor:04x}:{product:04x}:{digest}",
@@ -120,6 +193,10 @@ def discover_linux(
                 product_id=product,
                 location_id=0,
                 volumes=attached,
+                interfaces=interfaces,
+                interface_profile=interface_profile(interfaces),
+                identity_anchor=anchor,
+                identity_basis="usb-serial" if serial else "port-location",
                 capabilities=(
                     ("inspect-usb", "stage-sis")
                     if any(volume.stage_sis for volume in attached)

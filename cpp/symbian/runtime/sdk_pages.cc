@@ -35,8 +35,12 @@ extern "C" int SymbianRuntimePageCreate(unsigned int bytes,
     return KErrArgument;
   }
   RHeap* heap = &User::Heap();
+  if (heap->Open() != KErrNone) {
+    return KErrGeneral;
+  }
   void* storage = heap->Alloc(sizeof(SymbianRuntimePageOwner));
   if (storage == nullptr) {
+    heap->Close();
     return KErrNoMemory;
   }
   auto* created = new (storage) SymbianRuntimePageOwner;
@@ -46,6 +50,7 @@ extern "C" int SymbianRuntimePageCreate(unsigned int bytes,
   if (result != KErrNone) {
     created->~SymbianRuntimePageOwner();
     heap->Free(storage);
+    heap->Close();
     return result;
   }
   TUint8* base = created->chunk.Base();
@@ -55,6 +60,7 @@ extern "C" int SymbianRuntimePageCreate(unsigned int bytes,
     created->chunk.Close();
     created->~SymbianRuntimePageOwner();
     heap->Free(storage);
+    heap->Close();
     return KErrNotSupported;
   }
   *owner = created;
@@ -70,6 +76,7 @@ extern "C" void SymbianRuntimePageClose(SymbianRuntimePageOwner* owner) {
   owner->chunk.Close();
   owner->~SymbianRuntimePageOwner();
   heap->Free(owner);
+  heap->Close();
 }
 
 extern "C" void SymbianRuntimePageSetNext(SymbianRuntimePageOwner* owner,

@@ -113,6 +113,9 @@ def _audit_installed_behavior() -> None:
         "symbian/licenses/pybind11-LICENSE",
         "symbian/licenses/Abseil-LICENSE",
         "symbian/licenses/nlohmann-json-LICENSE",
+        "symbian/licenses/libusb-COPYING",
+        "symbian/host/libusb-1.0.a",
+        "symbian/host/include/libusb.h",
     ):
         if not Path(distribution.locate_file(resource)).is_file():
             raise RuntimeError(f"Missing installed resource: {resource}")

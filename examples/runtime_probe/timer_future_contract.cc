@@ -5,11 +5,11 @@
 #include <thread>
 
 #include "abi.h"
+#include "symbian/concurrency/bounded_channel.h"
 #include "symbian/concurrency/event_mailbox.h"
 #include "symbian/concurrency/property_watch.h"
 #include "symbian/concurrency/task_group.h"
 #include "symbian/concurrency/timer_pump.h"
-#include "thread/channel.h"
 
 namespace {
 std::int64_t fake_wall_seconds = 1000000;
@@ -43,7 +43,7 @@ extern "C" int SymbianRuntimeTimerFutureProbe() {
     }
   }
   {
-    thread::Channel<std::unique_ptr<int>> channel(2);
+    symbian::concurrency::BoundedChannel<std::unique_ptr<int>> channel(2);
     std::unique_ptr<int> first = std::make_unique<int>(5);
     std::unique_ptr<int> second = std::make_unique<int>(7);
     std::unique_ptr<int> rejected = std::make_unique<int>(9);
@@ -75,7 +75,7 @@ extern "C" int SymbianRuntimeTimerFutureProbe() {
     }
   }
   {
-    thread::Channel<int> channel(1);
+    symbian::concurrency::BoundedChannel<int> channel(1);
     absl::Status producer_status;
     std::thread producer([&] {
       producer_status = channel.writer()->Write(11);
@@ -94,7 +94,7 @@ extern "C" int SymbianRuntimeTimerFutureProbe() {
     }
   }
   {
-    thread::Channel<std::unique_ptr<int>> channel(1);
+    symbian::concurrency::BoundedChannel<std::unique_ptr<int>> channel(1);
     if (!channel.writer()->Write(std::make_unique<int>(1)).ok()) {
       return -316;
     }

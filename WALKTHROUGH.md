@@ -53,7 +53,8 @@ The project is divided as follows:
 | File | Responsibility |
 | --- | --- |
 | `model.h` | Pure counter, geometry, pointer hit testing and integer division |
-| `app.cc` | Original SDK types, Window Server connection, drawing and request loop |
+| `app.cc` | C++20 launcher using shared ownership and `std::thread` for the event loop |
+| `window_server.cc` | Original SDK types, Window Server connection, drawing and request loop |
 | `startup.S` | ARM entry marker and ARM-to-Thumb entry transition |
 | `startup.cc` | Checked thread-create layout, SDK heap setup, process initialization and `User::Exit` |
 | `image.ld` | Retained-relocation ELF transport with one code mapping and eager import tables |
@@ -261,7 +262,7 @@ of ELF/E32/DEF parsing is used.
 | `.symbian/gui-app/compile_commands.json` | Real CMake compilation database for editors |
 | `.symbian/gui-app/cmake/` | Persistent CMake/Ninja target tree |
 
-Edit `app.cc` or `model.h` and rerun `symbian build`. The persistent tree provides
+Edit `app.cc`, `window_server.cc` or `model.h` and rerun `symbian build`. The persistent tree provides
 the incremental build; the second build rechecks reproducibility. You can also
 use `cmake --build .symbian/gui-app/cmake` for quick compiler feedback, but that
 alone does not reconvert or update the published `.exe` and report.
@@ -357,7 +358,8 @@ For formatting and the full Python suite:
 uv run black --check symbian scripts
 uv run ruff check symbian scripts
 "$(brew --prefix llvm)/bin/clang-format" --dry-run --Werror \
-  examples/gui_app/app.cc examples/gui_app/startup.cc \
+  examples/gui_app/app.cc examples/gui_app/window_server.cc \
+  examples/gui_app/startup.cc \
   examples/gui_app/model.h cpp/tests/gui_model_test.cc
 uv run pytest -q
 ```
@@ -742,7 +744,7 @@ symbols with the corrected slide and recreate breakpoints.
 
 Once stopped in the correct image, use `info registers`, `bt`, `list`,
 `step`, `next`, and `x/8i $pc`. Add a source-line breakpoint inside `DrawGui`
-using its current line number from `app.cc`; inspect model/layout values where
+using its current line number from `window_server.cc`; inspect model/layout values where
 optimization leaves them available. Startup assembly executes ARM instructions
 and C++ executes Thumb. For raw-address breakpoints, upstream documents
 `set arm fallback-mode thumb` for Thumb addresses; use ARM for startup instead.

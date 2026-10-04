@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from symbian.cli.__main__ import _parser
-from symbian.device import connection, installation
+from symbian.device import at, connection, installation, mode
 from symbian.device.linux import discover_linux
 from symbian.device.policy import policy
 from symbian.status import Code, StatusError
@@ -220,6 +220,19 @@ def test_linux_sysfs_mount_adapter_uses_usb_ancestor(tmp_path):
         "serial": "private-phone-serial",
     }.items():
         (usb / name).write_text(value)
+    usb_interface = usb.parent / "1-2:1.0"
+    usb_interface.mkdir()
+    for name, value in {
+        "bInterfaceNumber": "00",
+        "bInterfaceClass": "08",
+        "bInterfaceSubClass": "06",
+        "bInterfaceProtocol": "50",
+        "bConfigurationValue": "01",
+        "bAlternateSetting": "10",
+        "bNumEndpoints": "02",
+        "interface": "Nokia Storage",
+    }.items():
+        (usb_interface / name).write_text(value)
     block = usb / "1-2:1.0/host0/target0/block/sdb/sdb1"
     block.mkdir(parents=True)
     (block / "ro").write_text("0")
@@ -236,4 +249,256 @@ def test_linux_sysfs_mount_adapter_uses_usb_ancestor(tmp_path):
     assert devices[0].volumes[0].disk == "sdb1"
     assert devices[0].volumes[0].mount == mount
     assert devices[0].capabilities == ("inspect-usb", "stage-sis")
+    assert devices[0].interface_profile == "mass-storage"
+    assert devices[0].interfaces[0].protocol_code == 0x50
+    assert devices[0].interfaces[0].alternate_setting == 10
+    assert devices[0].interfaces[0].endpoint_count == 2
+    assert devices[0].interfaces[0].declared_name == "Nokia Storage"
+    assert devices[0].identity_basis == "usb-serial"
     assert "private-phone-serial" not in str(devices[0].model_dump())
+
+
+def test_mode_ticket_requires_same_serial_and_observes_usb_transition(
+    monkeypatch, tmp_path
+):
+    storage = _usb(
+        "808 PureView",
+        0x0421,
+        0x05D0,
+        [
+            {
+                "IOObjectClass": "IOUSBHostInterface",
+                "bConfigurationValue": 1,
+                "bInterfaceNumber": 0,
+                "bInterfaceClass": 8,
+                "bInterfaceSubClass": 6,
+                "bInterfaceProtocol": 80,
+            }
+        ],
+    )
+    suite = _usb(
+        "808 PureView",
+        0x0421,
+        0x05D1,
+        [
+            {
+                "IOObjectClass": "IOUSBHostInterface",
+                "bConfigurationValue": 1,
+                "bInterfaceNumber": 0,
+                "bInterfaceClass": 2,
+                "bInterfaceSubClass": 2,
+                "bInterfaceProtocol": 1,
+                "IORegistryEntryChildren": [
+                    {
+                        "IOObjectClass": "IOSerialBSDClient",
+                        "IOCalloutDevice": "/dev/cu.usbmodem141202",
+                    }
+                ],
+            }
+        ],
+    )
+    baseline = connection.discover_from_registry(
+        {"IORegistryEntryChildren": [storage]}, lambda _: {}
+    )[0]
+    after = connection.discover_from_registry(
+        {"IORegistryEntryChildren": [suite]}, lambda _: {}
+    )[0]
+    monkeypatch.setattr(mode, "select", lambda _: baseline)
+    monkeypatch.setattr(mode, "discover", lambda: (baseline,))
+    ticket = tmp_path / "mode.json"
+    assert mode.begin(ticket)["state"] == "awaiting-handset-selection"
+    assert "private-phone-serial" not in ticket.read_text()
+    assert ticket.stat().st_mode & 0o777 == 0o600
+    with pytest.raises(StatusError) as error:
+        mode.begin(ticket)
+    assert error.value.code == Code.ALREADY_EXISTS
+    assert mode.verify(ticket)["state"] == "unchanged"
+    monkeypatch.setattr(mode, "discover", lambda: (after,))
+    result = mode.verify(ticket)
+    assert result["state"] == "usb-transition-observed"
+    assert result["same_device_verified"] is True
+    assert result["target_mode_verified"] is False
+    assert result["host_serial_ports"] == ("/dev/cu.usbmodem141202",)
+    impostor = suite | {"USB Serial Number": "different-phone"}
+    other = connection.discover_from_registry(
+        {"IORegistryEntryChildren": [impostor]}, lambda _: {}
+    )[0]
+    monkeypatch.setattr(mode, "discover", lambda: (other,))
+    assert mode.verify(ticket)["state"] == "device-unavailable"
+
+
+def test_mode_ticket_rejects_location_only_identity(monkeypatch, tmp_path):
+    device = connection.discover_from_registry(
+        {"IORegistryEntryChildren": [_usb("808", 0x0421, 0x05D0)]},
+        lambda _: {},
+    )[0]
+    monkeypatch.setattr(
+        mode,
+        "select",
+        lambda _: device.model_copy(update={"identity_basis": "port-location"}),
+    )
+    with pytest.raises(StatusError) as error:
+        mode.begin(tmp_path / "mode.json")
+    assert error.value.code == Code.FAILED_PRECONDITION
+
+
+def test_interface_names_and_host_binding_are_attached_to_exact_interface():
+    serial_client = {
+        "IOObjectClass": "IOSerialBSDClient",
+        "IOCalloutDevice": "/dev/cu.usbmodem141202",
+    }
+    phone = connection.discover_from_registry(
+        {
+            "IORegistryEntryChildren": [
+                _usb(
+                    "808 PureView",
+                    0x0421,
+                    0x05D1,
+                    [
+                        {
+                            "IOObjectClass": "IOUSBHostInterface",
+                            "IORegistryEntryName": "MTP",
+                            "bInterfaceNumber": 0,
+                            "bInterfaceClass": 6,
+                            "bInterfaceSubClass": 1,
+                            "bInterfaceProtocol": 1,
+                            "bNumEndpoints": 3,
+                            "bAlternateSetting": 0,
+                        },
+                        {
+                            "IOObjectClass": "IOUSBHostInterface",
+                            "IORegistryEntryName": "CDC Data Interface",
+                            "bInterfaceNumber": 2,
+                            "bInterfaceClass": 10,
+                            "bInterfaceSubClass": 0,
+                            "bInterfaceProtocol": 0,
+                            "bNumEndpoints": 2,
+                            "IORegistryEntryChildren": [
+                                {
+                                    "IOObjectClass": "AppleUSBACMData",
+                                    "IORegistryEntryChildren": [serial_client],
+                                }
+                            ],
+                        },
+                    ],
+                )
+            ]
+        },
+        lambda _: {},
+    )[0]
+    imaging, data = phone.interfaces
+    assert imaging.declared_name == "MTP"
+    assert imaging.function == "Still imaging / PTP transport"
+    assert imaging.endpoint_count == 3
+    assert imaging.host_serial_port is None
+    assert data.declared_name is None
+    assert data.host_driver == "AppleUSBACMData"
+    assert data.host_serial_port == "/dev/cu.usbmodem141202"
+    assert data.model_dump()["function"] == "CDC data interface"
+
+
+def test_descriptive_interface_metadata_does_not_forge_mode_transition(
+    monkeypatch, tmp_path
+):
+    interface = connection.UsbInterface(
+        number=0, class_code=6, subclass_code=1, protocol_code=1
+    )
+    baseline = connection.ConnectedDevice(
+        selector="usb:0421:05d1:test",
+        manufacturer="Nokia",
+        product="808 PureView",
+        vendor_id=0x0421,
+        product_id=0x05D1,
+        location_id=1,
+        volumes=(),
+        interfaces=(interface,),
+        identity_anchor="a" * 24,
+        identity_basis="usb-serial",
+        capabilities=("inspect-usb",),
+    )
+    enriched = baseline.model_copy(
+        update={
+            "interfaces": (
+                interface.model_copy(
+                    update={"declared_name": "MTP", "endpoint_count": 3}
+                ),
+            )
+        }
+    )
+    monkeypatch.setattr(mode, "select", lambda _: baseline)
+    monkeypatch.setattr(mode, "discover", lambda: (enriched,))
+    ticket = tmp_path / "mode.json"
+    mode.begin(ticket)
+    assert mode.verify(ticket)["state"] == "unchanged"
+
+
+def test_info_queries_at_only_for_observed_808_pc_suite_port(monkeypatch):
+    phone = connection.discover_from_registry(
+        {
+            "IORegistryEntryChildren": [
+                _usb(
+                    "808 PureView",
+                    0x0421,
+                    0x05D1,
+                    [
+                        {
+                            "IOObjectClass": "IOUSBHostInterface",
+                            "bInterfaceNumber": 1,
+                            "bInterfaceClass": 2,
+                            "bInterfaceSubClass": 2,
+                            "bInterfaceProtocol": 1,
+                            "IORegistryEntryChildren": [
+                                {
+                                    "IOObjectClass": "IOSerialBSDClient",
+                                    "IOCalloutDevice": "/dev/cu.usbmodem141202",
+                                }
+                            ],
+                        },
+                        {
+                            "IOObjectClass": "IOUSBHostInterface",
+                            "bInterfaceNumber": 2,
+                            "bInterfaceClass": 10,
+                            "bInterfaceSubClass": 0,
+                            "bInterfaceProtocol": 0,
+                        },
+                    ],
+                )
+            ]
+        },
+        lambda _: {},
+    )[0]
+    monkeypatch.setattr(connection, "select", lambda _: phone)
+    calls = []
+
+    def fake_probe(port, include_status=False):
+        calls.append(port)
+        return {
+            "state": "at-ready",
+            "transport": "cdc-acm",
+            "queries": {
+                "manufacturer": {"state": "ok", "value": "Nokia"},
+                "model": {"state": "ok", "value": "Nokia 808 PureView"},
+                "revision": {
+                    "state": "ok",
+                    "value": "113.010.1508 2013-01-02 RM-807 (c) Nokia",
+                },
+            },
+        }
+
+    monkeypatch.setattr(at, "probe", fake_probe)
+    from symbian.device import usb_map
+
+    monkeypatch.setattr(
+        usb_map,
+        "inspect",
+        lambda device, operation="map", limit=0: {"state": "observed"},
+    )
+    assert "protocol_probe" not in connection.inspect_device(
+        probe_protocol=False
+    )
+    assert not calls
+    result = connection.inspect_device()
+    assert calls == ["/dev/cu.usbmodem141202"]
+    assert result["reported_identity"]["rm_code"] == "RM-807"
+    assert result["reported_identity"]["firmware_revision"] == "113.010.1508"
+    assert "os_version" not in result["device"]

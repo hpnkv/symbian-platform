@@ -8,6 +8,8 @@
 
 #include <pthread.h>
 
+#include "thread/selectables.h"
+
 extern "C" void SymbianFiberSwap(std::uintptr_t* saved_sp,
                                  std::uintptr_t next_sp);
 
@@ -173,9 +175,12 @@ absl::Status Scheduler::RunReady(std::size_t max_turns) {
   if (pthread_setspecific(scheduler_key, this) != 0) {
     return absl::InternalError("cannot bind guest fiber scheduler TLS");
   }
+  // Reuse the ready snapshot across a turn. Policy selection still happens
+  // outside mu, but a yielding fiber does not allocate a new vector each time.
+  std::vector<Fiber*> snapshot;
   for (std::size_t turn = 0; turn < max_turns; ++turn) {
     Fiber* next = nullptr;
-    std::vector<Fiber*> snapshot;
+    snapshot.clear();
     {
       std::lock_guard lock(mu_);
       const auto now = std::chrono::steady_clock::now();
@@ -237,7 +242,9 @@ void FiberEntry() {
 }
 
 Fiber::Fiber(Scheduler& scheduler, Work work, std::size_t stack_bytes)
-    : scheduler_(scheduler), work_(std::move(work)) {
+    : scheduler_(scheduler),
+      work_(std::move(work)),
+      cancellation_(std::make_unique<PermanentEvent>()) {
   if (std::this_thread::get_id() != scheduler.owner_ || stack_bytes < 4096 ||
       stack_bytes > 1024 * 1024 || stack_bytes % sizeof(std::uintptr_t) != 0 ||
       !work_) {
@@ -263,6 +270,30 @@ Fiber::~Fiber() {
 Fiber* Fiber::Current() noexcept {
   Scheduler* scheduler = Scheduler::Current();
   return scheduler == nullptr ? nullptr : scheduler->current_;
+}
+
+void Fiber::Cancel() {
+  if (!cancel_requested_.exchange(true, std::memory_order_acq_rel)) {
+    cancellation_->Notify();
+  }
+}
+
+bool Fiber::Cancelled() const noexcept {
+  return cancellation_->HasBeenNotified();
+}
+
+Case Fiber::OnCancel() const {
+  return cancellation_->OnEvent();
+}
+
+bool Cancelled() {
+  Fiber* current = Fiber::Current();
+  return current != nullptr && current->Cancelled();
+}
+
+Case OnCancel() {
+  Fiber* current = Fiber::Current();
+  return current == nullptr ? NonSelectableCase() : current->OnCancel();
 }
 
 void Fiber::Yield() {
