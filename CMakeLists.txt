@@ -29,7 +29,7 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
   # explicit: a new experiment needs a deliberate target/profile choice.
   set(indexed_probe_directories
       abi_probe abseil_allocator_probe abseil_status_probe
-      cxx20_probe cxx20_module_probe dll_data_probe
+      connectivity_probe cxx20_probe cxx20_module_probe dll_data_probe
       dll_lifecycle_probe dll_probe e32_probe import_probe
       mbedtls_dll_probe pointer_probe runtime_probe)
   file(GLOB existing_probe_directories RELATIVE "${CMAKE_SOURCE_DIR}/examples"
@@ -66,6 +66,18 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
   # The stackless runtime probes now use installed guest StatusOr and time.
   target_link_libraries(symbian_index_runtime PRIVATE
                         Symbian::AbseilStatusOr)
+  if(NOT TARGET Symbian::Connectivity OR NOT TARGET Symbian::Stackless)
+    message(FATAL_ERROR
+      "The selected SDK needs Connectivity and Stackless indexing targets")
+  endif()
+  set(connectivity_dir "${CMAKE_SOURCE_DIR}/examples/connectivity_probe")
+  file(GLOB connectivity_sources CONFIGURE_DEPENDS
+       "${connectivity_dir}/*.cc" "${connectivity_dir}/*.S")
+  add_library(symbian_index_connectivity OBJECT EXCLUDE_FROM_ALL
+              ${connectivity_sources})
+  target_link_libraries(symbian_index_connectivity PRIVATE
+                        Symbian::Connectivity Symbian::Stackless)
+  add_dependencies(symbian_probe_index symbian_index_connectivity)
   foreach(probe IN ITEMS abseil_allocator abseil_status)
     set(probe_dir "${CMAKE_SOURCE_DIR}/examples/${probe}_probe")
     file(GLOB probe_sources CONFIGURE_DEPENDS

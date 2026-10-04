@@ -32,12 +32,16 @@ class Observer final : public symbian::api::connectivity::TcpAcceptObserver {
         return;
       }
       const std::array<std::uint8_t, 1> response{'A'};
-      client.SendFor(response, std::chrono::seconds(5));
+      if (!client.SendFor(response, std::chrono::seconds(5)).ok()) {
+        return;
+      }
     });
     if (!posted.ok()) {
       return;
     }
-    listener->AcceptNext();
+    if (!listener->AcceptNext().ok()) {
+      return;
+    }
   }
 
   symbian::api::connectivity::ActiveTcpListener* listener = nullptr;

@@ -1,5 +1,15 @@
 # Research log
 
+2026-10-04: Root `SYMBIAN_INDEX_GUEST_PROBES` intentionally rejects any
+`examples/*_probe` directory without an explicit ARM target. The added
+`connectivity_probe` directory had a standalone build but no root IDE target,
+so configuration stopped with the reported CMake error. Adding an object
+indexing target using the installed Connectivity/Stackless interfaces makes
+both ARM preset compile databases complete. An existing ARMv6 build cache
+still referenced an older SDK path; passing the active
+`-DSYMBIAN_SDK_PREFIX=...` selected the current SDK. This target compiles
+source for indexing; it does not link the probe variants into one executable.
+
 2026-10-04: The resident service had only been started by a dedicated Pytest
 harness. An attempt through the normal `symbian app run` path failed at CMake
 because the example preset's optional `SYMBIAN_SDK_PREFIX` environment value

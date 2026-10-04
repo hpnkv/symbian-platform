@@ -1,5 +1,15 @@
 # Status
 
+2026-10-04 connectivity IDE indexing repair: the root guest-probe CMake
+profile now declares `connectivity_probe` explicitly and builds an object
+indexing target against the active SDK's `Symbian::Connectivity` and
+`Symbian::Stackless` targets. `cmake --preset guest-probes-armv6` and
+`guest-probes-armv5t` configured with the current SDK prefix; both
+`symbian_index_connectivity` targets compiled all seven source/assembly files
+and ARMv6 `compile_commands.json` lists them. Two previously ignored Status
+returns in the worker probe are checked. This is IDE indexing and compilation
+evidence, not a new guest runtime or Nokia 808 result.
+
 2026-10-04 ordinary emulator launch for the resident example: the research
 project now resolves its installed SDK from the selected compiler when the
 optional preset environment variable is absent. With the active negotiated
