@@ -43,6 +43,15 @@ target_link_libraries(symbian_host_primitive_objects PRIVATE
   Boost::fiber Boost::context absl::status absl::log
   absl::log_internal_check_op absl::random_random)
 symbian_native_library(symbian_host_primitive_objects)
+# Boost.Context's forced unwind and Boost.Fiber's wait paths throw on Linux.
+# Keep that required exception boundary in only the TUs that include Boost;
+# the remaining implementation and public ABI retain -fno-exceptions.
+set_source_files_properties(
+  host/thread/boost_primitives.cc
+  host/thread/executor.cc
+  host/thread/fiber.cc
+  PROPERTIES COMPILE_OPTIONS
+  "$<$<CXX_COMPILER_ID:AppleClang,Clang,GNU>:-fexceptions>")
 set(bundle "${CMAKE_CURRENT_BINARY_DIR}/libsymbian_host_primitives.a")
 get_filename_component(concurrency_workspace
   "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
