@@ -1,6 +1,11 @@
 # Mission: Revive the Nokia 808 / Symbian Belle Development Platform for 2026
 
-You are working on a long-running engineering and research project whose goal is to create a **modern, macOS-native development stack for the Nokia 808 PureView and the Symbian Belle ecosystem**, suitable for serious application development, system-component development, reverse engineering, debugging, experimentation, and potentially eventually developing an alternative operating system for the hardware.
+You are working on a long-running engineering and research project whose goal is to create a **modern development stack for the Nokia 808 PureView and the Symbian Belle ecosystem**, suitable for serious application development, system-component development, reverse engineering, debugging, experimentation, and potentially eventually developing an alternative operating system for the hardware.
+
+macOS is the currently exercised interactive host. Linux preparation is
+provisional and follows the dependency-limited [Linux host plan](linux-host-plan.md);
+Linux host wheel evidence does not establish GUI, guest-debugger or device
+behavior there.
 
 The Nokia 808 remains the initial physical target. The SDK's application and
 emulator workflows also serve other Symbian devices where their actual ABI and

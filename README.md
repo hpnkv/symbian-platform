@@ -10,6 +10,8 @@ The project exists to make Symbian development inspectable and repeatable with
 current host tools. It keeps firmware and private device data outside the
 repository and records where emulator evidence ends. An ARM build or emulator
 pass does **not** establish Nokia 808 compatibility.
+Linux host builds are available with provisional application and emulator
+instructions; interactive Linux guest runs and debugging remain to be checked.
 
 [Explore the documentation](https://hpnkv.github.io/symbian-platform/) ·
 [Create a project](doc/docs/guides/projects.md) ·
@@ -59,7 +61,8 @@ The [emulator guide](doc/docs/guides/firmware.md) explains where firmware fits.
 
 ## Start here
 
-Install the host dependencies, then check the toolchain. `uv` creates the
+Install the host dependencies using the [source preparation guide](doc/docs/guides/source-prerequisites.md)
+or its [Linux path](doc/docs/guides/linux.md), then check the toolchain. `uv` creates the
 Python environment and runs the `symbian` command. The first ARM object probe
 does not require firmware or an installed target SDK.
 
@@ -83,6 +86,7 @@ From there, follow [getting started](doc/docs/getting-started.md) or open the
 | Package a private CA for one app | [TLS and CA bundles](doc/docs/guides/tls.md) |
 | Prepare firmware for local emulator work | [Firmware guide](doc/docs/guides/firmware.md) |
 | Build and test this repository | [Host build guide](doc/docs/guides/host-build.md) |
+| Prepare a Linux host | [Provisional Linux guide](doc/docs/guides/linux.md) |
 
 The runnable examples live in [`examples/`](examples/). Local builds,
 firmware, upstream checkouts and emulator state stay outside version control.

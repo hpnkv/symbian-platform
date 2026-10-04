@@ -475,9 +475,7 @@ def _parser() -> argparse.ArgumentParser:
         "configure-ide", help="Install local GUI Run and ARM Debug profiles"
     )
     ide.add_argument("--root", type=Path, default=Path.cwd())
-    ide.add_argument(
-        "--gdb", type=Path, default=Path("/opt/homebrew/bin/arm-none-eabi-gdb")
-    )
+    ide.add_argument("--gdb", type=Path)
     for operation in ("status", "screenshot", "pointer"):
         command = emulator_commands.add_parser(operation)
         command.add_argument("--endpoint", type=Path, required=True)

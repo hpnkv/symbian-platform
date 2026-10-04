@@ -38,7 +38,7 @@ checkout.
    shows the current controls.
 3. Reload CMake. Check that `app.cc`, `window_server.cc`, `startup.cc` and
    `startup.S` belong to `gui_app`, and that the profile uses the ARM triple
-   rather than a macOS target. The expected compiler database is
+   rather than a host target. The expected compiler database is
    `.symbian/cmake/gui-app/compile_commands.json` for the shared preset.
 
 ![CMake settings showing an enabled Symbian ARM local preset in the prepared IntelliJ IDEA CLion plugin project.](../assets/screenshots/clion-cmake-profile.png)
@@ -59,7 +59,7 @@ separate steps. The [GUI build guide](gui-build.md) explains those artifacts.
 | ARM headers are unresolved | Confirm the prepared SDK and `SYMBIAN_GUI_SDK_INCLUDE`; reload CMake after a path change. |
 | LLD or Ninja is missing | Check `cmake`, `ninja`, `clang++` and `ld.lld` on the IDE toolchain `PATH`. |
 | A local `clion-arm` toolchain name is unavailable | Select the shared `symbian-pic` preset or restart the IDE after installing a named toolchain. |
-| Indexing looks like macOS code | Inspect the selected profile and its `compile_commands.json` for `--target=armv6-none-eabi`. |
+| Indexing looks like host code | Inspect the selected profile and its `compile_commands.json` for `--target=armv6-none-eabi`. |
 
 The prepared project was configured in an IntelliJ IDEA installation with the
 CLion plugin, and its target model resolved the GUI C++ and assembly sources.

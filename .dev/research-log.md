@@ -1,5 +1,11 @@
 # Research log
 
+## 2026-10-04: Linux host preparation questions
+
+A11 uses a pinned static dependency prefix, CMake/Ninja presets and an installed-wheel audit on Linux. This repository already has bounded Linux aarch64 host-native/wheel evidence, while its SDK exporter and Run/IDE wrappers still assumed Homebrew or a macOS `.app` path. The host code now selects LLVM through PATH or `SYMBIAN_LLVM_BIN`, chooses the Linux EKA2L1 CMake output path and can use `gdb-multiarch`. The pinned EKA2L1 checkout contains `linux_x64-build.sh` for FFmpeg but no maintained Linux aarch64 counterpart.
+
+Open questions for a real Linux host: whether full source SDK export (including `rcomp`, Abseil, guest runtime and vendored Mbed TLS) passes on both host architectures; which Qt/FFmpeg package set the pinned patched emulator needs; whether disposable GUI and control sockets work under X11 and Wayland; whether the remote GDB frontend and source relocation work in CLion; and whether PySide6 Console and USB discovery/protocol results match the bounded host tests. Treat wheel and ARM build results separately from emulator execution and physical-device evidence.
+
 ## 2026-10-04: Transport and entropy boundary follow-up
 
 The pinned EKA2L1 base socket returns false for `KSONonBlockingIO` (family 1/id 4), while its `KSOBlockingIO` case is itself a success stub. The internet socket uses asynchronous libuv send/receive requests, but the selected guest OpenC `fcntl(F_SETFL, O_NONBLOCK)` path still fails before the TLS BIO can attach. A one-line option-acceptance patch would not establish POSIX nonblocking `recv` or `send`; the next acceptance control must observe WANT_READ/WANT_WRITE and cancellation against a connected disposable guest socket. No emulator patch was applied in this pass.

@@ -7,14 +7,16 @@ metadata, a restricted executable basename, versions in 0..32767, one payload
 up to 16 MiB, and installation to `!:\sys\bin\<name>.exe`. It has no resources,
 scripts, dependencies, embedded packages, upgrades or certificates.
 
-This advances the macOS build/package/emulator loop. It does not establish
+This advances the build/package/emulator loop. It does not establish
 installation policy or loader compatibility on the physical Nokia 808.
 A supplied Delight RM-807 firmware bundle now imports into EKA2L1; GUI startup
 and visual behavior in that material remain under investigation.
 
-The host build requires OpenSSL 3's static libcrypto for the legacy SHA-1 field
-(`brew install openssl@3`). It follows A11's static linkage pattern; the verified
-wheel has no Homebrew crypto dylib dependency and includes the OpenSSL license.
+The host build requires OpenSSL 3's static libcrypto for the legacy SHA-1 field.
+The isolated dependency bootstrap in the [host build guide](host-build.md)
+supplies it on macOS or Linux. It follows A11's static linkage pattern; the
+verified wheel does not depend on a package-manager crypto library and includes
+the OpenSSL license.
 No historical SDK or Windows utility is needed for this profile. Native SIS
 code returns Abseil statuses, compiles without exceptions and is synchronous.
 Bindings release the GIL for native work; Python handles files, TOML and reports.

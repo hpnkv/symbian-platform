@@ -38,8 +38,9 @@ compatibility.
 
 1. Put a breakpoint in `GuiMain` or `DrawGui` in the GUI source.
 2. Select **GUI Debug** and its **Symbian GUI GDB** native debug profile.
-   **GUI Host LLDB** follows the macOS launcher and cannot stop in ARM guest
-   C++.
+   The host debugger follows the native launcher and cannot stop in ARM guest
+   C++. The screenshot shows macOS **GUI Host LLDB**; Linux may have **GUI Host
+   GDB** instead. Guest debugging uses **Symbian GUI GDB** on either host.
 
    ![The IDE profile selector showing the enabled ARM CMake profile, GUI Host LLDB and Symbian GUI GDB.](../assets/screenshots/clion-debug-profiles.png)
 

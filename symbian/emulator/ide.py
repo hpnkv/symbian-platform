@@ -103,7 +103,7 @@ def _select_debugger(
     component.text = selection.model_dump_json(by_alias=True, indent=2)
 
 
-def configure(root: Path, gdb: Path, python: Path | None = None) -> dict:
+def configure(root: Path, gdb: Path | None, python: Path | None = None) -> dict:
     """Writes ignored IDE settings and a GDB supervisor, preserving profiles.
 
     Args:
@@ -115,6 +115,17 @@ def configure(root: Path, gdb: Path, python: Path | None = None) -> dict:
         Paths to the launcher and configuration directories.
     """
     root = root.resolve()
+    if gdb is None:
+        found = shutil.which("arm-none-eabi-gdb") or shutil.which(
+            "gdb-multiarch"
+        )
+        if found is None:
+            raise StatusError(
+                Code.NOT_FOUND,
+                "ARM GDB is unavailable; install arm-none-eabi-gdb or "
+                "gdb-multiarch, or pass --gdb",
+            )
+        gdb = Path(found)
     gdb = gdb.resolve()
     python = Path(python or sys.executable).absolute()
     for executable in (gdb, python):
@@ -126,7 +137,7 @@ def configure(root: Path, gdb: Path, python: Path | None = None) -> dict:
     wrapper.parent.mkdir(parents=True, exist_ok=True)
     wrapper.write_text(
         "#!/bin/sh\n"
-        'export PATH="/opt/homebrew/bin:/opt/homebrew/opt/llvm/bin:$PATH"\n'
+        "export PATH=" + shlex.quote(os.environ.get("PATH", "")) + "\n"
         "exec "
         + " ".join(
             shlex.quote(str(a))
@@ -206,10 +217,7 @@ def configure(root: Path, gdb: Path, python: Path | None = None) -> dict:
             envs,
             "env",
             name="PATH",
-            value=(
-                "/opt/homebrew/bin:/opt/homebrew/opt/llvm/bin:"
-                + os.environ.get("PATH", "")
-            ),
+            value=(os.environ.get("PATH", "")),
         )
         ET.SubElement(envs, "env", name="PYTHONPATH", value=str(root))
         ET.SubElement(run, "method", v="2")

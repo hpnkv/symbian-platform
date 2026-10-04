@@ -27,7 +27,8 @@ source-directory overrides support offline prepared inputs.
 commands when Clang and source SDK headers are available. Host libraries retain
 native commands. `gui_app` links ARM ELF; `gui_app_e32` runs the independent
 publisher; `gui_app_run` is a native executable suitable for CLion Run. See
-CLION.md. The guest runtime is a separate target configuration (RUNTIME.md).
+the [CLion guide](clion.md). The [guest runtime](../capabilities/runtime.md)
+is a separate target configuration.
 
 ## Linux evidence and release gates
 
@@ -64,5 +65,6 @@ CLI doctor and packaged resources. Linux release wheels also need cibuildwheel's
 repair/tagging gate; the directly built experimental linux_aarch64 wheel is not
 itself a published manylinux wheel. No packages have been uploaded.
 
-The one-install compiler/header/emulator/debugger payload design is in
-DISTRIBUTION.md. Those payloads are not yet included in the host tooling wheel.
+The one-install compiler/header/emulator/debugger payload design is in the
+[distribution plan](https://github.com/hpnkv/symbian-platform/blob/main/.dev/distribution.md).
+Those payloads are not yet included in the host tooling wheel.

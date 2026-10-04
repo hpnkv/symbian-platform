@@ -17,6 +17,7 @@ from symbian import toolchain
 from symbian.process import run
 from symbian.sdk import build_import_proxy
 from symbian.status import Code, StatusError
+from symbian.toolchain.host_tools import llvm_tool
 
 
 class AppSdk(BaseModel):
@@ -64,6 +65,16 @@ class AppSdk(BaseModel):
                     Code.NOT_FOUND, f"SDK dependency: {dependency}"
                 )
         return sdk
+
+
+def _emulator_binary(workspace: Path) -> Path:
+    """Returns the pinned research frontend's expected host build output."""
+    system = platform.system()
+    if system == "Darwin":
+        return workspace / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+    if system == "Linux":
+        return workspace / "build/eka2l1/bin/eka2l1_qt"
+    raise StatusError(Code.UNIMPLEMENTED, f"Unsupported SDK host: {system}")
 
 
 def _build_runtime_variant(
@@ -451,16 +462,9 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
         )
     if output.exists():
         raise StatusError(Code.ALREADY_EXISTS, f"SDK prefix exists: {output}")
-    compiler = Path("/opt/homebrew/opt/llvm/bin/clang++")
-    linker = Path("/opt/homebrew/bin/ld.lld")
-    if not compiler.is_file():
-        compiler = Path(shutil.which("clang++") or "clang++").absolute()
-        linker = Path(shutil.which("ld.lld") or "ld.lld").absolute()
-    c_compiler = compiler.parent / "clang"
-    if not c_compiler.is_file():
-        raise StatusError(
-            Code.NOT_FOUND, f"Matching LLVM C compiler: {c_compiler}"
-        )
+    compiler = llvm_tool("clang++")
+    c_compiler = llvm_tool("clang", sibling=compiler.parent)
+    linker = llvm_tool("ld.lld", sibling=compiler.parent)
     mimalloc = workspace / "research/upstream/mimalloc"
     mimalloc_revision = "d4881d338125e1cb7c47ba4cfb398d6f7c0c8d45"
     if not (mimalloc / "include/mimalloc.h").is_file():
@@ -478,15 +482,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
         )
     archive_tools = {}
     for name in ("llvm-ar", "llvm-ranlib"):
-        candidate = compiler.parent / name
-        if not candidate.is_file():
-            candidate = Path(shutil.which(name) or "/missing/" + name)
-        if not candidate.is_file():
-            raise StatusError(
-                Code.NOT_FOUND,
-                f"LLVM {name} required for ARM static libraries",
-            )
-        archive_tools[name] = candidate
+        archive_tools[name] = llvm_tool(name, sibling=compiler.parent)
     runtimes = {}
     for architecture in ("armv5t", "armv6"):
         runtime = workspace / f".symbian/runtime-probe-{architecture}"
@@ -1276,6 +1272,10 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             for index, candidate in enumerate(dict.fromkeys(candidates)):
                 if candidate.is_file():
                     shutil.copyfile(candidate, licenses / f"{tree}-{index}.txt")
+        emulator_binary = _emulator_binary(workspace)
+        guest_gdb = shutil.which("arm-none-eabi-gdb") or shutil.which(
+            "gdb-multiarch"
+        )
         sdk = AppSdk(
             prefix=output,
             architectures=("armv5t", "armv6"),
@@ -1285,15 +1285,10 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             ar=archive_tools["llvm-ar"],
             ranlib=archive_tools["llvm-ranlib"],
             python=Path(sys.executable).absolute(),
-            emulator=workspace
-            / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1",
+            emulator=emulator_binary,
             firmware_importer=workspace
             / "build/eka2l1/platform-control/symbian_firmware_tool",
-            gdb=(
-                Path(shutil.which("arm-none-eabi-gdb"))
-                if shutil.which("arm-none-eabi-gdb")
-                else None
-            ),
+            gdb=Path(guest_gdb) if guest_gdb else None,
         )
         (output / "sdk.json").write_text(sdk.model_dump_json(indent=2) + "\n")
         digests = {

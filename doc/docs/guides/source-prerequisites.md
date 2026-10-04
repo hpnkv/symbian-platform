@@ -1,60 +1,79 @@
 # Prepare the toolchain and public source
 
-All commands in this document start in this repository's root unless indicated.
-Use Apple Silicon macOS with Apple's command-line development tools installed.
-Check the selected developer directory and compiler:
+Run these commands from the repository root. The host tools compile C++ and
+convert ARM ELF into Symbian E32; target headers and firmware are separate
+inputs. Linux preparation is **provisional**: host native builds and a Linux
+wheel have passed bounded checks, while a Linux GUI emulator session and guest
+debugger have not yet been validated on an interactive host.
+
+## 1. Install host tools
+
+=== "macOS"
+
+    On Apple Silicon, install Apple's command-line tools if `xcrun` does not
+    find Clang. Homebrew supplies CMake, Ninja, upstream LLVM/LLD and uv:
+
+    ```sh
+    xcode-select -p
+    xcrun --find clang++
+    brew install uv cmake ninja lld llvm googletest openssl@3
+    ```
+
+=== "Linux (provisional)"
+
+    On Ubuntu 24.04 or a comparable distribution, install a C++ toolchain,
+    CMake 3.28+, Ninja, Clang/LLD and the bootstrap prerequisites. Package
+    names can vary by distribution.
+
+    ```sh
+    sudo apt update
+    sudo apt install build-essential clang lld llvm cmake ninja-build \
+      git curl ca-certificates perl pkg-config autoconf automake libtool \
+      python3-dev
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+
+    Start a new shell if the uv installer added its directory to your `PATH`.
+    The [uv installer](https://docs.astral.sh/uv/getting-started/installation/)
+    also supports a pinned-version URL.
+
+## 2. Prepare the host build and check ARM output
+
+Use an isolated prefix for static OpenSSL and libusb, following the same
+native/wheel separation as [A11](https://github.com/hpnkv/a11). The bootstrap
+checks the source archive hashes. The export/build tools require `clang`,
+`clang++`, `ld.lld`, `llvm-ar` and `llvm-ranlib`; put one LLVM toolchain on
+`PATH`, or set `SYMBIAN_LLVM_BIN` to its bin directory for SDK export.
 
 ```sh
-xcode-select -p
-xcrun --find clang++
-xcrun clang++ --version
-brew install uv cmake ninja lld llvm googletest openssl@3
+export SYMBIAN_DEPS_PREFIX="$PWD/.symbian/host-deps"
+scripts/bootstrap_wheel_deps.sh
 uv sync
 uv run symbian doctor
+uv run symbian toolchain probe
 ```
 
-Install Apple's command-line tools separately if `xcrun` cannot locate Clang.
-`uv sync` builds the host native extension and installs the project CLI and
-development tools. `doctor` reports tool availability and target readiness; a
-working host toolchain does not make the Belle runtime ready.
-
-The tested GUI build used Apple Clang 21 and LLD 23.1.2. Use the default
-`clang++`/`ld.lld` discovered on PATH, or select them explicitly:
+Build the GUI source example after preparing its headers below and selecting
+an installed SDK:
 
 ```sh
 uv run symbian build --project examples/gui_app \
   --output .symbian/gui-app \
-  --compiler "$(xcrun --find clang++)" \
-  --linker "$(brew --prefix lld)/bin/ld.lld"
+  --compiler "$(command -v clang++)" --linker "$(command -v ld.lld)"
 ```
 
-Run that build only after preparing the source headers in the next section and
-activating an installed SDK. The migrated GUI links the installed SDK's
-`Symbian::Stackless` target and selected import proxies; the earlier staged
-EUSER/WS32 proxies remain provenance controls for the original narrow GUI.
-Homebrew can install newer versions than this checkpoint; build reports record
-actual paths and versions. Reproducibility currently means independent build
-directories on the same host and toolchain, not identical output from every
-compiler release.
+The report records the actual compiler and linker. Independent builds on one
+host check reproducibility for that toolchain; they do not prove identical
+output across macOS and Linux. `symbian init` defaults to ARMv6 and can select
+ARMv5T explicitly. The cross toolchain supplies freestanding ARM EABI flags
+and target include paths, so host C++ headers do not enter a guest build.
 
-Current new projects use the SDK's `symbian-arm.cmake` toolchain with
-`SYMBIAN_TARGET_ARCH=armv6`. `symbian init --architecture armv5t` selects the
-older target when needed. Existing ARMv5T projects retain their choice.
-Effective C++ flags include `--target=armv6-none-eabi`, `-mthumb`,
-`-mfloat-abi=soft`, `-mabi=aapcs`, `-ffreestanding`, `-std=c++20`,
-`-fPIC`, `-fno-exceptions`, `-fno-rtti`, and `-nostdinc`.
-The GUI adds `-g -gdwarf-4 -O1`; its final `-O1` overrides the generic `-O2`.
-Target code cannot accidentally include macOS C++ headers. SDK includes are
-supplied explicitly. `_UNICODE`, the GCC/EABI compatibility definitions,
-`__EPOC32__`, and ARM platform definitions select the upstream headers' intended
-declarations. The linker retains relocations and rejects unresolved imports.
+A working ARM build does not prove E32 loader acceptance, emulator execution
+or Nokia 808 compatibility. The [host build guide](host-build.md) covers
+native tests and wheel checks; [C++20 capabilities](../capabilities/cpp20.md)
+records the bounded guest runtime.
 
-C++20 language support is real, but a complete target standard library is not
-available. This GUI uses neither a hosted libc++ nor exceptions. See
-[C++20 guide](../capabilities/cpp20.md) for the separately tested language, modules and
-selected header-only library experiments and their remaining runtime work.
-
-# 3. Acquire the pinned public source profile
+## 3. Acquire the pinned public source profile
 
 The checked-in manifest contains paths, hashes, revisions, and export names.
 It does not contain an SDK distribution or upstream header contents.

@@ -26,6 +26,7 @@ from symbian.emulator.background import (
 from symbian.emulator.configuration import add_options, options, resolve
 from symbian.emulator.firmware import digest, selected, svc_profile
 from symbian.status import Code, StatusError
+from symbian.toolchain.host_tools import llvm_tool
 
 
 def _digest(path: Path) -> str:
@@ -174,7 +175,7 @@ def session(
     source = root / "examples/gui_app"
     build = root / ".symbian/gui-app"
     headers = root / ".symbian/gui-sdk/include"
-    compiler, linker = "/usr/bin/clang++", "/opt/homebrew/bin/ld.lld"
+    compiler, linker = None, None
     if project is not None:
         from symbian.project.configuration import ProjectConfiguration
         from symbian.project.sdk import AppSdk, discover_sdk
@@ -205,6 +206,10 @@ def session(
         raise StatusError(
             Code.FAILED_PRECONDITION, f"Application source missing: {source}"
         )
+    if compiler is None:
+        selected_compiler = llvm_tool("clang++")
+        compiler = str(selected_compiler)
+        linker = str(llvm_tool("ld.lld", sibling=selected_compiler.parent))
     command = dict(overrides or {})
     if backend is not None:
         command["backend"] = backend

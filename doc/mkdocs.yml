@@ -45,6 +45,7 @@ theme:
     - toc.follow
     - content.code.copy
     - content.code.annotate
+    - content.tabs.link
     - search.suggest
     - search.highlight
 
@@ -61,6 +62,8 @@ markdown_extensions:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.details
   - pymdownx.snippets:
       base_path: [ .. ]
@@ -122,6 +125,7 @@ nav:
           - Run and debug: guides/clion-run-debug.md
           - Source indexing: guides/clion-advanced.md
       - Host builds: guides/host-build.md
+      - Linux host (provisional): guides/linux.md
   - Tutorials:
       - GUI application: tutorials/gui-app.md
       - Runtime probe: tutorials/runtime-probe.md

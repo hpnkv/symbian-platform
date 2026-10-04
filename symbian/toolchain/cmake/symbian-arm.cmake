@@ -32,7 +32,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Call LLD directly so Apple's Mach-O linker cannot enter the target link.
+# Call LLD directly so no host-native linker can enter the ARM target link.
 # Do not resolve the ld.lld symlink: its argv[0] selects the LLVM driver.
 set(CMAKE_CXX_LINK_EXECUTABLE
     "<CMAKE_LINKER> -m armelf --target1-abs --no-undefined --emit-relocs --build-id=none <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")

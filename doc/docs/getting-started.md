@@ -2,6 +2,8 @@
 
 Start with the host tools, then create an application. You need a local
 firmware image only when you are ready to run it in an emulator.
+On Linux, follow the [provisional host path](guides/linux.md) alongside these
+steps; interactive emulator and guest-debugger checks remain open there.
 
 ## A few names you will see
 

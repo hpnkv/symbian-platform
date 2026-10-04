@@ -1,7 +1,7 @@
 # Guest debugging details
 
-EKA2L1's remote GDB stub debugs the ARM guest. LLDB attached to the macOS
-EKA2L1 process debugs the host emulator. For the regular GUI workflow, use
+EKA2L1's remote GDB stub debugs the ARM guest. A native debugger attached
+to EKA2L1 itself debugs the host emulator. For the regular GUI workflow, use
 [Debug the GUI guest](../guides/gui-debug.md) and the saved
 [CLion Run/Debug profiles](../guides/clion-run-debug.md).
 
@@ -21,12 +21,25 @@ Its source prefixes are stable for reproducible builds:
 
 Inspect the ELF and compilation database before booting:
 
-```sh
-"$(brew --prefix llvm)/bin/llvm-dwarfdump" --verify \
-  .symbian/gui-app/gui_app.elf
-"$(brew --prefix llvm)/bin/clangd" --check=examples/gui_app/app.cc \
-  --compile-commands-dir=.symbian/gui-app
-```
+=== "macOS"
+
+    ```sh
+    "$(brew --prefix llvm)/bin/llvm-dwarfdump" --verify \
+      .symbian/gui-app/gui_app.elf
+    "$(brew --prefix llvm)/bin/clangd" --check=examples/gui_app/app.cc \
+      --compile-commands-dir=.symbian/gui-app
+    ```
+
+=== "Linux (provisional)"
+
+    ```sh
+    llvm-dwarfdump --verify .symbian/gui-app/gui_app.elf
+    clangd --check=examples/gui_app/app.cc \
+      --compile-commands-dir=.symbian/gui-app
+    ```
+
+    Install `clangd` and `llvm-dwarfdump` from the same LLVM toolchain used
+    by the build if your distribution splits them into separate packages.
 
 Compiler parsing and DWARF inspection do not prove guest execution. Optimized
 locals may be unavailable at a breakpoint.
@@ -45,7 +58,8 @@ enable-gdb-stub: true
 gdb-port: 24689
 ```
 
-After launching the image with the stub enabled, open `arm-none-eabi-gdb` and
+After launching the image with the stub enabled, open `arm-none-eabi-gdb`
+(or `gdb-multiarch` on Linux) and
 replace the paths and `SLIDE` with values from this run:
 
 ```text
