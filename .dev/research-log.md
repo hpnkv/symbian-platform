@@ -2,6 +2,8 @@
 
 ## 2026-10-04: Linux host preparation questions
 
+Final host CI run `37202283905` passed both native and both wheel jobs: 10/10 CTests on Ubuntu 24.04 x86_64 and aarch64, plus installed-wheel audit for CPython 3.11–3.14 on each manylinux_2_28 architecture. This closes the provisional host build/package gate, not the interactive development-machine gate. Remaining real-host checks are source SDK export, pinned EKA2L1 Qt/FFmpeg build and disposable GUI session, guest GDB/CLion relocation, Console visuals on the supported x86_64/Python combinations, a viable aarch64/Python 3.14 Console renderer and bounded USB discovery. None of this establishes a Nokia 808 guest ABI or physical-device result.
+
 Linux CI run `37199385640` reached CMake after building the existing OpenSSL and libusb prefix, then failed on both architectures in native and wheel jobs because `BoostConfig.cmake` was absent. The host concurrency library already requires Boost.Fiber and Context; this is a bootstrap omission, not a new SDK dependency. The isolated prefix now builds hash-checked Boost 1.90.0 with explicit x86_64/aarch64 architecture and ABI selections adapted from A11. The follow-up run must verify the Boost install, CMake discovery, host compile and wheel audit. A future Linux machine check should confirm whether the chosen GCC/toolchain and libstdc++ baseline are suitable for distribution.
 
 The local Docker manylinux_2_28 x86_64 image exposes GNU `ar` but no `llvm-ar`. Its GNU `ar -M` successfully merged a tiny C archive through the same MRI command shape used by `scripts/bundle_static.py`. CMake now selects LLVM `ar` when available and GNU `ar` on Linux otherwise. This only proves the archive command in that image, not the full host bundle or wheel audit.

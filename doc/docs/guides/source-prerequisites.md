@@ -27,7 +27,7 @@ debugger have not yet been validated on an interactive host.
 
     ```sh
     sudo apt update
-    sudo apt install build-essential clang lld llvm cmake ninja-build \
+    sudo apt install build-essential clang clang-format lld llvm cmake ninja-build \
       git curl ca-certificates perl pkg-config autoconf automake libtool \
       python3-dev
     curl -LsSf https://astral.sh/uv/install.sh | sh

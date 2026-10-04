@@ -2,8 +2,10 @@
 
 Build/test layout follows A11: an isolated dependency prefix, native CMake/Ninja
 presets and GTest, a separate Python wheel build, and an installed-wheel audit.
-All native libraries/tests compile without exceptions; only pybind11 boundary
-translation units enable them. Linux hides statically linked vendor symbols.
+Native libraries and tests default to exceptions disabled. The host
+Boost.Fiber implementation enables them in three translation units required
+for Boost.Context unwinding; pybind11 boundary files are the other explicit
+exception scope. Linux hides statically linked vendor symbols.
 
 ```sh
 export SYMBIAN_DEPS_PREFIX="$PWD/.symbian/host-deps"
@@ -16,9 +18,9 @@ uv run pytest -q
 uv build --wheel
 ```
 
-The prefix supplies static OpenSSL libcrypto. The bootstrap is adapted from
-A11's actual source/hash/cache approach and pins OpenSSL 3.5.9 with its official
-archive digest. Static linkage is enforced on Linux and macOS. Linux checks
+The prefix supplies static OpenSSL, libusb and Boost archives. The bootstrap
+is adapted from A11's source/hash/cache approach and pins OpenSSL 3.5.9 with
+its official archive digest. Static linkage is enforced on Linux and macOS. Linux checks
 Perl prerequisite modules, including IPC::Cmd and Time::Piece. Abseil,
 nlohmann::json and pybind11_abseil have pinned source revisions/hashes; optional
 source-directory overrides support offline prepared inputs.
@@ -32,20 +34,24 @@ is a separate target configuration.
 
 ## Linux evidence and release gates
 
-A native Linux aarch64 manylinux_2_28 container, CPython 3.12, built all seven
-host CTest targets and a real wheel. The installed wheel passed the loader
-closure audit and 62 status/HTTP/parser/CLI/preservation/control Pytest cases.
-Tests were copied outside the source package to ensure imports used the installed
-wheel. The initial source-path run exposed shadowing, which was corrected.
+[Linux CI run 37202283905](https://github.com/hpnkv/symbian-platform/actions/runs/37202283905)
+passed these host checks on Ubuntu 24.04 and manylinux_2_28:
 
-The Linux wheel contains all three native extension modules, uses static
-OpenSSL and passes the ELF system-library/RPATH allowlist. This establishes the
-host core on Linux; Linux Qt frontend, ARM guest launch, GDB/CLion, display/input
-and actual firmware fixtures remain separate gates. x86_64 and other CPython
-builds are configured in CI but have not been executed locally.
+| Host architecture | Native CTest | Installed wheel audit | Console GUI dependency |
+| --- | --- | --- | --- |
+| x86_64 | 10/10 | Python 3.11–3.14 | PySide6 on 3.11–3.13; 3.14 CLI only |
+| aarch64 | 10/10 | Python 3.11–3.14 | CLI only |
+
+Each wheel was built, repaired by auditwheel, installed in a fresh environment
+and checked for native imports, CLI doctor, packaged resources and ELF loader
+dependencies. An earlier native Linux aarch64 CPython 3.12 experiment also
+passed 62 installed-wheel status/HTTP/parser/CLI/preservation/control Pytest
+cases. These checks establish a host core and installable wheels. The Linux
+Qt frontend, source SDK export, ARM guest launch, GDB/CLion, display/input
+and real firmware fixtures remain separate gates.
 
 `.github/workflows/host-linux.yml` separates native and cibuildwheel gates for
-x86_64/aarch64. Cibuildwheel is configured for CPython 3.11–3.14 and manylinux_2_28.
+x86_64/aarch64. Cibuildwheel covers CPython 3.11–3.14 and manylinux_2_28.
 The macOS baseline remains arm64/macOS 26.0 based on the actual local native
 closure, rather than retagging a binary for older systems.
 

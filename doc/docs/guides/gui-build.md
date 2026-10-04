@@ -112,10 +112,13 @@ execution test. All GUI runtime, import, loader and debugger flags stay false.
 
 For formatting and the full Python suite:
 
+On macOS, use `$(brew --prefix llvm)/bin/clang-format` in place of
+`clang-format` if Homebrew's LLVM bin directory is not on `PATH`.
+
 ```sh
 uv run black --check symbian scripts
 uv run ruff check symbian scripts
-"$(brew --prefix llvm)/bin/clang-format" --dry-run --Werror \
+clang-format --dry-run --Werror \
   examples/gui_app/app.cc examples/gui_app/window_server.cc \
   examples/gui_app/startup.cc \
   examples/gui_app/model.h cpp/tests/gui_model_test.cc
@@ -126,4 +129,3 @@ The full suite also has optional emulator/header/module inputs described in
 [EKA2L1 research notes](https://github.com/hpnkv/symbian-platform/blob/main/.dev/research/eka2l1.md) and
 [C++20 guide](../capabilities/cpp20.md). Missing optional inputs must remain visible as
 skips. None of these tests issues a hardware operation.
-
