@@ -2,11 +2,13 @@
 
 ## 2026-10-04: Resident wire framing boundary
 
-The frame codec can enforce the 64 KiB per-frame budget before it allocates a
-payload, but it cannot enforce the plan's four-message/256 KiB inbound queue
-budget without a session owner. A fragmented frame can hold only one bounded
-payload in the decoder. The next service layer must account for completed
-frames, authenticate before MessagePack schema dispatch, and distinguish
+The frame codec enforces the 64 KiB per-frame budget before payload allocation;
+`InboundQueue` enforces four messages and 256 KiB of completed payloads when a
+session owns it. A fragmented frame can hold one additional bounded payload
+in the decoder, so the complete session memory budget must count both. The
+typed control envelope is limited to 4 KiB, but operation bodies remain
+untrusted maps. The next service layer must authenticate before dispatch,
+validate operation bodies and distinguish
 malformed input, cancellation and transport loss. The current host GTest is
 not evidence of a guest service or an authenticated emulator session.
 
@@ -15,6 +17,15 @@ the base socket rejects `KSONonBlockingIO` and the selected OpenC `fcntl`
 path fails before the TLS BIO attaches. Implementing that option requires an
 observable nonblocking read/write contract, not just a success return. This
 is still the transport prerequisite for an emulator TLS handshake.
+
+The original `kernel/eka/kernel/execs.txt` passed through its own `genexec.pl`
+generator assigns `EExecMathSecureRandom = 265`; the generated user stub
+dispatches a one-argument slow executive call. The original kernel handler
+returns `KErrNotReady` when its RNG cannot guarantee security. This source
+number is a research lead, not yet a verified RM-807/Belle ROM wrapper ABI:
+EKA2L1's v10 and v101 dispatch maps have no secure-random handler, and the
+SDK's candidate adapter still has unresolved EABI trap imports. No guest
+entropy source was enabled on the basis of the generated number alone.
 
 ## 2026-10-04: Linux host preparation questions
 

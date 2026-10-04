@@ -72,7 +72,7 @@ bindings call it rather than duplicating format rules. In the
 | `symbian::sis` | `cpp/symbian/sis/sis.h` | Build bounded unsigned SIS packages and inspect that profile. |
 | `symbian::analysis` | `cpp/symbian/analysis/*.h` | Read bounded ELF, attributes and checksum inputs. |
 | `symbian::emulator` | `cpp/symbian/emulator/*.h` | Native firmware/control parsing for owned emulator sessions. |
-| `symbian::agent` | `cpp/symbian/agent/frame.h` | Incremental, bounded length framing for the planned authenticated device protocol. The host `symbian::agent_frame` target is available; a guest SDK export is pending. |
+| `symbian::agent` | `cpp/symbian/agent/frame.h`, `control.h` | Bounded length framing, inbound queue accounting and typed MessagePack control envelopes for the planned device protocol. The host `symbian::agent_frame` target is available; a guest SDK export is pending. |
 
 These calls use `absl::Status` or `absl::StatusOr`; an unsupported format
 profile returns an error instead of being guessed. `InspectImage` and

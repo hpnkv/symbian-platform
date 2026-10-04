@@ -9,13 +9,16 @@
 
 #include <gtest/gtest.h>
 
+#include "symbian/agent/control.h"
 #include "symbian/agent/frame.h"
+#include "symbian/status/json_codec.h"
 
 namespace {
 
 using symbian::agent::EncodeFrame;
 using symbian::agent::Frame;
 using symbian::agent::FrameDecoder;
+using symbian::agent::InboundQueue;
 using symbian::agent::kMaximumFrameBytes;
 
 TEST(AgentFrame, IncrementalPayloadAndAdjacentFrames) {
@@ -85,6 +88,66 @@ TEST(AgentFrame, EncodesBoundaryAndRoundTripsBinary) {
   EXPECT_FALSE(EncodeFrame(std::span<const std::uint8_t>()).ok());
   payload.push_back(0);
   EXPECT_FALSE(EncodeFrame(payload).ok());
+}
+
+TEST(AgentFrame, QueueBoundsAndReleasesPayloads) {
+  InboundQueue queue;
+  for (int i = 0; i < 4; ++i) {
+    EXPECT_TRUE(queue.Push(Frame{std::string(64 * 1024, 'x')}).ok());
+  }
+  EXPECT_EQ(queue.size(), 4);
+  EXPECT_EQ(queue.queued_bytes(), 256 * 1024);
+  EXPECT_FALSE(queue.Push(Frame{"x"}).ok());
+  auto oldest = queue.Pop();
+  ASSERT_TRUE(oldest.has_value());
+  EXPECT_EQ(oldest->payload.size(), 64 * 1024);
+  EXPECT_EQ(queue.queued_bytes(), 192 * 1024);
+  EXPECT_TRUE(queue.Push(Frame{"x"}).ok());
+  EXPECT_EQ(queue.size(), 4);
+  queue.Clear();
+  EXPECT_EQ(queue.queued_bytes(), 0);
+  EXPECT_FALSE(queue.Pop().has_value());
+  EXPECT_FALSE(queue.Push(Frame{""}).ok());
+  EXPECT_FALSE(queue.Push(Frame{std::string(64 * 1024 + 1, 'x')}).ok());
+}
+
+TEST(AgentFrame, ControlRoundTripPreservesUnknownFields) {
+  symbian::agent::ControlMessage message;
+  message.request_id = 17;
+  message.kind = symbian::agent::ControlKind::kStatus;
+  message.deadline_millis = 1500;
+  message.body = {{"scope", "self"}};
+  message.extensions = {{"future", 42}};
+  auto encoded = symbian::agent::PackControl(message);
+  ASSERT_TRUE(encoded.ok()) << encoded.status();
+  auto parsed = symbian::agent::ParseControl(*encoded);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_EQ(parsed->request_id, 17);
+  EXPECT_EQ(parsed->kind, symbian::agent::ControlKind::kStatus);
+  EXPECT_EQ(parsed->deadline_millis, 1500);
+  EXPECT_EQ(parsed->body, message.body);
+  EXPECT_EQ(parsed->extensions, message.extensions);
+}
+
+TEST(AgentFrame, ControlRejectsMalformedAndOversizedInput) {
+  auto packed = symbian::PackMsgpack(
+      nlohmann::json{{"v", 1}, {"id", 9}, {"kind", 250}}, "test");
+  ASSERT_TRUE(packed.ok());
+  EXPECT_FALSE(symbian::agent::ParseControl(*packed).ok());
+  packed = symbian::PackMsgpack(
+      nlohmann::json{{"v", 1}, {"id", 9}, {"kind", 2}, {"body", "bad"}},
+      "test");
+  ASSERT_TRUE(packed.ok());
+  EXPECT_FALSE(symbian::agent::ParseControl(*packed).ok());
+  packed = symbian::PackMsgpack(
+      nlohmann::json{{"v", 1}, {"id", 9}, {"kind", 2}}, "test");
+  ASSERT_TRUE(packed.ok());
+  EXPECT_TRUE(symbian::agent::ParseControl(*packed).ok());
+  EXPECT_FALSE(symbian::agent::ParseControl(std::string(4097, 'x')).ok());
+  symbian::agent::ControlMessage too_large;
+  too_large.request_id = 9;
+  too_large.body = {{"bytes", std::string(4096, 'x')}};
+  EXPECT_FALSE(symbian::agent::PackControl(too_large).ok());
 }
 
 }  // namespace

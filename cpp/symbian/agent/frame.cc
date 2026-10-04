@@ -80,4 +80,32 @@ absl::StatusOr<std::string> EncodeFrame(std::span<const std::uint8_t> payload,
   return frame;
 }
 
+absl::Status InboundQueue::Push(Frame frame) {
+  if (frame.payload.empty() || frame.payload.size() > kMaximumFrameBytes) {
+    return absl::InvalidArgumentError("Queued frame is outside the limit");
+  }
+  if (frames_.size() >= kMaximumQueuedFrames ||
+      frame.payload.size() > kMaximumQueuedBytes - queued_bytes_) {
+    return absl::ResourceExhaustedError("Inbound frame queue is full");
+  }
+  queued_bytes_ += frame.payload.size();
+  frames_.push_back(std::move(frame));
+  return absl::OkStatus();
+}
+
+std::optional<Frame> InboundQueue::Pop() {
+  if (frames_.empty()) {
+    return std::nullopt;
+  }
+  Frame frame = std::move(frames_.front());
+  queued_bytes_ -= frame.payload.size();
+  frames_.pop_front();
+  return frame;
+}
+
+void InboundQueue::Clear() {
+  frames_.clear();
+  queued_bytes_ = 0;
+}
+
 }  // namespace symbian::agent

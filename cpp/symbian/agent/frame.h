@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <optional>
 #include <span>
 #include <string>
@@ -72,6 +73,33 @@ class FrameDecoder {
 absl::StatusOr<std::string> EncodeFrame(
     std::span<const std::uint8_t> payload,
     std::size_t maximum_frame_bytes = kMaximumFrameBytes);
+
+/**
+ * @brief Completed inbound frames awaiting schema dispatch.
+ *
+ * Counts encoded payload bytes. A session owns one decoder and one queue and
+ * releases both on disconnect. This class does not authenticate or interpret
+ * the queued MessagePack.
+ */
+class InboundQueue {
+ public:
+  /** @brief Admit a completed frame or return ResourceExhausted. */
+  absl::Status Push(Frame frame);
+
+  /** @brief Remove the oldest frame, if any. */
+  std::optional<Frame> Pop();
+
+  std::size_t queued_bytes() const { return queued_bytes_; }
+
+  std::size_t size() const { return frames_.size(); }
+
+  /** @brief Release all queued payloads after disconnect. */
+  void Clear();
+
+ private:
+  std::deque<Frame> frames_;
+  std::size_t queued_bytes_ = 0;
+};
 
 }  // namespace symbian::agent
 
