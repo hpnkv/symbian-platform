@@ -1,5 +1,15 @@
 # Research log
 
+2026-10-04: A second CLion configure failure after adding the connectivity
+indexing target was a different cause: the ignored user preset explicitly
+overrode `SYMBIAN_SDK_PREFIX` with an older exported SDK, while the active
+SDK manifest pointed at the new resident-agent export. A `-D` override made
+the shared preset pass, but CLion's own named preset still selected the old
+path. Refreshing the machine-local preset and replaying the exact CLion
+command resolved it. Open question: add a supported generator for local IDE
+presets so SDK updates do not leave absolute paths behind; do not silently
+override an explicitly selected SDK in project CMake.
+
 2026-10-04: Root `SYMBIAN_INDEX_GUEST_PROBES` intentionally rejects any
 `examples/*_probe` directory without an explicit ARM target. The added
 `connectivity_probe` directory had a standalone build but no root IDE target,

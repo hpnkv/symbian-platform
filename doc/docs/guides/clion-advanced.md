@@ -34,6 +34,22 @@ and Debug actions. See [JetBrains' database guide](https://www.jetbrains.com/hel
 Do not introduce a macOS compiled dummy target for guest source files: it
 would supply incorrect pointer sizes, calling conventions and platform macros.
 
+## Index every root guest probe
+
+If you open the repository root in CLion, use its `clion-guest-probes-armv6`
+or `clion-guest-probes-armv5t` profile for native guest probes. The root
+`symbian_probe_index` target compiles the declared probe sources with ARM
+headers; it does not combine their different entry points into one program.
+The connectivity probe is included through `symbian_index_connectivity`.
+
+`CMakeUserPresets.json` is an ignored, machine-local file. If a profile says
+the SDK lacks `Connectivity` or `Stackless`, check its
+`SYMBIAN_SDK_PREFIX` value against the directory of the active `sdk.json`.
+An old prefix can point to an earlier SDK even after you export a new one.
+Update that local value, then reload CMake. `MBEDTLS_SOURCE` should point to
+this repository's `third_party/mbedtls-symbian`, which contains the vendored
+source and headers.
+
 ## Attach ARM GDB manually
 
 The [guest debug walkthrough](gui-debug.md) shows how to start a disposable

@@ -1,5 +1,16 @@
 # Status
 
+2026-10-04 CLion preset follow-up: the user's exact
+`cmake --preset clion-guest-probes-armv6 -S ... -B ...` still failed after
+the connectivity target was added because ignored `CMakeUserPresets.json`
+selected an October 2 SDK at `/Users/helena/dev/symbian-sdk`. Its exported
+targets did not include the current Connectivity/Stackless pair. The local
+preset now selects the active SDK and the in-repository Mbed TLS source.
+The exact ARMv6 configure command succeeds, as do the ARMv5T configure and
+both `symbian_index_connectivity` builds. The committed CMake error now names
+the stale prefix and the developer guide explains how to refresh a local
+preset. This is configuration/indexing evidence only.
+
 2026-10-04 connectivity IDE indexing repair: the root guest-probe CMake
 profile now declares `connectivity_probe` explicitly and builds an object
 indexing target against the active SDK's `Symbian::Connectivity` and
