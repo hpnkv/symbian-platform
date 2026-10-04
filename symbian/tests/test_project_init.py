@@ -225,10 +225,15 @@ def test_cli_initial_build_sdk_copy_and_moved_project(tmp_path):
     (moved / "sdk-location.json").write_text(
         json.dumps({"sdk": os.path.relpath(prefix, moved)})
     )
-    (moved / "extra.cc").write_text("int ExtraSource() { return 1; }\n")
+    nested = moved / "modules/widget"
+    nested.mkdir(parents=True)
+    (nested / "extra.cc").write_text("int ExtraSource() { return 1; }\n")
+    (nested / "extra.h").write_text("int ExtraSource();\n")
     cli("app", "build", "--project", moved)
     database = json.loads((moved / "compile_commands.json").read_text())
-    assert any(row["file"].endswith("/extra.cc") for row in database)
+    assert any(
+        row["file"].endswith("/modules/widget/extra.cc") for row in database
+    )
     command = next(
         row["command"] for row in database if row["file"].endswith("/model.cc")
     )

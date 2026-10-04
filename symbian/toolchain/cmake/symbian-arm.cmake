@@ -7,7 +7,8 @@ endif()
 list(APPEND CMAKE_TRY_COMPILE_PLATFORM_VARIABLES SYMBIAN_TARGET_ARCH)
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR "${SYMBIAN_TARGET_ARCH}")
-set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY CACHE STRING
+    "Cross-compiler probes must not link a host executable" FORCE)
 
 # Root IDE profiles follow the activated SDK, including after an SDK export.
 # Standalone application profiles keep their explicit sdk.cmake selection.
@@ -39,7 +40,14 @@ else()
   find_program(CMAKE_C_COMPILER NAMES clang REQUIRED)
 endif()
 set(CMAKE_ASM_COMPILER "${CMAKE_CXX_COMPILER}")
-find_program(CMAKE_LINKER NAMES ld.lld REQUIRED)
+if(SYMBIAN_SDK_PREFIX AND EXISTS "${SYMBIAN_SDK_PREFIX}/bin/ld.lld")
+  set(symbian_lld "${SYMBIAN_SDK_PREFIX}/bin/ld.lld")
+else()
+  find_program(symbian_lld NAMES ld.lld REQUIRED)
+endif()
+# CMake can seed CMAKE_LINKER with the host linker during compiler detection;
+# an ARM executable must always use the selected SDK's LLD driver.
+set(CMAKE_LINKER "${symbian_lld}" CACHE FILEPATH "Symbian ARM linker" FORCE)
 set(CMAKE_CXX_COMPILER_TARGET ${SYMBIAN_TARGET_ARCH}-none-eabi)
 set(CMAKE_C_COMPILER_TARGET ${SYMBIAN_TARGET_ARCH}-none-eabi)
 set(CMAKE_ASM_COMPILER_TARGET ${SYMBIAN_TARGET_ARCH}-none-eabi)

@@ -45,15 +45,17 @@ automatically; specialized probes retain their declared compiler settings.
 
 The shared guest presets follow the active SDK on each CMake configure. After
 exporting a new SDK, reload the profile. If an older CMake cache still selects
-a host compiler, run `cmake --fresh --preset clion-guest-probes-armv6` once.
+a host compiler or macOS `/usr/bin/ld`, run
+`cmake --fresh --preset clion-guest-probes-armv6` once. The toolchain pins the
+selected SDK's ARM compiler and LLD before CMake checks the compiler.
 `CMakeUserPresets.json` remains an ignored place for local compiler paths.
 `MBEDTLS_SOURCE` should point to this repository's
 `third_party/mbedtls-symbian` source and headers.
 
-Registered applications created by `symbian init` attach native files from
-their project root and conventional `src/`, `cpp/` and `include/` directories
-to the actual guest executable target. CMake watches those directories for new
-files, so an IDE reload updates target membership and compile commands.
+Registered applications created by `symbian init` attach project-owned native
+files anywhere in their source tree to the actual guest executable target.
+Build output and separately managed dependencies are excluded. CMake watches
+for new files, so an IDE reload updates target membership and compile commands.
 
 ## Attach ARM GDB manually
 

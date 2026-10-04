@@ -23,7 +23,7 @@ class StopPoller final : public CActive {
     return KErrNone;
   }
 
-  ~StopPoller() {
+  ~StopPoller() override {
     Cancel();
     timer_.Close();
   }

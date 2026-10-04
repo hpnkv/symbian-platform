@@ -17,30 +17,40 @@ function(symbian_add_import_executable target)
     message(FATAL_ERROR "Imported application requires SYMBIAN_IMPORT_PROXIES")
   endif()
   symbian_add_pic_executable(${target} ${ARGN})
-  # A registered application owns native sources in its source directory and
-  # conventional src/cpp/include trees. CMake tracks additions so new app
-  # files join the real guest target and IDE compile context automatically.
+  # A registered application owns native files anywhere in its source tree.
+  # CMake tracks additions so new files join its real guest target and IDE
+  # compile context automatically. Build and dependency trees stay separate.
   if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/symbian.toml")
     file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/symbian.toml"
       app_section REGEX "^\\[application\\][ \t]*$")
     if(app_section)
-      set(native_patterns "${CMAKE_CURRENT_SOURCE_DIR}/*")
-      file(GLOB native_top CONFIGURE_DEPENDS ${native_patterns})
-      set(native_files ${native_top})
-      foreach(source_tree IN ITEMS src cpp include)
-        if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${source_tree}")
-          file(GLOB_RECURSE native_tree CONFIGURE_DEPENDS
-            "${CMAKE_CURRENT_SOURCE_DIR}/${source_tree}/*")
-          list(APPEND native_files ${native_tree})
+      file(GLOB_RECURSE native_files CONFIGURE_DEPENDS LIST_DIRECTORIES FALSE
+        "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/*.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/*.cxx"
+        "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/*.hh"
+        "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/*.hxx"
+        "${CMAKE_CURRENT_SOURCE_DIR}/*.S"
+        "${CMAKE_CURRENT_SOURCE_DIR}/*.s")
+      get_target_property(registered_sources ${target} SOURCES)
+      set(registered_absolute_sources)
+      foreach(registered_source IN LISTS registered_sources)
+        if(NOT registered_source MATCHES "^\\$<")
+          get_filename_component(registered_absolute "${registered_source}"
+            ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+          list(APPEND registered_absolute_sources "${registered_absolute}")
         endif()
       endforeach()
-      get_target_property(registered_sources ${target} SOURCES)
       foreach(native_file IN LISTS native_files)
-        if(native_file MATCHES "\\.(c|cc|cpp|cxx|h|hh|hpp|hxx|S|s)$")
-          list(FIND registered_sources "${native_file}" source_index)
-          if(source_index EQUAL -1)
-            target_sources(${target} PRIVATE "${native_file}")
-          endif()
+        if(native_file MATCHES "/(build|out|vendor|third_party|\\.symbian|\\.git)/")
+          continue()
+        endif()
+        list(FIND registered_absolute_sources "${native_file}" source_index)
+        if(source_index EQUAL -1)
+          target_sources(${target} PRIVATE "${native_file}")
         endif()
       endforeach()
     endif()

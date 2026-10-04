@@ -79,8 +79,8 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
   if(NOT TARGET Symbian::Connectivity OR NOT TARGET Symbian::Stackless)
     message(FATAL_ERROR
       "SDK at ${SYMBIAN_SDK_PREFIX} lacks Connectivity or Stackless. "
-      "Update the ignored CMakeUserPresets.json SDK prefix to the active "
-      "sdk.json directory, then reload the CLion CMake profile")
+      "Install and activate an SDK with these targets, then reload the "
+      "CLion CMake profile")
   endif()
   set(connectivity_dir "${CMAKE_SOURCE_DIR}/examples/connectivity_probe")
   file(GLOB connectivity_sources CONFIGURE_DEPENDS
