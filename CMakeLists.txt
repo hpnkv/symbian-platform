@@ -197,6 +197,8 @@ endif()
 
 install(FILES third_party/a11/LICENSE
         DESTINATION symbian/licenses RENAME A11-LICENSE)
+install(FILES third_party/boost/LICENSE_1_0.txt
+        DESTINATION symbian/licenses RENAME Boost-LICENSE)
 install(FILES "${abseil_SOURCE_DIR}/LICENSE"
         DESTINATION symbian/licenses RENAME Abseil-LICENSE)
 install(FILES "${nlohmann_json_SOURCE_DIR}/LICENSE.MIT"

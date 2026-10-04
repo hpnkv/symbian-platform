@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Adapted from A11's bootstrap: the host SDK needs static OpenSSL and
-# libusb archives. CMake pins the remaining header/source dependencies.
+# Adapted from A11's bootstrap: the host SDK needs static OpenSSL, libusb,
+# and Boost.Fiber/Context archives. CMake pins the remaining dependencies.
 set -euo pipefail
 prefix=${SYMBIAN_DEPS_PREFIX:?Set SYMBIAN_DEPS_PREFIX to an isolated prefix}
 arch=${SYMBIAN_WHEEL_ARCH:-$(uname -m)}
@@ -25,17 +25,37 @@ if [[ "${host_os}" == Darwin ]]; then
   deployment_tag="-macos-${MACOSX_DEPLOYMENT_TARGET}"
 fi
 case "${host_os}:${arch}" in
-  Darwin:x86_64|Darwin:amd64) openssl_target=darwin64-x86_64-cc ;;
-  Darwin:arm64|Darwin:aarch64) openssl_target=darwin64-arm64-cc ;;
-  Linux:x86_64|Linux:amd64) openssl_target=linux-x86_64 ;;
-  Linux:aarch64|Linux:arm64) openssl_target=linux-aarch64 ;;
+  Darwin:x86_64|Darwin:amd64)
+    openssl_target=darwin64-x86_64-cc
+    boost_arch_args=(toolset=clang target-os=darwin architecture=x86
+                     address-model=64 abi=sysv binary-format=mach-o
+                     'cxxflags=-arch x86_64' 'linkflags=-arch x86_64') ;;
+  Darwin:arm64|Darwin:aarch64)
+    openssl_target=darwin64-arm64-cc
+    boost_arch_args=(toolset=clang target-os=darwin architecture=arm
+                     address-model=64 abi=aapcs binary-format=mach-o
+                     'cxxflags=-arch arm64' 'linkflags=-arch arm64') ;;
+  Linux:x86_64|Linux:amd64)
+    openssl_target=linux-x86_64
+    boost_arch_args=(toolset=gcc target-os=linux architecture=x86
+                     address-model=64 abi=sysv binary-format=elf
+                     cxxflags=-fPIC cflags=-fPIC) ;;
+  Linux:aarch64|Linux:arm64)
+    openssl_target=linux-aarch64
+    boost_arch_args=(toolset=gcc target-os=linux architecture=arm
+                     address-model=64 abi=aapcs binary-format=elf
+                     cxxflags=-fPIC cflags=-fPIC) ;;
   *) echo "Unsupported dependency target: ${host_os} ${arch}" >&2; exit 2 ;;
 esac
 # Include host OS, architecture, version and deployment floor in the cache key.
 version=3.5.9
 libusb_version=1.0.30
-stamp="${prefix}/.symbian-deps-v2-${host_os}-${arch}-${version}-${libusb_version}${deployment_tag}"
-if [[ -f "${stamp}" && -f "${prefix}/lib/libcrypto.a" && -f "${prefix}/lib/libusb-1.0.a" ]]; then exit 0; fi
+boost_version=1.90.0
+stamp="${prefix}/.symbian-deps-v3-${host_os}-${arch}-${version}-${libusb_version}-${boost_version}${deployment_tag}"
+if [[ -f "${stamp}" && -f "${prefix}/lib/libcrypto.a" &&
+      -f "${prefix}/lib/libusb-1.0.a" &&
+      -f "${prefix}/lib/libboost_fiber.a" &&
+      -f "${prefix}/lib/libboost_context.a" ]]; then exit 0; fi
 jobs=${CMAKE_BUILD_PARALLEL_LEVEL:-4}
 work=$(mktemp -d "${TMPDIR:-/tmp}/symbian-wheel-deps.XXXXXX")
 trap 'rm -rf "${work}"' EXIT
@@ -110,7 +130,19 @@ download_and_extract \
   make -j "${jobs}"
   make install
 )
+download_and_extract \
+  "https://archives.boost.io/release/${boost_version}/source/boost_1_90_0.tar.bz2" \
+  boost.tar.bz2 \
+  49551aff3b22cbc5c5a9ed3dbc92f0e23ea50a0f7325b0d198b705e8ee3fc305
+(
+  cd "${work}/boost_1_90_0"
+  ./bootstrap.sh --prefix="${prefix}" \
+    --with-libraries=atomic,chrono,context,fiber,thread
+  ./b2 -j "${jobs}" "${boost_arch_args[@]}" cxxstd=20 variant=release \
+    link=static runtime-link=shared threading=multi install
+)
 mkdir -p "${prefix}/share"
 cp "${work}/libusb-${libusb_version}/COPYING" "${prefix}/COPYING"
 cp "${work}/openssl-${version}/LICENSE.txt" "${prefix}/share/symbian-OpenSSL-LICENSE"
+cp "${work}/boost_1_90_0/LICENSE_1_0.txt" "${prefix}/share/symbian-Boost-LICENSE"
 touch "${stamp}"

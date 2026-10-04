@@ -2,6 +2,8 @@
 
 ## 2026-10-04: Linux host preparation questions
 
+Linux CI run `37199385640` reached CMake after building the existing OpenSSL and libusb prefix, then failed on both architectures in native and wheel jobs because `BoostConfig.cmake` was absent. The host concurrency library already requires Boost.Fiber and Context; this is a bootstrap omission, not a new SDK dependency. The isolated prefix now builds hash-checked Boost 1.90.0 with explicit x86_64/aarch64 architecture and ABI selections adapted from A11. The follow-up run must verify the Boost install, CMake discovery, host compile and wheel audit. A future Linux machine check should confirm whether the chosen GCC/toolchain and libstdc++ baseline are suitable for distribution.
+
 A11 uses a pinned static dependency prefix, CMake/Ninja presets and an installed-wheel audit on Linux. This repository already has bounded Linux aarch64 host-native/wheel evidence, while its SDK exporter and Run/IDE wrappers still assumed Homebrew or a macOS `.app` path. The host code now selects LLVM through PATH or `SYMBIAN_LLVM_BIN`, chooses the Linux EKA2L1 CMake output path and can use `gdb-multiarch`. The pinned EKA2L1 checkout contains `linux_x64-build.sh` for FFmpeg but no maintained Linux aarch64 counterpart.
 
 The host CMake smoke configure found `symbian_a11_source_check` still listed a deleted concurrency `README.md` after documentation reorganization. Its CMake source list now uses the tracked `.dev/thread-a11.md`; macOS configure, native build and 11/11 CTest cases passed after the correction. This was a host build-graph error, not a guest or Linux runtime result.
