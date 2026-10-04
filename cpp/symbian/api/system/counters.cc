@@ -18,7 +18,7 @@ absl::StatusOr<TickReading> ReadTickCounter() {
   }
   return TickReading{
       .count = SymbianRuntimeTickCount(),
-      .period = std::chrono::microseconds(period),
+      .period = absl::Microseconds(period),
   };
 }
 

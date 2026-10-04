@@ -17,7 +17,7 @@ repeated hello, close the connection. The hello result declares version 1,
 the 4 KiB control limit, the 16-request connection cap and available read-only
 operations. The host validates these before using the session. Hello consumes
 one request slot. The
-service gives each control exchange one five-second monotonic deadline across
+service gives each control exchange one five-second Abseil deadline across
 prefix, payload and response; a peer cannot keep a worker indefinitely by
 dripping frame bytes. The host read-only session applies its requested timeout
 to the entire status exchange, including fragmented responses. The

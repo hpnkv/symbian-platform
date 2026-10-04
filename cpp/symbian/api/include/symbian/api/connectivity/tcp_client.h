@@ -5,13 +5,13 @@
 #define SYMBIAN_API_CONNECTIVITY_TCP_CLIENT_H_
 
 #include <array>
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <span>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/time/time.h"
 
 namespace symbian::api::connectivity {
 
@@ -56,7 +56,7 @@ class TcpClient {
    * callers must use an application acknowledgement for exactly-once work.
    */
   absl::Status SendFor(std::span<const std::uint8_t> bytes,
-                       std::chrono::milliseconds timeout);
+                       absl::Duration timeout);
 
   /**
    * @brief Receive at least one byte into a buffer of at most 32 KiB.
@@ -73,7 +73,7 @@ class TcpClient {
    * reuse the same stream; no abandoned callback may write into @p bytes.
    */
   absl::StatusOr<std::size_t> ReceiveFor(std::span<std::uint8_t> bytes,
-                                         std::chrono::milliseconds timeout);
+                                         absl::Duration timeout);
 
  private:
   friend class TcpListener;

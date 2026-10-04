@@ -4,7 +4,6 @@
 #ifndef SYMBIAN_API_CONNECTIVITY_TLS_SERVER_H_
 #define SYMBIAN_API_CONNECTIVITY_TLS_SERVER_H_
 
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -12,6 +11,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/time/time.h"
 #include "symbian/api/connectivity/tcp_client.h"
 
 namespace symbian::api::connectivity {
@@ -54,15 +54,15 @@ class TlsServer {
   ~TlsServer();
 
   /** @brief Complete TLS 1.2/1.3 handshake with an aggregate 0–60s deadline. */
-  absl::Status Accept(TcpClient&& client, std::chrono::milliseconds timeout);
+  absl::Status Accept(TcpClient&& client, absl::Duration timeout);
 
   /** @brief Receive application data into at most 32 KiB. */
   absl::StatusOr<std::size_t> ReadFor(std::span<std::uint8_t> bytes,
-                                      std::chrono::milliseconds timeout);
+                                      absl::Duration timeout);
 
   /** @brief Send at most 32 KiB of application data. */
   absl::Status WriteFor(std::span<const std::uint8_t> bytes,
-                        std::chrono::milliseconds timeout);
+                        absl::Duration timeout);
 
   /** @brief Close the current stream and reset its TLS state. */
   void CloseSession();

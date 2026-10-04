@@ -5,10 +5,10 @@
 #define SYMBIAN_API_CONNECTIVITY_TCP_LISTENER_H_
 
 #include <array>
-#include <chrono>
 #include <cstdint>
 
 #include "absl/status/statusor.h"
+#include "absl/time/time.h"
 #include "symbian/api/connectivity/tcp_client.h"
 
 namespace symbian::api::connectivity {
@@ -46,7 +46,7 @@ class TcpListener {
    * A timeout cancels and drains the native accept before returning a
    * deadline-exceeded status, so the listener can safely accept again.
    */
-  absl::StatusOr<TcpClient> AcceptFor(std::chrono::milliseconds timeout);
+  absl::StatusOr<TcpClient> AcceptFor(absl::Duration timeout);
 
  private:
   explicit TcpListener(NativeTcpListener* native) : native_(native) {}

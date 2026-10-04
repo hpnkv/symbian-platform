@@ -9,7 +9,7 @@ service-specific data packages. Discovery should produce typed channel
 descriptors with units and supported rates. A move-only subscription would
 own its channel and return timestamped sample values; unknown channels would
 remain discoverable rather than being mislabelled as a known sensor type.
-`std::chrono` would carry sample times and `absl::Status` would carry service
+`absl::Time` would carry sample times and `absl::Status` would carry service
 and permission errors.
 
 ## Concurrency and cost

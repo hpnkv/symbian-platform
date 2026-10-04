@@ -13,8 +13,13 @@ namespace {
 
 constexpr std::size_t kMaximumOperationBytes = 32 * 1024;
 
-bool ValidTimeout(std::chrono::milliseconds timeout) {
-  return timeout.count() >= 0 && timeout.count() <= 60000;
+bool ValidTimeout(absl::Duration timeout) {
+  return timeout >= absl::ZeroDuration() && timeout <= absl::Seconds(60);
+}
+
+int NativeTimeout(absl::Duration timeout) {
+  return static_cast<int>(
+      absl::ToInt64Milliseconds(absl::Ceil(timeout, absl::Milliseconds(1))));
 }
 
 }  // namespace
@@ -68,7 +73,7 @@ absl::Status TcpClient::Send(std::span<const std::uint8_t> bytes) {
 }
 
 absl::Status TcpClient::SendFor(std::span<const std::uint8_t> bytes,
-                                std::chrono::milliseconds timeout) {
+                                absl::Duration timeout) {
   if (!ValidTimeout(timeout)) {
     return absl::InvalidArgumentError("TCP send timeout must be 0-60000 ms");
   }
@@ -83,7 +88,7 @@ absl::Status TcpClient::SendFor(std::span<const std::uint8_t> bytes,
   }
   const int result = SymbianDeviceTcpSendFor(native_, bytes.data(),
                                              static_cast<int>(bytes.size()),
-                                             static_cast<int>(timeout.count()));
+                                             NativeTimeout(timeout));
   return result == 0 ? absl::OkStatus()
                      : symbian::StatusFromNativeError(result, "Send TCP data");
 }
@@ -107,8 +112,8 @@ absl::StatusOr<std::size_t> TcpClient::Receive(std::span<std::uint8_t> bytes) {
   return static_cast<std::size_t>(received);
 }
 
-absl::StatusOr<std::size_t> TcpClient::ReceiveFor(
-    std::span<std::uint8_t> bytes, std::chrono::milliseconds timeout) {
+absl::StatusOr<std::size_t> TcpClient::ReceiveFor(std::span<std::uint8_t> bytes,
+                                                  absl::Duration timeout) {
   if (!ValidTimeout(timeout)) {
     return absl::InvalidArgumentError("TCP receive timeout must be 0-60000 ms");
   }
@@ -124,7 +129,7 @@ absl::StatusOr<std::size_t> TcpClient::ReceiveFor(
   int received = 0;
   const int result = SymbianDeviceTcpReceiveFor(
       native_, bytes.data(), static_cast<int>(bytes.size()),
-      static_cast<int>(timeout.count()), &received);
+      NativeTimeout(timeout), &received);
   if (result != 0) {
     return symbian::StatusFromNativeError(result, "Receive TCP data");
   }

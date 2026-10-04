@@ -8,7 +8,7 @@ and fast counters in `<symbian/api/system/counters.h>`.
 The original calls expose a bare 32-bit count and separate integer
 period/frequency queries. A count without its unit is easy to misuse as wall
 time or to compare across devices. `TickReading` pairs the count with a
-`std::chrono::microseconds` period; `FastCounterReading` pairs it with the
+`absl::Duration` period; `FastCounterReading` pairs it with the
 measured ticks-per-second value. `absl::StatusOr` distinguishes an unavailable
 counter from a valid zero count. Both structs make 32-bit wrap explicit.
 

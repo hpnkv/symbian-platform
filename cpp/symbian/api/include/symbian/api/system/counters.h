@@ -4,10 +4,10 @@
 #ifndef SYMBIAN_API_SYSTEM_COUNTERS_H_
 #define SYMBIAN_API_SYSTEM_COUNTERS_H_
 
-#include <chrono>
 #include <cstdint>
 
 #include "absl/status/statusor.h"
+#include "absl/time/time.h"
 
 namespace symbian::api::system {
 
@@ -21,7 +21,7 @@ struct TickReading {
   /** @brief Native tick count sampled after the period lookup. */
   std::uint32_t count = 0;
   /** @brief Duration of one tick reported by the current platform. */
-  std::chrono::microseconds period{0};
+  absl::Duration period = absl::ZeroDuration();
 };
 
 /** @brief Native 32-bit fast counter and platform-reported frequency. */

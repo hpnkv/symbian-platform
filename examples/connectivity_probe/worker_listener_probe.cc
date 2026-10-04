@@ -3,10 +3,10 @@
 // Opt-in research of a shareable accepted socket on an A11-derived worker.
 
 #include <array>
-#include <chrono>
 #include <cstdint>
 #include <utility>
 
+#include "absl/time/time.h"
 #include "symbian/api/connectivity/active_tcp_listener.h"
 #include "symbian/concurrency/worker_executor.h"
 
@@ -23,16 +23,16 @@ class Observer final : public symbian::api::connectivity::TcpAcceptObserver {
     }
     auto posted = worker.Post([client = std::move(*result)]() mutable {
       const std::array<std::uint8_t, 1> marker{'W'};
-      if (!client.SendFor(marker, std::chrono::seconds(5)).ok()) {
+      if (!client.SendFor(marker, absl::Seconds(5)).ok()) {
         return;
       }
       std::array<std::uint8_t, 1> request{};
-      auto received = client.ReceiveFor(request, std::chrono::seconds(5));
+      auto received = client.ReceiveFor(request, absl::Seconds(5));
       if (!received.ok() || *received != 1 || request[0] != 'Q') {
         return;
       }
       const std::array<std::uint8_t, 1> response{'A'};
-      if (!client.SendFor(response, std::chrono::seconds(5)).ok()) {
+      if (!client.SendFor(response, absl::Seconds(5)).ok()) {
         return;
       }
     });

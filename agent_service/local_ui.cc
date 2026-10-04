@@ -8,19 +8,16 @@
 #include <e32property.h>
 #include <w32std.h>
 
-namespace {
+#include "agent_signals.h"
 
-const TUid kAgentPropertyCategory =
-    TUid::Uid(static_cast<TInt32>(0xe0000a31u));
-constexpr TUint kRaisePanelKey = 0x4147454e;
+namespace {
 
 TInt NameAgentWindowGroup(RWindowGroup& group) {
   // AppArc's APGWGNAM.CPP encodes status, UID, caption and document as
   // NUL-separated UTF-16 fields. Status 0x40 marks the application ready.
   static const TUint16 kName[] = {
-      '4', '0', 0, 'e', '0', '0', '0', '0', 'a', '3', '1', 0,
-      'D', 'e', 'v', 'e', 'l', 'o', 'p', 'm', 'e', 'n', 't', ' ',
-      'A', 'g', 'e', 'n', 't', 0};
+      '4', '0', 0,   'e', '0', '0', '0', '0', 'a', '3', '1', 0,   'D', 'e', 'v',
+      'e', 'l', 'o', 'p', 'm', 'e', 'n', 't', ' ', 'A', 'g', 'e', 'n', 't', 0};
   TPtrC16 name(kName, sizeof(kName) / sizeof(kName[0]));
   return group.SetName(name);
 }
@@ -28,21 +25,25 @@ TInt NameAgentWindowGroup(RWindowGroup& group) {
 class RaisePanelProperty {
  public:
   TInt Open() {
-    TInt result = RProperty::Define(kAgentPropertyCategory, kRaisePanelKey,
-                                    RProperty::EInt);
+    TInt result =
+        RProperty::Define(agent_service::kPropertyCategory,
+                          agent_service::kRaisePanelKey, RProperty::EInt);
     if (result == KErrAlreadyExists) {
       // A previous process can leave its definition behind after a crash.
-      result = RProperty::Delete(kAgentPropertyCategory, kRaisePanelKey);
+      result = RProperty::Delete(agent_service::kPropertyCategory,
+                                 agent_service::kRaisePanelKey);
       if (result == KErrNone) {
-        result = RProperty::Define(kAgentPropertyCategory, kRaisePanelKey,
-                                   RProperty::EInt);
+        result =
+            RProperty::Define(agent_service::kPropertyCategory,
+                              agent_service::kRaisePanelKey, RProperty::EInt);
       }
     }
     if (result != KErrNone) {
       return result;
     }
     defined_ = true;
-    result = property_.Attach(kAgentPropertyCategory, kRaisePanelKey);
+    result = property_.Attach(agent_service::kPropertyCategory,
+                              agent_service::kRaisePanelKey);
     if (result != KErrNone) {
       return result;
     }
@@ -56,7 +57,8 @@ class RaisePanelProperty {
   ~RaisePanelProperty() {
     property_.Close();
     if (defined_) {
-      RProperty::Delete(kAgentPropertyCategory, kRaisePanelKey);
+      RProperty::Delete(agent_service::kPropertyCategory,
+                        agent_service::kRaisePanelKey);
     }
   }
 
@@ -176,7 +178,9 @@ TInt RunWindow(std::atomic<bool>& stop_requested) {
           if (result == KErrNone) {
             // A bare RWindowGroup is invisible to AppArc task lookup.
             result = NameAgentWindowGroup(group);
-            if (result != KErrNone) group.Close();
+            if (result != KErrNone) {
+              group.Close();
+            }
           }
           if (result == KErrNone) {
             RWindow window(session);
@@ -307,7 +311,8 @@ extern "C" int AgentLocalUiMain(std::atomic<bool>* stop_requested) {
 
 extern "C" int AgentRequestForeground() {
   RProperty property;
-  TInt result = property.Attach(kAgentPropertyCategory, kRaisePanelKey);
+  TInt result = property.Attach(agent_service::kPropertyCategory,
+                                agent_service::kRaisePanelKey);
   if (result != KErrNone) {
     return result;
   }

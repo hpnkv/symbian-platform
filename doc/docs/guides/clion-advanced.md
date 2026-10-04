@@ -39,9 +39,17 @@ would supply incorrect pointer sizes, calling conventions and platform macros.
 If you open the repository root in CLion, use its `clion-guest-probes-armv6`
 or `clion-guest-probes-armv5t` profile. CMake discovers registered application
 projects in the root and `examples/`, including `agent_service` and `gui_app`,
-and exposes their real ARM targets. `symbian_probe_index` gives each probe a
-separate ARM source target. New probe directories receive a source target
-automatically; specialized probes retain their declared compiler settings.
+and exposes their real ARM targets. The SDK's device API, TLS and guest
+concurrency libraries are loaded from their component CMake files in this
+profile too, so implementation files such as `tls_server.cc` belong to
+compilable targets. Any remaining project-owned native files under `cpp/symbian`,
+`agent_service` and `examples` join an automatic indexing target. The host
+profile indexes host-owned files under `cpp`, including `cpp/python` and
+`cpp/tests`; guest-only sources stay with their ARM profile. A new source file
+therefore appears in the IDE after CMake reload; its component target remains
+the build authority. `symbian_probe_index` gives each probe a separate ARM
+source target. New probe directories receive a source target automatically;
+specialized probes retain their declared compiler settings.
 
 The shared guest presets follow the active SDK on each CMake configure. After
 exporting a new SDK, reload the profile. If an older CMake cache still selects

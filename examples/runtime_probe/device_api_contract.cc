@@ -1,6 +1,5 @@
-#include <chrono>
-
 #include "abi.h"
+#include "absl/time/time.h"
 #include "symbian/api/display/display.h"
 #include "symbian/api/power/power.h"
 #include "symbian/api/system/counters.h"
@@ -16,8 +15,9 @@
 
 extern "C" int SymbianRuntimeDeviceApiProbe() {
   const auto tick = symbian::api::system::ReadTickCounter();
-  if (!tick.ok() || tick->period <= std::chrono::microseconds::zero() ||
-      tick->period.count() != SymbianRuntimeTickPeriodMicros()) {
+  if (!tick.ok() || tick->period <= absl::ZeroDuration() ||
+      absl::ToInt64Microseconds(tick->period) !=
+          SymbianRuntimeTickPeriodMicros()) {
     return -430;
   }
   const auto fast = symbian::api::system::ReadFastCounter();

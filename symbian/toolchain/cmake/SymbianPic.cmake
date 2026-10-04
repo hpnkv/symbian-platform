@@ -12,6 +12,24 @@ function(_symbian_project_file output filename)
   set(${output} "${resolved}" PARENT_SCOPE)
 endfunction()
 
+function(_symbian_collect_native_files directory output)
+  set(found)
+  file(GLOB entries CONFIGURE_DEPENDS LIST_DIRECTORIES TRUE "${directory}/*")
+  foreach(entry IN LISTS entries)
+    get_filename_component(name "${entry}" NAME)
+    if(IS_DIRECTORY "${entry}")
+      if(name MATCHES "^(build|out|vendor|third_party|\\.symbian|\\.git|cmake-build[^/]*)$")
+        continue()
+      endif()
+      _symbian_collect_native_files("${entry}" nested)
+      list(APPEND found ${nested})
+    elseif(entry MATCHES "\\.(c|cc|cpp|cxx|mm|S|s|h|hh|hpp|hxx)$")
+      list(APPEND found "${entry}")
+    endif()
+  endforeach()
+  set(${output} "${found}" PARENT_SCOPE)
+endfunction()
+
 function(symbian_add_import_executable target)
   if(NOT SYMBIAN_IMPORT_PROXIES)
     message(FATAL_ERROR "Imported application requires SYMBIAN_IMPORT_PROXIES")
@@ -24,17 +42,7 @@ function(symbian_add_import_executable target)
     file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/symbian.toml"
       app_section REGEX "^\\[application\\][ \t]*$")
     if(app_section)
-      file(GLOB_RECURSE native_files CONFIGURE_DEPENDS LIST_DIRECTORIES FALSE
-        "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
-        "${CMAKE_CURRENT_SOURCE_DIR}/*.cc"
-        "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/*.cxx"
-        "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
-        "${CMAKE_CURRENT_SOURCE_DIR}/*.hh"
-        "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/*.hxx"
-        "${CMAKE_CURRENT_SOURCE_DIR}/*.S"
-        "${CMAKE_CURRENT_SOURCE_DIR}/*.s")
+      _symbian_collect_native_files("${CMAKE_CURRENT_SOURCE_DIR}" native_files)
       get_target_property(registered_sources ${target} SOURCES)
       set(registered_absolute_sources)
       foreach(registered_source IN LISTS registered_sources)
@@ -45,9 +53,6 @@ function(symbian_add_import_executable target)
         endif()
       endforeach()
       foreach(native_file IN LISTS native_files)
-        if(native_file MATCHES "/(build|out|vendor|third_party|\\.symbian|\\.git)/")
-          continue()
-        endif()
         list(FIND registered_absolute_sources "${native_file}" source_index)
         if(source_index EQUAL -1)
           target_sources(${target} PRIVATE "${native_file}")

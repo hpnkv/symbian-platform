@@ -34,7 +34,7 @@ if (opened.ok()) {
 buffers up to 32 KiB and return Abseil statuses for native errors. An empty
 send succeeds; an empty receive returns zero. Keep the client, calls and
 destruction on the same worker thread. Each call waits for a native request;
-`SendFor` and `ReceiveFor` add 0–60 second deadlines. On expiry they cancel
+`SendFor` and `ReceiveFor` take an `absl::Duration` of 0–60 seconds. On expiry they cancel
 and drain the native request before returning a deadline status. In the
 emulator, a client reused its socket after a timed-out read and received the
 host's later byte. A send can already be delivered before its deadline fires;
@@ -43,19 +43,19 @@ the application protocol must acknowledge work when delivery matters.
 ## Accept one host connection
 
 ```cpp
-#include <chrono>
+#include "absl/time/time.h"
 #include "symbian/api/connectivity/tcp_listener.h"
 
 auto listener = symbian::api::connectivity::TcpListener::ListenIpv4(
     {127, 0, 0, 1}, 39096);
 if (listener.ok()) {
-  auto client = listener->AcceptFor(std::chrono::seconds(5));
+  auto client = listener->AcceptFor(absl::Seconds(5));
   // Check client.ok() before using the connected stream.
 }
 ```
 
 The listener binds only the supplied IPv4 address, with backlog one.
-`AcceptFor` accepts a 0–60 second timeout, cancels and drains a pending
+`AcceptFor` accepts a 0–60 second `absl::Duration`, cancels and drains a pending
 native accept on expiry, and returns a deadline-exceeded status. The same
 listener can accept again afterwards. The accepted client keeps the
 socket-server session alive even if the listener closes. Both owners remain

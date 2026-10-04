@@ -54,17 +54,19 @@ absl::StatusOr<TcpClient> TcpListener::Accept() {
   return TcpClient(client);
 }
 
-absl::StatusOr<TcpClient> TcpListener::AcceptFor(
-    std::chrono::milliseconds timeout) {
+absl::StatusOr<TcpClient> TcpListener::AcceptFor(absl::Duration timeout) {
   if (native_ == nullptr) {
     return absl::FailedPreconditionError("TCP listener is closed");
   }
-  if (timeout.count() < 0 || timeout.count() > 60000) {
+  if (timeout < absl::ZeroDuration() || timeout > absl::Seconds(60)) {
     return absl::InvalidArgumentError("TCP accept timeout must be 0-60000 ms");
   }
   NativeTcpClient* client = nullptr;
   const int result = SymbianDeviceTcpAcceptFor(
-      native_, static_cast<int>(timeout.count()), &client);
+      native_,
+      static_cast<int>(absl::ToInt64Milliseconds(
+          absl::Ceil(timeout, absl::Milliseconds(1)))),
+      &client);
   if (result != 0) {
     return symbian::StatusFromNativeError(result, "Accept TCP stream");
   }

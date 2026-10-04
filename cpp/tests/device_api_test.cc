@@ -7,6 +7,7 @@
 #include <thread>
 #include <utility>
 
+#include "absl/time/time.h"
 #include "gtest/gtest.h"
 #include "native_camera.h"
 #include "native_display.h"
@@ -173,7 +174,7 @@ TEST(DeviceApiTest, CounterReadingsKeepNativeUnits) {
   auto tick = symbian::api::system::ReadTickCounter();
   ASSERT_TRUE(tick.ok()) << tick.status();
   EXPECT_EQ(tick->count, 0xfffffff0u);
-  EXPECT_EQ(tick->period.count(), 1000);
+  EXPECT_EQ(absl::ToInt64Microseconds(tick->period), 1000);
 
   fast_frequency = 32768;
   fast_count = 123;

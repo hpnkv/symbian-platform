@@ -2,19 +2,42 @@
 // Licensed under the Apache License, Version 2.0.
 
 #include <e32base.h>
+#include <e32property.h>
+
+#include "agent_signals.h"
 
 extern "C" int RunActiveProbe();
-extern "C" bool AgentLocalStopRequested();
 extern "C" void AgentStopOnScheduler();
 
 namespace {
 
-class StopPoller final : public CActive {
+class StopWatcher final : public CActive {
  public:
-  StopPoller() : CActive(CActive::EPriorityStandard) {}
+  StopWatcher() : CActive(CActive::EPriorityStandard) {}
 
   TInt Open() {
-    TInt result = timer_.CreateLocal();
+    TInt result =
+        RProperty::Define(agent_service::kPropertyCategory,
+                          agent_service::kStopServiceKey, RProperty::EInt);
+    if (result == KErrAlreadyExists) {
+      result = RProperty::Delete(agent_service::kPropertyCategory,
+                                 agent_service::kStopServiceKey);
+      if (result == KErrNone) {
+        result =
+            RProperty::Define(agent_service::kPropertyCategory,
+                              agent_service::kStopServiceKey, RProperty::EInt);
+      }
+    }
+    if (result != KErrNone) {
+      return result;
+    }
+    defined_ = true;
+    result = property_.Attach(agent_service::kPropertyCategory,
+                              agent_service::kStopServiceKey);
+    if (result != KErrNone) {
+      return result;
+    }
+    result = property_.Set(0);
     if (result != KErrNone) {
       return result;
     }
@@ -23,44 +46,88 @@ class StopPoller final : public CActive {
     return KErrNone;
   }
 
-  ~StopPoller() override {
+  ~StopWatcher() override {
     Cancel();
-    timer_.Close();
+    property_.Close();
+    if (defined_) {
+      RProperty::Delete(agent_service::kPropertyCategory,
+                        agent_service::kStopServiceKey);
+    }
   }
 
  private:
   void Arm() {
-    timer_.After(iStatus, 100000);
+    property_.Subscribe(iStatus);
     SetActive();
   }
 
   void RunL() override {
-    if (AgentLocalStopRequested()) {
+    TInt stop = 0;
+    if (iStatus.Int() != KErrNone || property_.Get(stop) != KErrNone ||
+        stop != 0) {
       AgentStopOnScheduler();
       return;
     }
     Arm();
   }
 
-  void DoCancel() override { timer_.Cancel(); }
+  void DoCancel() override { property_.Cancel(); }
 
-  TInt RunError(TInt error) override { return error; }
+  TInt RunError(TInt) override {
+    AgentStopOnScheduler();
+    return KErrNone;
+  }
 
-  RTimer timer_;
+  RProperty property_;
+  bool defined_ = false;
 };
+
+alignas(StopWatcher) unsigned char stop_watcher_storage[sizeof(StopWatcher)];
+StopWatcher* stop_watcher = nullptr;
 
 }  // namespace
 
-extern "C" void ProbeStartScheduler() {
-  StopPoller poller;
-  if (poller.Open() != KErrNone) {
-    return;
+extern "C" TInt ProbePrepareScheduler() {
+  if (stop_watcher != nullptr) {
+    return KErrInUse;
   }
-  CActiveScheduler::Start();
+  StopWatcher* watcher =
+      new (static_cast<TAny*>(stop_watcher_storage)) StopWatcher();
+  const TInt result = watcher->Open();
+  if (result != KErrNone) {
+    watcher->~StopWatcher();
+    return result;
+  }
+  stop_watcher = watcher;
+  return KErrNone;
+}
+
+extern "C" TInt ProbeRequestStop() {
+  RProperty property;
+  TInt result = property.Attach(agent_service::kPropertyCategory,
+                                agent_service::kStopServiceKey);
+  if (result == KErrNone) {
+    result = property.Set(1);
+  }
+  property.Close();
+  return result;
+}
+
+extern "C" void ProbeStartScheduler() {
+  if (stop_watcher != nullptr) {
+    CActiveScheduler::Start();
+  }
 }
 
 extern "C" void ProbeStopScheduler() {
   CActiveScheduler::Stop();
+}
+
+extern "C" void ProbeReleaseScheduler() {
+  if (stop_watcher != nullptr) {
+    stop_watcher->~StopWatcher();
+  }
+  stop_watcher = nullptr;
 }
 
 extern "C" int RuntimeMain() {

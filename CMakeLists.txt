@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.28)
-project(symbian_platform VERSION 0.1.0 LANGUAGES CXX)
+if(SYMBIAN_INDEX_GUEST_PROBES)
+  project(symbian_platform VERSION 0.1.0 LANGUAGES C CXX ASM)
+else()
+  project(symbian_platform VERSION 0.1.0 LANGUAGES C CXX)
+endif()
+include(cmake/SymbianNativeIndex.cmake)
 
 # CLion can load this same repository with a second, real ARM CMake profile.
 # Keep the host dependency graph out of that profile so compiler discovery and
@@ -12,7 +17,6 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
       "Guest probe indexing requires the symbian-arm.cmake cross toolchain")
   endif()
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-  enable_language(C ASM)
   set(SYMBIAN_LIBCXX_SOURCE
     "${CMAKE_SOURCE_DIR}/research/upstream/llvm-project/libcxx")
   set(SYMBIAN_OPENC_SOURCE
@@ -73,6 +77,12 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
     message(FATAL_ERROR
       "The selected SDK has no Abseil StatusOr indexing profile; update it")
   endif()
+  # Component CMake files own the actual guest library sources and include
+  # paths. Loading them here makes SDK internals navigable in the same ARM
+  # profile as applications, without per-file IDE registration.
+  add_subdirectory(cpp/symbian/api EXCLUDE_FROM_ALL)
+  add_subdirectory(cpp/symbian/tls EXCLUDE_FROM_ALL)
+  add_subdirectory(cpp/symbian/concurrency/guest EXCLUDE_FROM_ALL)
   # The stackless runtime probes now use installed guest StatusOr and time.
   target_link_libraries(symbian_index_runtime PRIVATE
                         Symbian::AbseilStatusOr)
@@ -174,6 +184,8 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
       add_subdirectory("${application_dir}" EXCLUDE_FROM_ALL)
     endif()
   endforeach()
+  symbian_index_remaining_native(symbian_index_remaining_guest
+    Symbian::AbseilStatusOr cpp/symbian agent_service examples)
   return()
 endif()
 
@@ -278,3 +290,5 @@ if(SYMBIAN_BUILD_GUI_EXAMPLE)
     message(STATUS "GUI target unavailable: prepare-gui-sdk and a Clang host compiler are required")
   endif()
 endif()
+symbian_index_remaining_native(symbian_index_remaining_host absl::statusor
+  cpp)

@@ -26,11 +26,17 @@ namespace {
 constexpr std::size_t kMaximumPemBytes = 262144;
 constexpr std::size_t kMaximumIoBytes = 32768;
 
-absl::Status ValidateTimeout(std::chrono::milliseconds timeout) {
-  if (timeout.count() < 0 || timeout.count() > 60000) {
+absl::Status ValidateTimeout(absl::Duration timeout) {
+  if (timeout < absl::ZeroDuration() || timeout > absl::Seconds(60)) {
     return absl::InvalidArgumentError("TLS deadline must be 0-60000 ms");
   }
   return absl::OkStatus();
+}
+
+std::chrono::steady_clock::time_point SteadyDeadline(absl::Duration timeout) {
+  const auto rounded = absl::Ceil(timeout, absl::Milliseconds(1));
+  return std::chrono::steady_clock::now() +
+         std::chrono::milliseconds(absl::ToInt64Milliseconds(rounded));
 }
 
 absl::Status TlsError(std::string_view operation, int code) {
@@ -61,14 +67,15 @@ struct TlsServer::Impl {
     mbedtls_pk_free(&private_key);
   }
 
-  absl::StatusOr<std::chrono::milliseconds> Remaining() {
+  absl::StatusOr<absl::Duration> Remaining() {
     const auto now = std::chrono::steady_clock::now();
     if (now >= deadline) {
       return absl::DeadlineExceededError("TLS operation deadline expired");
     }
     const auto remaining =
         std::chrono::duration_cast<std::chrono::milliseconds>(deadline - now);
-    return std::max(remaining, std::chrono::milliseconds(1));
+    return absl::Milliseconds(
+        std::max(remaining, std::chrono::milliseconds(1)).count());
   }
 
   static int Send(void* context, const unsigned char* bytes,
@@ -210,8 +217,7 @@ TlsServer::~TlsServer() {
   }
 }
 
-absl::Status TlsServer::Accept(TcpClient&& client,
-                               std::chrono::milliseconds timeout) {
+absl::Status TlsServer::Accept(TcpClient&& client, absl::Duration timeout) {
   absl::Status valid = ValidateTimeout(timeout);
   if (!valid.ok()) {
     return valid;
@@ -220,7 +226,7 @@ absl::Status TlsServer::Accept(TcpClient&& client,
     return absl::FailedPreconditionError("TLS server already has a stream");
   }
   impl_->client.emplace(std::move(client));
-  impl_->deadline = std::chrono::steady_clock::now() + timeout;
+  impl_->deadline = SteadyDeadline(timeout);
   impl_->io_status = absl::OkStatus();
   int status = mbedtls_ssl_setup(&impl_->ssl, &impl_->config);
   if (status != 0) {
@@ -253,8 +259,8 @@ absl::Status TlsServer::Accept(TcpClient&& client,
   return absl::DeadlineExceededError("TLS handshake retry limit reached");
 }
 
-absl::StatusOr<std::size_t> TlsServer::ReadFor(
-    std::span<std::uint8_t> bytes, std::chrono::milliseconds timeout) {
+absl::StatusOr<std::size_t> TlsServer::ReadFor(std::span<std::uint8_t> bytes,
+                                               absl::Duration timeout) {
   absl::Status valid = ValidateTimeout(timeout);
   if (!valid.ok()) {
     return valid;
@@ -262,7 +268,7 @@ absl::StatusOr<std::size_t> TlsServer::ReadFor(
   if (!connected() || bytes.empty() || bytes.size() > kMaximumIoBytes) {
     return absl::FailedPreconditionError("TLS read needs a live 1-32 KiB span");
   }
-  impl_->deadline = std::chrono::steady_clock::now() + timeout;
+  impl_->deadline = SteadyDeadline(timeout);
   impl_->io_status = absl::OkStatus();
   for (int attempt = 0; attempt < 64; ++attempt) {
     const int count = mbedtls_ssl_read(&impl_->ssl, bytes.data(), bytes.size());
@@ -285,7 +291,7 @@ absl::StatusOr<std::size_t> TlsServer::ReadFor(
 }
 
 absl::Status TlsServer::WriteFor(std::span<const std::uint8_t> bytes,
-                                 std::chrono::milliseconds timeout) {
+                                 absl::Duration timeout) {
   absl::Status valid = ValidateTimeout(timeout);
   if (!valid.ok()) {
     return valid;
@@ -294,7 +300,7 @@ absl::Status TlsServer::WriteFor(std::span<const std::uint8_t> bytes,
     return absl::FailedPreconditionError(
         "TLS write needs a live 1-32 KiB span");
   }
-  impl_->deadline = std::chrono::steady_clock::now() + timeout;
+  impl_->deadline = SteadyDeadline(timeout);
   impl_->io_status = absl::OkStatus();
   std::size_t written = 0;
   for (int attempt = 0; attempt < 64 && written < bytes.size(); ++attempt) {

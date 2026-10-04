@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
-#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <span>
@@ -15,6 +14,8 @@
 #include <thread>
 #include <utility>
 
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "agent_certificates.h"
 #include "symbian/agent/guest_control.h"
 #include "symbian/agent/guest_log.h"
@@ -27,6 +28,9 @@
 
 extern "C" void ProbeStartScheduler();
 extern "C" void ProbeStopScheduler();
+extern "C" int ProbePrepareScheduler();
+extern "C" int ProbeRequestStop();
+extern "C" void ProbeReleaseScheduler();
 extern "C" int AgentLocalUiMain(std::atomic<bool>* stop_requested);
 extern "C" int AgentRequestForeground();
 
@@ -34,29 +38,25 @@ namespace {
 
 using symbian::api::connectivity::TcpClient;
 using symbian::api::connectivity::TlsServer;
-using namespace std::chrono_literals;
-
 constexpr std::uint16_t kAgentPort = 39101;
 constexpr std::size_t kMaximumFrame = 4096;
 constexpr std::size_t kMaximumRequestsPerConnection = 16;
 constexpr std::size_t kTlsWorkerStackBytes = 256 * 1024;
-constexpr auto kControlDeadline = 5s;
+const absl::Duration kControlDeadline = absl::Seconds(5);
 
-std::chrono::milliseconds Remaining(
-    std::chrono::steady_clock::time_point deadline) {
-  const auto now = std::chrono::steady_clock::now();
+absl::Duration Remaining(absl::Time deadline) {
+  const absl::Time now = absl::Now();
   if (now >= deadline) {
-    return 0ms;
+    return absl::ZeroDuration();
   }
-  return std::max(1ms, std::chrono::duration_cast<std::chrono::milliseconds>(
-                           deadline - now));
+  return std::max(absl::Milliseconds(1), std::move(deadline) - now);
 }
 
 bool ReadExactly(TlsServer& server, std::span<std::uint8_t> output,
-                 std::chrono::steady_clock::time_point deadline) {
+                 absl::Time deadline) {
   while (!output.empty()) {
     const auto remaining = Remaining(deadline);
-    if (remaining == 0ms) {
+    if (remaining == absl::ZeroDuration()) {
       return false;
     }
     auto received = server.ReadFor(output, remaining);
@@ -69,19 +69,21 @@ bool ReadExactly(TlsServer& server, std::span<std::uint8_t> output,
 }
 
 bool WriteExactly(TlsServer& server, std::span<const std::uint8_t> input,
-                  std::chrono::steady_clock::time_point deadline) {
+                  absl::Time deadline) {
   // TlsServer::WriteFor writes the entire input or returns an error.
-  const auto remaining = Remaining(deadline);
-  return remaining != 0ms && server.WriteFor(input, remaining).ok();
+  const auto remaining = Remaining(std::move(deadline));
+  return remaining != absl::ZeroDuration() &&
+         server.WriteFor(input, remaining).ok();
 }
 
 symbian::agent::GuestStatusSnapshot ReadStatusSnapshot() {
   symbian::agent::GuestStatusSnapshot snapshot;
   snapshot.logs_available = true;
   auto tick = symbian::api::system::ReadTickCounter();
-  if (tick.ok() && tick->period.count() > 0) {
+  if (tick.ok() && tick->period > absl::ZeroDuration()) {
     snapshot.tick = symbian::agent::GuestTickSnapshot{
-        tick->count, static_cast<std::uint64_t>(tick->period.count())};
+        tick->count,
+        static_cast<std::uint64_t>(absl::ToInt64Microseconds(tick->period))};
   }
   auto display = symbian::api::display::ReadPrimaryDisplayGeometry();
   if (display.ok() && display->width_pixels > 0 && display->height_pixels > 0) {
@@ -96,7 +98,8 @@ void Serve(TcpClient client, symbian::agent::AgentLogRing& log) {
   auto server =
       TlsServer::Create(k_server_cert, k_server_key, k_server_cert,
                         symbian::api::connectivity::TlsVersion::kTls13);
-  if (!server.ok() || !server->Accept(std::move(client), 10s).ok()) {
+  if (!server.ok() ||
+      !server->Accept(std::move(client), absl::Seconds(10)).ok()) {
     return;
   }
   log.Append(symbian::agent::AgentLogCode::kAuthenticated);
@@ -110,7 +113,7 @@ void Serve(TcpClient client, symbian::agent::AgentLogRing& log) {
   bool negotiated = false;
   for (std::size_t request_index = 0;
        request_index < kMaximumRequestsPerConnection; ++request_index) {
-    const auto deadline = std::chrono::steady_clock::now() + kControlDeadline;
+    const absl::Time deadline = absl::Now() + kControlDeadline;
     std::array<std::uint8_t, 4> prefix{};
     if (!ReadExactly(*server, prefix, deadline)) {
       return;
@@ -192,6 +195,9 @@ class AgentService final
   }
 
   void OnAccept(absl::StatusOr<TcpClient> result) override {
+    if (stopping_) {
+      return;
+    }
     if (result.ok()) {
       // The bounded queue closes a rejected client through its captured owner.
       worker_.PostFiber(
@@ -200,10 +206,16 @@ class AgentService final
           },
           kTlsWorkerStackBytes);
     }
-    listener_.AcceptNext();
+    if (!listener_.AcceptNext().ok()) {
+      StopFromLocalUi();
+    }
   }
 
   void StopFromLocalUi() {
+    if (stopping_) {
+      return;
+    }
+    stopping_ = true;
     listener_.Stop();
     ProbeStopScheduler();
   }
@@ -213,6 +225,7 @@ class AgentService final
       std::make_shared<symbian::agent::AgentLogRing>();
   symbian::concurrency::WorkerExecutor worker_{4};
   symbian::api::connectivity::ActiveTcpListener listener_;
+  bool stopping_ = false;
 };
 
 AgentService* current_service = nullptr;
@@ -243,7 +256,19 @@ extern "C" int RunActiveProbe() {
     return -301;
   }
   std::atomic<bool> stop_requested{false};
-  std::thread ui_thread([&] { AgentLocalUiMain(&stop_requested); });
+  const int prepared = ProbePrepareScheduler();
+  if (prepared != 0) {
+    return prepared;
+  }
+  std::thread ui_thread([&] {
+    const int ui_result = AgentLocalUiMain(&stop_requested);
+    if (ui_result != 0) {
+      stop_requested.store(true);
+    }
+    if (stop_requested.load()) {
+      ProbeRequestStop();
+    }
+  });
   current_service = &service;
   current_stop_request = &stop_requested;
   ProbeStartScheduler();
@@ -251,5 +276,6 @@ extern "C" int RunActiveProbe() {
   current_stop_request = nullptr;
   current_service = nullptr;
   ui_thread.join();
+  ProbeReleaseScheduler();
   return 0;
 }
