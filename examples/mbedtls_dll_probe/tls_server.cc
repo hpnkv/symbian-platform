@@ -2,10 +2,12 @@
 // Licensed under the Apache License, Version 2.0.
 // Research-only, manually addressed mutual-TLS listener in the emulator.
 
+#include <array>
 #include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <span>
+#include <string>
 
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy.h"
@@ -14,6 +16,7 @@
 #include "mbedtls/ssl.h"
 #include "mbedtls/x509_crt.h"
 #include "psa/crypto.h"
+#include "symbian/agent/guest_control.h"
 #include "symbian/api/connectivity/tcp_listener.h"
 #include "test_certificate.h"
 
@@ -63,12 +66,95 @@ struct TlsState {
   mbedtls_pk_context private_key;
 };
 
+int ReadExactly(mbedtls_ssl_context* ssl, unsigned char* bytes,
+                std::size_t length) {
+  std::size_t received = 0;
+  int retries = 0;
+  while (received < length && retries < 16) {
+    const int result =
+        mbedtls_ssl_read(ssl, bytes + received, length - received);
+    if (result > 0) {
+      received += static_cast<std::size_t>(result);
+      retries = 0;
+    } else if (result == MBEDTLS_ERR_SSL_WANT_READ ||
+               result == MBEDTLS_ERR_SSL_WANT_WRITE ||
+               result == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
+      ++retries;
+    } else {
+      return -260;
+    }
+  }
+  return received == length ? 0 : -260;
+}
+
+int WriteExactly(mbedtls_ssl_context* ssl, const unsigned char* bytes,
+                 std::size_t length) {
+  std::size_t sent = 0;
+  int retries = 0;
+  while (sent < length && retries < 16) {
+    const int result = mbedtls_ssl_write(ssl, bytes + sent, length - sent);
+    if (result > 0) {
+      sent += static_cast<std::size_t>(result);
+      retries = 0;
+    } else if (result == MBEDTLS_ERR_SSL_WANT_READ ||
+               result == MBEDTLS_ERR_SSL_WANT_WRITE) {
+      ++retries;
+    } else {
+      return -261;
+    }
+  }
+  return sent == length ? 0 : -261;
+}
+
+int ServeReadOnlyControl(mbedtls_ssl_context* ssl, bool expect_oversized) {
+  std::array<unsigned char, 4> prefix{};
+  if (ReadExactly(ssl, prefix.data(), prefix.size()) != 0) {
+    return -262;
+  }
+  const std::uint32_t size = (static_cast<std::uint32_t>(prefix[0]) << 24) |
+                             (static_cast<std::uint32_t>(prefix[1]) << 16) |
+                             (static_cast<std::uint32_t>(prefix[2]) << 8) |
+                             static_cast<std::uint32_t>(prefix[3]);
+  if (size == 0 || size > 4096) {
+    return expect_oversized ? 0 : -263;
+  }
+  if (expect_oversized) {
+    return -264;
+  }
+  std::array<unsigned char, 4096> payload{};
+  if (ReadExactly(ssl, payload.data(), size) != 0) {
+    return -265;
+  }
+  auto request = symbian::agent::ParseGuestControl(
+      std::string_view(reinterpret_cast<const char*>(payload.data()), size));
+  if (!request.ok()) {
+    return -266;
+  }
+  auto response = symbian::agent::PackGuestResult(*request);
+  if (!response.ok()) {
+    return -267;
+  }
+  const std::uint32_t response_size = response->size();
+  const std::array<unsigned char, 4> response_prefix{
+      static_cast<unsigned char>(response_size >> 24),
+      static_cast<unsigned char>(response_size >> 16),
+      static_cast<unsigned char>(response_size >> 8),
+      static_cast<unsigned char>(response_size)};
+  if (WriteExactly(ssl, response_prefix.data(), response_prefix.size()) != 0 ||
+      WriteExactly(ssl,
+                   reinterpret_cast<const unsigned char*>(response->data()),
+                   response->size()) != 0) {
+    return -268;
+  }
+  return 0;
+}
+
 }  // namespace
 
 extern "C" __attribute__((visibility("default"))) int MbedNativeTlsServerProbe(
     int port, int version, int mode) {
   if (port <= 0 || port > 65535 || (version != 12 && version != 13) ||
-      (mode != 0 && mode != 1)) {
+      mode < 0 || mode > 3) {
     return -240;
   }
   if (psa_crypto_init() != PSA_SUCCESS) {
@@ -134,6 +220,9 @@ extern "C" __attribute__((visibility("default"))) int MbedNativeTlsServerProbe(
   if (std::strcmp(mbedtls_ssl_get_version(&state.ssl),
                   version == 12 ? "TLSv1.2" : "TLSv1.3") != 0) {
     return -252;
+  }
+  if (mode == 2 || mode == 3) {
+    return ServeReadOnlyControl(&state.ssl, mode == 3);
   }
   unsigned char request = 0;
   int received = MBEDTLS_ERR_SSL_WANT_READ;

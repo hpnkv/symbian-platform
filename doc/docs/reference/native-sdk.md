@@ -21,6 +21,7 @@ required Abseil status/runtime profile and, where needed, an OS import proxy.
 | `Symbian::Storage` | `symbian/api/storage/storage.h` | Open, read, write or copy files | Move-only handles; use and destroy on the opening thread. |
 | `Symbian::Camera` | `symbian/api/camera/camera.h` | Discover camera slots | `StatusOr`; discovery does not reserve a camera. |
 | `Symbian::Connectivity` | `symbian/api/connectivity/tcp_client.h`, `tcp_listener.h` | Connect, listen, accept and exchange bounded IPv4 TCP data | Move-only, synchronous worker owners; deadline cancellation for accept, send and receive. |
+| `Symbian::Agent` | `symbian/agent/guest_control.h` | Parse and answer bounded read-only hello/status control messages | Authenticate the TLS peer before parsing; this codec does not own a service or grant permissions. |
 
 For example, a display query can live in a small adapter:
 
@@ -73,7 +74,14 @@ bindings call it rather than duplicating format rules. In the
 | `symbian::sis` | `cpp/symbian/sis/sis.h` | Build bounded unsigned SIS packages and inspect that profile. |
 | `symbian::analysis` | `cpp/symbian/analysis/*.h` | Read bounded ELF, attributes and checksum inputs. |
 | `symbian::emulator` | `cpp/symbian/emulator/*.h` | Native firmware/control parsing for owned emulator sessions. |
-| `symbian::agent` | `cpp/symbian/agent/frame.h`, `control.h` | Bounded length framing, inbound queue accounting and typed MessagePack control envelopes for the planned device protocol. The host `symbian::agent_frame` target is available; a guest SDK export is pending. |
+| `symbian::agent` | `cpp/symbian/agent/frame.h`, `control.h` | Bounded length framing, inbound queue accounting and typed MessagePack control envelopes for the planned device protocol. The host `symbian::agent_frame` target is available. The guest uses the smaller `Symbian::Agent` codec. |
+
+The host Python binding exposes `pack_agent_read_request`,
+`agent_control_payload_length` and `parse_agent_result_frame`. Each runs its
+native validation with the GIL released. The
+[read-only host session](agent-protocol.md#host-read-only-session) wraps them
+with explicit mutual TLS and a typed result; application code does not need to
+decode MessagePack itself.
 
 These calls use `absl::Status` or `absl::StatusOr`; an unsupported format
 profile returns an error instead of being guessed. `InspectImage` and

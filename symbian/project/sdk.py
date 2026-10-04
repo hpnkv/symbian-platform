@@ -618,6 +618,11 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             output / "include/symbian",
             dirs_exist_ok=True,
         )
+        (output / "include/symbian/agent").mkdir()
+        shutil.copyfile(
+            workspace / "cpp/symbian/agent/guest_control.h",
+            output / "include/symbian/agent/guest_control.h",
+        )
         shutil.copytree(
             workspace / "cpp/symbian/concurrency/common/thread",
             output / "include/thread",
@@ -1134,6 +1139,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                 for component in (
                     "system",
                     "connectivity",
+                    "agent",
                     "power",
                     "display",
                     "storage",

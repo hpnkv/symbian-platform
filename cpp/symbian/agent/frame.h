@@ -29,6 +29,11 @@ struct Frame {
   std::string payload;
 };
 
+/** @brief Validate a complete four-byte network-order prefix before allocation. */
+absl::StatusOr<std::size_t> DecodeFrameLength(
+    std::span<const std::uint8_t> prefix,
+    std::size_t maximum_frame_bytes = kMaximumFrameBytes);
+
 /**
  * @brief Incrementally reads one network-order, 32-bit length-prefixed frame.
  *

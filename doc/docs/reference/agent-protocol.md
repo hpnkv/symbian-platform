@@ -1,8 +1,10 @@
 # Development-agent wire framing
 
 The planned resident service will use one protocol over an authenticated TCP
-session. The first implemented piece is a native frame codec for the host. It
-does not yet connect to an emulator process or accept commands.
+session. Host native code owns framing and the full control envelope. A small
+guest codec answers read-only hello/status requests. A one-connection research
+DLL has exercised that exchange inside the emulator; a resident service is
+still pending.
 
 ## Frame shape and limits
 
@@ -28,10 +30,48 @@ retained when a message is parsed and encoded again. Version one currently
 defines hello, status, cancel, result and error envelopes. The `body` remains
 an untrusted map until a specific operation validates it.
 
-These codecs are host native components. The service must authenticate the
-connection before interpreting payloads, validate each operation body and
-permission grant, and give each request a deadline, cancellation path and
-final status. The guest SDK export and resident implementation are pending.
+The guest `Symbian::Agent` target installs
+`symbian/agent/guest_control.h`. `ParseGuestControl` accepts only version-one
+hello/status, a nonzero request ID, an optional unsigned deadline and an empty
+body. Its limit is 4 KiB and eight top-level fields; unknown top-level fields
+are preserved in the response. `PackGuestResult` responds with service name,
+`ready` state and the single `status` capability. These routines parse the
+MessagePack payload after the four-byte frame prefix has been checked. They
+require an authenticated TLS peer; they do not authenticate, authorize,
+schedule or keep a listener alive.
+
+The service must authenticate before interpreting payloads, validate each
+operation body and permission grant, and give each request a deadline,
+cancellation path and final status. In particular, the one-shot research DLL
+does not implement a resident active-object listener, distinct peer identities
+or a handset-visible pairing action.
+
+## Host read-only session
+
+`symbian.agent.ReadOnlyAgentSession` opens an explicitly addressed TLS socket.
+It requires a CA PEM for the server and a client certificate/key; the server
+name is checked separately from the address. It sends a status request using
+the native control/frame bindings, rejects an oversized prefix before reading
+the payload and returns a typed `AgentStatus`.
+
+```python
+from pathlib import Path
+from symbian.agent import ReadOnlyAgentSession
+
+with ReadOnlyAgentSession.connect(
+    "127.0.0.1", 39098,
+    server_name="my-development-phone",
+    ca_bundle=Path("certs/phone-ca.pem"),
+    client_certificate=Path("certs/host.pem"),
+    client_key=Path("certs/host-key.pem"),
+) as agent:
+    print(agent.status())
+```
+
+This is an API example for a manually started listener; it is not a working
+pairing recipe for a Nokia 808. The emulator research test currently uses one
+self-signed fixture identity on both peers. Production use needs separate
+identities, protected key provisioning and a handset-visible pairing action.
 See the
 [development-agent plan](https://github.com/hpnkv/symbian-platform/blob/main/.dev/development-agent.md)
 for the intended service gates.

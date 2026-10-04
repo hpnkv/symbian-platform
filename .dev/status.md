@@ -1,5 +1,36 @@
 # Status
 
+2026-10-04 host read-only session: the native Python extension now binds
+bounded request framing, prefix validation and result parsing, releasing the
+GIL for native work. `symbian.agent.ReadOnlyAgentSession` provides explicit
+CA/server-name verification and a client certificate over a synchronous TLS
+socket; it returns a frozen typed status. The two local Pytests passed,
+including a mutual-TLS loopback status exchange and oversized-prefix
+rejection. This exercises host policy and wire compatibility, not production
+pairing or a resident guest service. A clean SDK export at
+`.symbian/agent-codec-sdk-20261004` installed the guest header and
+`libsymbian_api_agent.a` for both ARM profiles. The opt-in research DLL now
+links `Symbian::Agent` from that export rather than compiling its source
+directly. The full opt-in emulator TLS matrix passed against this clean SDK
+(`16 passed in 184.57 seconds`): TLS 1.2/1.3 outbound certificate controls,
+inbound mutual authentication, framed read-only status and oversized-prefix
+rejection. No default entropy or SDK-wide trust was enabled.
+
+2026-10-04 read-only agent protocol slice: the native guest MessagePack codec
+accepts bounded version-one hello/status requests, preserves unknown
+top-level fields and emits a typed `ready`/`status` result. The host native
+control codec round-trips its output in GTest. An opt-in RM-807 Dynarmic
+research DLL answered a framed status request after TLS 1.2 mutual
+authentication, including request ID and extension echo, and rejected a
+4,097-byte advertised payload before reading it (`2 passed`, targeted guest
+cases). An ARMv6 `symbian_api_agent` archive builds against the installed
+SDK; the SDK exporter now includes it for both ARM profiles as
+`Symbian::Agent`. The clean-export 16-case TLS matrix also passed the TLS 1.3
+framed exchange and oversized-prefix control.
+This is one synchronous connection in a research DLL, not a resident service,
+paired production identity, active-object listener, or physical Nokia 808
+result.
+
 2026-10-04 inbound authenticated TLS research milestone: the opt-in E32
 research DLL now has a manually addressed native RSocket listener that owns
 one Mbed TLS server handshake. In a disposable pinned RM-807 Dynarmic

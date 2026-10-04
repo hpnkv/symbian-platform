@@ -9,6 +9,21 @@
 
 namespace symbian::agent {
 
+absl::StatusOr<std::size_t> DecodeFrameLength(
+    std::span<const std::uint8_t> prefix, std::size_t maximum_frame_bytes) {
+  if (prefix.size() != 4) {
+    return absl::InvalidArgumentError("Frame prefix must be four bytes");
+  }
+  const std::size_t size = (static_cast<std::uint32_t>(prefix[0]) << 24) |
+                           (static_cast<std::uint32_t>(prefix[1]) << 16) |
+                           (static_cast<std::uint32_t>(prefix[2]) << 8) |
+                           static_cast<std::uint32_t>(prefix[3]);
+  if (size == 0 || size > maximum_frame_bytes || size > kMaximumFrameBytes) {
+    return absl::InvalidArgumentError("Frame length is outside the limit");
+  }
+  return size;
+}
+
 FrameDecoder::FrameDecoder(std::size_t maximum_frame_bytes)
     : maximum_frame_bytes_(std::min(maximum_frame_bytes, kMaximumFrameBytes)) {}
 
@@ -36,14 +51,12 @@ absl::StatusOr<std::size_t> FrameDecoder::Consume(
     return offset;
   }
   if (expected_size_ == 0) {
-    expected_size_ = (static_cast<std::uint32_t>(prefix_[0]) << 24) |
-                     (static_cast<std::uint32_t>(prefix_[1]) << 16) |
-                     (static_cast<std::uint32_t>(prefix_[2]) << 8) |
-                     static_cast<std::uint32_t>(prefix_[3]);
-    if (expected_size_ == 0 || expected_size_ > maximum_frame_bytes_) {
+    auto length = DecodeFrameLength(prefix_, maximum_frame_bytes_);
+    if (!length.ok()) {
       failed_ = true;
-      return absl::InvalidArgumentError("Frame length is outside the limit");
+      return length.status();
     }
+    expected_size_ = *length;
     payload_.reserve(expected_size_);
   }
   const std::size_t available = bytes.size() - offset;

@@ -19,7 +19,7 @@ the generated symbol list.
 | Query supported device services | `symbian::api` connectivity, display, power, storage, camera and system headers | Guest application |
 | Schedule guest work | `symbian::concurrency` Future, Task, event executor and timer headers | Guest application |
 | Configure optional application TLS | `symbian_mbedtls` platform and socket BIO headers | Guest application |
-| Validate a development-agent envelope | `symbian::agent` frame and control headers | Host library; guest export pending |
+| Validate a development-agent envelope | `symbian::agent` frame and control headers; `Symbian::Agent` read-only guest codec | Host library and guest application |
 | Work directly with EUSER or Window Server | [Original header reference](platform/index.html) | Guest application |
 
 The host format libraries return `absl::Status` or `absl::StatusOr`. A failed

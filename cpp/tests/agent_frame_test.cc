@@ -11,6 +11,7 @@
 
 #include "symbian/agent/control.h"
 #include "symbian/agent/frame.h"
+#include "symbian/agent/guest_control.h"
 #include "symbian/status/json_codec.h"
 
 namespace {
@@ -60,6 +61,9 @@ TEST(AgentFrame, RejectsOversizeBeforePayloadAllocation) {
 }
 
 TEST(AgentFrame, RejectsZeroAndEnforcesSmallerConfiguredLimit) {
+  const std::uint8_t acceptable[] = {0, 0, 0, 2};
+  EXPECT_EQ(*symbian::agent::DecodeFrameLength(acceptable, 2), 2);
+  EXPECT_FALSE(symbian::agent::DecodeFrameLength(acceptable, 1).ok());
   FrameDecoder decoder(2);
   std::optional<Frame> completed;
   const std::uint8_t zero[] = {0, 0, 0, 0};
@@ -148,6 +152,53 @@ TEST(AgentFrame, ControlRejectsMalformedAndOversizedInput) {
   too_large.request_id = 9;
   too_large.body = {{"bytes", std::string(4096, 'x')}};
   EXPECT_FALSE(symbian::agent::PackControl(too_large).ok());
+}
+
+TEST(AgentFrame, GuestReadOnlyResultMatchesHostControlEnvelope) {
+  symbian::agent::ControlMessage request;
+  request.request_id = 17;
+  request.kind = symbian::agent::ControlKind::kStatus;
+  request.deadline_millis = 1500;
+  request.extensions = {{"future", 42}};
+  auto encoded = symbian::agent::PackControl(request);
+  ASSERT_TRUE(encoded.ok()) << encoded.status();
+  auto guest = symbian::agent::ParseGuestControl(*encoded);
+  ASSERT_TRUE(guest.ok()) << guest.status();
+  EXPECT_EQ(guest->request_id, 17);
+  EXPECT_EQ(guest->kind, 2);
+  EXPECT_EQ(guest->deadline_millis, 1500);
+  EXPECT_EQ(guest->extension_count, 1);
+  auto response = symbian::agent::PackGuestResult(*guest);
+  ASSERT_TRUE(response.ok()) << response.status();
+  auto host = symbian::agent::ParseControl(*response);
+  ASSERT_TRUE(host.ok()) << host.status();
+  EXPECT_EQ(host->request_id, 17);
+  EXPECT_EQ(host->kind, symbian::agent::ControlKind::kResult);
+  EXPECT_EQ(host->body["service"], "symbian-agent");
+  EXPECT_EQ(host->body["capabilities"], nlohmann::json::array({"status"}));
+  EXPECT_EQ(host->extensions, request.extensions);
+}
+
+TEST(AgentFrame, GuestReadOnlyRejectsMalformedAndExcessiveInput) {
+  for (const nlohmann::json& value : {
+           nlohmann::json{{"v", 1}, {"id", 0}, {"kind", 1}},
+           nlohmann::json{{"v", 2}, {"id", 1}, {"kind", 1}},
+           nlohmann::json{{"v", 1}, {"id", 1}, {"kind", 3}},
+           nlohmann::json{
+               {"v", 1}, {"id", 1}, {"kind", 1}, {"body", {{"write", true}}}},
+       }) {
+    auto bytes = symbian::PackMsgpack(value, "test");
+    ASSERT_TRUE(bytes.ok());
+    EXPECT_FALSE(symbian::agent::ParseGuestControl(*bytes).ok());
+  }
+  EXPECT_FALSE(symbian::agent::ParseGuestControl(std::string(4097, 'x')).ok());
+  const std::string duplicate_id =
+      "\x84\xa1v\x01\xa2id\x01\xa2id\x02\xa4kind\x01";
+  EXPECT_FALSE(symbian::agent::ParseGuestControl(duplicate_id).ok());
+  const std::string duplicate_extension =
+      "\x85\xa1v\x01\xa2id\x01\xa4kind\x01\xa1x\x01\xa1x\x02";
+  EXPECT_FALSE(symbian::agent::ParseGuestControl(duplicate_extension).ok());
+  EXPECT_FALSE(symbian::agent::ParseGuestControl("").ok());
 }
 
 }  // namespace

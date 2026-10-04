@@ -98,7 +98,11 @@ endif()
 target_link_libraries(mbedcrypto_probe_elf PRIVATE
   "${mbedtls_archive}" "${mbedx509_archive}" "${MBEDTLS_ARCHIVE}")
 if(SYMBIAN_RM807_TLS_HANDSHAKE_PROBE)
-  target_link_libraries(mbedcrypto_probe_elf PRIVATE Symbian::Connectivity)
+  if(NOT TARGET Symbian::Agent)
+    message(FATAL_ERROR "TLS control probe needs the installed Symbian::Agent target")
+  endif()
+  target_link_libraries(mbedcrypto_probe_elf PRIVATE
+    Symbian::Connectivity Symbian::Agent)
 endif()
 # The runtime archive contains optional mimalloc POSIX helpers that Belle does
 # not import. Retain the declared DLL export while discarding unused helpers.

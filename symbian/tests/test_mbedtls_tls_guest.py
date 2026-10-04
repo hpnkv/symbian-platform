@@ -11,6 +11,7 @@ import threading
 import time
 from pathlib import Path
 
+import msgpack
 import pytest
 
 from symbian import toolchain
@@ -87,7 +88,7 @@ def guest_binaries(tmp_path_factory):
     for version in (12, 13):
         for mode in (0, 1, 2, 3):
             clients[(version, mode)] = build_client(sdk, build, version, mode)
-        for mode in (0, 1):
+        for mode in (0, 1, 2, 3):
             clients[("server", version, mode)] = build_client(
                 sdk, build, version, mode, ordinal=7, port=39098
             )
@@ -237,7 +238,7 @@ def test_authenticated_guest_tls(guest_binaries, tmp_path, version, mode):
 
 
 @pytest.mark.parametrize("version", [12, 13])
-@pytest.mark.parametrize("mode", [0, 1])
+@pytest.mark.parametrize("mode", [0, 1, 2, 3])
 def test_guest_mutual_tls_listener(guest_binaries, tmp_path, version, mode):
     """Authenticates an inbound host and rejects a missing client cert."""
     golden = ROOT / ".symbian/instances/delight-import-01"
@@ -267,7 +268,7 @@ def test_guest_mutual_tls_listener(guest_binaries, tmp_path, version, mode):
     )
     context.minimum_version = exact_version
     context.maximum_version = exact_version
-    if mode == 0:
+    if mode != 1:
         context.load_cert_chain(
             CERTIFICATES / "server-cert.pem",
             CERTIFICATES / "server-key.pem",
@@ -315,11 +316,56 @@ def test_guest_mutual_tls_listener(guest_binaries, tmp_path, version, mode):
                             connection, server_hostname="sdk-test"
                         ) as tls:
                             tls.settimeout(5)
-                            tls.sendall(b"H")
-                            reply = tls.recv(1)
+                            if mode < 2:
+                                tls.sendall(b"H")
+                                reply = tls.recv(1)
+                            elif mode == 3:
+                                tls.sendall((4097).to_bytes(4, "big"))
+                                reply = b""
+                            else:
+                                payload = msgpack.packb(
+                                    {
+                                        "v": 1,
+                                        "id": 17,
+                                        "kind": 2,
+                                        "deadline_ms": 1500,
+                                        "body": {},
+                                        "future": 42,
+                                    },
+                                    use_bin_type=True,
+                                )
+                                tls.sendall(
+                                    len(payload).to_bytes(4, "big") + payload
+                                )
+
+                                def receive_exact(count):
+                                    output = bytearray()
+                                    while len(output) < count:
+                                        chunk = tls.recv(count - len(output))
+                                        if not chunk:
+                                            raise EOFError(
+                                                "Guest closed a control frame"
+                                            )
+                                        output.extend(chunk)
+                                    return bytes(output)
+
+                                response_size = int.from_bytes(
+                                    receive_exact(4), "big"
+                                )
+                                assert 0 < response_size <= 4096
+                                response = msgpack.unpackb(
+                                    receive_exact(response_size), raw=False
+                                )
+                                assert response["id"] == 17
+                                assert response["kind"] == 4
+                                assert response["future"] == 42
+                                assert response["body"]["capabilities"] == [
+                                    "status"
+                                ]
+                                reply = b"S"
                     except OSError:
                         reply = b""
-                assert (reply == b"S") == (mode == 0)
+                assert (reply == b"S") == (mode != 1 and mode != 3)
                 assert process.wait(timeout=20) == 0
                 exits = control.exit_report()["process_exits"]
                 assert len(exits) == 1

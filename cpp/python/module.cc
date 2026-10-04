@@ -7,6 +7,7 @@
 #include <pybind11/stl.h>
 #include <pybind11_abseil/status_casters.h>
 
+#include "python/agent_bindings.h"
 #include "python/concurrency_interop.h"
 #include "python/device_bindings.h"
 #include "python/status_interop.h"
@@ -147,6 +148,7 @@ symbian::sdk::ProxyInfo InspectProxy(const py::bytes& data) {
 }  // namespace
 
 PYBIND11_MODULE(_native, module) {
+  symbian::python::BindAgent(module);
   symbian::python::InstallPythonSchedulerParkGuard();
   symbian::python::BindConcurrencyInterop(module);
   symbian::python::BindDevice(module);

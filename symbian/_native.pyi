@@ -13,6 +13,9 @@ import symbian.status
 
 __all__: list[str] = [
     "ArmAttributes",
+    "agent_control_payload_length",
+    "pack_agent_read_request",
+    "parse_agent_result_frame",
     "E32ExportSlot",
     "E32ImageInfo",
     "E32ImportBlock",
@@ -43,6 +46,20 @@ __all__: list[str] = [
     "status_code_to_http",
     "status_code_to_websocket",
 ]
+
+def agent_control_payload_length(prefix: bytes) -> int:
+    """Validate a complete four-byte agent control prefix."""
+    ...
+
+def pack_agent_read_request(
+    request_id: int, kind: int, deadline_millis: int = 0
+) -> bytes:
+    """Encode a version-one hello or status request and its frame prefix."""
+    ...
+
+def parse_agent_result_frame(frame: bytes) -> dict[str, typing.Any]:
+    """Validate and parse one complete agent result frame."""
+    ...
 
 class ArmAttributes:
     @property

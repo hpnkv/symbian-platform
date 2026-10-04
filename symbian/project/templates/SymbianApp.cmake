@@ -161,7 +161,7 @@ endif()
 # Each verified device capability is a separate opt-in archive. Absent
 # archives create no target, so a project cannot accidentally link a planned
 # but unimplemented device facility.
-foreach(component IN ITEMS system connectivity power media display sensors
+foreach(component IN ITEMS system connectivity agent power media display sensors
                            camera storage)
   set(component_archive
     "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_api_${component}.a")

@@ -58,12 +58,13 @@ foreach(runtime_target IN ITEMS import_status_module ok_status_singleton
   endif()
 endforeach()
 
-pybind11_add_module(symbian_python MODULE module.cc status_bindings.cc
+pybind11_add_module(symbian_python MODULE module.cc agent_bindings.cc status_bindings.cc
                     status_interop.cc concurrency_interop.cc device_bindings.cc)
 set_target_properties(symbian_python PROPERTIES OUTPUT_NAME _native)
 target_include_directories(symbian_python BEFORE PRIVATE "${abseil_SOURCE_DIR}")
 target_link_libraries(symbian_python PRIVATE symbian::sis symbian::sdk
                       symbian::status symbian::concurrency symbian::device
+                      symbian::agent_frame
                       pybind11_abseil::status_casters)
 target_compile_features(symbian_python PRIVATE cxx_std_20)
 # Only Python boundary translation units enable exceptions. Hide static vendor

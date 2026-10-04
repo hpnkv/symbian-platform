@@ -1,5 +1,41 @@
 # Research log
 
+### 2026-10-04 — host control integration
+
+The Python session delegates MessagePack and frame length rules to the native
+agent library. It provides a manually addressed, mutually authenticated TLS
+socket with a project-selected CA and explicit server name. A local server
+requiring a client certificate accepted a status request and returned a typed
+result; the native prefix check rejected an advertised payload above 4 KiB.
+This proves the host API loopback path, not the phone pairing story.
+
+Open questions: choose an on-phone key generation/storage path and separate
+identity lifecycle before this can become a general device session. Add
+deadline/cancellation integration, reconnect, discovery and an active-object
+guest listener. Measure the actual phone transport and idle cost. No current
+emulator or host result proves Nokia 808 compatibility.
+
+### 2026-10-04 — guest read-only MessagePack control
+
+The host control codec and small guest decoder now share version-one
+hello/status/result envelopes. The guest caps its control payload at 4 KiB,
+checks the frame prefix before payload allocation and retains unknown
+top-level fields for the result. The TLS 1.2 and TLS 1.3 emulator cases authenticated the
+client certificate, then returned a framed result with the same request ID
+and unknown extension. A second case sent only a 4,097-byte prefix and the
+guest rejected it before reading or allocating the payload. The clean SDK's
+`Symbian::Agent` archive supplied the guest codec. The full opt-in TLS matrix
+passed 16/16; the host GTest also passed round-trip and malformed/oversized
+controls.
+
+Open questions: the one-shot DLL still lacks an active-object idle listener,
+separate provisioned peer identities and a handset-visible pairing flow.
+The protocol needs explicit cancellation, deadline interpretation and grants
+for every operation beyond read-only status. The guest decoder deliberately
+handles only an empty body and a small MessagePack subset; future operations
+need typed body validation before they are enabled. Neither emulator result
+nor ARM archive generation demonstrates Nokia 808 compatibility.
+
 ### 2026-10-04 — inbound authenticated TLS probe
 
 An opt-in DLL now accepts one native RSocket stream and runs the Mbed TLS
