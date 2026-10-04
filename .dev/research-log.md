@@ -1,5 +1,18 @@
 # Research log
 
+2026-10-04: The first bounded ring had sequence/code only, so events from one
+live process lacked timing and severity context. A steady clock already used
+for the service's control deadline now stamps append time as microseconds
+since ring construction; the ring clamps each timestamp against its previous
+one. Event code 2 is debug, code 3 warning, and authentication/close are
+information. Host models accept absent fields from earlier peers and preserve
+unknown numeric codes. Both emulator CPU backends read ordered stamps; the
+Dynarmic replay verified warning severity after a rejected frame. Open
+questions: future OS/application log sources need their own source identity,
+permission and privacy policy; a process restart must be represented when
+resuming a cursor; physical monotonic-clock quality and idle cost remain
+unmeasured. These readings are neither UTC nor cross-process timestamps.
+
 2026-10-04: A second CLion configure failure after adding the connectivity
 indexing target was a different cause: the ignored user preset explicitly
 overrode `SYMBIAN_SDK_PREFIX` with an older exported SDK, while the active

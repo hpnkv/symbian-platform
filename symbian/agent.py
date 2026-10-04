@@ -51,12 +51,14 @@ class AgentStatus(BaseModel):
 
 
 class AgentLogRecord(BaseModel):
-    """One service-local event; unknown numeric codes remain readable."""
+    """One service event with a process-relative monotonic timestamp."""
 
     model_config = ConfigDict(frozen=True)
 
     sequence: int
     code: int
+    severity: int | None = None
+    elapsed_us: int | None = None
 
 
 class AgentLogPage(BaseModel):

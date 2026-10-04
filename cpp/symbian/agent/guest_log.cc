@@ -8,9 +8,32 @@
 #include "absl/status/status.h"
 
 namespace symbian::agent {
+namespace {
+
+AgentLogSeverity SeverityFor(AgentLogCode code) {
+  switch (code) {
+    case AgentLogCode::kStatusRead:
+      return AgentLogSeverity::kDebug;
+    case AgentLogCode::kRejectedFrame:
+      return AgentLogSeverity::kWarning;
+    case AgentLogCode::kAuthenticated:
+    case AgentLogCode::kSessionClosed:
+      return AgentLogSeverity::kInfo;
+  }
+  return AgentLogSeverity::kInfo;
+}
+
+}  // namespace
 
 void AgentLogRing::Append(AgentLogCode code) {
-  records_[(next_sequence_ - 1) % kCapacity] = {next_sequence_, code};
+  const auto elapsed = std::chrono::steady_clock::now() - started_;
+  const auto microseconds =
+      std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+  const std::uint64_t elapsed_us =
+      microseconds > 0 ? static_cast<std::uint64_t>(microseconds) : 0;
+  last_elapsed_microseconds_ = std::max(last_elapsed_microseconds_, elapsed_us);
+  records_[(next_sequence_ - 1) % kCapacity] = {
+      next_sequence_, code, SeverityFor(code), last_elapsed_microseconds_};
   ++next_sequence_;
 }
 

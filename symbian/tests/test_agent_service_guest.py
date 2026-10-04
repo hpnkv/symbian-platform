@@ -145,6 +145,22 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                                 2,
                                 2,
                             ]
+                            assert [
+                                record.severity for record in page.records
+                            ] == [
+                                2,
+                                1,
+                                1,
+                            ]
+                            assert all(
+                                record.elapsed_us is not None
+                                for record in page.records
+                            )
+                            assert [
+                                record.elapsed_us for record in page.records
+                            ] == sorted(
+                                record.elapsed_us for record in page.records
+                            )
                             cursor = page.next_cursor
                         break
                     except ConnectionRefusedError:
@@ -177,6 +193,11 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                     assert agent.status().state == "ready"
                     page = agent.logs(after=cursor)
                     assert any(record.code == 3 for record in page.records)
+                    assert all(
+                        record.severity == 3
+                        for record in page.records
+                        if record.code == 3
+                    )
                     assert page.next_cursor > cursor
                 command = subprocess.run(
                     [

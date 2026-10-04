@@ -238,6 +238,10 @@ TEST(AgentFrame, GuestLogCursorReportsOverwrittenRecords) {
   EXPECT_TRUE(first->gap);
   ASSERT_EQ(first->count, 8);
   EXPECT_EQ(first->records[0].sequence, 9);
+  EXPECT_EQ(first->records[0].severity,
+            symbian::agent::AgentLogSeverity::kDebug);
+  EXPECT_LE(first->records[0].elapsed_microseconds,
+            first->records[1].elapsed_microseconds);
   EXPECT_EQ(first->next_cursor, 16);
   auto second = ring.ReadAfter(first->next_cursor, 8);
   ASSERT_TRUE(second.ok()) << second.status();
@@ -273,6 +277,8 @@ TEST(AgentFrame, GuestLogRequestAndResultRoundTrip) {
   auto parsed = symbian::agent::ParseControl(*result);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_EQ(parsed->body["records"].size(), 2);
+  EXPECT_EQ(parsed->body["records"][0]["severity"], 1);
+  EXPECT_TRUE(parsed->body["records"][0]["elapsed_us"].is_number_unsigned());
   EXPECT_EQ(parsed->body["records"][0]["sequence"], 5);
   EXPECT_EQ(parsed->body["records"][0]["code"], 2);
   EXPECT_EQ(parsed->body["next_cursor"], 6);

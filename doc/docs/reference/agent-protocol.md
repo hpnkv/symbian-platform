@@ -95,6 +95,14 @@ can retain an unknown future value: 1 authentication, 2 status read, 3 frame
 rejection and 4 session closed. The ring is cleared when the process exits.
 It does not contain operating-system logs or private application file data.
 
+Each new record also carries `severity` (1 debug, 2 information, 3 warning)
+and `elapsed_us`, microseconds since this process created the ring. The ring
+uses a steady clock and clamps each reading to the preceding one, so sequence
+order and reported elapsed time do not run backwards. The time is not UTC,
+does not survive a restart and should not be compared across processes. The
+host accepts records without these fields from an older peer; it retains
+unknown numeric codes and severities.
+
 The guest parser validates the complete logs body before reading the ring;
 `PackGuestLogResult` encodes one bounded page. The ring has one worker owner,
 so the example needs no new scheduler or cross-thread log lock. A future

@@ -1,5 +1,22 @@
 # Status
 
+2026-10-04 structured resident event metadata: `AgentLogRing` now stamps
+each fixed record with numeric debug/information/warning severity and a
+nondecreasing, process-relative steady-clock microsecond count. The guest
+codec includes both fields; the typed host model leaves them optional for
+older peers. A clean `.symbian/resident-agent-event-sdk-20261004` export
+installed the new public header/archive for ARMv5T and ARMv6. Native codec
+GTest, 27 host session/CLI Pytests, Black/Ruff/Clang Format and strict docs
+passed. The pinned RM-807 service passed Dynarmic and Dyncom (`2 passed in
+38.99s`), including authenticated reads and timestamp order; a targeted
+Dynarmic replay checked warning severity on rejected frames (`1 passed, 1
+deselected in 22.70s`). The final ARMv6 E32 has 798,544 code, 1,540 data
+and 69,316 BSS bytes with eight import DLLs. Its unsigned one-file research
+SIS SHA-256 is
+`b4c6f52e9908d6a745261c950374a08bf2b27f62ee0e9970d032ca3602527c69`.
+Elapsed time is not UTC, survives neither process restart nor ring overwrite,
+and does not make this OS log collection or a Nokia 808 result.
+
 2026-10-04 CLion preset follow-up: the user's exact
 `cmake --preset clion-guest-probes-armv6 -S ... -B ...` still failed after
 the connectivity target was added because ignored `CMakeUserPresets.json`

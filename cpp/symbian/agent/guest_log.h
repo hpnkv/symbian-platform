@@ -5,6 +5,7 @@
 #define SYMBIAN_AGENT_GUEST_LOG_H_
 
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 
@@ -20,10 +21,20 @@ enum class AgentLogCode : std::uint8_t {
   kSessionClosed = 4,
 };
 
+/** @brief Severity of one service-local event; future values may be added. */
+enum class AgentLogSeverity : std::uint8_t {
+  kDebug = 1,
+  kInfo = 2,
+  kWarning = 3,
+};
+
 /** @brief One retained event in the agent's own process. */
 struct AgentLogRecord {
   std::uint64_t sequence = 0;
   AgentLogCode code = AgentLogCode::kAuthenticated;
+  AgentLogSeverity severity = AgentLogSeverity::kInfo;
+  /** Microseconds since this ring was constructed; not UTC or persistent. */
+  std::uint64_t elapsed_microseconds = 0;
 };
 
 /** @brief One bounded read result, including a lost-record signal. */
@@ -59,6 +70,9 @@ class AgentLogRing {
 
  private:
   std::array<AgentLogRecord, kCapacity> records_{};
+  std::chrono::steady_clock::time_point started_ =
+      std::chrono::steady_clock::now();
+  std::uint64_t last_elapsed_microseconds_ = 0;
   std::uint64_t next_sequence_ = 1;
 };
 

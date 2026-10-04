@@ -59,7 +59,9 @@ Server layout. The [system](../capabilities/apis/system.md) and
 `AgentLogRing` retains 32 fixed records on one worker and returns at most eight
 after a sequence cursor. `AgentLogPage.gap` signals overwritten records;
 `PackGuestLogResult` wraps that page in the same authenticated control
-envelope. See the [protocol guide](agent-protocol.md#service-local-event-log)
+envelope. `AgentLogRecord` carries a process-relative steady-clock reading and
+numeric severity; neither is a wall clock or OS log source. See the
+[protocol guide](agent-protocol.md#service-local-event-log)
 for code meanings and retention.
 
 An `ActiveTcpListener` requires an installed original Symbian

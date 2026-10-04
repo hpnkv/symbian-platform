@@ -97,7 +97,12 @@ def test_read_only_status_over_mutual_tls():
                         receive(stream),
                         {
                             "records": [
-                                {"sequence": 5, "code": 2},
+                                {
+                                    "sequence": 5,
+                                    "code": 2,
+                                    "severity": 1,
+                                    "elapsed_us": 250,
+                                },
                                 {"sequence": 6, "code": 99},
                             ],
                             "next_cursor": 6,
@@ -137,7 +142,10 @@ def test_read_only_status_over_mutual_tls():
     assert observed[2]["body"] == {"after": 4, "limit": 2}
     assert logs.records[0].sequence == 5
     assert logs.records[0].code == 2
+    assert logs.records[0].severity == 1
+    assert logs.records[0].elapsed_us == 250
     assert logs.records[1].code == 99
+    assert logs.records[1].severity is None
     assert logs.next_cursor == 6
     assert logs.gap is False
 

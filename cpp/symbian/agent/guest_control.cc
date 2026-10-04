@@ -374,11 +374,15 @@ absl::StatusOr<std::string> PackGuestLogResult(
     if (record.sequence == 0) {
       return absl::InvalidArgumentError("Invalid log sequence");
     }
-    result.push_back(static_cast<char>(0x82));
+    result.push_back(static_cast<char>(0x84));
     WriteString(&result, "sequence");
     WriteUInt(&result, record.sequence);
     WriteString(&result, "code");
     WriteUInt(&result, static_cast<std::uint8_t>(record.code));
+    WriteString(&result, "severity");
+    WriteUInt(&result, static_cast<std::uint8_t>(record.severity));
+    WriteString(&result, "elapsed_us");
+    WriteUInt(&result, record.elapsed_microseconds);
   }
   WriteString(&result, "next_cursor");
   WriteUInt(&result, page.next_cursor);
