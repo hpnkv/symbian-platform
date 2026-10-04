@@ -4,7 +4,9 @@ The SDK includes the complete source and headers of the
 [mbedtls-symbian](https://github.com/shinovon/mbedtls-symbian) port, based on
 [Mbed TLS](https://github.com/Mbed-TLS/mbedtls). Your project links the
 installed ARM library targets. TLS needs cryptographic randomness and a
-trusted certificate chain; the guest handshake remains an open gate.
+trusted certificate chain. An opt-in emulator experiment has completed
+authenticated handshakes; the standard guest entropy source still fails
+closed, so applications must supply one for their actual target.
 
 ## 1. Link the library
 
@@ -36,11 +38,12 @@ path checks, package placement and exact current test evidence.
 
 ## 3. Interpret the result
 
-The installed archives compile TLS 1.2 and 1.3 and selected guest crypto,
-clock and certificate checks run in the emulator. Guest entropy is currently
-fail-closed; an opt-in emulator patch demonstrates connected nonblocking
-receive and cancellation, but guest `send` still returns `EINVAL`. An
-authenticated guest handshake is not yet demonstrated. Do not
-ship a security claim based on an ARM build or a host handshake. Follow the
+The installed archives compile TLS 1.2 and 1.3. In a patched, disposable
+RM-807 emulator instance, a research DLL using native `RSocket` completed
+authenticated client handshakes and exchanged application data with a local
+server using each protocol. Wrong hostname and untrusted certificate controls
+failed verification. The opt-in entropy adapter and emulator patch are not
+the default SDK configuration; cancellation, listener ownership and a
+physical-device result remain open. Follow the
 [development status](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md)
 for the next verified gate.

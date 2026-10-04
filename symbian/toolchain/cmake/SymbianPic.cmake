@@ -63,8 +63,10 @@ endfunction()
 
 # Publish an E32 DLL from an ordinary CMake target. The ELF remains the debug
 # symbol file. IMPORT_SYMBOLS creates a consumer-side ordinal proxy target.
+# RUNTIME_TARGET selects one runtime for the default startup; use
+# Symbian::Streams when linking Abseil-based SDK targets.
 function(symbian_add_dynamic_library target)
-  cmake_parse_arguments(PARSE_ARGV 1 DLL "" "STARTUP;LINKER_SCRIPT;EXPORT_DEFINITION;UID3"
+  cmake_parse_arguments(PARSE_ARGV 1 DLL "" "STARTUP;LINKER_SCRIPT;EXPORT_DEFINITION;UID3;RUNTIME_TARGET"
                         "SOURCES;IMPORT_SYMBOLS;IMPORT_PROXIES")
   if(DLL_UNPARSED_ARGUMENTS OR DLL_KEYWORDS_MISSING_VALUES OR
      NOT DLL_SOURCES OR
@@ -88,10 +90,13 @@ function(symbian_add_dynamic_library target)
   symbian_add_pic_dll(${elf_target} STARTUP "${DLL_STARTUP}"
     LINKER_SCRIPT "${DLL_LINKER_SCRIPT}" SOURCES ${DLL_SOURCES})
   if(default_startup)
-    if(NOT TARGET Symbian::Runtime)
-      message(FATAL_ERROR "The SDK DLL entry needs Symbian::Runtime; include(SymbianApp)")
+    if(NOT DLL_RUNTIME_TARGET)
+      set(DLL_RUNTIME_TARGET Symbian::Runtime)
     endif()
-    target_link_libraries(${elf_target} PRIVATE Symbian::Runtime)
+    if(NOT TARGET ${DLL_RUNTIME_TARGET})
+      message(FATAL_ERROR "The SDK DLL entry needs ${DLL_RUNTIME_TARGET}; include(SymbianApp)")
+    endif()
+    target_link_libraries(${elf_target} PRIVATE ${DLL_RUNTIME_TARGET})
     if(NOT DLL_IMPORT_PROXIES)
       set(DLL_IMPORT_PROXIES
         "${SYMBIAN_SDK_PREFIX}/proxies/euser/euser.dso")

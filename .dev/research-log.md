@@ -1,5 +1,28 @@
 # Research log
 
+### 2026-10-04 — native guest TLS handshake boundary
+
+The guest TLS DLL first crashed because its translation unit did not use the
+Mbed TLS archive's `MBEDTLS_USER_CONFIG_FILE` and guest compile definitions.
+Its `mbedtls_ssl_config` layout therefore differed from the archive. Sharing
+those definitions removed the crash. Mbed TLS then returned
+`MBEDTLS_ERR_PK_BAD_INPUT_DATA` until the probe initialized PSA crypto before
+the handshake, matching its host test setup. TLS 1.3 delivered a session
+ticket before application data, so a bounded read loop handles both
+`WANT_READ` and `RECEIVED_NEW_SESSION_TICKET`. These are library integration
+requirements for the planned C++ TLS owner.
+
+Eight opt-in emulator cases passed against a local server: authenticated TLS
+1.2 and 1.3 plus wrong-host, untrusted and expired certificate rejection for
+each. The certificate fixtures are local test material, never SDK-wide roots.
+The experiment uses original RSocket send/receive, the RM-807 random adapter
+and local EKA2L1 patches. Open questions remain: how to implement a native
+active-object socket owner with in-flight cancellation and deadlines; how to
+bound TLS session memory and buffers; whether the target phone supplies
+equivalent random quality, UTC, sockets and TLS latency; and how to host an
+inbound authenticated listener while idle. No physical-phone claim follows
+from this result.
+
 ## 2026-10-04: Original RSocket outbound and receive path
 
 A diagnostic DLL compiled against original `ES_SOCK.H` and `in_sock.h` with

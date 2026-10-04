@@ -1,5 +1,27 @@
 # Status
 
+2026-10-04 authenticated guest TLS research milestone: an opt-in E32 DLL
+linked the public `Symbian::Connectivity` RSocket client to the vendored Mbed
+TLS 3.4.1 archives, the checked guest UTC adapter, and a scoped RM-807 secure
+random adapter. A disposable, pinned RM-807 EKA2L1 instance reached a local
+Python/OpenSSL server. TLS 1.2 and TLS 1.3 each completed an authenticated
+client handshake with required peer verification and exact hostname, then
+exchanged one application byte. For each version, wrong-host, untrusted-chain
+and expired-certificate controls failed with the expected X.509 flags:
+`symbian/tests/test_mbedtls_tls_guest.py`, 8 passed in 92.75 seconds under
+Dynarmic. The default SDK guest entropy callback still fails closed. This
+does not establish secure entropy on a Nokia 808, a cancellable/nonblocking
+TLS owner, inbound listener, resident service, or physical-device TLS.
+Mbed TLS's TLS 1.3 session path directly references `time()`; the guest
+archive now implements it through the same validated UTC adapter. The SDK
+DLL helper also accepts `RUNTIME_TARGET` so a DLL using Abseil status targets
+selects the streams runtime once rather than linking incompatible runtime
+archives. A fresh `.symbian/tls-handshake-sdk-20261004` export completed for
+ARMv5T and ARMv6; both installed Mbed crypto archives define the guest
+`time()` adapter, and the installed CMake helper matches source. The default
+Mbed DLL link regression passed (`1 passed, 7 opt-in skips`), Black/Ruff,
+Clang Format and strict MkDocs/two-Doxygen builds passed.
+
 2026-10-04 SDK native TCP client: `Symbian::Connectivity` now installs a
 move-only `TcpClient` with bounded synchronous IPv4 connect/send/receive,
 original ESOCK/INSOCK headers and frozen import proxies for both ARM profiles.

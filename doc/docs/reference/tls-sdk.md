@@ -7,8 +7,8 @@ This SDK builds its TLS libraries from the complete, locally vendored
 which adapts the upstream [Mbed TLS](https://github.com/Mbed-TLS/mbedtls)
 project for Symbian. Link the library only in applications that need it. A
 TLS session uses a certificate to authenticate its peer and needs a trusted
-entropy source for cryptographic randomness; the latter remains an open guest
-runtime gate.
+entropy source for cryptographic randomness. The default guest entropy
+callback fails closed until a target-specific source is supplied.
 
 The default SDK export builds the vendored
 `third_party/mbedtls-symbian` port for ARMv5T and ARMv6. The repository
@@ -42,14 +42,16 @@ has been exercised in a dynamic DLL on both emulator backends. The source port
 also includes nonblocking socket BIO callbacks with cancellation; host tests
 pass, and an emulator DLL probe verifies that cancellation stops later send and
 receive callbacks before they touch the socket. A separate opt-in RM-807
-emulator patch and DLL probe now show a connected TCP receive returning
+emulator patch and DLL probe show a connected TCP receive returning
 `MBEDTLS_ERR_SSL_WANT_READ` when empty, delivering a delayed byte and refusing
-a read after cancellation. The same guest path currently returns `EINVAL` for
-`send` even before enabling nonblocking mode. An explicit-address `sendto`
-probe with a supplemental original libc import reached the guest but returned
-`ENOSYS`. Outbound I/O and TLS handshakes
-therefore remain unverified. Guest applications
-still need a verified secure entropy source. Certificate trust policy
+a read after cancellation. The OpenC `send` and `sendto` entry points do not
+provide working outbound I/O in this emulator profile. The separate
+`Symbian::Connectivity` target uses the original `RSocket` API and completes
+native send and receive. An opt-in TLS research DLL links that client with an
+RM-807 entropy adapter; it completed authenticated TLS 1.2 and TLS 1.3
+handshakes and exchanged application data in disposable emulator instances.
+The standard SDK archive still needs a verified secure entropy source for its
+actual target. Certificate trust policy
 belongs to the application; the SDK does not silently install a CA bundle.
 The project CMake option `SYMBIAN_CA_BUNDLE` selects a PEM file inside that
 project. Leave it empty to package no roots. For example, configure with
@@ -64,17 +66,18 @@ defaults. The TLS owner must explicitly load these roots and require peer
 verification. Packaging reads the selection from the ELF build directory's
 `CMakeCache.txt` and rejects a cache belonging to another project. Explicit
 key pinning remains possible without a CA bundle.
-Authenticated host-side TLS 1.2/1.3 tests pass. Guest DLL checks now cover
-SHA-256, UTC conversion, explicit trust, wrong-host rejection and expiry
-rejection. A guest TLS handshake and physical Nokia 808 TLS
-connection remain acceptance gates.
+Authenticated host-side TLS 1.2/1.3 tests pass. The opt-in guest TLS DLL
+checks both protocol versions with a local OpenSSL server, peer verification,
+application data, wrong-host, untrusted-certificate and expired-certificate
+rejection in each protocol version. A C++ owner with
+cancellable operations and a physical Nokia 808 TLS connection remain gates.
 
 An opt-in RM-807 emulator research probe now reaches Belle EUSER's secure
 random executive call through an ARM-state adapter. A local EKA2L1 patch
 supplies that call from libuv's host OS random source, and the DLL probe passed
 on both emulator CPU backends. The normal SDK archive continues to fail closed
-for guest entropy. This experiment does not validate entropy on a phone or
-complete a guest TLS handshake. See [DEVELOPMENT_AGENT.md](https://github.com/hpnkv/symbian-platform/blob/main/.dev/development-agent.md)
+for guest entropy. This experiment does not validate entropy on a phone. See
+[the agent plan](https://github.com/hpnkv/symbian-platform/blob/main/.dev/development-agent.md)
 for the service rollout and [STATUS.md](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md) for current evidence.
 
 ### Socket BIO API

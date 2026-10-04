@@ -39,10 +39,18 @@ have bounded emulator tests; other firmware needs its own checks. The
 [SDK C++ reference](native-sdk.md) and [development status](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md)
 record the exact coverage.
 
+With the SDK's default DLL startup, `RUNTIME_TARGET` selects the one C++
+runtime archive for the image. It defaults to `Symbian::Runtime`. A DLL that
+uses `Symbian::Connectivity` or another Abseil status target must set
+`RUNTIME_TARGET Symbian::Streams`, since those targets require the streams
+configuration. Do not link both runtime archives into one image. Declare all
+import proxies used by the final ELF through `IMPORT_PROXIES`; the converter
+checks their exact DLL dependencies.
+
 ## Mbed TLS
 
 The SDK physically includes the Mbed TLS adaptation's headers and source.
 Applications link its installed native targets and opt into a project-local
 CA bundle. Follow the [TLS guide](../guides/tls.md) for the current build and
-runtime boundary. A DLL probe or ARM build alone does not establish a TLS
-handshake.
+runtime boundary. Authenticated TLS 1.2/1.3 handshakes now pass in a patched
+emulator profile; the physical-device and cancellable owner gates remain open.

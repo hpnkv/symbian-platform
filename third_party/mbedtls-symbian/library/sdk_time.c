@@ -18,6 +18,12 @@ time_t symbian_mbedtls_time(time_t* output) {
   return value;
 }
 
+#ifdef SYMBIAN_MBEDTLS_GUEST
+// Mbed TLS 3.x still calls time() directly from its TLS 1.3 session path.
+// Route those calls through the same checked UTC source used for X.509.
+time_t time(time_t* output) { return symbian_mbedtls_time(output); }
+#endif
+
 struct tm* symbian_mbedtls_utc_gmtime_r(const time_t* input,
                                         struct tm* output) {
   if (input == NULL || output == NULL || *input < kEarliestTrustedUtc) {
