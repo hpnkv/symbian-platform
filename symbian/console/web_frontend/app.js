@@ -9,7 +9,7 @@ const pageInfo = {
   sdk_inspection: ["Artifact inspection", "Examine and verify native outputs."],
   sdk_preservation: ["Preservation", "Create and verify local preservation records."],
   device_actions: ["Device actions", "Inspect phones and stage applications with guided steps."],
-  development_agents: ["Development Agents", "Build the research agent and prepare a connected phone."],
+  development_agents: ["Development Agents", "Build an agent package and prepare a connected phone."],
   usb: ["USB inspector", "Explore host descriptors and interpreted phone interfaces."],
   protocols: ["Device protocols", "Read phone information through bounded native protocol probes."],
   activity: ["Activity", "Requests completed during this local console session."],
@@ -271,7 +271,9 @@ function applyContext(snapshot, revision) {
   renderSelection(); renderStatus();
   renderNavigation();
   const hostChanged = ["workspace", "project", "sdk_manifest", "firmware_store"].some(name => previous?.[name] !== snapshot.context[name]);
-  if (changed || hostChanged) {
+  const devicesChanged = JSON.stringify((previous?.devices || []).map(device => device.selector).sort()) !==
+    JSON.stringify((snapshot.context.devices || []).map(device => device.selector).sort());
+  if (changed || hostChanged || devicesChanged) {
     state.defaults = {};
     if (previous?.project !== snapshot.context.project) {
       state.applicationOverview = null;
@@ -285,7 +287,11 @@ function applyContext(snapshot, revision) {
       if (state.page === "application_detail") loadApplicationFirmware();
     }
     if (selectedTask()) fetchDefaults(selectedTask());
-    if (previous?.sdk_manifest !== snapshot.context.sdk_manifest && state.page === "development_agents") loadAgentProject();
+    if (previous?.sdk_manifest !== snapshot.context.sdk_manifest) {
+      state.agentPackage = null;
+      state.agentOutcome = null;
+      if (state.page === "development_agents") loadAgentProject();
+    }
     if (["device_actions", "usb", "protocols", "application_detail", "development_agents"].includes(state.page)) renderMain();
   }
 }
@@ -716,12 +722,12 @@ function renderAgents() {
     const stateLabel = staged ? "Package staged · installation unverified" : "Agent installation unknown";
     return `<section class="panel agent-card"><div class="agent-card-head"><span class="action-icon">${icon("phone")}</span><div><h2>${escapeHtml(phone.product)}</h2><p>${escapeHtml(phone.interface_profile)} · ${escapeHtml(phone.selector)}</p></div><span class="agent-badge">${escapeHtml(stateLabel)}</span></div>` +
       `<p>USB discovery cannot check whether the agent is installed. An authenticated agent connection is required before this console can show a live status.</p>` +
-      `<ol><li>Build the research package below.</li><li>Use a writable phone storage volume to stage the SIS.</li><li>Safely eject the volume and open the SIS on the phone. Complete its installer prompts.</li></ol>` +
+      `<ol><li>Build the agent package below.</li><li>Use a writable phone storage volume to stage the SIS.</li><li>Safely eject the volume and open the SIS on the phone. Complete its installer prompts.</li></ol>` +
       `<div class="agent-controls"><button class="button" data-agent-stage="${escapeHtml(phone.selector)}" ${canStage && !state.agentBusy ? "" : "disabled"}>${icon("upload")} Stage SIS on device</button>${!((phone.capabilities || []).includes("stage-sis")) ? '<small>A writable, verified USB storage volume is required.</small>' : !state.agentPackage ? '<small>Build a package first.</small>' : ""}</div>` +
       (staged ? `<p class="muted">${escapeHtml(staged.next_action || "Finish installation on the phone.")}</p>` : "") + `</section>`;
   }).join("");
-  const build = `<section class="panel agent-build"><h2>Build the development agent</h2><p>The current source is an emulator research service. Its package has not passed physical-device compatibility or installation checks.</p>` +
-    `<button class="button primary" data-agent-build ${available && !state.agentBusy ? "" : "disabled"}>${icon("build")} ${state.agentBusy === "build" ? "Building…" : "Build research SIS"}</button>` +
+  const build = `<section class="panel agent-build"><h2>Build the development agent</h2><p>Build an agent SIS for the current emulator profile. Physical-device compatibility and installation still need verification.</p>` +
+    `<button class="button primary" data-agent-build ${available && !state.agentBusy ? "" : "disabled"}>${icon("build")} ${state.agentBusy === "build" ? "Building…" : "Build agent package"}</button>` +
     (!project ? '<p class="muted">The agent source project is unavailable in this SDK installation.</p>' : !available ? '<p class="muted">Select an active SDK in the sidebar to build.</p>' : "") +
     (state.agentPackage ? `<div class="data-row"><span>Prepared SIS</span><span>${escapeHtml(state.agentPackage.split(/[\\/]/).pop())}</span></div>` : "") + `</section>`;
   return mainHeader("Development Agents", "Prepare the resident agent and inspect its state on connected devices.") +
@@ -745,7 +751,7 @@ async function buildAgent() {
     const packagePath = packaged.result?.result?.artifact;
     if (!packagePath) throw new Error("Packaging completed without a SIS artifact");
     state.agentPackage = packagePath; state.agentOutcome = packaged;
-    appendActivity("Build development agent", "Research SIS prepared", packaged);
+    appendActivity("Build development agent", "Agent package prepared", packaged);
     setWork("Ready");
   } catch (error) { state.agentError = String(error.message || error); setWork("Agent build failed"); }
   finally { state.agentBusy = ""; renderMain(); }
@@ -780,7 +786,7 @@ function renderApplication() {
     const compatible = record.device.kernel === "eka2";
     return `<option value="${escapeHtml(reference)}" ${state.applicationSelectedFirmware === reference ? "selected" : ""} ${compatible ? "" : "disabled"}>${escapeHtml(record.device.model)} · ${compatible ? escapeHtml(reference) : "Unavailable · EKA1 ABI"}</option>`;
   }).join("");
-  const isRunnable = ["e32-pic-experiment", "e32-import-experiment"].includes(app.kind);
+  const isRunnable = ["e32-pic", "e32-import", "e32-pic-experiment", "e32-import-experiment"].includes(app.kind);
   const chosen = state.applicationSelectedFirmware || app.firmware;
   const selectedRecord = records.find(record => record.firmware === chosen || (record.aliases || []).includes(chosen));
   const firmwareCompatible = !selectedRecord || selectedRecord.device.kernel === "eka2";

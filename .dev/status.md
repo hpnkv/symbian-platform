@@ -1,17 +1,30 @@
 # Status
 
+2026-10-04 public build terminology: generated applications and the agent
+example now declare `e32-import`, while the builder also accepts `e32-pic`,
+`e32-dll` and `arm-object`. Existing `*-experiment` declarations retain their
+previous report schemas for compatibility. The agent's active-SDK build
+returned `symbian.e32-import/v1` and `e32-executable` with E32 SHA-256
+`27b5ce1df0f400780c48d883b33c48baba73555c24c9d414bb380b47c07cbdda`.
+Console action names, README and agent guide describe an agent package rather
+than a research SIS. Focused console/project-init tests passed (19 passed,
+16 skipped), Black/Ruff and strict MkDocs passed. A broader legacy build test
+run had 3 failures and 9 errors in the native converter because its current
+ARM unwind check requires a Symbian exception descriptor; those old-kind
+fixtures did not exercise the new aliases. This gate needs separate repair.
+
 2026-10-04 desktop console device and agent navigation: connected USB
 candidates now appear as child entries under Devices. Development Agents has
 one card per candidate, a build/package control using the selected SDK, and a
 SIS staging control enabled only for a volume with `stage-sis` capability.
 The card says installation is unknown until an authenticated agent status
 transport exists, and records staging separately from handset installation.
-The research agent project built and packaged with the active SDK; the
-package command returned `OK` and SHA-256
-`c61365ba47103cd9bdf6983ea86e3e5d7a1b8b1be6913cc50116325cbdfbe5a9`.
-Frontend syntax and 14 web frontend Pytests passed. The built package includes
-an unverified local UI experiment and was not run on a phone; the earlier
-emulator evidence applies only to the preceding committed agent service.
+The agent project built and packaged with the active SDK; the package command
+returned `OK` and SHA-256
+`3f6dc1a5be2e1a343223076f5d0e1e2dc8d471994d40f2822c9c09d0ac2e9799`.
+Frontend syntax and 14 web frontend Pytests passed. The package was not run
+on a phone; the earlier emulator evidence applies only to the committed
+agent service.
 
 2026-10-04 structured resident event metadata: `AgentLogRing` now stamps
 each fixed record with numeric debug/information/warning severity and a

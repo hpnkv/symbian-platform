@@ -323,7 +323,7 @@ target_compile_options({name} PRIVATE -g -gdwarf-4
     ]
     (project / "symbian.toml").write_text(f"""[project]
 name = "{name}"
-kind = "e32-import-experiment"
+kind = "e32-import"
 cmake_preset = "symbian-pic"
 uid3 = {settings.uid3:#x}
 import_proxies = {json.dumps(proxies)}

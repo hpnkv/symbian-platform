@@ -1,13 +1,26 @@
 # Research log
 
+2026-10-04: Public project declarations used `e32-*-experiment` as the only
+accepted E32 kinds, so generated application manifests inherited a temporary
+label. New short kinds produce short report schemas and artifact kinds; old
+declarations remain accepted and keep their serialized identifiers. Open
+question: decide whether a versioned migration should retire the old aliases
+after external consumers have moved. The expanded legacy-build test run also
+exposed an ARM unwind descriptor precondition in the native converter on old
+fixtures; it is independent of the naming path and remains to be diagnosed.
+
 2026-10-04: The console can enumerate USB candidates and safely stage a
 digest-checked SIS on writable phone storage, but it has no authenticated
 device-agent discovery or installation query. The new overview therefore
 shows `installation unknown` even after staging. Open question: which paired
 transport and guest identity mechanism will let the console associate a live
 agent status with a USB device without conflating physical and emulator
-profiles? The local UI experiment currently builds/packages but has not
-passed guest runtime; no physical-device status is inferred from this build.
+profiles? A local UI attempt reached Window Server group construction, then
+raised `KERN-EXEC 3` at ROM `ws32.dll` address `0x80a50fbc` in the pinned
+Dynarmic emulator. Isolating screen and graphics-context creation passed the
+existing agent service test; including group construction failed. The UI
+change was removed from the package pending a verified implementation. No
+physical-device status is inferred from the package build.
 
 2026-10-04: The first bounded ring had sequence/code only, so events from one
 live process lacked timing and severity context. A steady clock already used

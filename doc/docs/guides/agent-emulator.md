@@ -1,9 +1,9 @@
-# Run the research agent in an emulator
+# Run the development agent in an emulator
 
 This guide starts the SDK's read-only development-agent example in a disposable
 EKA2L1 instance. EKA2L1 emulates Symbian software on a desktop host. The
 example uses a **public test certificate and key**, binds only to the
-emulator's loopback address and is for the pinned RM-807 research profile.
+emulator's loopback address and is for the pinned RM-807 emulator profile.
 It is not a device-pairing procedure.
 
 ## Before starting
@@ -16,7 +16,7 @@ Import and select the preserved RM-807 fixture using the
 symbian emu resolve --project examples/agent_service
 ```
 
-The selected device should be `808 PureView`, with the research EKA2L1 build
+The selected device should be `808 PureView`, with the configured EKA2L1 build
 available. That model label describes the **emulated firmware profile**; it
 does not establish compatibility with a physical Nokia 808.
 
@@ -62,7 +62,7 @@ its limit.
 ## Prepare a SIS in the desktop console
 
 Open `symbian console` and choose **Development Agents**. With an active SDK
-selected, **Build research SIS** compiles and packages this example. A
+selected, **Build agent package** compiles and packages this example. A
 connected USB phone appears both beneath **Devices** in the sidebar and as a
 card in **Development Agents**. If the phone exposes a writable storage volume,
 **Stage SIS on device** copies the verified package to its `Installs` folder.
@@ -70,7 +70,7 @@ Safely eject the volume and complete the installer prompts on the phone.
 
 The card continues to say that installation is **unknown** or **unverified**.
 USB detection and SIS staging cannot establish that the service installed or
-started. This research package has only passed emulator tests and is not a
+started. This agent package has only passed emulator tests and is not a
 validated Nokia 808 release.
 
 ## Stop and inspect
@@ -78,7 +78,7 @@ validated Nokia 808 release.
 Press **Ctrl-C** in the first terminal. The launcher reaps only the emulator
 process it started and retains `launch.json` and `frontend.log` in the printed
 session directory. Check `inputs_unchanged` and guest failures there if a run
-does not behave as expected. The research package has no boot-start script or
+does not behave as expected. The agent package has no boot-start script or
 application registration, and the example has no on-device status/disable UI.
 
 An emulator run proves only this selected guest/host path. The Nokia 808 still

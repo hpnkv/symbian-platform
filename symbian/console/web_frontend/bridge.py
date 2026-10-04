@@ -103,7 +103,7 @@ class ConsoleWebBridge:
         )
 
     def get_agent_project(self) -> dict[str, Any]:
-        """Locate the SDK checkout's emulator research agent project.
+        """Locate the SDK checkout's development agent project.
 
         A packaged SDK may omit this example. The frontend must not invent a
         deployable phone agent when its source is unavailable.
@@ -122,7 +122,7 @@ class ConsoleWebBridge:
             "project": (
                 str(project) if (project / "symbian.toml").is_file() else None
             ),
-            "profile": "emulator-research",
+            "profile": "emulator",
             "compiler": compiler,
             "linker": linker,
         }

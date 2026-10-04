@@ -1,6 +1,6 @@
 [project]
 name = "agent_service"
-kind = "e32-import-experiment"
+kind = "e32-import"
 cmake_preset = "symbian-pic"
 uid3 = 0xe0000a31
 import_proxies = [
@@ -16,7 +16,7 @@ import_proxies = [
 
 [package]
 uid = 0xe0000a32
-name = "Symbian Agent Emulator Research"
-vendor = "Symbian research"
+name = "Symbian Development Agent"
+vendor = "Symbian SDK"
 executable_name = "agent_service.exe"
 version = [1, 0, 0]

@@ -200,7 +200,7 @@ if (!navigation.innerHTML.includes('data-nav-device="usb:808"')) {
 if (!navigation.innerHTML.includes('Development Agents')) process.exit(2);
 let html = vm.runInContext('renderAgents()', context);
 if (!html.includes('Agent installation unknown')) process.exit(3);
-if (!html.includes('Build research SIS')) process.exit(4);
+if (!html.includes('Build agent package')) process.exit(4);
 if (!html.includes('data-agent-stage="usb:808" disabled')) process.exit(5);
 vm.runInContext("state.agentPackage = '/tmp/agent_service.sis'", context);
 html = vm.runInContext('renderAgents()', context);
@@ -215,6 +215,26 @@ if (html.includes('Agent installed')) process.exit(7);
         check=False,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_agent_project_uses_selected_sdk_tools(tmp_path: Path) -> None:
+    """The build control receives compiler/linker paths from the SDK."""
+    from types import SimpleNamespace
+
+    manifest = tmp_path / "sdk.json"
+    manifest.write_text(
+        '{"compiler": "/sdk/bin/clang++", "linker": "/sdk/bin/ld.lld"}',
+        encoding="utf-8",
+    )
+    bridge = ConsoleWebBridge()
+    try:
+        bridge._context = SimpleNamespace(sdk_manifest=str(manifest))
+        project = bridge.get_agent_project()
+        assert project["project"].endswith("examples/agent_service")
+        assert project["compiler"] == "/sdk/bin/clang++"
+        assert project["linker"] == "/sdk/bin/ld.lld"
+    finally:
+        bridge.shutdown()
 
 
 def test_firmware_default_and_compact_usb_interfaces() -> None:

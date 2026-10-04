@@ -13,7 +13,7 @@ import-free PIC executable:
 ```toml
 [project]
 name = "e32_probe"
-kind = "e32-pic-experiment"
+kind = "e32-pic"
 cmake_preset = "symbian-pic"
 uid3 = 0xe0000808
 ```

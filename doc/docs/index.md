@@ -17,7 +17,7 @@ its application-linked Mbed TLS port.
     Use the [build guide](guides/building.md),
     [firmware guide](guides/firmware.md) and
     [emulator controls](guides/emulator-control.md). Try the
-    [read-only research agent](guides/agent-emulator.md) after setup.
+    [read-only development agent](guides/agent-emulator.md) after setup.
 
 -   :material-library: **Use the SDK**
 

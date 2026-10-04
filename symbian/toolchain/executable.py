@@ -75,8 +75,10 @@ def build_executable(
         name: run([path, "--version"], cwd=project)
         for name, path in tools.items()
     }
-    dll = options.get("kind") == "e32-dll-experiment"
-    imported = options.get("kind") == "e32-import-experiment"
+    kind = options.get("kind")
+    dll = kind in ("e32-dll", "e32-dll-experiment")
+    imported = kind in ("e32-import", "e32-import-experiment")
+    canonical = kind in ("e32-pic", "e32-import", "e32-dll")
     definition_name = options.get("export_definition")
     if dll and (not isinstance(definition_name, str) or not definition_name):
         raise StatusError(
@@ -214,8 +216,15 @@ def build_executable(
     shutil.copyfile(primary / "compile_commands.json", database)
     image = output / f"{name}.{'dll' if dll else 'exe'}"
     elf = output / f"{name}.elf"
-    report = {
-        "schema": (
+    if canonical:
+        schema = (
+            "symbian.e32-dll/v1"
+            if dll
+            else "symbian.e32-import/v1" if imported else "symbian.e32-pic/v1"
+        )
+        artifact_kind = "e32-dll" if dll else "e32-executable"
+    else:
+        schema = (
             "symbian.e32-dll-experiment/v1"
             if dll
             else (
@@ -223,10 +232,13 @@ def build_executable(
                 if imported
                 else "symbian.e32-pic-experiment/v2"
             )
-        ),
-        "artifact_kind": (
+        )
+        artifact_kind = (
             "experimental-e32-dll" if dll else "experimental-e32-executable"
-        ),
+        )
+    report = {
+        "schema": schema,
+        "artifact_kind": artifact_kind,
         "artifact": str(image),
         "target": arm_target(architecture).model_dump(),
         "sha256": hashlib.sha256(first_image).hexdigest(),

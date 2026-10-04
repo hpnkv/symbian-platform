@@ -142,7 +142,10 @@ def prepare_package(
     build = toolchain.build(
         project, project / ".symbian/build", compiler, linker
     )
-    if build.get("artifact_kind") != "experimental-e32-executable":
+    if build.get("artifact_kind") not in (
+        "e32-executable",
+        "experimental-e32-executable",
+    ):
         raise StatusError(
             Code.FAILED_PRECONDITION,
             "Device installation requires an E32 executable project",
