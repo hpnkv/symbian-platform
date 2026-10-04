@@ -62,6 +62,6 @@ if(BUILD_TESTING)
   add_custom_target(symbian_a11_source_check
     COMMAND "${Python3_EXECUTABLE}"
             "${concurrency_workspace}/scripts/check_a11_concurrency.py"
-    SOURCES sources.json README.md
+    SOURCES sources.json "${concurrency_workspace}/.dev/thread-a11.md"
     VERBATIM)
 endif()

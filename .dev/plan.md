@@ -364,7 +364,7 @@ under `cpp/symbian/concurrency/upstream`, with digests, original paths/license,
 actual tests and an integrity-check target. The unmodified snapshot is not
 itself a guest backend. Bounded writable EXE data/BSS is verified;
 the remaining prerequisite gates below are still open. See
-`cpp/symbian/concurrency/README.md`.
+`.dev/thread-a11.md`.
 
 A bounded shared host/guest stackless adaptation now executes A11's completion semantics:
 shared Promise/Future/Task, inline OnReady/Then, cancellation requests,
