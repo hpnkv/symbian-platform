@@ -332,6 +332,11 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                                 record.elapsed_us for record in page.records
                             )
                             cursor = page.next_cursor
+                            recent = agent.recent_logs()
+                            assert [
+                                record.sequence for record in recent.records
+                            ] == [record.sequence for record in page.records]
+                            assert recent.next_cursor == cursor
                         break
                     except StatusError as error:
                         if (
