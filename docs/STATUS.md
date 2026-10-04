@@ -15,8 +15,10 @@ built on ARMv5T and ARMv6 against this SDK's architecture-matched
 suite passed 10/10, including authenticated TLS 1.2/1.3 application-data,
 wrong-hostname rejection and an invalid-UTC adapter case, using host entropy
 and time. The guest archive now defines `symbian_mbedtls_time` and
-`mbedtls_platform_gmtime_r` through the SDK clock/libc imports; guest UTC
-execution and physical clock correctness remain unverified.
+`mbedtls_platform_gmtime_r` through the SDK clock/libc imports. A dynamic DLL
+probe on both emulator backends converted 2024-01-01 UTC, rejected a pre-2020
+date and observed a clock above the plausibility floor; physical clock
+correctness remains unverified.
 
 `SYMBIAN_CA_BUNDLE` now selects only a project-local PEM file. CMake rejects
 outside/missing or oversized files and exposes the packaged path; packaging
@@ -32,7 +34,7 @@ declared export is retained while unused mimalloc POSIX helpers are discarded,
 and a dynamic `RLibrary` client verifies the `abc` digest and changed-input
 failure on Dynarmic and Dyncom. Its E32 import table lists EUSER, libc and
 libpthread. This establishes a bounded guest crypto call, not TLS. No guest
-TLS handshake, verified guest entropy/UTC,
+TLS handshake, verified guest entropy or physical UTC,
 nonblocking socket owner, expired-certificate rejection, emulator TLS memory
 bound, or Nokia 808 connection is claimed. DEVELOPMENT_AGENT step 2 remains
 open; steps 3 and later have not started. An ARM archive or host handshake

@@ -1,2 +1,3 @@
 EXPORTS
 MbedSha256 @ 1 NONAME
+MbedUtcProbe @ 2 NONAME

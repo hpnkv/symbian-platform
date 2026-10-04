@@ -92,9 +92,8 @@ def test_mbedtls_sha256_subset_links_as_e32_dll(artifacts):
     _, _, dll_build, _ = artifacts
     image = inspect_image(dll_build / "mbedcrypto_probe.dll")
     assert image["dll"] and image["architecture"] == "armv6"
-    assert len(image["exports"]) == 1
-    assert image["exports"][0]["ordinal"] == 1
-    assert not image["exports"][0]["absent"]
+    assert [entry["ordinal"] for entry in image["exports"]] == [1, 2]
+    assert all(not entry["absent"] for entry in image["exports"])
     assert [item["dll"] for item in image["imports"]] == [
         "euser.dll",
         "libc.dll",
@@ -144,6 +143,11 @@ def guest_client(artifacts):
             "    for (int i = 0; i < 32; ++i) {\n"
             "      if (digest[i] != expected[i]) result = -132;\n"
             "    }\n"
+            "  }\n"
+            "  if (result == 0) {\n"
+            "    using UtcProbe = int (*)();\n"
+            "    auto utc = reinterpret_cast<UtcProbe>(library.Lookup(2));\n"
+            "    result = utc == nullptr ? -135 : utc();\n"
             "  }\n"
             "  library.Close();\n"
             "  return result;\n"

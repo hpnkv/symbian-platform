@@ -20,6 +20,10 @@ converted DLL explicitly imports EUSER, libc and libpthread. The maintained
 five-case suite now passes, including dynamic `RLibrary` execution and a
 changed-digest control on Dynarmic and Dyncom. This is guest SHA-256 execution,
 not guest TLS or evidence of Nokia 808 loader compatibility.
+An added DLL export exercises `symbian_mbedtls_utc_gmtime_r` with 2024-01-01
+UTC, checks that 1970 is rejected, and checks that the emulated wall clock is
+above the adapter's 2020 floor. The same five-case suite passes with this
+probe on both backends; no physical clock/clock-change behavior was measured.
 
 The former `library/symbian.c` entropy callback used C `rand()`; the vendored
 copy now fails closed. [Historical Symbian cryptography documentation](https://docs.huihoo.com/symbian/s60-5th-edition-cpp-developers-library-v2.1/GUID-35228542-8C95-4849-A73F-2B4F082F0C44/sdk/doc_source/guide/Security-subsystem-guide/Crypto/cryptography.overview.html)
