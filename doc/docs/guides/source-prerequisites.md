@@ -39,7 +39,7 @@ debugger have not yet been validated on an interactive host.
 
 ## 2. Prepare the host build and check ARM output
 
-Use an isolated prefix for static OpenSSL and libusb, following the same
+Use an isolated prefix for static OpenSSL, libusb and Boost, following the same
 native/wheel separation as [A11](https://github.com/hpnkv/a11). The bootstrap
 checks the source archive hashes. The export/build tools require `clang`,
 `clang++`, `ld.lld`, `llvm-ar` and `llvm-ranlib`; put one LLVM toolchain on
@@ -146,4 +146,3 @@ The future matched target must supply compatible real system DLLs and services.
 
 The preparation report is `.symbian/gui-sdk/sdk-report.json`; each proxy also
 retains its own source, build trees, input digests and `report.json`.
-

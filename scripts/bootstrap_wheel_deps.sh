@@ -51,11 +51,12 @@ esac
 version=3.5.9
 libusb_version=1.0.30
 boost_version=1.90.0
-stamp="${prefix}/.symbian-deps-v3-${host_os}-${arch}-${version}-${libusb_version}-${boost_version}${deployment_tag}"
+stamp="${prefix}/.symbian-deps-v4-${host_os}-${arch}-${version}-${libusb_version}-${boost_version}${deployment_tag}"
 if [[ -f "${stamp}" && -f "${prefix}/lib/libcrypto.a" &&
       -f "${prefix}/lib/libusb-1.0.a" &&
       -f "${prefix}/lib/libboost_fiber.a" &&
-      -f "${prefix}/lib/libboost_context.a" ]]; then exit 0; fi
+      -f "${prefix}/lib/libboost_context.a" &&
+      -f "${prefix}/lib/libboost_filesystem.a" ]]; then exit 0; fi
 jobs=${CMAKE_BUILD_PARALLEL_LEVEL:-4}
 work=$(mktemp -d "${TMPDIR:-/tmp}/symbian-wheel-deps.XXXXXX")
 trap 'rm -rf "${work}"' EXIT
@@ -137,7 +138,7 @@ download_and_extract \
 (
   cd "${work}/boost_1_90_0"
   ./bootstrap.sh --prefix="${prefix}" \
-    --with-libraries=atomic,chrono,context,fiber,thread
+    --with-libraries=atomic,chrono,container,context,date_time,fiber,filesystem,thread
   ./b2 -j "${jobs}" "${boost_arch_args[@]}" cxxstd=20 variant=release \
     link=static runtime-link=shared threading=multi install
 )

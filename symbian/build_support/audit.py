@@ -112,6 +112,7 @@ def _audit_installed_behavior() -> None:
         "symbian/licenses/pybind11_abseil-LICENSE",
         "symbian/licenses/pybind11-LICENSE",
         "symbian/licenses/Abseil-LICENSE",
+        "symbian/licenses/Boost-LICENSE",
         "symbian/licenses/nlohmann-json-LICENSE",
         "symbian/licenses/libusb-COPYING",
         "symbian/host/libusb-1.0.a",
