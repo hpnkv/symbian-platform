@@ -11,7 +11,7 @@ import pytest
 
 from symbian import _native
 from symbian.agent import ReadOnlyAgentSession
-from symbian.status import StatusException
+from symbian.status import Code, StatusError, StatusException
 
 FIXTURES = (
     Path(__file__).parents[2] / "third_party/mbedtls-symbian/tests/fixtures"
@@ -47,61 +47,63 @@ def test_read_only_status_over_mutual_tls():
     port = listener.getsockname()[1]
     observed = []
 
+    def reply(stream, request, body):
+        response = msgpack.packb(
+            {"v": 1, "id": request["id"], "kind": 4, "body": body},
+            use_bin_type=True,
+        )
+        stream.sendall(len(response).to_bytes(4, "big") + response)
+
+    def receive(stream):
+        prefix = _receive_exact(stream, 4)
+        length = _native.agent_control_payload_length(prefix)
+        request = msgpack.unpackb(_receive_exact(stream, length), raw=False)
+        observed.append(request)
+        return request
+
     def serve():
         try:
             with listener.accept()[0] as raw:
                 with context.wrap_socket(raw, server_side=True) as stream:
-                    prefix = _receive_exact(stream, 4)
-                    length = _native.agent_control_payload_length(prefix)
-                    request = msgpack.unpackb(
-                        _receive_exact(stream, length), raw=False
-                    )
-                    observed.append(request)
-                    response = msgpack.packb(
+                    reply(
+                        stream,
+                        receive(stream),
                         {
-                            "v": 1,
-                            "id": request["id"],
-                            "kind": 4,
-                            "body": {
-                                "service": "symbian-agent",
-                                "state": "ready",
-                                "capabilities": ["status"],
-                                "system": {
-                                    "tick_count": 91,
-                                    "tick_period_us": 1000,
-                                },
-                                "display": {
-                                    "width_pixels": 640,
-                                    "height_pixels": 360,
-                                },
+                            "protocol_version": 1,
+                            "maximum_control_bytes": 4096,
+                            "maximum_requests": 16,
+                            "capabilities": ["status", "logs"],
+                        },
+                    )
+                    reply(
+                        stream,
+                        receive(stream),
+                        {
+                            "service": "symbian-agent",
+                            "state": "ready",
+                            "capabilities": ["status", "logs"],
+                            "system": {
+                                "tick_count": 91,
+                                "tick_period_us": 1000,
+                            },
+                            "display": {
+                                "width_pixels": 640,
+                                "height_pixels": 360,
                             },
                         },
-                        use_bin_type=True,
                     )
-                    stream.sendall(len(response).to_bytes(4, "big") + response)
-                    prefix = _receive_exact(stream, 4)
-                    length = _native.agent_control_payload_length(prefix)
-                    request = msgpack.unpackb(
-                        _receive_exact(stream, length), raw=False
-                    )
-                    observed.append(request)
-                    response = msgpack.packb(
+                    reply(
+                        stream,
+                        receive(stream),
                         {
-                            "v": 1,
-                            "id": request["id"],
-                            "kind": 4,
-                            "body": {
-                                "records": [
-                                    {"sequence": 5, "code": 2},
-                                    {"sequence": 6, "code": 99},
-                                ],
-                                "next_cursor": 6,
-                                "gap": False,
-                            },
+                            "records": [
+                                {"sequence": 5, "code": 2},
+                                {"sequence": 6, "code": 99},
+                            ],
+                            "next_cursor": 6,
+                            "gap": False,
                         },
-                        use_bin_type=True,
                     )
-                    stream.sendall(len(response).to_bytes(4, "big") + response)
         finally:
             listener.close()
 
@@ -119,19 +121,20 @@ def test_read_only_status_over_mutual_tls():
         logs = agent.logs(after=4, limit=2)
     thread.join(timeout=5)
     assert not thread.is_alive()
-    assert result.request_id == 1
+    assert result.request_id == 2
     assert result.service == "symbian-agent"
     assert result.state == "ready"
-    assert result.capabilities == ("status",)
+    assert result.capabilities == ("status", "logs")
     assert result.system is not None
     assert result.system.tick_count == 91
     assert result.display is not None
     assert result.display.width_pixels == 640
-    assert len(observed) == 2
-    assert observed[0]["kind"] == 2
-    assert observed[0]["id"] == 1
-    assert observed[1]["kind"] == 6
-    assert observed[1]["body"] == {"after": 4, "limit": 2}
+    assert len(observed) == 3
+    assert observed[0]["kind"] == 1
+    assert observed[1]["kind"] == 2
+    assert observed[1]["id"] == 2
+    assert observed[2]["kind"] == 6
+    assert observed[2]["body"] == {"after": 4, "limit": 2}
     assert logs.records[0].sequence == 5
     assert logs.records[0].code == 2
     assert logs.records[1].code == 99
@@ -154,6 +157,26 @@ def test_read_only_status_has_one_aggregate_response_deadline():
         try:
             with listener.accept()[0] as raw:
                 with context.wrap_socket(raw, server_side=True) as stream:
+                    prefix = _receive_exact(stream, 4)
+                    length = _native.agent_control_payload_length(prefix)
+                    request = msgpack.unpackb(
+                        _receive_exact(stream, length), raw=False
+                    )
+                    hello = msgpack.packb(
+                        {
+                            "v": 1,
+                            "id": request["id"],
+                            "kind": 4,
+                            "body": {
+                                "protocol_version": 1,
+                                "maximum_control_bytes": 4096,
+                                "maximum_requests": 16,
+                                "capabilities": ["status"],
+                            },
+                        },
+                        use_bin_type=True,
+                    )
+                    stream.sendall(len(hello).to_bytes(4, "big") + hello)
                     prefix = _receive_exact(stream, 4)
                     length = _native.agent_control_payload_length(prefix)
                     _receive_exact(stream, length)
@@ -183,3 +206,60 @@ def test_read_only_status_has_one_aggregate_response_deadline():
         assert time.monotonic() - started < 0.8
     thread.join(timeout=5)
     assert not thread.is_alive()
+
+
+def test_rejects_unsupported_hello_before_status():
+    """A TLS peer cannot downgrade the required control profile."""
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain(str(CERTIFICATE), str(PRIVATE_KEY))
+    context.load_verify_locations(str(CERTIFICATE))
+    context.verify_mode = ssl.CERT_REQUIRED
+    listener = socket.socket()
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(1)
+    port = listener.getsockname()[1]
+    observed = []
+
+    def serve():
+        try:
+            with listener.accept()[0] as raw:
+                with context.wrap_socket(raw, server_side=True) as stream:
+                    prefix = _receive_exact(stream, 4)
+                    length = _native.agent_control_payload_length(prefix)
+                    request = msgpack.unpackb(
+                        _receive_exact(stream, length), raw=False
+                    )
+                    observed.append(request["kind"])
+                    response = msgpack.packb(
+                        {
+                            "v": 1,
+                            "id": request["id"],
+                            "kind": 4,
+                            "body": {
+                                "protocol_version": 2,
+                                "maximum_control_bytes": 4096,
+                                "maximum_requests": 16,
+                                "capabilities": ["status"],
+                            },
+                        },
+                        use_bin_type=True,
+                    )
+                    stream.sendall(len(response).to_bytes(4, "big") + response)
+        finally:
+            listener.close()
+
+    thread = threading.Thread(target=serve, daemon=True)
+    thread.start()
+    with pytest.raises(StatusError) as error:
+        ReadOnlyAgentSession.connect(
+            "127.0.0.1",
+            port,
+            server_name="sdk-test",
+            ca_bundle=CERTIFICATE,
+            client_certificate=CERTIFICATE,
+            client_key=PRIVATE_KEY,
+        )
+    thread.join(timeout=5)
+    assert not thread.is_alive()
+    assert error.value.code == Code.FAILED_PRECONDITION
+    assert observed == [1]

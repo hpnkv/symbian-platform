@@ -101,6 +101,7 @@ void Serve(TcpClient client, symbian::agent::AgentLogRing& log) {
     ~CloseLog() { log.Append(symbian::agent::AgentLogCode::kSessionClosed); }
   } close_log{log};
 
+  bool negotiated = false;
   for (std::size_t request_index = 0;
        request_index < kMaximumRequestsPerConnection; ++request_index) {
     const auto deadline = std::chrono::steady_clock::now() + kControlDeadline;
@@ -126,9 +127,17 @@ void Serve(TcpClient client, symbian::agent::AgentLogRing& log) {
       log.Append(symbian::agent::AgentLogCode::kRejectedFrame);
       return;
     }
+    if ((!negotiated && request->kind != 1) ||
+        (negotiated && request->kind == 1)) {
+      log.Append(symbian::agent::AgentLogCode::kRejectedFrame);
+      return;
+    }
     absl::StatusOr<std::string> response =
         absl::InvalidArgumentError("Invalid agent operation");
-    if (request->kind == 6) {
+    if (request->kind == 1) {
+      response = symbian::agent::PackGuestHelloResult(
+          *request, true, kMaximumRequestsPerConnection);
+    } else if (request->kind == 6) {
       auto page = log.ReadAfter(request->log_after, request->log_limit);
       if (!page.ok()) {
         return;
@@ -157,6 +166,8 @@ void Serve(TcpClient client, symbian::agent::AgentLogRing& log) {
     }
     if (request->kind == 2) {
       log.Append(symbian::agent::AgentLogCode::kStatusRead);
+    } else if (request->kind == 1) {
+      negotiated = true;
     }
   }
 }

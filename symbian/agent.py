@@ -69,6 +69,17 @@ class AgentLogPage(BaseModel):
     gap: bool
 
 
+class AgentHello(BaseModel):
+    """Limits and read-only operations agreed before issuing requests."""
+
+    model_config = ConfigDict(frozen=True, extra="allow")
+
+    protocol_version: int
+    maximum_control_bytes: int
+    maximum_requests: int
+    capabilities: tuple[str, ...]
+
+
 class ReadOnlyAgentSession:
     """One TLS connection to a manually addressed read-only guest listener.
 
@@ -81,6 +92,7 @@ class ReadOnlyAgentSession:
         self._stream = stream
         self._timeout = timeout
         self._next_request_id = 1
+        self.hello: AgentHello | None = None
 
     @classmethod
     def connect(
@@ -119,7 +131,33 @@ class ReadOnlyAgentSession:
         except BaseException:
             raw.close()
             raise
-        return cls(stream, timeout)
+        session = cls(stream, timeout)
+        try:
+            session.negotiate()
+        except BaseException:
+            session.close()
+            raise
+        return session
+
+    def negotiate(self) -> AgentHello:
+        """Verify the guest's version, limits and supported operations once."""
+        if self.hello is not None:
+            return self.hello
+        request_id = self._next_request_id
+        self._next_request_id += 1
+        frame = _native.pack_agent_read_request(request_id, 1)
+        hello = AgentHello.model_validate(self._exchange(request_id, frame))
+        if (
+            hello.protocol_version != 1
+            or not 128 <= hello.maximum_control_bytes <= 4096
+            or not 2 <= hello.maximum_requests <= 16
+            or "status" not in hello.capabilities
+        ):
+            raise StatusError(
+                Code.FAILED_PRECONDITION, "Unsupported agent profile"
+            )
+        self.hello = hello
+        return hello
 
     def __enter__(self) -> Self:
         return self
@@ -133,6 +171,12 @@ class ReadOnlyAgentSession:
 
     def status(self) -> AgentStatus:
         """Request the agent's current read-only service state."""
+        if self.hello is None or "status" not in self.hello.capabilities:
+            raise StatusError(Code.FAILED_PRECONDITION, "Status unavailable")
+        if self._next_request_id > self.hello.maximum_requests:
+            raise StatusError(
+                Code.RESOURCE_EXHAUSTED, "Session request cap reached"
+            )
         request_id = self._next_request_id
         self._next_request_id += 1
         frame = _native.pack_agent_read_request(request_id, 2)
@@ -145,6 +189,12 @@ class ReadOnlyAgentSession:
         A true gap means older records were overwritten before this read.
         The next call should use ``next_cursor``; the ring is process-local.
         """
+        if self.hello is None or "logs" not in self.hello.capabilities:
+            raise StatusError(Code.FAILED_PRECONDITION, "Logs unavailable")
+        if self._next_request_id > self.hello.maximum_requests:
+            raise StatusError(
+                Code.RESOURCE_EXHAUSTED, "Session request cap reached"
+            )
         if after < 0 or not 1 <= limit <= 8:
             raise StatusError(
                 Code.INVALID_ARGUMENT, "Invalid log cursor or limit"

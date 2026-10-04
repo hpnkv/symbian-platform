@@ -57,7 +57,7 @@ struct GuestStatusSnapshot {
 absl::StatusOr<GuestControlRequest> ParseGuestControl(std::string_view payload);
 
 /**
- * @brief Pack a read-only result compatible with the host ControlMessage.
+ * @brief Pack a status result compatible with the host ControlMessage.
  *
  * The body advertises only the status capability. This routine does not grant
  * permission; the caller must have authenticated the TLS peer first.
@@ -67,6 +67,11 @@ absl::StatusOr<std::string> PackGuestResult(const GuestControlRequest& request);
 /** @brief Pack status with only the native observations actually available. */
 absl::StatusOr<std::string> PackGuestResult(
     const GuestControlRequest& request, const GuestStatusSnapshot& snapshot);
+
+/** @brief Advertise the bounded version-one read-only service profile. */
+absl::StatusOr<std::string> PackGuestHelloResult(
+    const GuestControlRequest& request, bool logs_available,
+    std::uint8_t maximum_requests);
 
 /** @brief Pack one bounded log page into a version-one result envelope. */
 absl::StatusOr<std::string> PackGuestLogResult(

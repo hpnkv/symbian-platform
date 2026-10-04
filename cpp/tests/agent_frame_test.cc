@@ -209,6 +209,25 @@ TEST(AgentFrame, GuestStatusIncludesOnlyAvailableNativeSnapshots) {
             nlohmann::json::array({"status", "logs"}));
 }
 
+TEST(AgentFrame, GuestHelloAdvertisesBoundedServiceProfile) {
+  symbian::agent::GuestControlRequest request;
+  request.request_id = 11;
+  request.kind = 1;
+  auto encoded = symbian::agent::PackGuestHelloResult(request, true, 16);
+  ASSERT_TRUE(encoded.ok()) << encoded.status();
+  auto parsed = symbian::agent::ParseControl(*encoded);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_EQ(parsed->body["protocol_version"], 1);
+  EXPECT_EQ(parsed->body["maximum_control_bytes"], 4096);
+  EXPECT_EQ(parsed->body["maximum_requests"], 16);
+  EXPECT_EQ(parsed->body["capabilities"],
+            nlohmann::json::array({"status", "logs"}));
+  request.kind = 2;
+  EXPECT_FALSE(symbian::agent::PackGuestHelloResult(request, true, 16).ok());
+  request.kind = 1;
+  EXPECT_FALSE(symbian::agent::PackGuestResult(request).ok());
+}
+
 TEST(AgentFrame, GuestLogCursorReportsOverwrittenRecords) {
   symbian::agent::AgentLogRing ring;
   for (int index = 0; index < 40; ++index) {

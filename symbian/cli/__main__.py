@@ -134,6 +134,7 @@ _COMMAND_DESCRIPTIONS = {
     (
         "agent",
     ): "Talk to a manually addressed, authenticated development agent.",
+    ("agent", "hello"): "Read the negotiated agent protocol profile.",
     ("agent", "status"): "Read the agent's current status over mutual TLS.",
     ("agent", "logs"): "Read bounded service events after a sequence cursor.",
     (
@@ -335,7 +336,7 @@ def _parser() -> argparse.ArgumentParser:
     agent_commands = commands.add_parser("agent").add_subparsers(
         dest="agent_command", required=True
     )
-    for name in ("status", "logs"):
+    for name in ("hello", "status", "logs"):
         agent_parser = agent_commands.add_parser(name)
         agent_parser.add_argument("host")
         agent_parser.add_argument("port", type=int)
@@ -660,6 +661,8 @@ def _execute(args: argparse.Namespace) -> dict:
             client_key=args.client_key,
             timeout=args.timeout,
         ) as agent:
+            if args.agent_command == "hello":
+                return agent.negotiate().model_dump()
             if args.agent_command == "logs":
                 return agent.logs(
                     after=args.after, limit=args.limit

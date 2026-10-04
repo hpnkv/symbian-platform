@@ -1,5 +1,24 @@
 # Status
 
+2026-10-04 negotiated resident read-only profile: after mutual TLS, the
+service now requires one hello before status or logs, advertises protocol
+version 1, a 4 KiB control limit, a 16-request connection limit and available
+operations, and closes on an out-of-order or repeated hello. The host validates
+the profile before returning `ReadOnlyAgentSession`, enforces the advertised
+request cap, and exposes `symbian agent hello`. A clean
+`.symbian/resident-agent-negotiated-sdk-20261004` export installed the new
+public hello codec for ARMv5T and ARMv6. Native codec GTest, 27 host
+session/CLI Pytests, strict docs, Black, Ruff and Clang Format checks passed.
+The opt-in pinned RM-807 service passed on Dynarmic and Dyncom (`2 passed in
+41.06s`): status/logs after hello, CLI hello, status-before-hello rejection,
+malformed and slow-frame cleanup, reconnect, log overwrite and the 16-request
+cap. The final ARMv6 E32 has 798,288 code, 1,540 data and 69,316 BSS bytes
+with eight import DLLs. Its unsigned one-file SIS SHA-256 is
+`644cd5faf306a7f960201e2dc33591673c473d1f925ab70d9b74a644f397bcc3`;
+it has no boot script or application registration. Hello validates this narrow
+wire profile; it does not establish pairing, phone identity, grants, physical
+Nokia 808 compatibility or broad transport negotiation.
+
 2026-10-04 bounded resident service log: `Symbian::Agent` now installs the
 documented `AgentLogRing` and log-result codec. One worker owns a fixed
 32-record, process-local ring; authenticated clients read up to eight records

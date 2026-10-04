@@ -12,6 +12,11 @@ public; it must never be used as a device identity.
 The example binds **127.0.0.1:39101** inside a disposable RM-807 emulator
 instance, selects TLS 1.3 and allows up to 16 control requests on one
 connection. Its 4 KiB control limit is checked before reading a payload. The
+first authenticated request must be hello. Status or logs sent first, and a
+repeated hello, close the connection. The hello result declares version 1,
+the 4 KiB control limit, the 16-request connection cap and available read-only
+operations. The host validates these before using the session. Hello consumes
+one request slot. The
 service gives each control exchange one five-second monotonic deadline across
 prefix, payload and response; a peer cannot keep a worker indefinitely by
 dripping frame bytes. The host read-only session applies its requested timeout
@@ -74,6 +79,10 @@ MessagePack payload after the four-byte frame prefix has been checked. They
 require an authenticated TLS peer; they do not authenticate, authorize,
 schedule or keep a listener alive.
 
+`PackGuestHelloResult` emits the bounded service profile. The service applies
+the hello-first rule; the codec alone has no session state. The host rejects
+unsupported versions or limits and closes TLS before issuing other requests.
+
 ### Service-local event log
 
 `AgentLogRing` retains 32 fixed-size event codes in memory on the service's
@@ -106,8 +115,9 @@ launched manually, not a paired or boot-started phone service.
 
 `symbian.agent.ReadOnlyAgentSession` opens an explicitly addressed TLS socket.
 It requires a CA PEM for the server and a client certificate/key; the server
-name is checked separately from the address. It sends a status request using
-the native control/frame bindings, rejects an oversized prefix before reading
+name is checked separately from the address. `connect()` first exchanges a
+hello frame and exposes its typed result as `session.hello`. It sends status
+requests using the native control/frame bindings, rejects an oversized prefix before reading
 the payload and returns a typed `AgentStatus`. Its timeout covers the whole
 request and response, rather than resetting for each `recv` fragment.
 `AgentStatus.system` and `.display` are optional typed snapshots. The tick
@@ -139,6 +149,12 @@ identities, protected key provisioning and a handset-visible pairing action.
 The CLI exposes the same read-only path:
 
 ```sh
+symbian agent hello 127.0.0.1 39101 \
+  --server-name my-development-phone \
+  --ca-bundle certs/phone-ca.pem \
+  --client-certificate certs/host.pem \
+  --client-key certs/host-key.pem
+
 symbian agent status 127.0.0.1 39101 \
   --server-name my-development-phone \
   --ca-bundle certs/phone-ca.pem \

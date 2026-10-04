@@ -1,5 +1,18 @@
 # Research log
 
+2026-10-04: The previous resident service accepted status or logs as the
+first authenticated frame, leaving no explicit boundary for version and
+limit agreement. A small hello result now gives version 1, the 4 KiB control
+ceiling, 16 requests per connection and `status`/`logs` availability. The
+worker requires hello first and rejects a repeated hello. The host checks
+that profile before returning a session and counts hello against the request
+cap. Dynarmic and Dyncom tests rejected a valid status frame sent before
+hello, then completed normal and reconnect flows. Open questions: negotiate
+stream counts/compression only when a credited stream exists; define stable
+device identity and handset-visible pairing before any non-loopback listener;
+measure memory and idle cost on a development phone. A successful emulator
+hello is no evidence of those policies or of Nokia 808 compatibility.
+
 2026-10-04: The first logs slice retains four service-local event codes after
 TLS authentication: authenticated session, status read, rejected frame and
 session closed. The ring is fixed at 32 records and lives on the existing

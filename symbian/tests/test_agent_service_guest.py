@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from symbian import toolchain
+from symbian import _native, toolchain
 from symbian.agent import ReadOnlyAgentSession
 from symbian.emulator.background import (
     background_environment,
@@ -22,6 +22,7 @@ from symbian.emulator.background import (
 from symbian.emulator.firmware import EUSER_808, ROM_808
 from symbian.emulator.launch import _digest, _stop
 from symbian.project.sdk import AppSdk
+from symbian.status import Code, StatusError
 
 ROOT = Path(__file__).parents[2]
 CERTIFICATES = ROOT / "third_party/mbedtls-symbian/tests/fixtures"
@@ -135,8 +136,8 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                             assert first.display.width_pixels > 0
                             assert first.display.height_pixels > 0
                             assert (first.request_id, second.request_id) == (
-                                1,
                                 2,
+                                3,
                             )
                             page = agent.logs(limit=8)
                             assert [record.code for record in page.records] == [
@@ -163,6 +164,15 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                         raw, server_hostname="sdk-test"
                     ) as tls:
                         tls.sendall((4097).to_bytes(4, "big"))
+                with socket.create_connection(("127.0.0.1", 39101), 10) as raw:
+                    with context.wrap_socket(
+                        raw, server_hostname="sdk-test"
+                    ) as tls:
+                        tls.sendall(_native.pack_agent_read_request(1, 2))
+                        try:
+                            assert tls.recv(1) == b""
+                        except (ssl.SSLError, ConnectionResetError):
+                            pass
                 with _connect() as agent:
                     assert agent.status().state == "ready"
                     page = agent.logs(after=cursor)
@@ -194,6 +204,24 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                 )
                 assert command.returncode == 0, command.stdout + command.stderr
                 assert json.loads(command.stdout)["result"]["state"] == "ready"
+                hello_args = command.args.copy()
+                hello_args[4] = "hello"
+                hello_command = subprocess.run(
+                    hello_args,
+                    cwd=ROOT,
+                    capture_output=True,
+                    text=True,
+                    timeout=15,
+                )
+                assert hello_command.returncode == 0, (
+                    hello_command.stdout + hello_command.stderr
+                )
+                assert (
+                    json.loads(hello_command.stdout)["result"][
+                        "maximum_control_bytes"
+                    ]
+                    == 4096
+                )
                 log_args = command.args.copy()
                 log_args[4] = "logs"
                 log_args.extend(["--after", str(cursor)])
@@ -226,8 +254,11 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                 if backend == "dynarmic":
                     for _ in range(2):
                         with _connect() as agent:
-                            for _request in range(16):
+                            for _request in range(15):
                                 assert agent.status().state == "ready"
+                            with pytest.raises(StatusError) as error:
+                                agent.status()
+                            assert error.value.code == Code.RESOURCE_EXHAUSTED
                     with _connect() as agent:
                         wrapped = agent.logs(after=0, limit=8)
                         assert wrapped.gap

@@ -396,9 +396,49 @@ absl::StatusOr<std::string> PackGuestResult(
   return PackGuestResult(request, GuestStatusSnapshot{});
 }
 
+absl::StatusOr<std::string> PackGuestHelloResult(
+    const GuestControlRequest& request, bool logs_available,
+    std::uint8_t maximum_requests) {
+  if (request.request_id == 0 || request.kind != 1 || maximum_requests == 0 ||
+      request.extension_count > 8 ||
+      request.extensions.size() > kMaximumControlBytes) {
+    return absl::InvalidArgumentError("Invalid guest hello result");
+  }
+  std::string result;
+  result.reserve(180 + request.extensions.size());
+  result.push_back(static_cast<char>(0x85 + request.extension_count));
+  WriteString(&result, "v");
+  WriteUInt(&result, 1);
+  WriteString(&result, "id");
+  WriteUInt(&result, request.request_id);
+  WriteString(&result, "kind");
+  WriteUInt(&result, 4);
+  WriteString(&result, "deadline_ms");
+  WriteUInt(&result, request.deadline_millis);
+  WriteString(&result, "body");
+  result.push_back(static_cast<char>(0x84));
+  WriteString(&result, "protocol_version");
+  WriteUInt(&result, 1);
+  WriteString(&result, "maximum_control_bytes");
+  WriteUInt(&result, kMaximumControlBytes);
+  WriteString(&result, "maximum_requests");
+  WriteUInt(&result, maximum_requests);
+  WriteString(&result, "capabilities");
+  result.push_back(static_cast<char>(logs_available ? 0x92 : 0x91));
+  WriteString(&result, "status");
+  if (logs_available) {
+    WriteString(&result, "logs");
+  }
+  result.append(request.extensions);
+  if (result.size() > kMaximumControlBytes) {
+    return absl::ResourceExhaustedError("Agent hello exceeds 4 KiB");
+  }
+  return result;
+}
+
 absl::StatusOr<std::string> PackGuestResult(
     const GuestControlRequest& request, const GuestStatusSnapshot& snapshot) {
-  if (request.request_id == 0 || (request.kind != 1 && request.kind != 2) ||
+  if (request.request_id == 0 || request.kind != 2 ||
       request.extension_count > 8 ||
       request.extensions.size() > kMaximumControlBytes) {
     return absl::InvalidArgumentError("Invalid guest result request");

@@ -46,7 +46,10 @@ one bounded chunk at a time and keeps its operation on the opening thread.
 Read the [storage guide](../capabilities/apis/storage.md) before choosing its
 file ownership pattern.
 
-`GuestStatusSnapshot` groups optional tick and display readings for the agent
+`PackGuestHelloResult` declares version-one control limits and read-only
+operations. The service requires hello before other requests; the codec has
+no connection state. `GuestStatusSnapshot` groups optional tick and display
+readings for the agent
 codec. Query `Symbian::System` and `Symbian::Display` on a worker after TLS
 authentication, fill only successful readings and call the two-argument
 `PackGuestResult`. The one-argument overload preserves the basic result.
