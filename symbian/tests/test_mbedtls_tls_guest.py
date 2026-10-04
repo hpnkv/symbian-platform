@@ -92,6 +92,9 @@ def guest_binaries(tmp_path_factory):
             clients[("server", version, mode)] = build_client(
                 sdk, build, version, mode, ordinal=7, port=39098
             )
+            clients[("owned", version, mode)] = build_client(
+                sdk, build, version, mode, ordinal=8, port=39098
+            )
     return dll_build / "mbedcrypto_probe.dll", clients
 
 
@@ -239,8 +242,11 @@ def test_authenticated_guest_tls(guest_binaries, tmp_path, version, mode):
 
 @pytest.mark.parametrize("version", [12, 13])
 @pytest.mark.parametrize("mode", [0, 1, 2, 3])
-def test_guest_mutual_tls_listener(guest_binaries, tmp_path, version, mode):
-    """Authenticates an inbound host and rejects a missing client cert."""
+@pytest.mark.parametrize("server_kind", ["server", "owned"])
+def test_guest_mutual_tls_listener(
+    guest_binaries, tmp_path, version, mode, server_kind
+):
+    """Checks raw and SDK-owned guest TLS listeners against the same peer."""
     golden = ROOT / ".symbian/instances/delight-import-01"
     pinned = {
         golden / "data/roms/rm-807/SYM.ROM": ROM_808,
@@ -253,7 +259,7 @@ def test_guest_mutual_tls_listener(guest_binaries, tmp_path, version, mode):
     guest_bin.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(guest_binaries[0], guest_bin / "mbedcrypto_probe.dll")
     shutil.copyfile(
-        guest_binaries[1][("server", version, mode)],
+        guest_binaries[1][(server_kind, version, mode)],
         guest_bin / "runtime_probe.exe",
     )
     (instance / "config.yml").write_text(

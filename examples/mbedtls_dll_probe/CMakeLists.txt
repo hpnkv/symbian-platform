@@ -45,7 +45,7 @@ if(SYMBIAN_RM807_SOCKET_PROBE)
   list(APPEND probe_sources socket_probe.c)
 endif()
 if(SYMBIAN_RM807_TLS_HANDSHAKE_PROBE)
-  list(APPEND probe_sources tls_handshake.cc tls_server.cc)
+  list(APPEND probe_sources tls_handshake.cc tls_server.cc tls_owner_probe.cc)
 endif()
 set(probe_exports MbedSha256 MbedUtcProbe MbedVerifyCert
   MbedSocketCancelProbe MbedEntropyFailureProbe)
@@ -53,7 +53,8 @@ if(SYMBIAN_RM807_SOCKET_PROBE)
   list(APPEND probe_exports MbedConnectedSocketProbe)
 endif()
 if(SYMBIAN_RM807_TLS_HANDSHAKE_PROBE)
-  list(APPEND probe_exports MbedNativeTlsHandshakeProbe MbedNativeTlsServerProbe)
+  list(APPEND probe_exports MbedNativeTlsHandshakeProbe MbedNativeTlsServerProbe
+    MbedOwnedTlsServerProbe)
 endif()
 set(probe_export_definition "${CMAKE_CURRENT_SOURCE_DIR}/exports.def")
 if(SYMBIAN_RM807_SOCKET_PROBE)
@@ -98,11 +99,11 @@ endif()
 target_link_libraries(mbedcrypto_probe_elf PRIVATE
   "${mbedtls_archive}" "${mbedx509_archive}" "${MBEDTLS_ARCHIVE}")
 if(SYMBIAN_RM807_TLS_HANDSHAKE_PROBE)
-  if(NOT TARGET Symbian::Agent)
-    message(FATAL_ERROR "TLS control probe needs the installed Symbian::Agent target")
+  if(NOT TARGET Symbian::Agent OR NOT TARGET Symbian::Tls)
+    message(FATAL_ERROR "TLS control probe needs installed Agent and Tls targets")
   endif()
   target_link_libraries(mbedcrypto_probe_elf PRIVATE
-    Symbian::Connectivity Symbian::Agent)
+    Symbian::Connectivity Symbian::Agent Symbian::Tls)
 endif()
 # The runtime archive contains optional mimalloc POSIX helpers that Belle does
 # not import. Retain the declared DLL export while discarding unused helpers.
@@ -116,5 +117,6 @@ if(SYMBIAN_RM807_SOCKET_PROBE)
 endif()
 if(SYMBIAN_RM807_TLS_HANDSHAKE_PROBE)
   target_link_options(mbedcrypto_probe_elf PRIVATE
-    --undefined=MbedNativeTlsHandshakeProbe --undefined=MbedNativeTlsServerProbe)
+    --undefined=MbedNativeTlsHandshakeProbe --undefined=MbedNativeTlsServerProbe
+    --undefined=MbedOwnedTlsServerProbe)
 endif()

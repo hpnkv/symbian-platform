@@ -21,6 +21,13 @@ The TLS target includes X.509 and crypto dependencies. For a hash-only use,
 link `MbedTLS::mbedcrypto` instead. An ordinary project does not link TLS
 unless it selects one of these targets.
 
+For an inbound C++ server that owns the Mbed TLS state, link the separate
+`Symbian::Tls` target and use `symbian/api/connectivity/tls_server.h`. It
+requires explicit PEM server credentials, client CA roots and a selected
+`TlsVersion` (`kTls12` or `kTls13`). Its read and
+write calls are bounded worker operations; it does not provision an identity
+or start a resident service for you.
+
 ## 2. Choose trust for this project
 
 If the app will use CA roots, put a PEM bundle inside its project and configure:

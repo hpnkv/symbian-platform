@@ -793,6 +793,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             "_ZN7UserHal10TickPeriodER27TTimeIntervalMicroSeconds32",
             "_ZN7UserSvr11HalFunctionEiiPvS0_",
             "_ZN11RHandleBase5CloseEv",
+            "_ZN12RSessionBase7DoShareEi",
             "_ZN16CActiveScheduler3AddEP7CActive",
             "_ZN16CActiveScheduler7CurrentEv",
             "_ZN16CActiveScheduler7InstallEPS_",
@@ -1214,6 +1215,47 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
         mbedtls_provenance = _build_mbedtls(
             workspace, output, compiler, linker, archive_tools
         )
+        for architecture in ("armv5t", "armv6"):
+            with tempfile.TemporaryDirectory(
+                prefix=f"symbian-guest-tls-{architecture}-"
+            ) as temporary:
+                build_tree = Path(temporary) / "build"
+                run(
+                    [
+                        cmake_tool,
+                        "-S",
+                        str(workspace / "cpp/symbian/tls"),
+                        "-B",
+                        str(build_tree),
+                        "-G",
+                        "Ninja",
+                        f"-DSYMBIAN_SDK_PREFIX={output}",
+                        f"-DSYMBIAN_TARGET_ARCH={architecture}",
+                        "-DCMAKE_TOOLCHAIN_FILE="
+                        f"{output / 'cmake/symbian-arm.cmake'}",
+                        f"-DCMAKE_CXX_COMPILER={compiler}",
+                        f"-DCMAKE_LINKER={linker}",
+                        f"-DCMAKE_AR={archive_tools['llvm-ar']}",
+                        f"-DCMAKE_RANLIB={archive_tools['llvm-ranlib']}",
+                        f"-DCMAKE_MAKE_PROGRAM={ninja_tool}",
+                        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+                    ],
+                    cwd=workspace,
+                )
+                run(
+                    [
+                        cmake_tool,
+                        "--build",
+                        str(build_tree),
+                        "--target",
+                        "symbian_api_tls",
+                    ],
+                    cwd=workspace,
+                )
+                shutil.copyfile(
+                    build_tree / "libsymbian_api_tls.a",
+                    output / "lib" / architecture / "libsymbian_api_tls.a",
+                )
         licenses = output / "licenses"
         licenses.mkdir()
         shutil.copyfile(
