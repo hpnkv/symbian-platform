@@ -1,4 +1,4 @@
-"""Opt-in resident, read-only agent experiment in the pinned emulator."""
+"""Opt-in resident agent behavior in the pinned emulator."""
 
 import json
 import os
@@ -12,9 +12,11 @@ import time
 from pathlib import Path
 
 import pytest
+from PIL import Image
 
 from symbian import _native, toolchain
 from symbian.agent import ReadOnlyAgentSession
+from symbian.emulator import Control
 from symbian.emulator.background import (
     background_environment,
     executable_for_session,
@@ -46,7 +48,7 @@ def service_image(tmp_path_factory):
     data = json.loads(presets.read_text())
     cache = data["configurePresets"][0]["cacheVariables"]
     cache["SYMBIAN_SDK_PREFIX"] = str(sdk.prefix)
-    cache["SYMBIAN_RESEARCH_CERTIFICATE_DIR"] = str(CERTIFICATES)
+    cache["SYMBIAN_AGENT_TEST_CERTIFICATE_DIR"] = str(CERTIFICATES)
     data["configurePresets"][0]["toolchainFile"] = str(
         sdk.prefix / "cmake/symbian-arm.cmake"
     )
@@ -71,6 +73,108 @@ def _connect(timeout=10.0):
         client_key=CERTIFICATES / "server-key.pem",
         timeout=timeout,
     )
+
+
+@pytest.mark.parametrize("action", ["stop", "background"])
+def test_local_window_controls(service_image, tmp_path, action):
+    """The guest panel stops locally or leaves the service running."""
+    golden = ROOT / ".symbian/instances/delight-import-01"
+    instance = tmp_path / "instance"
+    shutil.copytree(golden, instance)
+    guest_bin = instance / "data/drives/rm-807/c/sys/bin"
+    guest_bin.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(service_image, guest_bin / "agent_service.exe")
+    (instance / "config.yml").write_text(
+        "data-storage: data\ncpu: dynarmic\ndevice: 0\nlanguage: 1\n"
+        "enable-gdb-stub: false\nlog-svc: true\n"
+    )
+    executable = ROOT / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+    with tempfile.TemporaryDirectory(
+        prefix="agent-window-", dir="/tmp"
+    ) as name:
+        endpoint = Path(name) / "control.sock"
+        control = Control(endpoint)
+        env = dict(os.environ)
+        env.update(
+            EKA2L1_DATA_ROOT=str(instance),
+            EKA2L1_EXPERIMENTAL_SVC_PROFILE="rm807-113.010.1508",
+            EKA2L1_RESEARCH_CONTROL_SOCKET=str(endpoint),
+            **background_environment(),
+        )
+        with (tmp_path / "frontend.log").open("w") as log:
+            process = subprocess.Popen(
+                [
+                    executable_for_session(executable, Path(name)),
+                    "--device",
+                    "RM-807",
+                    "--run",
+                    "C:\\sys\\bin\\agent_service.exe",
+                ],
+                env=env,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+            )
+            try:
+                deadline = time.monotonic() + 25
+                while True:
+                    try:
+                        with _connect() as agent:
+                            assert agent.status().state == "ready"
+                        break
+                    except ConnectionRefusedError:
+                        if time.monotonic() >= deadline:
+                            raise
+                        time.sleep(0.05)
+                seen = False
+                for attempt in range(20):
+                    try:
+                        captured = control.capture(f"agent-{attempt}")
+                    except StatusError:
+                        time.sleep(0.1)
+                        continue
+                    path = Path(captured["path"])
+                    shutil.copyfile(path, tmp_path / "agent-screen.png")
+                    with Image.open(path) as image:
+                        pixel = image.convert("RGB").getpixel((500, 300))
+                    if pixel[1] > pixel[0] + 20 and pixel[1] > pixel[2] + 50:
+                        seen = True
+                        break
+                    time.sleep(0.1)
+                assert seen, "The agent status panel did not render"
+                if action == "stop":
+                    control.pointer(180, 520, "press")
+                    process.wait(timeout=15)
+                    assert process.returncode == 0
+                    exits = control.exit_report()["process_exits"]
+                    assert any(
+                        item["uid"] == 0xE0000A31 and item["reason"] == 0
+                        for item in exits
+                    )
+                else:
+                    control.pointer(180, 420, "press")
+                    time.sleep(0.3)
+                    with _connect() as agent:
+                        assert agent.status().state == "ready"
+                    assert process.poll() is None
+                    for attempt in range(20):
+                        try:
+                            captured = control.capture("agent-background")
+                            break
+                        except StatusError as error:
+                            if error.code != Code.UNAVAILABLE or attempt == 19:
+                                raise
+                            time.sleep(0.1)
+                    shutil.copyfile(
+                        captured["path"], tmp_path / "agent-background.png"
+                    )
+            finally:
+                if process.poll() is None:
+                    process.terminate()
+                try:
+                    process.wait(timeout=2)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=5)
 
 
 @pytest.mark.parametrize("backend", ["dynarmic", "dyncom"])

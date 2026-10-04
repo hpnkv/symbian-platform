@@ -12,6 +12,8 @@ import_proxies = [
   "${sdk}/proxies/esock/esock.dso",
   "${sdk}/proxies/insock/insock.dso",
   "${sdk}/proxies/hal/hal.dso",
+  "${sdk}/proxies/ws32/ws32.dso",
+  "${sdk}/proxies/gdi/gdi.dso",
 ]
 
 [package]
@@ -20,3 +22,7 @@ name = "Symbian Development Agent"
 vendor = "Symbian SDK"
 executable_name = "agent_service.exe"
 version = [1, 0, 0]
+
+[application]
+caption = "Development Agent"
+short_caption = "Agent"

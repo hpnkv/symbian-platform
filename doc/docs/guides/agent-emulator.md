@@ -32,7 +32,17 @@ The command builds the ARMv6 application against the active SDK, copies the
 selected firmware into a private disposable instance and launches
 `agent_service.exe`. It prints the session directory when the emulator starts.
 The service listens at `127.0.0.1:39101` through an active-object accept
-request. Its TLS and control work runs on the SDK's bounded worker.
+request. Its TLS and control work runs on the SDK's bounded worker. The
+application menu registers it as **Development Agent**. The local panel shows
+**RUNNING** while the service accepts connections.
+
+![Development Agent running in the emulator, with BACK and STOP controls](../assets/screenshots/agent-status.png)
+
+Choose **BACK** to leave the local panel while the service keeps running.
+Return to the agent from the application menu. Choose **STOP** to close the
+listener and exit the agent process. These controls were exercised in a
+disposable emulator; no physical-device background or idle-power behavior has
+been measured.
 
 ## Read the negotiated profile
 
@@ -64,9 +74,11 @@ its limit.
 Open `symbian console` and choose **Development Agents**. With an active SDK
 selected, **Build agent package** compiles and packages this example. A
 connected USB phone appears both beneath **Devices** in the sidebar and as a
-card in **Development Agents**. If the phone exposes a writable storage volume,
-**Stage SIS on device** copies the verified package to its `Installs` folder.
-Safely eject the volume and complete the installer prompts on the phone.
+card in **Development Agents**. **Stage agent package** transfers the checked
+SIS to `Installs` through a writable mounted volume or the phone's MTP
+interface in PC Suite mode. The SDK reads the staged bytes back to verify the
+hash. Safely eject a mounted volume, then complete the installer prompts on
+the phone.
 
 The card continues to say that installation is **unknown** or **unverified**.
 USB detection and SIS staging cannot establish that the service installed or
@@ -78,8 +90,8 @@ validated Nokia 808 release.
 Press **Ctrl-C** in the first terminal. The launcher reaps only the emulator
 process it started and retains `launch.json` and `frontend.log` in the printed
 session directory. Check `inputs_unchanged` and guest failures there if a run
-does not behave as expected. The agent package has no boot-start script or
-application registration, and the example has no on-device status/disable UI.
+does not behave as expected. The package includes application-menu
+registration and local BACK/STOP controls; it has no boot-start script.
 
 An emulator run proves only this selected guest/host path. The Nokia 808 still
 needs a separate physical-device gate, identity provisioning, local pairing,

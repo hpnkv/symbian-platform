@@ -21,13 +21,13 @@ endforeach()
 
 # This example is restricted to the pinned RM-807 emulator profile. The test
 # certificate and private key are public fixtures; never use them on a device.
-if(NOT SYMBIAN_RESEARCH_RM807_AGENT)
-  message(FATAL_ERROR "Set SYMBIAN_RESEARCH_RM807_AGENT=ON for the emulator")
+if(NOT SYMBIAN_EMULATOR_RM807_AGENT)
+  message(FATAL_ERROR "Set SYMBIAN_EMULATOR_RM807_AGENT=ON for the emulator")
 endif()
-set(SYMBIAN_RESEARCH_CERTIFICATE_DIR
+set(SYMBIAN_AGENT_TEST_CERTIFICATE_DIR
   "${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/mbedtls-symbian/tests/fixtures"
   CACHE PATH "Public, emulator-only TLS fixture")
-set(fixture_dir "${SYMBIAN_RESEARCH_CERTIFICATE_DIR}")
+set(fixture_dir "${SYMBIAN_AGENT_TEST_CERTIFICATE_DIR}")
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/agent_certificates.h" "")
 foreach(part server-cert server-key)
   file(READ "${fixture_dir}/${part}.pem" pem)
@@ -40,7 +40,7 @@ endforeach()
 symbian_add_import_executable(agent_service
   STARTUP startup.S
   LINKER_SCRIPT image.ld
-  SOURCES startup.cc scheduler_bridge.cc agent_service.cc
+  SOURCES startup.cc scheduler_bridge.cc agent_service.cc local_ui.cc
     sdk_entropy_rm807.cc sdk_entropy_rm807.S)
 target_include_directories(agent_service PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_compile_definitions(agent_service PRIVATE SYMBIAN_RM807_ENTROPY_PROBE=1

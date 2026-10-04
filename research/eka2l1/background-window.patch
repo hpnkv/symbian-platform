@@ -10,7 +10,7 @@ index cbd0a6b..613d72c 100644
  
  namespace eka2l1::drivers::graphics {
      static bool update_cached_dimensions(NSView* view, std::uint32_t* width, std::uint32_t* height) {
-@@ -37,7 +38,17 @@ static bool attach_context_to_view(NSOpenGLContext* context, NSView* view, std::
+@@ -37,7 +38,20 @@ static bool attach_context_to_view(NSOpenGLContext* context, NSView* view, std::
        dispatch_sync(dispatch_get_main_queue(), ^{
          [window makeFirstResponder:view];
          [context setView:view];
@@ -22,7 +22,10 @@ index cbd0a6b..613d72c 100644
 +          [window setCollectionBehavior:(NSWindowCollectionBehaviorManaged |
 +                                         NSWindowCollectionBehaviorFullScreenNone |
 +                                         NSWindowCollectionBehaviorFullScreenDisallowsTiling)];
-+          [window orderBack:nil];
++          // Keep a normal movable title bar. Ordering does not make the
++          // window key, so the launching terminal or IDE retains focus.
++          [window setMovable:YES];
++          [window orderFront:nil];
 +        } else {
 +          [window makeKeyAndOrderFront:nil];
 +        }

@@ -815,6 +815,9 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
         ws32 = gui["imports"]["ws32.dll"]["symbols"] + [
             "_ZN15CWsScreenDevice11ReleaseFontEP5CFont",
             "_ZN15CWsScreenDevice35GetNearestFontToDesignHeightInTwipsERP5CFontRK9TFontSpec",
+            "_ZNK15CWsScreenDevice12SizeInPixelsEv",
+            "_ZN9CWindowGc8ActivateER15RDrawableWindow",
+            "_ZN9CWindowGc10DeactivateEv",
         ]
         for dll, definition, symbols in (
             ("euser", source / "kernelhwsrv/kernel/eka/eabi/euseru.def", euser),

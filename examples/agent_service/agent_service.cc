@@ -5,12 +5,14 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <memory>
 #include <span>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <utility>
 
 #include "agent_certificates.h"
@@ -23,6 +25,8 @@
 #include "symbian/concurrency/worker_executor.h"
 
 extern "C" void ProbeStartScheduler();
+extern "C" void ProbeStopScheduler();
+extern "C" int AgentLocalUiMain(std::atomic<bool>* stop_requested);
 
 namespace {
 
@@ -197,6 +201,11 @@ class AgentService final
     listener_.AcceptNext();
   }
 
+  void StopFromLocalUi() {
+    listener_.Stop();
+    ProbeStopScheduler();
+  }
+
  private:
   std::shared_ptr<symbian::agent::AgentLogRing> log_ =
       std::make_shared<symbian::agent::AgentLogRing>();
@@ -204,13 +213,34 @@ class AgentService final
   symbian::api::connectivity::ActiveTcpListener listener_;
 };
 
+AgentService* current_service = nullptr;
+std::atomic<bool>* current_stop_request = nullptr;
+
 }  // namespace
+
+extern "C" bool AgentLocalStopRequested() {
+  return current_stop_request != nullptr && current_stop_request->load();
+}
+
+extern "C" void AgentStopOnScheduler() {
+  if (current_service != nullptr) {
+    current_service->StopFromLocalUi();
+  }
+}
 
 extern "C" int RunActiveProbe() {
   AgentService service;
   if (!service.Start().ok()) {
     return -301;
   }
+  std::atomic<bool> stop_requested{false};
+  std::thread ui_thread([&] { AgentLocalUiMain(&stop_requested); });
+  current_service = &service;
+  current_stop_request = &stop_requested;
   ProbeStartScheduler();
+  stop_requested.store(true);
+  current_stop_request = nullptr;
+  current_service = nullptr;
+  ui_thread.join();
   return 0;
 }
