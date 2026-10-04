@@ -1,0 +1,5 @@
+add_library(symbian_agent_frame STATIC frame.cc)
+add_library(symbian::agent_frame ALIAS symbian_agent_frame)
+target_include_directories(symbian_agent_frame PUBLIC ${PROJECT_SOURCE_DIR}/cpp)
+target_link_libraries(symbian_agent_frame PUBLIC absl::statusor)
+symbian_native_library(symbian_agent_frame)

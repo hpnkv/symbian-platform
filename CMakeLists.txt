@@ -173,6 +173,7 @@ FetchContent_Declare(nlohmann_json
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE SYSTEM)
 FetchContent_MakeAvailable(nlohmann_json)
 add_subdirectory(cpp/symbian/status)
+add_subdirectory(cpp/symbian/agent)
 add_subdirectory(cpp/symbian/concurrency)
 add_subdirectory(cpp/symbian/analysis)
 add_subdirectory(cpp/symbian/e32)

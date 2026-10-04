@@ -1,0 +1,83 @@
+// Copyright 2026 The Symbian SDK Authors.
+// Licensed under the Apache License, Version 2.0.
+
+#include "symbian/agent/frame.h"
+
+#include <algorithm>
+
+#include "absl/status/status.h"
+
+namespace symbian::agent {
+
+FrameDecoder::FrameDecoder(std::size_t maximum_frame_bytes)
+    : maximum_frame_bytes_(std::min(maximum_frame_bytes, kMaximumFrameBytes)) {}
+
+void FrameDecoder::Reset() {
+  prefix_size_ = 0;
+  expected_size_ = 0;
+  payload_.clear();
+  failed_ = false;
+}
+
+absl::StatusOr<std::size_t> FrameDecoder::Consume(
+    std::span<const std::uint8_t> bytes, std::optional<Frame>* completed) {
+  if (completed == nullptr) {
+    return absl::InvalidArgumentError("Frame output is null");
+  }
+  completed->reset();
+  if (failed_) {
+    return absl::FailedPreconditionError("Frame decoder needs Reset");
+  }
+  std::size_t offset = 0;
+  while (prefix_size_ < sizeof(prefix_) && offset < bytes.size()) {
+    prefix_[prefix_size_++] = bytes[offset++];
+  }
+  if (prefix_size_ < sizeof(prefix_)) {
+    return offset;
+  }
+  if (expected_size_ == 0) {
+    expected_size_ = (static_cast<std::uint32_t>(prefix_[0]) << 24) |
+                     (static_cast<std::uint32_t>(prefix_[1]) << 16) |
+                     (static_cast<std::uint32_t>(prefix_[2]) << 8) |
+                     static_cast<std::uint32_t>(prefix_[3]);
+    if (expected_size_ == 0 || expected_size_ > maximum_frame_bytes_) {
+      failed_ = true;
+      return absl::InvalidArgumentError("Frame length is outside the limit");
+    }
+    payload_.reserve(expected_size_);
+  }
+  const std::size_t available = bytes.size() - offset;
+  const std::size_t needed = expected_size_ - payload_.size();
+  const std::size_t count = std::min(available, needed);
+  if (count != 0) {
+    payload_.append(reinterpret_cast<const char*>(bytes.data() + offset),
+                    count);
+  }
+  offset += count;
+  if (payload_.size() == expected_size_) {
+    *completed = Frame{std::move(payload_)};
+    prefix_size_ = 0;
+    expected_size_ = 0;
+    payload_.clear();
+  }
+  return offset;
+}
+
+absl::StatusOr<std::string> EncodeFrame(std::span<const std::uint8_t> payload,
+                                        std::size_t maximum_frame_bytes) {
+  if (payload.empty() || payload.size() > maximum_frame_bytes ||
+      payload.size() > kMaximumFrameBytes) {
+    return absl::InvalidArgumentError("Frame payload is outside the limit");
+  }
+  const std::uint32_t size = static_cast<std::uint32_t>(payload.size());
+  std::string frame;
+  frame.reserve(sizeof(size) + size);
+  frame.push_back(static_cast<char>(size >> 24));
+  frame.push_back(static_cast<char>(size >> 16));
+  frame.push_back(static_cast<char>(size >> 8));
+  frame.push_back(static_cast<char>(size));
+  frame.append(reinterpret_cast<const char*>(payload.data()), payload.size());
+  return frame;
+}
+
+}  // namespace symbian::agent

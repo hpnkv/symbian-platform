@@ -1,5 +1,15 @@
 # Status
 
+2026-10-04 resident-agent frame boundary: `cpp/symbian/agent` now has a native
+incremental four-byte network-order length codec with a hard 64 KiB frame
+ceiling. It rejects zero/oversized lengths before payload allocation, stops
+at one completed frame and requires an explicit reset after malformed input.
+The focused GTest passes for fragmented, adjacent, invalid and maximum-size
+frames in the macOS host Debug build. This is host framing only: no guest SDK
+export, MessagePack schema validation, authenticated channel, socket listener,
+queue budget or emulator service run has passed. Development-agent gates 2
+and 3 remain open.
+
 2026-10-04 provisional Linux host CI gate: [run `37202283905`](https://github.com/hpnkv/symbian-platform/actions/runs/37202283905) passed all four jobs on commit `23b2133`. Ubuntu 24.04 x86_64 and aarch64 built with CMake/Ninja and passed 10/10 CTests each. Separate manylinux_2_28 x86_64 and aarch64 jobs built and auditwheel-repaired CPython 3.11–3.14 wheels; all eight wheels installed in fresh environments and passed the installed-wheel audit (native import, CLI doctor, packaged resources and ELF dependency allowlist). The aarch64 wheels and Linux Python 3.14 wheels omit automatic pywebview/PySide6 because the tested manylinux baseline could not resolve that renderer. This is host core/package evidence. No interactive Linux source SDK export, EKA2L1 GUI, guest GDB, Console visual run, USB device test or Nokia 808 compatibility was established. Documentation workflow `37202283842` built and deployed successfully on the same commit.
 
 2026-10-04 Linux aarch64 wheel gate: run `37201321281` built and auditwheel-repaired CPython 3.11, 3.12, 3.13 and 3.14 manylinux aarch64 wheels. Each installed in a fresh virtual environment and passed `python -m symbian.build_support.audit`, including native import, CLI doctor, resources and ELF dependency checks. The same run passed the Ubuntu 24.04 native build and 10/10 CTests on both aarch64 and x86_64. The aarch64 wheel excludes the unverified pywebview/PySide6 Console GUI dependency; an interactive Linux host, source SDK export, emulator and physical device remain separate gates.

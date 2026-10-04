@@ -42,6 +42,13 @@ symbian_native_library(symbian_status_test)
 add_test(NAME symbian_status_test COMMAND symbian_status_test)
 set_tests_properties(symbian_status_test PROPERTIES TIMEOUT 15)
 
+add_executable(symbian_agent_frame_test agent_frame_test.cc)
+target_link_libraries(symbian_agent_frame_test PRIVATE
+  symbian::agent_frame GTest::gtest_main)
+symbian_native_library(symbian_agent_frame_test)
+add_test(NAME symbian_agent_frame_test COMMAND symbian_agent_frame_test)
+set_tests_properties(symbian_agent_frame_test PROPERTIES TIMEOUT 15)
+
 add_executable(symbian_app_starter_test app_starter_test.cc
   "${CMAKE_SOURCE_DIR}/symbian/project/templates/model.cc"
   "${CMAKE_SOURCE_DIR}/symbian/project/templates/app_bridge.cc")

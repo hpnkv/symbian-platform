@@ -161,6 +161,7 @@ nav:
       - USB device transport: reference/device-usb.md
       - Desktop console interface: reference/console-interface.md
       - Mbed TLS SDK integration: reference/tls-sdk.md
+      - Development-agent protocol: reference/agent-protocol.md
       - Python API: reference/python.md
       - SDK native API guide: reference/native-sdk.md
       - C++ API: cpp.md
