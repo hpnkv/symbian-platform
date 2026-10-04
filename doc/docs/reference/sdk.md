@@ -1,4 +1,4 @@
-# Public SDK export and header research
+# SDK export and native headers
 
 The native SDK component reads frozen EABI export definitions and generates
 Clang/LLD sources for selected function import proxies. A proxy is an ELF link
@@ -16,7 +16,8 @@ live in cpp/symbian/sdk. Python owns paths, CMake/Ninja, dependency hashes and
 reports. Target probe C++ source also lives under cpp and is installed as a wheel
 resource. Native work releases the GIL and uses Abseil statuses without exceptions.
 
-For the pinned public kernel checkout described in RESEARCH.md:
+For the pinned public kernel checkout described in
+[the engineering notes](https://github.com/hpnkv/symbian-platform/blob/main/.dev/research.md):
 
 ```sh
 uv run symbian toolchain import-proxy \

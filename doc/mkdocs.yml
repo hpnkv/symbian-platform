@@ -1,5 +1,5 @@
 site_name: Symbian platform
-site_description: Modern application development and research tooling for Symbian
+site_description: Modern application development tools for Symbian
 site_url: https://hpnkv.github.io/symbian-platform/
 repo_url: https://github.com/hpnkv/symbian-platform
 repo_name: Symbian platform on GitHub
@@ -117,7 +117,7 @@ nav:
       - Emulator control: guides/emulator-control.md
       - Package an application: guides/packaging.md
       - TLS and CA bundles: guides/tls.md
-      - Run the research agent: guides/agent-emulator.md
+      - Run the development agent: guides/agent-emulator.md
       - Desktop console: guides/console.md
       - Connect a device: guides/device.md
       - CLion:
@@ -156,9 +156,9 @@ nav:
       - E32 build pipeline: reference/e32-build-pipeline.md
       - Firmware configuration: reference/firmware-configuration.md
       - Firmware import and preservation: reference/firmware-import.md
-      - Research emulator build: reference/emulator-source-build.md
+      - Build the emulator: reference/emulator-source-build.md
       - Guest debugging details: reference/guest-debugging.md
-      - Guest runtime research: reference/guest-runtime-research.md
+      - Guest runtime: reference/guest-runtime-research.md
       - USB device transport: reference/device-usb.md
       - Desktop console interface: reference/console-interface.md
       - Mbed TLS SDK integration: reference/tls-sdk.md

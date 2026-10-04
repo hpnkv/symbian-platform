@@ -95,7 +95,7 @@ experiment, even though its value was constant. Conversion correctly rejected
 it. The maintained interface uses an immediate function. Module support does
 not authorize stripping constructor arrays or skipping generated startup.
 
-## External libc++ header experiment
+## External libc++ headers
 
 The local Homebrew libc++ 23.1.2 configuration enables macOS availability markup
 and host thread support. Using it unchanged for ARM fails. The isolated research

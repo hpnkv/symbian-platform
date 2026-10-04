@@ -1,4 +1,4 @@
-# Research emulator build
+# Build the emulator from source
 
 The application guides use a prepared EKA2L1 installation. Build the pinned
 research emulator only when investigating emulator behavior, guest debugging

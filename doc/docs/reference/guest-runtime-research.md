@@ -1,4 +1,4 @@
-# Guest runtime research
+# Guest runtime
 
 The installed SDK contains target headers, ARM runtime archives, original
 Symbian import proxies and CMake targets. Applications use the

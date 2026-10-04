@@ -1,4 +1,4 @@
-"""Entry point for read-only research and Symbian application builds."""
+"""Entry point for Symbian application builds and inspection tools."""
 
 import argparse
 import os
@@ -155,7 +155,7 @@ _COMMAND_DESCRIPTIONS = {
     ): "Read ELF, E32, SIS, or import-proxy metadata from a local file.",
     ("build",): "Build an ARM/E32 application executable.",
     ("package",): "Package an application executable and resources into a SIS.",
-    ("preserve",): "Create or verify digested copies of research inputs.",
+    ("preserve",): "Create or verify digested copies of source inputs.",
     ("toolchain",): "Build and validate ARM/E32 application artifacts.",
     ("console",): "Open the graphical SDK and device console.",
 }
