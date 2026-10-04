@@ -1,7 +1,7 @@
 # Symbian platform engineering
 
-Read PLAN.md and docs/RESEARCH.md before expanding platform scope. Record
-experiments and open questions in docs/RESEARCH_LOG.md. Update docs/STATUS.md
+Read .dev/plan.md and .dev/research.md before expanding platform scope. Record
+experiments and open questions in .dev/research-log.md. Update .dev/status.md
 with evidence; ARM ELF generation does not prove Symbian loader compatibility.
 
 Use ~/dev/a11 as the implementation reference. Python lives in symbian/,

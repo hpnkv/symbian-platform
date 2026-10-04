@@ -18,5 +18,5 @@
     "scripts/audit_wheel.py": "9dfddeaff7700b7b724b2faabd800dd56260a8b2a5b925e98761bf05f6f1b7c6",
     "LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
   },
-  "adaptations": "docs/A11_STATUS.md and docs/HOST_BUILD.md"
+  "adaptations": ".dev/a11-status.md and doc/docs/guides/host-build.md"
 }

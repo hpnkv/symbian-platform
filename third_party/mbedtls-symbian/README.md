@@ -5,7 +5,7 @@ Clang/CMake SDK. The initial deliverable is application-linked static libraries;
 it does not replace the phone’s system `ssl.dll`.
 
 The SDK is under active development. Build and execution evidence, required
-platform services and limitations will be recorded in `docs/STATUS.md`.
+platform services and limitations are recorded in `.dev/status.md`.
 
 Cryptographic sources remain in `library/` and public headers in `include/`.
 Original licenses and copyright notices remain intact. Historical MMP, SIS and

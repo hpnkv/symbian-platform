@@ -20,7 +20,7 @@
  *
  * Parsing uses allow_exceptions=false. Serialization preflights string values
  * and object keys. Invalid input becomes an Abseil status; diagnostic reparsing
- * with exceptions is omitted. See docs/A11_STATUS.md for the recorded changes.
+ * with exceptions is omitted. See .dev/a11-status.md for the recorded changes.
  */
 
 #ifndef SYMBIAN_STATUS_JSON_CODEC_H_

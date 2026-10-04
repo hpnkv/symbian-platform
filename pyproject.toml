@@ -41,6 +41,10 @@ dev = [
     "pybind11-stubgen>=2.5.5,<3",
     "pillow>=12,<13",
 ]
+docs = [
+    "mkdocs-material>=9.5,<10",
+    "mkdocstrings[python]>=0.26,<1",
+]
 
 [tool.black]
 line-length = 80
@@ -57,7 +61,7 @@ select = ["E", "F", "I", "B"]
 testpaths = ["symbian"]
 
 # Host-tool wheels first. Emulator/LLVM/GDB payload wheels have separate
-# platform baselines and are designed in docs/DISTRIBUTION.md.
+# platform baselines and are designed in .dev/distribution.md.
 [tool.cibuildwheel]
 build = "cp311-* cp312-* cp313-* cp314-*"
 skip = "*-musllinux* *-win32 *-win_amd64 *-win_arm64"

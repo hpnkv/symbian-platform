@@ -13,3 +13,4 @@ research/upstream/
 CMakeUserPresets.json
 .DS_Store
 .idea/
+/doc/site/

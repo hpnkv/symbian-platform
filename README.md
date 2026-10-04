@@ -1,160 +1,89 @@
-# Symbian development platform
+# Symbian platform
 
-For generated applications, visible SDK installation, relative project settings
-and IDE Run/Debug integration, see [Standalone projects](docs/PROJECTS.md).
-The default SDK export includes opt-in Mbed TLS 1.2/1.3 static packages for
-both ARM profiles; see [TLS in the SDK](docs/MBEDTLS.md).
+A modern development workspace for Symbian applications. Build ARMv5T and
+ARMv6 executables and DLLs with CMake and Ninja, inspect E32 and SIS files,
+and exercise supported behavior in disposable emulator instances. The SDK
+includes C++ libraries, Python tooling, examples and the complete source of
+its application-linked Mbed TLS port.
 
-For a desktop interface to SDK workflows, USB inspection and device protocol
-probes, run `uv run symbian console`. See [Symbian Console](docs/CONSOLE.md).
+The project exists to make Symbian development inspectable and repeatable with
+current host tools. It keeps firmware and private device data outside the
+repository and records where emulator evidence ends. An ARM build or emulator
+pass does **not** establish Nokia 808 compatibility.
 
-Build reproducible ARM objects, E32 application executables and DLLs on macOS, and
-preserve existing firmware/ROM material in verifiable host-side archives.
-ARMv6 is the default, with ARMv5T available; firmware profiles include several
-Symbian devices and do not live inside generated projects. The first E32
-experiment passes historical
-image validation, CPU, ROMless installation and emulator process tests.
-Full Belle runtime compatibility remains unverified; a guarded GUI application now
-renders and operates against supplied RM-807 firmware on both backends.
-See docs/STATUS.md.
+[Explore the documentation](https://hpnkv.github.io/symbian-platform/) ·
+[Create a project](doc/docs/guides/projects.md) ·
+[Review current evidence](.dev/status.md)
 
-The native touch counter in [examples/gui_app](examples/gui_app) now has a full
-[WALKTHROUGH.md](WALKTHROUGH.md): source SDK preparation, modern toolchain,
-reproducible builds, checks, emulator launch and debugging. Its build and static
-checks pass. Live GDB verifies SDK heap setup, Window Server connection and
-initial drawing calls with the supplied ROM/Z. Separate live tests now check
-actual screen captures, pointer-driven count/reset changes and normal zero exit.
-See [the control replay](docs/EMULATOR_CONTROL.md) and
-[CLion setup](docs/CLION.md); full firmware/phone compatibility remains open.
+## In this README
+
+- [Capabilities](#capabilities)
+- [Start here](#start-here)
+- [Examples and workflows](#examples-and-workflows)
+- [Documentation map](#documentation-map)
+- [Development status](#development-status)
+
+## Capabilities
+
+| Area | What is available | Scope |
+| --- | --- | --- |
+| Toolchain | CMake/Ninja builds, ARM ELF to E32 conversion, import proxies and inspection | ARMv5T and ARMv6 profiles |
+| SDK | Native C++ libraries, architecture-specific CMake targets and source provenance | Link components explicitly |
+| Runtime | Selected libc++, allocation, concurrency and device API paths | Bounded guest tests; [details](doc/docs/capabilities/index.md) |
+| Packaging | Native SIS writer, metadata inspection and disposable emulator installation | Phone installation remains a separate gate |
+| TLS | Vendored Mbed TLS 3.4.1 source, static targets and project-local CA bundle packaging | Guest handshakes and secure entropy remain open |
+| Tools | Python CLI, desktop console, firmware onboarding and emulator controls | Firmware is supplied separately |
+
+The [capability map](doc/docs/capabilities/index.md) distinguishes implemented
+features from planned APIs. The [generated C++ reference](doc/docs/cpp.md)
+lists native declarations; its companion guides explain support limits.
+
+## Start here
+
+Install the host dependencies, then check the toolchain. The object probe does
+not require firmware or an installed target SDK.
 
 ```sh
-brew install openssl@3
 uv sync
 uv run symbian doctor
 uv run symbian toolchain probe
-uv run symbian build --project examples/abi_probe
-uv run symbian inspect .symbian/build/abi_probe.o
-uv run symbian build --project examples/e32_probe --output .symbian/e32-probe
-uv run symbian inspect --format e32 .symbian/e32-probe/e32_probe.exe
-uv run symbian package --project examples/e32_probe \
-  --artifact .symbian/e32-probe/e32_probe.exe
-uv run symbian inspect --format sis .symbian/package/probe.sis
-uv run symbian device policy flash
 ```
 
-Commands show readable summaries by default. Add `--output-format=json`
-before or after a command for the canonical result and status schema in scripts.
-`--help` describes each command and option. Hardware recovery commands
-describe policy only; there is no recovery executor. Preservation instructions
-are in recovery/README.md. Firmware and private device records stay outside Git.
+From there, follow [getting started](doc/docs/getting-started.md) or open the
+[desktop console](doc/docs/guides/console.md) with `uv run symbian console`.
 
-The probe compiles twice in independent directories, checks ARM ELF32 EABI5
-metadata through the native parser, compares bytes, and writes an object, report
-and compilation database. It requires neither an SDK nor a target linker. Set
-clangd's `--compile-commands-dir=.symbian/build` for the object example.
+## Examples and workflows
 
-The E32 application build uses CMake presets and Ninja, and additionally requires an
-ARM ELF linker (`brew install lld`). It links ARM startup to Thumb C++, preserves
-relocations with LLD, converts in the native core, and compares two CMake
-ELF/E32 builds. The primary tree remains usable for incremental compilation;
-CMake supplies the actual clangd database. See
-[docs/BUILDING.md](docs/BUILDING.md) for project configuration and migration.
-It supports one read-only code
-segment and internal relative references. It rejects imports, absolute
-relocations, writable data, TLS and constructors. Hand-written absolute addresses
-or stripped relocation records cannot be proved absent: input must come from a
-trusted link retaining all relocations. The startup directly exits a thread and
-is limited to a process without runtime resources. This is not an SDK or verified Belle application. Reports keep Symbian loader verification false.
-Use `.symbian/e32-probe` as clangd's compilation database directory.
+| If you want to… | Start with… |
+| --- | --- |
+| Create an IDE-ready application | [Standalone projects](doc/docs/guides/projects.md) |
+| Build and inspect an E32 image | [Build an application](doc/docs/guides/building.md) |
+| Build the source SDK and touch-counter GUI | [Source walkthrough](doc/docs/guides/from-source.md) and [GUI example](doc/docs/tutorials/gui-app.md) |
+| Exercise guest C++ allocation and containers | [Runtime probe](doc/docs/tutorials/runtime-probe.md) |
+| Package a private CA for one app | [TLS and CA bundles](doc/docs/guides/tls.md) |
+| Prepare firmware for local emulator work | [Firmware guide](doc/docs/guides/firmware.md) |
+| Build and test this repository | [Host build guide](doc/docs/guides/host-build.md) |
 
-The native EKA2L1 build and independent oracle tests are documented in
-[research/eka2l1/README.md](research/eka2l1/README.md). The local patch provides
-an explicit macOS instance root and fixes CLI shutdown without device images.
-The supplied Delight RM-807 firmware now imports ROM/Z into a private emulator
-instance. Firmware-specific executive routing, ARM thread-register preservation
-and SDK cleanup-stack setup now permit initial GUI drawing calls. Visual
-behavior remains unverified. See WALKTHROUGH.md.
-After building those research dependencies, run:
+The runnable examples live in [`examples/`](examples/). Local builds,
+firmware, upstream checkouts and emulator state stay outside version control.
 
-```sh
-uv run symbian toolchain verify-probe .symbian/e32-probe/e32_probe.exe
-```
+## Documentation map
 
-This runs 28 independent native tests, retains JSON/logs and input/binary hashes
-under `.symbian/probe-check`, and emits a structured report. It checks the
-maintained probe with Nokia's unchanged whole-image validator and executes
-ARM startup, Thumb C++ and the exit SVC on both EKA2L1 CPU backends at two
-addresses. Eight process cases additionally use EKA2L1's loader, memory model,
-scheduler and kernel SVC dispatch under its epoc10 profile. They verify normal
-and failure exits, repeated launches and address-space release on both backends.
-No Belle ROM/Z or system services are supplied; Belle loader/runtime
-verification remains false.
-Inherited GTest filters and sharding cannot silently reduce the test count.
+- [Guides](doc/docs/getting-started.md) cover setup, projects, CLion, packaging,
+  TLS, the desktop console and device connection.
+- [Capabilities](doc/docs/capabilities/index.md) explain the C++ runtime,
+  concurrency and device APIs, including planned surfaces.
+- [Reference](doc/docs/reference/sdk.md) describes SDK exports; Doxygen
+  generates the [C++ API](doc/docs/cpp.md) from native source.
+- [Engineering records](.dev/plan.md) hold plans, experiments, status and
+  unresolved questions. They are public project records rather than API
+  documentation.
 
-The native unsigned SISX writer and bounded inspector are described in
-[docs/PACKAGING.md](docs/PACKAGING.md). With the research oracles built, run:
+## Development status
 
-```sh
-uv run symbian toolchain verify-package .symbian/package/probe.sis \
-  --executable .symbian/e32-probe/e32_probe.exe
-```
-
-This extends the check to 35 cases. The package installs its unchanged executable
-into disposable emulator filesystems; both CPU backends launch it through the
-kernel. Registry reload, uninstall and reinstall are also checked. Belle and
-phone installation remain unverified. No physical-device executor is exposed.
-
-Frozen export and original SDK-header research is available through
-`toolchain import-proxy`. See [docs/SDK.md](docs/SDK.md) for a repeatable
-User::Exit ordinal proxy, typed original-header link probe and clangd checks.
-The eager E32 import profile executes a compiled development DLL through
-EKA2L1's loader and kernel. See [docs/IMPORTS.md](docs/IMPORTS.md) for build and
-research-test replay. Matched Belle SDK/runtime imports remain unverified.
-
-```sh
-cmake --preset debug
-cmake --build --preset debug -j 8
-ctest --preset debug
-uv run pytest -q
-uv run black --check symbian scripts
-uv run ruff check symbian scripts
-uv run python scripts/generate_stubs.py --check
-```
-
-CMake fetches the Abseil revision used by A11 and discovers or fetches GTest.
-For offline builds with that exact Abseil checkout, export
-`SYMBIAN_ABSEIL_SOURCE_DIR` before `uv sync` and CMake configuration.
-Python installation compiles the pybind11 extension with scikit-build-core;
-native core code compiles with exceptions disabled. The bindings release the
-GIL around stateless native conversion and inspection. Future concurrency uses
-A11's Thread library. The platform core remains synchronous; the emulator
-research harness uses EKA2L1's existing guest scheduler and timer lifecycle.
-
-
-The frozen DLL profile resolves function symbols from DEF ordinals and emits
-export tables, absence bitmaps and code relocations. Both emulator CPU backends
-execute a native generated development DLL, with actual mapped export pointers
-checked. See [docs/IMPORTS.md](docs/IMPORTS.md) for build and replay. These ROMless
-experiments do not establish matched Belle, SDK startup or physical execution.
-The installed SDK now publishes C/C++ DLL targets with selected frozen exports,
-ordinal proxy targets and retained ELF symbols. A bounded DLL data/BSS case runs
-on both emulator CPU backends; [the Mbed TLS SHA-256 probe](examples/mbedtls_dll_probe)
-shows a real C archive link. See [library targets](docs/PROJECTS.md) for the
-current contract and remaining lifetime limits.
-
-
-Const callback tables and simple C++ virtual dispatch now run through the
-unchanged emulator loader with native pointer relocations. Their packaged probe
-installs and launches on both CPU backends. Use `toolchain verify-pointers`
-with an optional `--package`; see [docs/POINTERS.md](docs/POINTERS.md).
-
-C++20 language, named-module and selected library experiments are documented in
-[docs/CXX20.md](docs/CXX20.md), with maintained examples and loader evidence.
-
-Application guidance: [CXX_CAVEATS.md](CXX_CAVEATS.md). The guest runtime
-subset and tests are in [docs/RUNTIME.md](docs/RUNTIME.md). The planned
-system, power, display and storage device components are in
-[docs/DEVICE_API.md](docs/DEVICE_API.md). Runtime cost
-hypotheses and measurement gates are in
-[PERFORMANCE_CONSIDERATIONS.md](PERFORMANCE_CONSIDERATIONS.md); the one-install
-distribution design is in [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md).
+The supplied RM-807 firmware has supported guarded emulator checks for GUI
+rendering and input, runtime paths, and selected Mbed TLS crypto/X.509 calls.
+Authenticated guest TLS 1.2/1.3 handshakes, secure entropy, emulator network
+transport and Nokia 808 compatibility remain open. See the
+[status record](.dev/status.md) and [research log](.dev/research-log.md) for
+specific results and unanswered questions.

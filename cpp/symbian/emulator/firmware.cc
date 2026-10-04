@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Uses original EKA2L1 installation/loader implementations, revision recorded
-// in research/eka2l1/README.md. No firmware parser is reimplemented here.
+// in .dev/research/eka2l1.md. No firmware parser is reimplemented here.
 #include "symbian/emulator/firmware.h"
 
 #include <algorithm>

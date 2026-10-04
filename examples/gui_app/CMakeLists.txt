@@ -57,7 +57,7 @@ endforeach()
 include(SymbianPic)
 include("${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
 if(NOT EXISTS "${SYMBIAN_GUI_SDK_INCLUDE}/w32std.h")
-  message(FATAL_ERROR "Prepare the source SDK with symbian toolchain prepare-gui-sdk; see WALKTHROUGH.md")
+  message(FATAL_ERROR "Prepare the source SDK with symbian toolchain prepare-gui-sdk; see doc/docs/guides/from-source.md")
 endif()
 symbian_add_import_executable(gui_app
   STARTUP startup.S LINKER_SCRIPT image.ld SOURCES app.cc window_server.cc async_bridge.cc startup.cc)

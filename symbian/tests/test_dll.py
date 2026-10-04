@@ -121,7 +121,7 @@ def test_relocation_and_export_payload_corruption_is_detected(dll):
             inspect_e32(bytes(changed))
 
 
-def test_dll_definition_cannot_escape_project(dll, tmp_path):
+def test_dll_definition_cannot_escape_project(tmp_path):
     from symbian.toolchain.executable import build_executable
 
     with pytest.raises(StatusError) as caught:
@@ -131,7 +131,7 @@ def test_dll_definition_cannot_escape_project(dll, tmp_path):
             {
                 "kind": "e32-dll-experiment",
                 "uid3": 0xE0000810,
-                "export_definition": "../../PLAN.md",
+                "export_definition": "../../.dev/plan.md",
             },
             "clang++",
             "ld.lld",

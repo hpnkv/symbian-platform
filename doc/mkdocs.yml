@@ -1,0 +1,133 @@
+site_name: Symbian platform
+site_description: Modern application development and research tooling for Symbian
+site_url: https://hpnkv.github.io/symbian-platform/
+repo_url: https://github.com/hpnkv/symbian-platform
+repo_name: Symbian platform on GitHub
+docs_dir: docs
+site_dir: site
+use_directory_urls: false
+validation:
+  links:
+    not_found: ignore
+watch:
+  - ../symbian
+  - ../cpp/symbian
+  - ../third_party/mbedtls-symbian/include
+
+theme:
+  name: material
+  font:
+    text: Noto Sans
+    code: JetBrains Mono
+  icon:
+    logo: material/cellphone-cog
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tracking
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - toc.follow
+    - content.code.copy
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.snippets:
+      base_path: [ .. ]
+      check_paths: true
+
+extra_css:
+  - assets/typography.css
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/hpnkv/symbian-platform
+      name: Symbian platform on GitHub
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [ .. ]
+          options:
+            docstring_style: google
+            show_source: false
+            show_root_heading: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            merge_init_into_class: true
+            members_order: source
+            filters: [ "!^_" ]
+
+nav:
+  - Overview: index.md
+  - Getting started: getting-started.md
+  - Guides:
+      - Standalone projects: guides/projects.md
+      - Build an application: guides/building.md
+      - Build a source SDK: guides/from-source.md
+      - Firmware and emulator: guides/firmware.md
+      - Emulator control: guides/emulator-control.md
+      - Package an application: guides/packaging.md
+      - TLS and CA bundles: guides/tls.md
+      - Desktop console: guides/console.md
+      - Connect a device: guides/device.md
+      - CLion: guides/clion.md
+      - Host builds: guides/host-build.md
+  - Tutorials:
+      - GUI application: tutorials/gui-app.md
+      - Runtime probe: tutorials/runtime-probe.md
+  - Capabilities:
+      - What is available: capabilities/index.md
+      - C++ usage: capabilities/cpp.md
+      - C++20: capabilities/cpp20.md
+      - Guest runtime: capabilities/runtime.md
+      - Concurrency: capabilities/concurrency.md
+      - Device APIs: capabilities/device-apis.md
+      - API families:
+          - Overview: capabilities/apis/index.md
+          - System: capabilities/apis/system.md
+          - Power: capabilities/apis/power.md
+          - Display: capabilities/apis/display.md
+          - Storage: capabilities/apis/storage.md
+          - Camera: capabilities/apis/camera.md
+          - Connectivity (planned): capabilities/apis/connectivity.md
+          - Sensors (planned): capabilities/apis/sensors.md
+          - Media (planned): capabilities/apis/media.md
+      - Performance: capabilities/performance.md
+  - Reference:
+      - SDK exports: reference/sdk.md
+      - Python API: reference/python.md
+      - C++ API: cpp.md

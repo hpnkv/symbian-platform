@@ -1348,7 +1348,7 @@ def _install_resource_tools(bin_path: Path) -> None:
         raise StatusError(
             Code.NOT_FOUND,
             "Prepared EPL rcomp checkout is required for SDK export; "
-            "see research/rcomp/README.md",
+            "see .dev/research/rcomp.md",
         )
     revision = run(
         ["git", "-C", str(source), "rev-parse", "HEAD"], cwd=workspace
