@@ -18,6 +18,8 @@ from symbian.console.web_frontend.models import (
     FormDefaults,
     UsbInventoryItem,
 )
+from symbian.device import agent_observation
+from symbian.device.connection import ConnectedDevice
 from symbian.status import StatusException
 
 
@@ -41,6 +43,34 @@ def test_web_frontend_bundles_local_assets() -> None:
     assert 'data-page="application_detail"' in html
     assert 'data-application-action="build"' in html
     assert 'data-application-action="package"' in html
+
+
+def test_bridge_records_owner_report_without_claiming_live_status(
+    monkeypatch, tmp_path
+) -> None:
+    path = tmp_path / "agent-observations.json"
+    monkeypatch.setattr(agent_observation, "default_path", lambda: path)
+    phone = ConnectedDevice(
+        selector="usb:phone",
+        manufacturer="Nokia",
+        product="808 PureView",
+        vendor_id=0x0421,
+        product_id=0x05D1,
+        location_id=1,
+        identity_basis="usb-serial",
+        identity_anchor="5ac2ac0a2e35fa0a152b8dd4",
+    )
+    bridge = ConsoleWebBridge()
+    try:
+        bridge._devices = (phone,)
+        result = bridge.report_agent_running(phone.selector)
+        assert result["state"] == "running-reported"
+        observations = agent_observation.read_for_devices((phone,))
+        assert observations[phone.selector] == result
+        bridge.clear_agent_report(phone.selector)
+        assert agent_observation.read_for_devices((phone,)) == {}
+    finally:
+        bridge.shutdown()
 
 
 def test_explicit_application_workdir_opens_application_view(
@@ -217,6 +247,16 @@ vm.runInContext(`
 html = vm.runInContext('renderAgents()', context);
 if (html.includes('data-agent-stage="usb:pc-suite" disabled')) process.exit(8);
 if (!html.includes('PC Suite MTP')) process.exit(9);
+vm.runInContext(`state.agentObservations = {'usb:pc-suite': {
+  identity_anchor: 'sample', reported_at: '2026-10-04T20:00:00+00:00',
+  state: 'running-reported'
+}}`, context);
+html = vm.runInContext('renderAgents()', context);
+if (!html.includes('Running reported · live status unavailable')) {
+  process.exit(10);
+}
+if (!html.includes('Clear running report')) process.exit(11);
+if (html.includes('Agent installed')) process.exit(12);
 """
     result = subprocess.run(
         ["node", "-e", script],
@@ -241,7 +281,7 @@ def test_agent_project_uses_selected_sdk_tools(tmp_path: Path) -> None:
     try:
         bridge._context = SimpleNamespace(sdk_manifest=str(manifest))
         project = bridge.get_agent_project()
-        assert project["project"].endswith("examples/agent_service")
+        assert project["project"].endswith("agent_service")
         assert project["compiler"] == "/sdk/bin/clang++"
         assert project["linker"] == "/sdk/bin/ld.lld"
     finally:

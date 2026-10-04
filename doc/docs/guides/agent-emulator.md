@@ -1,6 +1,6 @@
 # Run the development agent in an emulator
 
-This guide starts the SDK's read-only development-agent example in a disposable
+This guide starts the SDK's read-only development agent in a disposable
 EKA2L1 instance. EKA2L1 emulates Symbian software on a desktop host. The
 example uses a **public test certificate and key**, binds only to the
 emulator's loopback address and is for the pinned RM-807 emulator profile.
@@ -13,7 +13,7 @@ Import and select the preserved RM-807 fixture using the
 [firmware guide](firmware.md). Check what the emulator will use:
 
 ```sh
-symbian emu resolve --project examples/agent_service
+symbian emu resolve --project agent_service
 ```
 
 The selected device should be `808 PureView`, with the configured EKA2L1 build
@@ -25,7 +25,7 @@ does not establish compatibility with a physical Nokia 808.
 From the repository root, leave this command running in one terminal:
 
 ```sh
-symbian app run --project examples/agent_service
+symbian app run --project agent_service
 ```
 
 The command builds the ARMv6 application against the active SDK, copies the
@@ -80,9 +80,11 @@ interface in PC Suite mode. The SDK reads the staged bytes back to verify the
 hash. Safely eject a mounted volume, then complete the installer prompts on
 the phone.
 
-The card continues to say that installation is **unknown** or **unverified**.
 USB detection and SIS staging cannot establish that the service installed or
-started. This agent package has only passed emulator tests and is not a
+started. If you see the panel running on your phone, choose **I see the agent
+running** to record your observation. The card will label it as a reported
+state; a live authenticated connection is still unavailable over this USB
+mode. This agent package has only passed emulator tests and is not a
 validated Nokia 808 release.
 
 ## Stop and inspect

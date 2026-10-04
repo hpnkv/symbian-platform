@@ -34,21 +34,26 @@ and Debug actions. See [JetBrains' database guide](https://www.jetbrains.com/hel
 Do not introduce a macOS compiled dummy target for guest source files: it
 would supply incorrect pointer sizes, calling conventions and platform macros.
 
-## Index every root guest probe
+## Index guest projects from the repository root
 
 If you open the repository root in CLion, use its `clion-guest-probes-armv6`
-or `clion-guest-probes-armv5t` profile for native guest probes. The root
-`symbian_probe_index` target compiles the declared probe sources with ARM
-headers; it does not combine their different entry points into one program.
-The connectivity probe is included through `symbian_index_connectivity`.
+or `clion-guest-probes-armv5t` profile. CMake discovers registered application
+projects in the root and `examples/`, including `agent_service` and `gui_app`,
+and exposes their real ARM targets. `symbian_probe_index` gives each probe a
+separate ARM source target. New probe directories receive a source target
+automatically; specialized probes retain their declared compiler settings.
 
-`CMakeUserPresets.json` is an ignored, machine-local file. If a profile says
-the SDK lacks `Connectivity` or `Stackless`, check its
-`SYMBIAN_SDK_PREFIX` value against the directory of the active `sdk.json`.
-An old prefix can point to an earlier SDK even after you export a new one.
-Update that local value, then reload CMake. `MBEDTLS_SOURCE` should point to
-this repository's `third_party/mbedtls-symbian`, which contains the vendored
-source and headers.
+The shared guest presets follow the active SDK on each CMake configure. After
+exporting a new SDK, reload the profile. If an older CMake cache still selects
+a host compiler, run `cmake --fresh --preset clion-guest-probes-armv6` once.
+`CMakeUserPresets.json` remains an ignored place for local compiler paths.
+`MBEDTLS_SOURCE` should point to this repository's
+`third_party/mbedtls-symbian` source and headers.
+
+Registered applications created by `symbian init` attach native files from
+their project root and conventional `src/`, `cpp/` and `include/` directories
+to the actual guest executable target. CMake watches those directories for new
+files, so an IDE reload updates target membership and compile commands.
 
 ## Attach ARM GDB manually
 

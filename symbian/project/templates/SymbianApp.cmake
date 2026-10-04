@@ -1,3 +1,4 @@
+include_guard(GLOBAL)
 include(SymbianPic)
 get_filename_component(SYMBIAN_SDK_PREFIX
   "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)

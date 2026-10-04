@@ -4,7 +4,7 @@
     {
       "name": "symbian-pic",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/../../.symbian/cmake/agent-service",
+      "binaryDir": "${sourceDir}/../.symbian/cmake/agent-service",
       "toolchainFile": "$env{SYMBIAN_SDK_PREFIX}/cmake/symbian-arm.cmake",
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",

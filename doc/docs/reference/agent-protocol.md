@@ -3,7 +3,7 @@
 The planned resident service uses one protocol over an authenticated TCP
 session. Host native code owns framing and the full control envelope. A small
 guest codec answers read-only hello, status and recent-log requests. The manually started
-[emulator service example](https://github.com/hpnkv/symbian-platform/tree/main/examples/agent_service)
+[development agent source](https://github.com/hpnkv/symbian-platform/tree/main/agent_service)
 combines the active listener, SDK worker and mutual TLS. Its fixed test key is
 public; it must never be used as a device identity.
 

@@ -307,13 +307,13 @@ def session(
             endpoint = Path(private) / "control.sock"
             env = os.environ.copy()
             env.pop("EKA2L1_EXPERIMENTAL_SVC_PROFILE", None)
+            env.pop("QT_MAC_DISABLE_FOREGROUND_APPLICATION_TRANSFORM", None)
             env.update(
                 EKA2L1_DATA_ROOT=str(instance),
                 EKA2L1_RESEARCH_CONTROL_SOCKET=str(endpoint),
             )
             if env.get("SYMBIAN_CONSOLE_FOREGROUND_EMULATOR") == "1":
                 env.pop("EKA2L1_RESEARCH_BACKGROUND_WINDOW", None)
-                env.pop("QT_MAC_DISABLE_FOREGROUND_APPLICATION_TRANSFORM", None)
             else:
                 env.update(background_environment())
             if profile != "default":

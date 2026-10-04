@@ -9,6 +9,28 @@ set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR "${SYMBIAN_TARGET_ARCH}")
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
+# Root IDE profiles follow the activated SDK, including after an SDK export.
+# Standalone application profiles keep their explicit sdk.cmake selection.
+if(SYMBIAN_USE_ACTIVE_SDK)
+  if(DEFINED ENV{XDG_CONFIG_HOME})
+    set(active_sdk_file "$ENV{XDG_CONFIG_HOME}/symbian/active-sdk.json")
+  else()
+    set(active_sdk_file "$ENV{HOME}/.config/symbian/active-sdk.json")
+  endif()
+  if(NOT EXISTS "${active_sdk_file}")
+    message(FATAL_ERROR "No active SDK; run symbian sdk install")
+  endif()
+  file(READ "${active_sdk_file}" active_sdk_json)
+  string(JSON active_sdk_manifest ERROR_VARIABLE active_sdk_error
+         GET "${active_sdk_json}" manifest)
+  if(active_sdk_error OR NOT EXISTS "${active_sdk_manifest}")
+    message(FATAL_ERROR "Active SDK manifest is invalid: ${active_sdk_file}")
+  endif()
+  get_filename_component(active_sdk_prefix "${active_sdk_manifest}" DIRECTORY)
+  set(SYMBIAN_SDK_PREFIX "${active_sdk_prefix}" CACHE PATH
+      "Active SDK used by the root guest IDE profile" FORCE)
+endif()
+
 if(SYMBIAN_SDK_PREFIX AND EXISTS "${SYMBIAN_SDK_PREFIX}/bin/clang++")
   set(CMAKE_CXX_COMPILER "${SYMBIAN_SDK_PREFIX}/bin/clang++")
   set(CMAKE_C_COMPILER "${SYMBIAN_SDK_PREFIX}/bin/clang")

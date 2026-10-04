@@ -73,7 +73,7 @@ When the observer hands a client to an SDK worker, call
 session shareable before its sockets open. Keep `OnAccept()` short: post the
 move-only client to `Symbian::Stackless`'s `WorkerExecutor`, then rearm. The
 worker can call `SendFor`, `ReceiveFor`, or the `Symbian::Tls` owner. The
-[research service example](https://github.com/hpnkv/symbian-platform/tree/main/examples/agent_service)
+[development agent source](https://github.com/hpnkv/symbian-platform/tree/main/agent_service)
 shows the pattern with explicit loopback binding.
 
 The implementation keeps the original `RSocketServ`, `RSocket`, `TInetAddr`

@@ -1,5 +1,5 @@
 diff --git a/src/emu/drivers/src/graphics/backend/context_agl.mm b/src/emu/drivers/src/graphics/backend/context_agl.mm
-index cbd0a6b..613d72c 100644
+index cbd0a6b..d5edfe6 100644
 --- a/src/emu/drivers/src/graphics/backend/context_agl.mm
 +++ b/src/emu/drivers/src/graphics/backend/context_agl.mm
 @@ -3,6 +3,7 @@
@@ -22,8 +22,8 @@ index cbd0a6b..613d72c 100644
 +          [window setCollectionBehavior:(NSWindowCollectionBehaviorManaged |
 +                                         NSWindowCollectionBehaviorFullScreenNone |
 +                                         NSWindowCollectionBehaviorFullScreenDisallowsTiling)];
-+          // Keep a normal movable title bar. Ordering does not make the
-+          // window key, so the launching terminal or IDE retains focus.
++          // Keep a normal movable title bar. Ordering alone does not make
++          // the window key; Qt may still activate the application at launch.
 +          [window setMovable:YES];
 +          [window orderFront:nil];
 +        } else {
@@ -32,8 +32,13 @@ index cbd0a6b..613d72c 100644
        });
        return true;
      }
+@@ -137,4 +151,3 @@ static bool attach_context_to_view(NSOpenGLContext* context, NSView* view, std::
+       [m_context setValues:static_cast<const GLint*>(&interval) forParameter:NSOpenGLCPSwapInterval];
+     }
+ }
+-
 diff --git a/src/emu/qt/src/mainwindow.cpp b/src/emu/qt/src/mainwindow.cpp
-index 5e4005c..6de4c7d 100644
+index 5e4005c..ec85364 100644
 --- a/src/emu/qt/src/mainwindow.cpp
 +++ b/src/emu/qt/src/mainwindow.cpp
 @@ -71,12 +71,14 @@
@@ -51,12 +56,12 @@ index 5e4005c..6de4c7d 100644
  #include <QLineEdit>
  #include <QThreadPool>
  #include <QtConcurrent/QtConcurrent>
-@@ -1735,6 +1737,24 @@ void main_window::on_action_check_for_update_triggered() {
+@@ -1735,7 +1737,30 @@ void main_window::on_action_check_for_update_triggered() {
  }
  
  void main_window::load_and_show() {
-+    // SDK-owned test and Run sessions have a supervisor and should leave the
-+    // developer's terminal/IDE active when their window first appears.
++    // SDK-owned test and Run sessions have a supervisor. Avoid activating
++    // the window on the first Qt show while retaining later pointer focus.
 +    if (qEnvironmentVariable("EKA2L1_RESEARCH_BACKGROUND_WINDOW") == "1") {
 +        // A background macOS process has no usable application menu bar.
 +        // Keep every emulator menu in the window for tests and IDE sessions.
@@ -70,9 +75,22 @@ index 5e4005c..6de4c7d 100644
 +        move(screens[screen_index]->availableGeometry().topLeft() + QPoint(48, 48));
 +    }
      show();
++    // Suppress activation for the initial show only. Keeping this attribute
++    // set prevents a later user click from selecting the normal title bar.
++    if (qEnvironmentVariable("EKA2L1_RESEARCH_BACKGROUND_WINDOW") == "1") {
++        setAttribute(Qt::WA_ShowWithoutActivating, false);
++    }
 +    if (qEnvironmentVariable("SYMBIAN_CONSOLE_FOREGROUND_EMULATOR") == "1") {
 +        raise();
 +        activateWindow();
 +    }
      if (applist_) {
          applist_->request_reload();
+     }
+@@ -1947,4 +1972,4 @@ void main_window::question_dialog_open(const std::u16string &text, const std::u1
+     question_dialog_complete_callback_ = complete_callback;
+ 
+     emit question_dialog_open_request();
+-}
+\ No newline at end of file
++}

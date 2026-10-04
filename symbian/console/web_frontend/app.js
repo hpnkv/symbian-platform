@@ -97,7 +97,7 @@ const state = {
   firmwareInspections: {}, firmwareInspectionBusy: {}, firmwareInspectionErrors: {}, firmwareFileSearch: {},
   applicationOverview: null, applicationLoading: false, applicationError: "",
   agentProject: null, agentBusy: "", agentError: "", agentPackage: null,
-  agentOutcome: null, agentStaged: {},
+  agentOutcome: null, agentStaged: {}, agentObservations: {},
   applicationFirmware: null, applicationFirmwareBusy: false, applicationFirmwareError: "",
   applicationSelectedFirmware: "", applicationBusy: "", applicationAction: "", applicationOutcome: null, applicationBuildLog: "", applicationRunLog: "",
   usbTopologySignature: null, usbTopologyRevision: 0, usbContextRevision: 0,
@@ -260,6 +260,7 @@ function applyContext(snapshot, revision) {
   const changed = state.selectedDevice !== snapshot.selected_device;
   const previous = state.context;
   state.context = snapshot.context;
+  state.agentObservations = snapshot.agent_observations || {};
   state.selectedDevice = snapshot.selected_device || null;
   state.deviceStatus = snapshot.device_status || null;
   if (changed) {
@@ -722,11 +723,13 @@ function renderAgents() {
     const hasTransfer = (phone.capabilities || []).includes("stage-sis") || mtpCandidate;
     const canStage = hasTransfer && Boolean(state.agentPackage);
     const staged = state.agentStaged[phone.selector];
-    const stateLabel = staged ? "Package staged · installation unverified" : "Agent installation unknown";
+    const reported = state.agentObservations[phone.selector];
+    const stateLabel = reported ? "Running reported · live status unavailable" : staged ? "Package staged · installation unverified" : "Agent installation unknown";
     return `<section class="panel agent-card"><div class="agent-card-head"><span class="action-icon">${icon("phone")}</span><div><h2>${escapeHtml(phone.product)}</h2><p>${escapeHtml(phone.interface_profile)} · ${escapeHtml(phone.selector)}</p></div><span class="agent-badge">${escapeHtml(stateLabel)}</span></div>` +
-      `<p>USB discovery cannot check whether the agent is installed. An authenticated agent connection is required before this console can show a live status.</p>` +
-      `<ol><li>Build the agent package below.</li><li>Stage the SIS through PC Suite MTP or a writable USB storage volume.</li><li>Open the SIS in the phone's Installs folder and complete its installer prompts. Safely eject a mounted volume first.</li></ol>` +
+      (reported ? `<p>You reported seeing the agent running on this phone at ${escapeHtml(reported.reported_at)}. This is your observation, not a live check. The current phone build listens on its own loopback address, which this USB connection cannot reach.</p>` : `<p>USB discovery cannot check whether the agent is installed. The current phone build listens on its own loopback address, so this console has no authenticated live connection.</p>`) +
+      (!reported ? `<ol><li>Build the agent package below.</li><li>Stage the SIS through PC Suite MTP or a writable USB storage volume.</li><li>Open the SIS in the phone's Installs folder and complete its installer prompts. Safely eject a mounted volume first.</li></ol>` : "") +
       `<div class="agent-controls"><button class="button" data-agent-stage="${escapeHtml(phone.selector)}" ${canStage && !state.agentBusy ? "" : "disabled"}>${icon("upload")} Stage agent package</button>${!hasTransfer ? '<small>Connect in PC Suite mode or mount a writable USB storage volume.</small>' : !state.agentPackage ? '<small>Build a package first.</small>' : mtpCandidate && !(phone.capabilities || []).includes("stage-sis") ? '<small>The writable MTP Installs folder is checked before transfer.</small>' : ""}</div>` +
+      `<div class="agent-controls"><button class="button" data-agent-report="${escapeHtml(phone.selector)}" ${state.agentBusy ? "disabled" : ""}>${reported ? "Clear running report" : "I see the agent running"}</button><small>${reported ? "Clearing only changes this computer's record." : "Records your observation on this computer; no phone operation is sent."}</small></div>` +
       (staged ? `<p class="muted">${escapeHtml(staged.next_action || "Finish installation on the phone.")}</p>` : "") + `</section>`;
   }).join("");
   const build = `<section class="panel agent-build"><h2>Build the development agent</h2><p>Build an agent SIS for the current emulator profile. Physical-device compatibility and installation still need verification.</p>` +
@@ -772,6 +775,21 @@ async function stageAgent(selector) {
     appendActivity("Stage development agent SIS", "Awaiting phone installer", outcome);
     setWork("Ready");
   } catch (error) { state.agentError = String(error.message || error); setWork("Agent staging failed"); }
+  finally { state.agentBusy = ""; renderMain(); }
+}
+async function setAgentReport(selector) {
+  if (state.agentBusy) return;
+  const reported = Boolean(state.agentObservations[selector]);
+  state.agentBusy = "report"; state.agentError = ""; renderMain();
+  try {
+    if (reported) {
+      await window.pywebview.api.clear_agent_report(selector);
+      delete state.agentObservations[selector];
+    } else {
+      state.agentObservations[selector] = await window.pywebview.api.report_agent_running(selector);
+    }
+    appendActivity("Agent observation", reported ? "Local report cleared" : "Owner reported agent running");
+  } catch (error) { state.agentError = String(error.message || error); }
   finally { state.agentBusy = ""; renderMain(); }
 }
 function renderApplication() {
@@ -932,6 +950,7 @@ async function runApplicationAction(action) {
 function bindPage() {
   document.querySelector("[data-agent-build]")?.addEventListener("click", buildAgent);
   document.querySelectorAll("[data-agent-stage]").forEach(button => button.addEventListener("click", () => stageAgent(button.dataset.agentStage)));
+  document.querySelectorAll("[data-agent-report]").forEach(button => button.addEventListener("click", () => setAgentReport(button.dataset.agentReport)));
   document.getElementById("application-firmware")?.addEventListener("change", event => {
     state.applicationSelectedFirmware = event.target.value;
     renderMain();

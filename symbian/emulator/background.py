@@ -7,12 +7,11 @@ from symbian.status import Code, StatusError
 
 
 def background_environment() -> dict[str, str]:
-    """Returns both Qt and EKA settings for a nonactivating macOS launch."""
+    """Return the emulator setting for a movable macOS window."""
     if sys.platform != "darwin":
         return {}
     return {
         "EKA2L1_RESEARCH_BACKGROUND_WINDOW": "1",
-        "QT_MAC_DISABLE_FOREGROUND_APPLICATION_TRANSFORM": "1",
     }
 
 

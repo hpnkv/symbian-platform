@@ -25,23 +25,33 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
   set(SYMBIAN_RUNTIME_LOCALE_STREAM ON CACHE BOOL "" FORCE)
   add_subdirectory(cpp/symbian/runtime)
   # Give each probe its own target so an IDE uses the right local include
-  # directory and can report the source's project membership. Keep this list
-  # explicit: a new experiment needs a deliberate target/profile choice.
+  # directory and can report the source's project membership. Specialized
+  # profiles below retain their exact source and dependency choices.
   set(indexed_probe_directories
       abi_probe abseil_allocator_probe abseil_status_probe
       connectivity_probe cxx20_probe cxx20_module_probe dll_data_probe
       dll_lifecycle_probe dll_probe e32_probe import_probe
       mbedtls_dll_probe pointer_probe runtime_probe)
-  file(GLOB existing_probe_directories RELATIVE "${CMAKE_SOURCE_DIR}/examples"
+  file(GLOB existing_probe_directories CONFIGURE_DEPENDS
+       RELATIVE "${CMAKE_SOURCE_DIR}/examples"
        "${CMAKE_SOURCE_DIR}/examples/*_probe")
+  add_custom_target(symbian_probe_index)
   foreach(probe_directory IN LISTS existing_probe_directories)
     list(FIND indexed_probe_directories "${probe_directory}" probe_index)
     if(probe_index EQUAL -1)
-      message(FATAL_ERROR
-        "${probe_directory} has no ARM IDE indexing target; add its build rules")
+      set(probe_dir "${CMAKE_SOURCE_DIR}/examples/${probe_directory}")
+      file(GLOB probe_sources CONFIGURE_DEPENDS
+           "${probe_dir}/*.cc" "${probe_dir}/*.c" "${probe_dir}/*.S")
+      if(probe_sources)
+        add_library(symbian_index_${probe_directory} OBJECT EXCLUDE_FROM_ALL
+                    ${probe_sources})
+        target_link_libraries(symbian_index_${probe_directory} PRIVATE
+                              symbian_guest_runtime)
+        add_dependencies(symbian_probe_index
+                         symbian_index_${probe_directory})
+      endif()
     endif()
   endforeach()
-  add_custom_target(symbian_probe_index)
   foreach(probe IN ITEMS abi cxx20 dll_data dll_lifecycle dll e32 import
                          pointer runtime)
     set(probe_dir "${CMAKE_SOURCE_DIR}/examples/${probe}_probe")
@@ -140,6 +150,30 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
     "${CMAKE_SOURCE_DIR}/examples/runtime_probe/exception_contract.cc"
     "${CMAKE_SOURCE_DIR}/examples/runtime_probe/exception_metadata_contract.cc"
     PROPERTIES COMPILE_OPTIONS "-fexceptions;-frtti;-fno-pic")
+  # Registered applications own their actual CMake targets. Discover root
+  # projects and examples rather than adding an indexing rule per app.
+  file(GLOB application_manifests CONFIGURE_DEPENDS
+       "${CMAKE_SOURCE_DIR}/*/symbian.toml"
+       "${CMAKE_SOURCE_DIR}/examples/*/symbian.toml")
+  foreach(application_manifest IN LISTS application_manifests)
+    get_filename_component(application_dir "${application_manifest}" DIRECTORY)
+    if(EXISTS "${application_dir}/CMakeLists.txt")
+      file(READ "${application_manifest}" application_manifest_text)
+      if(NOT application_manifest_text MATCHES "\\[application\\]")
+        continue()
+      endif()
+      string(REGEX MATCHALL
+        "proxies/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+\\.dso"
+        application_proxy_paths "${application_manifest_text}")
+      set(SYMBIAN_IMPORT_PROXIES)
+      foreach(application_proxy IN LISTS application_proxy_paths)
+        list(APPEND SYMBIAN_IMPORT_PROXIES
+             "${SYMBIAN_SDK_PREFIX}/${application_proxy}")
+      endforeach()
+      list(REMOVE_DUPLICATES SYMBIAN_IMPORT_PROXIES)
+      add_subdirectory("${application_dir}" EXCLUDE_FROM_ALL)
+    endif()
+  endforeach()
   return()
 endif()
 

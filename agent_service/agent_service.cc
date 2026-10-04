@@ -1,7 +1,7 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
-// Manually started, loopback-only, emulator research agent. The bundled
-// certificate is a public test fixture and has no device security value.
+// Manually started, loopback-only development agent. The bundled certificate
+// is a public test fixture and has no physical-device security value.
 
 #include <algorithm>
 #include <array>
@@ -23,10 +23,12 @@
 #include "symbian/api/display/display.h"
 #include "symbian/api/system/counters.h"
 #include "symbian/concurrency/worker_executor.h"
+#include "symbian/native_status.h"
 
 extern "C" void ProbeStartScheduler();
 extern "C" void ProbeStopScheduler();
 extern "C" int AgentLocalUiMain(std::atomic<bool>* stop_requested);
+extern "C" int AgentRequestForeground();
 
 namespace {
 
@@ -230,7 +232,14 @@ extern "C" void AgentStopOnScheduler() {
 
 extern "C" int RunActiveProbe() {
   AgentService service;
-  if (!service.Start().ok()) {
+  absl::Status start = service.Start();
+  if (!start.ok()) {
+    // A second menu launch signals the resident instance. Other failures
+    // remain startup failures rather than silently claiming a live agent.
+    if (symbian::NativeErrorFromStatus(start) == -14 &&
+        AgentRequestForeground() == 0) {
+      return 0;
+    }
     return -301;
   }
   std::atomic<bool> stop_requested{false};

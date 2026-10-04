@@ -36,7 +36,7 @@ instructions; interactive Linux guest runs and debugging remain to be checked.
 | Runtime | Selected libc++, allocation, concurrency and device API paths | Bounded guest tests; [details](doc/docs/capabilities/index.md) |
 | Packaging | Native SIS writer, metadata inspection and disposable emulator installation | Phone installation remains a separate gate |
 | TLS | Vendored Mbed TLS 3.4.1 source, static targets and project-local CA bundle packaging | Authenticated TLS 1.2/1.3 passed in the emulator; physical-device trust and entropy remain open |
-| Development agent | Manually started, authenticated read-only status and bounded service logs | Loopback-only emulator profile; [run the example](doc/docs/guides/agent-emulator.md) |
+| Development agent | Manually started, authenticated read-only status and bounded service logs | Loopback-only emulator profile; [agent source](agent_service/) and [run guide](doc/docs/guides/agent-emulator.md) |
 | Tools | Python CLI, desktop console, firmware onboarding and emulator controls | Firmware is supplied separately |
 
 An **E32 image** is the executable or DLL format loaded by Symbian. A **SIS

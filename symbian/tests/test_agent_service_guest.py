@@ -39,11 +39,15 @@ pytestmark = pytest.mark.skipif(
 
 @pytest.fixture(scope="module")
 def service_image(tmp_path_factory):
-    """Builds the research service against a clean selected SDK."""
+    """Build the service against a clean selected SDK."""
     sdk = AppSdk.load(Path(os.environ["SYMBIAN_SDK_MANIFEST"]))
     output = tmp_path_factory.mktemp("agent-service")
     project = output / "project"
-    shutil.copytree(ROOT / "examples/agent_service", project)
+    shutil.copytree(
+        ROOT / "agent_service",
+        project,
+        ignore=shutil.ignore_patterns(".symbian"),
+    )
     presets = project / "CMakePresets.json"
     data = json.loads(presets.read_text())
     cache = data["configurePresets"][0]["cacheVariables"]

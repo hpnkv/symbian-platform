@@ -48,6 +48,11 @@ from symbian.console.web_frontend.models import (
     UsbInventoryItem,
     UsbTopology,
 )
+from symbian.device.agent_observation import (
+    clear_report,
+    read_for_devices,
+    report_running,
+)
 from symbian.device.connection import ConnectedDevice
 from symbian.project.layout import has_application_manifest
 from symbian.status import Code, Status, StatusException
@@ -105,10 +110,10 @@ class ConsoleWebBridge:
     def get_agent_project(self) -> dict[str, Any]:
         """Locate the SDK checkout's development agent project.
 
-        A packaged SDK may omit this example. The frontend must not invent a
+        A packaged SDK may omit this project. The frontend must not invent a
         deployable phone agent when its source is unavailable.
         """
-        project = Path(__file__).resolve().parents[3] / "examples/agent_service"
+        project = Path(__file__).resolve().parents[3] / "agent_service"
         with self._lock:
             manifest = self._context.sdk_manifest if self._context else None
         compiler = linker = None
@@ -126,6 +131,32 @@ class ConsoleWebBridge:
             "compiler": compiler,
             "linker": linker,
         }
+
+    def report_agent_running(self, selector: str) -> dict[str, Any]:
+        """Record a selected phone owner's observation, without USB claims."""
+        with self._lock:
+            device = next(
+                (item for item in self._devices if item.selector == selector),
+                None,
+            )
+        if device is None:
+            raise Status(
+                code=Code.NOT_FOUND, message="Selected phone is unavailable"
+            ).to_exception()
+        return report_running(device).model_dump(mode="json")
+
+    def clear_agent_report(self, selector: str) -> None:
+        """Forget a stale owner report for the selected phone."""
+        with self._lock:
+            device = next(
+                (item for item in self._devices if item.selector == selector),
+                None,
+            )
+        if device is None:
+            raise Status(
+                code=Code.NOT_FOUND, message="Selected phone is unavailable"
+            ).to_exception()
+        clear_report(device)
 
     def _call(self, coroutine: Any) -> Any:
         return self._worker.submit(lambda: asyncio.run(coroutine)).result()
@@ -199,7 +230,9 @@ class ConsoleWebBridge:
                 selected_device=selected,
                 device_status=self._status.view(),
             )
-        return snapshot.model_dump(mode="json")
+        result = snapshot.model_dump(mode="json")
+        result["agent_observations"] = read_for_devices(context.devices)
+        return result
 
     def get_application_overview(self) -> dict[str, Any]:
         """Read the selected application's identity and available artifact."""

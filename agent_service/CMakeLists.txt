@@ -19,13 +19,13 @@ foreach(required_target Symbian::Connectivity Symbian::Agent Symbian::Tls
   endif()
 endforeach()
 
-# This example is restricted to the pinned RM-807 emulator profile. The test
-# certificate and private key are public fixtures; never use them on a device.
-if(NOT SYMBIAN_EMULATOR_RM807_AGENT)
+# This service remains validated only in the pinned RM-807 emulator profile.
+# Its public TLS fixture is suitable only for loopback development sessions.
+if(NOT SYMBIAN_EMULATOR_RM807_AGENT AND NOT SYMBIAN_INDEX_GUEST_PROBES)
   message(FATAL_ERROR "Set SYMBIAN_EMULATOR_RM807_AGENT=ON for the emulator")
 endif()
 set(SYMBIAN_AGENT_TEST_CERTIFICATE_DIR
-  "${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/mbedtls-symbian/tests/fixtures"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/mbedtls-symbian/tests/fixtures"
   CACHE PATH "Public, emulator-only TLS fixture")
 set(fixture_dir "${SYMBIAN_AGENT_TEST_CERTIFICATE_DIR}")
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/agent_certificates.h" "")

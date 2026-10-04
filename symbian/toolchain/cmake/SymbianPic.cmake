@@ -17,6 +17,34 @@ function(symbian_add_import_executable target)
     message(FATAL_ERROR "Imported application requires SYMBIAN_IMPORT_PROXIES")
   endif()
   symbian_add_pic_executable(${target} ${ARGN})
+  # A registered application owns native sources in its source directory and
+  # conventional src/cpp/include trees. CMake tracks additions so new app
+  # files join the real guest target and IDE compile context automatically.
+  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/symbian.toml")
+    file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/symbian.toml"
+      app_section REGEX "^\\[application\\][ \t]*$")
+    if(app_section)
+      set(native_patterns "${CMAKE_CURRENT_SOURCE_DIR}/*")
+      file(GLOB native_top CONFIGURE_DEPENDS ${native_patterns})
+      set(native_files ${native_top})
+      foreach(source_tree IN ITEMS src cpp include)
+        if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${source_tree}")
+          file(GLOB_RECURSE native_tree CONFIGURE_DEPENDS
+            "${CMAKE_CURRENT_SOURCE_DIR}/${source_tree}/*")
+          list(APPEND native_files ${native_tree})
+        endif()
+      endforeach()
+      get_target_property(registered_sources ${target} SOURCES)
+      foreach(native_file IN LISTS native_files)
+        if(native_file MATCHES "\\.(c|cc|cpp|cxx|h|hh|hpp|hxx|S|s)$")
+          list(FIND registered_sources "${native_file}" source_index)
+          if(source_index EQUAL -1)
+            target_sources(${target} PRIVATE "${native_file}")
+          endif()
+        endif()
+      endforeach()
+    endif()
+  endif()
   # A project declares every proxy the converter may recognize. Only used
   # imports may become E32 DLL dependencies, including on older firmware.
   target_link_options(${target} PRIVATE --hash-style=sysv --no-dynamic-linker

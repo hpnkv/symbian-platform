@@ -7,7 +7,14 @@ from types import SimpleNamespace
 import pytest
 
 from symbian.cli.__main__ import _parser
-from symbian.device import at, connection, installation, mode, mtp
+from symbian.device import (
+    agent_observation,
+    at,
+    connection,
+    installation,
+    mode,
+    mtp,
+)
 from symbian.device.linux import discover_linux
 from symbian.device.policy import policy
 from symbian.status import Code, StatusError
@@ -185,6 +192,26 @@ def test_pc_suite_mtp_staging_uses_reusable_device_api(monkeypatch, tmp_path):
     assert calls[0][0] == phone
     assert calls[0][2].endswith(".sis")
     assert calls[0][3] == result["sha256"]
+
+
+def test_agent_running_report_is_user_evidence_bound_to_serial(tmp_path):
+    phone = connection.discover_from_registry(_tree(), lambda _: {})[0]
+    path = tmp_path / "observations.json"
+    report = agent_observation.report_running(phone, path)
+    assert report.state == "running-reported"
+    assert (
+        agent_observation.read_for_devices((phone,), path)[phone.selector][
+            "reported_at"
+        ]
+        == report.reported_at
+    )
+    switched = phone.model_copy(update={"selector": "usb:changed-mode"})
+    assert "usb:changed-mode" in agent_observation.read_for_devices(
+        (switched,), path
+    )
+    assert "private-phone-serial" not in path.read_text()
+    agent_observation.clear_report(switched, path)
+    assert agent_observation.read_for_devices((phone,), path) == {}
 
 
 def test_staging_rejects_missing_volume(monkeypatch, tmp_path):

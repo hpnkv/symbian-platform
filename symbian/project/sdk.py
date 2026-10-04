@@ -813,6 +813,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             "_ZN6RTimer5AfterER14TRequestStatus27TTimeIntervalMicroSeconds32",
         ]
         ws32 = gui["imports"]["ws32.dll"]["symbols"] + [
+            "_ZN12RWindowGroup7SetNameERK7TDesC16",
             "_ZN15CWsScreenDevice11ReleaseFontEP5CFont",
             "_ZN15CWsScreenDevice35GetNearestFontToDesignHeightInTwipsERP5CFontRK9TFontSpec",
             "_ZNK15CWsScreenDevice12SizeInPixelsEv",
