@@ -167,6 +167,56 @@ if (!navigation.innerHTML.includes('data:image/png;base64,AA==')) {
     assert result.returncode == 0, result.stderr
 
 
+def test_device_navigation_and_agent_overview_are_evidence_bounded() -> None:
+    """A connected phone is visible without claiming agent installation."""
+    if not shutil.which("node"):
+        pytest.skip("Node.js is needed for the frontend render check")
+    script = """
+const fs = require('fs');
+const vm = require('vm');
+const navigation = {innerHTML: ''};
+const context = vm.createContext({
+  document: {getElementById: () => navigation, querySelectorAll: () => []},
+  window: {addEventListener: () => {}},
+});
+vm.runInContext(
+  fs.readFileSync('symbian/console/web_frontend/app.js', 'utf8'), context
+);
+vm.runInContext(`
+  state.context = {sdk_manifest: '/sdk/sdk.json', devices: [{
+    selector: 'usb:808', product: '808 PureView', manufacturer: 'Nokia',
+    vendor_id: 1057, product_id: 1489, interface_profile: 'mass storage',
+    capabilities: ['inspect-usb', 'stage-sis']
+  }]};
+  state.agentProject = {
+    project: '/tmp/agent_service', compiler: '/sdk/bin/clang++',
+    linker: '/sdk/bin/ld.lld'
+  };
+  renderNavigation();
+`, context);
+if (!navigation.innerHTML.includes('data-nav-device="usb:808"')) {
+  process.exit(1);
+}
+if (!navigation.innerHTML.includes('Development Agents')) process.exit(2);
+let html = vm.runInContext('renderAgents()', context);
+if (!html.includes('Agent installation unknown')) process.exit(3);
+if (!html.includes('Build research SIS')) process.exit(4);
+if (!html.includes('data-agent-stage="usb:808" disabled')) process.exit(5);
+vm.runInContext("state.agentPackage = '/tmp/agent_service.sis'", context);
+html = vm.runInContext('renderAgents()', context);
+if (html.includes('data-agent-stage="usb:808" disabled')) process.exit(6);
+if (html.includes('Agent installed')) process.exit(7);
+"""
+    result = subprocess.run(
+        ["node", "-e", script],
+        cwd=Path(__file__).resolve().parents[2],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
 def test_firmware_default_and_compact_usb_interfaces() -> None:
     """The connected model wins by default and interface details stay brief."""
     if not shutil.which("node"):

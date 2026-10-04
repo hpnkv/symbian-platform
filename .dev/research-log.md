@@ -1,5 +1,14 @@
 # Research log
 
+2026-10-04: The console can enumerate USB candidates and safely stage a
+digest-checked SIS on writable phone storage, but it has no authenticated
+device-agent discovery or installation query. The new overview therefore
+shows `installation unknown` even after staging. Open question: which paired
+transport and guest identity mechanism will let the console associate a live
+agent status with a USB device without conflating physical and emulator
+profiles? The local UI experiment currently builds/packages but has not
+passed guest runtime; no physical-device status is inferred from this build.
+
 2026-10-04: The first bounded ring had sequence/code only, so events from one
 live process lacked timing and severity context. A steady clock already used
 for the service's control deadline now stamps append time as microseconds

@@ -1,6 +1,7 @@
 """Thread-safe pywebview bridge to the typed in-memory console client."""
 
 import asyncio
+import json
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -100,6 +101,31 @@ class ConsoleWebBridge:
             if self._initial_application
             else "applications"
         )
+
+    def get_agent_project(self) -> dict[str, Any]:
+        """Locate the SDK checkout's emulator research agent project.
+
+        A packaged SDK may omit this example. The frontend must not invent a
+        deployable phone agent when its source is unavailable.
+        """
+        project = Path(__file__).resolve().parents[3] / "examples/agent_service"
+        with self._lock:
+            manifest = self._context.sdk_manifest if self._context else None
+        compiler = linker = None
+        if manifest:
+            try:
+                sdk = json.loads(Path(manifest).read_text(encoding="utf-8"))
+                compiler, linker = sdk.get("compiler"), sdk.get("linker")
+            except (OSError, ValueError):
+                pass
+        return {
+            "project": (
+                str(project) if (project / "symbian.toml").is_file() else None
+            ),
+            "profile": "emulator-research",
+            "compiler": compiler,
+            "linker": linker,
+        }
 
     def _call(self, coroutine: Any) -> Any:
         return self._worker.submit(lambda: asyncio.run(coroutine)).result()

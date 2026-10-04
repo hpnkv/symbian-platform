@@ -123,6 +123,19 @@ button:disabled { cursor: default; opacity: .52; }
 .application-operations .button { margin-top: 10px; }
 .application-operations .button svg { width: 16px; height: 16px; stroke-width: 1.8; }
 .application-operations small, .application-operations .muted { display: block; color: var(--muted); font-size: 11px; margin-top: 5px; }
+.agent-build, .agent-card { padding: 21px 24px; margin-bottom: 13px; }
+.agent-build h2, .agent-card h2 { margin: 0 0 5px; font-size: 17px; }
+.agent-build p, .agent-card p { color: var(--muted); margin: 5px 0 14px; }
+.agent-build .data-row { margin-top: 15px; }
+.agent-section-title { font-size: 16px; margin: 25px 0 12px; }
+.agent-card-head { display: flex; align-items: center; gap: 12px; }
+.agent-card-head > div { flex: 1; min-width: 0; }
+.agent-card-head p { font-size: 12px; margin: 0; overflow-wrap: anywhere; }
+.agent-badge { flex: 0 0 auto; padding: 5px 8px; border-radius: 20px; background: #fff4dd; color: #805511; font-size: 11px; font-weight: 650; }
+.agent-card ol { margin: 0 0 16px; padding-left: 22px; color: var(--muted); }
+.agent-card li { margin: 4px 0; }
+.agent-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.agent-controls small { color: var(--muted); }
 .application-operations .inline-alert { display: block; margin-top: 8px; }
 .task-panel { padding: 24px 27px 25px; }
 .task-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 21px; }

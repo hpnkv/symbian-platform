@@ -59,6 +59,20 @@ display snapshot, or to `logs` for a page of service-local events. Use
 [protocol reference](../reference/agent-protocol.md) describes each field and
 its limit.
 
+## Prepare a SIS in the desktop console
+
+Open `symbian console` and choose **Development Agents**. With an active SDK
+selected, **Build research SIS** compiles and packages this example. A
+connected USB phone appears both beneath **Devices** in the sidebar and as a
+card in **Development Agents**. If the phone exposes a writable storage volume,
+**Stage SIS on device** copies the verified package to its `Installs` folder.
+Safely eject the volume and complete the installer prompts on the phone.
+
+The card continues to say that installation is **unknown** or **unverified**.
+USB detection and SIS staging cannot establish that the service installed or
+started. This research package has only passed emulator tests and is not a
+validated Nokia 808 release.
+
 ## Stop and inspect
 
 Press **Ctrl-C** in the first terminal. The launcher reaps only the emulator

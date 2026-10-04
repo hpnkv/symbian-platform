@@ -1,5 +1,18 @@
 # Status
 
+2026-10-04 desktop console device and agent navigation: connected USB
+candidates now appear as child entries under Devices. Development Agents has
+one card per candidate, a build/package control using the selected SDK, and a
+SIS staging control enabled only for a volume with `stage-sis` capability.
+The card says installation is unknown until an authenticated agent status
+transport exists, and records staging separately from handset installation.
+The research agent project built and packaged with the active SDK; the
+package command returned `OK` and SHA-256
+`c61365ba47103cd9bdf6983ea86e3e5d7a1b8b1be6913cc50116325cbdfbe5a9`.
+Frontend syntax and 14 web frontend Pytests passed. The built package includes
+an unverified local UI experiment and was not run on a phone; the earlier
+emulator evidence applies only to the preceding committed agent service.
+
 2026-10-04 structured resident event metadata: `AgentLogRing` now stamps
 each fixed record with numeric debug/information/warning severity and a
 nondecreasing, process-relative steady-clock microsecond count. The guest

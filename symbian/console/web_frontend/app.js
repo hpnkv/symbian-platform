@@ -9,6 +9,7 @@ const pageInfo = {
   sdk_inspection: ["Artifact inspection", "Examine and verify native outputs."],
   sdk_preservation: ["Preservation", "Create and verify local preservation records."],
   device_actions: ["Device actions", "Inspect phones and stage applications with guided steps."],
+  development_agents: ["Development Agents", "Build the research agent and prepare a connected phone."],
   usb: ["USB inspector", "Explore host descriptors and interpreted phone interfaces."],
   protocols: ["Device protocols", "Read phone information through bounded native protocol probes."],
   activity: ["Activity", "Requests completed during this local console session."],
@@ -44,6 +45,7 @@ const navSections = [
   ["emulator", "Emulator", "screen"],
   ["sdk_setup", "SDK tools", "tools"],
   ["device_actions", "Devices", "phone"],
+  ["development_agents", "Development Agents", "connection"],
   ["activity", "Activity", "clock"],
 ];
 const subpages = {
@@ -94,6 +96,8 @@ const state = {
   firmwareSelection: null, firmwareManuallySelected: false, firmwareSearch: "", inspectorAdvanced: {},
   firmwareInspections: {}, firmwareInspectionBusy: {}, firmwareInspectionErrors: {}, firmwareFileSearch: {},
   applicationOverview: null, applicationLoading: false, applicationError: "",
+  agentProject: null, agentBusy: "", agentError: "", agentPackage: null,
+  agentOutcome: null, agentStaged: {},
   applicationFirmware: null, applicationFirmwareBusy: false, applicationFirmwareError: "",
   applicationSelectedFirmware: "", applicationBusy: "", applicationAction: "", applicationOutcome: null, applicationBuildLog: "", applicationRunLog: "",
   usbTopologySignature: null, usbTopologyRevision: 0, usbContextRevision: 0,
@@ -171,7 +175,8 @@ function setPage(page) {
     loadApplication(true);
     loadApplicationFirmware(true);
   }
-  if (["device_actions", "usb", "protocols"].includes(page)) refreshContext();
+  if (["device_actions", "usb", "protocols", "development_agents"].includes(page)) refreshContext();
+  if (page === "development_agents") loadAgentProject();
 }
 function renderNavigation() {
   const group = pageGroup(state.page);
@@ -183,9 +188,14 @@ function renderNavigation() {
       const appIcon = image ? `<img src="${escapeHtml(image)}" alt="">` : icon("file");
       const application = key === "applications" && state.context?.project
         ? `<button class="nav-subitem ${state.page === "application_detail" ? "active" : ""}" data-page="application_detail" title="${escapeHtml(state.context.project)}">${appIcon}<span>${escapeHtml(state.context.project.split(/[\\/]/).filter(Boolean).pop())}</span></button>` : "";
-      return `<button class="nav-item ${active ? "active" : ""}" data-page="${key}" ${active ? 'aria-current="page"' : ""}>${icon(symbol)}<span>${label}</span></button>${application}`;
+      const devices = key === "device_actions" ? (state.context?.devices || []).map(device =>
+        `<button class="nav-subitem ${state.selectedDevice === device.selector && state.page === "device_actions" ? "active" : ""}" data-nav-device="${escapeHtml(device.selector)}" title="${escapeHtml(deviceName(device))}">${icon("phone")}<span>${escapeHtml(device.product)}</span></button>`).join("") : "";
+      return `<button class="nav-item ${active ? "active" : ""}" data-page="${key}" ${active ? 'aria-current="page"' : ""}>${icon(symbol)}<span>${label}</span></button>${application}${devices}`;
     }).join("");
   document.querySelectorAll("[data-page]").forEach(button => button.addEventListener("click", () => setPage(button.dataset.page)));
+  document.querySelectorAll("[data-nav-device]").forEach(button => button.addEventListener("click", async () => {
+    await selectPhone(button.dataset.navDevice); setPage("device_actions");
+  }));
 }
 function renderSelection() {
   const context = state.context;
@@ -259,6 +269,7 @@ function applyContext(snapshot, revision) {
   state.usbContextRevision = revision;
   if (revision === state.usbTopologyRevision) state.topologyMissingSelected = selectedPhoneMissing();
   renderSelection(); renderStatus();
+  renderNavigation();
   const hostChanged = ["workspace", "project", "sdk_manifest", "firmware_store"].some(name => previous?.[name] !== snapshot.context[name]);
   if (changed || hostChanged) {
     state.defaults = {};
@@ -274,7 +285,8 @@ function applyContext(snapshot, revision) {
       if (state.page === "application_detail") loadApplicationFirmware();
     }
     if (selectedTask()) fetchDefaults(selectedTask());
-    if (["device_actions", "usb", "protocols", "application_detail"].includes(state.page)) renderMain();
+    if (previous?.sdk_manifest !== snapshot.context.sdk_manifest && state.page === "development_agents") loadAgentProject();
+    if (["device_actions", "usb", "protocols", "application_detail", "development_agents"].includes(state.page)) renderMain();
   }
 }
 function selectedPhoneMissing() {
@@ -328,7 +340,7 @@ async function selectPhone(selector) {
   selectFirmwareForPhone(state.outcomes["firmware list"]?.firmware_library?.objects || []);
   try { state.deviceStatus = await window.pywebview.api.select_device(selector); }
   catch (error) { setWork(String(error.message || error)); }
-  renderSelection(); renderStatus(); renderMain();
+  renderSelection(); renderNavigation(); renderStatus(); renderMain();
   if (selectedTask()) fetchDefaults(selectedTask());
 }
 function mainHeader(title, description) {
@@ -342,6 +354,7 @@ function renderMain() {
   let body;
   if (state.page === "usb") body = renderUsb();
   else if (state.page === "application_detail") body = renderApplication();
+  else if (state.page === "development_agents") body = renderAgents();
   else if (state.page === "protocols") body = renderProtocols();
   else if (state.page === "activity") body = renderActivity();
   else body = renderActions();
@@ -688,6 +701,70 @@ function renderActivity() {
   const rows = state.activity.map(entry => `<tr><td>${escapeHtml(entry.time)}</td><td>${escapeHtml(entry.action)}</td><td>${escapeHtml(entry.outcome)}</td></tr>`).join("");
   return mainHeader(title, description) + `<div class="panel table-panel"><div class="table-scroll"><table class="data-table"><thead><tr><th>Time</th><th>Action</th><th>Outcome</th></tr></thead><tbody>${rows || '<tr><td colspan="3">No requests in this session yet.</td></tr>'}</tbody></table></div></div>`;
 }
+async function loadAgentProject() {
+  try { state.agentProject = await window.pywebview.api.get_agent_project(); }
+  catch (error) { state.agentError = String(error.message || error); }
+  if (state.page === "development_agents") renderMain();
+}
+function renderAgents() {
+  const phones = state.context?.devices || [];
+  const project = state.agentProject?.project;
+  const available = Boolean(project && state.agentProject?.compiler && state.agentProject?.linker);
+  const cards = phones.map(phone => {
+    const canStage = (phone.capabilities || []).includes("stage-sis") && Boolean(state.agentPackage);
+    const staged = state.agentStaged[phone.selector];
+    const stateLabel = staged ? "Package staged · installation unverified" : "Agent installation unknown";
+    return `<section class="panel agent-card"><div class="agent-card-head"><span class="action-icon">${icon("phone")}</span><div><h2>${escapeHtml(phone.product)}</h2><p>${escapeHtml(phone.interface_profile)} · ${escapeHtml(phone.selector)}</p></div><span class="agent-badge">${escapeHtml(stateLabel)}</span></div>` +
+      `<p>USB discovery cannot check whether the agent is installed. An authenticated agent connection is required before this console can show a live status.</p>` +
+      `<ol><li>Build the research package below.</li><li>Use a writable phone storage volume to stage the SIS.</li><li>Safely eject the volume and open the SIS on the phone. Complete its installer prompts.</li></ol>` +
+      `<div class="agent-controls"><button class="button" data-agent-stage="${escapeHtml(phone.selector)}" ${canStage && !state.agentBusy ? "" : "disabled"}>${icon("upload")} Stage SIS on device</button>${!((phone.capabilities || []).includes("stage-sis")) ? '<small>A writable, verified USB storage volume is required.</small>' : !state.agentPackage ? '<small>Build a package first.</small>' : ""}</div>` +
+      (staged ? `<p class="muted">${escapeHtml(staged.next_action || "Finish installation on the phone.")}</p>` : "") + `</section>`;
+  }).join("");
+  const build = `<section class="panel agent-build"><h2>Build the development agent</h2><p>The current source is an emulator research service. Its package has not passed physical-device compatibility or installation checks.</p>` +
+    `<button class="button primary" data-agent-build ${available && !state.agentBusy ? "" : "disabled"}>${icon("build")} ${state.agentBusy === "build" ? "Building…" : "Build research SIS"}</button>` +
+    (!project ? '<p class="muted">The agent source project is unavailable in this SDK installation.</p>' : !available ? '<p class="muted">Select an active SDK in the sidebar to build.</p>' : "") +
+    (state.agentPackage ? `<div class="data-row"><span>Prepared SIS</span><span>${escapeHtml(state.agentPackage.split(/[\\/]/).pop())}</span></div>` : "") + `</section>`;
+  return mainHeader("Development Agents", "Prepare the resident agent and inspect its state on connected devices.") +
+    (state.agentError ? `<div class="inline-alert">${escapeHtml(state.agentError)}</div>` : "") +
+    build + `<h2 class="agent-section-title">Connected devices</h2>` +
+    (cards || '<div class="panel empty-library">Connect a supported phone to see its installation steps.</div>') +
+    (state.agentOutcome ? renderOutcome(state.agentOutcome, "agent-action") : "");
+}
+async function buildAgent() {
+  const project = state.agentProject?.project;
+  if (!project || state.agentBusy) return;
+  state.agentBusy = "build"; state.agentError = ""; state.agentPackage = null;
+  setWork("Building development agent…"); renderMain();
+  try {
+    const built = await window.pywebview.api.run_form({path: ["build"], values: {
+      project, output: `${project}/.symbian/build`, compiler: state.agentProject.compiler, linker: state.agentProject.linker,
+    }});
+    const artifact = built.result?.result?.artifact;
+    if (!artifact) throw new Error("Build completed without an executable artifact");
+    const packaged = await window.pywebview.api.run_form({path: ["package"], values: {project, artifact, output: `${project}/.symbian/package`}});
+    const packagePath = packaged.result?.result?.artifact;
+    if (!packagePath) throw new Error("Packaging completed without a SIS artifact");
+    state.agentPackage = packagePath; state.agentOutcome = packaged;
+    appendActivity("Build development agent", "Research SIS prepared", packaged);
+    setWork("Ready");
+  } catch (error) { state.agentError = String(error.message || error); setWork("Agent build failed"); }
+  finally { state.agentBusy = ""; renderMain(); }
+}
+async function stageAgent(selector) {
+  if (!state.agentPackage || state.agentBusy) return;
+  state.agentBusy = "stage"; state.agentError = "";
+  setWork("Staging development agent SIS…"); renderMain();
+  try {
+    const outcome = await window.pywebview.api.run_form({path: ["device", "install"], values: {
+      project: state.agentProject.project, device: selector, package: state.agentPackage,
+    }});
+    state.agentStaged[selector] = outcome.result?.result || {};
+    state.agentOutcome = outcome;
+    appendActivity("Stage development agent SIS", "Awaiting phone installer", outcome);
+    setWork("Ready");
+  } catch (error) { state.agentError = String(error.message || error); setWork("Agent staging failed"); }
+  finally { state.agentBusy = ""; renderMain(); }
+}
 function renderApplication() {
   const project = state.context?.project;
   if (!project) return state.initialApplicationView && !state.context
@@ -844,6 +921,8 @@ async function runApplicationAction(action) {
   }
 }
 function bindPage() {
+  document.querySelector("[data-agent-build]")?.addEventListener("click", buildAgent);
+  document.querySelectorAll("[data-agent-stage]").forEach(button => button.addEventListener("click", () => stageAgent(button.dataset.agentStage)));
   document.getElementById("application-firmware")?.addEventListener("change", event => {
     state.applicationSelectedFirmware = event.target.value;
     renderMain();
