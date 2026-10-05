@@ -7,6 +7,7 @@ import platform
 import re
 import shutil
 import subprocess
+from importlib.metadata import distributions
 from pathlib import Path
 
 from check_native_sdk import write_example
@@ -72,7 +73,34 @@ class Closure:
                 for file in notices:
                     shutil.copy2(file, destination / file.name)
                 break
-        if not self.macos and str(original).startswith(("/usr/", "/lib/")):
+        if "site-packages" in original.parts:
+            for distribution in distributions():
+                files = distribution.files or ()
+                if not any(
+                    distribution.locate_file(file).resolve() == original
+                    for file in files
+                ):
+                    continue
+                destination = (
+                    self.output
+                    / "licenses/tools"
+                    / distribution.metadata["Name"]
+                )
+                for file in files:
+                    if "licenses" in file.parts:
+                        destination.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(
+                            distribution.locate_file(file),
+                            destination / file.name,
+                        )
+                if not destination.exists():
+                    raise RuntimeError(f"No installed tool license: {original}")
+                break
+        if (
+            not self.macos
+            and str(original).startswith(("/usr/", "/lib/"))
+            and "site-packages" not in original.parts
+        ):
             # Debian's copyright file includes the applicable source notices
             # for packaged tools and the shared libraries we redistribute.
             query = subprocess.run(
@@ -202,6 +230,14 @@ def bundle(args: argparse.Namespace) -> None:
     # target payloads must never retain those external-host dependencies.
     shutil.rmtree(output / "lib/host", ignore_errors=True)
     shutil.rmtree(output / "lib/python", ignore_errors=True)
+    # Proxy build reports and temporary build trees are unnecessary at install
+    # time. Keep the ordinal transport files; their notices remain in licenses.
+    for directory in (output / "proxies").iterdir():
+        for item in directory.iterdir():
+            if item.is_dir():
+                shutil.rmtree(item)
+            elif item.suffix != ".dso":
+                item.unlink()
     shutil.copytree(args.host, output / "host", symlinks=True)
     (output / "bin").mkdir(exist_ok=True)
     closure = Closure(output)

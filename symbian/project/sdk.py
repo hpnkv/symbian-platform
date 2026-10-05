@@ -1322,6 +1322,9 @@ def prepare(
         )
         shutil.copyfile(libcxx / "LICENSE.TXT", licenses / "LLVM-libcxx.txt")
         shutil.copyfile(
+            source / "llvm-project/LICENSE.TXT", licenses / "LLVM-tools.txt"
+        )
+        shutil.copyfile(
             workspace / "research/upstream/abseil-cpp/LICENSE",
             licenses / "Abseil-Apache-2.0.txt",
         )

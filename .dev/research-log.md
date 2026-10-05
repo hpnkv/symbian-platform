@@ -5901,3 +5901,24 @@ Archive installation from a fresh configuration and unsafe archive rejection
 now pass regression tests (9 passed, 16 fixture-dependent skips). Remaining:
 release source acquisition, four-host tool closure/relocation CI, publication,
 clean installed-wheel guide acceptance, and full EKA1 runtime coverage.
+
+## Native release build graph — 2026-10-05
+
+Added native-sdk.yml: acquire pinned public source and compile the EKA2 ARMv5T
+and ARMv6 runtime/API/TLS payload once on Linux, then reuse it for macOS/Linux
+x86_64/arm64 assembly. Host SDKs and exact-source CPython 3.12 wheels come from
+the existing tested host build. Guest export omits the redundant host primitive
+build. Cache keys cover the actual build inputs. Linux compiler archives and ICU
+packages have fixed SHA-256 inputs; only required LLVM tools/resource headers
+are extracted. Each host builds the resource tools once, gathers required
+licenses, runs relocated ARM GUI E32 builds, and loads the relative SDK manifest
+through its installed wheel. Proxy build reports/trees and Python payloads are
+excluded from native distributions.
+
+The release gate now requires all four native archives as well as the existing
+host archives, wheels, sdist and source archive (six gate regressions pass).
+Actionlint passes. Local source-pin/patch replay passed against the existing
+prepared inputs; Linux x86_64 assembly with Debian and ICU license closure passed
+both ARM build checks again. Clean Actions source acquisition and all four host
+assembly jobs still need execution. VERSION advances to 0.1.1 because the PyPI
+0.1.0 wheels cannot be overwritten with the relative-manifest/archive installer.

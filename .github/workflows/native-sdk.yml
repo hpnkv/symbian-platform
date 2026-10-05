@@ -1,0 +1,177 @@
+# Build the ARM payload once, then assemble and test its four native hosts.
+name: Native SDK
+on:
+  workflow_call:
+    inputs:
+      host_run_id:
+        description: Existing exact-commit host SDK run; empty uses this run
+        type: string
+        default: ""
+  workflow_dispatch:
+    inputs:
+      host_run_id:
+        description: Successful Host SDK run for this exact source commit
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+jobs:
+  guest:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify reused host source commit
+        if: inputs.host_run_id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HOST_RUN_ID: ${{ inputs.host_run_id }}
+        run: |
+          test "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$HOST_RUN_ID" --jq .head_sha)" = "$GITHUB_SHA"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$HOST_RUN_ID" --jq .conclusion)" = success
+          test "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$HOST_RUN_ID" --jq .path)" = .github/workflows/host-sdk.yml
+      - uses: actions/cache@v4
+        id: guest
+        with:
+          path: ${{ runner.temp }}/native-guest
+          key: native-guest-v1-${{ hashFiles('cpp/**', 'symbian/**', 'third_party/**', 'research/gui_app/source-profile.json', 'research/llvm/**', 'scripts/prepare_native_sources.py', 'scripts/build_native_guest.py') }}
+      - uses: actions/download-artifact@v4
+        if: steps.guest.outputs.cache-hit != 'true'
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.host_run_id || github.run_id }}
+          name: wheels-linux-x86_64
+          path: wheelhouse
+      - name: Install build prerequisites and exact-source host wheel
+        if: steps.guest.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zstd
+          python -m pip install wheelhouse/*cp312* 'cmake>=3.28,<5' 'ninja>=1.12,<2'
+      - uses: actions/cache@v4
+        if: steps.guest.outputs.cache-hit != 'true'
+        with:
+          path: ${{ runner.temp }}/native-llvm
+          key: native-llvm-linux-x86_64-${{ hashFiles('scripts/bootstrap_native_tools.py') }}
+      - name: Acquire pinned compiler
+        if: steps.guest.outputs.cache-hit != 'true'
+        run: python scripts/bootstrap_native_tools.py --arch x86_64 --output "${{ runner.temp }}/native-llvm"
+      - name: Acquire pinned public source and build both ARM targets
+        if: steps.guest.outputs.cache-hit != 'true'
+        run: |
+          echo "$SYMBIAN_LLVM_BIN" >> "$GITHUB_PATH"
+          export PATH="$SYMBIAN_LLVM_BIN:$PATH"
+          python scripts/prepare_native_sources.py --workspace "$PWD"
+          python scripts/build_native_guest.py --workspace "$PWD" --output "${{ runner.temp }}/native-guest"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-guest
+          path: ${{ runner.temp }}/native-guest
+          if-no-files-found: error
+  assemble:
+    needs: guest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            platform: linux
+            arch: aarch64
+          - runner: macos-15-intel
+            platform: macos
+            arch: x86_64
+          - runner: macos-15
+            platform: macos
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-guest
+          path: guest
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.host_run_id || github.run_id }}
+          name: host-sdk-${{ matrix.platform }}-${{ matrix.arch }}
+          path: host-archive
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.host_run_id || github.run_id }}
+          name: wheels-${{ matrix.platform }}-${{ matrix.arch }}
+          path: wheelhouse
+      - name: Install exact-source wheel and unpack tested host SDK
+        run: |
+          python -m pip install wheelhouse/*cp312*
+          mkdir host
+          tar -xzf host-archive/*.tar.gz -C host
+      - name: Install macOS build tools
+        if: runner.os == 'macOS'
+        run: |
+          brew install llvm lld cmake ninja
+          echo "SYMBIAN_LLVM_BIN=$(brew --prefix llvm)/bin" >> "$GITHUB_ENV"
+      - name: Install Linux build prerequisites
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build patchelf zstd
+          python -m pip install 'ninja>=1.12,<2'
+      - uses: actions/cache@v4
+        if: runner.os == 'Linux'
+        with:
+          path: ${{ runner.temp }}/native-llvm
+          key: native-llvm-linux-${{ matrix.arch }}-${{ hashFiles('scripts/bootstrap_native_tools.py') }}
+      - name: Acquire pinned Linux compiler
+        if: runner.os == 'Linux'
+        run: python scripts/bootstrap_native_tools.py --arch "${{ matrix.arch }}" --output "${{ runner.temp }}/native-llvm"
+      - name: Build resource tools
+        run: |
+          python scripts/prepare_native_sources.py --workspace "$PWD" --resources-only
+          python scripts/build_native_resources.py --workspace "$PWD" --output resources
+      - name: Assemble native SDK with complete tool dependency closure
+        shell: bash
+        env:
+          SDK_PLATFORM: ${{ matrix.platform }}
+          SDK_ARCH: ${{ matrix.arch }}
+        run: |
+          args=()
+          if [[ "$SDK_PLATFORM" == macos ]]; then
+            args+=(--lld "$(brew --prefix lld)/bin/ld.lld"
+                   --cmake "$(brew --prefix cmake)" --ninja "$(command -v ninja)")
+          else
+            cmake_prefix=$(python -c 'import cmake; print(cmake.CMAKE_DATA)' 2>/dev/null || echo /usr)
+            # PyPI Ninja installs its actual executable inside the package.
+            ninja_binary=$(python -c 'import ninja; print(ninja.BIN_DIR + "/ninja")')
+            args+=(--cmake "$cmake_prefix" --ninja "$ninja_binary"
+                   --license "${{ runner.temp }}/native-llvm/icu/usr/share/doc/libicu70")
+          fi
+          python scripts/bundle_native_sdk.py --guest guest --host host \
+            --llvm "$SYMBIAN_LLVM_BIN" --resources resources/bin \
+            --output sdk "${args[@]}"
+          python scripts/check_native_sdk.py sdk
+          # Use the installed wheel to select and consume the relative manifest.
+          cd "${{ runner.temp }}"
+          SYMBIAN_APP_SDK="$GITHUB_WORKSPACE/sdk/sdk.json" python -c \
+            'from pathlib import Path; from symbian.project.sdk import AppSdk; print(AppSdk.load(Path(__import__("os").environ["SYMBIAN_APP_SDK"])))'
+          cd "$GITHUB_WORKSPACE"
+          version=$(cat VERSION)
+          mkdir release-assets
+          tar -C sdk -czf "release-assets/symbian-sdk-$version-$SDK_PLATFORM-$SDK_ARCH.tar.gz" .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-sdk-${{ matrix.platform }}-${{ matrix.arch }}
+          path: release-assets/symbian-sdk-*.tar.gz
+          if-no-files-found: error

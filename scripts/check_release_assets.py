@@ -56,12 +56,53 @@ def check(dist: Path, assets: Path, version: str) -> None:
             "./share/symbian/LICENSE",
             "./share/symbian/VERSION",
         )
+        archives[assets / f"symbian-sdk-{version}-{system}-{arch}.tar.gz"] = (
+            "./VERSION",
+            "./sdk.json",
+            "./bin/clang++",
+            "./bin/ld.lld",
+            "./bin/llvm-ar",
+            "./bin/llvm-ranlib",
+            "./bin/clang-scan-deps",
+            "./bin/symbian-native",
+            "./bin/rcomp",
+            "./bin/uidcrc",
+            "./bin/cmake",
+            "./bin/ninja",
+            "./cmake/SymbianApp.cmake",
+            "./host/lib/cmake/SymbianHost/SymbianHostConfig.cmake",
+            "./licenses/Symbian-Apache-2.0.txt",
+            "./examples/hello_time/CMakeLists.txt",
+            *(
+                f"./lib/{target}/lib{component}.a"
+                for target in ("armv5t", "armv6")
+                for component in (
+                    "symbian_guest_runtime",
+                    "symbian_http",
+                    "symbian_api_tls",
+                    "symbian_api_websocket",
+                )
+            ),
+        )
     for archive, required in archives.items():
         with tarfile.open(archive) as stream:
             members = set(stream.getnames())
             missing = set(required) - members
             if missing:
                 raise ValueError(f"{archive.name}: missing {missing}")
+            if archive.name.startswith("symbian-sdk-"):
+                forbidden = {
+                    member
+                    for member in members
+                    if member.startswith(("./lib/python/", "./bin/python"))
+                    or member.endswith(
+                        ("/digests.json", "/host-dependencies.json")
+                    )
+                }
+                if forbidden:
+                    raise ValueError(
+                        f"{archive.name}: unexpected Python/provenance payload"
+                    )
             version_path = next(p for p in required if p.endswith("VERSION"))
             contents = stream.extractfile(version_path)
             if contents is None or contents.read().decode().strip() != version:

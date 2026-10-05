@@ -58,6 +58,39 @@ class ReleaseAssetsTest(unittest.TestCase):
                 ],
             )
 
+            self.archive(
+                self.assets / f"symbian-sdk-0.1.0-{system}-{arch}.tar.gz",
+                ".",
+                [
+                    "VERSION",
+                    "sdk.json",
+                    "bin/clang++",
+                    "bin/ld.lld",
+                    "bin/llvm-ar",
+                    "bin/llvm-ranlib",
+                    "bin/clang-scan-deps",
+                    "bin/symbian-native",
+                    "bin/rcomp",
+                    "bin/uidcrc",
+                    "bin/cmake",
+                    "bin/ninja",
+                    "cmake/SymbianApp.cmake",
+                    "host/lib/cmake/SymbianHost/SymbianHostConfig.cmake",
+                    "licenses/Symbian-Apache-2.0.txt",
+                    "examples/hello_time/CMakeLists.txt",
+                    *(
+                        f"lib/{target}/lib{component}.a"
+                        for target in ("armv5t", "armv6")
+                        for component in (
+                            "symbian_guest_runtime",
+                            "symbian_http",
+                            "symbian_api_tls",
+                            "symbian_api_websocket",
+                        )
+                    ),
+                ],
+            )
+
     @staticmethod
     def archive(path, prefix, members):
         with tarfile.open(path, "w:gz") as archive:
@@ -95,6 +128,15 @@ class ReleaseAssetsTest(unittest.TestCase):
             self.assets / "symbian-host-0.1.0-linux-aarch64.tar.gz",
             ".",
             ["share/symbian/VERSION"],
+        )
+        with self.assertRaisesRegex(ValueError, "missing"):
+            _ASSETS.check(self.dist, self.assets, "0.1.0")
+
+    def test_incomplete_guest_payload(self):
+        self.archive(
+            self.assets / "symbian-sdk-0.1.0-macos-arm64.tar.gz",
+            ".",
+            ["VERSION", "sdk.json", "bin/clang++"],
         )
         with self.assertRaisesRegex(ValueError, "missing"):
             _ASSETS.check(self.dist, self.assets, "0.1.0")

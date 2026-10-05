@@ -77,6 +77,9 @@ jobs:
     uses: ./.github/workflows/host-sdk.yml
     with:
       reuse_run_id: ${{ needs.validate.outputs.host_run }}
+  native:
+    needs: host
+    uses: ./.github/workflows/native-sdk.yml
   sources:
     needs: validate
     runs-on: ubuntu-24.04
@@ -106,7 +109,7 @@ jobs:
           path: release-assets/symbian-source-*.tar.gz
           if-no-files-found: error
   audit:
-    needs: [validate, host, sources]
+    needs: [validate, host, native, sources]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -125,6 +128,11 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           pattern: host-sdk-*
+          path: release-assets
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: native-sdk-*
           path: release-assets
           merge-multiple: true
       - uses: actions/download-artifact@v4
@@ -160,6 +168,11 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           pattern: host-sdk-*
+          path: release-assets
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: native-sdk-*
           path: release-assets
           merge-multiple: true
       - uses: actions/download-artifact@v4
