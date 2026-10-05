@@ -11,7 +11,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: host-sdk-${{ github.workflow }}-${{ github.ref }}
+  group: host-sdk-${{ github.ref }}
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 jobs:
   host:
@@ -44,11 +44,18 @@ jobs:
         with:
           path: ${{ runner.temp }}/symbian-deps
           key: host-deps-${{ matrix.platform }}-${{ matrix.arch }}-macos15-manylinux228-${{ hashFiles('scripts/bootstrap_wheel_deps.sh') }}
+      - name: Restore tested host core
+        id: core
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/symbian-host
+          key: host-core-${{ matrix.platform }}-${{ matrix.arch }}-macos15-manylinux228-${{ hashFiles('cpp/**', 'cmake/**', 'third_party/**', 'CMakeLists.txt', 'VERSION', 'scripts/build_release_host.sh', 'scripts/bootstrap_wheel_deps.sh', 'scripts/bundle_static.py', 'scripts/check_host_sdk.py') }}
       - name: Build native core, test, and reuse for all bindings
         run: python -m cibuildwheel --platform "${{ matrix.platform }}" --archs "${{ matrix.arch }}" --output-dir wheelhouse
         env:
           SYMBIAN_DEPS_PREFIX: ${{ runner.os == 'Linux' && format('/host{0}/symbian-deps', runner.temp) || format('{0}/symbian-deps', runner.temp) }}
-          SYMBIAN_PREBUILT_HOST_SDK: ${{ runner.os == 'Linux' && '/opt/symbian-host' || format('{0}/symbian-host', runner.temp) }}
+          SYMBIAN_PREBUILT_HOST_SDK: ${{ runner.os == 'Linux' && format('/host{0}/symbian-host', runner.temp) || format('{0}/symbian-host', runner.temp) }}
+          SYMBIAN_REUSE_HOST_SDK: ${{ steps.core.outputs.cache-hit }}
           SYMBIAN_WHEEL_ARCH: ${{ matrix.arch }}
           SYMBIAN_RELEASE_ASSETS: ${{ github.workspace }}/release-assets
           MACOSX_DEPLOYMENT_TARGET: "15.0"

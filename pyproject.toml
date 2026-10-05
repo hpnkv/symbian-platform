@@ -79,7 +79,7 @@ skip = "*-musllinux* *-win32 *-win_amd64 *-win_arm64"
 before-all = "bash {project}/scripts/build_release_host.sh"
 test-command = "python -m symbian.build_support.audit {wheel}"
 environment = { CMAKE_BUILD_PARALLEL_LEVEL = "4", CMAKE_ARGS = "-DSYMBIAN_PREBUILT_HOST_SDK=$SYMBIAN_PREBUILT_HOST_SDK" }
-environment-pass = ["SYMBIAN_DEPS_PREFIX", "SYMBIAN_PREBUILT_HOST_SDK", "SYMBIAN_WHEEL_ARCH", "SYMBIAN_RELEASE_ASSETS"]
+environment-pass = ["SYMBIAN_DEPS_PREFIX", "SYMBIAN_PREBUILT_HOST_SDK", "SYMBIAN_REUSE_HOST_SDK", "SYMBIAN_WHEEL_ARCH", "SYMBIAN_RELEASE_ASSETS"]
 
 [tool.cibuildwheel.linux]
 archs = ["x86_64", "aarch64"]

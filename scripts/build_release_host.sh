@@ -15,21 +15,25 @@ case "$(uname -s):${SYMBIAN_WHEEL_ARCH:-$(uname -m)}" in
   *) echo "Unsupported release host" >&2; exit 2 ;;
 esac
 python3 -m pip install 'cmake>=3.28,<5' 'ninja>=1.12,<2'
-"$root/scripts/bootstrap_wheel_deps.sh"
-build="$root/build/release-host-${platform}-${arch}"
-args=()
-if [[ "$platform" == macos ]]; then
-  args+=("-DCMAKE_OSX_ARCHITECTURES=$arch"
-         "-DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:-15.0}")
+if [[ "${SYMBIAN_REUSE_HOST_SDK:-false}" != true ]]; then
+  "$root/scripts/bootstrap_wheel_deps.sh"
+  build="$root/build/release-host-${platform}-${arch}"
+  args=()
+  if [[ "$platform" == macos ]]; then
+    args+=("-DCMAKE_OSX_ARCHITECTURES=$arch"
+           "-DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:-15.0}")
+  fi
+  cmake -S "$root" -B "$build" -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$prefix" \
+    -DCMAKE_INSTALL_LIBDIR=lib -DSYMBIAN_DEPS_PREFIX="$SYMBIAN_DEPS_PREFIX" \
+    -DSYMBIAN_BUILD_PYTHON=OFF -DSYMBIAN_BUILD_GUI_EXAMPLE=OFF \
+    -DSYMBIAN_INSTALL_HOST_SDK=ON -DBUILD_TESTING=ON "${args[@]}"
+  cmake --build "$build" --parallel "${CMAKE_BUILD_PARALLEL_LEVEL:-4}"
+  ctest --test-dir "$build" --output-on-failure
+  cmake --install "$build"
+else
+  echo "Reusing the tested host core for this source/dependency cache key"
 fi
-cmake -S "$root" -B "$build" -G Ninja \
-  -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$prefix" \
-  -DCMAKE_INSTALL_LIBDIR=lib -DSYMBIAN_DEPS_PREFIX="$SYMBIAN_DEPS_PREFIX" \
-  -DSYMBIAN_BUILD_PYTHON=OFF -DSYMBIAN_BUILD_GUI_EXAMPLE=OFF \
-  -DSYMBIAN_INSTALL_HOST_SDK=ON -DBUILD_TESTING=ON "${args[@]}"
-cmake --build "$build" --parallel "${CMAKE_BUILD_PARALLEL_LEVEL:-4}"
-ctest --test-dir "$build" --output-on-failure
-cmake --install "$build"
 python3 "$root/scripts/check_host_sdk.py" "$prefix"
 assets=${SYMBIAN_RELEASE_ASSETS:-$root/release-assets}
 # cibuildwheel copies /project into the Linux container; /host is the writable
