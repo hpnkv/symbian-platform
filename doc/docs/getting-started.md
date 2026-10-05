@@ -36,7 +36,9 @@ On Ubuntu, install `python3-venv` if `python3 -m venv` is unavailable.
 For application builds, [install the native SDK archive](guides/native-distributions.md)
 for your host. It includes the ARM compiler and build tools; no source checkout
 is needed. Native Linux archives require glibc 2.39 or later. Firmware and the
-emulator are configured separately for emulator execution.
+emulator are configured separately for emulator execution. Follow
+[Install the emulator](guides/emulator-installation.md) to select a compatible
+frontend without compiling Qt yourself.
 
 If you want to compile the SDK itself, follow
 [the source guide](guides/source-prerequisites.md).

@@ -264,8 +264,12 @@ def session(
                 )
     if executable is None or not executable.is_file():
         raise StatusError(
-            Code.NOT_FOUND, f"Build patched emulator: {executable}"
+            Code.NOT_FOUND,
+            f"Install an emulator with symbian emulator install: {executable}",
         )
+    from symbian.emulator.distribution import check_packaged
+
+    check_packaged(executable)
     if debug:
         if not 1024 <= port <= 65535:
             raise StatusError(Code.INVALID_ARGUMENT, "Invalid GDB port")

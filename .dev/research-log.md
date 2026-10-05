@@ -6194,3 +6194,19 @@ Five real graph/incremental/toolchain-change tests pass on macOS arm64
 (`/tmp/symbian-build-timeout-regressions.log`). Release rehearsal 37336662479
 at b723dde passed all four host/native assemblies and archive/wheel audit;
 the final change still needs an exact-source Intel CI replay.
+
+## 2026-10-05 — Independently installed emulator selection
+
+Added per-user versioned installs, atomic selection/rollback, offline archive
+and digest checks, host/path validation and actual native compatibility queries.
+Published release discovery compares protocol/features, skips incompatible
+versions and orders semantic versions numerically. A compatible selected
+emulator is reused across SDK upgrades. Explicit SDK/project/command paths
+override the installed default; missing SDK placeholder tools no longer hide
+it. Packaged executables are checked again before launch.
+
+The installer/CLI/configuration/owned-session suite passes 22 tests with ten
+firmware-dependent skips. Black/Ruff pass. Documentation now covers separate
+installation, rollback, offline use and firmware/guest-Qt separation. These
+commands are not yet in published 0.1.1 wheels; final 0.1.2 publication and a
+usable independent emulator release remain required.

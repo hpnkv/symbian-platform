@@ -103,6 +103,7 @@ nav:
   - Community credits: credits.md
   - Guides:
       - Install a native SDK: guides/native-distributions.md
+      - Install the emulator: guides/emulator-installation.md
       - Standalone projects: guides/projects.md
       - Build an application: guides/building.md
       - Build a real GUI app:

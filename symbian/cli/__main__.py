@@ -150,6 +150,10 @@ _COMMAND_DESCRIPTIONS = {
         "resolve",
     ): "Show effective global, SDK, project, and command overrides.",
     ("emu", "configure"): "Save emulator settings at one configuration level.",
+    ("emu", "install"): "Install a compatible released or offline emulator.",
+    ("emu", "select"): "Select a retained emulator version or roll back.",
+    ("emu", "list"): "List installed emulator versions.",
+    ("emu", "doctor"): "Check the actual emulator's SDK compatibility.",
     ("emu", "status"): "Inspect a running emulator through its control socket.",
     ("device",): "Discover USB handsets and stage application packages safely.",
     ("agent",): "Read an authenticated development agent over local TCP.",
@@ -299,7 +303,11 @@ def _add_output_format(
                         path + (choice.dest,),
                         "Inspect or change this Symbian workflow.",
                     )
+            seen = set()
             for command, child in action.choices.items():
+                if id(child) in seen:
+                    continue
+                seen.add(id(child))
                 _add_output_format(child, path + (command,))
 
 
@@ -540,9 +548,20 @@ def _parser() -> argparse.ArgumentParser:
     gui_package.add_argument(
         "--output", type=Path, default=Path(".symbian/gui-package-check")
     )
-    emulator_commands = commands.add_parser("emu").add_subparsers(
-        dest="emu_command", required=True
-    )
+    emulator_commands = commands.add_parser(
+        "emu", aliases=["emulator"]
+    ).add_subparsers(dest="emu_command", required=True)
+    emulator_install = emulator_commands.add_parser("install")
+    emulator_install.add_argument("--archive", type=Path)
+    emulator_install.add_argument("--version")
+    emulator_install.add_argument("--sha256")
+    emulator_select = emulator_commands.add_parser("select")
+    emulator_select.add_argument("version")
+    emulator_commands.add_parser("list")
+    emulator_doctor = emulator_commands.add_parser("doctor")
+    emulator_doctor.add_argument("--project", type=Path)
+    emulator_doctor.add_argument("--sdk", type=Path)
+    emulator_doctor.add_argument("--emulator", type=Path)
     for action in ("resolve", "configure"):
         command = emulator_commands.add_parser(action)
         command.add_argument("--project", type=Path)
@@ -1192,7 +1211,36 @@ def _execute(args: argparse.Namespace) -> dict:
         from symbian.toolchain.verification import verify_probe
 
         return verify_probe(args.artifact, args.oracles_build, args.output)
-    if args.command == "emu":
+    if args.command in ("emu", "emulator"):
+        if args.emu_command in ("install", "select", "list"):
+            from symbian.emulator.distribution import install, installed, select
+
+            if args.emu_command == "install":
+                return install(
+                    archive=args.archive,
+                    version=args.version,
+                    sha256=args.sha256,
+                )
+            if args.emu_command == "select":
+                return select(args.version)
+            return installed()
+        if args.emu_command == "doctor":
+            from symbian.emulator.configuration import resolve
+            from symbian.emulator.distribution import query
+            from symbian.status import Code, StatusError
+
+            resolution = resolve(
+                project=args.project,
+                sdk=args.sdk,
+                overrides={"emulator": args.emulator} if args.emulator else {},
+            )
+            frontend = resolution.settings.emulator
+            if frontend is None:
+                raise StatusError(
+                    Code.NOT_FOUND,
+                    "Install an emulator with symbian emulator install",
+                )
+            return {"emulator": str(frontend), **query(frontend)}
         if args.emu_command == "run":
             from symbian.emulator.launch import main as launch
             from symbian.status import Code, StatusError

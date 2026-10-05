@@ -142,6 +142,11 @@ def resolve(
         "profile": "auto",
     }
     origins = {key: "default" for key in values}
+    from symbian.emulator.distribution import active, active_path
+
+    installed_tools = active()
+    values.update(installed_tools)
+    origins.update({key: str(active_path()) for key in installed_tools})
     legacy = None
     # Host-tool defaults are declarations, not implicit firmware selections.
     if prefix is not None and (prefix / "sdk.json").is_file():
@@ -155,17 +160,27 @@ def resolve(
             raise StatusError(
                 Code.INVALID_ARGUMENT, f"{prefix / 'sdk.json'}: {error}"
             ) from error
-        values.update(
-            emulator=declaration.emulator,
-            importer=declaration.firmware_importer,
-        )
-        origins.update(
-            emulator=str(prefix / "sdk.json"), importer=str(prefix / "sdk.json")
-        )
+        for key, tool in (
+            ("emulator", declaration.emulator),
+            ("importer", declaration.firmware_importer),
+        ):
+            if key not in installed_tools or (
+                tool is not None and tool.is_file()
+            ):
+                values[key] = tool
+                origins[key] = str(prefix / "sdk.json")
         legacy = declaration.golden
-    elif root is not None:
+    elif root is not None and not installed_tools:
+        import platform
+
         values.update(
-            emulator=root / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1",
+            emulator=root
+            / "build/eka2l1/bin"
+            / (
+                "EKA2L1.app/Contents/MacOS/EKA2L1"
+                if platform.system() == "Darwin"
+                else "eka2l1_qt"
+            ),
             importer=root
             / "build/eka2l1/platform-control/symbian_firmware_tool",
         )

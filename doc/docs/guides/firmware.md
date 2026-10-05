@@ -11,7 +11,14 @@ when you want to run the app in a disposable emulator instance.
 EKA1 imports can open standalone emulator sessions. The Nokia 7610 profile also supports the opt-in [no-UI EKA1 process profile](eka1.md); generated
 GUI applications continue to require EKA2.
 
-## 1. Import an image
+## 1. Install the emulator and import an image
+
+[Install the compatible emulator](emulator-installation.md) before importing:
+
+```sh
+symbian emulator install
+symbian emulator doctor
+```
 
 For a supported local archive, give the import a short name:
 
