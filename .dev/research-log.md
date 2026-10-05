@@ -5739,3 +5739,10 @@ backends where available. Keep physical-device staging/installation results
 separate from mocked transfer checks and emulator execution. Capture commands,
 versions and failures; fix the guides/tools rather than relying on prepared
 worktree state. This acceptance remains pending publication.
+
+## 2026-10-05 — Community resource links
+
+Community credits now cite EKA2L1 Important Links and Delight alongside ROM
+resources, and describe Symbian World, NNProject, the Symbian World Telegram
+community and both requested Awesome Symbian lists. Documentation link checks
+pass; these are external resources rather than bundled firmware or SDK tools.

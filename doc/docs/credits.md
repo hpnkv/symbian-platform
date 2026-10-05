@@ -8,10 +8,9 @@ keep their original license notices.
 ## Running and understanding Symbian
 
 [EKA2L1](https://github.com/EKA2L1/EKA2L1) is the community emulator used in
-the disposable tests. It loads Symbian executables and, when separately
-supplied, firmware and system files. This repository keeps its pinned research
-checkout outside Git and applies local test and macOS patches. Emulator
-results remain separate from phone results.
+the SDK’s disposable application runs. It loads Symbian executables and, when
+separately supplied, firmware and system files. Emulator behavior can differ
+from a physical phone.
 
 [SymbianSource](https://github.com/SymbianSource) preserves original Symbian
 source, including kernel and user-library headers, EABI export definitions and
@@ -49,3 +48,22 @@ Firmware, ROM/Z files and private handset records are supplied separately.
 They are never redistributed in the SDK or this Git repository. The
 [firmware guide](guides/firmware.md) explains how a developer selects local
 material for emulator work.
+
+For ROM and firmware resources, see EKA2L1's
+[Important Links](https://eka2l1.miraheze.org/wiki/Important_Links) and the
+[Delight firmware project](https://www.symwld.com/delight/), which maintains
+community firmware for selected Symbian devices. Choose material for the
+correct model and use it according to its distribution terms.
+
+## Community resources
+
+- [Symbian World](https://www.symwld.com/) collects Symbian applications,
+  resources and community projects.
+- [NNProject](https://nnproject.cc/) develops applications and utilities for
+  Symbian and other mobile platforms.
+- [Symbian World on Telegram](https://t.me/symbian_world) is a place for
+  community discussion, support and news.
+- [hstsethi's Awesome Symbian](https://github.com/hstsethi/awesome-symbian)
+  curates links to Symbian software, tools and resources.
+- [gauravssnl's Awesome Symbian](https://github.com/gauravssnl/awesome-symbian)
+  collects applications, development resources and related projects.
