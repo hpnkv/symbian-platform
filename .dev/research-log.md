@@ -5746,3 +5746,17 @@ Community credits now cite EKA2L1 Important Links and Delight alongside ROM
 resources, and describe Symbian World, NNProject, the Symbian World Telegram
 community and both requested Awesome Symbian lists. Documentation link checks
 pass; these are external resources rather than bundled firmware or SDK tools.
+
+## 2026-10-05 — Share release host builds across Python versions
+
+Replaced the Linux-only, repeated-native/wheel workflow with a reusable four-host
+matrix: Linux x86_64/aarch64 and macOS x86_64/arm64. cibuildwheel builds/tests and
+installs the static host core once per container/host, then builds each Python
+3.11–3.14 binding against that archive. The same installed core supplies a
+relocated consumer audit and host-component archive. Native and Python audits
+remain separate. The macOS release floor is now exactly 15.0 to avoid the
+previous minOS 14.4 / macosx_14_0 tag ambiguity. Native core archives are labelled
+host components; they do not yet claim the required complete no-Python native
+SDK. Linux archives are copied through cibuildwheel's /host mount so they survive
+container teardown. Shell/config checks passed; the actual four-host run and
+publication/native payload gates remain pending.

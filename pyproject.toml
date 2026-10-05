@@ -71,15 +71,15 @@ select = ["E", "F", "I", "B"]
 [tool.pytest.ini_options]
 testpaths = ["symbian"]
 
-# Host-tool wheels first. Emulator/LLVM/GDB payload wheels have separate
-# platform baselines and are designed in .dev/distribution.md.
+# Build the static host core once per OS/architecture, then reuse it for each
+# interpreter. Native SDK/tool payloads are packaged separately by release CI.
 [tool.cibuildwheel]
 build = "cp311-* cp312-* cp313-* cp314-*"
 skip = "*-musllinux* *-win32 *-win_amd64 *-win_arm64"
-before-all = "bash {project}/scripts/bootstrap_wheel_deps.sh"
+before-all = "bash {project}/scripts/build_release_host.sh"
 test-command = "python -m symbian.build_support.audit {wheel}"
-environment = { CMAKE_BUILD_PARALLEL_LEVEL = "4", CMAKE_ARGS = "-DSYMBIAN_DEPS_PREFIX=$SYMBIAN_DEPS_PREFIX" }
-environment-pass = ["SYMBIAN_DEPS_PREFIX", "SYMBIAN_WHEEL_ARCH"]
+environment = { CMAKE_BUILD_PARALLEL_LEVEL = "4", CMAKE_ARGS = "-DSYMBIAN_PREBUILT_HOST_SDK=$SYMBIAN_PREBUILT_HOST_SDK" }
+environment-pass = ["SYMBIAN_DEPS_PREFIX", "SYMBIAN_PREBUILT_HOST_SDK", "SYMBIAN_WHEEL_ARCH", "SYMBIAN_RELEASE_ASSETS"]
 
 [tool.cibuildwheel.linux]
 archs = ["x86_64", "aarch64"]
@@ -87,5 +87,5 @@ manylinux-x86_64-image = "manylinux_2_28"
 manylinux-aarch64-image = "manylinux_2_28"
 
 [tool.cibuildwheel.macos]
-archs = ["arm64"]
-environment = { MACOSX_DEPLOYMENT_TARGET = "26.0", CMAKE_BUILD_PARALLEL_LEVEL = "4", CMAKE_ARGS = "-DSYMBIAN_DEPS_PREFIX=$SYMBIAN_DEPS_PREFIX -DCMAKE_OSX_DEPLOYMENT_TARGET=26.0" }
+archs = ["x86_64", "arm64"]
+environment = { MACOSX_DEPLOYMENT_TARGET = "15.0", CMAKE_BUILD_PARALLEL_LEVEL = "4", CMAKE_ARGS = "-DSYMBIAN_PREBUILT_HOST_SDK=$SYMBIAN_PREBUILT_HOST_SDK -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0" }

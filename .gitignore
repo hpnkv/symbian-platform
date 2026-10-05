@@ -18,3 +18,7 @@ CMakeUserPresets.json
 # Owner-supplied transport research checkouts.
 third_party/nghttp2/
 third_party/ngtcp2/
+
+# CI host components and Python wheel output.
+release-assets/
+wheelhouse/

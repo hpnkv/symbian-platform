@@ -1,0 +1,56 @@
+# Adapted from A11's release flow; share the core across Python versions.
+name: Host SDK
+on:
+  workflow_call:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["cpp/**", "cmake/**", "symbian/**", "third_party/**", "CMake*", "VERSION", "pyproject.toml", "scripts/**", ".github/workflows/host-sdk.yml"]
+  pull_request:
+    paths: ["cpp/**", "cmake/**", "symbian/**", "third_party/**", "CMake*", "VERSION", "pyproject.toml", "scripts/**", ".github/workflows/host-sdk.yml"]
+permissions:
+  contents: read
+jobs:
+  host:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            platform: linux
+            arch: aarch64
+          - runner: macos-15-intel
+            platform: macos
+            arch: x86_64
+          - runner: macos-15
+            platform: macos
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install wheel builder
+        run: python -m pip install "cibuildwheel==4.1.1"
+      - name: Build native core, test, and reuse for all bindings
+        run: python -m cibuildwheel --platform "${{ matrix.platform }}" --archs "${{ matrix.arch }}" --output-dir wheelhouse
+        env:
+          SYMBIAN_DEPS_PREFIX: ${{ runner.os == 'Linux' && '/opt/symbian-deps' || format('{0}/symbian-deps', runner.temp) }}
+          SYMBIAN_PREBUILT_HOST_SDK: ${{ runner.os == 'Linux' && '/opt/symbian-host' || format('{0}/symbian-host', runner.temp) }}
+          SYMBIAN_WHEEL_ARCH: ${{ matrix.arch }}
+          SYMBIAN_RELEASE_ASSETS: ${{ github.workspace }}/release-assets
+          MACOSX_DEPLOYMENT_TARGET: "15.0"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.platform }}-${{ matrix.arch }}
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: host-sdk-${{ matrix.platform }}-${{ matrix.arch }}
+          path: release-assets/symbian-host-*.tar.gz
+          if-no-files-found: error
