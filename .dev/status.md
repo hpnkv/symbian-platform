@@ -2728,3 +2728,11 @@ compiler installation, which now succeeds with the Linux limits-header fix.
 SDK relocation, tool dependency closure, oracle-enabled integration and Linux
 GUI/guest-debugger execution are still separate acceptance gates. See the
 research log for exact private logs and failed controls.
+
+The enabled Linux oracle/public-source/installed-host-archive suite subsequently
+passed **310 tests, 407 skipped**. Both ARMv5T and ARMv6 root indexing targets
+build; all **5,420 SDK digests** match. E32/CPU/import/pointer independent checks
+now cover EHABI descriptor fixups, and the GUI mismatch control changes its
+actual drawing source. Linux frontend `--help` passed under Xvfb using a fresh
+private root. These checks retain separate firmware, interactive-GUI and device
+gates; the private LLVM binary still needs ICU 70 outside its prefix.

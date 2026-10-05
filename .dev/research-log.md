@@ -5586,3 +5586,30 @@ a rebuilt Python module passed 294 tests with 423 explicitly skipped opt-in
 cases (`/tmp/symbian-linux-pytest-final-r1.log`). An oracle-enabled run is in
 progress. The frontend build does not prove Linux GUI interaction or firmware
 execution; neither result establishes physical-device compatibility.
+
+### Linux enabled-oracle and ARM indexing checkpoint — 2026-10-05
+
+The broad opt-in run exposed old assumptions beyond the host-only tests:
+E32 parser/CPU probes assumed no EHABI descriptor, pointer verification assumed
+four rather than eight fixups, and the import loader assumed only seven export
+fixups rather than seven exports plus four descriptor fields. The independent
+harnesses now verify/relocate those fields and continue checking all dispatch
+and export destinations. EKA1's two fixture-specific cases are in their own
+`symbian_eka1_oracle` executable, keeping EKA2's
+complete four-case verification contract free of skipped EKA1 cases. The GUI
+negative control now changes the drawing source where its color actually lives
+and asserts the replacement exists; the old app.cc replacement changed nothing.
+Current runtime import counts are checked explicitly.
+
+The root Mbed TLS ARM indexing target now uses the installed runtime's actual
+include/definition contract and generates its certificate fixture header.
+Both guest-probes presets build successfully with LLVM 23.1.2 on Linux:
+`/tmp/symbian-linux-index-v5-r3.log`, `/tmp/symbian-linux-index-v6-r3.log`.
+With oracle, public GUI-source and installed host concurrency variables enabled,
+Pytest passed **310 tests, 407 skipped** in 50.88s:
+`/tmp/symbian-linux-pytest-oracles-r3.log`. Failed earlier runs remain retained.
+The SDK's **5,420 declared digests** match their actual installed files.
+The Linux frontend's `--help` exits zero under Xvfb with a fresh private root
+(`/tmp/symbian-linux-frontend-help-r1.log`). Interactive GUI behavior and a
+firmware-backed Linux run are not established by that smoke test. The LLVM
+binary's private ICU 70 dependency remains a release-tool closure gap.

@@ -31,7 +31,9 @@ class PointerProbeTest : public symbian::testing::ProcessEnvironment {
     ASSERT_EQ(image->header.entry_point, 0);
     ASSERT_EQ(image->header.data_size, 0);
     ASSERT_EQ(image->header.dll_ref_table_count, 0);
-    ASSERT_EQ(image->code_reloc_section.num_relocs, 4);
+    ASSERT_EQ(image->code_reloc_section.num_relocs, 8);
+    descriptor_ = image->header_extended.exception_des & ~1U;
+    ASSERT_NE(descriptor_, 0);
     linked_base_ = image->header.code_base;
     code_size_ = image->header.code_size;
     for (const auto& page : image->code_reloc_section.entries) {
@@ -48,7 +50,7 @@ class PointerProbeTest : public symbian::testing::ProcessEnvironment {
         pointers_.push_back({offset, target});
       }
     }
-    ASSERT_EQ(pointers_.size(), 4);
+    ASSERT_EQ(pointers_.size(), 8);
   }
 
   void BeforeExecute(eka2l1::kernel::process* process) override {
@@ -63,6 +65,11 @@ class PointerProbeTest : public symbian::testing::ProcessEnvironment {
       ASSERT_NE(mapped, nullptr);
       EXPECT_EQ(*mapped, pointer.target + (base - linked_base_));
       EXPECT_EQ(*mapped & 1, pointer.target & 1);
+      // EHABI descriptors carry four address fields, including an end pointer.
+      // Check their relocation above, but they are not dispatch destinations.
+      if (pointer.offset >= descriptor_ && pointer.offset < descriptor_ + 16) {
+        continue;
+      }
       const uint32_t normalized = pointer.target & ~1U;
       ASSERT_GE(normalized, linked_base_);
       ASSERT_LT(normalized - linked_base_, code_size_);
@@ -105,6 +112,7 @@ class PointerProbeTest : public symbian::testing::ProcessEnvironment {
     uint32_t target;
   };
 
+  uint32_t descriptor_ = 0;
   uint32_t linked_base_ = 0;
   uint32_t code_size_ = 0;
   std::vector<Pointer> pointers_;

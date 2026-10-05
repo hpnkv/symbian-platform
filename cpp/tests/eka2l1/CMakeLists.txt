@@ -6,6 +6,13 @@ target_link_libraries(symbian_firmware_tests PRIVATE
                      symbian_emulator_firmware epoc config drivers GTest::gtest_main)
 add_test(NAME symbian_firmware_tests COMMAND symbian_firmware_tests)
 add_executable(symbian_e32_oracle e32_oracle_test.cc)
+add_executable(symbian_eka1_oracle eka1_oracle_test.cc)
+target_compile_features(symbian_eka1_oracle PRIVATE cxx_std_20)
+target_compile_options(symbian_eka1_oracle PRIVATE -fno-exceptions)
+target_link_libraries(symbian_eka1_oracle PRIVATE
+                      epocloader common GTest::gtest_main)
+# EKA1 has independent opt-in fixtures. Keep it out of the EKA2 verifier's
+# complete four-case suite; skipped cases cannot count as verification.
 add_executable(symbian_rom_atomic_oracle rom_atomic_oracle.cc)
 target_compile_features(symbian_rom_atomic_oracle PRIVATE cxx_std_20)
 target_compile_options(symbian_rom_atomic_oracle PRIVATE -fno-exceptions)

@@ -46,7 +46,7 @@ class CpuProbeTest
     ASSERT_TRUE(image.has_value());
     ASSERT_EQ(image->header.data_size, 0);
     ASSERT_EQ(image->header.dll_ref_table_count, 0);
-    ASSERT_EQ(image->header.code_reloc_offset, 0);
+    ASSERT_EQ(image->code_reloc_section.num_relocs, 4);
     ASSERT_LE(image->header.code_size, kCodeMappingSize);
     ASSERT_LT(image->header.entry_point, image->header.code_size);
     base_ = std::get<1>(GetParam());
@@ -54,6 +54,22 @@ class CpuProbeTest
     std::memcpy(memory_.data() + base_,
                 image->data.data() + image->header.code_offset,
                 image->header.code_size);
+    // This isolated CPU harness supplies the loader's text relocations before
+    // executing at each independent base; the process oracle uses its loader.
+    for (const auto& page : image->code_reloc_section.entries) {
+      for (const uint16_t word : page.rels_info) {
+        if (word == 0) {
+          continue;
+        }
+        ASSERT_EQ(word & 0xf000, 0x1000);
+        const uint32_t offset = page.base + (word & 0xfff);
+        ASSERT_LE(offset + 4, image->header.code_size);
+        uint32_t value = 0;
+        std::memcpy(&value, memory_.data() + base_ + offset, 4);
+        value += base_ - image->header.code_base;
+        std::memcpy(memory_.data() + base_ + offset, &value, 4);
+      }
+    }
     const auto backend = std::get<0>(GetParam());
     ASSERT_EQ(eka2l1::arm::resolve_emulator_type(backend), backend);
     monitor_ = eka2l1::arm::create_exclusive_monitor(backend, 1);

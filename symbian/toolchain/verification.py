@@ -339,7 +339,8 @@ def verify_pointers(
         or metadata["entry_offset"] != 0
         or metadata["dll"]
         or metadata["imports"]
-        or len(metadata["code_relocations"]) != 4
+        or len(metadata["code_relocations"]) != 8
+        or not metadata["exception_descriptor_offset"]
     ):
         raise StatusError(
             Code.INVALID_ARGUMENT,

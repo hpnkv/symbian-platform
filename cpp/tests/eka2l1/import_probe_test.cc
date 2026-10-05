@@ -46,7 +46,7 @@ class ImportProbeTest : public symbian::testing::ProcessEnvironment {
     const auto dll_image = eka2l1::loader::parse_e32img(&dll_buffer, true);
     ASSERT_TRUE(dll_image.has_value());
     ASSERT_EQ(dll_image->header.export_dir_count, 7);
-    ASSERT_EQ(dll_image->code_reloc_section.num_relocs, 7);
+    ASSERT_EQ(dll_image->code_reloc_section.num_relocs, 11);
     export_offset_ =
         dll_image->header.export_dir_offset - dll_image->header.code_offset;
     const auto& section = dll_image->code_reloc_section;
@@ -59,7 +59,13 @@ class ImportProbeTest : public symbian::testing::ProcessEnvironment {
         }
       }
     }
-    ASSERT_EQ(offsets.size(), 7);
+    ASSERT_EQ(offsets.size(), 11);
+    const uint32_t descriptor = dll_image->header_extended.exception_des & ~1U;
+    ASSERT_NE(descriptor, 0);
+    for (size_t i = 0; i < 4; ++i) {
+      EXPECT_EQ(offsets[i], descriptor + i * 4);
+    }
+    offsets.erase(offsets.begin(), offsets.begin() + 4);
     for (size_t i = 0; i < offsets.size(); ++i) {
       EXPECT_EQ(offsets[i], export_offset_ + i * 4);
     }

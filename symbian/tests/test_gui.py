@@ -225,12 +225,12 @@ def test_gui_real_headers_and_selected_runtime_imports_link(gui):
     assert {
         item["dll"]: len(item["slots"]) for item in report["e32"]["imports"]
     } == {
-        "euser.dll": 42,
+        "euser.dll": 52,
         "ws32.dll": 28,
         "libc.dll": 60,
         "libm.dll": 7,
-        "libpthread.dll": 13,
-        "drtaeabi.dll": 3,
+        "libpthread.dll": 19,
+        "drtaeabi.dll": 4,
     }
     assert not report["runtime_verified"]
     assert not report["import_execution_verified"]
@@ -314,8 +314,10 @@ def test_mismatched_equal_size_gui_payload_is_rejected_before_installation(
     ).parent
     project = tmp_path / "modified-project"
     shutil.copytree(source, project)
-    app = project / "app.cc"
-    app.write_text(app.read_text().replace("0x00e8ebf2", "0x00e8ebf3"))
+    drawing = project / "window_server.cc"
+    original_source = drawing.read_text()
+    assert "0x00e8ebf2" in original_source
+    drawing.write_text(original_source.replace("0x00e8ebf2", "0x00e8ebf3"))
     changed = toolchain.build(project, tmp_path / "changed")
     assert changed["sha256"] != report["sha256"]
     assert Path(changed["artifact"]).stat().st_size == original.stat().st_size

@@ -55,7 +55,7 @@ To replay acceptance, including changed-result controls:
 SYMBIAN_EKA1_GUEST=1 python -m pytest \
   symbian/tests/test_eka1.py symbian/tests/test_eka1_guest.py -v
 SYMBIAN_EKA1_TEST_IMAGE="$PWD/.symbian/eka1-build/eka1_probe.exe" \
-  build/eka2l1/platform-tests/symbian_e32_oracle \
+  build/eka2l1/platform-tests/symbian_eka1_oracle \
   '--gtest_filter=Eka1OracleTest.*'
 ```
 
@@ -87,7 +87,7 @@ Only one function-only `euser.dll` block is currently supported.
 SYMBIAN_EKA1_GUEST=1 python -m pytest \
   symbian/tests/test_eka1_import.py -v
 SYMBIAN_EKA1_IMPORT_TEST_IMAGE="$PWD/.symbian/eka1-import-build/eka1_import_probe.exe" \
-  build/eka2l1/platform-tests/symbian_e32_oracle \
+  build/eka2l1/platform-tests/symbian_eka1_oracle \
   '--gtest_filter=Eka1OracleTest.IndependentlyChecksPeImportsAndIat'
 ```
 

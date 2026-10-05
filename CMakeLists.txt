@@ -159,13 +159,24 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
     set(mbedtls_dir "${CMAKE_SOURCE_DIR}/examples/mbedtls_dll_probe")
     add_library(symbian_index_mbedtls OBJECT EXCLUDE_FROM_ALL
                 "${mbedtls_dir}/bridge.c" "${mbedtls_dir}/startup.S")
+    target_link_libraries(symbian_index_mbedtls PRIVATE Symbian::Runtime)
     target_include_directories(symbian_index_mbedtls PRIVATE
-      "${MBEDTLS_SOURCE}/include"
-      "${SYMBIAN_SDK_PREFIX}/include/compiler"
-      "${SYMBIAN_SDK_PREFIX}/include/openc"
-      "${SYMBIAN_SDK_PREFIX}/include/libc"
-      "${SYMBIAN_SDK_PREFIX}/include/pthread"
-      "${SYMBIAN_SDK_PREFIX}/include/posix4")
+      "${MBEDTLS_SOURCE}/include" "${CMAKE_CURRENT_BINARY_DIR}/mbedtls-fixtures")
+    target_compile_definitions(symbian_index_mbedtls PRIVATE
+      MBEDTLS_STATIC MBEDTLS_SSL_PROTO_TLS1_3 SYMBIAN_MBEDTLS_GUEST=1
+      MBEDTLS_USER_CONFIG_FILE="symbian_mbedtls/config.h")
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/mbedtls-fixtures")
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/mbedtls-fixtures/test_certificate.h" "")
+    foreach(fixture IN ITEMS "server-cert.pem;kTestCertificate"
+                             "expired-cert.pem;kExpiredCertificate"
+                             "server-key.pem;kTestPrivateKey")
+      list(GET fixture 0 fixture_file)
+      list(GET fixture 1 fixture_name)
+      file(READ "${MBEDTLS_SOURCE}/tests/fixtures/${fixture_file}" fixture_text)
+      string(REPLACE "\n" "\\n\"\n\"" fixture_c "${fixture_text}")
+      file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/mbedtls-fixtures/test_certificate.h"
+        "static const char ${fixture_name}[] = \"${fixture_c}\";\n")
+    endforeach()
     add_dependencies(symbian_probe_index symbian_index_mbedtls)
   endif()
   set_source_files_properties(
