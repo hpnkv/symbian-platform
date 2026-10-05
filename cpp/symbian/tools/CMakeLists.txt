@@ -1,0 +1,7 @@
+add_executable(symbian_native_tool main.cc)
+set_target_properties(symbian_native_tool PROPERTIES OUTPUT_NAME symbian-native)
+target_link_libraries(symbian_native_tool PRIVATE symbian::e32 absl::status_macros)
+symbian_native_library(symbian_native_tool)
+if(SYMBIAN_INSTALL_HOST_SDK)
+  install(TARGETS symbian_native_tool RUNTIME DESTINATION bin)
+endif()

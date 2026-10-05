@@ -1,0 +1,34 @@
+@PACKAGE_INIT@
+include(CMakeFindDependencyMacro)
+find_dependency(Threads)
+if(NOT TARGET Symbian::Host)
+  add_library(Symbian::Host STATIC IMPORTED)
+  set_target_properties(Symbian::Host PROPERTIES
+    IMPORTED_LOCATION "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_LIBDIR@/libsymbian_host.a"
+    INTERFACE_INCLUDE_DIRECTORIES "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_INCLUDEDIR@"
+    INTERFACE_COMPILE_FEATURES cxx_std_20
+    INTERFACE_COMPILE_DEFINITIONS "NGHTTP2_STATICLIB;SYMBIAN_CONCURRENCY_HOST_BOOST=1"
+    INTERFACE_LINK_LIBRARIES "Threads::Threads;${CMAKE_DL_LIBS}")
+  if(APPLE)
+    set_property(TARGET Symbian::Host APPEND PROPERTY INTERFACE_LINK_LIBRARIES
+      "-framework IOKit" "-framework CoreFoundation" "-framework Security" "-lobjc")
+  endif()
+endif()
+@SYMBIAN_HOST_ABSEIL_ALIASES@
+foreach(component IN ITEMS analysis e32 sis sdk status agent_frame concurrency device)
+  if(NOT TARGET symbian::${component})
+    add_library(symbian::${component} INTERFACE IMPORTED)
+    set_target_properties(symbian::${component} PROPERTIES
+      INTERFACE_LINK_LIBRARIES Symbian::Host)
+  endif()
+endforeach()
+if(NOT TARGET symbian_websocket)
+  add_library(symbian_websocket INTERFACE IMPORTED)
+  set_target_properties(symbian_websocket PROPERTIES
+    INTERFACE_LINK_LIBRARIES Symbian::Host)
+endif()
+set(abseil_SOURCE_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_INCLUDEDIR@")
+set(SYMBIAN_LIBUSB_STATIC "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_LIBDIR@/symbian-host/libusb-1.0.a")
+set(SYMBIAN_LIBUSB_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_INCLUDEDIR@/libusb-1.0")
+set(SYMBIAN_LIBUSB_LICENSE "${PACKAGE_PREFIX_DIR}/share/symbian/licenses/libusb-COPYING")
+check_required_components(SymbianHost)

@@ -2748,3 +2748,14 @@ recipe's 22 root patches replayed in order against clean pinned files. Local
 links, strict MkDocs, both Doxygen indices and Markdown section links passed;
 original-header warnings are unchanged. This documentation validation does not
 add loader, emulator or device execution coverage.
+
+## Reusable host SDK, 2026-10-05
+
+The standalone static host closure installs and relocates on macOS arm64 and
+Linux x86_64; consumer checks also exercise native CLI validation and input
+preservation. Both host native suites passed 13/13. Binding-only CPython 3.12
+wheels built from the installed archive pass fresh outside-checkout audits on
+both hosts. The macOS OpenSSL-header omission was caught and fixed. This enables
+reusing the core per host architecture, but does not establish the other host/
+Python combinations or complete guest/no-Python release payloads. Fresh macOS
+core minOS is 14.4; release floor/tag policy still needs resolution.

@@ -5640,3 +5640,44 @@ Markdown section-link scan passed (zero unresolved section links). `git diff
 --check` passed after whitespace cleanup. The requested documentation-wide switch
 from `uv run` to installed commands remains tied to making wheel publication
 available; source-checkout instructions currently retain their environment runner.
+
+## 2026-10-05 — reusable standalone host SDK and native publisher
+
+Added an explicit `SYMBIAN_INSTALL_HOST_SDK` installation: one static
+`libsymbian_host.a` merges the host format/network/device/concurrency libraries,
+private Boost primitive bundle, pinned Abseil, OpenSSL crypto, libusb and zlib.
+The relocatable `SymbianHost` CMake package supplies `Symbian::Host`, public
+headers and preserved notices; consumers need only normal OS thread/system
+libraries. Static zlib extends a ready dependency prefix without rebuilding
+OpenSSL, libusb and Boost. `SYMBIAN_PREBUILT_HOST_SDK` configures only the
+Python/canonical Status binding boundary against the same versioned archive.
+
+The installed `symbian-native` tool publishes EXEs/DLLs and generates proxy
+sources through the existing native implementations. `SymbianPic` chooses it
+when present, retaining the Python path for older source SDKs. Input reads are
+bounded, filesystem resolution uses error-code APIs, command-specific options
+reject mistakes/duplicates, and input/output aliases are rejected. The
+relocated consumer checker exercises parsing, HTTP, statuses, host fiber join,
+OpenSSL random bytes and installed native CLI behavior, including same-path,
+hardlink and symlink input preservation.
+
+Ubuntu x86_64: 13/13 native tests passed (`/tmp/symbian-linux-host-sdk-tests-r4.log`),
+relocated consumer/CLI passed (`/tmp/symbian-host-sdk-linux-consumer-r4.log`), and
+CPython 3.12 binding-only wheel passed an outside-checkout installed audit
+(`/tmp/symbian-linux-reused-wheel-audit-r2.log`). macOS arm64: 13/13 native tests
+passed (`/tmp/symbian-macos-host-sdk-tests-r1.log`), relocated consumer/CLI passed
+(`/tmp/symbian-host-sdk-macos-consumer-r4.log`), and the binding-only CPython
+3.12 wheel passed its installed audit
+(`/tmp/symbian-macos-reused-wheel-audit-r1.log`). The first macOS reuse build
+failed because OpenSSL headers were omitted; Linux's implicit system headers
+had masked that gap. Installed headers now include the matching OpenSSL tree,
+and both relocated consumers explicitly compile/call RAND_bytes.
+
+The fresh macOS dependency/core build uses a 14.4 deployment target. Native CLI
+Mach-O reports minOS 14.4 and only system CoreFoundation/libc++/libSystem loads.
+The Python wheel tag normalizes this to macosx_14_0_arm64; older macOS 14 patch
+levels have not been tested, and release deployment/tag policy remains to be
+settled. Local GTest came from a newer host floor, affecting test binaries only.
+The entire no-Python guest/tool payload, four-host release matrix, all Python
+versions, manylinux repair and full EKA1 runtime/API port remain unfinished.
+No host-only archive is being presented as the requested complete native SDK.

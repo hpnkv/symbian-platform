@@ -117,7 +117,8 @@ function(symbian_add_dynamic_library target)
     message(FATAL_ERROR "symbian_add_dynamic_library needs SOURCES, EXPORT_DEFINITION and UID3")
   endif()
   if(NOT SYMBIAN_SDK_PREFIX OR
-     NOT EXISTS "${SYMBIAN_SDK_PREFIX}/bin/symbian")
+     (NOT EXISTS "${SYMBIAN_SDK_PREFIX}/bin/symbian" AND
+      NOT EXISTS "${SYMBIAN_SDK_PREFIX}/bin/symbian-native"))
     message(FATAL_ERROR "Dynamic-library publishing requires an installed Symbian SDK")
   endif()
   _symbian_project_file(definition "${DLL_EXPORT_DEFINITION}")
@@ -154,9 +155,16 @@ function(symbian_add_dynamic_library target)
     endforeach()
   endif()
   set(dll "${CMAKE_BINARY_DIR}/${target}.dll")
+  if(EXISTS "${SYMBIAN_SDK_PREFIX}/bin/symbian-native")
+    set(publish_command "${SYMBIAN_SDK_PREFIX}/bin/symbian-native"
+      convert-dll --input "$<TARGET_FILE:${elf_target}>")
+  else()
+    set(publish_command "${SYMBIAN_SDK_PREFIX}/bin/symbian"
+      toolchain convert-dll "$<TARGET_FILE:${elf_target}>")
+  endif()
   add_custom_command(OUTPUT "${dll}"
-    COMMAND "${SYMBIAN_SDK_PREFIX}/bin/symbian" toolchain convert-dll
-      "$<TARGET_FILE:${elf_target}>" --definition "${definition}"
+    COMMAND ${publish_command}
+      --definition "${definition}"
       --uid3 "${DLL_UID3}" ${proxy_args} --output "${dll}"
     DEPENDS ${elf_target} "${definition}" ${DLL_IMPORT_PROXIES}
     VERBATIM)
@@ -168,13 +176,28 @@ function(symbian_add_dynamic_library target)
     foreach(symbol IN LISTS DLL_IMPORT_SYMBOLS)
       list(APPEND proxy_args --symbol "${symbol}")
     endforeach()
-    add_custom_command(OUTPUT "${proxy}"
-      COMMAND "${SYMBIAN_SDK_PREFIX}/bin/symbian" toolchain import-proxy
-        "${definition}" ${proxy_args} --target-dll "${target}.dll"
-        --output "${proxy_dir}"
-        --compiler "${CMAKE_CXX_COMPILER}" --linker "${CMAKE_LINKER}"
-      DEPENDS "${definition}"
-      VERBATIM)
+    if(EXISTS "${SYMBIAN_SDK_PREFIX}/bin/symbian-native")
+      add_custom_command(OUTPUT "${proxy}"
+        COMMAND "${SYMBIAN_SDK_PREFIX}/bin/symbian-native" proxy-sources
+          --definition "${definition}" ${proxy_args}
+          --target-dll "${target}.dll" --output "${proxy_dir}"
+        COMMAND "${CMAKE_CXX_COMPILER}" --target=armv5t-none-eabi -march=armv5t
+          -c "${proxy_dir}/exports.S" -o "${proxy_dir}/exports.o"
+        COMMAND "${CMAKE_LINKER}" -m armelf -shared --hash-style=sysv
+          --build-id=none "--soname=${target}.dso"
+          "--version-script=${proxy_dir}/exports.map"
+          -T "${proxy_dir}/proxy.ld" "${proxy_dir}/exports.o" -o "${proxy}"
+        DEPENDS "${definition}"
+        VERBATIM)
+    else()
+      add_custom_command(OUTPUT "${proxy}"
+        COMMAND "${SYMBIAN_SDK_PREFIX}/bin/symbian" toolchain import-proxy
+          "${definition}" ${proxy_args} --target-dll "${target}.dll"
+          --output "${proxy_dir}"
+          --compiler "${CMAKE_CXX_COMPILER}" --linker "${CMAKE_LINKER}"
+        DEPENDS "${definition}"
+        VERBATIM)
+    endif()
     add_custom_target(${target}_proxy DEPENDS "${proxy}")
     add_library(${target}_import UNKNOWN IMPORTED GLOBAL)
     set_target_properties(${target}_import PROPERTIES IMPORTED_LOCATION "${proxy}")

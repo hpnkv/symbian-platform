@@ -62,6 +62,7 @@ pybind11_add_module(symbian_python MODULE module.cc agent_bindings.cc websocket_
                     status_interop.cc concurrency_interop.cc device_bindings.cc)
 set_target_properties(symbian_python PROPERTIES OUTPUT_NAME _native)
 target_include_directories(symbian_python BEFORE PRIVATE "${abseil_SOURCE_DIR}")
+target_include_directories(symbian_python PRIVATE "${PROJECT_SOURCE_DIR}/cpp")
 target_link_libraries(symbian_python PRIVATE symbian::sis symbian::sdk
                       symbian::status symbian::concurrency symbian::device
                       symbian::agent_frame symbian_websocket
@@ -88,3 +89,6 @@ install(FILES "${SYMBIAN_LIBUSB_STATIC}" DESTINATION symbian/host
         RENAME libusb-1.0.a)
 install(FILES "${SYMBIAN_LIBUSB_INCLUDE_DIR}/libusb.h"
         DESTINATION symbian/host/include RENAME libusb.h)
+
+install(FILES "${PROJECT_SOURCE_DIR}/cpp/symbian/sdk/probes/header_probe.cc"
+        DESTINATION symbian/sdk/resources)

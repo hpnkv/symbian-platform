@@ -56,7 +56,11 @@ if [[ -f "${stamp}" && -f "${prefix}/lib/libcrypto.a" &&
       -f "${prefix}/lib/libusb-1.0.a" &&
       -f "${prefix}/lib/libboost_fiber.a" &&
       -f "${prefix}/lib/libboost_context.a" &&
-      -f "${prefix}/lib/libboost_filesystem.a" ]]; then exit 0; fi
+      -f "${prefix}/lib/libboost_filesystem.a" ]]; then
+  host_deps_ready=1
+else
+  host_deps_ready=0
+fi
 jobs=${CMAKE_BUILD_PARALLEL_LEVEL:-4}
 work=$(mktemp -d "${TMPDIR:-/tmp}/symbian-wheel-deps.XXXXXX")
 trap 'rm -rf "${work}"' EXIT
@@ -99,6 +103,24 @@ download_and_extract() {
   return 1
 }
 
+
+# zlib also belongs to the static SDK closure. Extend an existing dependency
+# prefix without recompiling OpenSSL/Boost/libusb unnecessarily.
+if [[ ! -f "${prefix}/lib/libz.a" ||
+      ! -f "${prefix}/share/symbian-zlib-LICENSE" ]]; then
+  download_and_extract \
+    "https://zlib.net/fossils/zlib-1.3.1.tar.gz" zlib.tar.gz \
+    9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
+  (
+    cd "${work}/zlib-1.3.1"
+    CFLAGS="-fPIC ${CFLAGS:-}" ./configure --static --prefix="${prefix}"
+    make -j "${jobs}"
+    make install
+  )
+  mkdir -p "${prefix}/share"
+  cp "${work}/zlib-1.3.1/LICENSE" "${prefix}/share/symbian-zlib-LICENSE"
+fi
+if [[ "${host_deps_ready}" == 1 ]]; then exit 0; fi
 
 # manylinux's minimal Perl omits modules required by OpenSSL's Configure.
 if [[ "${host_os}" == Linux ]]; then
