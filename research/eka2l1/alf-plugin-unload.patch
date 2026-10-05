@@ -1,0 +1,14 @@
+diff --git a/src/emu/services/src/audio/alf/alf.cpp b/src/emu/services/src/audio/alf/alf.cpp
+index e3750430a..39b7c92ce 100644
+--- a/src/emu/services/src/audio/alf/alf.cpp
++++ b/src/emu/services/src/audio/alf/alf.cpp
+@@ -61,6 +61,9 @@ namespace eka2l1 {
+             }
+             pending_plugin_request_ = ctx->move_to_new();
+             break;
++        // Unloading the plugin also retires its outstanding policy request.
++        // Completing only the unload leaves CActive::Cancel() waiting forever.
++        case 1:
+         case 4:
+             if (pending_plugin_request_) {
+                 pending_plugin_request_->complete(epoc::error_cancel);

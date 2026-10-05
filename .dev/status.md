@@ -3083,3 +3083,22 @@ Qt 4.8.1 guest widget now renders using Plastique after application registration
 and the path correction. Pointer-triggered Qt quit remains unverified, so the
 example and pointer/nullability migration are not complete. See the latest
 research-log entry for exact logs and the superseded candidate run.
+
+### Guest Qt shutdown corrections — 2026-10-05
+
+Guest Qt 4.8.1 now renders a real QPushButton, receives pointer input and exits
+with reason/type zero on macOS arm64 and Linux x86_64. Its ordinary destructor
+path needs ALF plugin-unload cancellation; Linux also exposed property
+notifications touching deleted request semaphores during kernel wipeout.
+Both maintained fixes compile and both upstream CTests pass on each host.
+The Linux negative control had normal guest exit followed by SIGSEGV; native
+GDB identifies the property→request semaphore teardown chain. With wipeout
+completion suppressed, Linux guest and frontend exit zero. S60 exit animations
+remain unsupported and are explicitly disconnected by the Qt sample.
+
+Producer 37356578674 passes Linux x86_64/arm64 and macOS arm64; Intel macOS
+is still building. Exact-source rehearsal 37359301901 is waiting on that
+producer. Both runs predate these new Qt teardown fixes and cannot establish
+acceptance of the updated emulator. A new producer/rehearsal and public release
+installation are required. The example remains under preparation; pointer and
+nullability revision has not started.

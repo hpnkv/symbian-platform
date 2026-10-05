@@ -6468,3 +6468,36 @@ Intel macOS. That candidate predates the guest replacement correction; defer
 publication and build/test the correction before choosing the initial emulator
 tag. The reference-to-pointer/nullability migration remains deferred until the
 emulator and guest Qt example streams are complete, as instructed by the owner.
+
+### Guest Qt shutdown and Linux teardown — 2026-10-05
+
+Original Qt 4.8.1 public headers, frozen QtCore/QtGui exports and its allocator
+hook now build an actual QWidget application against public SDK 0.1.2. With
+registration resources, raster graphics and Plastique, a full-screen button
+renders and a pointer press/release reaches clicked→quit. The application
+explicitly disconnects the S60 aboutToQuit animation signal; unsupported Window
+Server graphics-plugin requests still block that path. The earlier generic
+unsupported-request experiment was reverted and is not a maintained fix.
+
+Guest GDB established that the timer calls quit, exec returns zero, and QLabel
+destruction completes. QApplication teardown then waits for a transition-policy
+active object. ALF's HLE keeps opcode 3 pending, but opcode 1 (plugin unload)
+previously completed without cancelling that pending request. The original
+hosted Symbian RAlfTfxClient and ALF streamer server sources confirm the unload
+contract. The maintained alf-plugin-unload.patch cancels that request with
+KErrCancel, retaining ordinary QWidget/QApplication destruction.
+Sources: https://github.com/SymbianSource/oss.FCL.sf.mw.uiaccelerator/blob/master/uiacceltk/hitchcock/AlfDecoderServerClient/src/alfdecoderserverclient.cpp
+and https://github.com/SymbianSource/oss.FCL.sf.mw.uiaccelerator/blob/master/uiacceltk/hitchcock/ServerCore/Src/alfstreamerserver.cpp.
+
+The Linux guest then exited reason/type 0, but the host crashed with SIGSEGV.
+Native GDB identifies property_reference destruction during kernel wipeout:
+property cancellation signals a requester whose request semaphore has already
+been deleted, although its thread is still listed as alive. The maintained
+property-wipeout-notifications.patch suppresses completions during wipeout,
+while normal live subscription cancellation continues to signal KErrCancel.
+The corrected Linux button run has guest reason/type 0 and host exit 0:
+/tmp/symbian-guest-qt-run-button-linux-fixed.log, runtime button-fixed51.
+Mac button48 and timer unload47 also have guest reason/type 0 and host exit 0.
+Both hosts pass the two upstream CTests, including Bluetooth netplay. The
+maintained example's preparation/build, both CPU backends and delivered release
+acceptance remain required; these scratch results do not prove device support.

@@ -52,6 +52,8 @@ PATCHES = (
     "distribution-guest-patches",
     "distribution-tcp-close",
     "distribution-control-start",
+    "alf-plugin-unload",
+    "property-wipeout-notifications",
 )
 LIBRARIES = ("avformat", "avcodec", "swscale", "avutil", "swresample")
 
