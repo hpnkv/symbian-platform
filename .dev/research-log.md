@@ -6760,3 +6760,21 @@ compiler/linker and image-converter execution using relocated bundled tools;
 EKA1 runtime acceptance and physical execution remain separate gates. Stopped
 release run 37385341979 before publication and retained immutable v0.1.3.
 Prepare v0.1.4 with these fixes and the stronger release gate.
+
+### 2026-10-06 — Full Linux source regression
+
+Replayed tagged v0.1.4 over the preserved Linux source workspace. Both
+ARM probe index presets compile. Full host CTest passes 13 available suites
+(`/tmp/symbian-linux-v014-ctest.log`). An unrestricted Python run first found
+ten DLL setup errors because the owner-selected older SDK's standalone tool
+still required explicit symbols. Replayed with an isolated XDG_CONFIG_HOME
+whose active SDK selects the current staged native converter, rather than
+overriding SYMBIAN_SDK_MANIFEST across discovery tests. All 311 available
+Python checks pass; 437 optional checks skip, with the existing FastAPI
+deprecation warning (`/tmp/symbian-linux-v014-python-final.log`).
+
+On macOS the additional prepared-SDK application/library group passes 32
+with one optional skip; its SDK-install isolation check also passes after
+unsetting the inherited explicit SDK override (33 checks total). No product
+change was needed for that environment conflict. These runs do not establish
+physical-device behavior or availability of the not-yet-published 0.1.4 assets.

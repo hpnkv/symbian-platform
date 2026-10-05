@@ -3220,3 +3220,12 @@ shared CMake helper. These checks pass on macOS arm64 and Linux x86_64.
 The publisher now retains the startup's kernel selection for native conversion.
 Public artifact publication and clean installed-wheel acceptance remain pending.
 Physical-device execution and the broad nullability migration remain unverified.
+
+2026-10-06: Exact v0.1.4 source replay on helena@192.168.1.209 builds both
+guest probe indexes. Full Linux native CTest: 13 available suites passed.
+Full Linux Python: 311 passed, 437 optional skips, one existing FastAPI
+deprecation warning. A stale selected SDK initially caused ten DLL setup
+errors; an isolated active-SDK configuration selecting the freshly staged
+SDK resolves them. Additional live application/library checks pass 33
+(one optional skip); the isolated SDK-install fixture passes without an
+explicit inherited SYMBIAN_SDK_MANIFEST override.
