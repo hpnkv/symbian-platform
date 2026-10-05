@@ -1,6 +1,8 @@
 # EKA1 application support: smallest useful slice
 
 Status: first no-UI process slice implemented and accepted on 2026-10-05.
+The bounded original-EUSER PE import and balanced heap/copy slice also passes
+on both emulator backends. Broader ABI, writable state and lifecycle are next.
 See [EKA1.md](EKA1.md) for the tested CLI profile, evidence and restrictions.
 GUI Run, Debug and generation remain gated.
 

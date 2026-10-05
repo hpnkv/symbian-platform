@@ -109,7 +109,8 @@ build and execute on C7, E6, 6120 and E71 using the default executive map;
 the RM-807 profile remains restricted to its exact proven pair. EKA1 imports
 remain useful. The first no-UI Nokia 7610 process profile now executes on both
 emulator backends; its bounded entry and legacy image contract are documented
-in [EKA1.md](EKA1.md). General EKA1 C++/GUI/import/runtime support remains gated
+in [EKA1.md](EKA1.md). Five original EUSER heap/copy imports now execute
+with balanced cleanup; general EKA1 C++/GUI/import/runtime support remains gated
 under [eka1-plan.md](eka1-plan.md).
 Continue full import/header/server coverage and general lifecycle acceptance;
 this does not complete runtime, concurrency, distribution or physical-device

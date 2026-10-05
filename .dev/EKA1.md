@@ -6,6 +6,9 @@ Nokia 7610 RH-51 / Symbian OS 8.0 firmware. Both Dynarmic and Dyncom run it and
 record a normal process exit with reason 7610. A separately built version
 returns 7611 on both backends; checking it against 7610 fails as intended.
 This is emulator process support, not general EKA1 application/device support.
+The next bounded slice also executes five original EUSER imports: allocation,
+allocation length/cell counts, copying and freeing. Both backends restore the
+original heap counts; changed-result and corrupted-copy controls pass.
 
 ## Use the profile
 
@@ -56,6 +59,38 @@ SYMBIAN_EKA1_TEST_IMAGE="$PWD/.symbian/eka1-build/eka1_probe.exe" \
   '--gtest_filter=Eka1OracleTest.*'
 ```
 
+## Original EUSER imports
+
+The complete `examples/eka1_import_probe/` uses `kind = "e32-eka1-import"`
+and a selected legacy-ordinal proxy. Its DEF records only symbol/ordinal facts;
+`euser-source.json` identifies the pinned source and original EUSER digest.
+Follow the [user guide](../doc/docs/guides/eka1.md) to build the proxy, build the
+process and run it on either backend. Modern Belle EUSER proxies are incompatible.
+
+The exercised boundary has GNU2 symbol names and explicit integer/pointer
+declarations in `legacy_euser.h`: `User::AllocLen` (39), `User::AllocSize` (41),
+`User::Alloc` (45), `Mem::Copy` (243) and `User::Free` (476). This is not a
+general C++ ABI adapter. `Mem::Copy` returns the end pointer, `dest + length`.
+The probe checks 64 copied bytes, live heap counts and exact restoration after
+free. Allocation failure returns -4; failures 40–43 identify length/end-pointer,
+copied-data, live-count and cleanup errors. The corrupt-copy control returns
+41 after freeing its allocation.
+
+Native conversion reuses validated ELF proxy resolution and retained PLT call
+relocations. The final `.got.plt` function slots become a contiguous PE import
+address table at `text_size`; a zero word terminates it. The legacy import
+section contains ordinals, whereas EKA2 ELF import sections contain code offsets.
+Native inspection checks the section against every IAT word and its terminator.
+Only one function-only `euser.dll` block is currently supported.
+
+```sh
+SYMBIAN_EKA1_GUEST=1 python -m pytest \
+  symbian/tests/test_eka1_import.py -v
+SYMBIAN_EKA1_IMPORT_TEST_IMAGE="$PWD/.symbian/eka1-import-build/eka1_import_probe.exe" \
+  build/eka2l1/platform-tests/symbian_e32_oracle \
+  '--gtest_filter=Eka1OracleTest.IndependentlyChecksPeImportsAndIat'
+```
+
 ## Format and entry contract
 
 Native `ConvertEka1Executable` shares the existing retained-relocation ELF
@@ -71,10 +106,10 @@ and copies, with all format handling remaining native.
 | Flags | 0, original header, no EABI/EKA2/ELF-import flags | `0x12000028` |
 | Entry | ARM function that returns an integer | EKA2 marker and thread/process startup |
 | SID/capabilities | Absent, reported as zero | V security extension |
-| Imports/relocations | None in this implemented slice | Validated eager ordinal imports/typed fixups |
+| Imports/relocations | Optional contiguous EUSER PE IAT; no fixups | Validated eager ordinal imports/typed fixups |
 
 The probe is one RX mapping with position-independent internal branches.
-Unsupported data/BSS, absolute pointer fixups, imports, exports, lifecycle
+Unsupported data/BSS, absolute pointer fixups, other imports, exports, lifecycle
 arrays and exception metadata are rejected. The example explicitly excludes
 Clang's cantunwind-only `.ARM.exidx` metadata; it does not provide unwinding.
 Input must be trusted and retain relocations: handwritten absolute addresses
@@ -99,6 +134,8 @@ leaves match the historical EKA1 ABI. No legacy compiler was introduced.
   `7ae4317ffb1fc4f29506439bc6a21392fe9dd9bfdfd75c07a9727ed677cabd51`.
 - Initial process image SHA-256:
   `64238a00231c929bf395e1534476d0b615fa2e51dbedc92df460df4236bf9589`.
+- Imported heap/copy process SHA-256:
+  `8accf68f01299e6eed6f4da5c8cb819e503b63fb8e215e6e498f0edcf63b85fc`.
 - Executed frontend SHA-256:
   `c32f93f1b67921ca8c7dd1933fc099eb860d876f68eddaeda281a133d3e97982`.
 
@@ -128,8 +165,9 @@ are retained privately in `.symbian/eka1-20261005/original-rom-contract.json`.
   P900 import remains available, but its process ABI has not been exercised.
 - No Window Server/font/UI application profile, generated GUI app, normal
   Console app Run/Debug, AppArc registration or general OS boot claim.
-- No historical C++ import ABI, SDK runtime, libc++, heap-owning application
+- No general historical C++ import ABI, SDK runtime, libc++, heap-owning C++
   objects, global/static lifecycle, DLL publishing, threads or concurrency.
+  The five explicit EUSER calls above are the tested heap/import boundary.
 - No native HTTP/WebSocket/TLS on EKA1 yet: those use the separately tested
   EKA2 runtime, socket services and entropy contract.
 - No EKA1 SIS installation/signing. The native SISX builder explicitly rejects
@@ -141,7 +179,7 @@ is writable; emulator startup may modify its copied Z files. All baseline
 hashes matched after acceptance. Owner-writable file permissions still do not
 replace an independently held offline preservation copy.
 
-Next gates are a native EKA1 import/proxy/startup contract with original
-ordinals and real ABI calls, writable data/relocations and lifecycle, then UI
+Next gates are broader original ABI calls, writable data/relocations and
+lifecycle, then UI
 and legacy packaging with their own positive/negative controls. Do not relax
 these restrictions because an ARM ELF builds or a header parses.

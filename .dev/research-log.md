@@ -5497,3 +5497,49 @@ fixup controls. Host EKA2/firmware/CLI/console/signing selection91 passed,
 Black/Ruff and whitespace checks pass. Full restrictions and replay are in
 EKA1.md and the user guide. P900, C++/import ABI, modern libraries, networking,
 GUI, legacy SIS, debugging and physical-device compatibility remain gates.
+
+## 2026-10-05 — Original EKA1 PE imports and balanced heap calls
+
+Continued the accepted no-UI Nokia 7610 slice with native legacy PE imports.
+The native converter reuses retained ELF/proxy/PLT validation, keeps the final
+GOT function slots as a contiguous IAT at text_size, appends its zero terminator
+and emits ordinals in the import section. Inspection checks canonical section
+encoding, ordinal/IAT equality and bounds. One function-only euser.dll block,
+ARMv5T and no writable data/fixups/lifecycle remain the supported boundary.
+Python copies proxy bytes under the GIL and delegates all format work natively.
+
+Symbol/ordinal facts come from pinned EKA2L1 bridge/epoc6_n.def; provenance and
+its hash are in examples/eka1_import_probe/euser-source.json. Original firmware
+EUSER remains unchanged (digest in EKA1.md). Explicit GNU2 symbol declarations
+exercise User::AllocLen39, AllocSize41, Alloc45, Mem::Copy243 and Free476.
+No legacy compiler, C++ runtime, emulator shim or new scheduler was introduced.
+The probe allocates64, copies and checks every byte, checks live cell/byte counts,
+frees, and requires exact restoration. The corruption control still frees.
+
+Retained initial failure: .symbian/eka1-import-20261005/dynarmic/report.json
+records reason40 for image238a92ed07f0c549db80ef7f4ae89f8b30c876029a8ce2484d67fed2d873e4f0.
+The oracle incorrectly expected Mem::Copy to return dest. Original e32std.inl
+specifies dest+length; correcting that expectation passed both backends in
+{dynarmic-r2,dyncom-r2}. Final code always performs the copy before checking
+length/end-pointer, so a failed length oracle cannot lead to uninitialized reads.
+
+Final acceptance: SYMBIAN_EKA1_GUEST=1 pytest test_eka1_import.py test_eka1.py
+ test_eka1_guest.py: 19 passed in31.56s. Log /tmp/eka1-import-acceptance-final.log;
+retained outputs .symbian/eka1-import-final-r2-20261005. The import matrix uses
+normal7610, changed7611 and corrupted41 on Dynarmic/Dyncom, plus four reruns
+requiring rejection against expected7610: ten import guest runs. Native exits
+are type0, frontend exits0 and all preserved baseline hashes match.
+Two-tree-reproducible imported images:
+- normal: 8accf68f01299e6eed6f4da5c8cb819e503b63fb8e215e6e498f0edcf63b85fc
+- changed: a48730a5dbbcca8174eb3d203fddb27d36227aa5867ccf3b355459814f86de26
+- corrupt: 6808cc443cf67689c018b15eb92779e604565620454b0df5f695d3caa123be6e
+
+Independent EKA2L1 parser checks original header/CPU/entry, one EUSER block,
+section ordinals41/45/39/243/476, matching IAT, absent writable state/security
+and fixups, damaged UID and truncated code. Both EKA1 oracle tests pass;
+/tmp/eka1-import-oracle-final.log. This is not historical checksum validation.
+Native CTest14/14 (/tmp/eka1-import-native-final.log); E32 suite40 tests.
+Host E32/import/project/CLI/Console/SDK regression selection70 passed,2 skipped
+(/tmp/eka1-import-host-final.log). See EKA1.md and the public guide for complete
+build/verification commands and restrictions. Broader ABI, writable state,
+lifecycle, networking, UI, legacy packaging and phone acceptance remain gates.

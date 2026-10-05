@@ -2700,3 +2700,19 @@ outer view at the form's edge.
   Console application Run/Debug, legacy SIS and P900 execution remain gated.
   The SISX builder explicitly rejects EKA1 rather than implying old-format
   installer compatibility.
+
+## 2026-10-05 — EKA1 original EUSER imports
+
+- Native EKA1 conversion and inspection now support a bounded function-only
+  EUSER PE import table, sharing validated ELF/proxy/call primitives with EKA2.
+  The complete ARMv5T example uses original allocation, length/count, copy and
+  free calls; both CPU backends verify copied bytes and balanced heap cleanup.
+- Normal7610, changed7611 and corrupted-copy41 results pass; checking controls
+  against7610 fails. Ten import guest runs preserve every golden firmware hash.
+  Combined EKA1 acceptance19/19; independent EKA2L1 legacy/PE parser tests2/2;
+  native CTest14/14, E32 suite40 tests; host regression70 passed,2 skipped.
+- This establishes five explicit pointer/integer legacy ABI calls against the
+  named 7610 fixture. General C++ ABI, writable state/fixups/lifecycle, UI,
+  HTTP/TLS, legacy SIS, P900 and physical-device behavior remain unverified.
+  [EKA1.md](EKA1.md) and the user guide describe replay, provenance and caveats;
+  the research log retains the initial Mem::Copy return-oracle failure.
