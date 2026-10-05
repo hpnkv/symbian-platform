@@ -45,4 +45,6 @@ HTML_COLORSTYLE_SAT    = 60
 HTML_COLORSTYLE_GAMMA  = 90
 HTML_EXTRA_STYLESHEET  = ../theme/doxygen-awesome.css ../typography.css
 HAVE_DOT               = NO
+INPUT_FILTER           = "python3 filter_comments.py"
+FILTER_SOURCE_FILES    = NO
 SOURCE_BROWSER         = YES

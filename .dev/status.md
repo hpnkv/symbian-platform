@@ -2769,3 +2769,9 @@ execution coverage. Ordinary commands use the activated/installed `symbian`
 entry point, Tutorials is removed, and the runtime recipe remains in a guide.
 Public Markdown formatting checks pass on macOS clang-format 23 and Linux
 clang-format 18; documentation builds enforce braces and other root style rules.
+
+Original-header Doxygen class briefs now describe functionality before API
+metadata; detailed descriptions put publication/capability information last.
+All eleven snapshots retain unchanged declarations and source-browser content.
+Strict documentation builds and rendered class-list/detail-order checks passed.
+The separate generated symbol-description coverage remains unfinished.

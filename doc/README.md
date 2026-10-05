@@ -36,3 +36,7 @@ conditional and loop bodies. Format new or edited examples with
 Use `--clang-format /path/to/clang-format` when it is not on `PATH`; the
 Doxygen build also needs it on `PATH`. Doxygen comment examples are formatted
 at build time by `doc/cpp/filter_examples.py`, preserving source files.
+
+Original-header publication and API-status tags are placed after functional
+documentation by `doc/cpp/platform/filter_comments.py`; the licensed snapshots
+and source-browser views retain their original text.

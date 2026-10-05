@@ -5705,3 +5705,18 @@ with macOS clang-format 23.1.2 and Ubuntu clang-format 18.1.3. The local link
 checker now ignores fenced examples instead of interpreting lambda captures as
 Markdown links. Strict MkDocs and both Doxygen indices passed; historical-header
 warnings remain. No wheels were published by this documentation pass.
+
+## 2026-10-05 — Doxygen functional descriptions before API metadata
+
+The original-header input filter now moves publication, release/internal status,
+prototype and capability tags to an end paragraph. Class-list briefs no longer
+start with publication status; CActive's functional brief precedes its details,
+which precede API status. Declaration comparison passed across all eleven
+headers. The licensed snapshots and source-browser views remain unchanged.
+The filter preserves non-UTF-8 bytes in historical comments; decoding strictly
+as UTF-8 had caused silent filter failure on several headers, caught during
+validation and fixed with byte-preserving decode/encode. Build guards now fail
+on filter tracebacks as well as Doxygen errors. Final strict MkDocs, both
+Doxygen indices, local links and formatting passed in
+`/tmp/symbian-docs-final-all.log`, with remaining historical-header warnings.
+This ordering fix does not complete the separate all-symbol documentation work.
