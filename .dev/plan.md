@@ -107,9 +107,10 @@ global -> SDK -> project -> command resolution, documented in
 bundles replace fixed RM-807 paths in production Run/Debug. Generated starters
 build and execute on C7, E6, 6120 and E71 using the default executive map;
 the RM-807 profile remains restricted to its exact proven pair. EKA1 imports
-remain useful, while the missing EKA1 application ABI is reported explicitly.
-The dependency-limited first EKA1 capability is scoped in
-[eka1-plan.md](eka1-plan.md); it is not implemented.
+remain useful. The first no-UI Nokia 7610 process profile now executes on both
+emulator backends; its bounded entry and legacy image contract are documented
+in [EKA1.md](EKA1.md). General EKA1 C++/GUI/import/runtime support remains gated
+under [eka1-plan.md](eka1-plan.md).
 Continue full import/header/server coverage and general lifecycle acceptance;
 this does not complete runtime, concurrency, distribution or physical-device
 objectives.

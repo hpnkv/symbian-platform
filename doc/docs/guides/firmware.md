@@ -8,6 +8,10 @@ your own firmware locally; it is not part of this repository or SDK.
 You can create and build an application before importing firmware. Import one
 when you want to run the app in a disposable emulator instance.
 
+EKA1 imports can open standalone emulator sessions. The tested Nokia 7610
+fixture also supports the opt-in [no-UI EKA1 process profile](eka1.md); generated
+GUI applications continue to require EKA2.
+
 ## 1. Import an image
 
 For a supported local archive, give the import a short name:

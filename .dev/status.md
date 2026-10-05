@@ -2678,3 +2678,25 @@ outer view at the form's edge.
   or HTTP1 WebSocket Upgrade. Details/replay/failures are in the research log
   and HTTP, WebSocket and TLS guides. Explicit Status discards use IgnoreError;
   bool-returning local concurrency APIs retain their appropriate handling.
+
+## 2026-10-05 — Bounded EKA1 process support
+
+- The first EKA1 slice is implemented: native legacy E32 publication and
+  inspection, e32-eka1/ARMv5T CMake build profile, complete no-UI example and
+  toolchain verify-eka1 CLI. Nokia 7610 RH-51/epoc80 runs and exits normally
+  with result7610 on both Dynarmic and Dyncom; independent changed-result7611
+  images run on both, and mismatched exit oracles reject them. All preserved
+  fixture hashes remain unchanged.
+- Existing EKA2L1 EKA1 heap/exit bootstrap is required; no emulator shim or new
+  compiler/runtime dependency was added. Independent parser acceptance and
+  UID/truncation controls pass. This establishes named-firmware emulator
+  process execution, not general EKA1 ABI or physical-device acceptance.
+- EKA1 acceptance11/11; native CTest14/14; E32 suite39/39. Existing host
+  regression selection91 passed,
+  15 skipped. Real CLI verification, strict docs and formatting checks pass.
+  Artifacts/failures/replay are recorded in the research log.
+- See [EKA1.md](EKA1.md) for the exact fixture/frontend identities and caveats.
+  Imports, writable state/fixups, C++ runtime, HTTP/TLS, GUI generation/normal
+  Console application Run/Debug, legacy SIS and P900 execution remain gated.
+  The SISX builder explicitly rejects EKA1 rather than implying old-format
+  installer compatibility.

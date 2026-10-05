@@ -5413,3 +5413,87 @@ connection pooling, decompression, HTTP1 Upgrade or HTTP2 multiplexing/push.
 Streaming exposes independent read/write halves and caller deadlines; native
 synchronous work belongs on the existing SDK executor. Internet acceptance
 requires live DNS/network and the selected public roots; it is not hermetic.
+
+## 2026-10-05 — First executable EKA1 profile
+
+After committing/pushing the HTTP and outstanding work, implemented the first
+slice from eka1-plan.md using the existing Clang/LLD, CMake/Ninja and native
+E32 converter. There is no new compiler/runtime/scheduler or EKA1 emulator
+patch. The profile is e32-eka1, ARMv5T, one RX PIC mapping, callable ARM entry
+with integer return, legacy 124-byte header/CPU0x2000 and no security extension.
+Native inspection now identifies the kernel. Imports, writable data/BSS,
+absolute pointer fixups, exports and lifecycle/unwind metadata are rejected.
+The example explicitly excludes cantunwind metadata. SISX now rejects EKA1
+instead of accidentally accepting its newly inspectable header.
+
+Selected preserved Nokia 7610 RH-51, epoc80, firmware identity
+80c85c43e74cd6f6bc2a071e32d2efdebe1fa0a3c5352c08217327b6415bfbe3.
+ROM SHA256 a5a2b1fb499410ced638ad590edc7dfbfcd491839919d1a11cf58f76c64aee9a;
+EUSER SHA256 7ae4317ffb1fc4f29506439bc6a21392fe9dd9bfdfd75c07a9727ed677cabd51.
+Original instrec.exe is a ROM image (not disk E32), SHA256
+bedf1cbbe7c032a45d13ffb4d68d82bb74e2f617e4e78c243f85330bb52e3422:
+UID1 0x1000007a, priority350, flags2, Thumb entry0x50adc225,
+code address0x50adc224, no data/BSS, ROM DLL reference table. Header and entry
+observations remain private at
+.symbian/eka1-20261005/original-rom-contract.json. ROM import references cannot
+be treated as EKA2 eager-import or legacy disk PE tables.
+
+Pinned EKA2L1 2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8 supplies an existing
+EKA1 thread bootstrap in kernel/src/libmanager.cpp and thread.cpp. It sets up
+the heap with original EUSER ordinals166/1127, invokes DLL attach entries,
+calls the image entry and forwards r0 to ordinal397 Thread::Exit. The callable
+ARM entry returns through that bootstrap; it does not use an EKA2 marker or
+Belle SVC0x73. This is a dependency on the tested emulator's EKA1 bootstrap,
+not proof of a physical phone's entry contract. Executed local frontend
+SHA256 c32f93f1b67921ca8c7dd1933fc099eb860d876f68eddaeda281a133d3e97982
+includes maintained patches and preexisting research changes; no pristine
+upstream binary claim is made.
+
+Normal image SHA256
+64238a00231c929bf395e1534476d0b615fa2e51dbedc92df460df4236bf9589;
+changed-return image SHA256
+d3b619814060b4651fd875a037bd093dac9ad0d6c10e8752877eb5340bc60dea.
+Both images reproduce in two separate CMake trees. Both Dynarmic/Dyncom
+record normal process exit type0 with reasons7610 and7611 respectively,
+frontend exit0. Both changed-return checks against expected7610 fail with
+FAILED_PRECONDITION and retain accepted=false. All golden manifest hashes
+match before/after every run. Only disposable instance contents are writable.
+
+Replay: SYMBIAN_EKA1_GUEST=1 pytest symbian/tests/test_eka1.py
+symbian/tests/test_eka1_guest.py: 11 passed in 12.98 seconds, including
+four preflight policy cases and four both-backend execution cases (six
+actual guest runs with mismatched controls). Final log
+/tmp/symbian-eka1-acceptance-r3.log and evidence
+.symbian/eka1-final-r3-20261005. Independent EKA2L1 parser test:
+SYMBIAN_EKA1_TEST_IMAGE=.symbian/eka1-20261005/build/eka1_probe.exe,
+platform-tests/symbian_e32_oracle --gtest_filter=Eka1OracleTest.*;
+/tmp/symbian-eka1-oracle-tests.log. It accepts original-format CPU/header,
+entry, absent imports/security/data/relocations and rejects damaged UID and
+truncated code. It does not verify historical code checksum semantics;
+our native checker validates the emitted profile's additive word checksum.
+EKA2/V original-loader validation is not an EKA1 oracle.
+
+The actual CLI toolchain verify-eka1 passed on Dyncom:
+/tmp/symbian-eka1-cli.log, .symbian/eka1-20261005/cli-dyncom/report.json.
+It uses resolved firmware/frontend/backend settings, requires a new output
+outside preservation, rejects wrong image/fixture/exec map, bounds execution,
+reaps only its child, checks the native process exit rather than frontend
+exit alone, and retains firmware/image/frontend identity and logs.
+
+Retained failures: first execution reached reason7610, but reporting a Path
+inside the command list failed JSON serialization; string conversion fixed
+report publication, and fresh runs retained the full native exit. The initial
+SISX rejection test loaded the older installed native module and failed;
+a rebuilt, atomically replaced module passes it. Initial EKA2 regression
+selection found two stale test assertions: code size assumed no relocation
+section despite the probe's existing EHABI descriptor, and expected obsolete
+CMake input-error wording. Updated those assertions to the current preserved
+behavior, with the same loader/profile checks; final selection passes.
+
+Native tests: all14 CTest targets pass; E32/ARM-attribute suite39 tests pass,
+including EKA1 truncation, identity, ISA, entry, unsupported data and pointer
+fixup controls. Host EKA2/firmware/CLI/console/signing selection91 passed,
+15 opt-in skipped (/tmp/symbian-eka1-regressions-r2.log). Strict MkDocs,
+Black/Ruff and whitespace checks pass. Full restrictions and replay are in
+EKA1.md and the user guide. P900, C++/import ABI, modern libraries, networking,
+GUI, legacy SIS, debugging and physical-device compatibility remain gates.

@@ -1,7 +1,8 @@
 # EKA1 application support: smallest useful slice
 
-Status: plan only. Do not enable EKA1 Run, Debug or application generation from
-this document.
+Status: first no-UI process slice implemented and accepted on 2026-10-05.
+See [EKA1.md](EKA1.md) for the tested CLI profile, evidence and restrictions.
+GUI Run, Debug and generation remain gated.
 
 ## Why this is separate
 

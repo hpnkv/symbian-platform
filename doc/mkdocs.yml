@@ -114,6 +114,7 @@ nav:
           - Troubleshoot: guides/gui-troubleshooting.md
           - Guest C++ runtime: guides/guest-runtime-source.md
       - Firmware and emulator: guides/firmware.md
+      - EKA1 process profile: guides/eka1.md
       - Emulator control: guides/emulator-control.md
       - Package an application: guides/packaging.md
       - Native HTTP client and server: guides/http.md
