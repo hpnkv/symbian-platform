@@ -13,7 +13,7 @@ its session and subsession, is move-only, and closes both exactly once. A
 lossy conversion. `absl::StatusOr` distinguishes an empty file or directory
 from an error, including `PermissionDenied` for protected paths.
 
-## Boundary and cost
+## Ownership and cost
 
 `ReadAt` fills a caller-owned `std::span<std::byte>` directly. Reusing one
 open file avoids reconnecting to the File Server and allocating a buffer on
@@ -21,8 +21,7 @@ every read. `DirectoryReader::Next()` yields one owned entry at a time, so a
 large directory never becomes a large result vector. The legacy handles and
 descriptors remain in `native_storage.cc`. Paths must be absolute UTF-16 drive
 paths. File Server calls may block; create, use and destroy each owner on the
-same worker thread while event callbacks remain bounded-fast. Cross-thread
-native session ownership has not been established.
+same worker thread while event callbacks remain short. Native session owners must remain on the creating worker thread.
 
 `WritableFile` uses the same ownership rule and reads directly from a caller
 `std::span<const std::byte>` during synchronous `WriteAt`; there is no
@@ -46,12 +45,10 @@ APIs promise a bounded amount of work and memory per step, not a fixed maximum
 I/O latency.
 This distinction matters when an underlying drive or server stops responding.
 
-## Remaining work
+## Restrictions
 
-This first profile supports file offsets within 2 GiB. Large-file APIs,
-metadata/watch subscriptions and cancellation need separate permission and
-lifetime evidence. Native in-flight I/O cancellation and timeout handling also
-need a verified asynchronous File Server owner. `WriteAt` is one native
-synchronous write; it does not promise an atomic update across multiple calls
-or a rollback after a failed write. Raw partition, erasure,
-flashing and recovery operations do not belong in this library.
+Offsets must be below 2 GiB. Large-file APIs and metadata/watch subscriptions
+are unavailable. Cancellation is checked between synchronous operations;
+in-flight I/O has no fixed cancellation or timeout bound.
+`WriteAt` does not provide an atomic update across multiple calls or rollback
+after a failed write.

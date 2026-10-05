@@ -45,7 +45,7 @@ initial drive C content. Every application launch gets new writable state.
 Inputs are hashed before and after import. Failed and timed-out native imports
 retain request, response, logs and partial staging, and publish no object or
 alias. The default timeout is 300 seconds; `--timeout` changes that bound.
-Successful staging retains evidence but removes its duplicate instance.
+Successful staging retains reports but removes its duplicate instance.
 
 
 ## Identity, verification and offline transfer
@@ -66,7 +66,7 @@ symbian firmware import --bundle /transfer/c7-bundle --name c7
 `list` reads metadata and explicitly reports that full integrity was not checked.
 `inspect`, export, bundle import and launch verify every baseline byte. Additional
 or missing files, mismatched identities and links fail verification. Source
-paths in provenance are historical evidence, never required for resolution.
+original paths are informational and are not required for resolution.
 Bundles contain private firmware and provenance, so transfer them privately.
 Moving a store needs only a global `--store` configuration change; project IDs
 and SDK files stay valid. There is no network download or firmware redistributor.

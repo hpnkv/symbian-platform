@@ -61,8 +61,5 @@ separate steps. The [GUI build guide](gui-build.md) explains those artifacts.
 | A local `clion-arm` toolchain name is unavailable | Select the shared `symbian-pic` preset or restart the IDE after installing a named toolchain. |
 | Indexing looks like host code | Inspect the selected profile and its `compile_commands.json` for `--target=armv6-none-eabi`. |
 
-The prepared project was configured in an IntelliJ IDEA installation with the
-CLion plugin, and its target model resolved the GUI C++ and assembly sources.
-That is bounded editor evidence. The [Run and Debug guide](clion-run-debug.md)
-explains guest execution and breakpoints; the [advanced guide](clion-advanced.md)
-covers retained artifacts and manual debugging.
+Use the [Run and Debug guide](clion-run-debug.md) for guest execution and
+breakpoints, or the [advanced guide](clion-advanced.md) for manual debugging.

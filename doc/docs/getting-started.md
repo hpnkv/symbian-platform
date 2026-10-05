@@ -2,8 +2,7 @@
 
 Start with the host tools, then create an application. You need a local
 firmware image only when you are ready to run it in an emulator.
-On Linux, follow the [provisional host path](guides/linux.md) alongside these
-steps; interactive emulator and guest-debugger checks remain open there.
+On Linux, follow the [Linux host guide](guides/linux.md) alongside these steps.
 
 ## A few names you will see
 
@@ -16,9 +15,8 @@ steps; interactive emulator and guest-debugger checks remain open there.
 | Window Server | The system service a GUI app uses to create windows and receive redraw and input events |
 
 The usual path is **C++ source → ARM build → E32 image → SIS package → emulator
-check**. Each step has its own output and validation. A successful emulator
-check is useful development evidence; physical compatibility is measured
-separately.
+check**. Test the required services and installation policy on your target
+device before deployment.
 
 ## 1. Install the host tools
 

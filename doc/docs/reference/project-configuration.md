@@ -43,9 +43,7 @@ SVG icon. The SDK compiles registration resources with the installed `rcomp`
 and packages them beside the executable. For another menu language, add
 `[application.localizations.fr]` with `caption` and `short_caption`; the main
 caption is the fallback. This translates the launcher entry, not your app's
-own UI. Unsupported language tags fail during packaging. The exact set of accepted tags is checked during project configuration; the
-[development status](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md)
-records validation evidence.
+own UI. Unsupported language tags fail during packaging. The exact set of accepted tags is checked during project configuration.
 
 ## Process network capability
 
@@ -84,6 +82,6 @@ device.
 | `sdk.json`, `digests.json` | Installed entry points and file verification |
 
 The [SDK export reference](sdk.md) gives the fuller installed surface. The
-[capability guide](../capabilities/index.md) records which native facilities
-have been exercised. The current development export still depends on declared
+[capability guide](../capabilities/index.md) describes available native facilities
+and restrictions. The source export depends on declared
 host tools and separately supplied private firmware.

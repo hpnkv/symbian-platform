@@ -13,7 +13,7 @@ prevents one failed attribute from silently becoming zero or a guessed DPI.
 `absl::StatusOr` rejects nonpositive pixel geometry. The type describes HAL
 geometry only: a Window Server layout may differ after rotation.
 
-## Boundary and cost
+## Ownership and cost
 
 `native_display.cc` contains the legacy HAL include; public code sees ordinary
 C++ values. Four small synchronous HAL reads need no Window Server connection,
@@ -38,8 +38,7 @@ label on its existing wake timer, redrawing only after a change. Return
 immutable strings that remain valid until the panel closes; share the state
 with a worker through an atomic value.
 
-## Remaining work
+## Restrictions
 
-Window Server orientation and size-change notifications, multiple screens and
-display-handle ownership require a separate observed contract. This snapshot
-does not claim to provide those behaviors.
+The geometry query is a snapshot. It does not subscribe to orientation or
+size-change notifications and does not enumerate multiple screens.

@@ -23,7 +23,5 @@ Implementation files appear to help trace behavior; they are not additional
 application APIs.
 
 The [original header reference](cpp/platform/index.html) is deliberately
-separate and covers eleven selected historical headers. Its declarations are a
-research aid. Check the SDK import proxy and named firmware evidence before
-depending on an OS symbol. Generated output by itself does not establish
-physical Nokia 808 compatibility.
+separate and covers eleven selected historical headers. Check the SDK import proxy and selected firmware's exports before depending
+on an OS symbol.

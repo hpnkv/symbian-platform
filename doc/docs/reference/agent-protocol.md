@@ -78,8 +78,8 @@ The guest checks the MAC, then returns
 `HMAC-SHA256(key, "symbian-agent-server-v1" || server_nonce || client_nonce)`.
 The host checks the final proof before it sends hello. A failed or incomplete
 exchange closes the connection. A five-second deadline bounds the exchange.
-The guest obtains its nonces through the selected RM-807 entropy adapter; its
-behavior on a physical handset remains unverified.
+The guest requires secure entropy for fresh nonces. The RM-807 adapter needs
+the matching patched emulator; a physical target needs its own secure source.
 
 The checked-in `agent_service/test-agent.key` is public and **emulator-only**.
 The build refuses to expose that key on Wi-Fi. A private build cannot use it.
@@ -198,19 +198,9 @@ symbian agent listen --key-file /private/agent.key --files
 Each command opens one temporary authenticated listener. `--after` is a
 process-local sequence cursor; it does not survive an agent restart.
 
-## Verification boundary
+## Device requirements
 
-The opt-in guest suite builds against the selected SDK, launches the agent in
-the pinned RM-807 EKA2L1 profile, checks authentication, status, logs,
-rejection, deadlines and local panel controls:
-
-```sh
-SYMBIAN_SDK_MANIFEST="$PWD/.symbian/sdk/sdk.json" \
-SYMBIAN_AGENT_SERVICE_GUEST=1 \
-  uv run pytest symbian/tests/test_agent_service_guest.py -q
-```
-
-Use an installed SDK manifest in place of the example path. Those tests show
-bounded emulator behavior only. A private physical package still needs on-phone
-installation, network reachability, the pairing-code comparison, entropy and
-long-running idle behavior to be checked on the actual device.
+The emulator profile uses loopback and a public test key. For a physical device,
+use a private key and package, complete the pairing-code comparison, and check
+the device's network reachability and installation policy. The emulator key
+and transport fixture are unsuitable for deployment.

@@ -19,10 +19,9 @@ your breakpoint. Inspect the call stack and local values in the ARM session.
 Host LLDB attached to the EKA2L1 process debugs the emulator itself, which is
 a different target.
 
-## 3. Retain evidence
+## 3. Diagnose a failed session
 
 Record the actual load address, ELF/E32 pair, firmware identity, guest exit
 reason and emulator log with any breakpoint result. The [guest debugging
 reference](../reference/guest-debugging.md) gives manual ARM GDB commands,
-source mappings and the known startup failure controls. A breakpoint or ARM
-build does not establish physical-device compatibility.
+source mappings and startup troubleshooting.

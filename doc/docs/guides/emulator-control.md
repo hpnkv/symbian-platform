@@ -1,12 +1,8 @@
 # Native emulator capture and input
 
-The guarded RM-807 fixture now runs the GUI on both tested macOS CPU backends.
-Actual guest screen textures show `0000`, two increment taps produce `0001` and
-`0002`, a tap outside controls leaves `0002`, and reset returns `0000`. Exit
-completes the SDK thread-exit path and records process UID `0xe0000811`, exit
-type kill/0, reason zero. The frontend itself exits with code zero. This is an
-application test against the supplied custom firmware, not proof of OS boot,
-full Belle compatibility or physical-phone behavior.
+Use the patched EKA2L1 frontend to capture the guest display, send logical
+pointer events and inspect native process exits. The control endpoint belongs
+to a local disposable emulator session; it provides no physical-device control.
 
 ## Implementation and lifecycle
 
@@ -16,18 +12,12 @@ injected CMake hook. The host Python extension and wheel do not link EKA2L1 or
 this adapter. Its native code uses Abseil Status/StatusOr, C++20 and disabled
 exceptions, with the repository's formatting and layout conventions.
 
-The adapter uses EKA2L1's existing Qt event loop and kernel callbacks. It adds
-no scheduler, worker thread, Python callback or native Python reference. Python
-is a synchronous socket/policy client, so no pybind11 boundary or GIL holder is
-needed for this interface. New native concurrency, if later needed, must use
-A11's thread library rather than a separate pool.
-
 Capture calls the original graphics driver's `read_bitmap` on `screen_texture`,
 then encodes PNG in native Qt code. It captures the guest display, excluding the
 host desktop and frontend overlays. Pointer coordinates are logical guest
 coordinates; events enter the same Window Server driver queue as normal
-frontend input. Returning `queued` does not prove delivery; pixel changes in
-the live test provide that evidence. Process exit records copy scalar/string
+frontend input. A `queued` response acknowledges enqueueing; check the next capture for
+visible delivery. Process exit records copy scalar/string
 values from the real kernel callback, avoiding dangling process pointers.
 
 The Qt thread holds the frontend state lock while validating pointers/captures.
@@ -37,17 +27,14 @@ graphics. Pointer delivery releases its validation lock before the existing
 Window Server path acquires the kernel lock internally. Teardown detaches the
 callback before the OS worker destroys the kernel, saves a final report, then
 stops the existing workers. Pending replies drain with at most 100 ms per
-accepted socket after the Qt loop stops. Both ordering mistakes were exercised and corrected
-in retained private experiments.
+accepted socket after the Qt loop stops.
 
 ## Start a controlled disposable instance
 
-Apply all seven patches and build `eka2l1_qt` as described in source walkthrough
-section 6. Prepare a new copied instance and its C-drive GUI payload as in
-section 7. For this fixture the virtual C mapping is
-`data/drives/rm-807/c`; keep the original golden instance unbooted. Disable the
-GDB stub for the autonomous rendering/input run. Set `cpu: dynarmic` or
-`cpu: dyncom` in that copy's config.
+Build the [patched frontend](../reference/emulator-source-build.md) and
+prepare a disposable instance using the [firmware guide](firmware.md).
+For the RM-807 profile the virtual C mapping is `data/drives/rm-807/c`.
+Use `cpu: dynarmic` or `cpu: dyncom` in that copy's config.
 
 From the repository root, after setting `SYMBIAN_GUI_INSTANCE` to that private
 copy and `SYMBIAN_EMULATOR` to the built executable:
@@ -80,8 +67,8 @@ failure. The live test retries only explicit UNAVAILABLE responses.
 For the current 360x640 logical layout, reset is centered at `(180,575)` and exit
 at `(296,575)`. Exit is handled on press; do not send release to the closed
 window. Captures are 720x1280 with this fixture's display scale two;
-pointer coordinates remain 360x640. This proves the tested portrait setup;
-other orientations/scales need their own checks. Current captured control colors
+pointer coordinates remain 360x640. These coordinates apply to this portrait layout; adjust them for other
+orientations or display scales. Current captured control colors
 are green, blue and purple, reflecting the source SDK's packed TRgb ordering.
 The operations are increment/reset/exit regardless of color.
 
@@ -119,40 +106,4 @@ parent. Native image dimensions are bounded at 4096 per axis. Publication uses
 [QSaveFile](https://doc.qt.io/qt-6/qsavefile.html). Existing final reports also
 prevent reusing an endpoint name. These are local accidental-overwrite bounds,
 not an immutable archive against the owning user. A timed-out client cannot
-interrupt a stalled graphics driver; test ownership and process deadlines
-provide the failure boundary.
-
-## Replay the tests
-
-```sh
-cmake --build build/eka2l1 --target eka2l1_qt symbian_control_probe -j 4
-ctest --test-dir build/eka2l1 -R '^symbian_control_probe$' --output-on-failure
-SYMBIAN_GUI_DEBUG_GOLDEN_ROOT="$PWD/.symbian/instances/delight-import-01" \
-SYMBIAN_GUI_DEBUG_BUILD="$PWD/.symbian/gui-app" \
-SYMBIAN_EKA2L1_EXECUTABLE="$PWD/build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1" \
-uv run pytest -q symbian/tests/test_guest_gui.py \
-  --basetemp .symbian/gui-render-check-01
-```
-
-Use a new private basetemp: Pytest clears its selected directory. Each backend
-gets a fresh firmware copy, exact digest checks, a short private socket parent,
-real rendered-pixel oracles, input bounds/malformed-request controls and a normal
-exit check. Pillow is a development dependency used only to inspect generated
-PNG pixels independently; it contains no Symbian format implementation. Tests
-retain PNGs and process/host exit evidence before cleaning up their socket
-parent. They stop only their own process on failure. Missing fixture variables
-produce visible skips; full platform evidence still requires all optional inputs.
-
-The tested sequence is 0 → 1 → 2 → outside unchanged → 0 → exit. Saturation,
-rotation, occlusion/focus restoration, full resource/address-space accounting,
-general facade create/reset/snapshot/install orchestration, complete DLL
-initialization and OS boot remain separate work. This earlier control checkpoint
-logged 0x10D; the later bounded DLL attach work maps that observed hook. DLL
-detach/unload and other private operations remain open.
-
-One full-suite run observed the frontend exceeding its 15-second shutdown bound
-after the guest exited normally. Native phase logs and stack sampling now retain
-evidence if that recurs. Subsequent repeated runs and the 170-case full suite
-pass; the original timeout's cause remains unresolved. Launcher cancellation
-reaps the owned frontend with bounded terminate/kill waits. Guest-exit and
-frontend-exit evidence remain separate.
+interrupt a stalled graphics driver; the launcher must enforce a process deadline if graphics stops responding.

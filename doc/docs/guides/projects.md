@@ -44,9 +44,7 @@ symbian app run --project ~/dev/hello_time
 
 A run needs a separately supplied firmware image imported into the local
 [firmware store](firmware.md). The emulator launches a disposable copy, so the
-stored baseline remains available for the next run. An emulator result is
-useful development evidence; it does not establish compatibility with a
-physical Nokia 808.
+stored baseline remains available for the next run.
 
 ## Where to go next
 

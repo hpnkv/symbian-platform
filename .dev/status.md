@@ -2736,3 +2736,15 @@ now cover EHABI descriptor fixups, and the GUI mismatch control changes its
 actual drawing source. Linux frontend `--help` passed under Xvfb using a fresh
 private root. These checks retain separate firmware, interactive-GUI and device
 gates; the private LLVM binary still needs ICU 70 outside its prefix.
+
+## Public documentation, 2026-10-05
+
+Public MkDocs pages describe usage, ownership and actual restrictions without
+`.dev` links, development evidence matrices or detailed roadmap narration.
+README covers native HTTP/WebSockets/TLS, concurrency, initial EKA1, Linux and
+planned release payloads without presenting unfinished distribution work as
+available. Complete networking examples remain. The standalone emulator source
+recipe's 22 root patches replayed in order against clean pinned files. Local
+links, strict MkDocs, both Doxygen indices and Markdown section links passed;
+original-header warnings are unchanged. This documentation validation does not
+add loader, emulator or device execution coverage.

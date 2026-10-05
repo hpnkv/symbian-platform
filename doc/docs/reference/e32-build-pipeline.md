@@ -58,7 +58,5 @@ uv run symbian toolchain verify-probe .symbian/e32-probe/e32_probe.exe
 ```
 
 The oracle checks this probe in a ROMless process harness. It is not a general
-application test. The [runtime capability guide](../capabilities/runtime.md),
-[import notes](https://github.com/hpnkv/symbian-platform/blob/main/.dev/imports.md)
-and [development status](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md)
-record bounded execution and remaining gates.
+application test. See the [runtime guide](../capabilities/runtime.md) for supported runtime
+profiles and [library targets](project-libraries.md) for DLL imports.

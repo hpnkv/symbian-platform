@@ -8,8 +8,7 @@ your own firmware locally; it is not part of this repository or SDK.
 You can create and build an application before importing firmware. Import one
 when you want to run the app in a disposable emulator instance.
 
-EKA1 imports can open standalone emulator sessions. The tested Nokia 7610
-fixture also supports the opt-in [no-UI EKA1 process profile](eka1.md); generated
+EKA1 imports can open standalone emulator sessions. The Nokia 7610 profile also supports the opt-in [no-UI EKA1 process profile](eka1.md); generated
 GUI applications continue to require EKA2.
 
 ## 1. Import an image
@@ -55,7 +54,7 @@ Each run copies the verified baseline into new writable emulator state. It
 does not boot or edit your stored baseline. The emulator checks selected
 imports and ARM attributes before the guest starts. If it reports a missing
 service, use the [compatibility notes](../capabilities/firmware.md) to
-understand what has actually been exercised.
+check the profile's requirements and restrictions.
 
-An emulator run is a development check. Physical-device compatibility,
-including a Nokia 808, needs separate on-device evidence.
+Test required services and installation policy on the target phone before
+deployment.

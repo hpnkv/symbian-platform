@@ -3,7 +3,7 @@
 `doc/mkdocs.yml` builds the developer site with the same Material palette,
 Noto Sans and JetBrains Mono fonts, navigation features and code highlighting
 settings as A11. `doc/cpp/Doxyfile` builds the SDK-owned native reference;
-`doc/cpp/platform/Doxyfile` builds a separate, curated reference for nine
+`doc/cpp/platform/Doxyfile` builds a separate, curated reference for eleven
 original Symbian headers. Both use the Doxygen Awesome theme. The original
 header notices and copied theme/style licenses remain with their files.
 

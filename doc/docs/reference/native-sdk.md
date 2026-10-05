@@ -22,7 +22,9 @@ required Abseil status/runtime profile and, where needed, an OS import proxy.
 | `Symbian::Camera` | `symbian/api/camera/camera.h` | Discover camera slots | `StatusOr`; discovery does not reserve a camera. |
 | `Symbian::Connectivity` | `symbian/api/connectivity/tcp_client.h`, `tcp_listener.h`, `active_tcp_listener.h` | Connect, listen, accept and exchange bounded IPv4 TCP data | Synchronous worker owners plus a single-request active-object listener; deadline cancellation for blocking accept, send and receive. |
 | `Symbian::Crypto` | `mbedtls/md.h`, `mbedtls/entropy.h` | Use opt-in Mbed TLS cryptographic primitives without a TLS socket | Links only `libmbedcrypto`; applications own key storage and entropy policy. |
-| `Symbian::Tls` | `symbian/api/connectivity/tls_server.h` | Own a TLS server configuration and one mutually authenticated stream | Opt-in Mbed TLS link; caller supplies server identity, client CA roots and working guest entropy. Synchronous worker only. |
+| `Symbian::Http` | `symbian/api/connectivity/http.h` | Streaming HTTP/1.1 and HTTP/2 client/server | Worker-owned exchange, bounded body streams and absolute deadlines. |
+| `Symbian::WebSocket` | `symbian/api/connectivity/websocket.h` | RFC 8441 WebSocket connections | Shared HTTP/2 transport with bounded messages and stream backpressure. |
+| `Symbian::Tls` | `symbian/api/connectivity/tls_stream.h` | TLS 1.2/1.3 client/server streams | Caller supplies trust roots, peer identity and working guest entropy. Synchronous worker only. |
 | `Symbian::Agent` | `symbian/agent/guest_control.h`, `guest_log.h` | Parse bounded read-only control messages and retain a 32-record service log | Authenticate the peer before parsing; this codec does not own a service or grant permissions. |
 
 For example, a display query can live in a small adapter:
@@ -82,18 +84,18 @@ sockets open.
 starters. A guest event thread should perform short work and schedule blocking
 queries or transfers on a worker. A cancellation request is complete only
 when the producer publishes its terminal result and releases native buffers.
-The [concurrency guide](../capabilities/concurrency.md) explains the verified
-profile and its limits.
+The [concurrency guide](../capabilities/concurrency.md) explains the available
+profiles and their limits.
 
 `MbedTLS::mbedtls` is an optional C archive target, with matching
 `MbedTLS::mbedx509` and `MbedTLS::mbedcrypto` components. The SDK vendors the
 full source and exposes its `symbian_mbedtls` platform and socket BIO headers.
 Its default trust set is empty: an application chooses a project-local CA
 bundle or explicit pinning. The [TLS guide](../guides/tls.md) shows CMake
-configuration and the current runtime acceptance boundary. A compiled TLS
-archive is not evidence of a guest handshake.
+configuration, peer verification and transport ownership.
 
-`Symbian::Tls` adds the SDK's C++ `TlsServer` owner on top of those archives.
+`Symbian::Tls` adds the SDK's C++ `TlsStream` owner; `TlsServer` is an alias.
+`Connect()` verifies a server using explicit roots, hostname, TLS version and ALPN.
 `Create()` parses caller-supplied PEM server credentials and client CA roots.
 Select `TlsVersion::kTls12` or `TlsVersion::kTls13` there: this Mbed TLS server
 needs one version per listener. `Accept()` requires a verified client
@@ -127,7 +129,7 @@ bindings call it rather than duplicating format rules. In the
 | `symbian::sis` | `cpp/symbian/sis/sis.h` | Build bounded unsigned SIS packages and inspect that profile. |
 | `symbian::analysis` | `cpp/symbian/analysis/*.h` | Read bounded ELF, attributes and checksum inputs. |
 | `symbian::emulator` | `cpp/symbian/emulator/*.h` | Native firmware/control parsing for owned emulator sessions. |
-| `symbian::agent` | `cpp/symbian/agent/frame.h`, `control.h` | Bounded length framing, inbound queue accounting and typed MessagePack control envelopes for the planned device protocol. The host `symbian::agent_frame` target is available. The guest uses the smaller `Symbian::Agent` codec. |
+| `symbian::agent` | `cpp/symbian/agent/frame.h`, `control.h` | Bounded length framing, inbound queue accounting and typed MessagePack control envelopes for the device protocol. The host `symbian::agent_frame` target is available. The guest uses the smaller `Symbian::Agent` codec. |
 | `symbian::device` | `cpp/symbian/device/usb.h` | Inspect serial-matched USB interfaces and stage one checked SIS through MTP. |
 
 `symbian::device::StageMtpSis` is a host operation. It takes a serial-derived
@@ -153,13 +155,11 @@ These calls use `absl::Status` or `absl::StatusOr`; an unsupported format
 profile returns an error instead of being guessed. `InspectImage` and
 `InspectPackage` validate their documented subsets. Neither is a universal
 oracle for every historical image. See [SDK exports](sdk.md) for the installed
-artifacts and [E32/SIS capabilities](../capabilities/index.md) for evidence.
+artifacts and [E32/SIS capabilities](../capabilities/index.md) for available facilities.
 
 ## Original OS declarations
 
 For a direct EUSER, Window Server, File Server, HAL or ECam call, open the
 [original Symbian header guide](native-symbian.md) and its separate
-[Doxygen index](../cpp/platform/index.html). A historical declaration is a
-starting point for an import and runtime check. A function name in a header
-does not establish that the selected firmware exports it or that the Nokia
-808 has been validated.
+[Doxygen index](../cpp/platform/index.html). Check that the selected firmware exports each required symbol and provides
+the corresponding service.

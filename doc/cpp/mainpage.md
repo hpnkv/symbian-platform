@@ -18,7 +18,8 @@ the generated symbol list.
 | Build or inspect a SIS package | `symbian::sis` in `sis.h` | Host tooling |
 | Query supported device services | `symbian::api` connectivity, display, power, storage, camera and system headers | Guest application |
 | Schedule guest work | `symbian::concurrency` Future, Task, event executor and timer headers | Guest application |
-| Configure optional application TLS | `symbian_mbedtls` platform and socket BIO headers | Guest application |
+| Stream HTTP or WebSocket data | `symbian::http` and connectivity HTTP/WebSocket headers | Host library and guest application |
+| Configure application TLS | Connectivity `TlsStream` and Mbed TLS headers | Guest application |
 | Validate a development-agent envelope | `symbian::agent` frame and control headers; `Symbian::Agent` read-only guest codec | Host library and guest application |
 | Work directly with EUSER or Window Server | [Original header reference](platform/index.html) | Guest application |
 
@@ -35,8 +36,8 @@ shows which components are implemented and which remain planned.
    The SDK's CMake targets and public headers belong in the application target;
    E32 conversion and SIS assembly are owned by the build and package tools.
 2. **Use a device service:** choose a small `symbian::api` header, read its
-   result and lifetime rules, then compare the corresponding capability guide
-   with the firmware and emulator evidence.
+   result and lifetime rules, and check its firmware requirements in the
+   corresponding capability guide.
 3. **Use asynchronous work:** begin with `symbian::concurrency::Future` and
    its event executor. An asynchronous native request must keep its buffers
    alive until completion or cancellation has drained.
@@ -47,5 +48,4 @@ shows which components are implemented and which remain planned.
 The [file list](files.html), [namespace list](namespaces.html) and search box
 lead to the generated symbol detail. The index includes native implementation
 files so maintainers can trace behavior; application code should start with
-public headers. ARM compilation and emulator behavior do not prove Nokia 808
-compatibility.
+public headers.

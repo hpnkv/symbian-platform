@@ -34,10 +34,9 @@ target_link_libraries(my_app PRIVATE my_library_import)
 
 The export definition freezes ordinals; the linker script separates executable
 code and writable data. The helper retains an ELF for symbols and produces an
-E32 DLL after link/conversion checks. DLL loading and C++ constructor behavior
-have bounded emulator tests; other firmware needs its own checks. The
-[SDK C++ reference](native-sdk.md) and [development status](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md)
-record the exact coverage.
+E32 DLL after link/conversion checks. The SDK entry handles process-attach
+constructors. Check the selected firmware's imports and ABI; see the
+[SDK C++ reference](native-sdk.md).
 
 With the SDK's default DLL startup, `RUNTIME_TARGET` selects the one C++
 runtime archive for the image. It defaults to `Symbian::Runtime`. A DLL that
@@ -53,6 +52,5 @@ The SDK physically includes the Mbed TLS adaptation's headers and source.
 `Symbian::Crypto` links the cryptographic primitives without a TLS stream;
 `Symbian::Tls` adds the C++ server and TLS/X.509 archives. Applications link
 these installed native targets explicitly and opt into a project-local
-CA bundle. Follow the [TLS guide](../guides/tls.md) for the current build and
-runtime boundary. Authenticated TLS 1.2/1.3 handshakes now pass in a patched
-emulator profile; the physical-device and cancellable owner gates remain open.
+CA bundle. Follow the [TLS guide](../guides/tls.md) for client/server examples,
+peer verification and the target-specific entropy requirement.

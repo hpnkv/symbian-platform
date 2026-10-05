@@ -63,21 +63,10 @@ short_caption = "Zähler"
 The package contains the unchanged EXE, fallback and translated menu
 resources, and an SDK-compiled SVG-in-MIF icon on the same install drive;
 target system libraries must already exist. Native inspection checks every
-embedded hash, resource UID and install path. The original EKA2L1 AppArc
-parser selects the French, German and Japanese resources, decodes `Zähler`
-and `カウンター` as Unicode,
-and its MIF reader extracts the SVG icon. Its installer accepted the seven
-files on Dyncom and Dynarmic, reloaded
-their registry entry, removed the resources on uninstall and reinstalled them
-(eight headless tests). The full verifier passed 17 original image/checksum
-and installer cases through the visible SDK. These cases execute no guest
-instructions. The current GUI source has six DLL imports and 153 import
-slots. Physical Belle icon rendering remains to be observed. The emulator's
-process creation without system DLLs leaves those slots
-unresolved, which is not an application
-launch. Certificates and physical-phone installation remain separate gates.
+embedded hash, resource UID and install path. Use compatible system DLLs from the selected firmware; package inspection
+alone does not execute the application.
 
-# 5. Run checks that do not require a ROM
+## Run checks without a ROM
 
 Build and run the host GTests and Python policy tests:
 
@@ -102,13 +91,9 @@ uv run symbian toolchain verify-gui .symbian/gui-app/gui_app.exe \
   --oracles-build build/eka2l1 --output .symbian/gui-validation
 ```
 
-The research build recipe below supplies the oracle executables.
-`verify-gui` runs one checksum case and seven unchanged historical validator
-cases against a private exact copy of this generated image. It retains binary
-hashes, test JSON, logs and `report.json`. It does not execute GUI instructions,
-resolve target system DLLs, or boot an OS. `verify-probe` and `verify-pointers`
-are specific to other maintained examples; they cannot substitute for a GUI
-execution test. All GUI runtime, import, loader and debugger flags stay false.
+The [emulator source build](../reference/emulator-source-build.md) supplies
+these validators. `verify-gui` checks image metadata and checksums; run the GUI
+separately to exercise imports, drawing and input.
 
 For formatting and the full Python suite:
 
@@ -125,7 +110,6 @@ clang-format --dry-run --Werror \
 uv run pytest -q
 ```
 
-The full suite also has optional emulator/header/module inputs described in
-[EKA2L1 research notes](https://github.com/hpnkv/symbian-platform/blob/main/.dev/research/eka2l1.md) and
-[C++20 guide](../capabilities/cpp20.md). Missing optional inputs must remain visible as
-skips. None of these tests issues a hardware operation.
+Source-dependent tests need the prepared headers and, for native image
+validators, `SYMBIAN_EKA2L1_ORACLES_BUILD`. Tests requiring absent optional
+inputs are skipped.

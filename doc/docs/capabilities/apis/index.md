@@ -12,14 +12,10 @@ CMake target. `Symbian::System` provides typed native counter readings;
 `Symbian::Storage` owns File Server handles for streaming reads and explicit
 writes. `Symbian::Camera` exposes a typed inventory snapshot.
 `Symbian::Connectivity` offers a bounded worker-facing TCP client through the
-original Socket Server. Other component
-directories record their boundaries but gain an
-archive and public header only when their native contracts and permissions
-have a repeatable emulator or device probe. The staged families and
-acceptance gates are in the [device API guide](../device-apis.md).
+original Socket Server. See the [device API guide](../device-apis.md) for the available components.
 
 Each component article records its native starting point, the modern C++
-ownership and state model, performance choices, and evidence still needed:
+ownership, threading, performance considerations and restrictions:
 
 | Implemented archive | Component notes |
 | --- | --- |

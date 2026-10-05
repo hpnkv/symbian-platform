@@ -142,19 +142,3 @@ The synchronous facade handles one exchange per connection. Connection pooling,
 redirects, decompression, server push, HTTP/1 Upgrade and multiplexed exchanges
 are not implemented. `Expect` requests are rejected explicitly. Extended
 CONNECT uses the shared `Http2` duplex primitive below the WebSocket facade.
-
-The emulator acceptance suite exercises public HTTP/HTTPS pages, forces and
-records TLS 1.2/1.3 and ALPN, rejects wrong hostnames, and tests native servers
-against Python's HTTP/1.1 and independent hyper-h2 codecs. Replay:
-
-```sh
-SYMBIAN_HTTP_LIVE_GUEST=1 \
-SYMBIAN_SDK_MANIFEST=/absolute/sdk/sdk.json \
-python -m pytest symbian/tests/test_http_guest.py -v
-```
-
-By default this test builds the current workspace libraries against the selected
-SDK dependencies. Set `SYMBIAN_HTTP_EXPORTED_SDK=1` to use only exported SDK
-libraries. The opt-in RM-807 entropy adapter is a named emulator experiment;
-these results establish neither general firmware nor physical-device support.
-Exact inputs, outcomes and retained failures are in `.dev/research-log.md`.

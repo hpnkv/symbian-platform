@@ -32,7 +32,7 @@ TLS implementation. The Symbian adaptation began with
 [shinovon's mbedtls-symbian](https://github.com/shinovon/mbedtls-symbian).
 The complete source, headers, build project and tests are now vendored under
 [`third_party/mbedtls-symbian`](https://github.com/hpnkv/symbian-platform/tree/main/third_party/mbedtls-symbian),
-with provenance and Apache-2.0 notices. The SDK builds the app-linked
+with original Apache-2.0 notices. The SDK builds the app-linked
 archives from that local tree and adds no shared CA trust store.
 
 [A11](https://github.com/hpnkv/a11) is the implementation reference for
@@ -41,8 +41,7 @@ kept under `third_party/a11` and the concurrency component. The documentation
 uses A11's Material and Doxygen visual settings, with copied style licenses.
 [Abseil](https://github.com/abseil/abseil-cpp) supplies selected C++ libraries;
 [LLVM](https://github.com/llvm/llvm-project) supplies Clang, LLD and libc++
-source used by the modern host and guest toolchains. Their revisions and local
-patches are recorded in SDK provenance.
+source used by the modern host and guest toolchains. Source builds use pinned revisions and explicit target patches.
 
 ## Firmware and device material
 

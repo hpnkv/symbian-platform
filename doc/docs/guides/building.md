@@ -40,8 +40,9 @@ symbian app run --project ~/dev/hello_time
 ```
 
 An ARM ELF or converted E32 passing structural checks does not prove that the
-Symbian loader accepts it. Emulator execution provides a separate, bounded
-check. Nokia 808 compatibility still needs on-device evidence.
+Symbian loader accepts it. Run the application in the emulator and check its
+native exit report; test installation and required services on the target device
+before deployment.
 
 For a custom source graph, linker script, reproducibility report or low-level
 PIC probe, continue to the [E32 build pipeline](../reference/e32-build-pipeline.md).

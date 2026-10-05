@@ -20,14 +20,8 @@ stack, Window Server session and timer request completion. The selected ROM need
 [source walkthrough](../guides/from-source.md) for pinned source acquisition, SDK
 preparation, build/test commands, emulator launch, editor setup and debugging.
 
-The ELF/E32 build, model tests, image validation, SIS installation/registry
-operations and offline debug symbols are tested. The supplied Delight RM-807
-bundle imports into EKA2L1. With the guarded experimental executive profile and
-CPU correction, live ARM GDB verifies heap setup, Window Server connection and
-completion of the initial drawing function. SDK cleanup-stack initialization is
-provided. Both backends now pass rendered PNG, increment/reset/outside pointer
-and normal zero guest/frontend exit checks; see
-[the control replay](../guides/emulator-control.md). CLion should load this
-directory's `symbian-pic` profile; see [CLion setup](../guides/clion.md).
-See [the ABI experiment](https://github.com/hpnkv/symbian-platform/blob/main/.dev/belle-abi.md) for scope and replay. The example has a single-EXE SIS package
-and no application registration.
+Build with the project's `symbian-pic` profile and use
+[emulator controls](../guides/emulator-control.md) to capture the screen and
+send taps. For IDE Run and guest breakpoints, follow
+[CLion setup](../guides/clion.md). The SIS includes application registration,
+menu captions and an icon; it does not supply an Avkon application lifecycle.

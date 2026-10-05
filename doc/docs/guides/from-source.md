@@ -17,7 +17,7 @@ runtime contracts.
 | 3 | [Build and inspect](gui-build.md) | ARM ELF, E32 and host checks |
 | 4 | [Run in the emulator](gui-emulator.md) | A disposable named-firmware session with real pixels and input |
 | 5 | [Inspect symbols and debug](gui-debug.md) | Source navigation and ARM guest breakpoints |
-| 6 | [Troubleshoot](gui-troubleshooting.md) | Known failure checks and retained evidence |
+| 6 | [Troubleshoot](gui-troubleshooting.md) | Common failures and diagnostics |
 | 7 | [Investigate the guest C++ runtime](guest-runtime-source.md) | Runtime profile and native dependency context |
 
 The [CLion guide](clion.md) explains IDE profiles and Run/Debug controls.

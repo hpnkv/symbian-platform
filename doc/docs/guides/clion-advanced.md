@@ -81,8 +81,7 @@ reference](https://www.jetbrains.com/help/clion/remote-debug.html).
 For a manual session, calculate the symbol slide from the guest's actual
 runtime code base minus the ELF segment base. Apply it before expecting source
 breakpoints to resolve. Do not copy a slide from another firmware, run or
-build. The SDK supervisor records mapping evidence in `.symbian/gui-runs`.
-The checked example has passed source breakpoint and instruction stepping
-controls; full IDE stack unwinding remains an open check. A macOS debugger
+build. The SDK supervisor records load mappings in `.symbian/gui-runs`.
+Guest stack unwinding can be incomplete. A macOS debugger
 attached to the EKA2L1 process is a different target from ARM GDB attached to
 the guest executable.

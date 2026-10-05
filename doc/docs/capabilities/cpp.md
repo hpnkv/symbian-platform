@@ -1,13 +1,11 @@
-# Writing a C++ application for Symbian in 2026
+# Write a C++ application for Symbian
 
 Device selection is independent of application and SDK artifacts. See
 [ROM/Z configuration and transfer](../guides/firmware.md). The SDK resolves settings,
 verifies firmware and owns fresh emulator copies; application code does not need
 ROM paths, firmware-specific executive maps or display-scale calculations.
-Modern features supplied by the SDK stay available on older systems when their
-actual ABI/services permit them. Current generated starters execute on C7, E6,
-6120 and E71; EKA1 startup/import adaptation remains absent and is reported
-before Run. Unsupported font-server calls return a real error instead of hanging.
+The modern application runtime requires EKA2 services. EKA1 uses the separate
+[legacy process profile](../guides/eka1.md), which does not support GUI starters.
 
 The ordinary `symbian init` starter uses `Symbian::Stackless`: a tap logs now,
 then a timer Future logs again, and Clear cancels pending work. Authors work
@@ -26,17 +24,10 @@ You should not need to learn executive call numbers, construct E32 headers, or
 manage compiler relocation workarounds to write an application. Those belong to
 the SDK. This guide covers decisions the application still has to make.
 
-The SDK is under construction. C++20 language support, a runtime capability, and
-an OS service are separate promises. The current string/vector runtime is a
-bounded execution-tested subset; guest Abseil Status/StatusOr and
-`flat_hash_map` have bounded installed-SDK execution tests, while guest JSON,
-broader Abseil, full A11 scheduling and fiber lifetime, and many hosted
-facilities still need ports. Shared/unique ownership
-and a bounded A11-derived stackless Future/Task subset have guest controls.
-Bounded global initialization and one parent/worker thread join have guest
-execution tests. Host tooling using those libraries
-does not make them available inside the phone. Check [RUNTIME.md](runtime.md)
-and [STATUS.md](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md) before selecting a feature.
+Choose facilities from the [runtime profiles](runtime.md) and
+[concurrency APIs](concurrency.md). Guest JSON, general C++ TLS, thread-safe
+local statics and thrown C++ exceptions are unsupported. A host library's
+availability does not make it available in the guest.
 
 ## Keep application logic away from the platform ABI
 
@@ -49,17 +40,17 @@ A host GTest passing on a 64-bit Mac cannot establish a 32-bit SDK layout.
 System DLLs have fixed calling conventions, object layouts and numbered exports.
 New compiler/STL objects are suitable inside your own consistently built code;
 they are not a replacement ABI for existing OS DLLs. Pass the platform's expected
-descriptor/handle or a narrow C interface at the boundary. Do not expose
+descriptor/handle or a narrow C interface. Do not expose
 std::string, std::vector, Abseil maps or nlohmann objects across a frozen system
 DLL interface, and do not assume two separately built runtime configurations are
 interchangeable. [The image contract](https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/userlibandfileserver/fileserver/inc/f32image.h)
 is independent of the host compiler.
 
-The SDK should select the triple, headers, runtime configuration and import
-proxies, and reject unsupported binaries with useful diagnostics. Application
+The SDK selects the triple, headers, runtime configuration and import
+proxies, and rejects unsupported binaries with diagnostics. Application
 code should never embed syscall numbers or copy functions from the emulator.
 The current runtime's SDK adapter also isolates a real placement-new header
-conflict; see RUNTIME.md. Do not work around that conflict by editing OS headers
+conflict; see the [runtime guide](runtime.md). Do not work around that conflict by editing OS headers
 or disabling exception-specification checks in your application.
 
 ## Treat descriptors as views or buffers with an explicit encoding
@@ -69,7 +60,7 @@ text and optional BCP 47 keyed translations. An SVG icon is a
 project-relative asset. The SDK compiles these to native resources and a
 MIF container; application C++ does not need RSS or SIS language syntax.
 This is menu localization only. In-app text still needs an owned UTF-8
-model and a tested conversion at its UI boundary.
+model and an explicit conversion for UI calls.
 
 A descriptor carries a length; writable descriptors also have a capacity. It is
 not a C string and need not be NUL terminated. Its length is a count of 8-bit or
@@ -91,9 +82,8 @@ synchronous call that consumes it immediately; it is insufficient for an
 asynchronous call retaining the buffer. Do not mutate/reallocate a string or
 vector while its storage backs an outstanding request.
 
-The SDK should provide encoding-aware, capacity-checked adapters. Even with
-those adapters, your application must choose its encoding and retain ownership
-until completion. Qt helpers follow the same boundary rule: use QString/QJson
+Your application must choose its encoding, check capacity and retain ownership
+until completion. Qt helpers follow the same ownership rule: use QString/QJson
 only where an external Qt API actually requires them.
 
 ## Distinguish returned errors, leaves and panics
@@ -103,40 +93,36 @@ These are different control-flow contracts:
 | Result | Application responsibility |
 | --- | --- |
 | Returned TInt / completed request error | Check it and translate into the application's status policy at the adapter |
-| A leaving API, usually suffixed `L` or `LC` | Call only through a verified leave/cleanup boundary |
+| A leaving API, usually suffixed `L` or `LC` | Call only through a leave/cleanup adapter |
 | Panic | Treat as a failed invariant/programming contract and retain the diagnostic |
 
 A leave is not automatically an Abseil Status and is not a portable C++
 exception. An `LC` function additionally transfers a cleanup-stack obligation.
-Do not assume std::unique_ptr destructors or a C++ catch block implement a raw
-Symbian leave boundary. The preserved [cleanup and trap interfaces](https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/include/e32base.h)
+Do not assume std::unique_ptr destructors or a C++ catch block implement raw
+Symbian leave handling. The preserved [cleanup and trap interfaces](https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/include/e32base.h)
 must be respected by the adapter.
 
 The SDK's host native libraries disable C++ exceptions and return
 Status/StatusOr. Guest applications currently compile with exceptions off by
-default. An opt-in guest exception profile is planned, but is not available.
-An isolated probe now verifies ARM unwind-table and E32 descriptor publication
-and a no-throw cleanup path. Imported type-info data and actual throw/catch
-destructor unwinding remain unverified. Even then, a Symbian leave remains a
-separate contract.
-Guest leave-to-Status adapters are not yet generally verified. Prefer the proven
-nonleaving APIs in the examples until that boundary is supplied. Do not rename
-an `L` call or ignore its failure to make a no-exceptions build pass.
+default. A guest exception profile is not available.
+Imported typeinfo and general throw/catch unwinding are unsupported. A Symbian
+leave remains a separate contract; use an adapter that traps and translates
+it. Calling an `L` function without its required leave handling is unsafe.
 
 Allocation policy also matters. The initial guest libc++ profile makes ordinary
 new terminate the guest with KErrNoMemory; nothrow allocation returns nullptr.
 A container's allocation failure therefore does not currently become a
 recoverable StatusOr. Bound input sizes and working sets. If your application
 must recover from memory pressure, require a tested fallible allocation API
-before choosing that container for the operation. RUNTIME.md records the exact
-current policy. `std::nothrow` now works directly in the bounded guest profile;
+before choosing that container for the operation. The [runtime guide](runtime.md)
+describes the allocation policy. `std::nothrow` works in the guest profile;
 the SDK relocates its local GOT entry. Generated model creation checks null
 and releases acquired native resources. This fallible acquisition does not
 make subsequent string/vector growth recoverable.
 
 ## Static storage and lifecycle
 
-New projects use the SDK's verified independent code/data linker layout.
+New projects use the SDK's independent code/data linker layout.
 New projects target ARMv6 by default; choose ARMv5T for a device or ROM profile
 that requires it. The selection controls compiler attributes, E32 CPU metadata
 and the guest runtime archive. The SDK checks ELF attributes before publication
@@ -147,41 +133,26 @@ pointers to code/data receive loader fixups automatically. Do not manually put
 writable storage into the code segment or adjust runtime addresses. The current
 bounded profile limits combined data/BSS to 1 MiB. The SDK startup now runs
 bounded global constructors after heap setup and global destructors before exit;
-real `std::string` globals execute on both ARM profiles and emulator backends.
-Local-static guards, TLS and full DLL lifecycle still need runtime work.
+C++ globals may own runtime objects such as `std::string`.
+Thread-safe local-static guards, TLS and general DLL teardown are unsupported.
 Unsupported sections and relocation forms are errors, not silently removed.
-See RUNTIME.md for execution and failure controls.
+See the [runtime guide](runtime.md) for supported storage and failure behavior.
 
-The SDK now preserves Clang's ARM variadic-call rules when OpenC headers are
-included, and the guest has a tested `std::error_code` category/message path.
-The acceptance calls the named firmware's real `libc.dll` for `vsnprintf` and
-`strerror_r`; another firmware profile must supply compatible C exports for
-those operations. The alternate installed `Symbian::Streams` target supports
-a bounded classic-C locale and `std::ostringstream` formatting; select it
-instead of `Symbian::Runtime` so its libc++ configuration matches its archive.
-C/POSIX names are supported; file streams, general wide I/O and other named
-locales remain unverified. `Symbian::AbseilStatusOr` links the matching streams
-runtime and supplies the tested Status/StatusOr and flat-hash-map subset.
-Imported function pointers have
-a tested bounded PLT/data-relocation path; imported data objects, including
-exception typeinfo, still need a
-separate ABI implementation.
+The SDK preserves Clang's ARM variadic-call rules with OpenC headers and
+supplies libc++ error categories. Formatting and error messages require compatible
+`vsnprintf` and `strerror_r` exports from the selected firmware's `libc.dll`.
+Use `Symbian::Streams` for classic C/POSIX locale and `std::ostringstream`,
+instead of `Symbian::Runtime`; file streams, general wide I/O and other named
+locales are unsupported. Abseil-based components select the matching streams
+runtime. Imported function pointers are supported; imported data objects,
+including exception typeinfo, are unsupported.
 
-`EPOCALLOWDLLDATA` was an MMP converter opt-in for writable DLL `.data` and
-`.bss`; the original `elf2e32` rejects those sections in a DLL without it.
-It does not make executable data relocation or DLL initialization automatic.
-This SDK has verified EXE data and a bounded DLL case: simple initialized and
-zeroed globals in a DLL get per-process storage and relocation on both emulator
-CPU backends. A C++ DLL constructor also runs on process attach through the
-real Belle static-call list. A bounded dynamic-load/close case also runs a DLL
-destructor before `RLibrary::Close` returns. TLS and general DLL lifetime are
-still open. Keep mutable DLL globals default-visible when the toolchain must
-emit GOT references; internal/hidden cross-mapping references currently fail
-conversion with an explicit error. Applications need no historical MMP setting.
-Generated projects receive the tested `RLibrary::Load`, `Lookup` and `Close`
-imports from the SDK's EUSER proxy; they need no hand-written ordinal file for
-this path. Check the selected firmware's actual ABI before assuming this
-named-fixture result applies to another ROM.
+DLL `.data` and `.bss` receive per-process storage and relocation. SDK DLL
+startup runs process-attach constructors, and `RLibrary::Close` releases a
+dynamically loaded DLL. Keep mutable globals default-visible where the compiler
+must emit GOT references; hidden cross-mapping references fail conversion.
+Applications need no historical `EPOCALLOWDLLDATA` MMP directive. Declare
+compatible import proxies and check that the selected firmware supplies them.
 
 ## An asynchronous request owns its storage until it completes
 
@@ -195,74 +166,35 @@ the outstanding request has completed, then release its buffers/status and close
 its handles. The API-specific cancellation contract decides how completion is
 observed. Cancellation requested is not the same as ownership released.
 [Request-status and wait interfaces](https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/include/e32std.h)
-are part of the platform boundary.
+describe these OS contracts.
 
 Keep the UI/event loop responsive. Long computation, filesystem work or a wait
 inside the dispatcher delays unrelated events and redraws. Raw active objects
 need a scheduler and define their RunL/error/cancellation behavior; ordinary
 C++ code does not acquire those semantics by declaring a callback. Use the SDK's
-supported event-loop adapter when available. A future guest concurrency adapter
-must use A11's thread library. A bounded `std::thread` path now executes on a
-ROM with `libpthread.dll`: creation, join, atomic updates, and shared/unique
-ownership across a worker. Link `Symbian::Threads` for that profile and check
-the selected firmware provides its imports. On the tested RM-807 ROM,
-`std::this_thread::yield()` also imports `sched_yield` from `libc.dll`.
-The default no-exceptions runtime terminates with -6 for an invalid
-`std::thread::join()`; handle thread ownership before calling `join()`.
-`Symbian::Stackless` adds the
-bounded A11-derived Promise/Future/Task and nonblocking fan-in subset. The
-installed `<symbian/concurrency/native_timer.h>` owns one native `RTimer`
-request and drains cancellation on close; create, arm and close it on one OS
-thread. `TimerPump` in `<symbian/concurrency/timer_pump.h>` now completes
-bounded timer Tasks, including worker-requested cancellation, on the owning
-event thread. It does not yet own a shared Window Server event pump or
-arbitrary native service requests, and there is no complete event-loop adapter,
-stackful fiber or verified `jthread`. For 64-bit atomics, the default
-runtime uses an `RFastLock`. `Symbian::NativeAtomics64` calls ROM atomics and
-should be selected only for a verified firmware. The imported RM-807, RM-675
-and RM-609 ROMs pass its cross-thread emulator controls; RM-243 and RM-346
-lack its EABI imports. Lock-free behavior can vary by ROM implementation.
-The SDK's `is_lock_free()` query reflects the selected
-runtime archive. Clang's raw `__atomic_always_lock_free` target query may not
-describe the linked SDK archive; use the standard runtime query for a concrete
-atomic object.
-For application deadlines, use `absl::Time` for an absolute real-world time
-and `absl::Duration` for a relative delay. `TimerPump` converts an accepted
-absolute time once to monotonic waiting; a later wall-clock correction does
-not move that request. Do not replace `absl::Now()` with a raw counter or
-read native counters in application code. The ROM's OpenC `CLOCK_MONOTONIC`
-fails on the tested RM-807 fixture;
-the SDK clock uses the nanokernel tick and its HAL period, with an ordinary
-tick fallback. Its precision depends on the device, and a gap of half a
-32-bit counter wrap between reads still needs further validation (about
-24.9 days at a 1 ms nanokernel tick). `FastCounter` is
-suited to short measurements only after checking that device's frequency,
-direction and power behavior; it is not the default deadline source.
-Creating a second scheduler is not a shortcut to compatibility.
+[event executor](concurrency.md) to coordinate timers, property watches,
+mailbox callbacks and fibers with one native wait. Window Server requests
+remain owned by the application. Use `WorkerExecutor` for blocking I/O and
+computation; the event thread should only dispatch bounded work.
 
-The current gui_app uses a deliberately small paired event/redraw wait loop.
-Its pending statuses remain alive and it cancels/drains requests during cleanup.
-The generated starter has an opt-in `SYMBIAN_ENABLE_TIMER_TASKS` profile whose
-one wait services those statuses and timer Tasks. It requires firmware
-`libpthread` and passed RM-807 Dynarmic/Dyncom GUI controls. This is a bounded
-example, not a general asynchronous framework. `TimerPump` defaults to 64
-pending timers; scheduling at capacity yields a ready Task with an explicit
-resource-exhausted result. Observe Task results even when scheduling appears
-to complete immediately.
-`PropertyWatch` owns one Publish & Subscribe change request and yields a
-`Future<int>`; it dispatches beside the timer pump before the single event
-thread wait. `EventMailbox` provides bounded event-thread callbacks; it is
-not A11's shared-pool `Post`. An unresolved `Future::Await` returns a clear
-error outside a fiber; inside a guest `thread::Fiber` it parks cooperatively.
-Guest `thread::Mutex`, `MutexLock`, `CondVar` and `SleepFor` now switch to
-pending fibers instead of blocking the event OS thread. The separate
-`Symbian::Fibers` archive exposes an explicitly pumped, pinned scheduler with
-custom ready ordering and wake notification. It does not yet integrate with
-the native request owner or implement A11 `PermanentEvent`, `Select`,
-structured joining or cancellation. Stack guards, native leave/TRAP
-boundaries and debugger-visible waits also remain unverified. Keep each
-`thread::Fiber` and its scheduler alive until the fiber finishes: the current
-bounded destructor treats unfinished ownership as a runtime contract failure.
+For composition, link `Symbian::Stackless` and use `Promise`, `Future`, `Task`,
+`Then`, `JoinAll` and `TaskGroup`. A producer completes its Promise from a
+native completion or worker. `OnReady` may run inline, even during registration.
+Marshal UI work to its owning event thread. Observe the Task from
+`TaskGroup::Finish()` before releasing child resources; abandoning a group
+requests cancellation without waiting for drainage.
+
+Link `Symbian::Fibers` when a guest operation needs cooperative `Await`.
+An unresolved `Await` outside a fiber returns an error. Keep each fiber and
+its scheduler alive until it finishes. Blocking OS calls still block its whole
+OS thread; fibers do not virtualize native heap, TLS or leave/TRAP state.
+
+Use `absl::Time` for absolute real-world deadlines and `absl::Duration` for
+relative delays. `TimerPump` converts an accepted absolute deadline once to
+monotonic waiting; later wall-clock corrections do not move it. Timer admission
+is bounded to 64 by default; scheduling at capacity produces an explicit
+resource-exhausted result. Observe the result even if scheduling completes
+immediately. See the [runtime guide](runtime.md) for clock and atomic profiles.
 
 ## Close handles and keep the allocator owner explicit
 
@@ -277,18 +209,15 @@ Allocate and free through the same ownership domain. Do not delete a platform
 allocation using an unrelated modern allocator or export allocator-owned objects
 across DLL boundaries without an agreed release API. Symbian has thread heaps;
 secondary-thread heap/TLS setup is a runtime concern, not something achieved by
-jumping into a C++ function. Generated startup now sets up a secondary thread's
-heap and calls its entry function; one bounded parent/worker join executes.
-General TLS cleanup, cross-thread freeing and worker lifecycle remain open.
+jumping into a C++ function. SDK startup supplies the secondary thread's heap
+and entry path. General TLS cleanup and DLL teardown ordering are unsupported;
+keep service state explicitly owned.
 The [heap/session interfaces](https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/include/e32cmn.h)
 make these distinctions explicit.
 
-Prefer explicit lifetime for application services. The SDK now handles bounded
-EXE global construction/destruction, DLL process-attach construction and one
-dynamic close/destructor contract. TLS objects and general DLL teardown ordering
-still need verified adapters. Moving
-a mutable global into a custom ELF section is not a legitimate fix. Until the
-remaining lifetime contracts are supported, keep service state in its owner.
+Prefer explicit lifetime for application services. A custom ELF section does
+not supply missing lifecycle behavior. Keep mutable service state in its owner
+and make shutdown drain outstanding work before releasing resources.
 
 ## Plan installation identity and permissions before relying on a service
 
@@ -302,11 +231,11 @@ are the API vocabulary; device policy still has to be tested.
 
 The current examples use experimental E-range UIDs. Do not ship those identities
 as a released application allocation. Installation, application registration,
-launch-menu visibility and starting an executable by path are separate gates.
+launch-menu visibility and starting an executable by path are separate operations.
 A Window Server client drawing a window is not automatically a fully registered
 application with lifecycle integration. The SDK now owns menu registration
-resources, translated captions and icon packaging; broader lifecycle
-integration is still bounded. You must still select a stable application
+resources, translated captions and icon packaging. The Window Server starter
+does not implement an Avkon application lifecycle. You must still select a stable application
 identity and permission policy.
 
 Keep executable code and writable application data separate. Symbian paths are
@@ -314,9 +243,9 @@ drive-based; Z is the ROM view, system executables use `sys/bin`, and private
 application data belongs in the appropriate security-controlled location.
 Do not hard-code C as the only writable volume or depend on a desktop working
 directory. Removable/absent/full storage and failed writes are normal conditions.
-The SDK should offer path/service adapters; the application still chooses which
+The application chooses which
 data is durable, private, exportable or disposable. The [file-server interface](https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/userlibandfileserver/fileserver/inc/f32file.h)
-is the platform boundary, not POSIX filesystem equivalence.
+defines the native drive and permission model.
 
 ## Assume backgrounding, redraw and interruption are ordinary operation
 
@@ -333,53 +262,13 @@ polling and work in bounded chunks. Persist important user data at deliberate
 points; a destructor at process exit is not your only durability strategy.
 Desktop-fast code or continuous redraw can still be a poor phone application.
 
-## Test the boundaries, not just the model
+## Debug and test the application
 
-Host GTest validates portable model behavior; emulator tests validate actual
-loader/imports, heap/service calls, event lifetimes and rendered results. Use
-Pytest to install/launch in an owned fresh instance, exercise input, retain
-captures and inspect native exit/panic records. Include allocation failure,
-invalid input, cancellation during shutdown and repeated acquisition/cleanup.
-A successful ELF build or E32 parser check establishes neither runtime execution
-nor the phone's installation policy.
+Test portable model behavior on the host and exercise input, rendering,
+allocation failure, cancellation and shutdown in the emulator. Check the native
+guest exit or panic record as well as the frontend's exit code.
 
-Keep the debug ELF exactly paired with the executable installed for the test.
+Keep the debug ELF paired with the executable installed for the session.
 Runtime load addresses can differ from link addresses; let the SDK relocate
-symbols instead of hard-coding addresses in breakpoints. A source change needs
-a newly published ELF/E32 pair. The root `gui_app_run` supervisor performs that
-publication; see [CLION.md](../guides/clion.md).
-
-The original counter/runtime acceptance remains guarded against one preserved RM-807 firmware
-fixture and uses an explicit experimental routing profile. The physical phone's
-identity/firmware is still unknown. Do not infer general Belle or physical-device
-compatibility from that run. Those differences should be diagnosed by SDK
-profiles and tests, rather than leaking firmware workarounds into app logic.
-
-## What belongs to the SDK as it matures
-
-For bounded stackless composition, link `Symbian::Stackless` and include
-`<symbian/concurrency/future.h>` or `<symbian/concurrency/parallel.h>`. A producer
-completes its Promise from an OS completion callback or a verified worker;
-`Then`, `JoinAll`, `TaskGroup::Finish` and bounded `DriveInline` arrange
-continuations without
-blocking the event thread.
-An `OnReady` callback may run immediately during registration or on the
-completing thread, so marshal UI changes to the owning event thread. `Cancel`
-is a request; retain native request buffers and handles until their completion
-drains. Dropping an unfinished TaskGroup requests cancellation but does not
-wait; observe the Task returned by `Finish()` before releasing child resources.
-This profile carries `absl::StatusOr<T>` results and `absl::Status` failures
-directly. Absent `Await` and fiber APIs still mark it as a bounded profile,
-not the final A11 guest ABI.
-
-The SDK should own tool selection, E32 conversion/relocations, runtime startup,
-heap/TLS setup, tested leave/Status adapters, encoding helpers, cancellation-aware
-request owners, handle RAII, service/path adapters, registration/packaging and
-debug symbol relocation. A developer should still specify identity/permissions,
-choose encodings and allocation policy, retain asynchronous ownership, manage
-application lifecycle/durable state and test the required OS services.
-
-A workaround mentioned here is not a permanent demand on every application.
-When an adapter closes a gap, update this guide to describe its public contract
-and remove the manual workaround. Track unsupported runtime capabilities in
-RUNTIME.md/STATUS.md; keep this guide focused on writing a robust application.
+symbols. Rebuild and publish a fresh ELF/E32 pair after source changes. See
+[CLion Run and Debug](../guides/clion-run-debug.md).

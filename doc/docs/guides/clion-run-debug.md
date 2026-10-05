@@ -30,10 +30,6 @@ CMake target and has a different role.*
    control. CLion's Stop button ends only this owned frontend. The run keeps
    logs and input/binary digests beneath `.symbian/gui-runs` for inspection.
 
-A successful ARM build is only a build result. A visible counter and normal
-emulator exit add guest evidence, but neither proves physical Nokia 808
-compatibility.
-
 ## Stop at a guest source line
 
 1. Put a breakpoint in `GuiMain` or `DrawGui` in the GUI source.
@@ -55,8 +51,7 @@ compatibility.
    address. Inspect variables and step through the guest; Stop cleans up the
    owned emulator child.
 
-The supported check has stopped at a guest source breakpoint in the IDE.
-Comprehensive stack unwinding remains unverified. If the debug profile is
+Guest stack unwinding can be incomplete. If the debug profile is
 missing, reopen the GUI project after running `configure-ide`. If the port is
 busy, stop the conflicting session before starting another; the supervisor
 rejects a busy port rather than attaching to an unrelated process.

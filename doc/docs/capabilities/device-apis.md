@@ -1,6 +1,6 @@
 # Modern on-device APIs
 
-This is the plan for application-facing C++ APIs built on the target SDK. The
+The SDK provides application-facing C++ APIs built on the target OS services. The
 public surface lives under `cpp/symbian/api/include/symbian/api/`; the SDK
 exports it as `<symbian/api/...>` with separate opt-in `Symbian::<Component>`
 archives.
@@ -10,51 +10,25 @@ translation in separate native bridge translation units. Applications receive
 typed C++ values and `absl::Status` or `absl::StatusOr` and can keep using the
 SDK's C++20 standard library.
 
-## Component sequence
+## Available components
 
-| Component | First useful application operation | Evidence before exposing more |
+| CMake target | Application operation | Restrictions |
 | --- | --- | --- |
-| `system` | Read tick and fast counters, including their actual period or frequency | Packaged linked probe on both ARM targets and emulator CPU backends; wrap-specific tests remain open |
-| `storage` | Own file and directory cursors; stream reads and entries, and write with explicit creation and flush | File Server import and read/write checks in a disposable emulator instance; large files and device behavior remain open |
-| `power` | Read independent power-good, external-supply and qualitative battery fields | HAL import and status checks; device validation and change notifications remain open |
-| `display` | Query primary pixel geometry and optional physical twips | HAL import and positive geometry check; orientation change and multiple screens remain open |
-| `sensors` | Enumerate available channels and read timestamped samples | Header/ordinal and capability checks, subscription cancellation and overflow controls |
-| `media` | Audio playback and recording with owned buffers | Audio service contracts, timing, format negotiation and cancellation |
-| `camera` | Typed ECam camera-count discovery, without activating hardware | Opening, preview and capture need a verified leave boundary and named-firmware callback, permission and buffer-lifetime evidence |
-| `connectivity` | Connect and exchange bounded IPv4 TCP data on a worker | Asynchronous listener, cancellation, deadlines, bearer observation and physical-device checks remain open |
+| `Symbian::System` | Read tick and fast counters with their period or frequency | 32-bit counters wrap; these are not wall time |
+| `Symbian::Storage` | Stream files and directories, write and flush, copy in chunks | Synchronous I/O; offsets below 2 GiB |
+| `Symbian::Power` | Read power-good, external-supply and qualitative battery fields | Optional fields can be unknown; snapshot only |
+| `Symbian::Display` | Query primary pixel geometry and optional physical twips | Snapshot only; no multiple-screen or orientation subscription |
+| `Symbian::Camera` | Discover the available camera count | No camera opening, preview or capture |
+| `Symbian::Connectivity` | Resolve hosts, connect, accept and exchange IPv4 TCP data | Worker-owned blocking operations; active accepts require an active scheduler |
 
-`system`, `power`, `display`, `storage`, `camera` and `connectivity` have public
-headers and separate archives. The sensor and media rows are planned
-components, not claimed device features.
-Their separate directories reserve source boundaries; add a public header and
-archive only after a native service contract has been verified. Keep
-device-specific facts as unknown until measured. No flashing, erasure,
-bootloader, partition, OTP, calibration or hardware-recovery operation belongs
-in this application API.
+Sensors and media are planned components with no public headers or archives.
+The [component guides](apis/index.md) describe each available API's ownership,
+threading and error handling.
 
-## API rules
-
-- Group APIs by a device capability rather than by historical server class.
-  Do not expose raw descriptors, `TRequestStatus`, cleanup-stack ownership or
-  native error integers in public headers.
-- Keep synchronous queries bounded. Long-running or event-driven operations
-  return SDK `Future`/`Task` values, own their native requests through
-  cancellation and drainage, and integrate with the existing `EventExecutor`.
-  Any compute-heavy continuation is explicitly placed on its worker executor.
-- Open native handles and allocate buffers only when a request needs them.
-  Define closure and cancellation before adding subscriptions. Use an explicit
-  capability or availability result instead of a guessed fallback value.
-- Test host-side data/error mapping with GTest, then compile and execute the
-  actual bridge on ARMv5T and ARMv6 under both emulator CPU backends. Device
-  evidence is a separate gate and must name its model and firmware.
-- Package public headers and both architecture archives in the SDK manifest,
-  with digests and a CMake target. A packaged-header compile and linked
-  emulator probe are required before calling a component usable.
-
-## Initial `system` slice
+## Read a native counter
 
 `ReadTickCounter()` and `ReadFastCounter()` return typed readings from the
-already verified `User::TickCount`/`UserHal::TickPeriod` and
+`User::TickCount`/`UserHal::TickPeriod` and
 `User::FastCounter`/kernel HAL frequency bridges. Their counts are 32-bit and
 wrap; the API does not present them as wall time or an indefinitely increasing
 uptime. A missing or zero period/frequency returns a status. The implementation
@@ -84,7 +58,7 @@ attribute stays unknown, and an unknown battery enumeration is never coerced
 to a percentage. `Symbian::Display` requires valid primary HAL pixel dimensions;
 physical twip dimensions remain optional. Both queries are snapshots, not
 subscriptions. A legacy `hal.dll` proxy and the original EPL-licensed HAL
-headers remain inside the SDK native boundary.
+headers are used by the SDK bridge.
 
 `Symbian::Storage` owns a File Server session and file or directory subsession
 per open handle. Its movable C++ owners close those resources exactly once.
@@ -105,9 +79,7 @@ requests a stop from another thread, checked before and between the read,
 write and flush. Directory listing is likewise entry-at-a-time and has its own
 cross-thread stop request. Current
 native File Server operations are synchronous, so an already-running request
-may delay terminal cancellation. A fixed wall-clock cancellation bound needs
-verified asynchronous File Server requests and cancellation drainage; the
-current contract makes no such claim.
+may delay terminal cancellation. Cancellation has no fixed wall-clock bound.
 
 Application CMake can opt into only the required archives:
 
@@ -132,14 +104,3 @@ if (opened.ok()) {
   // Use the first *bytes_read bytes only when bytes_read.ok().
 }
 ```
-
-## Next native contracts
-
-Connectivity should separate observation from connection creation: a snapshot
-must not silently enable mobile data or change access points. Sensors need
-typed channel metadata, timestamped samples and a bounded subscription whose
-drop policy is visible. Media and camera should own native streams and buffers
-with explicit cancellation and drainage; decoding, encoding and image work
-belong on a worker, while event-thread completions remain bounded. Camera
-preview and still capture must keep capability and privacy state explicit.
-These are design gates, not exported APIs yet.

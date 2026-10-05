@@ -1,23 +1,24 @@
 # SDK export and native headers
 
-The native SDK component reads frozen EABI export definitions and generates
-Clang/LLD sources for selected function import proxies. A proxy is an ELF link
-artifact whose exported symbol points to an ordinal word. It is not executable
-DLL implementation code. No historical SDK, DEF table or implementation is
-bundled with the wheel.
+The SDK installs native headers, architecture-specific runtime and component
+archives, frozen-ordinal OS import proxies and CMake helpers. See
+[project configuration](project-configuration.md) for installation and selection,
+and the [native API guide](native-sdk.md) for application targets.
+Firmware and original system DLL implementations are supplied separately.
 
-The current profile accepts `EXPORTS`, `symbol @ ordinal NONAME`, optional
-`ABSENT` and `DATA size` declarations, and selects 1..256 present functions.
-It preserves original ordinals, including holes. Aliases, other directives,
-data imports, absent selections and decorated DLL UID/version names remain
-unsupported. Plain DLL/DSO names avoid guessing a Belle module version.
-The parser, selection, source generation and bounded ELF metadata inspection
-live in cpp/symbian/sdk. Python owns paths, CMake/Ninja, dependency hashes and
-reports. Target probe C++ source also lives under cpp and is installed as a wheel
-resource. Native work releases the GIL and uses Abseil statuses without exceptions.
+## Function import proxies
 
-For the pinned public kernel checkout described in
-[the engineering notes](https://github.com/hpnkv/symbian-platform/blob/main/.dev/research.md):
+A proxy is an ELF link artifact whose exported symbol points to an ordinal
+word. It is not executable DLL implementation code. The native SDK component
+reads frozen export definitions and generates Clang/LLD proxy sources.
+
+The parser accepts `EXPORTS`, `symbol @ ordinal NONAME`, optional `ABSENT`
+and `DATA size` declarations. Proxy generation selects 1–256 present functions
+and preserves their original ordinals, including holes. Aliases, data imports,
+absent selections and decorated DLL UID/version names are unsupported.
+Use plain DLL/DSO names.
+
+From a prepared source checkout:
 
 ```sh
 uv run symbian toolchain import-proxy \
@@ -28,62 +29,33 @@ uv run symbian toolchain import-proxy \
 uv run symbian inspect --format import-proxy .symbian/euser-proxy/euser.dso
 ```
 
-`--headers` is optional. When supplied, the build compiles an original-header
-User::Exit call and links a research ELF against the proxy. Both proxy and link
-probe repeat byte-for-byte in separate CMake trees. The persistent primary tree
-has a real compilation database, and Ninja dependencies include consumed SDK
-headers. Inputs and tool versions are hashed/recorded in report.json. Keep the
-DEF outside the generated output tree.
+`--headers` is optional. When supplied, the command compiles an original-header
+call and links it against the proxy. Keep the DEF outside the generated output
+tree. The build retains a compilation database and records tool versions and
+consumed inputs in `report.json`.
 
-The public EABI table has 2546 exports and places `_ZN4User4ExitEi` at ordinal
-641. Selecting it produces one ordinal slot without inventing the preceding
-640 entries. Its ELF version identifies euser.dll and soname euser.dso.
-The linker script puts the ordinal section first and makes dynamic pointers
-file offsets, matching assumptions in the historical converter. LLD's ordinary
-shared-library script does not provide that layout. Version-script DLL names
-must be unquoted here; LLD retains quote characters in the resulting version
-name when the name itself is quoted.
+The public EABI definition places `_ZN4User4ExitEi` at ordinal 641. Selecting
+it creates one ordinal slot rather than inventing preceding entries. The proxy
+version names `euser.dll`; its soname is `euser.dso`. The SDK linker script
+places ordinal data first and uses file offsets for dynamic pointers, as
+required by the converter.
 
-The header profile selects `__GCC32__`, `__GCCV3__`, `__EABI__`, `__EPOC32__`,
-`__MARM__` and `__MARM_ARMV5__`. It checks the public source's sizes for integer,
-UID, request status, time interval and descriptor types. In this EKA2 source
-TRequestStatus has separate status and flags words and is eight bytes; it must
-not be modeled as a single integer. TDesC16/TDes16/TPtrC16/TPtr16 sizes are
-4/8/8/12. These checks establish this compiled source profile, not the full 808
-C++ ABI. Clangd consumes the resulting target database with zero errors.
+## Platform headers and ABI
 
-An optional GTest oracle extracts Nokia's nonthrowing GetSymbolOrdinal method
-unchanged from the pinned buildtools source and compiles it with fixed-width host
-declarations. It reads the generated User::Exit slot as 641 and rejects a changed
-section index. It checks this method's contract, not the complete historical ELF
-consumer or Belle loader. The original EPL source remains in its ignored checkout.
+The original EKA2 header profile defines `__GCC32__`, `__GCCV3__`, `__EABI__`,
+`__EPOC32__`, `__MARM__` and `__MARM_ARMV5__`. In these headers,
+`TRequestStatus` has status and flags words and is eight bytes;
+`TDesC16`, `TDes16`, `TPtrC16` and `TPtr16` have sizes 4, 8, 8 and 12 bytes.
+Use the actual target headers rather than host structures that imitate them.
 
-```sh
-cmake --preset debug -DSYMBIAN_BUILD_SDK_ORDINAL_ORACLE=ON
-cmake --build --preset debug
-ctest --preset debug
-```
+An import proxy must match the selected firmware's export table. Linking
+`User::Exit` does not supply heap setup, process initialization or runtime
+cleanup: use SDK startup. EKA1 uses different GNU2 symbols and legacy import
+layout; see the [EKA1 guide](../guides/eka1.md).
 
-SYMBIAN_SDK_PROXY_TEST_IMAGE defaults to .symbian/euser-proxy/euser.dso.
-The option defaults off, so ordinary native tests do not require research
-checkouts or a prebuilt fixture.
+## Inspection
 
-The native inspector bounds sections, strings, symbols and version records,
-and checks ordinal words, DLL names and the generated dynamic-pointer profile.
-It is not a general ELF authenticity/validity verdict. The research artifacts:
-
-- euser.dso SHA-256: `c53aa0b81ec07f6d18c8eab0298a8237e7906909eaa5caac975e55d3659876fb`
-- header_probe.elf SHA-256: `934eb1b3da3c3d7cde86388e797a61dfd251e1c32ed7608c65567ae8a42b272d`
-
-The linked probe uses R_ARM_JUMP_SLOT in a writable GOT/PLT segment. The current
-E32 converter supports an import-free PIC profile and correctly rejects it.
-The separate eager import profile provides a code-region slot layout, ordinal
-conversion and development DLL execution; see IMPORTS.md. Actual target DLLs
-remain untested. SDK startup additionally
-initializes heap/TLS and DLL/static entry points before E32Main; User::Exit performs
-cleanup. Linking its symbol does not justify replacing those contracts with the
-existing direct-thread-exit experiment.
-
-Matched Belle DLL/ROM/Z material, complete ABI, initialization, resource processing
-and physical installation remain unverified. Reports keep import execution and
-Symbian loader verification false. See .dev/research-log.md for experiment evidence.
+The native inspector bounds ELF sections, strings, symbols and version records
+and checks ordinal words and DLL names. It validates the generated proxy
+profile, rather than arbitrary ELF files. Binary parsing and source generation
+live in the native library; Python handles paths and build orchestration.

@@ -19,7 +19,8 @@ All operations and destruction belong to one SDK worker, outside an active
 scheduler callback. Absolute deadlines cover the native BIO's socket I/O.
 The application supplies a trusted target-specific hardware entropy adapter.
 The default guest entropy service fails closed; the named RM-807 research
-adapter is an opt-in emulator experiment, not a portable phone implementation.
+adapter is available only in the matching patched emulator profile; it is not
+a portable phone implementation.
 UTC comes from the runtime and certificate-date checking remains enabled.
 
 ## Package and load a CA bundle
@@ -175,20 +176,12 @@ its transport on destruction or failure. `CloseSession` releases an inbound
 session without a blocking TLS close alert and lets its configured state accept
 another client. A client transport is likewise cancelled by closing its socket.
 
-## Evidence and lower-level API
-
-The native HTTP client has fetched public sites from the named RM-807 emulator
-with TLS 1.2 and TLS 1.3, recorded the negotiated versions/ALPN, streamed a body
-larger than its buffering bound and rejected wrong hostnames. Native server
-acceptance also uses independent host HTTP codecs. The public test identity
-used for inbound checks is a transport fixture, not a deployed pairing scheme.
-See [native HTTP](http.md) for replay and `.dev/research-log.md` for exact evidence.
-These results do not establish physical-device support or portable entropy.
+## Lower-level API
 
 The original Mbed TLS C API remains available for advanced transport or identity
 policy. Link `MbedTLS::mbedtls` after
 `find_package(MbedTLS 3.4.1 EXACT CONFIG REQUIRED)`, or `MbedTLS::mbedcrypto` for
 crypto alone. When combining the C package with Abseil-based native SDK APIs,
 select the same streams runtime for their closure; the native `Symbian::Tls`
-target already does so. The [TLS SDK reference](../reference/tls-sdk.md) records
-upstream provenance and earlier certificate-verification controls.
+target already does so. The [TLS SDK reference](../reference/tls-sdk.md) describes
+the packaged source, build targets and socket BIO requirements.

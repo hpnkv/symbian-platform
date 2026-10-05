@@ -2,9 +2,7 @@
 
 Run these commands from the repository root. The host tools compile C++ and
 convert ARM ELF into Symbian E32; target headers and firmware are separate
-inputs. Linux preparation is **provisional**: host native builds and a Linux
-wheel have passed bounded checks, while a Linux GUI emulator session and guest
-debugger have not yet been validated on an interactive host.
+inputs. Follow the tab for your host system below.
 
 ## 1. Install host tools
 
@@ -22,16 +20,31 @@ debugger have not yet been validated on an interactive host.
 === "Linux (provisional)"
 
     On Ubuntu 24.04 or a comparable distribution, install a C++ toolchain,
-    CMake 3.28+, Ninja, Clang/LLD and the bootstrap prerequisites. Package
+    CMake 3.28+, Ninja 1.12+, Clang/LLD and the bootstrap prerequisites. Package
     names can vary by distribution.
 
     ```sh
     sudo apt update
     sudo apt install build-essential clang clang-format lld llvm cmake ninja-build \
       git curl ca-certificates perl pkg-config autoconf automake libtool \
-      python3-dev
+      python3-dev python3-tk
     curl -LsSf https://astral.sh/uv/install.sh | sh
     ```
+
+    Ubuntu 24.04's Ninja 1.11 is too old for target input tracking. Install
+    the maintained version and put its directory first on `PATH`:
+
+    ```sh
+    uv tool install 'ninja>=1.12,<2'
+    export PATH="$HOME/.local/bin:$PATH"
+    ```
+
+    Host format libraries build with Clang 20. The pinned LLVM 23 libc++
+    guest sources require **Clang 23 or later**, with matching LLD, archive
+    tools and `clang-scan-deps`. Select that toolchain before SDK export.
+    Official LLVM Linux binaries may require older ICU shared libraries;
+    check `ldd` on every tool. An external ICU workaround is not a
+    redistributable tool closure.
 
     Start a new shell if the uv installer added its directory to your `PATH`.
     The [uv installer](https://docs.astral.sh/uv/getting-started/installation/)
@@ -141,8 +154,8 @@ The EUSER definition is `kernel/eka/eabi/euseru.def`; WS32 is
 function ordinals without renumbering. The generated `euser.dso` and `ws32.dso`
 are **link-time ordinal proxies**, not executable implementations of those
 libraries. Copying them into a guest cannot supply EUSER or Window Server.
-The public source profile is pre-Belle evidence, not a verified Nokia 808 SDK.
-The future matched target must supply compatible real system DLLs and services.
+These headers and export definitions describe a pre-Belle source profile.
+The target firmware must supply compatible system DLLs and services.
 
 The preparation report is `.symbian/gui-sdk/sdk-report.json`; each proxy also
 retains its own source, build trees, input digests and `report.json`.

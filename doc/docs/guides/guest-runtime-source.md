@@ -12,9 +12,8 @@ errors use explicit status results.
 | Use strings, containers or clocks | [C++ capabilities](../capabilities/cpp.md) |
 | Add a timer or bounded asynchronous task | [Concurrency](../capabilities/concurrency.md) |
 | Link a native library or DLL | [Library targets](../reference/project-libraries.md) |
-| Explore startup, imports and ABI behavior | [Runtime research details](../reference/guest-runtime-research.md) |
+| Explore startup, imports and ABI behavior | [Runtime reference](../reference/guest-runtime-research.md) |
 
-The [runtime capability page](../capabilities/runtime.md) separates executed
-subsets from open work. Run the smallest relevant example before adopting a
-feature in an application. Emulator execution is a bounded check, not evidence
-that a Nokia 808 accepts the same image.
+The [runtime capability page](../capabilities/runtime.md) describes the library
+profiles and restrictions. Run the smallest relevant example before adding a
+feature to your application.

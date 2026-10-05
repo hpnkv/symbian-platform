@@ -1,41 +1,38 @@
 # Firmware and emulator compatibility
 
-These are bounded emulator and import observations for named firmware samples. They do not predict physical-device behavior. See the [firmware guide](../guides/firmware.md) to select a local image.
+Select a local image using the [firmware guide](../guides/firmware.md).
+Firmware is supplied separately; its DLL exports and system services determine
+which application profiles can run.
 
-## Actual contracts and remaining gaps
+## Application requirements
 
-The C++ runtime supplied by this SDK remains enabled regardless of historical
-Symbian feature lists. Requirements are actual ARM EABI/EKA2 E32-V startup,
-import ordinals and the services an application uses. EKA1 dumps import, but
-the current starter fails before launch with a specific missing EKA2 ABI error;
-an EKA1 startup/import adapter has not been implemented. Building an application
-without firmware remains possible.
+The modern C++ runtime requires the ARM EABI/EKA2 application ABI and the
+imports used by the selected components. The GUI starter needs EUSER, WS32 and
+GDI; the task/thread profile also requires `libpthread.dll`. Missing DLLs are
+reported before process creation. Building without firmware is possible.
+[EKA1 executables](../guides/eka1.md) use a separate legacy profile; they cannot
+use the modern GUI or runtime archives.
 
-The GUI requires EUSER, WS32 and GDI. Missing DLLs fail before process creation.
-The starter uses the default font, adapts down to 176x208 logical pixels and
-supports touch, Enter/centre, Backspace and Clear/Exit softkeys. Its model keeps
-twelve rows; the smallest displays show only the newest rows that fit.
-Full orientation handling and all vendor/server ABIs remain unfinished.
+The starter adapts to displays down to 176x208 logical pixels and supports
+touch, Enter/centre, Backspace and Clear/Exit softkeys. The model retains twelve
+rows and displays the newest rows that fit. Full orientation handling and all
+vendor/server ABIs are unsupported.
 
-The RM-807 executive workaround is auto-selected only for its exact verified
-ROM/EUSER pair. Other dumps use the default executive map. An explicit mismatched
-profile is rejected; ambient `EKA2L1_EXPERIMENTAL_SVC_PROFILE` cannot override
-the resolver. Each launch report records the effective profile and mappings.
+## Runtime profiles
 
-The optional `Symbian::NativeAtomics64` runtime has been executed with the
-imported RM-807, RM-675 (C7) and RM-609 (E6) ROMs on both emulator CPU
-backends. Their EUSER 64-bit entry points match and use LDREXD/STREXD. The
-imported RM-243 (6120c) and RM-346 (E71) EUSERs lack those EABI ordinals;
-selecting this profile for them is unsupported. This is firmware capability
-evidence, not a claim about every device of the same model or physical phone.
+The RM-807 executive profile is selected only for its matching ROM/EUSER pair.
+Other firmware uses the default executive map. A mismatched explicit profile
+is rejected; ambient `EKA2L1_EXPERIMENTAL_SVC_PROFILE` cannot override selection.
+Launch reports record the selected profile and mappings.
 
-Unknown font-server requests return `KErrNotSupported` and remain logged;
-they no longer leave a synchronous client waiting forever. This supplies an
-error contract, not an implementation of the missing font operation. Native
-guest exits are checked even when the frontend exits zero. A guest reason -4
-is `RESOURCE_EXHAUSTED`; -5 is `UNIMPLEMENTED`; panics and other failures retain
-their actual reason and evidence path.
+`Symbian::NativeAtomics64` requires selected EUSER 64-bit exports. RM-807,
+RM-675 and RM-609 profiles provide them; RM-243 and RM-346 do not. Compatibility
+must be checked against the actual firmware, rather than a product name alone.
 
-See the [development status](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md) and [research log](https://github.com/hpnkv/symbian-platform/blob/main/.dev/research-log.md) entries for tested devices,
-screenshots, CPU backend coverage and retained failure controls. Import success
-does not establish application execution, full OS boot or physical compatibility.
+Unknown font-server requests return `KErrNotSupported`. Inspect the guest exit
+record even when the frontend exits zero: -4 maps to `RESOURCE_EXHAUSTED`, -5
+to `UNIMPLEMENTED`, and panic records retain their native reason.
+
+Emulator system-service coverage is incomplete. Firmware import, application
+launch and full OS boot are different operations; test installation and the
+required services on the target phone before deployment.

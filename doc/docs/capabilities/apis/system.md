@@ -13,9 +13,9 @@ time or to compare across devices. `TickReading` pairs the count with a
 measured ticks-per-second value. `absl::StatusOr` distinguishes an unavailable
 counter from a valid zero count. Both structs make 32-bit wrap explicit.
 
-## Boundary and cost
+## Ownership and cost
 
-`counters.cc` uses the SDK's already verified native runtime bridge. The
+`counters.cc` uses the SDK's native runtime bridge. The
 public header contains no Symbian descriptors or HAL types. Each query samples
 one metadata value and one count without heap allocation or a retained native
 handle. The metadata call is repeated because the public result must describe
@@ -42,9 +42,8 @@ native active scheduler required by `ActiveTcpListener`; it does not install a
 second SDK task scheduler. See the
 [resident agent](../../reference/agent-protocol.md) for a complete use.
 
-## Remaining work
+## Restrictions
 
-Counter wrap over long intervals and physical-phone frequencies need
-independent checks. The counter API deliberately provides no wall clock or timer
-subscription; those have different semantics and ownership. Physical-device
-validation of the service stop property is still open.
+Counters wrap at 32 bits; use their reported period or frequency and account
+for wrap when computing intervals. This API supplies no wall clock or timer
+subscription.

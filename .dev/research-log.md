@@ -5613,3 +5613,30 @@ The Linux frontend's `--help` exits zero under Xvfb with a fresh private root
 (`/tmp/symbian-linux-frontend-help-r1.log`). Interactive GUI behavior and a
 firmware-backed Linux run are not established by that smoke test. The LLVM
 binary's private ICU 70 dependency remains a release-tool closure gap.
+
+## 2026-10-05 — public developer documentation cleanup
+
+Reviewed the MkDocs guides, capability pages and references, replacing development
+journals, old experiment matrices, retained-artifact hashes and engineering-plan
+links with available API contracts, requirements and usage. No `.dev/` reference
+remains in `doc/docs`. Preserved complete HTTP/TLS/WebSocket examples and concrete
+restrictions: EKA1's separate GNU2 profile, unsupported imported data/TLS/runtime
+features, worker affinity and cancellation drainage, and target-specific entropy.
+Corrected stale claims that fibers, event integration, SIS resources/signing and
+Linux frontend builds were absent. README now covers these work streams and
+states that full release payloads and EKA1 libraries remain unfinished.
+
+The emulator source guide now includes its source pin and complete ordered
+22-root-patch application recipe instead of directing readers to an internal
+journal. Replayed that exact sequence against clean files extracted from the
+pinned EKA2L1 commit; all 22 patches applied. Temporary script and source copy
+remain outside Git. This checks patch application, not runtime compatibility.
+
+`uv run --no-sync --only-group docs ./doc/build.sh --strict` passed, including
+local-link checks, strict MkDocs and both Doxygen indices. Historical header
+Doxygen warnings (parameter names, legacy commands and unresolved original
+symbols) remain; there were no Doxygen errors. Final strict MkDocs rebuild and
+Markdown section-link scan passed (zero unresolved section links). `git diff
+--check` passed after whitespace cleanup. The requested documentation-wide switch
+from `uv run` to installed commands remains tied to making wheel publication
+available; source-checkout instructions currently retain their environment runner.

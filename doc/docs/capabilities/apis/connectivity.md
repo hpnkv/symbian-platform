@@ -37,9 +37,7 @@ destruction on the same worker thread. Each call waits for a native request.
 All three accept an absolute `absl::Time deadline`, defaulting to
 `absl::InfiniteFuture()`. Choose a finite deadline at call sites where a
 bounded wait matters, such as `absl::Now() + absl::Minutes(1)`. On expiry they
-cancel and drain the native request before returning a deadline status. In the
-emulator, a client reused its socket after a timed-out read and received the
-host's later byte. A send can already be delivered before its deadline fires;
+cancel and drain the native request before returning a deadline status. A send can already be delivered before its deadline fires;
 the application protocol must acknowledge work when delivery matters.
 
 ## Accept one host connection
@@ -91,18 +89,7 @@ internet socket headers, plus proxies for their numbered DLL exports. See
 the [original header reference](../../reference/native-symbian.md) when an
 application needs an OS operation beyond this helper.
 
-## Evidence and limits
+## Restrictions
 
-An ARMv6 consumer linked through the exported SDK target and ran in a
-disposable RM-807 emulator instance on Dynarmic and Dyncom. The host received
-its request byte and the guest received the host reply. A wrong reply
-produced a distinct failure exit. The test kept SHA-256-pinned ROM, EUSER,
-ESOCK and INSOCK files unchanged. This establishes a bounded emulator path;
-it does not prove Nokia 808 compatibility or radio behavior. A separate
-inbound test connected from the host to a Dynarmic guest listener, exchanged
-bytes after the listener closed, and verified two accept timeouts on a second
-listener. This is a synchronous worker path, not a resident service loop.
-
-The separate connection monitor discussed in the [development plan](https://github.com/hpnkv/symbian-platform/blob/main/.dev/plan.md)
-remains planned. Opening this TCP client can request network connectivity;
-it should not be used as a passive bearer observer.
+Opening a TCP connection can request network connectivity. Do not use it as a
+passive bearer observer. There is no modern connection-monitor API yet.

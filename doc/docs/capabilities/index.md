@@ -1,22 +1,22 @@
 # Capability map
 
-The platform has a modern host toolchain and an intentionally bounded guest
-runtime. Link only the application libraries you use; the generated SDK
-provides architecture-specific targets for ARMv5T and ARMv6.
+The SDK provides host tools and application-linked native libraries for ARMv5T
+and ARMv6. Link only the components your application uses.
 
-| Area | Current development evidence | Read next |
+| Area | Available facilities | Read next |
 | --- | --- | --- |
-| E32 builds and DLLs | Native conversion, format checks and selected emulator execution | [Building](../guides/building.md), [SDK](../reference/sdk.md) |
-| C++ runtime | Selected libc++, allocation, global lifetime and concurrency paths | [Guest runtime](runtime.md), [C++ usage](cpp.md) |
-| Device APIs | System, power, display, storage and camera archives with bounded probes | [Device APIs](device-apis.md) |
-| TLS | Vendored Mbed TLS sources, project CA resource and selected guest crypto/X.509 calls | [TLS guide](../guides/tls.md) |
-| Deployment | Native SIS writer and disposable emulator install checks | [Packaging](../guides/packaging.md) |
+| Build tools | ARM ELF to E32 conversion, frozen-ordinal import proxies, executable and DLL inspection | [Building](../guides/building.md), [SDK](../reference/sdk.md) |
+| C++ runtime | libc++ containers, ownership, clocks, compiler-rt helpers and runtime profiles | [Guest runtime](runtime.md), [C++ usage](cpp.md) |
+| Concurrency | Futures, Tasks, channels, fibers, timers, property watches and event/worker executors | [Concurrency](concurrency.md) |
+| Device APIs | Counters, power and display snapshots, file streaming, camera discovery and TCP sockets | [Device APIs](device-apis.md) |
+| HTTP and WebSockets | Streaming HTTP/1.1 and HTTP/2 client/server; RFC 8441 WebSockets | [HTTP](../guides/http.md), [WebSockets](../guides/websocket.md) |
+| TLS | Mbed TLS 1.2/1.3 sessions with explicit trust roots and peer verification | [TLS guide](../guides/tls.md) |
+| Packaging | SIS generation, application resources, signatures and emulator installation | [Packaging](../guides/packaging.md) |
+| EKA1 | Separate legacy executable startup and selected EUSER imports | [EKA1 profile](../guides/eka1.md) |
 
-!!! warning "Open gates"
+The modern runtime and device libraries require the EKA2 application ABI.
+EKA1 has a smaller, separate profile. TLS requires a target-specific secure
+entropy source. Sensors and media have no exported modern API yet.
 
-    Guest TLS 1.2/1.3 handshakes, secure entropy, socket transport and Nokia
-    808 compatibility have not passed their development gates. Planned APIs
-    are marked as such on their individual pages.
-
-The [C++ reference](../cpp.md) is generated from native declarations. It
-shows available symbols; the guides state which behavior has been exercised.
+Use the [C++ reference](../cpp.md) for symbol details and the linked guides
+for each component's requirements and restrictions.

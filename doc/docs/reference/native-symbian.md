@@ -29,7 +29,6 @@ data, so callers must use the correct 8-bit or 16-bit variant.
 
 The snapshots preserve upstream notices and are scoped to eleven useful headers.
 They are not a complete platform SDK. Some declarations need further include
-files or import proxies before they can compile in a new project. The
-[capability map](../capabilities/index.md) and [status](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md)
-state which paths have execution evidence. ARM output or emulator execution is
-not proof of Nokia 808 compatibility.
+files or import proxies before they can compile in a new project. See the [capability map](../capabilities/index.md) for available modern wrappers
+and their requirements. Check the selected firmware's exports before using a
+legacy declaration.

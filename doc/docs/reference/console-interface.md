@@ -13,10 +13,8 @@ diagnostics, run `python -m symbian.console.web_frontend.app` in a terminal.
 The desktop shell uses pywebview: WKWebView on macOS and WebView2 on Windows.
 The Linux x86_64 package includes the PySide6 renderer on Python 3.11–3.13.
 The manylinux aarch64 wheels and Linux Python 3.14 wheel do not install that
-renderer because PySide6 could not be resolved in those CI audit environments;
-the Console GUI remains unverified there. The launcher can use the legacy Tk
-frontend when pywebview is absent and Tk is installed, but that route has not
-been checked on Linux aarch64. The HTML, CSS and JavaScript are bundled
+renderer. Use the CLI when no compatible renderer is installed. The launcher
+can use the legacy Tk frontend when pywebview is absent and Tk is installed. The HTML, CSS and JavaScript are bundled
 locally. No browser tab, listening port or remote content is needed.
 
 The light interface groups all 38 public SDK actions by purpose:
@@ -44,7 +42,7 @@ Simple actions execute from their input page; consequential changes retain a
 review step. The full content area scrolls with a touchpad. Results display
 typed values, grouped fields and bounded lists as the primary view. Large
 firmware manifests have a searchable file index. Raw JSON can still be opened,
-copied and highlighted as JSON for exact evidence. Navigation retains cached
+copied and highlighted as JSON for inspection. Navigation retains cached
 results and draft inputs while context refreshes in the background.
 
 The USB inspector lists generic host descriptors with named USB classes. Select

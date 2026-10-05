@@ -7,15 +7,33 @@ checkout and build products outside version control and preserve its licenses.
 
 ## Source and patches
 
-The maintained source checkpoint is EKA2L1 commit
-`2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8`. The ordered local patches
-under `research/eka2l1/` add isolated instance roots, guarded firmware import,
-loopback guest debugging and bounded research controls. Read the
-[research build notes](https://github.com/hpnkv/symbian-platform/blob/main/.dev/research/eka2l1.md)
-before applying them to a fresh checkout. The existing workspace may already
-have these patches; inspect it before changing it.
+Use EKA2L1 commit `2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8` and its
+pinned submodules. From the platform repository root, create a fresh checkout
+and apply the maintained patches in order:
 
-The research frontend needs Qt and an FFmpeg build compatible with the host.
+```sh
+mkdir -p research/upstream
+git clone --no-checkout https://github.com/EKA2L1/EKA2L1 research/upstream/EKA2L1
+git -C research/upstream/EKA2L1 checkout 2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8
+git -C research/upstream/EKA2L1 submodule update --init --recursive --depth 1
+for patch in \
+  instance-root runtime-probe guest-debug-step guest-debug-library-query \
+  symbian101-experimental guest-thread-register guest-control \
+  firmware-import-bounds fbs-unsupported-request background-window \
+  dll-wsd-dyncom-exit belle-library-entry-start belle-library-load-prepare \
+  belle-thread-exit-reason dyncom-strexd-value v10-thread-exit-reason \
+  ntick-fast-counter-hal fast-counter-rate belle-recv-from-no-length \
+  belle-nonblocking-tcp belle-secure-random belle-recv-one-or-more-no-length
+do
+  git -C research/upstream/EKA2L1 apply "$PWD/research/eka2l1/$patch.patch"
+done
+```
+
+The patches add isolated instance roots, firmware import checks, loopback guest
+debugging, capture/input controls and service compatibility fixes. Inspect an
+existing checkout before applying them; do not reapply patches already present.
+
+The frontend needs Qt and an FFmpeg build compatible with the host.
 The pinned source tree contains `linux_x64-build.sh` for x86_64; it has no
 maintained Linux aarch64 FFmpeg script here. Use the same pinned checkout and
 local patch sequence on either host. The configured build also creates
@@ -24,7 +42,7 @@ algorithms are not linked into the SDK's native format implementation.
 
 === "macOS"
 
-    The tested Apple Silicon setup uses Homebrew Qt and the pinned ARM64 FFmpeg
+    On Apple Silicon, use Homebrew Qt and the pinned ARM64 FFmpeg
     script:
 
     ```sh
@@ -90,7 +108,7 @@ run and do not launch the preserved firmware baseline directly:
     EKA2L1_DATA_ROOT="$SYMBIAN_GUI_INSTANCE" "$SYMBIAN_EMULATOR" --help
     ```
 
-=== "Linux (provisional)"
+=== "Linux"
 
     The pinned CMake target sets its executable output to `bin/eka2l1_qt`:
 
@@ -103,11 +121,5 @@ run and do not launch the preserved firmware baseline directly:
 The root holds `config.yml`, device data, writable drives and logs. On macOS, a direct manual launch may become the foreground app; the SDK
 Run supervisor uses an accessory window in its maintained EKA2L1 patch. The
 window can remain visible over a full-screen terminal, accept dragging, and
-leave that terminal frontmost. Linux window focus
-and managed GUI input remain unverified. The supervisor still owns and cleans
-up its disposable process. Return to
-[Run the GUI example](../guides/gui-emulator.md) for the application task.
-
-The [development status](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md)
-records which firmware and CPU backend controls passed. Emulator execution
-cannot establish Nokia 808 compatibility.
+leave that terminal frontmost. The supervisor owns and cleans up its disposable process. Return to
+[Run the GUI example](../guides/gui-emulator.md) for application launch.

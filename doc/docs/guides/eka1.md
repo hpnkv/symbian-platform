@@ -30,7 +30,7 @@ Its separate ARM entry calls this function and returns to the emulator's
 existing EKA1 heap/exit bootstrap. The native converter emits the legacy
 124-byte E32 header, and inspection identifies `kernel: eka1`. It rejects
 writable data/BSS, pointer fixups, lifecycle and exception metadata.
-The maintained SISX builder rejects EKA1 images: legacy SIS is a separate gate.
+The SISX builder rejects EKA1 images; legacy SIS packaging is unsupported.
 
 ## Allocate, copy and free through original EUSER
 
@@ -80,15 +80,11 @@ extern "C" int Eka1Main() {
 }
 ```
 
-`Mem::Copy` returns the end pointer. The maintained probe checks all 64 bytes,
-allocation length, live heap counts and exact restoration after free. Its
-changed-result and corrupted-copy controls run on both CPU backends. The native
+`Mem::Copy` returns the end pointer. The native
 converter validates retained ELF calls and emits a contiguous, zero-terminated
 legacy PE IAT; inspection checks each ordinal against the import section.
 Do not substitute modern Belle EUSER proxies or SDK C++ class declarations.
 
 This profile does not supply EKA1 GUI, runtime libraries, HTTP/TLS, C++ import
 ABI beyond the five explicit calls, P900 execution or physical-device
-compatibility. The source workspace's
-`.dev/EKA1.md` records exact fixture/frontend digests, the independent parser
-and changed-result controls, bootstrap dependencies and remaining ABI gates.
+compatibility.

@@ -1,6 +1,6 @@
 # Mbed TLS SDK integration
 
-The [application TLS guide](../guides/tls.md) gives the project steps. This reference records source, build and current runtime evidence.
+The [application TLS guide](../guides/tls.md) gives the project steps. This reference describes the packaged sources, targets and transport adapters.
 
 This SDK builds its TLS libraries from the complete, locally vendored
 [mbedtls-symbian](https://github.com/shinovon/mbedtls-symbian) source port,
@@ -18,7 +18,7 @@ installs Mbed TLS 3.4.1 headers, the static `mbedcrypto`, `mbedx509` and
 `mbedtls` archives, architecture-specific CMake package targets, the
 Apache-2.0 license, a complete inspectable source copy in
 `source/mbedtls-symbian`. The SDK digest inventory covers installed payload
-integrity; separate source provenance manifests are not maintained.
+integrity.
 Cloning an older installed SDK with `symbian sdk install` also fails with a
 message to use `--workspace` for a fresh export; it cannot silently copy an
 SDK without the default TLS package.
@@ -39,21 +39,17 @@ explicitly or transitively request it.
 The packaged port compiles TLS 1.2 and TLS 1.3. These archives do not replace
 Symbian's system `ssl.dll`. The port supplies a UTC adapter using the SDK's
 clock and libc imports, with an invalid-clock failure path. Its guest behavior
-has been exercised in a dynamic DLL on both emulator backends. The source port
-also includes nonblocking socket BIO callbacks with cancellation; host tests
-pass, and an emulator DLL probe verifies that cancellation stops later send and
-receive callbacks before they touch the socket. A separate opt-in RM-807
-emulator patch and DLL probe show a connected TCP receive returning
-`MBEDTLS_ERR_SSL_WANT_READ` when empty, delivering a delayed byte and refusing
-a read after cancellation. The OpenC `send` and `sendto` entry points do not
-provide working outbound I/O in this emulator profile. The separate
-`Symbian::Connectivity` target uses the original `RSocket` API and completes
-native send and receive. An opt-in TLS research DLL links that client with an
-RM-807 entropy adapter; it completed authenticated TLS 1.2 and TLS 1.3
-handshakes and exchanged application data in disposable emulator instances.
-The standard SDK archive still needs a verified secure entropy source for its
-actual target. Certificate trust policy
-belongs to the application; the SDK does not silently install a CA bundle.
+requires compatible clock and libc services on the target. The port also
+provides nonblocking OpenC socket BIO callbacks. For SDK HTTP and WebSockets,
+use `TlsStream` over `Symbian::Connectivity`'s native `RSocket` transport;
+OpenC outbound socket I/O is unavailable in the RM-807 emulator profile.
+
+The standard guest entropy callback fails closed. Supply a secure entropy
+source appropriate to the actual target. The RM-807 entropy adapter requires
+the matching patched emulator and is not a phone entropy implementation.
+Certificate trust policy belongs to the application; no CA roots are loaded
+implicitly.
+
 The project CMake option `SYMBIAN_CA_BUNDLE` selects a PEM file inside that
 project. Leave it empty to package no roots. For example, configure with
 `-DSYMBIAN_CA_BUNDLE:STRING=certs/private-ca.pem`. CMake checks the path and
@@ -67,23 +63,6 @@ defaults. The TLS owner must explicitly load these roots and require peer
 verification. Packaging reads the selection from the ELF build directory's
 `CMakeCache.txt` and rejects a cache belonging to another project. Explicit
 key pinning remains possible without a CA bundle.
-Authenticated host-side TLS 1.2/1.3 tests pass. The opt-in guest TLS DLL
-checks both protocol versions with a local OpenSSL server, peer verification,
-application data, wrong-host, untrusted-certificate and expired-certificate
-rejection in each protocol version. A separate research DLL listener completed
-TLS 1.2/1.3 server handshakes with a presented client certificate and rejected
-clients without one. That fixture uses the same local self-signed certificate
-and key on both sides, so it tests verification mechanics and does not provide
-agent pairing identity. A C++ owner with
-cancellable operations and a physical Nokia 808 TLS connection remain gates.
-
-An opt-in RM-807 emulator research probe now reaches Belle EUSER's secure
-random executive call through an ARM-state adapter. A local EKA2L1 patch
-supplies that call from libuv's host OS random source, and the DLL probe passed
-on both emulator CPU backends. The normal SDK archive continues to fail closed
-for guest entropy. This experiment does not validate entropy on a phone. See
-[the agent plan](https://github.com/hpnkv/symbian-platform/blob/main/.dev/development-agent.md)
-for the service rollout and [STATUS.md](https://github.com/hpnkv/symbian-platform/blob/main/.dev/status.md) for current evidence.
 
 ### Socket BIO API
 
@@ -96,5 +75,5 @@ Pass the BIO to `mbedtls_ssl_set_bio` with
 `MBEDTLS_ERR_SSL_WANT_WRITE` only when the socket becomes ready. Call
 `symbian_mbedtls_socket_bio_cancel` to make later callback invocations return
 `MBEDTLS_ERR_NET_CONN_RESET`. The cancel flag does not interrupt a callback
-already inside OpenC. The opt-in emulator experiment covers receive and
-post-cancel behavior only; it is not yet a supported connected TLS transport.
+already inside OpenC. For native SDK TLS sessions, use `TlsStream` over the native Socket Server
+transport instead.

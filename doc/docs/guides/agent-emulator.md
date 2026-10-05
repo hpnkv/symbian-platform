@@ -40,11 +40,7 @@ application menu registers it as **Development Agent**. The local panel shows
 
 Choose **BACK** to leave the local panel while the service keeps running.
 Return to the agent from the application menu. Choose **STOP** to close the
-listener and exit the agent process. These controls were exercised in a
-disposable emulator; no physical-device background or idle-power behavior has
-been measured.
-
-## Read the negotiated profile
+listener and exit the agent process. ## Read the negotiated profile
 
 In a second terminal at the repository root, use the example's public test
 key. This key is part of the source tree and has no device-security value:
@@ -102,9 +98,8 @@ Wi-Fi, choose **Check live status**. The agent discovers the console, connects
 to it and proves possession of its phone-specific key. Only an authenticated
 response earns the **Verified live** label. This protocol
 authenticates the peer but does not encrypt traffic; use a trusted local
-network. A failed check does not prove the agent is absent: discovery, network,
-installer or guest entropy may be at fault. Nokia 808 compatibility remains a
-separate physical-device gate.
+network. If the check fails, inspect discovery, network reachability, installation and
+guest entropy.
 
 ## Stop and inspect
 
@@ -113,7 +108,3 @@ process it started and retains `launch.json` and `frontend.log` in the printed
 session directory. Check `inputs_unchanged` and guest failures there if a run
 does not behave as expected. The package includes application-menu
 registration and local BACK/STOP controls; it has no boot-start script.
-
-An emulator run proves only this selected guest/host path. The Nokia 808 still
-needs a separate physical-device gate, installation and network checks, local
-pairing confirmation, permission controls and idle-power measurements.

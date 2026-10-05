@@ -8,8 +8,7 @@ behavior with a locally supplied ROM/Z image.
 | --- | --- |
 | ![Counter at 0000.](../assets/screenshots/gui-counter-initial.png){ width="250" } | ![Counter at 0001.](../assets/screenshots/gui-counter-one.png){ width="250" } |
 
-*These are captures from a guarded run against the named RM-807 research
-fixture. They are emulator evidence, not screenshots from a physical phone.*
+*EKA2L1 captures using an RM-807 firmware image.*
 
 ## 1. Prepare the image and firmware
 
@@ -26,16 +25,15 @@ Use the emulator's visible window to tap the increment, reset and exit
 controls.
 
 A manual pinned-source build, private fixture preparation and direct
-`--run` workflow are in the [research emulator reference](../reference/emulator-source-build.md).
+`--run` workflow are in the [emulator build reference](../reference/emulator-source-build.md).
 They are needed when investigating the emulator itself.
 
-## 3. Record the result
+## 3. Check the application
 
 Check that the counter starts at `0000`, increments once per tap, resets and
 exits normally. Keep the selected firmware identity, CPU backend, screenshots,
 guest exit reason and instance log. If the GUI fails before drawing, retain
-the failure log and use [guest debugging](gui-debug.md). A working emulator
-session does not prove Nokia 808 compatibility.
+the failure log and use [guest debugging](gui-debug.md).
 
 ## Open the emulator for manual application launch
 
@@ -75,25 +73,10 @@ each application still depends on the emulator's kernel and service support.
 The SDK counter exercises a small Window Server path. Firmware applications
 can require additional AVKON, media, database and file-system services.
 
-Fresh-instance checks against the preserved RM-807 113.010.1508 fixture with
-the experimental Belle profile found:
+Firmware applications can fail when they require unimplemented services.
+In the RM-807 profile, Gallery can show a black screen while its media service
+exits with `KErrGeneral` (-2); Clock may also fail to render. These applications
+are not supported by the emulator profile.
 
-| Application | Observed result |
-| --- | --- |
-| SDK counter | Renders |
-| Calculator | Renders and accepts a digit tap |
-| Settings | Renders its initial list; subviews untested |
-| Gallery, both registered entries | Black screen; media Harvester exits with `KErrGeneral` (`-2`) |
-| Clock | Black screen; cause not yet isolated |
-
-Gallery reproduces on Dynarmic and Dyncom, with and without an injected SDK
-application. Waiting 30 seconds on Dynarmic does not produce a display.
-Its logs expose unsupported file-system plugin loading/mounting/opening and
-missing executive calls. These are emulator compatibility gaps; the precise
-dependency that prevents Gallery's first frame remains unresolved. A working
-Calculator or Settings screen does not establish complete firmware support.
-
-For a failed app, retain the session's `frontend.log`, selected firmware and
-profile, app name/UID, capture and native process-exit report. The investigation
-and private evidence paths are recorded in the repository's
-`.dev/research-log.md`.
+For a failed application, inspect `frontend.log`, the selected firmware and
+profile, application UID, capture and native process-exit report.

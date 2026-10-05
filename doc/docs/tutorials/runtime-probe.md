@@ -1,14 +1,21 @@
 # C++ runtime probe
 
-Exercises actual LLVM libc++ strings/vectors on the Symbian heap, with repeated
-allocation/destruction and a separate fatal allocation control. Build and
-emulator instructions, exact limitations and upstream provenance are in
-[guest runtime guide](../capabilities/runtime.md).
+The example uses LLVM libc++ strings and vectors with repeated allocation and
+destruction. It also includes separate allocation-failure controls.
+Use the [guest runtime guide](../capabilities/runtime.md) to select the matching
+headers and archive, and [source preparation](../guides/source-prerequisites.md)
+for external dependencies.
 
-This is a bounded experiment. Writable data/BSS, selected GOT fixups, EXE
-global lifetime and 32-/64-bit integer division execute in the maintained
-profiles. A bounded 32-bit C++ atomic probe now executes through the ROM
-EUSER atomic operations on ARMv5T and ARMv6; it does not prove cross-thread
-races or thread-safe libc++ ownership. TLS, local-static guards and a general
-hosted C++20 runtime remain
-separate gates.
+From a prepared source checkout:
+
+```sh
+uv run symbian build --project examples/runtime_probe \
+  --output .symbian/runtime-probe
+uv run symbian inspect --format e32 .symbian/runtime-probe/runtime_probe.exe
+```
+
+Keep the matching ELF for debugging. Run with compatible firmware in a
+[disposable emulator instance](../guides/gui-emulator.md) and inspect the native
+exit reason. The runtime supports writable data/BSS, local GOT fixups, global
+initialization and compiler arithmetic helpers; general C++ TLS and thread-safe
+local-static guards are unsupported.
