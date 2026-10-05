@@ -18,6 +18,7 @@ from symbian.agent import (
     ReadOnlyAgentSession,
 )
 from symbian.status import Code, StatusError, StatusException
+from symbian.websocket import WebSocketStream
 
 KEY_FILE = Path(__file__).parents[2] / "agent_service/test-agent.key"
 KEY = KEY_FILE.read_bytes()
@@ -33,7 +34,8 @@ def _receive_exact(stream, count):
     return bytes(data)
 
 
-def _authenticate(stream, *, correct=True):
+def _authenticate(stream, *, correct=True, server=True):
+    stream = WebSocketStream.from_socket(stream, server=server)
     server_nonce = bytes(range(32))
     stream.sendall(b"SAG1" + server_nonce)
     reply = _receive_exact(stream, 64)
@@ -46,6 +48,7 @@ def _authenticate(stream, *, correct=True):
         KEY, b"symbian-agent-server-v1" + nonces, hashlib.sha256
     )
     stream.sendall(proof if correct else bytes(32))
+    return stream
 
 
 def _request(stream):
@@ -81,7 +84,7 @@ def test_read_only_status_over_authenticated_socket():
     def serve():
         try:
             with listener.accept()[0] as stream:
-                _authenticate(stream)
+                stream = _authenticate(stream)
                 for body in (
                     {
                         "protocol_version": 1,
@@ -186,7 +189,7 @@ def test_phone_initiated_discovery_and_status():
             )
             assert reply == b"SAGR1" + nonce + expected
         with socket.create_connection(("127.0.0.1", port)) as stream:
-            _authenticate(stream)
+            stream = _authenticate(stream, server=False)
             for body in (
                 {
                     "protocol_version": 1,
@@ -253,9 +256,13 @@ def test_rejects_wrong_server_proof_before_control_frames():
     def serve():
         try:
             with listener.accept()[0] as stream:
-                _authenticate(stream, correct=False)
+                stream = _authenticate(stream, correct=False)
                 stream.settimeout(0.5)
-                observed.append(stream.recv(1))
+                try:
+                    observed.append(stream.recv(1))
+                except StatusError as error:
+                    assert error.code == Code.UNAVAILABLE
+                    observed.append(b"")
         finally:
             listener.close()
 
@@ -274,7 +281,7 @@ def test_read_only_status_has_one_aggregate_response_deadline():
     def serve():
         try:
             with listener.accept()[0] as stream:
-                _authenticate(stream)
+                stream = _authenticate(stream)
                 _reply(
                     stream,
                     _request(stream),
@@ -289,7 +296,7 @@ def test_read_only_status_has_one_aggregate_response_deadline():
                 for byte in b"\x00\x00\x00\x01":
                     try:
                         stream.sendall(bytes([byte]))
-                    except OSError:
+                    except (OSError, StatusError):
                         break
                     time.sleep(0.22)
         finally:
@@ -315,7 +322,7 @@ def test_rejects_unsupported_hello_before_status():
     def serve():
         try:
             with listener.accept()[0] as stream:
-                _authenticate(stream)
+                stream = _authenticate(stream)
                 request = _request(stream)
                 observed.append(request["kind"])
                 _reply(

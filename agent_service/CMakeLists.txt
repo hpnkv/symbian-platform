@@ -11,8 +11,10 @@ if(NOT EXISTS "${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
   message(FATAL_ERROR "Select an exported Symbian SDK")
 endif()
 include(SymbianPic)
-include("${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
-foreach(required_target Symbian::Connectivity Symbian::Agent Symbian::Crypto
+if(NOT TARGET Symbian::Runtime)
+  include("${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
+endif()
+foreach(required_target Symbian::Connectivity Symbian::WebSocket Symbian::Agent Symbian::Crypto
     Symbian::Stackless Symbian::System Symbian::Display Symbian::Storage)
   if(NOT TARGET ${required_target})
     message(FATAL_ERROR "Selected SDK lacks ${required_target}")
@@ -69,7 +71,7 @@ target_include_directories(agent_service PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_compile_definitions(agent_service PRIVATE SYMBIAN_RM807_ENTROPY_PROBE=1
   MBEDTLS_STATIC SYMBIAN_MBEDTLS_GUEST=1
   MBEDTLS_USER_CONFIG_FILE="symbian_mbedtls/config.h")
-target_link_libraries(agent_service PRIVATE Symbian::Connectivity Symbian::Agent
+target_link_libraries(agent_service PRIVATE Symbian::Connectivity Symbian::WebSocket Symbian::Agent
   Symbian::Crypto Symbian::Stackless Symbian::System Symbian::Display
   Symbian::Storage)
 target_link_options(agent_service PRIVATE --gc-sections)

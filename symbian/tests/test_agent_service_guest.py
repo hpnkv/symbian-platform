@@ -370,8 +370,9 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                     agent._stream.sendall(_native.pack_agent_read_request(1, 1))
                     try:
                         assert agent._stream.recv(1) == b""
-                    except ConnectionResetError:
-                        pass
+                    except (ConnectionResetError, StatusError) as error:
+                        if isinstance(error, StatusError):
+                            assert error.code == Code.UNAVAILABLE
                 with _connect() as agent:
                     assert agent.status().state == "ready"
                     page = agent.logs(after=cursor)
@@ -445,8 +446,9 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                         time.sleep(2)
                     try:
                         assert agent._stream.recv(1) == b""
-                    except ConnectionResetError:
-                        pass
+                    except (ConnectionResetError, StatusError) as error:
+                        if isinstance(error, StatusError):
+                            assert error.code == Code.UNAVAILABLE
                     assert time.monotonic() - started < 7.5
                 with _connect() as agent:
                     assert agent.status().state == "ready"

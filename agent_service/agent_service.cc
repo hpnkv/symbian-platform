@@ -26,6 +26,7 @@
 #include "symbian/api/connectivity/active_tcp_listener.h"
 #include "symbian/api/connectivity/broadcast_probe.h"
 #include "symbian/api/connectivity/tcp_client.h"
+#include "symbian/api/connectivity/websocket.h"
 #include "symbian/api/display/display.h"
 #include "symbian/api/display/resident_panel.h"
 #include "symbian/api/system/active_service.h"
@@ -36,6 +37,7 @@
 namespace {
 
 using symbian::api::connectivity::TcpClient;
+using symbian::api::connectivity::WebSocketStream;
 constexpr std::uint16_t kAgentPort = 39101;
 constexpr std::uint16_t kDiscoveryPort = 39104;
 constexpr std::uint16_t kHostPort = 39103;
@@ -81,7 +83,7 @@ absl::Duration Remaining(absl::Time deadline) {
   return std::max(absl::Milliseconds(1), std::move(deadline) - now);
 }
 
-bool ReadExactly(TcpClient& client, std::span<std::uint8_t> output,
+bool ReadExactly(WebSocketStream& client, std::span<std::uint8_t> output,
                  absl::Time deadline) {
   while (!output.empty()) {
     const auto remaining = Remaining(deadline);
@@ -97,7 +99,7 @@ bool ReadExactly(TcpClient& client, std::span<std::uint8_t> output,
   return true;
 }
 
-bool WriteExactly(TcpClient& client, std::span<const std::uint8_t> input,
+bool WriteExactly(WebSocketStream& client, std::span<const std::uint8_t> input,
                   absl::Time deadline) {
   const auto remaining = Remaining(std::move(deadline));
   return remaining != absl::ZeroDuration() && client.Send(input, deadline).ok();
@@ -158,7 +160,7 @@ absl::StatusOr<std::array<std::uint8_t, 4>> DiscoverHost() {
       kDiscoveryPort, request, response, absl::Now() + absl::Seconds(3));
 }
 
-bool Authenticate(TcpClient& client) {
+bool Authenticate(WebSocketStream& client) {
   constexpr std::string_view kClientLabel = "symbian-agent-client-v1";
   constexpr std::string_view kServerLabel = "symbian-agent-server-v1";
   std::array<std::uint8_t, 32> nonce{};
@@ -235,7 +237,31 @@ symbian::agent::GuestStatusSnapshot ReadStatusSnapshot() {
   return snapshot;
 }
 
-void Serve(TcpClient client, symbian::agent::AgentLogRing& log) {
+void Serve(TcpClient raw, symbian::agent::AgentLogRing& log) {
+  symbian::websocket::Options options;
+  options.mask_provider = []() -> absl::StatusOr<std::array<std::uint8_t, 4>> {
+    std::array<std::uint8_t, 4> mask{};
+    mbedtls_entropy_context entropy;
+    mbedtls_entropy_init(&entropy);
+    const int result = mbedtls_entropy_func(&entropy, mask.data(), mask.size());
+    mbedtls_entropy_free(&entropy);
+    if (result != 0) {
+      return absl::UnavailableError("WebSocket masking entropy unavailable");
+    }
+    return mask;
+  };
+  const auto deadline = absl::Now() + kControlDeadline;
+#if SYMBIAN_AGENT_PRIVATE_PROFILE
+  auto opened =
+      WebSocketStream::Connect(std::move(raw), std::move(options), deadline);
+#else
+  auto opened =
+      WebSocketStream::Accept(std::move(raw), std::move(options), deadline);
+#endif
+  if (!opened.ok()) {
+    return;
+  }
+  auto client = std::move(*opened);
   if (!Authenticate(client)) {
     return;
   }
@@ -312,11 +338,13 @@ void Serve(TcpClient client, symbian::agent::AgentLogRing& log) {
         static_cast<std::uint8_t>(count >> 16),
         static_cast<std::uint8_t>(count >> 8),
         static_cast<std::uint8_t>(count)};
-    if (!WriteExactly(client, response_prefix, deadline) ||
-        !WriteExactly(
+    std::string framed(reinterpret_cast<const char*>(response_prefix.data()),
+                       response_prefix.size());
+    framed.append(*response);
+    if (!WriteExactly(
             client,
-            std::span(reinterpret_cast<const std::uint8_t*>(response->data()),
-                      response->size()),
+            std::span(reinterpret_cast<const std::uint8_t*>(framed.data()),
+                      framed.size()),
             deadline)) {
       return;
     }
@@ -326,6 +354,7 @@ void Serve(TcpClient client, symbian::agent::AgentLogRing& log) {
       negotiated = true;
     }
   }
+  client.Close(absl::Now() + kControlDeadline).IgnoreError();
 }
 
 class AgentService final
@@ -335,30 +364,34 @@ class AgentService final
 
   absl::Status Start() {
     if (SYMBIAN_AGENT_PRIVATE_PROFILE) {
-      return worker_.Post([stop = stopping_, log = log_] {
-        while (!stop->load()) {
-          auto host = DiscoverHost();
-          if (host.ok() && !stop->load()) {
-            link_phase.store(LinkPhase::kDialing);
-            auto client = TcpClient::ConnectIpv4(
-                *host, kHostPort, absl::Now() + absl::Seconds(3));
-            if (client.ok() && !stop->load()) {
-              link_phase.store(LinkPhase::kAuthenticating);
-              Serve(std::move(*client), *log);
-            } else if (!stop->load()) {
-              link_phase.store(LinkPhase::kDialError);
+      auto task = worker_.PostFiber(
+          [stop = stopping_, log = log_] {
+            while (!stop->load()) {
+              auto host = DiscoverHost();
+              if (host.ok() && !stop->load()) {
+                link_phase.store(LinkPhase::kDialing);
+                auto client = TcpClient::ConnectIpv4(
+                    *host, kHostPort, absl::Now() + absl::Seconds(3));
+                if (client.ok() && !stop->load()) {
+                  link_phase.store(LinkPhase::kAuthenticating);
+                  Serve(std::move(*client), *log);
+                } else if (!stop->load()) {
+                  link_phase.store(LinkPhase::kDialError);
+                }
+              } else if (!stop->load()) {
+                link_phase.store(host.status().code() ==
+                                         absl::StatusCode::kDeadlineExceeded
+                                     ? LinkPhase::kNoOffer
+                                     : LinkPhase::kProbeError);
+              }
+              for (int tick = 0; tick != 8 && !stop->load(); ++tick) {
+                absl::SleepFor(absl::Milliseconds(250));
+              }
             }
-          } else if (!stop->load()) {
-            link_phase.store(host.status().code() ==
-                                     absl::StatusCode::kDeadlineExceeded
-                                 ? LinkPhase::kNoOffer
-                                 : LinkPhase::kProbeError);
-          }
-          for (int tick = 0; tick != 8 && !stop->load(); ++tick) {
-            absl::SleepFor(absl::Milliseconds(250));
-          }
-        }
-      });
+          },
+          kWorkerStackBytes);
+      auto result = task.ResultIfReady();
+      return result ? result->status() : absl::OkStatus();
     }
     absl::Status status = listener_.EnableWorkerSharing();
     if (!status.ok()) {

@@ -12,7 +12,9 @@ extern "C" TInt SymbianRm807SecureRandom(TDes8* output);
 extern "C" int mbedtls_hardware_poll(void* data, unsigned char* output,
                                      size_t len, size_t* olen) {
   (void)data;
-  if (olen == nullptr) return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
+  if (olen == nullptr) {
+    return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
+  }
   *olen = 0;
   if (output == nullptr || len == 0 || len > 1024) {
     return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;

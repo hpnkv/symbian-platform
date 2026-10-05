@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict
 
 from symbian import _native
 from symbian.status import Code, StatusError
+from symbian.websocket import WebSocketStream
 
 
 class AgentTickSnapshot(BaseModel):
@@ -108,7 +109,7 @@ class ReadOnlyAgentSession:
     nonces. The channel has no confidentiality; use a trusted local network.
     """
 
-    def __init__(self, stream: socket.socket, timeout: float):
+    def __init__(self, stream: WebSocketStream, timeout: float):
         self._stream = stream
         self.peer_ip = stream.getpeername()[0]
         self._timeout = timeout
@@ -226,6 +227,7 @@ class ReadOnlyAgentSession:
                             raw,
                             key_file=key_file,
                             timeout=min(5.0, remaining),
+                            websocket_server=True,
                         )
         except OSError as error:
             raise StatusError(
@@ -243,21 +245,29 @@ class ReadOnlyAgentSession:
 
     @classmethod
     def from_socket(
-        cls, raw: socket.socket, *, key_file: Path, timeout: float = 5.0
+        cls,
+        raw: socket.socket,
+        *,
+        key_file: Path,
+        timeout: float = 5.0,
+        websocket_server: bool = False,
     ) -> Self:
         """Authenticate the agent on an already connected TCP socket."""
         if timeout <= 0:
-            raw.close()
+            raw.abort() if isinstance(raw, WebSocketStream) else raw.close()
             raise StatusError(Code.INVALID_ARGUMENT, "Invalid agent timeout")
         key = key_file.read_bytes()
         if len(key) != 32:
-            raw.close()
+            raw.abort() if isinstance(raw, WebSocketStream) else raw.close()
             raise StatusError(
                 Code.INVALID_ARGUMENT, "Agent key must contain 32 bytes"
             )
         try:
-            raw.settimeout(timeout)
             deadline = time.monotonic() + timeout
+            phase = "WebSocket handshake"
+            raw = WebSocketStream.from_socket(
+                raw, server=websocket_server, timeout=timeout
+            )
             phase = "challenge"
             challenge = cls._read_exact(raw, 36, deadline)
             if challenge[:4] != b"SAG1":
@@ -283,18 +293,18 @@ class ReadOnlyAgentSession:
                     Code.UNAUTHENTICATED, "Agent identity did not match"
                 )
         except TimeoutError as error:
-            raw.close()
+            raw.abort() if isinstance(raw, WebSocketStream) else raw.close()
             raise StatusError(
                 Code.DEADLINE_EXCEEDED,
                 f"Agent {phase} timed out after TCP connected",
             ) from error
         except OSError as error:
-            raw.close()
+            raw.abort() if isinstance(raw, WebSocketStream) else raw.close()
             raise StatusError(
                 Code.UNAVAILABLE, f"Agent connection failed: {error}"
             ) from error
         except BaseException:
-            raw.close()
+            raw.abort() if isinstance(raw, WebSocketStream) else raw.close()
             raise
         session = cls(raw, timeout)
         try:
@@ -306,7 +316,7 @@ class ReadOnlyAgentSession:
 
     @staticmethod
     def _read_exact(
-        stream: socket.socket, count: int, deadline: float
+        stream: WebSocketStream, count: int, deadline: float
     ) -> bytes:
         result = bytearray()
         while len(result) < count:
@@ -348,7 +358,7 @@ class ReadOnlyAgentSession:
 
     def close(self) -> None:
         """Release the underlying socket."""
-        self._stream.close()
+        self._stream.abort()
 
     def status(self) -> AgentStatus:
         """Request the agent's current read-only service state."""

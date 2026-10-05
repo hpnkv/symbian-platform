@@ -14,6 +14,44 @@ agent protocol authenticates both peers but does not encrypt traffic; use it
 on a trusted local network. Neither USB detection nor a completed ARM build
 proves installation or execution on a Nokia 808.
 
+## WebSocket transport
+
+Agent 1.1 uses a binary WebSocket over HTTP/2 prior knowledge, negotiated
+through RFC 8441 extended `CONNECT /symbian-agent`. Both endpoints use
+nghttp2 1.70.0. The phone is the WebSocket client on an outbound connection;
+the console accepts it as the WebSocket server. For emulator loopback, the
+host connects as client and the guest accepts as server. The authentication
+roles remain guest as challenge issuer and host as proof responder.
+
+The SDK exposes `Symbian::WebSocket`, `WebSocketStream`, `WebSocketServer`,
+and a socket-independent `symbian::websocket::WebSocket` codec. Host Python
+uses `symbian.websocket.WebSocketStream` and `WebSocketServer`, with the same
+native codec through `_native.WebSocketCodec`. Native bindings release the
+GIL and retain no Python callbacks. The worker and its existing A11 thread
+executor remain responsible for ownership and scheduling.
+
+The framing parser, endian helpers, masking loop and frame writer come from
+A11's `Http2WebSocketChannel`. The parser keeps A11's buffer adoption path.
+The transport adapter replaces A11's unavailable libuv HTTP body stream with
+nghttp2 memory callbacks and SDK TCP calls. Guest masking keys use the existing
+entropy adapter; host keys use OpenSSL. The default message limit is 4100 bytes
+(4 KiB control plus its prefix); each direction has a 64 KiB queue bound, and
+receive queues hold at most 16 messages. Headers are capped at 2048 bytes and
+16 fields. nghttp2 also bounds settings, acknowledgements and continuation
+frames and disables dynamic HPACK tables. These are queue limits, not an
+attestation of total process memory usage.
+
+Authentication packets and complete control frames travel in binary messages.
+Message boundaries do not replace the native control length prefix. Fragmented
+binary messages and ping/pong use A11's framing code. Close drains already
+received messages; transport/protocol errors abort the connection. Handshake
+and request deadlines are distinct from stream lifetime.
+
+This endpoint requires RFC 8441 support; HTTP/1.1 Upgrade clients and browser
+WebSocket APIs cannot directly use this cleartext HTTP/2 endpoint. The old
+raw-TCP agent and the new host require matching transport versions. Physical
+1.0.8 observations do not establish compatibility of the new transport.
+
 ## Pairing and authentication
 
 The console creates one private key for each serial-derived USB identity
@@ -33,12 +71,12 @@ entire reply and connects to its IPv4 sender. The console accepts a TCP peer
 only if it sent a valid discovery request during this check. Discovery and TCP
 ports are protocol constants; addresses are found anew on each status check.
 
-Before reading a control frame, the server sends `SAG1` and a fresh 32-byte
-nonce. The client replies with a fresh 32-byte nonce and
+After the WebSocket handshake and before reading a control frame, the guest sends `SAG1` and a fresh 32-byte
+nonce. The host replies with a fresh 32-byte nonce and
 `HMAC-SHA256(key, "symbian-agent-client-v1" || server_nonce || client_nonce)`.
-The server checks the MAC, then returns
+The guest checks the MAC, then returns
 `HMAC-SHA256(key, "symbian-agent-server-v1" || server_nonce || client_nonce)`.
-The client checks the final proof before it sends hello. A failed or incomplete
+The host checks the final proof before it sends hello. A failed or incomplete
 exchange closes the connection. A five-second deadline bounds the exchange.
 The guest obtains its nonces through the selected RM-807 entropy adapter; its
 behavior on a physical handset remains unverified.
