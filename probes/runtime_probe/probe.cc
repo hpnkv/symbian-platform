@@ -109,7 +109,7 @@ extern "C" int SymbianRuntimeExceptionProbe();
 extern "C" int RuntimeCheckInitializers();
 #endif
 
-extern "C" int RuntimeMain() {
+int main() {
 #ifdef SYMBIAN_RUNTIME_ALLOC_BENCH
   return SymbianRuntimeAllocBench();
 #endif

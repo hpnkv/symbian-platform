@@ -1,6 +1,11 @@
 #include <e32base.h>
-#include <symbian/runtime.h>
 #include <u32std.h>
+
+#if __has_include(<symbian/runtime.h>)
+#include <symbian/runtime.h>
+#else
+#include "abi.h"
+#endif
 
 static_assert(sizeof(TInt) == 4 && sizeof(TUint32) == 4);
 static_assert(sizeof(TRequestStatus) == 8);

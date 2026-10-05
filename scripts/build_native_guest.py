@@ -23,21 +23,7 @@ def main() -> None:
     )
     build_import_proxy(
         root / "research/upstream/kernelhwsrv/kernel/eka/eabi/euseru.def",
-        [
-            "_ZN10RAllocator4OpenEv",
-            "_ZN10RAllocator5CloseEv",
-            "_ZN4User11InitProcessEv",
-            "_ZN4User15CountAllocCellsEv",
-            "_ZN4User4ExitEi",
-            "_ZN4User4FreeEPv",
-            "_ZN4User5AllocEi",
-            "_ZN4User9AllocatorEv",
-            "_ZN4User9InvariantEv",
-            "_ZN8UserHeap15SetupThreadHeapEiR24SStdEpocThreadCreateInfo",
-            "memcpy",
-            "memmove",
-            "memset",
-        ],
+        [],
         "euser.dll",
         root / ".symbian/runtime-sdk/euser",
         str(llvm_tool("clang++")),

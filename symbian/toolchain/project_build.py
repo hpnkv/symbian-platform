@@ -48,11 +48,18 @@ def _target(tree: Path, project: Path, name: str) -> Target:
                 Code.NOT_FOUND, f"CMake executable target not found: {name}"
             )
         target = read(matches[0]["jsonFile"])
-        if target["type"] != "EXECUTABLE" or len(target["artifacts"]) != 1:
+        if (
+            target["type"] not in ("EXECUTABLE", "SHARED_LIBRARY")
+            or len(target["artifacts"]) != 1
+        ):
             raise StatusError(
                 Code.FAILED_PRECONDITION, "Expected one executable artifact"
             )
         artifact = (tree / target["artifacts"][0]["path"]).resolve()
+        if target["type"] == "SHARED_LIBRARY":
+            # The public .dso is the ordinal transport after SDK publication;
+            # conversion and debugging use the retained implementation ELF.
+            artifact = artifact.parent / f"{name}_elf.elf"
         if not artifact.is_relative_to(tree):
             raise StatusError(
                 Code.FAILED_PRECONDITION, "Artifact must stay in the build tree"
@@ -134,6 +141,7 @@ def configure(
         )
     identity = json.dumps(
         {
+            "project": str(project.resolve()),
             "architecture": architecture,
             "compiler": compiler,
             "compiler_version": run([compiler, "--version"], cwd=project),

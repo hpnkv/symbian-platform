@@ -6,7 +6,7 @@
 
 #include "symbian/api/connectivity/tcp_client.h"
 
-extern "C" int RuntimeMain() {
+int main() {
   using symbian::api::connectivity::TcpClient;
   auto client = TcpClient::ConnectIpv4({127, 0, 0, 1}, 39094);
   if (!client.ok()) {

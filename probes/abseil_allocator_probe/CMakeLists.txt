@@ -7,7 +7,7 @@ endif()
 if(NOT EXISTS "${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
   message(FATAL_ERROR "SYMBIAN_SDK_PREFIX must name an installed SDK")
 endif()
-include("${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
+include(SymbianApp)
 
 # The original Abseil targets consume the same configured guest headers and
 # ABI as Symbian::Runtime. Absolute data references let E32 rebase code and
@@ -37,13 +37,11 @@ set(CMAKE_HAVE_LIBC_PTHREAD 1 CACHE INTERNAL "Guest pthread symbols" FORCE)
 add_subdirectory("${SYMBIAN_ABSEIL_SOURCE}" "${CMAKE_BINARY_DIR}/abseil"
                  EXCLUDE_FROM_ALL)
 
-add_executable(abseil_allocator_probe
-  ../runtime_probe/startup.S ../runtime_probe/startup.cc contract.cc)
+symbian_add_executable(abseil_allocator_probe contract.cc)
 target_include_directories(abseil_allocator_probe PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/../../cpp/symbian/runtime")
 set_target_properties(abseil_allocator_probe PROPERTIES SUFFIX ".elf")
 target_link_options(abseil_allocator_probe PRIVATE
-  -T "${CMAKE_CURRENT_SOURCE_DIR}/../runtime_probe/image.ld"
   --gc-sections --hash-style=sysv --no-dynamic-linker --as-needed)
 target_link_libraries(abseil_allocator_probe PRIVATE
   absl::malloc_internal

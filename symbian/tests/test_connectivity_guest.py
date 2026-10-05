@@ -70,8 +70,8 @@ def listener_image(tmp_path_factory):
     cmake_file = project / "CMakeLists.txt"
     cmake_file.write_text(
         cmake_file.read_text().replace(
-            "SOURCES startup.cc probe.cc",
-            "SOURCES startup.cc listener_probe.cc",
+            "connectivity_probe probe.cc",
+            "connectivity_probe listener_probe.cc",
         )
     )
     presets = project / "CMakePresets.json"
@@ -103,8 +103,8 @@ def active_listener_image(tmp_path_factory):
     cmake_file = project / "CMakeLists.txt"
     cmake_file.write_text(
         cmake_file.read_text().replace(
-            "SOURCES startup.cc probe.cc",
-            "SOURCES startup.cc active_listener_probe.cc scheduler_bridge.cc",
+            "connectivity_probe probe.cc",
+            "connectivity_probe active_listener_probe.cc scheduler_bridge.cc",
         )
     )
     presets = project / "CMakePresets.json"
@@ -136,8 +136,8 @@ def worker_listener_image(tmp_path_factory):
     cmake_file = project / "CMakeLists.txt"
     cmake_file.write_text(
         cmake_file.read_text().replace(
-            "SOURCES startup.cc probe.cc",
-            "SOURCES startup.cc worker_listener_probe.cc scheduler_bridge.cc",
+            "connectivity_probe probe.cc",
+            "connectivity_probe worker_listener_probe.cc scheduler_bridge.cc",
         )
         + "\ntarget_link_libraries(connectivity_probe PRIVATE "
         "Symbian::Stackless)\n"

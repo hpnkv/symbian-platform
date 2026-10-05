@@ -40,14 +40,16 @@ presets/Ninja, with a compile database and two-tree reproducibility checks.
 Its entire application function is:
 
 ```cpp
-extern "C" int Eka1Main() { return 7610; }
+int main() {
+  return 7610;
+}
 ```
 
-Its separate ARM entry preserves the return address, calls the Thumb-1 function
+The shared SDK ARM entry preserves the return address, calls the Thumb-1 function
 and returns its result in r0. It has no EKA2 startup marker, direct executive
 calls, EUSER proxies or runtime library. A new project must declare
-`kind = "e32-eka1"`, `architecture = "armv5t"`, and a compatible callable ARM
-entry/linker layout. Do not reuse the EKA2 SDK startup.
+`kind = "e32-eka1"`, `architecture = "armv5t"`, and ordinary `main()`. The SDK selects the callable ARM entry and linker
+layout; EKA2 startup is not used.
 
 To replay acceptance, including changed-result controls:
 
@@ -62,9 +64,9 @@ SYMBIAN_EKA1_TEST_IMAGE="$PWD/.symbian/eka1-build/eka1_probe.exe" \
 ## Original EUSER imports
 
 The complete `probes/eka1_import_probe/` uses `kind = "e32-eka1-import"`
-and a selected legacy-ordinal proxy. Its DEF records only symbol/ordinal facts;
+and `Symbian::Eka1EUser`. The SDK owns the legacy-ordinal definition and proxy;
 The research log records the pinned ordinal source and original EUSER digest.
-Follow the [user guide](../doc/docs/guides/eka1.md) to build the proxy, build the
+Follow the [user guide](../doc/docs/guides/eka1.md) to build the
 process and run it on either backend. Modern Belle EUSER proxies are incompatible.
 
 The exercised boundary has GNU2 symbol names and explicit integer/pointer

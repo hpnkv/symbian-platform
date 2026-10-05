@@ -9,7 +9,7 @@ SECTIONS {
     KEEP(*(.text.startup))
     *(.text .text.*)
   } :code
-  .rodata : { *(.rodata .rodata.*) } :code
+  .rodata : { KEEP(*(.rodata.symbian_exception)) *(.rodata .rodata.*) } :code
   .data.rel.ro : { *(.data.rel.ro .data.rel.ro.*) } :code
   .ARM.exidx : {
     __symbian_exidx_start = .;

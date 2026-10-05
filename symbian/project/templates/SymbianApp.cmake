@@ -14,26 +14,7 @@ if(NOT SYMBIAN_WORKSPACE_BUILD)
   # driver paths afterwards too, so changing the SDK selector updates Ninja.
   include("${SYMBIAN_SDK_PREFIX}/cmake/symbian-arm.cmake")
 endif()
-# Original OS libraries expose their full frozen ABI. Applications name targets;
-# only symbols used by the linker become dependencies in the E32 image.
-foreach(pair IN ITEMS "EUser:euser" "WindowServer:ws32" "Gdi:gdi" "Hal:hal"
-    "FileServer:efsrv" "SocketServer:esock" "Internet:insock" "C:libc"
-    "Math:libm" "Pthread:libpthread" "CxxAbi:drtaeabi" "CameraNative:ecam")
-  string(REPLACE ":" ";" fields "${pair}")
-  list(GET fields 0 name)
-  list(GET fields 1 dll)
-  set(proxy "${SYMBIAN_SDK_PREFIX}/proxies/${dll}/${dll}.dso")
-  if(EXISTS "${proxy}")
-    add_library(Symbian${name} SHARED IMPORTED GLOBAL)
-    set_target_properties(Symbian${name} PROPERTIES IMPORTED_LOCATION "${proxy}")
-    target_include_directories(Symbian${name} SYSTEM INTERFACE
-      "${SYMBIAN_SDK_PREFIX}/include/platform")
-    target_compile_definitions(Symbian${name} INTERFACE _UNICODE __GCC32__
-      __GCCV3__ __EABI__ __EPOC32__ __MARM__ __MARM_ARMV5__)
-    target_compile_options(Symbian${name} INTERFACE -fshort-wchar)
-    add_library(Symbian::${name} ALIAS Symbian${name})
-  endif()
-endforeach()
+include(SymbianPlatform)
 set(SYMBIAN_CA_BUNDLE "" CACHE STRING
     "Project PEM CA bundle; empty means no packaged trust roots")
 if(SYMBIAN_CA_BUNDLE)
@@ -83,7 +64,7 @@ if(NOT EXISTS "${runtime_archive}")
 endif()
 add_library(SymbianRuntime STATIC IMPORTED)
 set_target_properties(SymbianRuntime PROPERTIES
-  IMPORTED_LOCATION "${runtime_archive}")
+  IMPORTED_LOCATION "${runtime_archive}" SYMBIAN_RUNTIME_PROFILE default)
 target_include_directories(SymbianRuntime SYSTEM INTERFACE
   "${SYMBIAN_SDK_PREFIX}/include"
   "${SYMBIAN_SDK_PREFIX}/include/config"
@@ -108,8 +89,9 @@ set(math_proxy "${SYMBIAN_SDK_PREFIX}/proxies/libm/libm.dso")
 set(libc_proxy "${SYMBIAN_SDK_PREFIX}/proxies/libc/libc.dso")
 # libc++ hash tables and clocks use these selected services. Ordinary apps
 # must not acquire a new ROM dependency merely by linking Symbian::Runtime.
-# CMake de-duplicates repeated --as-needed tokens when separate calls are
-# flattened. Keep one contiguous scope or the second proxy becomes mandatory.
+# Executable and DLL helpers apply --as-needed to the complete target graph.
+# Nested dependency targets must not restore --no-as-needed and introduce
+# unused OS services into the published image.
 set(optional_runtime_proxies)
 if(EXISTS "${math_proxy}")
   list(APPEND optional_runtime_proxies "${math_proxy}")
@@ -118,8 +100,7 @@ if(EXISTS "${libc_proxy}")
   list(APPEND optional_runtime_proxies "${libc_proxy}")
 endif()
 if(optional_runtime_proxies)
-  target_link_libraries(SymbianRuntime INTERFACE
-    --as-needed ${optional_runtime_proxies} --no-as-needed)
+  target_link_libraries(SymbianRuntime INTERFACE ${optional_runtime_proxies})
 endif()
 target_link_libraries(SymbianRuntime INTERFACE
   "${SYMBIAN_SDK_PREFIX}/proxies/libpthread/libpthread.dso")
@@ -133,7 +114,7 @@ set(native64_proxy "${SYMBIAN_SDK_PREFIX}/proxies/euser-native64/euser.dso")
 if(EXISTS "${native64_archive}" AND EXISTS "${native64_proxy}")
   add_library(SymbianNativeAtomics64 STATIC IMPORTED)
   set_target_properties(SymbianNativeAtomics64 PROPERTIES
-    IMPORTED_LOCATION "${native64_archive}")
+    IMPORTED_LOCATION "${native64_archive}" SYMBIAN_RUNTIME_PROFILE atomic64)
   foreach(property INTERFACE_INCLUDE_DIRECTORIES
       INTERFACE_COMPILE_DEFINITIONS INTERFACE_COMPILE_OPTIONS)
     get_target_property(value SymbianRuntime ${property})
@@ -143,8 +124,7 @@ if(EXISTS "${native64_archive}" AND EXISTS "${native64_proxy}")
     set_target_properties(SymbianNativeAtomics64 PROPERTIES ${property} "${value}")
   endforeach()
   target_link_libraries(SymbianNativeAtomics64 INTERFACE
-    "${native64_proxy}" --as-needed "${math_proxy}"
-    "${libc_proxy}" --no-as-needed)
+    "${native64_proxy}" "${math_proxy}" "${libc_proxy}")
   add_library(Symbian::NativeAtomics64 ALIAS SymbianNativeAtomics64)
 endif()
 
@@ -156,7 +136,7 @@ set(stream_libc_proxy "${SYMBIAN_SDK_PREFIX}/proxies/libc/libc.dso")
 if(EXISTS "${stream_archive}" AND EXISTS "${stream_libc_proxy}")
   add_library(SymbianStreams STATIC IMPORTED)
   set_target_properties(SymbianStreams PROPERTIES
-    IMPORTED_LOCATION "${stream_archive}")
+    IMPORTED_LOCATION "${stream_archive}" SYMBIAN_RUNTIME_PROFILE streams)
   target_include_directories(SymbianStreams SYSTEM INTERFACE
     "${SYMBIAN_SDK_PREFIX}/include/stream-config"
     "${SYMBIAN_SDK_PREFIX}/include"
@@ -178,7 +158,7 @@ if(EXISTS "${stream_archive}" AND EXISTS "${stream_libc_proxy}")
     $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
     -ffunction-sections -fdata-sections)
   target_link_libraries(SymbianStreams INTERFACE
-    --as-needed "${math_proxy}" --no-as-needed
+    "${math_proxy}"
     "${stream_libc_proxy}"
     "${SYMBIAN_SDK_PREFIX}/proxies/libpthread/libpthread.dso"
     "${SYMBIAN_SDK_PREFIX}/proxies/drtaeabi/drtaeabi.dso")
@@ -337,7 +317,8 @@ function(symbian_add_static_library target)
     list(APPEND sources "${resolved}")
   endforeach()
   add_library(${target} STATIC ${sources})
-  target_link_libraries(${target} PUBLIC Symbian::Runtime)
+  cmake_language(EVAL CODE
+    "cmake_language(DEFER CALL _symbian_link_default_runtime ${target})")
   target_compile_options(${target} PRIVATE -g -gdwarf-4
     "-fdebug-prefix-map=${CMAKE_BINARY_DIR}=/symbian-build/library")
   set_target_properties(${target} PROPERTIES

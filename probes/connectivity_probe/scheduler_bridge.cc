@@ -13,7 +13,7 @@ extern "C" void ProbeStopScheduler() {
   CActiveScheduler::Stop();
 }
 
-extern "C" int RuntimeMain() {
+int main() {
   CActiveScheduler scheduler;
   CActiveScheduler::Install(&scheduler);
   const int result = RunActiveProbe();

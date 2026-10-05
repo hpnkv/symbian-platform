@@ -75,52 +75,7 @@ def artifacts(tmp_path_factory):
     else:
         native_proxy = build_import_proxy(
             root / "research/upstream/kernelhwsrv/kernel/eka/eabi/euseru.def",
-            [
-                "_ZN4User11InitProcessEv",
-                "_ZN4User4ExitEi",
-                "_ZN4User9InvariantEv",
-                "_ZN8UserHeap15SetupThreadHeapEiR24SStdEpocThreadCreateInfo",
-                "_ZN10RAllocator4OpenEv",
-                "_ZN10RAllocator5CloseEv",
-                "_ZN4User5AllocEi",
-                "_ZN4User4FreeEPv",
-                "_ZN4User9AllocatorEv",
-                "_ZN4User15CountAllocCellsEv",
-                "memcpy",
-                "memmove",
-                "memset",
-                "_ZN9RFastLock11CreateLocalE10TOwnerType",
-                "_ZN9RFastLock4WaitEv",
-                "_ZN9RFastLock4PollEv",
-                "_ZN9RFastLock6SignalEv",
-                "_ZN11RHandleBase5CloseEv",
-                "__e32_memory_barrier",
-                "__e32_atomic_add_ord32",
-                "__e32_atomic_and_ord32",
-                "__e32_atomic_load_acq32",
-                "__e32_atomic_ior_ord32",
-                "__e32_atomic_cas_ord32",
-                "__e32_atomic_cas_ord8",
-                "__e32_atomic_load_acq8",
-                "__e32_atomic_store_ord32",
-                "__e32_atomic_store_ord8",
-                "__e32_atomic_swp_ord32",
-                "__e32_atomic_swp_ord8",
-                "_ZN4User9TickCountEv",
-                "_ZN4User10NTickCountEv",
-                "_ZN4User11FastCounterEv",
-                "_ZN4User5AfterE27TTimeIntervalMicroSeconds32",
-                "_ZN4User14WaitForRequestER14TRequestStatus",
-                "_ZN4User17WaitForAnyRequestEv",
-                "_ZN6RTimer11CreateLocalEv",
-                "_ZN6RTimer6CancelEv",
-                "_ZN6RTimer7HighResER14TRequestStatus27TTimeIntervalMicroSeconds32",
-                "_ZN7RThread4OpenE9TThreadId10TOwnerType",
-                "_ZNK7RThread2IdEv",
-                "_ZNK7RThread13RequestSignalEv",
-                "_ZN7UserHal10TickPeriodER27TTimeIntervalMicroSeconds32",
-                "_ZN7UserSvr11HalFunctionEiiPvS0_",
-            ],
+            [],
             "euser.dll",
             output / "euser-native-primitives",
             compiler=os.environ.get("SYMBIAN_RUNTIME_COMPILER", "clang++"),
@@ -143,7 +98,7 @@ def artifacts(tmp_path_factory):
     else:
         thread_proxy = build_import_proxy(
             root / "research/upstream/kernelhwsrv/kernel/eka/eabi/euseru.def",
-            sorted(native_symbols | thread_symbols),
+            [],
             "euser.dll",
             output / "euser-thread-primitives",
             compiler=os.environ.get("SYMBIAN_RUNTIME_COMPILER", "clang++"),
@@ -158,7 +113,7 @@ def artifacts(tmp_path_factory):
     }
     native_atomic64_proxy = build_import_proxy(
         root / "research/upstream/kernelhwsrv/kernel/eka/eabi/euseru.def",
-        sorted(native_symbols | thread_symbols | native_atomic64_symbols),
+        [],
         "euser.dll",
         output / "euser-native-atomic64-diagnostic",
         compiler=os.environ.get("SYMBIAN_RUNTIME_COMPILER", "clang++"),
@@ -177,7 +132,7 @@ def artifacts(tmp_path_factory):
     else:
         chunk_proxy = build_import_proxy(
             root / "research/upstream/kernelhwsrv/kernel/eka/eabi/euseru.def",
-            sorted(native_symbols | chunk_symbols),
+            [],
             "euser.dll",
             output / "euser-chunk-primitives",
             compiler=os.environ.get("SYMBIAN_RUNTIME_COMPILER", "clang++"),
@@ -358,7 +313,13 @@ def artifacts(tmp_path_factory):
     def build_artifact(architecture, mode):
         if (architecture, mode) not in result:
             project = output / (architecture + "-" + mode)
-            shutil.copytree(root / "probes/runtime_probe", project)
+            shutil.copytree(
+                root / "probes/runtime_probe",
+                project,
+                ignore=shutil.ignore_patterns(
+                    "cmake-build-*", "build", ".symbian"
+                ),
+            )
             if selected:
                 for source_file in project.glob("*.cc"):
                     source_file.write_text(
@@ -556,8 +517,9 @@ def artifacts(tmp_path_factory):
             manifest = project / "symbian.toml"
             manifest.write_text(
                 manifest.read_text().replace(
-                    "../../.symbian/runtime-sdk/euser/euser.dso",
-                    selected_euser_proxy,
+                    "[project]",
+                    "[project]\nimport_proxies = "
+                    + json.dumps([selected_euser_proxy]),
                 )
             )
             if mode in (

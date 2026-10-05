@@ -364,7 +364,7 @@ def test_debug_launcher_relocates_before_source_breakpoints(tmp_path):
             "-ex",
             f"target remote 127.0.0.1:{port}",
             "-ex",
-            "break GuiMain",
+            "break main",
             "-ex",
             "continue",
             "-ex",
@@ -461,7 +461,7 @@ def test_debug_launcher_preserves_gdb_machine_interface(tmp_path):
         symbols = Path(WORKSPACE) / ".symbian/gui-app/gui_app.elf"
         exchange("1-file-exec-and-symbols " + quote(symbols), "1^done")
         # IDE breakpoints can be registered before the remote connection.
-        exchange("2-break-insert GuiMain", "2^done")
+        exchange("2-break-insert main", "2^done")
         exchange(f"3-target-select remote 127.0.0.1:{port}", "3^connected")
         result = exchange("4-break-list", "4^done")
         gui_address = re.search(r'addr="(0x[0-9a-f]+)"', result)

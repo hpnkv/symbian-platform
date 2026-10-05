@@ -34,18 +34,21 @@ def imported_images(tmp_path_factory):
     compiler = llvm_tool("clang++")
     linker = llvm_tool("ld.lld", sibling=compiler.parent)
     proxy = build_import_proxy(
-        project / "euser.def",
-        list(SYMBOLS),
+        ROOT / "symbian/toolchain/cmake/euser_eka1.def",
+        [],
         "euser.dll",
         output / "proxy",
         str(compiler),
         str(linker),
     )
-    manifest = project / "symbian.toml"
-    manifest.write_text(
-        manifest.read_text().replace(
-            "../../.symbian/eka1-euser-proxy/euser.dso",
-            proxy["artifact"],
+    cmake = project / "CMakeLists.txt"
+    cmake.write_text(
+        cmake.read_text().replace(
+            "include(SymbianPic)",
+            "add_library(Symbian::Eka1EUser SHARED IMPORTED)\n"
+            "set_target_properties(Symbian::Eka1EUser PROPERTIES\n"
+            f'  IMPORTED_LOCATION "{proxy["artifact"]}")\n'
+            "include(SymbianPic)",
         )
     )
     presets = project / "CMakePresets.json"

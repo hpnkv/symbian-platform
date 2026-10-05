@@ -5,7 +5,7 @@ option(SYMBIAN_ABSEIL_USE_SDK "Link installed guest Abseil target" OFF)
 if(NOT EXISTS "${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
   message(FATAL_ERROR "SYMBIAN_SDK_PREFIX must name an installed SDK")
 endif()
-include("${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
+include(SymbianApp)
 
 if(NOT SYMBIAN_ABSEIL_USE_SDK)
 if(NOT IS_DIRECTORY "${SYMBIAN_ABSEIL_SOURCE}")
@@ -40,20 +40,13 @@ add_subdirectory("${SYMBIAN_ABSEIL_SOURCE}" "${CMAKE_BINARY_DIR}/abseil"
                  EXCLUDE_FROM_ALL)
 endif()
 
-if(SYMBIAN_ABSEIL_USE_SDK)
-  set(startup_root "${SYMBIAN_SDK_PREFIX}/share/symbian/runtime")
-else()
-  set(startup_root "${CMAKE_CURRENT_SOURCE_DIR}/../runtime_probe")
-endif()
-add_executable(abseil_status_probe
-  "${startup_root}/startup.S" "${startup_root}/startup.cc" contract.cc)
+symbian_add_executable(abseil_status_probe contract.cc)
 if(NOT SYMBIAN_ABSEIL_USE_SDK)
   target_include_directories(abseil_status_probe PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../../cpp/symbian/runtime")
 endif()
 set_target_properties(abseil_status_probe PROPERTIES SUFFIX ".elf")
 target_link_options(abseil_status_probe PRIVATE
-  -T "${startup_root}/image.ld"
   --gc-sections --hash-style=sysv --no-dynamic-linker --as-needed
   --error-limit=0)
 if(SYMBIAN_ABSEIL_USE_SDK)

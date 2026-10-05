@@ -91,8 +91,7 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
   add_subdirectory(cpp/symbian/tls EXCLUDE_FROM_ALL)
   symbian_workspace_archive(SymbianTls symbian_api_tls)
   add_library(symbian_index_http OBJECT EXCLUDE_FROM_ALL
-    probes/http_probe/probe.cc probes/http_probe/startup.cc
-    probes/http_probe/startup.S)
+    probes/http_probe/probe.cc)
   target_link_libraries(symbian_index_http PRIVATE Symbian::Http Symbian::Tls
     Symbian::Storage)
   add_dependencies(symbian_probe_index symbian_index_http)
@@ -136,7 +135,7 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
   endif()
   set(module_dir "${CMAKE_SOURCE_DIR}/probes/cxx20_module_probe")
   add_library(symbian_index_cxx20_module OBJECT EXCLUDE_FROM_ALL
-              "${module_dir}/probe.cc" "${module_dir}/startup.S")
+              "${module_dir}/probe.cc")
   target_sources(symbian_index_cxx20_module PRIVATE
     FILE_SET CXX_MODULES FILES "${module_dir}/transform.cppm")
   target_link_libraries(symbian_index_cxx20_module PRIVATE
@@ -158,7 +157,7 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
     endif()
     set(mbedtls_dir "${CMAKE_SOURCE_DIR}/probes/mbedtls_dll_probe")
     add_library(symbian_index_mbedtls OBJECT EXCLUDE_FROM_ALL
-                "${mbedtls_dir}/bridge.c" "${mbedtls_dir}/startup.S")
+                "${mbedtls_dir}/bridge.c")
     target_link_libraries(symbian_index_mbedtls PRIVATE Symbian::Runtime)
     target_include_directories(symbian_index_mbedtls PRIVATE
       "${MBEDTLS_SOURCE}/include" "${CMAKE_CURRENT_BINARY_DIR}/mbedtls-fixtures")

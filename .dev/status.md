@@ -3189,3 +3189,12 @@ Do not begin the broad mutable-reference/nullability sweep yet.
 2026-10-05: Fixed stale active-SDK selection in guest workspace presets.
 Both local CLion ARM presets configure/generate with the staged Qt SDK;
 SDK-selection regression: 1 passed. Full probe migration remains in progress.
+
+2026-10-05: Bundled probes now use SDK-owned executable/DLL machinery and main.
+Fresh native guest export succeeds for ARMv5T/ARMv6; Python-free relocated GUI
+and startup builds pass both. Live DLL lifecycle checks: 16 passed across both
+ISAs/backends. Fresh Qt GUI acceptance: 2 passed (both backends). Linux native
+converter tests and 55 integration checks pass; four library/debug checks also
+pass with LLVM diagnostics on PATH. Shipping those diagnostics in native SDKs.
+Public docs build strictly. Release version bump/publication remains pending;
+physical-device execution and general typed exception support remain unverified.

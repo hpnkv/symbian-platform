@@ -56,7 +56,7 @@ def build_executable(
     if any(key in options for key in ("source", "startup", "linker_script")):
         raise StatusError(
             Code.INVALID_ARGUMENT,
-            "Declare sources, startup and linker script in CMakeLists.txt",
+            "Declare sources through the SDK CMake target helpers",
         )
     uid3 = options.get("uid3")
     if type(uid3) is not int or not 0xE0000000 <= uid3 <= 0xEFFFFFFF:
@@ -111,15 +111,19 @@ def build_executable(
         "e32-dll",
     )
     definition_name = options.get("export_definition")
-    if dll and (not isinstance(definition_name, str) or not definition_name):
+    if definition_name is not None and (
+        not isinstance(definition_name, str) or not definition_name
+    ):
         raise StatusError(
-            Code.INVALID_ARGUMENT, "DLL export_definition required"
+            Code.INVALID_ARGUMENT, "Invalid DLL export_definition"
         )
     if not dll and definition_name is not None:
         raise StatusError(
             Code.INVALID_ARGUMENT, "Exports require a DLL project"
         )
-    definition = (project / definition_name).resolve() if dll else None
+    definition = (
+        (project / definition_name).resolve() if definition_name else None
+    )
     if definition is not None and (
         not definition.is_relative_to(project)
         or definition.is_relative_to(output)
@@ -205,22 +209,35 @@ def build_executable(
         )
 
     target = configure(primary)
+
     # CMake's evaluated link fragments include transitive imported libraries.
     # Pass the same actual ordinal libraries to the native image converter.
-    linked_proxies = set(proxies)
-    for fragment in target.link_fragments:
-        if fragment.get("role") == "libraries":
-            for item in shlex.split(fragment["fragment"]):
-                if item.endswith(".dso"):
-                    linked_proxies.add((primary / item).resolve())
-    proxies = tuple(sorted(linked_proxies))
-    proxy_bytes = {path: path.read_bytes() for path in proxies}
+    def linked_proxy_paths(built_target, tree):
+        linked = set(declared_proxies)
+        for fragment in built_target.link_fragments:
+            if fragment.get("role") == "libraries":
+                for item in shlex.split(fragment["fragment"]):
+                    if item.endswith(".dso"):
+                        linked.add((tree / item).resolve())
+        return tuple(sorted(linked))
+
+    proxies = linked_proxy_paths(target, primary)
+    proxy_bytes = {
+        path: path.read_bytes()
+        for path in proxies
+        if not path.is_relative_to(primary)
+    }
     inputs = {path: path.read_bytes() for path in target.inputs}
     inputs.update(proxy_bytes)
     if definition is not None:
         inputs[definition] = definition_bytes
     first_log = cmake_build.build(primary, name, tools["cmake"])
     _unchanged(inputs)
+    # Normal library targets create their ordinal transport during this build.
+    # Read those outputs after the dependency graph has finished publishing.
+    proxy_bytes = {path: path.read_bytes() for path in proxies}
+    if dll and definition is None:
+        definition_bytes = (primary / f"{name}.def").read_bytes()
     # Ninja's dependency graph adds headers discovered by the compiler.
     dependencies = cmake_build.dependencies(
         primary, target.artifact, tools["ninja"]
@@ -251,6 +268,23 @@ def build_executable(
         _unchanged(inputs)
         if repeated_dependencies != dependencies:
             raise StatusError(Code.ABORTED, "Compiler dependency graph changed")
+        repeated_proxy_bytes = {
+            path: path.read_bytes()
+            for path in linked_proxy_paths(repeated, temporary)
+        }
+        if sorted(repeated_proxy_bytes.values()) != sorted(
+            proxy_bytes.values()
+        ):
+            raise StatusError(
+                Code.DATA_LOSS, "Independent import proxies differ"
+            )
+        proxy_bytes = repeated_proxy_bytes
+        if dll and definition is None:
+            repeated_definition = (temporary / f"{name}.def").read_bytes()
+            if repeated_definition != definition_bytes:
+                raise StatusError(
+                    Code.DATA_LOSS, "Independent DLL exports differ"
+                )
         second_elf = repeated.artifact.read_bytes()
         second_image = convert(second_elf)
         if (first_elf, first_image) != (second_elf, second_image):

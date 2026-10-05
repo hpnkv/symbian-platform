@@ -7,7 +7,7 @@
 #ifndef SYMBIAN_EKA1_CORRUPT_COPY
 #define SYMBIAN_EKA1_CORRUPT_COPY 0
 #endif
-extern "C" int Eka1Main() {
+int main() {
   int before_bytes = 0;
   const int before_cells = LegacyAllocSize(before_bytes);
   auto* data = static_cast<unsigned char*>(LegacyAlloc(64));

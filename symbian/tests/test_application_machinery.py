@@ -62,7 +62,6 @@ def test_standard_entry_and_automatic_transitive_imports(
         "cmake_minimum_required(VERSION 3.28)\n"
         "project(application LANGUAGES CXX ASM)\ninclude(SymbianApp)\n"
         "symbian_add_executable(application main.cc)\n"
-        "target_link_libraries(application PRIVATE Symbian::Runtime)\n"
         "symbian_publish_executable(application UID3 0xe0000825)\n"
     )
     tree = tmp_path / "build"
@@ -212,3 +211,65 @@ def test_qt_complete_library_includes_data_and_rejects_malformed_slots(
     struct.pack_into("<I", malformed, dynamic + 4, (info & ~255) | 20)
     with pytest.raises(StatusError):
         convert_imported_executable(bytes(malformed), proxies, 0xE0000821)
+
+
+@pytest.mark.parametrize("runtime", ["Runtime", "Streams"])
+def test_static_library_runtime_profile_reaches_its_consumer(
+    sdk, tmp_path, runtime
+):
+    (tmp_path / "value.cc").write_text(
+        "#include <string>\n"
+        'int Value() { return std::string("hello").size(); }\n'
+    )
+    (tmp_path / "main.cc").write_text(
+        "int Value();\nint main() { return Value() == 5 ? 0 : 1; }\n"
+    )
+    (tmp_path / "CMakeLists.txt").write_text(
+        "cmake_minimum_required(VERSION 3.28)\n"
+        "project(application LANGUAGES CXX ASM)\ninclude(SymbianApp)\n"
+        "symbian_add_static_library(value SOURCES value.cc)\n"
+        f"target_link_libraries(value PRIVATE Symbian::{runtime})\n"
+        "symbian_add_executable(application main.cc)\n"
+        "target_link_libraries(application PRIVATE value)\n"
+        "symbian_publish_executable(application UID3 0xe0000825)\n"
+    )
+    tree = tmp_path / "build"
+    configure(sdk, tmp_path, tree, "armv6")
+    assert (
+        inspect_image(tree / "e32/application.exe")["architecture"] == "armv6"
+    )
+
+
+def test_shared_dependency_graph_configures_and_preserves_imports(
+    sdk, tmp_path
+):
+    (tmp_path / "main.cc").write_text(
+        "#include <string>\n"
+        'int main() { return std::string("hello").size(); }\n'
+    )
+    graph = [
+        "add_library(part0 INTERFACE)",
+        "target_link_libraries(part0 INTERFACE Symbian::Streams)",
+        "add_library(part1 INTERFACE)",
+        "target_link_libraries(part1 INTERFACE part0)",
+    ]
+    for index in range(2, 25):
+        graph.extend(
+            [
+                f"add_library(part{index} INTERFACE)",
+                f"target_link_libraries(part{index} INTERFACE "
+                f"part{index - 1} part{index - 2})",
+            ]
+        )
+    (tmp_path / "CMakeLists.txt").write_text(
+        "cmake_minimum_required(VERSION 3.28)\n"
+        "project(application LANGUAGES CXX ASM)\ninclude(SymbianApp)\n"
+        + "\n".join(graph)
+        + "\nsymbian_add_executable(application main.cc)\n"
+        + "target_link_libraries(application PRIVATE part24)\n"
+        + "symbian_publish_executable(application UID3 0xe0000825)\n"
+    )
+    tree = tmp_path / "build"
+    configure(sdk, tmp_path, tree, "armv6")
+    image = inspect_image(tree / "e32/application.exe")
+    assert "euser.dll" in {item["dll"] for item in image["imports"]}

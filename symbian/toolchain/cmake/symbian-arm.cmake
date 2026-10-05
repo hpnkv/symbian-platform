@@ -18,7 +18,9 @@ set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY CACHE STRING
 
 include("${CMAKE_CURRENT_LIST_DIR}/SymbianSdk.cmake")
 symbian_select_sdk()
-if(SYMBIAN_SDK_PREFIX AND EXISTS "${SYMBIAN_SDK_PREFIX}/bin/clang++")
+if(SYMBIAN_SDK_PREFIX AND EXISTS "${SYMBIAN_SDK_PREFIX}/bin/clang++" AND
+   (SYMBIAN_WORKSPACE_BUILD OR NOT DEFINED CMAKE_CXX_COMPILER OR
+    EXISTS "${CMAKE_SOURCE_DIR}/sdk-location.json"))
   set(CMAKE_CXX_COMPILER "${SYMBIAN_SDK_PREFIX}/bin/clang++")
   set(CMAKE_C_COMPILER "${SYMBIAN_SDK_PREFIX}/bin/clang")
 else()
@@ -30,7 +32,10 @@ if(SYMBIAN_SDK_PREFIX AND EXISTS "${SYMBIAN_SDK_PREFIX}/bin/llvm-ar")
   set(CMAKE_AR "${SYMBIAN_SDK_PREFIX}/bin/llvm-ar")
   set(CMAKE_RANLIB "${SYMBIAN_SDK_PREFIX}/bin/llvm-ranlib")
 endif()
-if(SYMBIAN_SDK_PREFIX AND EXISTS "${SYMBIAN_SDK_PREFIX}/bin/ld.lld")
+if(DEFINED CMAKE_LINKER AND NOT SYMBIAN_WORKSPACE_BUILD AND
+   NOT EXISTS "${CMAKE_SOURCE_DIR}/sdk-location.json")
+  set(symbian_lld "${CMAKE_LINKER}")
+elseif(SYMBIAN_SDK_PREFIX AND EXISTS "${SYMBIAN_SDK_PREFIX}/bin/ld.lld")
   set(symbian_lld "${SYMBIAN_SDK_PREFIX}/bin/ld.lld")
 else()
   find_program(symbian_lld NAMES ld.lld REQUIRED)

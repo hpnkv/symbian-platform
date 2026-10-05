@@ -48,7 +48,7 @@ def test_real_pointer_build_retains_four_fixups_and_header_dependencies(
     assert not report["e32"]["dll"]
     assert str(PROJECT / "probe.h") in report["inputs"]
     database = json.loads(Path(report["compile_commands"]).read_text())
-    assert len(database) == 4
+    assert len(database) == 5
     assert all(
         "-fno-exceptions" in row["command"]
         for row in database

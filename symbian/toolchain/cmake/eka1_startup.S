@@ -7,7 +7,9 @@
 .type Eka1Entry, %function
 Eka1Entry:
   push {r4, lr}
-  bl Eka1Main
+  mov r0, #0
+  mov r1, #0
+  bl main
   pop {r4, lr}
   bx lr
 .size Eka1Entry, . - Eka1Entry

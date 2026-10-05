@@ -6,17 +6,32 @@ archives, frozen-ordinal OS import proxies and CMake helpers. See
 and the [native API guide](native-sdk.md) for application targets.
 Firmware and original system DLL implementations are supplied separately.
 
-## Function import proxies
+## OS library targets
+
+Applications link installed CMake targets such as `Symbian::EUser` and
+`Symbian::WindowServer`. The SDK supplies their complete frozen ABI and records
+only the functions and data actually imported by the linked application.
+Application authors do not create proxies or enumerate imported symbols.
+
+```cmake
+include(SymbianApp)
+symbian_add_executable(my_app main.cc)
+target_link_libraries(my_app PRIVATE Symbian::FileServer)
+```
+
+## Diagnostic proxy generation
 
 A proxy is an ELF link artifact whose exported symbol points to an ordinal
 word. It is not executable DLL implementation code. The native SDK component
 reads frozen export definitions and generates Clang/LLD proxy sources.
 
 The parser accepts `EXPORTS`, `symbol @ ordinal NONAME`, optional `ABSENT`
-and `DATA size` declarations. Proxy generation selects 1–256 present functions
-and preserves their original ordinals, including holes. Aliases, data imports,
-absent selections and decorated DLL UID/version names are unsupported.
-Use plain DLL/DSO names.
+and `DATA size` declarations. Generation without a symbol selection includes
+all present function and data exports, preserving original ordinals and holes.
+Explicit selection supports up to 65535 exports. Aliases, absent selections
+and decorated DLL UID/version names are unsupported; use plain DLL/DSO names.
+The following command is for investigating an OS ABI, rather than building an
+ordinary application.
 
 From a prepared source checkout:
 

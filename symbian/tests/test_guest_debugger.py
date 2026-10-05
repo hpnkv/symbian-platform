@@ -144,7 +144,7 @@ def test_live_source_breakpoints_and_single_step_remain_halted(
     script = tmp_path / "debug.gdb"
     if experimental:
         final_stops = (
-            "delete breakpoints\nbreak GuiMain\ncontinue\n"
+            "delete breakpoints\nbreak main\ncontinue\n"
             'printf "GUI_MAIN_PC=%#x\\n", $pc\n'
             "delete breakpoints\nbreak *0x804c26f0\ncontinue\n"
             "set arm force-mode arm\nx/2i $pc\n"

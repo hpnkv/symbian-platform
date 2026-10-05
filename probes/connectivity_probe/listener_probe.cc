@@ -11,7 +11,7 @@
 #include "symbian/api/connectivity/tcp_listener.h"
 #include "symbian/native_status.h"
 
-extern "C" int RuntimeMain() {
+int main() {
   using symbian::api::connectivity::TcpClient;
   using symbian::api::connectivity::TcpListener;
   std::optional<TcpClient> client;

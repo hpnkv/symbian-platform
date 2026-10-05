@@ -33,7 +33,7 @@ def dll_and_client(tmp_path_factory):
     root = tmp_path_factory.mktemp("Writable DLL and client with spaces")
     dll = toolchain.build(DLL_PROJECT, root / "dll", COMPILER, LINKER)
     proxy = build_import_proxy(
-        DLL_PROJECT / "exports.def",
+        root / "dll/cmake/probe.def",
         ["SymbianProbeTransform"],
         "probe.dll",
         root / "proxy",
@@ -44,18 +44,18 @@ def dll_and_client(tmp_path_factory):
     shutil.copytree(CLIENT_PROJECT, client)
     (client / "probe.cc").write_text(
         'extern "C" unsigned SymbianProbeTransform(unsigned);\n'
-        'extern "C" int ProbeMain() {\n'
+        "int main() {\n"
         "  volatile unsigned input = 16;\n"
         "  unsigned first = SymbianProbeTransform(input);\n"
         "  unsigned second = SymbianProbeTransform(input);\n"
         "  return first == 0x918U && second == 0x919U ? 0 : 42;\n"
         "}\n"
     )
-    manifest = client / "symbian.toml"
-    manifest.write_text(
-        manifest.read_text().replace(
-            "../../.symbian/probe-dll/probe.dso", proxy["artifact"]
-        )
+    (client / "CMakeLists.txt").write_text(
+        "cmake_minimum_required(VERSION 3.28)\n"
+        "project(import_probe LANGUAGES CXX ASM)\ninclude(SymbianPic)\n"
+        "symbian_add_executable(import_probe probe.cc)\n"
+        f'target_link_libraries(import_probe PRIVATE "{proxy["artifact"]}")\n'
     )
     app = toolchain.build(client, root / "app", COMPILER, LINKER)
     return dll, proxy, app
@@ -70,7 +70,7 @@ def test_dll_data_and_client_have_reproducible_contracts(dll_and_client):
     assert image["bss_size"] == 4
     assert len(image["code_data_relocations"]) == 2
     assert image["data_relocations"] == []
-    assert image["exports"][-1]["ordinal"] == 7
+    assert image["exports"][-1]["ordinal"] == 1
     assert app["e32"]["imports"][0]["dll"] == "probe.dll"
     assert Path(proxy["artifact"]).is_file()
 

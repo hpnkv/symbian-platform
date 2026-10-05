@@ -12,8 +12,8 @@ endif()
 if(NOT SYMBIAN_EKA1_RESULT MATCHES "^[0-9]+$")
   message(FATAL_ERROR "SYMBIAN_EKA1_RESULT must be a nonnegative integer")
 endif()
-symbian_add_import_executable(eka1_import_probe
-  STARTUP startup.S LINKER_SCRIPT image.ld SOURCES probe.cc)
+symbian_add_executable(eka1_import_probe probe.cc)
+target_link_libraries(eka1_import_probe PRIVATE Symbian::Eka1EUser)
 target_compile_definitions(eka1_import_probe PRIVATE
   SYMBIAN_EKA1_RESULT=${SYMBIAN_EKA1_RESULT}
   SYMBIAN_EKA1_CORRUPT_COPY=${SYMBIAN_EKA1_CORRUPT_COPY})

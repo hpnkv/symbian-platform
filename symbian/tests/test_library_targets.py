@@ -14,6 +14,7 @@ from symbian.project.configuration import Preferences
 from symbian.project.generate import generate
 from symbian.project.sdk import AppSdk
 from symbian.sdk import inspect_proxy
+from symbian.toolchain.host_tools import llvm_tool
 
 
 @pytest.mark.skipif(
@@ -65,13 +66,10 @@ def test_static_archive_links_with_debug_symbols(tmp_path, architecture, cpu):
     assert archive.is_file()
     database = json.loads(Path(report["compile_commands"]).read_text())
     assert any(Path(item["file"]).name == "year.cc" for item in database)
-    nm = shutil.which("llvm-nm") or "/opt/homebrew/opt/llvm/bin/llvm-nm"
+    nm = llvm_tool("llvm-nm", sibling=sdk.compiler.parent)
     symbols = run([nm, str(report["linked_elf"])], cwd=project)
     assert "LibraryYear" in symbols
-    dwarfdump = (
-        shutil.which("llvm-dwarfdump")
-        or "/opt/homebrew/opt/llvm/bin/llvm-dwarfdump"
-    )
+    dwarfdump = llvm_tool("llvm-dwarfdump", sibling=sdk.compiler.parent)
     dwarf = run(
         [dwarfdump, "--name=LibraryYear", str(report["linked_elf"])],
         cwd=project,
@@ -93,33 +91,25 @@ def test_c_dynamic_library_publishes_elf_dll_and_proxy(tmp_path, architecture):
         Path(__file__).parents[2] / "probes/dll_data_probe", project
     )
     (project / "probe.c").write_text(
-        "volatile unsigned SymbianProbeSeed = 0x808U;\n"
-        "volatile unsigned SymbianProbeCalls;\n"
+        "static volatile unsigned SymbianProbeSeed = 0x808U;\n"
+        "static volatile unsigned SymbianProbeCalls;\n"
         "unsigned SymbianProbeTransform(unsigned input) {\n"
         "  return SymbianProbeSeed + input + ++SymbianProbeCalls;\n"
         "}\n"
     )
-    shutil.copyfile(
-        Path(__file__).parents[2] / "probes/import_probe/image.ld",
-        project / "import.ld",
-    )
     (project / "client.c").write_text(
         "extern unsigned SymbianProbeTransform(unsigned);\n"
-        "unsigned Client(void) { return SymbianProbeTransform(1U); }\n"
+        "int main(void) { return (int)SymbianProbeTransform(1U); }\n"
+    )
+    (project / "symbian.toml").write_text(
+        '[project]\nkind = "e32-import-experiment"\n'
     )
     (project / "CMakeLists.txt").write_text(
         "cmake_minimum_required(VERSION 3.28)\n"
-        "project(probe LANGUAGES C ASM)\n"
-        "include(SymbianPic)\n"
-        "symbian_add_dynamic_library(probe STARTUP startup.S "
-        "LINKER_SCRIPT image.ld SOURCES probe.c "
-        "EXPORT_DEFINITION exports.def UID3 0xE0000D17 "
-        "IMPORT_SYMBOLS SymbianProbeTransform)\n"
-        "symbian_add_pic_executable(client_elf STARTUP startup.S "
-        "LINKER_SCRIPT import.ld SOURCES client.c)\n"
-        "target_link_options(client_elf PRIVATE --hash-style=sysv "
-        "--no-dynamic-linker)\n"
-        "target_link_libraries(client_elf PRIVATE probe_import)\n"
+        "project(probe LANGUAGES C ASM)\ninclude(SymbianPic)\n"
+        "symbian_add_dynamic_library(probe SOURCES probe.c UID3 0xE0000D17)\n"
+        "symbian_add_executable(client_elf client.c)\n"
+        "target_link_libraries(client_elf PRIVATE probe)\n"
     )
     build = tmp_path / "C DLL build"
     run(
@@ -144,14 +134,11 @@ def test_c_dynamic_library_publishes_elf_dll_and_proxy(tmp_path, architecture):
     image = inspect_image(build / "probe.dll")
     assert image["architecture"] == architecture
     assert image["data_size"] == image["bss_size"] == 4
-    assert image["exports"][-1]["ordinal"] == 7
-    assert (
-        inspect_proxy(build / "probe-import/probe.dso")["target_dll"]
-        == "probe.dll"
-    )
+    assert image["exports"][-1]["ordinal"] == 1
+    assert inspect_proxy(build / "probe.dso")["target_dll"] == "probe.dll"
     client = convert_imported_executable(
         (build / "client_elf.elf").read_bytes(),
-        [(build / "probe-import/probe.dso").read_bytes()],
+        [(build / "probe.dso").read_bytes()],
         0xE0000D19,
     )
     (build / "client.exe").write_bytes(client)

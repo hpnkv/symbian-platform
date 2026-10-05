@@ -9,7 +9,7 @@
 #include "absl/time/time.h"
 #include "symbian/native_status.h"
 
-extern "C" int RuntimeMain() {
+int main() {
   absl::Status error = absl::InvalidArgumentError("guest status");
   if (error.ok() || error.code() != absl::StatusCode::kInvalidArgument ||
       error.message() != "guest status") {

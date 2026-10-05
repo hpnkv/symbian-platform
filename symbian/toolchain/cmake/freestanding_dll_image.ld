@@ -1,10 +1,12 @@
 ENTRY(_E32Startup)
-PHDRS { code PT_LOAD FLAGS(5); data PT_LOAD FLAGS(6); dynamic PT_DYNAMIC FLAGS(4); }
+PHDRS { code PT_LOAD FLAGS(5); data PT_LOAD FLAGS(6); }
 SECTIONS {
  . = 0x8000;
  .text : { KEEP(*(.text.startup)) *(.text*) } :code
  .plt : { *(.plt) } :code
  .rodata : { *(.rodata*) } :code
+ .init_array : { HIDDEN(__init_array_start = .); KEEP(*(SORT_BY_INIT_PRIORITY(.init_array.*))) KEEP(*(.init_array)) HIDDEN(__init_array_end = .); } :code
+ .fini_array : { HIDDEN(__fini_array_start = .); KEEP(*(SORT_BY_INIT_PRIORITY(.fini_array.*))) KEEP(*(.fini_array)) HIDDEN(__fini_array_end = .); } :code
  .dynsym : { *(.dynsym) } :code
  .dynstr : { *(.dynstr) } :code
  .gnu.version : { *(.gnu.version) } :code
@@ -13,7 +15,7 @@ SECTIONS {
  .rel.plt : { *(.rel.plt) } :code
  .got : { *(.got) } :code
  .got.plt : { *(.got.plt) } :code
- .dynamic : { *(.dynamic) } :code :dynamic
+ .dynamic : { *(.dynamic) } :code
  . = 0x20000000;
  .data : { *(.data .data.*) . = ALIGN(4); } :data
  .bss (NOLOAD) : { *(.bss .bss.* COMMON) . = ALIGN(4); } :data

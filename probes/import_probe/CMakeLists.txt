@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
-project(symbian_import_probe LANGUAGES CXX ASM)
-
+project(import_probe LANGUAGES CXX ASM)
 include(SymbianPic)
-symbian_add_import_executable(import_probe
-  STARTUP startup.S
-  LINKER_SCRIPT image.ld
-  SOURCES probe.cc)
+add_subdirectory(../dll_probe "${CMAKE_CURRENT_BINARY_DIR}/probe-library")
+symbian_add_executable(import_probe probe.cc)
+target_link_libraries(import_probe PRIVATE probe)

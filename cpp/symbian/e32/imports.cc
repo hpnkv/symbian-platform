@@ -408,18 +408,24 @@ absl::StatusOr<ResolvedImports> ResolveImports(
     }
     const size_t p = symbols.offset + symbol * 16;
     const uint16_t index = Read16(elf, p + 14);
-    const uint32_t address = Read32(elf, p + 4) & ~uint32_t{1};
     const uint32_t size = Read32(elf, p + 8);
-    if (index == 0 || index >= sections.size() ||
-        static_cast<uint8_t>(elf[p + 12]) != 0x12 || elf[p + 13] != 0 ||
-        Read16(elf, versions.offset + symbol * 2) != 1 || size == 0 ||
-        (sections[index].flags & 6) != 6 || address < code.address ||
-        !Within(code.size, address - code.address, size) ||
+    const uint8_t info = static_cast<uint8_t>(elf[p + 12]);
+    const bool function = (info == 0x12 || info == 0x22);
+    const bool weak_object = info == 0x21;
+    const uint32_t address =
+        Read32(elf, p + 4) & (function ? ~uint32_t{1} : ~uint32_t{0});
+    if (index == 0 || index >= sections.size() || (!function && !weak_object) ||
+        elf[p + 13] != 0 || Read16(elf, versions.offset + symbol * 2) != 1 ||
+        size == 0 || (sections[index].flags & 2) == 0 ||
         address < sections[index].address ||
         !Within(sections[index].size, address - sections[index].address,
-                size)) {
+                size) ||
+        (function &&
+         ((sections[index].flags & 6) != 6 || address < code.address ||
+          !Within(code.size, address - code.address, size)))) {
       return absl::UnimplementedError(
-          "Unreferenced dynamic symbol is not local code");
+          "Unreferenced dynamic symbol is not a defined local function or weak "
+          "object");
     }
   }
   if (blocks.size() != needed_count) {

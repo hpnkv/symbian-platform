@@ -20,6 +20,7 @@ from symbian.emulator.firmware import EUSER_808, ROM_808
 from symbian.emulator.launch import _digest, _stop
 from symbian.process import run
 from symbian.project.sdk import AppSdk
+from symbian.sdk import inspect_proxy
 
 WORKSPACE = os.environ.get("SYMBIAN_RUNTIME_WORKSPACE")
 SDK_MANIFEST = os.environ.get("SYMBIAN_APP_SDK")
@@ -34,7 +35,6 @@ def artifacts(tmp_path_factory):
     root = Path(WORKSPACE).resolve()
     sdk = AppSdk.load(Path(SDK_MANIFEST))
     output = tmp_path_factory.mktemp("C++ DLL lifecycle")
-    dynamic_proxy = str(sdk.prefix / "proxies/euser/euser.dso")
     results = {}
     for architecture in ("armv5t", "armv6"):
         source = output / architecture / "dll-source"
@@ -72,39 +72,33 @@ def artifacts(tmp_path_factory):
         assert image["dll"] and image["architecture"] == architecture
         assert image["bss_size"] > 0 and image["code_relocations"]
 
+        ordinals = {
+            entry["symbol"]: entry["ordinal"]
+            for entry in inspect_proxy(build / "lifecycle_probe.dso")["exports"]
+        }
         client = output / architecture / "client"
-        shutil.copytree(root / "probes/runtime_probe", client)
+        shutil.copytree(
+            root / "probes/runtime_probe",
+            client,
+            ignore=shutil.ignore_patterns("cmake-build-*", "build", ".symbian"),
+        )
         (client / "probe.cc").write_text(
             'extern "C" int SymbianLifecycleState();\n'
-            'extern "C" int RuntimeMain() {\n'
+            "int main() {\n"
             "  return SymbianLifecycleState() == 12 ? 0 : -122;\n"
             "}\n"
         )
-        manifest = client / "symbian.toml"
-        manifest.write_text(
-            manifest.read_text().replace(
-                'import_proxies = ["../../.symbian/runtime-sdk/'
-                'euser/euser.dso"]',
-                "import_proxies = "
-                + json.dumps(
-                    [
-                        str(root / ".symbian/runtime-sdk/euser/euser.dso"),
-                        str(
-                            build / "lifecycle_probe-import/lifecycle_probe.dso"
-                        ),
-                    ]
-                ),
-            )
+        cmake = client / "CMakeLists.txt"
+        cmake.write_text(
+            cmake.read_text()
+            + "\ntarget_link_libraries(runtime_probe PRIVATE "
+            + f'"{build}/lifecycle_probe.dso")\n'
         )
         presets = json.loads((client / "CMakePresets.json").read_text())
         variables = presets["configurePresets"][0]["cacheVariables"]
         variables["SYMBIAN_PLATFORM_ROOT"] = str(root)
-        variables["SYMBIAN_IMPORT_PROXIES"] = ";".join(
-            (
-                str(root / ".symbian/runtime-sdk/euser/euser.dso"),
-                str(build / "lifecycle_probe-import/lifecycle_probe.dso"),
-            )
-        )
+        variables["SYMBIAN_RUNTIME_USE_SDK"] = "ON"
+        variables["SYMBIAN_SDK_PREFIX"] = str(sdk.prefix)
         (client / "CMakePresets.json").write_text(json.dumps(presets))
         app = toolchain.build(
             client,
@@ -117,20 +111,27 @@ def artifacts(tmp_path_factory):
         assert {item["dll"] for item in app["e32"]["imports"]} == {
             "euser.dll",
             "lifecycle_probe.dll",
+            "libc.dll",
+            "libpthread.dll",
         }
 
         dynamic_client = output / architecture / "dynamic-client"
-        shutil.copytree(root / "probes/runtime_probe", dynamic_client)
+        shutil.copytree(
+            root / "probes/runtime_probe",
+            dynamic_client,
+            ignore=shutil.ignore_patterns("cmake-build-*", "build", ".symbian"),
+        )
         (dynamic_client / "probe.cc").write_text(
             "#include <e32std.h>\n"
             '_LIT(KLifecycleName, "C:\\\\sys\\\\bin\\\\lifecycle_probe.dll");\n'
-            'extern "C" int RuntimeMain() {\n'
+            "int main() {\n"
             "  RLibrary library;\n"
             "  const TInt loaded = library.Load(KLifecycleName, KNullDesC);\n"
             "  if (loaded != KErrNone) return -120 + loaded;\n"
-            "  auto state = reinterpret_cast<TInt (*)()>(library.Lookup(1));\n"
+            "  auto state = reinterpret_cast<TInt (*)()>(\n"
+            f"      library.Lookup({ordinals['SymbianLifecycleState']}));\n"
             "  auto sink = reinterpret_cast<void (*)(volatile int*)>(\n"
-            "      library.Lookup(2));\n"
+            f"      library.Lookup({ordinals['SymbianLifecycleSetSink']}));\n"
             "  if (state == nullptr || sink == nullptr) {\n"
             "    library.Close();\n"
             "    return -123;\n"
@@ -145,13 +146,6 @@ def artifacts(tmp_path_factory):
             "  return observed == 34 ? 0 : -125;\n"
             "}\n"
         )
-        dynamic_manifest = dynamic_client / "symbian.toml"
-        dynamic_manifest.write_text(
-            dynamic_manifest.read_text().replace(
-                "../../.symbian/runtime-sdk/euser/euser.dso",
-                dynamic_proxy,
-            )
-        )
         dynamic_presets = json.loads(
             (dynamic_client / "CMakePresets.json").read_text()
         )
@@ -159,7 +153,8 @@ def artifacts(tmp_path_factory):
             "cacheVariables"
         ]
         dynamic_variables["SYMBIAN_PLATFORM_ROOT"] = str(root)
-        dynamic_variables["SYMBIAN_IMPORT_PROXIES"] = dynamic_proxy
+        dynamic_variables["SYMBIAN_RUNTIME_USE_SDK"] = "ON"
+        dynamic_variables["SYMBIAN_SDK_PREFIX"] = str(sdk.prefix)
         (dynamic_client / "CMakePresets.json").write_text(
             json.dumps(dynamic_presets)
         )
@@ -172,7 +167,9 @@ def artifacts(tmp_path_factory):
         )
         assert dynamic_app["reproducible"]
         assert {item["dll"] for item in dynamic_app["e32"]["imports"]} == {
-            "euser.dll"
+            "euser.dll",
+            "libc.dll",
+            "libpthread.dll",
         }
 
         probe = source / "probe.cc"

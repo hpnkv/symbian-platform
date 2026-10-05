@@ -211,6 +211,12 @@ absl::StatusOr<std::string> GenerateExportDefinition(std::string_view elf) {
       if ((flags & 2) == 0 || (info & 15) == 0) {
         continue;
       }
+      // Inline/template constant objects are compiler-generated weak storage,
+      // not standalone DLL function exports. Their local storage stays in the
+      // implementation image; exporting application DATA remains unsupported.
+      if ((info >> 4) == 2 && (info & 15) == 1) {
+        continue;
+      }
       if ((info & 15) != 2 || (flags & 6) != 6) {
         return absl::UnimplementedError(
             absl::StrCat("Automatic DLL exports require functions: ", *name));

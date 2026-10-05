@@ -187,7 +187,7 @@ int Run(const ProbeCase& test) {
 }
 }  // namespace
 
-extern "C" int RuntimeMain() {
+int main() {
   auto file = storage::ReadOnlyFile::Open(u"C:\\http-case.txt");
   if (!file.ok()) {
     return -310;

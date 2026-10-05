@@ -138,3 +138,24 @@ def test_complete_library_preserves_data_and_absent_ordinals(tmp_path):
         "absent": False,
     }
     assert inspect_proxy(Path(result["artifact"])) == result["proxy"]
+
+
+def test_proxy_compiler_switch_preserves_target_and_output_name(tmp_path):
+    compiler = shutil.which("clang++")
+    linker = shutil.which("ld.lld")
+    if not compiler or not linker:
+        pytest.skip("Clang/LLD required")
+    definition = tmp_path / "test.def"
+    definition.write_text("EXPORTS\nFunction @ 7 NONAME\n")
+    output = tmp_path / "proxy"
+    first = build_import_proxy(
+        definition, [], "test.dll", output, compiler, linker
+    )
+    alias = tmp_path / "different-clang++"
+    alias.symlink_to(compiler)
+    second = build_import_proxy(
+        definition, [], "test.dll", output, str(alias), linker
+    )
+    assert second["reproducible"]
+    assert second["sha256"] == first["sha256"]
+    assert second["proxy"]["target_dll"] == "test.dll"

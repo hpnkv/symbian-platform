@@ -3,6 +3,6 @@
 #ifndef SYMBIAN_EKA1_RESULT
 #define SYMBIAN_EKA1_RESULT 7610
 #endif
-extern "C" int Eka1Main() {
+int main() {
   return SYMBIAN_EKA1_RESULT;
 }

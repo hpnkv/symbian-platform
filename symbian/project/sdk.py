@@ -797,6 +797,15 @@ def prepare(
         )
         from symbian.project.qt import prepare_qt
 
+        build_import_proxy(
+            workspace / "symbian/toolchain/cmake/euser_eka1.def",
+            [],
+            "euser.dll",
+            output / "proxies/euser-eka1",
+            str(compiler),
+            str(linker),
+        )
+
         prepare_qt(
             workspace / "research/upstream/qt4",
             output,
@@ -1012,7 +1021,7 @@ def prepare(
                     output / "lib" / architecture / "libsymbian_api_tls.a",
                 )
         licenses = output / "licenses"
-        licenses.mkdir()
+        licenses.mkdir(exist_ok=True)
         shutil.copyfile(
             nghttp2_source / "COPYING", licenses / "nghttp2-LICENSE"
         )

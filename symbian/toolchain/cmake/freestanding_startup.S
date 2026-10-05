@@ -1,4 +1,4 @@
-// Experimental EKA2 startup, without EUSER or a C++ runtime.
+// SDK freestanding EKA2 process entry for diagnostic/no-resource programs.
 // Only for a no-resource process: direct ThreadKill skips User::Exit cleanup.
 // SVC 0x73 is the EKA2L1 epoc94/epoc10 ThreadKill mapping; real Belle untested.
 .syntax unified
@@ -13,7 +13,9 @@ _E32Startup:
   b .Lstart
   .word 0          // Loader-owned code segment ID, entry + 12.
 .Lstart:
-  bl ProbeMain
+  mov r0, #0
+  mov r1, #0
+  bl main
   mov r2, r0      // Exit reason from C++.
   mvn r0, #0xfe
   bic r0, r0, #0x7f00  // KCurrentThreadHandle = 0xffff8001.

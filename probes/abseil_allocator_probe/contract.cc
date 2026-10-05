@@ -5,7 +5,7 @@
 
 // The pinned Abseil implementation, not an SDK lookalike, supplies these
 // allocation, arena, skiplist and SpinLock operations.
-extern "C" int RuntimeMain() {
+int main() {
   using absl::base_internal::LowLevelAlloc;
   std::thread([] {}).join();
   const int cells_before_page = SymbianRuntimeAllocationCells();

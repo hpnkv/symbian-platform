@@ -86,6 +86,8 @@ def main() -> None:
                 "lld",
                 "llvm-ar",
                 "llvm-ranlib",
+                "llvm-nm",
+                "llvm-dwarfdump",
             }
             selected = []
             for member in members:

@@ -64,9 +64,13 @@ def test_native_converter_rejects_protected_identity(image):
 def test_project_auxiliary_files_cannot_escape(tmp_path):
     project = tmp_path / "project"
     shutil.copytree(PROJECT, project)
-    shutil.copyfile(PROJECT / "startup.S", tmp_path / "startup.S")
+    (tmp_path / "outside.cc").write_text("int Outside() { return 0; }\n")
     cmake = project / "CMakeLists.txt"
-    cmake.write_text(cmake.read_text().replace("startup.S", "../startup.S"))
+    cmake.write_text(
+        cmake.read_text().replace(
+            "e32_probe probe.cc", "e32_probe probe.cc ../outside.cc"
+        )
+    )
     with pytest.raises(StatusError) as caught:
         toolchain.build(project, tmp_path / "output")
     assert caught.value.code == Code.FAILED_PRECONDITION
@@ -79,12 +83,20 @@ def test_unaligned_absolute_pointer_rejected_after_real_link(tmp_path):
     shutil.copytree(PROJECT, project)
     (project / "probe.cc").write_text(
         'extern "C" unsigned int SymbianAbiProbe(unsigned int v) { return v; }'
-        '\nextern "C" int ProbeMain() { return 0; }\n'
+        "\nint main() { return 0; }\n"
     )
-    with (project / "startup.S").open("a") as stream:
-        stream.write(
-            '.section .rodata, "a", %progbits\n.byte 0\n.word ProbeMain\n'
+    (project / "unaligned.S").write_text(
+        '.section .rodata, "a", %progbits\n.byte 0\n'
+        ".global UnalignedPointer\nUnalignedPointer: .word main\n"
+    )
+    cmake = project / "CMakeLists.txt"
+    cmake.write_text(
+        cmake.read_text().replace(
+            "e32_probe probe.cc", "e32_probe probe.cc unaligned.S"
         )
+        + "\ntarget_link_options(e32_probe PRIVATE "
+        "--undefined=UnalignedPointer)\n"
+    )
     with pytest.raises(StatusError) as caught:
         toolchain.build(project, tmp_path / "output")
     assert caught.value.code == Code.UNIMPLEMENTED

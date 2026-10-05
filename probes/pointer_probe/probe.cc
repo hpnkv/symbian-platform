@@ -1,6 +1,6 @@
 #include "probe.h"
 
-extern "C" int ProbeMain() {
+int main() {
   volatile unsigned int input = 16U;
   const Callback* volatile callbacks = SymbianCallbacks;
   const Transformer transformer;

@@ -1,9 +1,7 @@
 cmake_minimum_required(VERSION 3.28)
 project(cxx20_probe LANGUAGES CXX ASM)
 include(SymbianPic)
-symbian_add_pic_executable(cxx20_probe
-  STARTUP startup.S LINKER_SCRIPT image.ld
-  SOURCES probe.cc callbacks.cc transform.cc)
+symbian_add_executable(cxx20_probe probe.cc callbacks.cc transform.cc interworking.S)
 
 # This opt-in experiment consumes separately configured headers, not macOS
 # runtime libraries. A target libc++ port is not supplied by this project.

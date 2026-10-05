@@ -8,8 +8,7 @@ set(SYMBIAN_EKA1_RESULT 7610 CACHE STRING "Expected process exit reason")
 if(NOT SYMBIAN_EKA1_RESULT MATCHES "^[0-9]+$")
   message(FATAL_ERROR "SYMBIAN_EKA1_RESULT must be a nonnegative integer")
 endif()
-symbian_add_pic_executable(eka1_probe
-  STARTUP startup.S LINKER_SCRIPT image.ld SOURCES probe.cc)
+symbian_add_executable(eka1_probe probe.cc)
 target_compile_definitions(eka1_probe PRIVATE
   SYMBIAN_EKA1_RESULT=${SYMBIAN_EKA1_RESULT})
 target_compile_options(eka1_probe PRIVATE

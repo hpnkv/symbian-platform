@@ -18,6 +18,8 @@ TOOLS = (
     "ld.lld",
     "llvm-ar",
     "llvm-ranlib",
+    "llvm-nm",
+    "llvm-dwarfdump",
     "clang-scan-deps",
 )
 # These are the host OS ABI, rather than third-party SDK dependencies. Copying

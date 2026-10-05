@@ -10,11 +10,9 @@ if(SYMBIAN_HTTP_WORKSPACE_SOURCE)
   add_subdirectory("${SYMBIAN_HTTP_WORKSPACE_SOURCE}/cpp/symbian/tls" tls)
 endif()
 if(NOT TARGET Symbian::Runtime)
-  include("${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
+  include(SymbianApp)
 endif()
-symbian_add_import_executable(http_probe
-  STARTUP startup.S LINKER_SCRIPT image.ld
-  SOURCES startup.cc probe.cc)
+symbian_add_executable(http_probe probe.cc)
 target_include_directories(http_probe PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 if(SYMBIAN_HTTP_WORKSPACE_SOURCE)
   target_include_directories(http_probe BEFORE PRIVATE

@@ -95,7 +95,9 @@ def test_mbedtls_crypto_x509_links_as_e32_dll(artifacts):
     _, _, dll_build, _ = artifacts
     image = inspect_image(dll_build / "mbedcrypto_probe.dll")
     assert image["dll"] and image["architecture"] == "armv6"
-    assert [entry["ordinal"] for entry in image["exports"]] == [1, 2, 3, 4, 5]
+    assert [entry["ordinal"] for entry in image["exports"]] == list(
+        range(1, len(image["exports"]) + 1)
+    )
     assert all(not entry["absent"] for entry in image["exports"])
     assert [item["dll"] for item in image["imports"]] == [
         "euser.dll",
@@ -103,34 +105,50 @@ def test_mbedtls_crypto_x509_links_as_e32_dll(artifacts):
         "libpthread.dll",
     ]
     assert any(slot["ordinal"] == 641 for slot in image["imports"][0]["slots"])
-    proxy = inspect_proxy(
-        dll_build / "mbedcrypto_probe-import/mbedcrypto_probe.dso"
-    )
+    proxy = inspect_proxy(dll_build / "mbedcrypto_probe.dso")
     assert proxy["target_dll"] == "mbedcrypto_probe.dll"
+    assert {
+        "MbedSha256",
+        "MbedUtcProbe",
+        "MbedVerifyCert",
+        "MbedSocketCancelProbe",
+        "MbedEntropyFailureProbe",
+    } <= {entry["symbol"] for entry in proxy["exports"]}
     assert (dll_build / "mbedcrypto_probe_elf.elf").is_file()
 
 
 @pytest.fixture(scope="module")
 def guest_client(artifacts):
     """Builds a dynamic RLibrary consumer using the real EUSER ordinals."""
-    _, sdk, _, output = artifacts
+    _, sdk, dll_build, output = artifacts
+    ordinals = {
+        entry["symbol"]: entry["ordinal"]
+        for entry in inspect_proxy(dll_build / "mbedcrypto_probe.dso")[
+            "exports"
+        ]
+    }
     root = Path(__file__).parents[2]
     proxy = str(sdk.prefix / "proxies/euser/euser.dso")
     result = {}
     for changed in (False, True):
         project = output / ("changed-client" if changed else "client")
-        shutil.copytree(root / "probes/runtime_probe", project)
+        shutil.copytree(
+            root / "probes/runtime_probe",
+            project,
+            ignore=shutil.ignore_patterns("cmake-build-*", "build", ".symbian"),
+        )
         source = (
             "#include <e32std.h>\n"
             "#include <stddef.h>\n"
             '_LIT(KShaName, "C:\\\\sys\\\\bin\\\\mbedcrypto_probe.dll");\n'
-            'extern "C" int RuntimeMain() {\n'
+            "int main() {\n"
             "  RLibrary library;\n"
             "  TInt loaded = library.Load(KShaName, KNullDesC);\n"
             "  if (loaded != KErrNone) return -130 + loaded;\n"
             "  using Sha = int (*)(const unsigned char*, size_t, "
             "unsigned char*);\n"
-            "  auto sha = reinterpret_cast<Sha>(library.Lookup(1));\n"
+            "  auto sha = reinterpret_cast<Sha>(\n"
+            f"      library.Lookup({ordinals['MbedSha256']}));\n"
             "  if (sha == nullptr) { library.Close(); return -131; }\n"
             "  const unsigned char input[] = {'a', 'b', "
             + ("'d'" if changed else "'c'")
@@ -149,24 +167,26 @@ def guest_client(artifacts):
             "  }\n"
             "  if (result == 0) {\n"
             "    using UtcProbe = int (*)();\n"
-            "    auto utc = reinterpret_cast<UtcProbe>(library.Lookup(2));\n"
+            "    auto utc = reinterpret_cast<UtcProbe>(\n"
+            f"      library.Lookup({ordinals['MbedUtcProbe']}));\n"
             "    result = utc == nullptr ? -135 : utc();\n"
             "  }\n"
             "  if (result == 0) {\n"
             "    using Verify = int (*)();\n"
-            "    auto verify = reinterpret_cast<Verify>(library.Lookup(3));\n"
+            "    auto verify = reinterpret_cast<Verify>(\n"
+            f"      library.Lookup({ordinals['MbedVerifyCert']}));\n"
             "    result = verify == nullptr ? -138 : verify();\n"
             "  }\n"
             "  if (result == 0) {\n"
             "    using SocketProbe = int (*)();\n"
             "    auto socket_probe = "
-            "reinterpret_cast<SocketProbe>(library.Lookup(4));\n"
+            f"reinterpret_cast<SocketProbe>(library.Lookup({ordinals['MbedSocketCancelProbe']}));\n"
             "    result = socket_probe == nullptr ? -142 : socket_probe();\n"
             "  }\n"
             "  if (result == 0) {\n"
             "    using EntropyProbe = int (*)();\n"
             "    auto entropy_probe = "
-            "reinterpret_cast<EntropyProbe>(library.Lookup(5));\n"
+            f"reinterpret_cast<EntropyProbe>(library.Lookup({ordinals['MbedEntropyFailureProbe']}));\n"
             "    result = entropy_probe == nullptr ? -144 : entropy_probe();\n"
             "  }\n"
             "  library.Close();\n"
@@ -397,17 +417,28 @@ def test_rm807_nonblocking_receive_and_cancel_in_emulator(artifacts, tmp_path):
         cwd=example,
     )
     run(["cmake", "--build", str(dll_build)], cwd=example)
+    ordinals = {
+        entry["symbol"]: entry["ordinal"]
+        for entry in inspect_proxy(dll_build / "mbedcrypto_probe.dso")[
+            "exports"
+        ]
+    }
     project = tmp_path / "client"
-    shutil.copytree(root / "probes/runtime_probe", project)
+    shutil.copytree(
+        root / "probes/runtime_probe",
+        project,
+        ignore=shutil.ignore_patterns("cmake-build-*", "build", ".symbian"),
+    )
     (project / "probe.cc").write_text(
         "#include <e32std.h>\n"
         '_LIT(KName, "C:\\\\sys\\\\bin\\\\mbedcrypto_probe.dll");\n'
-        'extern "C" int RuntimeMain() {\n'
+        "int main() {\n"
         " RLibrary library;\n"
         " TInt loaded = library.Load(KName, KNullDesC);\n"
         " if (loaded != KErrNone) return -160 + loaded;\n"
         " using Probe = int (*)(int);\n"
-        " auto probe = reinterpret_cast<Probe>(library.Lookup(6));\n"
+        "  auto probe = reinterpret_cast<Probe>(\n"
+        f"      library.Lookup({ordinals['MbedConnectedSocketProbe']}));\n"
         " TInt result = probe == nullptr ? -161 : probe(39093);\n"
         " library.Close();\n"
         " return result;\n"

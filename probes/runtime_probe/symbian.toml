@@ -3,7 +3,6 @@ name = "runtime_probe"
 kind = "e32-import-experiment"
 cmake_preset = "symbian-pic"
 uid3 = 0xe0000813
-import_proxies = ["../../.symbian/runtime-sdk/euser/euser.dso"]
 
 [package]
 uid = 0xe0000814

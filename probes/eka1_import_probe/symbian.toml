@@ -4,4 +4,3 @@ kind = "e32-eka1-import"
 uid3 = 0xE0000761
 architecture = "armv5t"
 cmake_preset = "symbian-eka1"
-import_proxies = ["../../.symbian/eka1-euser-proxy/euser.dso"]

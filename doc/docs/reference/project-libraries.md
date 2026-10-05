@@ -41,8 +41,10 @@ Automatic data exports are not supported. Imported data from original OS and
 Qt libraries is supported through their frozen import libraries.
 
 SDK startup handles process-attach constructors and finalizers. The default
-DLL runtime is `Symbian::Runtime`; a DLL using a streams-based SDK component
-must currently select `RUNTIME_TARGET Symbian::Streams`. Check the selected
+DLL runtime is `Symbian::Runtime`. Linking a streams-based SDK component
+automatically selects its matching runtime and compile settings. Use ordinary
+`target_link_libraries` for these dependencies; incompatible runtime profiles
+produce a configuration error. Check the selected
 firmware's imports and ABI; see the [SDK C++ reference](native-sdk.md).
 
 ## Mbed TLS

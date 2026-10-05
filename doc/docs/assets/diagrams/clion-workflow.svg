@@ -62,6 +62,6 @@
   <path d="M461 424h20M461 432h20M466 440h10" stroke="#4054b2" stroke-width="3" stroke-linecap="round"/>
   <text x="506" y="439" class="label">4  Guest debugging</text>
   <text x="452" y="488" class="mono">GUI Debug → Symbian GUI GDB</text>
-  <text x="452" y="522" class="body">Set a breakpoint in <tspan class="mono">GuiMain</tspan>, then Resume.</text>
+  <text x="452" y="522" class="body">Set a breakpoint in <tspan class="mono">main</tspan>, then Resume.</text>
   <text x="48" y="600" class="muted">The emulator result is a development check. Physical Nokia 808 behavior remains a separate gate.</text>
 </svg>

@@ -6692,3 +6692,37 @@ to mask activation. Explicit SDK prefixes remain supported outside that mode.
 Activated application-machinery-sdk locally; both CLion ARMv6 and ARMv5T
 presets configure and generate successfully. The selection regression passes.
 These are CMake checks, not guest execution or a newly published SDK.
+
+### 2026-10-05 — Shared executable and library machinery for diagnostic probes
+
+Migrated all bundled E32/EKA1 probe projects to ordinary main and SDK-owned
+startup/image layouts. Extracted real ARM/Thumb callback diagnostics into
+interworking.S; those remain probe behavior, not application bootstraps. DLL
+probes use normal library targets and automatic exports; consumers link targets.
+Legacy five-function EUSER facts and exception metadata now belong to the SDK.
+
+The application/import/EKA1 conversion group passed 38 checks (14 opt-in guest
+checks skipped). Additional proxy/library/source-graph checks passed 20 (8
+skipped). The complete reused dependency graph now visits each target once;
+without that, Abseil configuration expanded repeated edges exponentially.
+Both CLion ARM probe indexes build. Live constructor, dynamic lookup, unload
+and missing-DLL acceptance: 16 passed across ARMv5T/ARMv6 and both backends.
+
+A fresh native-guest export completes for both architectures. Fixed shared Qt
+license-directory creation during that export. Relocated Python-free GUI and
+standard-startup builds pass both architectures. Against its refreshed SDK,
+application/library checks passed 18 (8 optional checks skipped), and the real
+Qt widget renders, accepts its quit click and shuts down on both backends
+(2 passed). Physical-device behavior remains untested. Typed throw remains
+outside the supported imported-typeinfo profile; metadata-only exception
+retention is checked separately.
+
+Linux source synchronization preserves the previous dirty work in
+.symbian/linux-source-backup. Native E32/SDK tests pass there. The integration
+group passed 55 with 11 skips; two debug-tool checks additionally pass with
+host LLVM tools available. Mixed host/guest links now suppress host rpath
+flags. Native distribution assembly includes llvm-nm and llvm-dwarfdump so
+installed users do not need platform-specific diagnostic paths.
+
+Strict public documentation and C++ snippet formatting pass, with existing
+Doxygen parsing warnings. New published artifacts are still pending.

@@ -23,6 +23,7 @@ from symbian.emulator.background import (
 from symbian.emulator.firmware import EUSER_808, ROM_808
 from symbian.emulator.launch import _digest, _stop
 from symbian.project.sdk import AppSdk
+from symbian.sdk import inspect_proxy
 
 ROOT = Path(__file__).parents[2]
 CERTIFICATES = ROOT / "third_party/mbedtls-symbian/tests/fixtures"
@@ -84,28 +85,54 @@ def guest_binaries(tmp_path_factory):
         check=True,
         stdout=subprocess.DEVNULL,
     )
+    ordinals = {
+        entry["symbol"]: entry["ordinal"]
+        for entry in inspect_proxy(dll_build / "mbedcrypto_probe.dso")[
+            "exports"
+        ]
+    }
     clients = {}
     for version in (12, 13):
         for mode in (0, 1, 2, 3):
-            clients[(version, mode)] = build_client(sdk, build, version, mode)
+            clients[(version, mode)] = build_client(
+                sdk,
+                build,
+                version,
+                mode,
+                ordinal=ordinals["MbedNativeTlsHandshakeProbe"],
+            )
         for mode in (0, 1, 2, 3):
             clients[("server", version, mode)] = build_client(
-                sdk, build, version, mode, ordinal=7, port=39098
+                sdk,
+                build,
+                version,
+                mode,
+                ordinal=ordinals["MbedNativeTlsServerProbe"],
+                port=39098,
             )
             clients[("owned", version, mode)] = build_client(
-                sdk, build, version, mode, ordinal=8, port=39098
+                sdk,
+                build,
+                version,
+                mode,
+                ordinal=ordinals["MbedOwnedTlsServerProbe"],
+                port=39098,
             )
     return dll_build / "mbedcrypto_probe.dll", clients
 
 
-def build_client(sdk, build, version, mode, ordinal=6, port=39095):
+def build_client(sdk, build, version, mode, *, ordinal, port=39095):
     """Builds one normal E32 consumer of the DLL's TLS export."""
     project = build / f"client-{ordinal}-{version}-{mode}"
-    shutil.copytree(ROOT / "probes/runtime_probe", project)
+    shutil.copytree(
+        ROOT / "probes/runtime_probe",
+        project,
+        ignore=shutil.ignore_patterns("cmake-build-*", "build", ".symbian"),
+    )
     (project / "probe.cc").write_text(
         "#include <e32std.h>\n"
         '_LIT(KDll, "C:\\\\sys\\\\bin\\\\mbedcrypto_probe.dll");\n'
-        'extern "C" int RuntimeMain() {\n'
+        "int main() {\n"
         "  RLibrary library;\n"
         "  TInt loaded = library.Load(KDll, KNullDesC);\n"
         "  if (loaded != KErrNone) return -210 + loaded;\n"

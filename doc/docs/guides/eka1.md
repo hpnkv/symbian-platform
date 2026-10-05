@@ -25,12 +25,12 @@ On a headless Linux host, install Xvfb as described in the
 The complete CMake example's application is:
 
 ```cpp
-extern "C" int Eka1Main() {
+int main() {
   return 7610;
 }
 ```
 
-Its separate ARM entry calls this function and returns to the emulator's
+The SDK supplies the ARM entry, calls `main` and returns to the emulator's
 existing EKA1 heap/exit bootstrap. The native converter emits the legacy
 124-byte E32 header, and inspection identifies `kernel: eka1`. It rejects
 writable data/BSS, pointer fixups, lifecycle and exception metadata.
@@ -39,24 +39,11 @@ The SISX builder rejects EKA1 images; legacy SIS packaging is unsupported.
 ## Allocate, copy and free through original EUSER
 
 The separate `probes/eka1_import_probe/` profile supports five original
-EUSER functions through their legacy GNU2 names and ordinals. Build its selected
-proxy from the source workspace:
+EUSER functions through their legacy GNU2 names and ordinals. The installed SDK
+provides `Symbian::Eka1EUser`; the probe links that normal CMake target. No
+project-owned symbol list or import proxy is needed.
 
 ```sh
-python - <<'PY'
-from pathlib import Path
-from symbian.sdk import build_import_proxy
-from symbian.toolchain.host_tools import llvm_tool
-
-compiler = llvm_tool("clang++")
-symbols = ["AllocLen__4UserPCv", "AllocSize__4UserRi", "Alloc__4Useri",
-           "Copy__3MemPvPCvi", "Free__4UserPv"]
-build_import_proxy(
-    Path("probes/eka1_import_probe/euser.def"), symbols, "euser.dll",
-    Path(".symbian/eka1-euser-proxy"), str(compiler),
-    str(llvm_tool("ld.lld", sibling=compiler.parent)),
-)
-PY
 symbian build --project probes/eka1_import_probe \
   --output .symbian/eka1-import-build
 symbian toolchain verify-eka1 .symbian/eka1-import-build/eka1_import_probe.exe \
@@ -73,7 +60,7 @@ application to copy stack bytes into a heap allocation and release it:
 ```cpp
 #include "legacy_euser.h"
 
-extern "C" int Eka1Main() {
+int main() {
   const unsigned char source[4] = {1, 2, 3, 4};
   auto* dest = static_cast<unsigned char*>(LegacyAlloc(4));
   if (dest == nullptr) {

@@ -39,7 +39,7 @@ def test_real_multi_source_header_rebuild_and_persistent_database(tmp_path):
     cmake = project / "CMakeLists.txt"
     cmake.write_text(
         cmake.read_text().replace(
-            "SOURCES probe.cc", "SOURCES probe.cc multiply.cc"
+            "e32_probe probe.cc", "e32_probe probe.cc multiply.cc"
         )
     )
     output = tmp_path / "build with spaces"

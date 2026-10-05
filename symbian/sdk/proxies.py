@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import re
 import tempfile
 from importlib.resources import files
 from pathlib import Path
@@ -145,9 +146,23 @@ def build_import_proxy(
     )
 
     def build(tree: Path) -> tuple[bytes, str]:
+        fresh = []
+        cache = tree / "CMakeCache.txt"
+        if cache.is_file():
+            cache_text = cache.read_text()
+            previous = re.search(
+                r"^CMAKE_CXX_COMPILER:[^=]+=(.*)$", cache_text, re.MULTILINE
+            )
+            if (previous and previous[1] != tools["compiler"]) or (
+                "--target=armv5t-none-eabi" not in cache_text
+            ):
+                # CMake's implicit compiler restart discards the proxy name.
+                # Refresh this owned build tree while preserving all -D inputs.
+                fresh = ["--fresh"]
         configure = run(
             [
                 tools["cmake"],
+                *fresh,
                 "--preset",
                 "proxy",
                 "-S",
