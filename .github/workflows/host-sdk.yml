@@ -2,6 +2,11 @@
 name: Host SDK
 on:
   workflow_call:
+    inputs:
+      reuse_run_id:
+        description: Reuse successful host artifacts for the same source commit
+        type: string
+        default: ""
   workflow_dispatch:
   push:
     branches: [main]
@@ -10,6 +15,7 @@ on:
     paths: ["cpp/**", "cmake/**", "symbian/**", "third_party/**", "CMake*", "VERSION", "pyproject.toml", "scripts/**", ".github/workflows/host-sdk.yml"]
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: host-sdk-${{ github.ref }}
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
@@ -32,25 +38,31 @@ jobs:
             platform: macos
             arch: arm64
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+        if: inputs.reuse_run_id == ''
         with:
           python-version: "3.12"
       - name: Install wheel builder
+        if: inputs.reuse_run_id == ''
         run: python -m pip install "cibuildwheel==4.1.1"
       - name: Restore static dependency prefix
+        if: inputs.reuse_run_id == ''
         uses: actions/cache@v4
         with:
           path: ${{ runner.temp }}/symbian-deps
           key: host-deps-${{ matrix.platform }}-${{ matrix.arch }}-macos15-manylinux228-${{ hashFiles('scripts/bootstrap_wheel_deps.sh') }}
       - name: Restore tested host core
+        if: inputs.reuse_run_id == ''
         id: core
         uses: actions/cache@v4
         with:
           path: ${{ runner.temp }}/symbian-host
           key: host-core-${{ matrix.platform }}-${{ matrix.arch }}-macos15-manylinux228-${{ hashFiles('cpp/**', 'cmake/**', 'third_party/**', 'CMakeLists.txt', 'VERSION', 'scripts/build_release_host.sh', 'scripts/bootstrap_wheel_deps.sh', 'scripts/bundle_static.py', 'scripts/check_host_sdk.py') }}
       - name: Build native core, test, and reuse for all bindings
+        if: inputs.reuse_run_id == ''
         run: python -m cibuildwheel --platform "${{ matrix.platform }}" --archs "${{ matrix.arch }}" --output-dir wheelhouse
         env:
           SYMBIAN_DEPS_PREFIX: ${{ runner.os == 'Linux' && format('/host{0}/symbian-deps', runner.temp) || format('{0}/symbian-deps', runner.temp) }}
@@ -59,6 +71,32 @@ jobs:
           SYMBIAN_WHEEL_ARCH: ${{ matrix.arch }}
           SYMBIAN_RELEASE_ASSETS: ${{ github.workspace }}/release-assets
           MACOSX_DEPLOYMENT_TARGET: "15.0"
+      - name: Verify reused artifacts belong to this source commit
+        if: inputs.reuse_run_id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REUSE_RUN_ID: ${{ inputs.reuse_run_id }}
+        run: |
+          run_sha=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$REUSE_RUN_ID" --jq .head_sha)
+          test "$run_sha" = "$GITHUB_SHA"
+          conclusion=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$REUSE_RUN_ID" --jq .conclusion)
+          test "$conclusion" = success
+          workflow_path=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$REUSE_RUN_ID" --jq .path)
+          test "$workflow_path" = .github/workflows/host-sdk.yml
+      - uses: actions/download-artifact@v4
+        if: inputs.reuse_run_id != ''
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.reuse_run_id }}
+          name: wheels-${{ matrix.platform }}-${{ matrix.arch }}
+          path: wheelhouse
+      - uses: actions/download-artifact@v4
+        if: inputs.reuse_run_id != ''
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.reuse_run_id }}
+          name: host-sdk-${{ matrix.platform }}-${{ matrix.arch }}
+          path: release-assets
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.platform }}-${{ matrix.arch }}

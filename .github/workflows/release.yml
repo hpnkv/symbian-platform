@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
@@ -14,6 +15,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
+      host_run: ${{ steps.host.outputs.run_id }}
     steps:
       - uses: actions/checkout@v4
       - id: version
@@ -31,9 +33,30 @@ jobs:
                   raise SystemExit("Release tag does not match VERSION")
           with open(os.environ["GITHUB_OUTPUT"], "a") as output:
               output.write(f"version={version}\n")
+      - id: host
+        name: Find successful host artifacts for this source commit
+        shell: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          import json
+          import os
+          import subprocess
+          endpoint = (
+              f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/workflows/"
+              f"host-sdk.yml/runs?head_sha={os.environ['GITHUB_SHA']}"
+              "&status=success&per_page=1"
+          )
+          runs = json.loads(subprocess.check_output(["gh", "api", endpoint]))
+          candidates = runs["workflow_runs"]
+          run_id = str(candidates[0]["id"]) if candidates else ""
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"run_id={run_id}\n")
   host:
     needs: validate
     uses: ./.github/workflows/host-sdk.yml
+    with:
+      reuse_run_id: ${{ needs.validate.outputs.host_run }}
   sources:
     needs: validate
     runs-on: ubuntu-24.04

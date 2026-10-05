@@ -2822,3 +2822,12 @@ consumer before archiving and rebuilding interpreter-specific bindings.
 The cache-hit script branch and archive creation passed on macOS; Bash syntax
 and actionlint pass. The active dry run has all eight Linux and four macOS
 arm64 wheels/audits complete, with Intel still running.
+
+Release validation can now reuse completed host-sdk.yml artifacts for the exact
+release commit. Reuse checks the source SHA, successful conclusion and workflow
+path before downloading and re-uploading each architecture's already-audited
+wheels/core archive. The release matrix/content gate still runs on the assembled
+artifacts. This avoids rebuilding interpreter bindings when a tested main
+commit is tagged; a cache miss retains the full four-host build path. Workflow
+lint and the empty-candidate discovery query pass; hosted reuse acceptance is
+pending the first completed matching host run. Host jobs have a 60-minute cap.
