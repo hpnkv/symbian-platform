@@ -454,7 +454,7 @@ auto Then(const Future<T>& future, Fn transform) -> Future<
 
   Promise<U> promise;
   Future<U> continued = promise.future();
-  promise.SetCancellationCallback([future]() mutable { (void)future.Cancel(); })
+  promise.SetCancellationCallback([future]() mutable { future.Cancel().IgnoreError(); })
       .IgnoreError();
   future.OnReady(
       [promise = std::move(promise), transform = std::move(transform)](

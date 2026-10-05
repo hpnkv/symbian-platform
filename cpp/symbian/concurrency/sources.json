@@ -710,7 +710,13 @@
     }
   },
   "built_guest_backend": false,
-  "adaptation_patches": [],
+  "adaptation_patches": [
+    {
+      "file": "cpp/a11/concurrency/future.h",
+      "description": "Explicitly discarded cancellation Status uses IgnoreError, per workspace policy.",
+      "adapted_sha256": "f21c524a6f7868df949ef2cda93ab3d02ec86f2f827aa147da367a34a1ab8ebf"
+    }
+  ],
   "backend_conflict": {
     "files": [
       "cpp/thread/thread/boost_primitives.cc",

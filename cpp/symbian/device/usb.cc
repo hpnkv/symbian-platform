@@ -2037,7 +2037,7 @@ UsbSession::SubmitBulkFuture(uint8_t endpoint, const std::string& data,
   confirmation->SetCancellationCallback(
       [session = weak_from_this(), id = *submitted] {
         if (auto active = session.lock()) {
-          (void)active->Cancel(id);
+          active->Cancel(id).IgnoreError();
         }
       });
   return future;
@@ -2057,7 +2057,7 @@ UsbSession::SubmitInterruptFuture(uint8_t endpoint, const std::string& data,
   confirmation->SetCancellationCallback(
       [session = weak_from_this(), id = *submitted] {
         if (auto active = session.lock()) {
-          (void)active->Cancel(id);
+          active->Cancel(id).IgnoreError();
         }
       });
   return future;
@@ -2079,7 +2079,7 @@ UsbSession::SubmitControlFuture(uint8_t request_type, uint8_t request,
   confirmation->SetCancellationCallback(
       [session = weak_from_this(), id = *submitted] {
         if (auto active = session.lock()) {
-          (void)active->Cancel(id);
+          active->Cancel(id).IgnoreError();
         }
       });
   return future;
