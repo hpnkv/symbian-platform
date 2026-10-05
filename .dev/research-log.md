@@ -6517,3 +6517,35 @@ Online acquisition of the pinned original EUSER DEF also succeeds on macOS.
 Strict MkDocs, Black, Ruff and patch whitespace checks pass. Documentation
 keeps the guest Qt requirement, raster/Plastique/no-animation setup and EKA2
 scope explicit. Acceptance against the actual published emulator remains open.
+
+After both Qt teardown corrections, the full live HTTP guest suite also passes
+on macOS arm64 (11 cases, 77.64s) and Linux x86_64 (11 cases, 47.50s), including
+actual TLS 1.2/1.3, HTTP/2 and server behavior. Logs:
+/tmp/symbian-http-qt-teardown-macos.log and -linux.log. Latest host SDK workflow
+37361411791 at 9857542 passes all four architectures and their Python 3.11–3.14
+bindings. Corrected emulator producer 37360525851 at d470570 and exact-source
+release rehearsal 37360566823 are still active; no emulator tag is published.
+
+### Corrected delivered emulator acceptance — 2026-10-05
+
+Actual corrected producer 37360525851 archives install using the public PyPI
+0.1.2 command in isolated selection directories on macOS arm64 and Linux
+x86_64. The delivered Qt 6.8.3 frontend passes both maintained guest Qt backend
+tests on each host: two macOS cases (10.43s) and two Linux cases (5.32s).
+Logs: /tmp/symbian-qt-delivered-ci-tests-{macos,linux}.log. A Linux test launch
+initially named a nonexistent executable; rerunning with the bundle descriptor's
+bin/eka2l1_qt succeeds. This initial failure preceded emulator execution.
+
+All six GUI/debugger tests pass against the downloaded macOS archive (29.11s),
+using a current public-SDK GUI build. The first attempt correctly rejected an
+old recorded CMake input hash before launch. Logs:
+/tmp/symbian-gui-delivered-ci-current-tests-macos.log and
+/tmp/symbian-gui-current-ci-build.log. A fresh PyPI installation and isolated
+HOME also build, inspect, package and sign hello_time and gui_app from the
+published native SDK; /tmp/symbian-emulator-public-guide-build-macos.log.
+Public emulator download acceptance remains pending publication.
+
+The same fresh-venv and isolated-HOME public SDK build/package/sign walkthrough
+also passes on Linux x86_64; /tmp/symbian-emulator-public-guide-build-linux.log
+on the owner Linux host. Neither guide build requires the SDK source checkout
+or external LLVM. Physical-device installation remains untested.

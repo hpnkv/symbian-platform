@@ -64,3 +64,8 @@ with a worker through an atomic value.
 
 The geometry query is a snapshot. It does not subscribe to orientation or
 size-change notifications and does not enumerate multiple screens.
+
+For an application window, use the [Window Server counter](../../guides/from-source.md)
+or the [Symbian Qt button](../../guides/qt-app.md). The Qt example requires guest
+Qt 4.8.1 and uses raster graphics and Plastique in the emulator; the host
+emulator's desktop Qt libraries do not supply guest widgets.

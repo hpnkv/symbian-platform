@@ -3112,3 +3112,14 @@ pass. Corrected producer 37360525851 at d470570 is queued behind the older
 producer, with exact-source rehearsal 37360566823 waiting for it. Public
 emulator publication and replay of its downloaded archives remain required
 before the emulator/Qt stream and deferred pointer migration can be closed.
+
+### Delivered corrected emulator acceptance — 2026-10-05
+
+Corrected producer 37360525851 passes macOS arm64 and both Linux architectures;
+Intel macOS is still compiling. Downloaded macOS arm64/Linux x86_64 bundles
+install through public PyPI 0.1.2 and pass both guest Qt backends on each host.
+The delivered macOS bundle also passes six GUI/debugger checks after rebuilding
+a stale diagnostic GUI input. A fresh public-wheel/native-SDK environment
+builds, packages and signs both application guides on macOS. Exact-source
+release rehearsal and actual public emulator downloads remain the next gates.
+Pointer/nullability changes have not begun.

@@ -9,6 +9,7 @@ and ARMv6. Link only the components your application uses.
 | C++ runtime | libc++ containers, ownership, clocks, compiler-rt helpers and runtime profiles | [Guest runtime](runtime.md), [C++ usage](cpp.md) |
 | Concurrency | Futures, Tasks, channels, fibers, timers, property watches and event/worker executors | [Concurrency](concurrency.md) |
 | Device APIs | Counters, power and display snapshots, file streaming, camera discovery and TCP sockets | [Device APIs](device-apis.md) |
+| Application UI | Native Window Server applications; a guest Qt 4.8.1 widget example with separately supplied Qt DLLs | [GUI app](../guides/from-source.md), [Qt app](../guides/qt-app.md) |
 | HTTP and WebSockets | Streaming HTTP/1.1 and HTTP/2 client/server; RFC 8441 WebSockets | [HTTP](../guides/http.md), [WebSockets](../guides/websocket.md) |
 | TLS | Mbed TLS 1.2/1.3 sessions with explicit trust roots and peer verification | [TLS guide](../guides/tls.md) |
 | Packaging | SIS generation, application resources, signatures and emulator installation | [Packaging](../guides/packaging.md) |
