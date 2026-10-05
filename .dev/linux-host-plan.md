@@ -1,9 +1,12 @@
-# Provisional Linux host support
+# Linux host support
 
-Status: implementation preparation. Host native and wheel evidence exists for
-Linux aarch64; application SDK export, GUI emulator, guest GDB, Console visuals
-and physical-device flows have not been validated end to end on an interactive
-Linux host. The public entry is `doc/docs/guides/linux.md`.
+Status: Linux x86_64/aarch64 host SDKs, native SDK archives and Python 3.11–3.14
+wheels are published in 0.1.1. On Linux x86_64, clean public-wheel/native-archive
+guide replay builds, packages, signs and runs hello_time and gui_app with actual
+rendering, input and normal exits on the named Belle fixture under Xvfb. The
+restricted Nokia 7610 EKA1 profile also passes on both CPU backends. Guest GDB,
+Console desktop behavior, Linux arm64 emulator execution and physical-device
+flows remain open. The public entry is `doc/docs/guides/linux.md`.
 
 ## Scope and dependency policy
 

@@ -2,10 +2,12 @@
 
 You are working on a long-running engineering and research project whose goal is to create a **modern development stack for the Nokia 808 PureView and the Symbian Belle ecosystem**, suitable for serious application development, system-component development, reverse engineering, debugging, experimentation, and potentially eventually developing an alternative operating system for the hardware.
 
-macOS is the currently exercised interactive host. Linux preparation is
-provisional and follows the dependency-limited [Linux host plan](linux-host-plan.md);
-Linux host wheel evidence does not establish GUI, guest-debugger or device
-behavior there.
+macOS and Linux host SDKs and wheels are published for x86_64 and arm64.
+Clean installed native SDK workflows now build, package, sign and run the
+hello_time and gui_app guides on macOS arm64 and Linux x86_64, using the named
+Belle fixture; Linux rendering/input checks use Xvfb. The
+[Linux host plan](linux-host-plan.md) retains the guest-debugger, Console desktop,
+Linux arm64 emulator and physical-device gates.
 
 The Nokia 808 remains the initial physical target. The SDK's application and
 emulator workflows also serve other Symbian devices where their actual ABI and

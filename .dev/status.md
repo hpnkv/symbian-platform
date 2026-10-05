@@ -2897,3 +2897,25 @@ corrupt-copy controls, in /tmp/symbian-linux-eka1-acceptance-r2.log. The private
 fixture was transferred through the portable firmware format and imported with
 its unchanged content identity. Broad EKA1 SDK/runtime/GUI/networking and legacy
 packaging remain unsupported. Public guides include headless Linux execution.
+
+### 0.1.1 native distributions published and public guides replayed — 2026-10-05
+
+Audited manual release 37322572074 and tag release 37326077196 succeed at
+25efb2b. PyPI has sixteen CPython 3.11–3.14 wheels for macOS/Linux x86_64/arm64
+and one sdist. GitHub v0.1.1 has twenty-six assets, including all four relocatable
+no-Python native SDK archives plus host archives and source. Shared ARMv5T/ARMv6
+EKA2 payload compilation is reused across hosts. A tagged replay found/fixed the
+30-second nested init build timeout before publication; an intentional
+31-second delayed local initial build and corrected Intel acceptance pass.
+
+Clean public-PyPI virtual environments and public native-archive downloads pass
+Getting started and hello_time/gui_app build/package/sign/default IDE setup on
+macOS arm64 and Linux x86_64. Actual installed-CLI emulator runs then pass
+rendering, input, timer/Clear or counter/reset and normal exit, with preserved
+RM-807 firmware unchanged; Linux uses Xvfb. Logs use the
+/tmp/symbian-published-native-{macos,linux}-{guide,run}.log names on their hosts.
+The Linux EKA1 profile also passes nineteen Pytests and two independent native
+format/import GTests. Physical staging/installation remains unverified: USB
+list is empty. Native archives provide the implemented EKA2 SDK, not full EKA1
+or replacements for firmware OS DLL implementations. Complete original-symbol
+documentation and broader OS/runtime coverage remain outstanding.

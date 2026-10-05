@@ -6007,3 +6007,51 @@ v0.1.1 tag; do not publish a wheel that retains this starter timeout.
 Linux independent native EKA1 header/bounds and PE import/IAT oracles also pass:
 2 GTests in /tmp/symbian-linux-eka1-native-oracle.log, using the newly built
 accepted probe images. No further runtime capability is inferred.
+
+A controlled macOS replay delayed the selected SDK's initial-build wrapper by
+31 seconds, then compiled a real starter E32 successfully with the corrected
+CLI. /tmp/symbian-native-delayed-init.log retains the result. The wrapper was
+removed after the experiment. Relevant project regressions pass (14 passed,
+16 optional fixture skips); Black/Ruff pass. No generic timeout was relaxed.
+
+## Published native SDK 0.1.1 and clean guide replay — 2026-10-05
+
+Corrected host run 37322554074 passes all four platforms and sixteen wheels.
+Manual release 37322572074 passes guest source/build, all four native archive
+assemblies and the full sixteen-wheel/ten-archive audit. Updated the still
+unpublished v0.1.1 tag from ca6585d to audited 25efb2b with an explicit tag-ref
+lease, retaining the failed run in public Actions history. Tag release
+37326077196 passes: exact-source host reuse, native guest/archive caches,
+repeat acceptance, matrix audit, trusted PyPI publishing and GitHub publication.
+Public PyPI version JSON verifies sixteen wheels and one sdist. Public GitHub
+release has twenty-six assets: sixteen wheels, four host SDKs, four native SDKs,
+source archive and sdist. No optional attestations/provenance manifests were
+added. Release notes describe archive selection and genuine EKA1/OS restrictions.
+
+New virtual environments installed symbian-platform==0.1.1 from public PyPI
+and downloaded the macOS arm64/Linux x86_64 native SDK archives from the public
+release. With isolated HOME/configuration/data and no package-manager/toolchain
+PATH entries, both hosts pass the actual CLI doctor/archive install/default IDE
+init/build/inspect/package/sign sequence for hello_time and a separately copied
+gui_app with relative sdk-location.json. Logs:
+/tmp/symbian-published-native-macos-guide.log and Linux
+/tmp/symbian-published-native-linux-guide.log. PyPI's simple/version indexes
+briefly lagged uploads; the subsequent ordinary index installs succeeded.
+
+The same installed CLI runs both published-archive applications in owned copies
+of the named RM-807 Belle fixture on Dynarmic, on macOS arm64 and Linux x86_64
+under Xvfb. Independent native framebuffer pixels verify hello_time's timer
+log/Clear and gui_app's increment/reset. Both applications record reason zero,
+frontend/CLI exit zero and unchanged preserved firmware on each host. Logs:
+/tmp/symbian-published-native-macos-run.log and Linux
+/tmp/symbian-published-native-linux-run.log. No source SDK or external LLVM was
+used for application builds. Emulator binaries and legally held firmware remain
+separate configured inputs. USB enumeration reports no attached phone, so
+physical staging/handset installation instructions remain unverified.
+
+Open distribution questions: narrow guest/archive cache inputs so wheel-only
+CLI edits do not rebuild unchanged guest libraries; include all useful exported
+startup source under share/symbian/runtime, which the assembler currently omits.
+The maintained CMake has no references to that path, and both public guides work
+without it. Full EKA1 runtime/API/GUI/networking/legacy SIS, original OS library
+implementation coverage and complete original-symbol documentation remain open.
