@@ -6,7 +6,10 @@ function(_symbian_project_file output filename)
   cmake_path(IS_PREFIX project_root "${resolved}" NORMALIZE inside)
   file(REAL_PATH "${SYMBIAN_SDK_PREFIX}/cmake" sdk_cmake)
   cmake_path(IS_PREFIX sdk_cmake "${resolved}" NORMALIZE inside_sdk)
-  if((NOT inside AND NOT inside_sdk) OR NOT EXISTS "${resolved}" OR
+  file(REAL_PATH "${SYMBIAN_SDK_PREFIX}/share/symbian/runtime" sdk_runtime)
+  cmake_path(IS_PREFIX sdk_runtime "${resolved}" NORMALIZE inside_runtime)
+  if((NOT inside AND NOT inside_sdk AND NOT inside_runtime) OR
+     NOT EXISTS "${resolved}" OR
      IS_DIRECTORY "${resolved}")
     message(FATAL_ERROR "Symbian target input must be a project or selected SDK file: ${filename}")
   endif()

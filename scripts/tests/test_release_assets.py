@@ -75,6 +75,9 @@ class ReleaseAssetsTest(unittest.TestCase):
                     "bin/cmake",
                     "bin/ninja",
                     "cmake/SymbianApp.cmake",
+                    "share/symbian/runtime/startup.S",
+                    "share/symbian/runtime/startup.cc",
+                    "share/symbian/runtime/image.ld",
                     "host/lib/cmake/SymbianHost/SymbianHostConfig.cmake",
                     "licenses/Symbian-Apache-2.0.txt",
                     "examples/hello_time/CMakeLists.txt",
@@ -130,6 +133,18 @@ class ReleaseAssetsTest(unittest.TestCase):
             ["share/symbian/VERSION"],
         )
         with self.assertRaisesRegex(ValueError, "missing"):
+            _ASSETS.check(self.dist, self.assets, "0.1.0")
+
+    def test_missing_startup_sources(self):
+        path = self.assets / "symbian-sdk-0.1.0-linux-x86_64.tar.gz"
+        with tarfile.open(path) as archive:
+            members = [
+                member.name.removeprefix("./")
+                for member in archive
+                if not member.name.startswith("./share/symbian/runtime/")
+            ]
+        self.archive(path, ".", members)
+        with self.assertRaisesRegex(ValueError, "share/symbian/runtime"):
             _ASSETS.check(self.dist, self.assets, "0.1.0")
 
     def test_incomplete_guest_payload(self):

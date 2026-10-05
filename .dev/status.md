@@ -2919,3 +2919,15 @@ format/import GTests. Physical staging/installation remains unverified: USB
 list is empty. Native archives provide the implemented EKA2 SDK, not full EKA1
 or replacements for firmware OS DLL implementations. Complete original-symbol
 documentation and broader OS/runtime coverage remain outstanding.
+
+### Native startup export follow-up (2026-10-05)
+
+Native assembly now preserves share/symbian/runtime, with an explicit release
+completeness gate. SDK-owned runtime sources are accepted by the CMake input
+helper. The relocated no-Python GUI and shared-startup E32 build checks pass
+for both ARM targets on macOS arm64 and Linux x86_64; seven release-audit and
+six E32 regressions pass. Guest/archive cache inputs now include probe and
+Abseil patch inputs and exclude wheel-only CLI/acceptance changes. Actions
+replay and a future release are still required to ship this change beyond the
+already published 0.1.1 assets. No broader EKA1 or firmware-library support is
+implied.

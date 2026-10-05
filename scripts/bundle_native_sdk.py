@@ -227,7 +227,15 @@ def bundle(args: argparse.Namespace) -> None:
     if output.exists():
         raise RuntimeError(f"Output already exists: {output}")
     output.mkdir(parents=True)
-    for name in ("include", "lib", "cmake", "proxies", "source", "licenses"):
+    for name in (
+        "include",
+        "lib",
+        "cmake",
+        "proxies",
+        "source",
+        "share",
+        "licenses",
+    ):
         shutil.copytree(args.guest / name, output / name, symlinks=False)
     # An installed development SDK can also contain Python/host wrappers;
     # target payloads must never retain those external-host dependencies.

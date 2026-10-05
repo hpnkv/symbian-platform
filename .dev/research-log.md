@@ -6055,3 +6055,32 @@ startup source under share/symbian/runtime, which the assembler currently omits.
 The maintained CMake has no references to that path, and both public guides work
 without it. Full EKA1 runtime/API/GUI/networking/legacy SIS, original OS library
 implementation coverage and complete original-symbol documentation remain open.
+
+## 2026-10-05 — Native startup export and payload cache inputs
+
+The no-Python assembler now preserves the source SDK's share/ tree, including
+share/symbian/runtime/startup.S, startup.cc and image.ld. A new relocated
+acceptance executable uses those files, std::string global initialization and
+std::vector, linked against the installed runtime. Its first configure failed:
+SymbianPic allowed selected SDK inputs only from cmake/. The maintained helper
+now also accepts the selected SDK's runtime subtree; unrelated external inputs
+remain rejected (six E32 regression tests pass).
+
+A real macOS arm64 bundle from the prepared target/host/resource inputs builds
+both hello_time and the shared-startup executable for ARMv5T and ARMv6 after
+relocation into a path containing spaces, with only bundled tools in PATH.
+The Linux x86_64 SDK, augmented with its corresponding original exported share/
+and updated maintained helper, passes the same check on helena@192.168.1.209.
+Logs: /tmp/symbian-native-startup-bundle-macos.log,
+/tmp/symbian-native-startup-macos.log and remote
+/tmp/symbian-native-startup-linux.log. These checks establish compilation,
+linking and E32 conversion, not new guest startup/lifetime execution evidence.
+The release audit requires all three files; seven audit regressions pass.
+
+Guest/archive cache keys migrate to v2 and use explicit payload inputs. They
+include the previously omitted runtime/Abseil probe inputs, CMake support,
+Abseil patches and compiler acquisition driver. CLI-only Python and installed
+acceptance helper changes no longer invalidate identical native payloads;
+acceptance still runs after cache restoration. Input membership checks and
+actionlint pass. Four-host Actions replay remains to be run for this revision;
+0.1.1's published archives are unchanged.

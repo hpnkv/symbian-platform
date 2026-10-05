@@ -1,4 +1,4 @@
-"""Builds a GUI application's E32 images from a relocated, Python-free SDK."""
+"""Builds GUI and shared-startup E32 images from a Python-free SDK."""
 
 import argparse
 import os
@@ -22,6 +22,33 @@ target_compile_definitions(hello_time PRIVATE SYMBIAN_ENABLE_ABSEIL_STATUS=1
   SYMBIAN_ENABLE_TIMER_TASKS=1)
 target_link_options(hello_time PRIVATE --gc-sections)
 symbian_publish_executable(hello_time UID3 0xe0000830)
+"""
+
+
+STARTUP_CMAKE = """
+set(startup "${SYMBIAN_SDK_PREFIX}/share/symbian/runtime")
+symbian_add_import_executable(startup_check STARTUP "${startup}/startup.S"
+  LINKER_SCRIPT "${startup}/image.ld"
+  SOURCES startup_check.cc "${startup}/startup.cc")
+target_link_libraries(startup_check PRIVATE Symbian::Runtime)
+target_link_options(startup_check PRIVATE --gc-sections)
+symbian_publish_executable(startup_check UID3 0xe0000831)
+"""
+
+STARTUP_SOURCE = """#include <string>
+#include <vector>
+
+namespace {
+const std::string label = "native SDK startup";
+}
+
+extern "C" int RuntimeMain() {
+  const std::vector<int> values = {3, 5, 8};
+  if (label != "native SDK startup" || values.size() != 3) {
+    return 1;
+  }
+  return values[0] + values[1] == values[2] ? 0 : 2;
+}
 """
 
 
@@ -65,6 +92,12 @@ def check(sdk: Path) -> None:
         root = Path(d)
         moved = root / "SDK with spaces"
         shutil.copytree(sdk, moved, symlinks=True)
+        # Compile and link the exported startup in a separate executable. The
+        # GUI starter owns its startup files and cannot detect a dropped share/.
+        example = moved / "examples/hello_time"
+        (example / "startup_check.cc").write_text(STARTUP_SOURCE)
+        with (example / "CMakeLists.txt").open("a") as cmake:
+            cmake.write(STARTUP_CMAKE)
         env = {
             key: value
             for key, value in os.environ.items()
@@ -108,9 +141,10 @@ def check(sdk: Path) -> None:
                 check=True,
                 timeout=180,
             )
-            image = (build / "e32/hello_time.exe").read_bytes()
-            if image[16:20] != b"EPOC":
-                raise RuntimeError("Converter did not produce an E32 image")
+            for name in ("hello_time", "startup_check"):
+                image = (build / "e32" / f"{name}.exe").read_bytes()
+                if image[16:20] != b"EPOC":
+                    raise RuntimeError(f"Missing E32 signature in {name}")
         for tool in ("clang-scan-deps", "llvm-ar", "rcomp", "uidcrc"):
             # These helpers have different help exit conventions. A missing
             # dynamic loader or executable is a failure regardless of that.
@@ -122,7 +156,10 @@ def check(sdk: Path) -> None:
             )
             if result.returncode < 0 or result.returncode in (126, 127):
                 raise RuntimeError(f"Bundled helper cannot run: {tool}")
-    print("Relocated native SDK: ARMv5T and ARMv6 GUI E32 builds passed")
+    print(
+        "Relocated native SDK: ARMv5T and ARMv6 GUI and shared-startup "
+        "E32 builds passed"
+    )
 
 
 def main() -> None:
