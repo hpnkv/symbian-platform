@@ -1,0 +1,120 @@
+// Documentation adapted from the Symbian Developer Library.
+// Original reference content is licensed under EPL-1.0.
+// SPDX-License-Identifier: EPL-1.0
+
+/** \fn static IMPORT_C CCamera * CCamera::NewL(MCameraObserver2 &aObserver, TInt aCameraIndex, TInt aPriority)
+\param aObserver Reference to class derived from MCameraObserver2 designed to receive notification of asynchronous event completion.
+
+\param aCameraIndex Index from 0 to CamerasAvailable()-1 inclusive specifying the camera device to use.
+
+\param aPriority Value from -100 to 100 indicating relative priority of client to use camera.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-021C509B-C821-3401-B2F4-DE7F52BB16D4.html#GUID-C805202D-D1FC-3E5D-AA7A-450CD940AE40">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C CCamera * CCamera::New2L(MCameraObserver2 &aObserver, TInt aCameraIndex, TInt aPriority)
+\param aObserver Reference to class derived from MCameraObserver2 designed to receive notification of asynchronous event completion.
+
+\param aCameraIndex Index from 0 to CamerasAvailable()-1 inclusive specifying the camera device to use.
+
+\param aPriority Value from -100 to 100 indicating relative priority of client to use camera.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-021C509B-C821-3401-B2F4-DE7F52BB16D4.html#GUID-C5A323D2-322D-3784-9546-A066B50C4DE1">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C CCamera * CCamera::NewL(MCameraObserver &aObserver, TInt aCameraIndex)
+\param aObserver Reference to class derived from MCameraObserver designed to receive notification of asynchronous event completion.
+
+\param aCameraIndex Index from 0 to CamerasAvailable()-1 inclusive specifying the camera device to use.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-021C509B-C821-3401-B2F4-DE7F52BB16D4.html#GUID-05226527-D17A-3312-94C4-0DD040FF3835">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C CCamera * CCamera::NewDuplicateL(MCameraObserver2 &aObserver, TInt aCameraHandle)
+\param aObserver Reference to an observer.
+
+\param aCameraHandle Handle of an existing camera object.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-021C509B-C821-3401-B2F4-DE7F52BB16D4.html#GUID-9F211515-BE9D-3464-A20D-5C40D6CBE546">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C CCamera * CCamera::NewDuplicate2L(MCameraObserver2 &aObserver, TInt aCameraHandle)
+\param aObserver Reference to an observer.
+
+\param aCameraHandle Handle of an existing camera object.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-021C509B-C821-3401-B2F4-DE7F52BB16D4.html#GUID-DE06AC83-B216-3510-BE9F-B3F5E1FBAEF7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C CCamera * CCamera::NewDuplicateL(MCameraObserver &aObserver, TInt aCameraHandle)
+\param aObserver Reference to an observer.
+
+\param aCameraHandle Handle of an existing camera object.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-021C509B-C821-3401-B2F4-DE7F52BB16D4.html#GUID-D791EB65-A9B7-31D0-9D87-6597FC5F58DD">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CCameraStatusWatch::~CCameraStatusWatch()
+Destructor. The destructor has to be called by the client when it does not need the desired reserve notifications any more.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-6C0DAE0A-F64C-3AE0-9F53-63E767E79E9B.html#GUID-D630A514-4F61-3D0B-9408-CC6B7B3D8F09">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static CCameraStatusWatch * CCameraStatusWatch::NewL(MReserveObserver &aReserveObserver, TInt aCameraIndex, TInt aSecureId)
+Used to create the CCameraStatusWatch class object. This is needed by the method TReservedInfo::SubscribeReserveInfoL in order to grab the reserve notification from the ECam implementation and hence further forward it to the observer MReserveObserver.
+
+\param aReserveObserver Reference to an observer.
+
+\param aCameraIndex The camera index for which the subscription is needed.
+
+\param aSecureId The secure ID of the process where serialized part of the ECam implementation runs.
+
+\leave May leave with any error code
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-6C0DAE0A-F64C-3AE0-9F53-63E767E79E9B.html#GUID-2B703E91-DE64-343D-8B8E-1DB755F4333D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TBool TECAMEvent2::IsEventEncapsulationValid(const TECAMEvent &aECAMEvent)
+This method may be used by MCameraObserver2::HandleEvent to know whether a particular event received has been encapsulated in a correct version of TECAMEvent base class. Indirectly, its provided implementation also specifies different events which are supposed to use a specific version of TECAMEvent base class. This static method will be provided per derived version of TECAMEvent base class. So, MCameraObserver2::HandleEvent implementation may consist of 2 parts: 1) Recognize the class which encapsulated the event(aECAMEvent) and type-cast to that class. 2) Recognize the event.
+
+Note : MCameraObserver2::HandleEvent should ignore unrecognised events and unrecognized version of TECAMEvent base class. Unless clearly stated to use a particular derived version of TECAMEvent base class, events should use class TECAMEvent.
+
+\param aECAMEvent TECAMEvent class reference providing details of a particular event
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-6A60F684-76BF-3001-ABB8-E6A8DB32663B.html#GUID-DD5B9B30-FA6F-3269-8725-47B0D1617963">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TECAMEvent2::TECAMEvent2(TUid aEventType, TInt aErrorCode, TInt aParam)
+Constructor.
+
+For example: For KUidECamEventCIPSetColorSwapEntry; KUidECamEventCIPRemoveColorSwapEntry; KUidECamEventCIPSetColorAccentEntry and KUidECamEventCIPRemoveColorAccentEntry, aParam represents color entry.
+
+For KUidECamEventCameraSettingPreCaptureWarning, aParam represents bit field describing all PreCaptureWarnings currently issued.
+
+Future events may also use this class.
+
+\param aEventType A UID to define the type of event.
+
+\param aErrorCode The error code associated with the event.
+
+\param aParam This signifies different things for different valid events.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-6A60F684-76BF-3001-ABB8-E6A8DB32663B.html#GUID-7358BE40-2D63-3637-9A29-FB1519E37AF7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C const TUid & TECAMEvent2::EventClassUsed() const
+Gives the uid representing this version of TECAMEvent base class.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-6A60F684-76BF-3001-ABB8-E6A8DB32663B.html#GUID-6BAAFC61-EB10-31BC-9D68-85591420E4AD">Symbian Developer Library</a>)</small></p>
+*/

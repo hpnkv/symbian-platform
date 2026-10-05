@@ -2,11 +2,11 @@
 DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = "Original Symbian headers"
 PROJECT_BRIEF          = "Selected EUSER, Window Server, networking, graphics and device declarations"
-INPUT                  = headers mainpage.md
+INPUT                  = headers supplements mainpage.md
 USE_MDFILE_AS_MAINPAGE = mainpage.md
 RECURSIVE              = NO
 FULL_PATH_NAMES        = NO
-FILE_PATTERNS          = *.h *.md
+FILE_PATTERNS          = *.h *.md *.dox
 OUTPUT_DIRECTORY       = ../../site/cpp
 HTML_OUTPUT            = platform
 GENERATE_HTML          = YES

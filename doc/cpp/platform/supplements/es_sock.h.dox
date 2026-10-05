@@ -1,0 +1,3059 @@
+// Documentation adapted from the Symbian Developer Library.
+// Original reference content is licensed under EPL-1.0.
+// SPDX-License-Identifier: EPL-1.0
+
+/** \fn static IMPORT_C TUint32 ByteOrder::Swap32(TUint32 aVal)
+Reverses the order of the bytes in a 32-bit value.
+
+\param aVal The value to reverse.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-A934C24D-0E90-3D33-B4FC-654FB9004CFC.html#GUID-D9BCE49E-9664-3775-B93D-52B299A146ED">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TUint16 ByteOrder::Swap16(TUint16 aVal)
+Reverses the order of the bytes in a 16-bit value.
+
+\param aVal The value to reverse.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-A934C24D-0E90-3D33-B4FC-654FB9004CFC.html#GUID-ABB9D26B-755A-3538-A41B-C605837C403C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static TUint16 ByteOrder::Swap16(TUint aVal)
+Reverses the order of the bytes in a 16-bit value.
+
+\param aVal The value to reverse.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-A934C24D-0E90-3D33-B4FC-654FB9004CFC.html#GUID-4891F54E-539C-332B-B05F-921B46BAB826">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C CSubConParameterFamily * CSubConParameterFamily::NewL(RSubConParameterBundle &aBundle, TUint32 aFamilyId)
+Creates a new sub-connection parameter set family. This class is used as a container for a number of parameter sets (generic and extension) that make up a family. It is a specific instantiatable class and therefore creates an instance of CSubConParameterFamily without using ECOM.
+
+Note: The aBundle parameter that is passed into this method will take ownership of the newly created CSubConParameterFamily object. When the bundle is destroyed, this family object will also be destroyed (along with any parameter sets that are owned by the family).
+
+\param aBundle Family container (bundle) that this family is to be added to
+
+\param aFamilyId identifier for the specific family type, currently only 4, QoS (KSubConQoSFamily),Authorisation (KSubConAuthorisationFamily), CallDescrParams (KSubConnCallDescrParamsFamily) and ContextDescrParams (KSubConnContextDescrParamsFamily), are defined.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-5D8EEFF7-7012-3F0B-B096-99391E381C57">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C CSubConParameterFamily * CSubConParameterFamily::LoadL(RSubConParameterBundle &aBundle, TPtrC8 &aBuffer)
+Creates a new sub-connection parameter set family from a buffer containing the serialised object.
+
+Note: The aBundle parameter that is passed into this method will take ownership of the newly created CSubConParameterFamily object. When the bundle is destroyed, this family object will also be destroyed (along with any parameter sets that are owned by the family).
+
+\param aBundle Family container (bundle) that this family is to be added to
+
+\param aBuffer Buffer containing the serialised object information
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-5A29776E-CF83-35D1-B357-66E62AACCD69">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C CSubConParameterFamily * CSubConParameterFamily::NewL(CSubConParameterBundle &aBundle, TUint32 aFamilyId)
+Creates a new sub-connection parameter set family. This class is used as a container for a number of parameter sets (generic and extension) that make up a family. It is a specific instantiatable class and therefore creates an instance of CSubConParameterFamily without using ECOM.
+
+Note: The aBundle parameter that is passed into this method will take ownership of the newly created CSubConParameterFamily object. When the bundle is destroyed, this family object will also be destroyed (along with any parameter sets that are owned by the family).
+
+\param aBundle Family container (bundle) that this family is to be added to.
+
+\param aFamilyId identifier for the specific family type, currently only 4, QoS (KSubConQoSFamily),Authorisation (KSubConAuthorisationFamily), CallDescrParams (KSubConnCallDescrParamsFamily) and ContextDescrParams (KSubConnContextDescrParamsFamily), are defined.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-143F606A-46F5-3018-BD87-67E645A8DF1C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C CSubConParameterFamily * CSubConParameterFamily::LoadL(CSubConParameterBundle &aBundle, TPtrC8 &aBuffer)
+Creates a new sub-connection parameter set family from a buffer containing the serialised object.
+
+Note: The aBundle parameter that is passed into this method will take ownership of the newly created CSubConParameterFamily object. When the bundle is destroyed, this family object will also be destroyed (along with any parameter sets that are owned by the family).
+
+\param aBundle Family container (bundle) that this family is to be added to
+
+\param aBuffer Buffer containing the serialised object information
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-C801F952-3075-3A68-BDAC-305CABEB9E3B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C CSubConParameterFamily::~CSubConParameterFamily()
+Sub-connection parameter family destructor. It cleans up the arrays deleting all the paarmeter sets it ownes
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-982532DE-2502-3FC3-92C4-E2258AA3563E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CSubConParameterFamily::SetGenericSetL(CSubConGenericParameterSet &aGenericSet, TParameterSetType aType)
+Assigns the generic parameter set of a sub-connection parameter set family.
+
+Note: The CSubConParameterFamily object takes ownership of the parameter set that is passed into this method. When the family object is destroyed, any parameter sets owned by this object will also be destroyed.
+
+\param aGenericSet Generic Parameter Set to be assigned to the family (family takes ownership)
+
+\param aType The type of the set (requested, acceptable or granted)
+
+\par Exceptions
+leaves with KAlreadyExists if a set is already assigned to the family.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-4751E539-A747-36A0-86FE-1AE886295BE8">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CSubConParameterFamily::AddExtensionSetL(CSubConExtensionParameterSet &aExtensionSet, TParameterSetType aType)
+Adds an extension parameter set to a sub-connection parameter set family.
+
+Note: The CSubConParameterFamily object takes ownership of the parameter set that is passed into this method. When the family object is destroyed, any parameter sets owned by this object will also be destroyed.
+
+\param aExtensionSet Extension Parameter Set to be added to the family (family takes ownership)
+
+\param aType The type of the set (requested, acceptable or granted)
+
+\par Exceptions
+leaves with KErrNoMemory in out of memeory conditions.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-66E137EA-0574-396F-BB27-61290670545C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CSubConExtensionParameterSet * CSubConParameterFamily::FindExtensionSet(TUid aSetId, TParameterSetType aType)
+Searches a sub-connection parameter family for an extension parameter set. DO NOT USE this form of the method. It is broken. This is only capable of finding extension sets contained within IP Subconnection Provider, and these extension sets have been deprecated.
+
+\param aSetId Although a TUid, this is the extension class Id
+
+\param aType The type of the set from TParameterSetType (ERequested, EAcceptable or EGranted)
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-895529DA-0A45-3957-ACFE-AC732BA0CBF2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CSubConExtensionParameterSet * CSubConParameterFamily::FindExtensionSet(STypeId aSetId, TParameterSetType aType)
+Searches a sub-connection parameter family for an extension parameter set.
+
+\param aSetId The STypeId of the extension set
+
+\param aType The type of the set from TParameterSetType (ERequested, EAcceptable or EGranted)
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-4EC47171-50E6-36FE-8773-CB942849AE9C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CSubConGenericParameterSet * CSubConParameterFamily::GetGenericSet(TParameterSetType aType)
+Accessor for the sub-connection generic parameter set of a family.
+
+\param aType The type of the set (requested, acceptable or granted)
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-2771A7F6-9B55-3743-976C-B8A081F68F2F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TUint32 CSubConParameterFamily::Id()
+Fetch the identity of the sub-connection parameter family
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-190474B8-D696-3ADB-8574-3BB4DAE55043">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TUint CSubConParameterFamily::Length() const
+Calculates the length of buffer required to serialise this parameter set family.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-B3390441-4359-3634-ABA1-E32B67D9B4A2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CSubConParameterFamily::Load(TPtrC8 &aDes)
+Instructs this sub-connection family to set its members based on the serialiesd data in the buffer passed.
+
+\param aDes Buffer containing the serialised family object
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-FA7601C7-72C6-3888-9E2A-92A558DDE7A8">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CSubConParameterFamily::Store(TDes8 &aDes) const
+Instructs this sub-connection family to create a serialised version of itself and append it to the buffer that has been passed.
+
+\param aDes Buffer to append the serialised object to
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-0811F95F-2CDB-3E17-A6B3-E6316AA4C5C1">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CSubConParameterFamily::ClearAllParameters(TParameterSetType aType)
+Clears (removes and deletes) all parameter sets with the type specified
+
+\param aType The type of the set to be deleted(requested, acceptable or granted)
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-C5CE3BA2-4308-318F-AE63-26B4B0BB8ACD">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CSubConParameterFamily::CSubConParameterFamily(TUint32 aFamilyId)
+Empty sub-connection parameter family constructor
+
+\param aFamilyId identifier for the specific family type, currently only 4, QoS (KSubConQoSFamily),Authorisation (KSubConAuthorisationFamily), CallDescrParams (KSubConnCallDescrParamsFamily) and ContextDescrParams (KSubConnContextDescrParamsFamily), are defined.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-249C75B7-C8B1-3BBB-A379-3EFEC3969793">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CSubConParameterFamily::ConstructL(RSubConParameterBundle &aBundle)
+Set up the sub-connection family with empty sets
+
+Note: The aBundle parameter that is passed into this method will take ownership of the newly created CSubConParameterFamily object. When the bundle is destroyed, this family object will also be destroyed (along with any parameter sets that are owned by the family).
+
+\param aBundle Bundle (container) the family is to be added to
+
+\par Exceptions
+leaves with KErrNoMemory in out of memory conditions
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-F3F90DE1-0234-3A57-9FC1-969E32D7AC15">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CSubConParameterFamily::ConstructL(CSubConParameterBundle &aBundle)
+Set up the sub-connection family with empty sets
+
+Note: The aBundle parameter that is passed into this method will take ownership of the newly created CSubConParameterFamily object. When the bundle is destroyed, this family object will also be destroyed (along with any parameter sets that are owned by the family).
+
+\param aBundle Bundle (container) the family is to be added to
+
+\par Exceptions
+leaves with KErrNoMemory in out of memory conditions
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-71DAD6F0-7C7A-3C64-9521-2B426BFE3A9C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt32 CSubConParameterFamily::ExtractFamilyAndCreateBufferL(TPtrC8 &aBuffer, TPtrC8 &aContainerBuffer)
+Used internally to extract the family id for the descriptor storing the serialised version of this object (and others). It also sets up a new buffer that is the section of the original buffer that represents this object only.
+
+\param aBuffer Source buffer containing mulitple serialised objects (family at the start)
+
+\param aContainerBuffer Set up by this method and represents only the serialised data of the family object.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5181C974-94F7-3C7D-9FFE-F38BD11001EB.html#GUID-7BD0BF76-6BE5-36A6-8F26-DE28F6040CC2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C RConnection::~RConnection()
+Empty destructor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-BCADE197-E386-3835-ABA4-B460A69F324B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::Open(RSocketServ &aSocketServer, TUint aConnectionType=KConnectionTypeDefault)
+Opens a new RConnection instance.
+
+\param aSocketServer Socket Server session.
+
+\param aConnectionType Reserved.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-2A010F6C-57DA-3D29-A7CB-FB44EC99BF83">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::Open(RSocketServ &aSocketServer, TName &aName)
+Opens a new RConnection instance cloned from an existing RConnection instance.
+
+\param aSocketServer Socket Server session.
+
+\param aName Name of an existing RConnection (obtainable via Name() method).
+
+\par capability
+Dependent on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-C31EE01D-B56F-3A37-B172-AA4AB7170C89">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::Close()
+Closes the connection.
+
+The connection will not be dropped immediately: it will be dropped when there is no more data traffic on the connection. So if a client needs to graciously shutdown the connection, Close(), not Stop(), needs to be used after shutting down the socket.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-20D71C1C-27EE-3305-8326-4CC1DFFB0E2F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::Start(TRequestStatus &aStatus)
+Start a connection asynchonously using the default connection preferences.
+
+The request completes once the connection is fully up or an error has occurred. Successful completion will be accompanied by a KConnectionUp progress.
+
+If an RConnection has been stopped or has gone down, any subsequent start will act in the same way as a start with a new RConnection. i.e. The preferences from previous starts will not be used.
+
+\param aStatus On return, the status of the request, e.g. KErrNone, KErrAlreadyExists.
+
+\par capability
+Dependent on the access point implementation
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-6582017B-E5E4-3826-A30E-146762A398BB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::Start(TConnPref &aPref, TRequestStatus &aStatus)
+Start a connection asynchonously using the connection preferences specified.
+
+The connection preferences can be of type TConnSnapPref, TCommDbConnPref, TCommDbMultiConnPref or TConnPrefList. See the definitions of these classes to see their usage.
+
+The request completes once the connection is fully up or an error has occurred. Successful completion will be accompanied by a KConnectionUp progress.
+
+If an RConnection has been stopped or has gone down, any subsequent start will act in the same way as a start with a new RConnection. i.e. The preferences from previous starts will not be used.
+
+\param aPref Connection preferences.
+
+\param aStatus On return, the status of the request, e.g. KErrNone, KErrAlreadyExists.
+
+\par capability
+Dependent on the access point implementation
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-2525B522-BCBE-3786-9CD2-9C895752D7C8">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::Start()
+Start a connection synchonously using the default connection preferences.
+
+The request completes once the connection is fully up or an error has occurred. Successful completion will be accompanied by a KConnectionUp progress.
+
+If an RConnection has been stopped or has gone down, any subsequent start will act in the same way as a start with a new RConnection. i.e. The preferences from previous starts will not be used.
+
+\par capability
+Dependent on the access point implementation
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-CB62E838-A380-309C-8B08-1F804EDB4387">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::Start(TConnPref &aPref)
+Start a connection synchonously using the connection preferences specified.
+
+The connection preferences can be of type TConnSnapPref, TCommDbConnPref, TCommDbMultiConnPref or TConnPrefList. See the definitions of these classes to see their usage.
+
+The request completes once the connection is fully up or an error has occurred. Successful completion will be accompanied by a KConnectionUp progress.
+
+If an RConnection has been stopped or has gone down, any subsequent start will act in the same way as a start with a new RConnection. i.e. The preferences from previous starts will not be used.
+
+\param aPref Connection preferences.
+
+\par capability
+Dependent on the access point implementation
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-76216FE8-E939-3FFD-986C-FDEF23E0208B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::Stop()
+Stops the entire connection by disconnecting the underlying network interface immediately, regardless of whether other clients are using it or not.
+
+Applications using the connection will be sent the socket error code KErrCancel. The application generally responds with clean up operations and pop-up boxes alerting the user to the termination of the application.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-52878713-A4E8-327E-901B-449EF3D39E0A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::Stop(TConnStopType aStopType)
+Stops the entire connection by disconnecting the underlying network interface immediately, regardless of whether other clients are using it or not.
+
+If the argument is EStopNormal this is identical to calling Stop() with no argument. If it is EStopAuthoritative then applications using the connection will be sent the socket error code KErrConnectionTerminated, which generally results in the applications closing quietly (without pop-up boxes).
+
+\param aStopType The type of stop which is being requested.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-8DA2D56C-4EF2-3B5F-AA3A-B356F733591F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::Stop(TSubConnectionUniqueId aSubConnectionUniqueId)
+Stops a subconnection.
+
+Applications will be sent a socket error code to indicate that they must perform clean up operations.
+
+\param aSubConnectionUniqueId A valid identifier for a subconnection.
+
+\par Pre-condition
+An attached connection: as a result of performing either a Start() or an Attach()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-F71CF9AC-32FE-3B78-B6BC-8BEEA812EE3A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::Stop(TSubConnectionUniqueId aSubConnectionUniqueId, TConnStopType aStopType)
+Stop a subconnection on an interface
+
+\param aSubConnectionUniqueId A valid identifier for a subconnection
+
+\param aStopType The kind of stop to do (controls what error code is reported to interface clients)
+
+\par Pre-condition
+Must be attached to a connection; either by performing a Start(), or using Attach()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-0AE03D2F-B177-3EAB-A041-0A42282F8A8D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::WaitForIncoming(RSubConnection &aIncomingSubConnection, TRequestStatus &aStatus)
+Subscribe for an incoming session on this connection.
+
+\param aIncomingSubConnection On completion, the subconnection representing the incoming session. The incoming session can be accepted (by calling RSubConnection::Accept) or rejected (by calling RSubConnection::Stop) The subconnection is implicitly started (no need to call RSubConnection::Start). aIncomingSubConnection must not be open prior to calling this method.
+
+\param aStatus On completion, the status of the request, e.g. KErrNone or another of the system wide error codes.
+
+\par Pre-condition
+Must be attached to a connection by performing a Start().
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-B507FF2A-5867-3D64-8C3F-138027D5CE09">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::WaitForIncoming(RSubConnection &aIncomingSubConnection)
+Synchronously wait for an incoming session on this connection.
+
+\param aIncomingSubConnection On completion, the subconnection representing the incoming session. The incoming session can be accepted (by calling RSubConnection::Accept) or rejected (by calling RSubConnection::Stop) The subconnection is implicitly started (no need to call RSubConnection::Start). aIncomingSubConnection must not be open prior to calling this method.
+
+\par Pre-condition
+Must be attached to a connection by performing a Start().
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-BD9D0282-7F1B-3C79-B15B-8736451BD29E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::CancelWaitForIncoming()
+Cancel the previous subscription for an incoming session.
+
+\par Pre-condition
+Must be attached to a connection by performing a Start().
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-5A07DC0E-5976-34BE-BCB8-1510BF149312">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::ProgressNotification(TNifProgressBuf &aProgress, TRequestStatus &aStatus, TUint aSelectedProgress=KConnProgressDefault)
+Requests asynchronous progress notification for the connection.
+
+\param aProgress A buffer to receive progress notification.
+
+\param aStatus On return, the status of the request.
+
+\param aSelectedProgress The type of progress to report. If set, report only the particular progress specified and any progress in error. If not set, report all progress normally.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-9A3328EA-FAFC-393F-8080-D8CD7DA9A80C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::ProgressNotification(TSubConnectionUniqueId aSubConnectionUniqueId, TNifProgressBuf &aProgress, TRequestStatus &aStatus, TUint aSelectedProgress=KConnProgressDefault)
+Requests asynchronous progress notification for a subconnection.
+
+NOTE: This function is not supported and will correctly return KErrNotSupported.
+
+\param aSubConnectionUniqueId A valid identifier for a subconnection.
+
+\param aProgress A buffer to receive progress notification.
+
+\param aStatus On return, the status of the request.
+
+\param aSelectedProgress The type of progress to report. If set, report only the particular progress specified and any progress in error. If not set, report all progress normally.
+
+\par Pre-condition
+An attached connection: as a result of performing either a Start() or an Attach() No outstanding request for progress notifications for this subconnection on this RConnection
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-5BB41FBB-7ACF-3455-A5FB-64860970CD63">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::CancelProgressNotification()
+Cancels a request for progress notification for the connection, as issued by ProgressNotification().
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-6D2335FD-EDA1-3C60-AA9C-E7BADA0FA5B1">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::CancelProgressNotification(TSubConnectionUniqueId aSubConnectionUniqueId)
+Cancels a request for progress notification for a specified subconnection, as issued by ProgressNotification().
+
+\param aSubConnectionUniqueId The identifier for the subconnection used to make the request.
+
+\par Pre-condition
+An attached connection: as a result of performing either a Start() or an Attach() An outstanding request for a progress notification on the subconnection on this RConnection
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-890F2F7B-05D5-3A7B-8619-BFAD7345EFAF">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::Progress(TNifProgress &aProgress)
+Obtains the current progress information for the connection.
+
+\param aProgress A buffer to receive progress information.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-6FD7EC8E-2494-3C34-BD0F-E8581B353034">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::Progress(TSubConnectionUniqueId aSubConnectionUniqueId, TNifProgress &aProgress)
+Obtains the current progress information on a specified subconnection.
+
+\param aSubConnectionUniqueId A valid identifier for the subconnection of interest.
+
+\param aProgress On return, progress information.
+
+\par Pre-condition
+An attached connection: as a result of performing either a Start() or an Attach()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-17CD11DB-6391-3BD5-BE10-6E0556F5C9FC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::LastProgressError(TNifProgress &aProgress)
+Obtains information about the last Progress() call which failed with an error.
+
+\param aProgress A buffer to receive progress information.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-3E8EB02E-0D7A-3595-9C47-0CA4BBE522D5">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::ServiceChangeNotification(TUint32 &aNewISPId, TDes &aNewServiceType, TRequestStatus &aStatus)
+Requests service change notification from the agent. This call completes if the underlying service changes (i.e. ISP, GPRS APN or LAN Service). Important: It Panics if used BEFORE &quot;RConnecion::Open(...)&quot; being called.
+
+\param aNewISPId On completion, the new ISP Id.
+
+\param aNewServiceType On completion, the new service type.
+
+\param aStatus On completion, &quot;KErrNone&quot; if succesful, &quot;KErrNotReady&quot; if called before &quot;RConnection::Start(...)&quot; being called, &quot;KErrInUse&quot; if called twice. Otherwise another of the system wide error codes.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-1108BCDE-F126-3FD0-82E8-4846EA715C0F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::CancelServiceChangeNotification()
+Cancels a request for notification of change of service for the connection, as issued by ServiceChangeNotification(). Nothing happens if called without having called &quot;RConnection::ServiceChangeNotification(...)&quot; before. Important: It Panics if used BEFORE &quot;RConnecion::Open(...)&quot; being called.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-BD9A14F9-EDC3-3976-AEB4-C9EA8E6AE2B9">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::GetIntSetting(const TDesC &aSettingName, TUint32 &aValue)
+\param aSettingName The CommDb table name and field name to be accessed. Of the form &quot;&lt;table name&gt;\\&lt;field name&gt;&quot; (for example &quot;IAP\\Id&quot; or &quot;ModemBearer\\PortName&quot;).
+
+\param aValue On return, the value of the table/field pair.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-3BC65689-0722-31C0-B61F-D3FEB6644A4A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::GetBoolSetting(const TDesC &aSettingName, TBool &aValue)
+\param aSettingName The CommDb table name and field name to be accessed. Of the form &quot;&lt;table name&gt;\\&lt;field name&gt;&quot;. (for example &quot;IAP\\Id&quot; or &quot;ModemBearer\\PortName&quot;).
+
+\param aValue On return, the value of the table/field pair.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-8B646839-D27D-31D2-9BE1-B9732A5A20D1">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::GetDesSetting(const TDesC &aSettingName, TDes8 &aValue)
+\param aSettingName The CommDb table name and field name to be accessed. Of the form &quot;&lt;table name&gt;\\&lt;field name&gt;&quot; (for example &quot;IAP\\Id&quot; or &quot;ModemBearer\\PortName&quot;).
+
+\param aValue On return, the value of the table/field pair.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-38FDE7C2-E05C-3B89-ABBB-D5995DDCBFF2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::GetDesSetting(const TDesC &aSettingName, TDes16 &aValue)
+\param aSettingName The CommDb table name and field name to be accessed. Of the form &quot;&lt;table name&gt;\\&lt;field name&gt;&quot; (for example &quot;IAP\\Id&quot; or &quot;ModemBearer\\PortName&quot;).
+
+\param aValue On return, the value of the table/field pair.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-AF9BC986-9EED-33A9-ADB2-41D5544767E6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::GetLongDesSetting(const TDesC &aSettingName, TDes &aValue)
+\param aSettingName The CommDb table name and field name to be accessed. Of the form &quot;&lt;table name&gt;\\&lt;field name&gt;&quot;. (for example &quot;IAP\\Id&quot; or &quot;ModemBearer\\PortName&quot;).
+
+\param aValue On return, the value of the table/field pair.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-69DFCBB4-AE81-3412-B4F8-7F5621960C4D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::SetParameters(ESock::CCommsDataObjectBase &aDataObject)
+Speculative method - Not yet supported Do not call this function, it has ony been introduced for symmetry with RConnection::GetParameters and will be completed at a later date.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-9213E608-0845-3265-81E8-9F5A0E006ABD">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::Name(TName &aName)
+Gets the unique name of an RConnection.
+
+Used to create an RConnection which is a clone of an existing RConnection (possibly in a different process).
+
+\param aName On return, the unique name of the RConnection.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-709F44C8-7514-3721-9E9A-5920AE97E7CC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::EnumerateConnections(TUint &aCount)
+Enumerates the number of currently active interfaces.
+
+This does not count the number of RConnections but the number of underlying interfaces. These may be attached to by varying numbers of RConnections, RSockets etc.
+
+\param aCount On return, contains the number of currently active interfaces on the server.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-14512582-7723-3626-A245-6C625340AD17">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::GetConnectionInfo(TUint aIndex, TDes8 &aConnectionInfo)
+Gets information about one of the currently active connections.
+
+Note that the actual connection information is gathered on a call to EnumerateConnections() and GetConnectionInfo() is simply used to return the information to the client. Therefore, if the state of the connections change after the EnumerateConnections() call, then the information returned by GetConnectionInfo() may be out of date.
+
+\param aIndex The index of the connection - must be between 1 and the value of aCount returned in EnumerateConnections().
+
+\param aConnectionInfo On return, contains a TPckg&lt;TConnectionInfo&gt; containing information about the connection.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-4F5BB67C-29BA-3691-A301-96E6C4E6A207">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::AllInterfaceNotification(TDes8 &aNotification, TRequestStatus &aStatus)
+Requests asynchronous change notification for all interfaces.
+
+This allows a client to receive a notification whenever a connection in the system goes up or down.
+
+This allows the automatic update of the list of active network connections.
+
+\param aNotification On return, a wrapped interface change notification (TInterfaceNotification).
+
+\param aStatus On return, the status of the request.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-222BE155-9829-3B0D-AA5A-0EA1BD177BC6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::CancelAllInterfaceNotification()
+Cancels a change notification request previously issued by a call to AllInterfaceNotification().
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-73D1DAF7-2465-38FE-98BB-3E82EEE9EF4C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::Ioctl(TUint aOptionLevel, TUint aOptionName, TRequestStatus &aStatus, TDes8 *aDesc)
+Get information on the connection in an asynchronous manner
+
+\param aOptionLevel Option level to be used.
+
+\param aOptionName Option name to be used.
+
+\par capability
+Dependent on the type of operation so deferred to PRT. See documentation of constant values used in aOptionName and aOptionLevel for more information
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-441899CB-A3FE-3D6E-B7A9-10D2FFC20270">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::Ioctl(TUint aOptionLevel, TUint aOptionName, TRequestStatus &aStatus)
+Get information on the connection in an asynchronous manner
+
+\param aOptionLevel Option level to be used.
+
+\param aOptionName Option name to be used.
+
+\par capability
+Dependent on the type of operation so deferred to PRT. See documentation of constant values used in aOptionName and aOptionLevel for more information
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-27848C51-EBA2-3FCC-A943-22F478EE3075">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::CancelIoctl()
+Cancel any outstanding Ioctl request
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-EAE0B3DB-B6E9-3833-BFDD-C5D9E82BF020">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::Control(TUint aOptionLevel, TUint aOptionName, TDes8 &aOption)
+Gets detailed information on connection clients and sockets.
+
+More likely to be used by system control type applications.
+
+\param aOptionLevel Option level to be used.
+
+\param aOptionName Option name to be used.
+
+\param aOption On return, the option value.
+
+\par capability
+Dependent on the type of operation so deferred to PRT. See documentation of constant values used in aOptionName and aOptionLevel for more information
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-163EDDFD-9852-3160-A272-B515C533727B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::GetOpt(TUint aOptionLevel, TUint aOptionName, TInt &aOption)
+Gets an option.
+
+\param aOptionLevel Option level to be queried.
+
+\param aOptionName Option name to be queried.
+
+\param aOption On return, the option value.
+
+\par capability
+Dependent on the type of operation so deferred to PRT. See documentation of constant values used in aOptionName and aOptionLevel for more information
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-0B226129-7BFD-316A-BE5A-3F0D1B9140F0">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::SetOpt(TUint aOptionLevel, TUint aOptionName, TInt aOption=0)
+Sets an option.
+
+\param aOptionLevel Option level to be set.
+
+\param aOptionName Option name to be set
+
+\param aOption Option value.
+
+\par capability
+Dependent on the type of operation so deferred to PRT. See documentation of constant values used in aOptionName and aOptionLevel for more information
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-DE1220CD-6AD4-39C5-A525-925360A42323">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::Attach(const TDesC8 &aConnectionInfo, TConnAttachType aAttachType)
+Attaches the RConnection object to an existing interface.
+
+This operation will not start an interface, as Start() does, but attaches to an existing interface if it exists.
+
+\param aConnectionInfo Identity of the connection to attach to. This is a TPckg&lt;TConnectionInfo&gt;&amp; (possibly obtained from a call to GetConnectionInfo()).
+
+\param aAttachType Identifies the intended use of the connection.
+
+\par capability
+dependent on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-CB22EA50-7BA1-309E-BE53-2BC3DBAB84BF">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::EnumerateSubConnections(TUint &aCount)
+Asks the server to gather information on the currently active subconnections.
+
+Unlike EnumerateConnections(), EnumerateSubConnections() does not cache the information about subconnections, so it is possible for a greater or fewer number of records to be returned through GetSubConnectionInfo()
+
+\param aCount On return, contains the number of currently active connections.
+
+\par Pre-condition
+An attached connection: as a result of performing either a Start() or an Attach()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-CC738C03-2808-32F5-A9A9-479EB75BAA74">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::GetSubConnectionInfo(TDes8 &aSubConnectionInfo)
+Gets information about one of the currently active subconnections.
+
+This function is used when a valid TSubConnectionUniqueId has been discovered using the alternative form of GetSubConnectionInfo(), and the client wishes to update its TSubConnectionInfo-derived structure with the latest subconnection information.
+
+\param aSubConnectionInfo A TPckg&lt;TSubConnectionInfo-derived class&gt;: the actual class depends upon the type of subconnection, eg. GPRS context, PPP, NCP. On entry, must contain a valid TSubConnectionUniqueId to indicate which of the subconnections it wishes to gather information about. On return, contains information about the subconnection.
+
+\par Pre-condition
+An attached connection: as a result of performing either a Start() or an Attach()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-F3A011A4-8646-3E99-A429-D64A0FF7688B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RConnection::GetSubConnectionInfo(TUint aIndex, TDes8 &aSubConnectionInfo)
+Gets information about one of the currently active subconnections.
+
+This function is intended for the initial enumeration of connections, when no TSubConnectionUniqueIds are available, so the client must iterate through the list of subconnections.
+
+\param aIndex The index of the connection - must be between 1 and the value of aCount returned in EnumerateSubConnections().
+
+\param aSubConnectionInfo On return, contains a TPckg&lt;TSubConnectionInfo-derived class&gt; containing information about the subconnection; the actual class depends upon the type of subconnection, eg. GPRS context, PPP NCP.
+
+\par Pre-condition
+An attached connection: as a result of performing either a Start() or an Attach()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-8FFA0EB6-0722-3E48-8148-FE9C0D732DEE">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::AllSubConnectionNotification(TSubConnectionNotificationBuf &aSubConnectionEvent, TRequestStatus &aStatus)
+Requests notification of any change in the state of any of the subconnections belonging to this RConnection.
+
+\param aStatus On return, the status of the request.
+
+\par Pre-condition
+An attached connection: as a result of performing either a Start() or an Attach() No outstanding request for subconnection notifications for this subconnection on this RConnection
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-0628851C-8EB3-35A1-B331-70A48A3E2FBC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::CancelAllSubConnectionNotification()
+Cancels the request for notification to changes to the state of subconnections, made using the AllSubConnectionNotification().
+
+\par Pre-condition
+An attached connection: as a result of performing either a Start() or an Attach() An outstanding request for notification about changes to the state of subconnections.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-B4C03995-E43D-3411-AA72-B2A3901026FE">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::DataTransferredRequest(TPckg< TUint > &aUplinkVolume, TPckg< TUint > &aDownlinkVolume, TRequestStatus &aStatus)
+Gets the amount of data that has been transferred by the entire connection.
+
+since v7.0s
+
+\param aUplinkVolume On return, contains the amount of data in bytes transferred by this connection to the remote endpoint.
+
+\param aDownlinkVolume On return, contains the amount of data in bytes transferred by this connection from the remote endpoint.
+
+\param aStatus On return, the status of the request.
+
+\par Pre-condition
+An attached connection, as a result of performing either a Start() or an Attach()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-84D25EFA-5030-3373-9F26-289DD92CD9D7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::DataTransferredRequest(TSubConnectionUniqueId aSubConnectionUniqueId, TPckg< TUint > &aUplinkVolume, TPckg< TUint > &aDownlinkVolume, TRequestStatus &aStatus)
+Gets the amount of data that has been transferred by the specified subconnection.
+
+\param aSubConnectionUniqueId A valid identifier for the subconnection being queried.
+
+\param aUplinkVolume On return, contains the amount of data in bytes transferred by this connection to the remote endpoint.
+
+\param aDownlinkVolume On return, contains the amount of data in bytes transferred by this connection from the remote endpoint.
+
+\param aStatus On return, the status of the request.
+
+\par Pre-condition
+An attached connection, as a result of performing either a Start() or an Attach()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-A37CFF29-AE4B-3221-AF79-396DF0C584CD">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::DataTransferredCancel()
+Cancels a request for the amount of data transferred on the entire connection, issued by DataTransferredRequest().
+
+\par Pre-condition
+An attached connection; either as a result of performing a Start() or an Attach() An outstanding request for the amount of data transferred on this connection made using GetDataTransferred()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-6C3BA56C-90AC-39BD-8FBC-B6BB94D62F0E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::DataTransferredCancel(TSubConnectionUniqueId aSubConnectionUniqueId)
+Cancels a request for the amount of data transferred on a specified subconnection, issued by DataTransferredRequest().
+
+\param aSubConnectionUniqueId The identifier for the subconnection used to make the request.
+
+\par Pre-condition
+An attached connection; either as a result of performing a Start() or an Attach() An outstanding request for the amount of data transferred on this connection made using GetDataTransferred()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-76B4897E-0032-3F63-931D-B3DB2E38087C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::DataSentNotificationRequest(TUint aThreshold, TPckg< TUint > &aUplinkVolume, TRequestStatus &aStatus)
+Requests a notification after an additional aThreshold bytes have been sent by the entire connection.
+
+Making this request with an aThreshold of zero will result in the server reading the value in aUplinkVolume and producing a notification when the absolute amount of data specified here has been sent.
+
+\param aThreshold The number of additional bytes to be sent by this connection before the request completes.
+
+\param aUplinkVolume The total number of bytes sent by this connection so far.
+
+\param aStatus On return, the status of the request.
+
+\par Pre-condition
+An attached connection, as a result of performing either a Start() or an Attach() No outstanding request for data sent notifications on this RConnection
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-87A2D2E2-E2D3-3B6F-84B7-8BB696B2E580">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::DataSentNotificationRequest(TSubConnectionUniqueId aSubConnectionUniqueId, TUint aThreshold, TPckg< TUint > &aUplinkVolume, TRequestStatus &aStatus)
+Requests a notification after an additional aThreshold bytes have been sent on a specified subconnection.
+
+Making this request with an aThreshold of zero will result in the server reading the value in aUplinkVolume and producing a notification when the absolute amount of data specified here has been sent.
+
+\param aSubConnectionUniqueId A valid identifier for the subconnection of interest.
+
+\param aThreshold The number of additional bytes to be sent by this connection before the request completes.
+
+\param aUplinkVolume The total number of bytes sent by this connection so far.
+
+\param aStatus On return, the status of the request.
+
+\par Pre-condition
+An attached connection, as a result of performing either a Start() or an Attach() No outstanding request for data sent notifications for this subconnection on this RConnection
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-3A83BE14-25DA-38DF-B920-F6AB3A0D5BF3">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::DataSentNotificationCancel()
+Cancels a request for the amount of data sent on this connection, as issued by DataSentNotificationRequest().
+
+\par Pre-condition
+An attached connection, as a result of performing either a Start() or an Attach() An outstanding request for the amount of data transferred on this connection, made using DataSentNotificationRequest()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-681E6ED5-D70E-3002-9799-6FB1091D2372">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::DataSentNotificationCancel(TSubConnectionUniqueId aSubConnectionUniqueId)
+Cancels a request for the amount of data sent by the specified subconnection.
+
+\param aSubConnectionUniqueId The identifier for the subconnection used to make the request.
+
+\par Pre-condition
+An attached connection, as a result of performing either a Start() or an Attach() An outstanding request for the amount of data transferred on this subconnection, made using DataSentNotificationRequest()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-2C0087A7-F25A-39A9-B78D-4B3A9FCBC054">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::DataReceivedNotificationRequest(TUint aThreshold, TPckg< TUint > &aDownlinkVolume, TRequestStatus &aStatus)
+Requests a notification after an additional aThreshold bytes have been received by this connection.
+
+Completes when an amount of data equal to aThreshold has been received, starting from when the request is posted.
+
+Making this request with an aThreshold of zero will result in the server reading the value in aDownlinkVolume, and producing a notification when the absolute amount of data specified here has been sent.
+
+\param aThreshold The number of additional bytes to be received by this connection before the request completes.
+
+\param aDownlinkVolume The total number of bytes received by this connection so far
+
+\param aStatus On return, the status of the request.
+
+\par Pre-condition
+An attached connection, as a result of performing either a Start() or an Attach() No outstanding request for data received notifications for this connection on this RConnection
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-62EF6DED-16BF-3DDC-8F09-663766113342">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::DataReceivedNotificationRequest(TSubConnectionUniqueId aSubConnectionUniqueId, TUint aThreshold, TPckg< TUint > &aDownlinkVolume, TRequestStatus &aStatus)
+Requests notification after an additional aThreshold bytes have been received by a specified subconnection.
+
+Completes when an amount of data equal to aThreshold has been received, starting from when the request is posted.
+
+Making this request with an aThreshold of zero will result in the server reading the value in aDownlinkVolume, and producing a notification when the absolute amount of data specified here has been sent.
+
+\param aSubConnectionUniqueId A valid identifier for a subconnection.
+
+\param aThreshold The number of additional bytes to be received by this connection before the request completes.
+
+\param aDownlinkVolume On return, the total number of bytes received by this connection so far.
+
+\param aStatus On return, the status of the request.
+
+\par Pre-condition
+An attached connection, as a result of performing either a Start() or an Attach() No outstanding request for data received notifications for this subconnection on this RConnection
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-126221A5-C2CD-3AB2-9C19-2376CC226BFF">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::DataReceivedNotificationCancel()
+Cancels a request (issued by DataReceivedNotificationRequest ()) for the amount of data received by the entire connection.
+
+\par Pre-condition
+An attached connection, as a result of performing either a Start() or an Attach() An outstanding request for the amount of data received on this connection made using DataReceivedNotificationRequest()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-178479E8-6526-30D3-8744-A61EA55A53FA">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::DataReceivedNotificationCancel(TSubConnectionUniqueId aSubConnectionUniqueId)
+Cancels a request (issued by DataReceivedNotificationRequest ()) for the amount of data received by the specified subconnection.
+
+\param aSubConnectionUniqueId The identifier for the subconnection used to make the request.
+
+\par Pre-condition
+An attached connection, as a result of performing either a Start() or an Attach() An outstanding request for the amount of data received on this subconnection made using DataReceivedNotificationRequest()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-20B2E4E3-5A66-36B7-876F-87F147C1C1F6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::IsConnectionActiveRequest(TUint aSecs, TPckg< TBool > &aState, TRequestStatus &aStatus)
+Checks whether the connection is active or inactive.
+
+Notes whether any data is passed for aSecs after the time of call before responding. If data is passed the connection is considered active; otherwise it is considered inactive.
+
+\param aSecs The period for checking whether the connection is active. The maximum period allowed is approximately 35 mins.
+
+\param aState On entry, the state the client believes the subconnection is currently in; on return, contains the current state of the subconnection.
+
+\param aStatus On return, the status of the request
+
+\par Pre-condition
+An attached connection, as a result of performing either a Start() or an Attach() No outstanding request for activity notifications for this connection on this RConnection
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-06C63ABE-F3F5-3DA4-8C39-406ACDEE7F60">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::IsConnectionActiveCancel()
+\par Pre-condition
+An attached connection, as a result of performing either a Start() or an Attach() An outstanding request for activity notification on this connection made using IsConnectionActiveRequest()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-47885C71-C313-333D-AF9D-AD89C29CB16B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::IsSubConnectionActiveRequest(TSubConnectionUniqueId aSubConnectionUniqueId, TUint aSecs, TPckg< TBool > &aState, TRequestStatus &aStatus)
+Checks whether the subconnection is active or has changed state (active/inactive)
+
+The request will be completed when the aState passed in by the client is not the same as the current state, but this transition can only occur in quantised periods of aSecs
+
+The maximum period allowed is approximately 35 mins
+
+\param aSubConnectionUniqueId A valid identifier for a subconnection
+
+\param aSecs The quantisation period for checking whether the subconnection is active
+
+\param aState The state the client believes the subconnection is currently in; on return, contains the current state of the subconnection
+
+\param aStatus On return, the status of the request
+
+\par Pre-condition
+An attached connection, as a result of performing either a Start() or an Attach() No outstanding request for activity notifications for this subconnection on this RConnection
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-77F75E5A-2F0A-3B67-AE0F-001FB90B4695">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RConnection::IsSubConnectionActiveCancel(TSubConnectionUniqueId aSubConnectionUniqueId)
+\param aSubConnectionUniqueId The identifier for the subconnection used to make the request
+
+\par Pre-condition
+An attached connection, as a result of performing either a Start() or an Attach() An outstanding request for an activity notification on this subconnection made using IsSubConnectionActiveRequest()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-E96B6AFE-8A94-3BF3-9B07-8A46D533B430">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TBool RConnection::SameSession(TInt aSessionHandle)
+Checks that the Session Handle passed is the same as that of this RConnection.
+
+Use to verify the RConnection argument passed to the RSocket and RHostResolver Open(..., RConnection&amp; aConnection) methods.
+
+\param aSessionHandle The handle which is to be checked against that of this RConnection
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BED8A733-2ED7-31AD-A911-C1F4707C67FD.html#GUID-2476127F-F936-34FF-8CDE-E36A6637D1B8">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RHostResolver::Open(RSocketServ &aSocketServer, TUint anAddrFamily, TUint aProtocol)
+Initialises a name resolution service provided by a particular protocol.
+
+This must be called before other object functions are used.
+
+\param aSocketServer The socket server session
+
+\param anAddrFamily A constant identifying the protocol family
+
+\param aProtocol A constant that identifies the protocol that provides the name resolution service
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-D3DA67F1-82F5-321C-830B-02E95D71C63C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RHostResolver::Open(RSocketServ &aSocketServer, TUint anAddrFamily, TUint aProtocol, RConnection &aConnection)
+Initialises a name resolution service provided by a particular protocol, and associates the service with the same interface as an existing RConnection instance.
+
+This must be called before other object functions are used.
+
+Note that the association is instantaneous, in that the Host Resolver is associated with the interface that the RConnection is associated with at the present time. This association terminates when the underlying interface goes down.
+
+\param anAddrFamily A constant identifying the protocol family.
+
+\param aProtocol A constant that identifies the protocol that provides the name resolution service.
+
+\param aConnection Existing RConnection whose interface this Host Resolver will be associated with.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-50D3287F-5585-3C7B-A55A-F324E93382DC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RHostResolver::GetByName(const TDesC &aName, TNameEntry &aResult, TRequestStatus &aStatus)
+Resolves a machine name to a TSockAddress asynchronously.
+
+The server will fill in the supplied TNameEntry.
+
+\param aName The name to resolve. The format of the name and any wild-cards supported, along with any separators in hierarchical name systems, are protocol specific
+
+\param aResult On return, the result of the name resolution. If more than one result is allowed by the protocol, the client can call Next() to find any further results.
+
+\param aStatus Indicates asynchronous operation and, on completion, contains an error code: see the system-wide error codes.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-6CDEC0C3-DA40-3173-A493-2E2599B04870">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RHostResolver::GetByName(const TDesC &aName, TNameEntry &aResult)
+Resolves a machine name to a TSockAddress.
+
+The server will fill in the supplied TNameEntry.
+
+\param aName The name to resolve. The format of the name and any wild-cards supported, along with any separators in hierarchical name systems, are protocol specific
+
+\param aResult On return, the result of the name resolution. If more than one result is allowed by the protocol, the client can call Next() to find any further results.
+
+\par capability
+Dependent on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-676D5536-401C-3239-BDAF-8C7C6E036B07">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RHostResolver::Next(TNameEntry &aResult, TRequestStatus &aStatus)
+Get the next response if there is more than one response for a given host name (alias list)
+
+Returns the next answer asynchronously, where there is more than one response for a given host name.
+
+For some protocols, GetByName() and GetByAddress() may find more than one answer, for example if aliases are allowed.
+
+\param aResult Returns the next result of the name resolution.
+
+\param aStatus Indicates asynchronous operation and on completion contains an error code: see the system-wide error codes.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-7AE0C470-4F02-3733-B321-0F0752D152C6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RHostResolver::Next(TNameEntry &aResult)
+Get the next response if there is more than one response for a given host name (alias list)
+
+Returns the next answer where there is more than one response for a given host name.
+
+For some protocols, GetByName() and GetByAddress() may find more than one answer, for example if aliases are allowed.
+
+\param aResult Returns the next result of the name resolution.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-EB61C8ED-2C02-3325-96E8-41661FADB9D3">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RHostResolver::GetByAddress(const TSockAddr &anAddr, TNameEntry &aResult, TRequestStatus &aStatus)
+Get host by address (as get by name)
+
+Gets the name of a host from its address asynchronously
+
+\param anAddr The address to use
+
+\param aResult On return, the result of the query. If more than one result is allowed by the protocol, the client can call Next() to find any further results.
+
+\param aStatus Indicates asynchronous operation and on completion contains an error code: see the system-wide error codes.
+
+\par capability
+Dependent on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-6BF65A21-B069-39ED-A44B-5AECFE79F18C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RHostResolver::GetByAddress(const TSockAddr &anAddr, TNameEntry &aResult)
+Get host by address (as get by name)
+
+Gets the name of a host from its address
+
+\param anAddr The address to use
+
+\param aResult Returns the result of the query. If more than one result is allowed by the protocol, the client can call Next() to find any further results.
+
+\par capability
+Dependent on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-B0675D7A-DEFC-3FC3-9180-8ACA8EAC5A68">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RHostResolver::GetHostName(TDes &aName)
+Gets the name of the local host.
+
+Note that with some protocols the name of the local host is not necessarily known at all times. In some cases, a preceding call to SetHostName() must have been made.
+
+\param aName Returns the result of the query. The buffer passed in should have a minimum length of 256 characters, otherwise a panic may occur: you can use a parameter of the THostName type.
+
+\par capability
+Dependent on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-33CA3D00-33CB-338A-83A8-12ED2D5BB13C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RHostResolver::GetHostName(TDes &aName, TRequestStatus &aStatus)
+Gets the name of the local host asynchronously.
+
+Note that with some protocols the name of the local host is not necessarily known at all times. In some cases, a preceding call to SetHostName() must have been made.
+
+\param aName Returns the result of the query. The buffer passed in should have a minimum length of 256 characters, otherwise a panic may occur: you can use a parameter of the THostName type.
+
+\param aStatus Indicates asynchronous operation and on completion contains an error code: see the system-wide error codes.
+
+\par capability
+Dependent on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-67D77F77-D32C-3399-BB17-E9183F7D3234">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RHostResolver::SetHostName(const TDesC &aName)
+\param aName The local host name.
+
+\par capability
+NetworkControl Service restricting and stored at protocol level
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-1AEB96C0-950E-3813-9632-DADE8D1DCCD6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RHostResolver::Close()
+Closes a name resolution service. If a service has been opened using Open(), then it should be closed using Close(). This will ensure all associated resources are released.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-0F791E8A-3A4E-3A23-B101-66C4EB442E37">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RHostResolver::Cancel()
+Cancels any outstanding asynchronous calls, which will return with error code KErrCancel.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-D7AE863B-3C18-3911-8F46-9C1A6A4D7152">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RHostResolver::Query(const TDesC8 &aQuery, TDes8 &aResult, TRequestStatus &aStatus)
+Protocol - independent query. Asynchronous version.
+
+\param aQuery contains query data. The concrete type of the data depends on protocol. e.g. for tcpip it will imply DNS query.
+
+\param aResult Descriptor that will receive data. The concrete meaning of this data depends on protocol.
+
+\param aStatus indicates asynchronous operation, on completion contains a system-wide error code
+
+\par capability
+Dependent on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-78724AF3-45E9-34A8-9C06-0B50002FBF6C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RHostResolver::Query(const TDesC8 &aQuery, TDes8 &aResult)
+Protocol - independent query. Synchronous version.
+
+\param aQuery contains query data. The concrete type of the data depends on protocol. e.g. for tcpip it will imply DNS query.
+
+\param aResult Descriptor that will receive data. The concrete meaning of this data depends on protocol.
+
+\par capability
+Dependent on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-BE745CF6-FD44-3AE3-8185-BD0EEB2A09EF">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RHostResolver::QueryGetNext(TDes8 &aResult, TRequestStatus &aStatus)
+Get the next query result. For some queries there can be more than one results. Asynchronous version.
+
+\param aResult Descriptor that will receive data. The concrete meaning of this data depends on protocol.
+
+\param aStatus indicates asynchronous operation, on completion contains a system-wide error code. In particular KErrNotFound means that there is no more information from resolver.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-77338284-A679-395A-A5C6-4A963C3B3A58">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RHostResolver::QueryGetNext(TDes8 &aResult)
+Get the next query result. For some queries there can be more than one results. Synchronous version.
+
+\param aResult Descriptor that will receive data. The concrete meaning of this data depends on protocol.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B16CAD6D-85B1-3482-AAC0-9BADEDB6ABDD.html#GUID-51D15C83-6897-3069-92A6-CA79B4780FA0">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RNetDatabase::Open(RSocketServ &aSocketServer, TUint anAddrFamily, TUint aProtocol)
+Initialises a database access service provided by a particular protocol. It must be called before other object functions are used.
+
+\param aSocketServer The socket server session
+
+\param anAddrFamily A constant identifying the protocol family
+
+\param aProtocol A constant that identifies the protocol that provides the database access service
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-7489739B-3608-3F9F-BB02-DE65D7AA53A2.html#GUID-7318EA5F-E404-3E65-B43D-8782F0A5248E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RNetDatabase::Query(const TDesC8 &aQuery, TDes8 &aResult, TRequestStatus &aStat)
+Makes a query to the database asynchronously.
+
+\param aQuery The query to perform
+
+\param aResult The result of the query
+
+\param aStat Indicates asynchronous operation and on completion contains an error code: see the system-wide error codes.
+
+\par capability
+Dependent on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-7489739B-3608-3F9F-BB02-DE65D7AA53A2.html#GUID-E2C8E9E7-00E9-36C6-AB2D-77F4869507E2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RNetDatabase::Query(const TDesC8 &aQuery, TDes8 &aResult)
+Makes a query to the database.
+
+\param aQuery The query to perform
+
+\param aResult The result of the query
+
+\par capability
+Dependent on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-7489739B-3608-3F9F-BB02-DE65D7AA53A2.html#GUID-B7586528-E946-3831-8B80-FEA39F230926">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RNetDatabase::Add(const TDesC8 &anItem, TRequestStatus &aStat)
+Adds a record to the database asynchronously.
+
+\param anItem The record to add
+
+\param aStat Indicates asynchronous operation and on completion contains an error code: see the system-wide error codes.
+
+\par capability
+Dependent on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-7489739B-3608-3F9F-BB02-DE65D7AA53A2.html#GUID-2C8D37D8-9EF7-3612-A4A3-FD764BB2FB71">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RNetDatabase::Add(const TDesC8 &anItem)
+Adds a record to the database.
+
+\param anItem The record to add
+
+\par capability
+Dependent on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-7489739B-3608-3F9F-BB02-DE65D7AA53A2.html#GUID-7BF6867D-D412-3346-97B8-D23027A29FA3">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RNetDatabase::Remove(const TDesC8 &anItem, TRequestStatus &aStat)
+Removes a record from the database asynchronously.
+
+\param anItem The record to remove
+
+\param aStat Indicates asynchronous operation and on completion contains an error code: see the system-wide error codes.
+
+\par capability
+Dependent on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-7489739B-3608-3F9F-BB02-DE65D7AA53A2.html#GUID-417C8E9C-9B1F-37AC-948A-841C016F1B0E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RNetDatabase::Remove(const TDesC8 &anItem)
+Removes a record from the database.
+
+\param anItem The record to remove
+
+\par capability
+Dependent on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-7489739B-3608-3F9F-BB02-DE65D7AA53A2.html#GUID-C0FB9E7F-AA99-3A10-B25A-398A0A9541E9">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RNetDatabase::Close()
+Closes a database access service. If a service has been opened using Open(), then it should be closed using Close(). This will ensure all associated resources are released.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-7489739B-3608-3F9F-BB02-DE65D7AA53A2.html#GUID-7186C8A9-21E1-3EBE-BDB7-F0BACA3D565D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RNetDatabase::Cancel()
+Cancels any outstanding asynchronous calls, which will return with error code KErrCancel.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-7489739B-3608-3F9F-BB02-DE65D7AA53A2.html#GUID-A26640A4-83E5-356B-B388-EE8B9AB62A61">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RServiceResolver::Open(RSocketServ &aSocketServer, TUint anAddrFamily, TUint sockType, TUint aProtocol)
+set up the sub session - unlike name resolvers and net databases, services can be socket type specific. Opens a service resolver service.
+
+Unlike name resolvers (RHostResolver) and net databases (RNetDatabase), services can be socket type specific.
+
+\param aSocketServer The socket server session.
+
+\param anAddrFamily A constant identifying the protocol family.
+
+\param sockType A constant that identifies the socket type.
+
+\param aProtocol A constant that identifies the protocol that provides the service.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDD32F28-BA89-3CA1-93B0-355CDD9CD92D.html#GUID-AF221B34-3567-3DCC-AC1A-116D5C37EA69">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RServiceResolver::GetByName(const TDesC &aName, TPortNum &aPort, TRequestStatus &aStatus)
+Gets a service by name asynchronously.
+
+\param aName Name of the service to get.
+
+\param aPort On completion, the port associated with the service.
+
+\param aStatus On completion, KErrNone if successful otherwise another of the system-wide error codes.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDD32F28-BA89-3CA1-93B0-355CDD9CD92D.html#GUID-F224E0FB-B82C-3B92-935F-EECFEFB86BFB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RServiceResolver::GetByName(const TDesC &aName, TPortNum &aPort)
+Get a service by name.
+
+\param aName Name of the service to get.
+
+\param aPort On return, the port associated with the service.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDD32F28-BA89-3CA1-93B0-355CDD9CD92D.html#GUID-219DD6CA-855C-3605-8F4F-446BB9E3ABD7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RServiceResolver::GetByNumber(const TUint aPort, TDes &aName, TRequestStatus &aStatus)
+Gets the name of the service asynchronously.
+
+\param aPort Port of the service.
+
+\param aName On completion, the name of the service.
+
+\param aStatus On completion, KErrNone if successful otherwise another of the system-wide error codes.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDD32F28-BA89-3CA1-93B0-355CDD9CD92D.html#GUID-0B1494E4-230F-3D8C-A197-638C2ED6D67A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RServiceResolver::GetByNumber(const TUint aPort, TDes &aName)
+Gets the name of the service
+
+\param aPort Port of the service.
+
+\param aName On return, the name of the service.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDD32F28-BA89-3CA1-93B0-355CDD9CD92D.html#GUID-7285A8AC-955A-383A-8424-0512391A7384">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RServiceResolver::RegisterService(const TDesC &aName, const TUint &aPort, TRequestStatus &aStatus)
+Registers a new service asynchronously.
+
+\param aName Name of the service.
+
+\param aPort Port of the service.
+
+\param aStatus On completion, KErrNone if successful otherwise another of the system-wide error codes.
+
+\par capability
+NetworkControl To protect against dangerous new services being added, which may steal legimate services resources
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDD32F28-BA89-3CA1-93B0-355CDD9CD92D.html#GUID-18E09F44-8449-3299-AF47-9EB93C3E57D1">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RServiceResolver::RegisterService(const TDesC &aName, const TUint &aPort)
+Registers a new service.
+
+\param aName Name of the service.
+
+\param aPort Port of the service.
+
+\par capability
+NetworkControl To protect against dangerous new services being added, which may steal legimate services resources
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDD32F28-BA89-3CA1-93B0-355CDD9CD92D.html#GUID-1253DF31-057A-33FE-8FDC-E99C32A067EC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RServiceResolver::RemoveService(const TDesC &aName, const TUint &aPort, TRequestStatus &aStatus)
+Removes a service asynchronously.
+
+\param aName Name of the service to remove.
+
+\param aPort Port of the service to remove.
+
+\param aStatus On completion, KErrNone if successful otherwise another of the system-wide error codes.
+
+\par capability
+NetworkControl Ensure that only privileged apps can remove information from the service resolver
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDD32F28-BA89-3CA1-93B0-355CDD9CD92D.html#GUID-1A770EFC-DD1E-3249-AAAC-91AB78B07BEC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RServiceResolver::RemoveService(const TDesC &aName, const TUint &aPort)
+Removes a service.
+
+\param aName Name of the service.
+
+\param aPort Port of the service.
+
+\par capability
+NetworkControl Ensure that only privileged apps can remove information from the service resolver
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDD32F28-BA89-3CA1-93B0-355CDD9CD92D.html#GUID-424764B0-0FF3-3E4D-9175-85492C0400D7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RServiceResolver::Close()
+Closes a service resolver service
+
+If a service has been opened using Open(), then it should be closed using Close(). This will ensure all associated resources are released.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDD32F28-BA89-3CA1-93B0-355CDD9CD92D.html#GUID-6857B293-BE39-36BD-9248-1328B9A76584">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RServiceResolver::Cancel()
+Cancels any pending request.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDD32F28-BA89-3CA1-93B0-355CDD9CD92D.html#GUID-E5B8E945-61FE-305F-8C38-4C36E008E06B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C RSocket::RSocket()
+Default Constructor
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-5DC4D90C-79EB-3E62-A6BE-3A0C6EB10C74">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::Open(RSocketServ &aServer, TUint addrFamily, TUint sockType, TUint protocol)
+Opens an implicit socket by creating a new subsession to the socket server. Implicit socket is not explicitly associated with any connection. The socket will choose the default connection for sending the packets.
+
+Implicit socket accepts packets routed through any connection.
+
+Opens a channel to a protocol identified by a tuple of constants. If a socket is the first to be opened for a protocol it will have the additional effect of loading the protocol in the socket server.
+
+- The default connection scenario is where an application holding one started RConnection opens a socket without explicitly associating it with the RConnection. The explicit association can be made by passing the RConnection or a derived RSubConnection to an appropriate overload of RSocket::Open(...) (not this method).
+
+- The implicit connection scenario is where an application holding either none or many started RConnections (to different access points) opens a socket without explicitly associating it an RConnection.
+
+- The explicit connection scenario is where an application holding started RConnections opens a socket explicitly associating it with one of its RConnections.
+
+Applications attempting to exercise the default connection scenario shall (from 9.3 onwards) receive an error from RSocket::Open(...). The actual error code is yet to be defined.
+
+\param aServer The socket server session.
+
+\param addrFamily A valid address constant for a protocol family.
+
+\param sockType A valid socket type for the protocol.
+
+\param protocol A protocol constant which identifies a specific protocol.
+
+\par capability
+Dependent Capability required depends on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-4D4F4D0E-1029-3FEF-AC8B-E98DAB145C5F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::Open(RSocketServ &aServer, TUint addrFamily, TUint sockType, TUint protocol, RConnection &aConnection)
+Opens an explicit socket by creating a new subsession to the socket server. The socket is explicitly associated with the same underlying connection as an existing RConnection instance.
+
+Socket traffic is directed to and from the specified connection only.
+
+The association is instantaneous, in that the socket is associated with the interface that the RConnection is associated with at the present time. This association terminates when the underlying interface goes down.
+
+\param aServer The socket server session.
+
+\param addrFamily A valid address constant for a protocol family.
+
+\param sockType A valid socket type for the protocol.
+
+\param protocol A protocol constant which identifies a specific protocol.
+
+\param aConnection Existing RConnection whose interface this socket will be associated with.
+
+\par capability
+Dependent Capability required depends on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-200DF66B-B3A0-33DF-A096-623F9ECD2316">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::Open(RSocketServ &aServer, TUint addrFamily, TUint sockType, TUint protocol, RSubConnection &aSubConnection)
+Opens an explicit socket by creating a new subsession to the socket server. The socket is explicitly associated with the same underlying connection as an existing RSubConnection instance.
+
+Socket traffic is directed to and from the specified connection only.
+
+since 7.0S
+
+\param aServer The socket server session.
+
+\param addrFamily A valid address constant for a protocol family.
+
+\param sockType A valid socket type for the protocol.
+
+\param protocol A protocol constant which identifies a specific protocol.
+
+\param aSubConnection Existing RSubConnection this socket will be associated with.
+
+\par capability
+Dependent Capability required depends on the type of connection so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-019C3438-3045-30F7-8C52-97F31FF54790">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::Open(RSocketServ &aServer, const TDesC &aName)
+Opens an implicit socket by creating a new subsession to the socket server. Implicit socket is not explicitly associated with any connection. The socket will choose the default connection for sending the packets.
+
+Implicit socket accepts packets routed through any connection.
+
+Opens a channel to a protocol identified by a name. If a socket is the first to be opened for a protocol it will have the additional effect of loading the protocol in the socket server.
+
+- The default connection scenario is where an application holding one started RConnection opens a socket without explicitly associating it with the RConnection. The explicit association can be made by passing the RConnection or a derived RSubConnection to an appropriate overload of RSocket::Open(...) (not this method).
+
+- The implicit connection scenario is where an application holding either none or many started RConnections (to different access points) opens a socket without explicitly associating it an RConnection.
+
+- The explicit connection scenario is where an application holding started RConnections opens a socket explicitly associating it with one of its RConnections.
+
+Applications attempting to exercise the default connection scenario shall (from 9.3 onwards) receive an error from RSocket::Open(...). The actual error code is yet to be defined.
+
+\param aServer The socket server session.
+
+\param aName Name of a protocol.
+
+\par capability
+Dependent Capability required depends on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-C730E3C1-0EDE-3F44-A25D-D4B1E89889C5">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::Open(RSocketServ &aServer)
+Opens an implicit socket by creating a new subsession to the socket server. Implicit socket is not explicitly associated with any connection. The socket will choose the default connection for sending the packets.
+
+Implicit socket accepts packets routed through any connection.
+
+Provides a blank channel to the socket server which has no protocol associated. A socket opened in this manner is suitable as an argument to Accept(), which will marry the blank socket to a protocol when a connection is established to a remote endpoint.
+
+\param aServer The socket server session.
+
+\par capability
+Dependent Capability required depends on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-8812A98F-F471-33C4-B978-5383DFDE3217">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::Send(const TDesC8 &aDesc, TUint someFlags, TRequestStatus &aStatus)
+Sends data to a remote host on a connected socket with options set by protocol specific flags.
+
+A socket may only have one send operation in progress at any one time. Send() should only be used with connected sockets.
+
+If a protocol's information flag is marked with KSIUrgentData, then KSockWriteUrgent may be provided as a flag to Send(). All other flags are protocol specific.
+
+\param aDesc The data to be sent.
+
+\param someFlags Flags which are passed through to protocol
+
+\param aStatus On return KErrNone if successful, otherwise another of the system-wide error codes. Note that KErrEof indicates that the socket has been shutdown with option EStopOutput.
+
+\par capability
+Dependent on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-A586B1AC-8325-3A8D-AB80-FBB292B17364">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::Send(const TDesC8 &aDesc, TUint someFlags, TRequestStatus &aStatus, TSockXfrLength &aLen)
+Sends data to a remote host on a connected socket with options set by protocol specific flags.
+
+The length of the descriptor indicates the amount of data to be sent. The TSockXfrLength argument will return the amount of data actually sent.
+
+A socket may only have one send operation in progress at any one time.
+
+Send() should only be used with connected sockets.
+
+If a protocol's information flag is marked with KSIUrgentData, then KSockWriteUrgent may be provided as a flag to Send(). All other flags are protocol specific.
+
+\param aDesc The data to be sent.
+
+\param someFlags Flags which are passed through to protocol
+
+\param aStatus On return KErrNone if successful, otherwise another of the system-wide error codes. Note that KErrEof indicates that the socket has been shutdown with option EStopOutput
+
+\param aLen Filled in with amount of data sent before completion
+
+\par capability
+Dependent Capability required depends on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-5296FB10-146E-3111-B138-16F1E815903D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::CancelSend()
+Cancels an outstanding Send() operation.
+
+Calling the function will cause any outstanding send operation to complete prematurely. The state of a socket after a send is cancelled is defined by the characteristics of the protocol.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-BCFD4422-C209-3123-ACA9-38512C1D0DB8">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::Recv(TDes8 &aDesc, TUint flags, TRequestStatus &aStatus)
+Receives data from a remote host, allowing flags for protocol specific information.
+
+For a stream-interfaced socket the function only completes when the full amount of requested data has been received (or the connection breaks). This means when the descriptor has been filled to its maximum length (not its current length).
+
+For a datagram-interface socket, the function completes when one datagram arrives - even if it is not sufficient to fill the buffer. If the datagram does not fit in the buffer supplied then the remaining data will be lost.
+
+Recv() should only be used with connected sockets.
+
+A socket may only have one receive operation outstanding at any one time.
+
+If a protocol's information flag is marked with KSIPeekData, then KSockReadPeek may be provided as a flag to Recv(). All other flags are protocol specific.
+
+\param aDesc A descriptor where data received will be placed.
+
+\param flags Flags for protocol specific information.
+
+\param aStatus On return, KErrNone if successful, otherwise another of the system-wide error codes. Note that KErrEof indicates either that a remote connection is closed, and that no more data is available for reading, or the socket has been shutdown with option RSocket::EStopInput.
+
+\par capability
+Dependent on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-29F55E85-D819-39AE-BB20-A13F4F5BB1F0">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::Recv(TDes8 &aDesc, TUint flags, TRequestStatus &aStatus, TSockXfrLength &aLen)
+Receives data from a remote host, allowing flags for protocol specific information.
+
+For a stream-interfaced sockets, the function only completes when the full amount of requested data has been received (or the connection breaks). This means when the descriptor has been filled to its maximum length (not its current length).
+
+For a datagram-interface socket, the function completes when one datagram arrives - even if it is not sufficient to fill the buffer. If the datagram does not fit in the buffer supplied, remaining data may be retrieved using the Datagram Continuation feature.
+
+This function implements the Datagram Continuation feature for PRTs implementing PRT1.5: the ability to read a datagram in parts. For a client request to read a datagram, using the TSockXfrLength parameter, remaining unread octets of the datagram are returned in the TSockXfrLength parameter. The client can then read the remaining octets by further reads with the 'KSockReadContinuation' flag OR'd into the flags field. Remaining octets are discarded upon the next read without the KSockReadContinuation flag set.
+
+Recv() should only be used with connected sockets.
+
+A socket may only have one receive operation outstanding at any one time.
+
+If a protocol's information flag is marked with KSIPeekData, then KSockReadPeek may be provided as a flag to Recv(). All other flags are protocol specific.
+
+\param aDesc A descriptor where data received will be placed.
+
+\param flags Flags for protocol specific information.
+
+\param aStatus Reference to the request status object. On completion, KErrNone if successful, otherwise one of the system wide error codes. Note that KErrEof indicates either that a remote connection is closed, and that no more data is available for reading, or the socket has been shutdown with option RSocket::EStopInput.
+
+\param aLen For non-datagram sockets, on return, a length which indicates how much data was read. This is the same as length of the returned aDesc. For datagram sockets, this parameter returns the number of remaining unread octets.
+
+\par capability
+Dependent on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-84015C99-6102-3FFD-B584-559E63A7C11C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::RecvOneOrMore(TDes8 &aDesc, TUint flags, TRequestStatus &aStatus, TSockXfrLength &aLen)
+Receives data from a remote host and completes when data is available.
+
+The function reads at least one byte of data, but will complete as soon as any data is available. The amount of data received is returned via the TSockXfrLength argument.
+
+RecvOneOrMore() can only be used with stream-interfaced connected sockets; datagram interface sockets will return KErrNotSupported.
+
+A socket may only have one receive operation outstanding at any one time.
+
+\param aDesc A descriptor where data read will be placed.
+
+\param flags Flags which are passed through to protocol.
+
+\param aStatus On completion, KErrNone if successful, otherwise one of the system wide error codes. Note that KErrEof indicates either that a remote connection is closed, and that no more data is available for reading, or the socket has been shutdown with option RSocket::EStopInput.
+
+\param aLen For non-datagram sockets, on return, a length which indicates how much data was read. This is the same as length of the returned aDesc. For datagram sockets, this parameter is not used.
+
+\par capability
+Dependent on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-7C9F73DB-52A9-357F-8DCA-163E533D4BC2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::RecvOneOrMore(TDes8 &aDesc, TUint flags, TRequestStatus &aStatus)
+Receives data from a remote host and completes when data is available.
+
+The function reads at least one byte of data, but will complete as soon as any data is available. The amount of data received is returned via the TSockXfrLength argument.
+
+RecvOneOrMore() can only be used with stream-interfaced connected sockets; datagram interface sockets will return KErrNotSupported.
+
+A socket may only have one receive operation outstanding at any one time.
+
+\param aDesc A descriptor where data read will be placed.
+
+\param flags Flags which are passed through to protocol.
+
+\param aStatus On completion, KErrNone if successful, otherwise one of the system wide error codes. Note that KErrEof indicates either that a remote connection is closed, and that no more data is available for reading, or the socket has been shutdown with option RSocket::EStopInput.
+
+\par capability
+Dependent on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-BC9F9BD7-2A6D-3EF8-8FF0-157DD58CA924">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::CancelRecv()
+Cancels an outstanding Recv() operation.
+
+Calling this function will cause any outstanding receive operation to complete prematurely. The state of a socket after a receive is cancelled is defined by the characteristics of the protocol.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-9FC75F50-A4A6-39D3-9B33-DEBBD4D3A36A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::Read(TDes8 &aDesc, TRequestStatus &aStatus)
+Receives data from a remote host.
+
+For a stream-interfaced sockets, the function only completes when the full amount of requested data has been received (or the connection breaks). This means when the descriptor has been filled to its maximum length (not its current length). For a connection-oriented datagram-interface, the function completes when a datagram arrives even if it is not sufficient to fill the buffer.
+
+Read() should only be used with connected sockets.
+
+A socket may only have one receive operation outstanding at any one time.
+
+\param aDesc A descriptor where data read will be placed.
+
+\param aStatus On completion, KErrNone if successful, otherwise one of the system wide error codes. Note that KErrEof indicates either that a remote connection is closed, and that no more data is available for reading, or the socket has been shutdown with option RSocket::EStopInput.
+
+\par capability
+Dependent on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-CDC6A58B-C79B-32DA-A0CC-E7A3D063FE4F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::CancelRead()
+Cancels an outstanding Read() operation.
+
+Calling this function will cause any outstanding Read() operation to complete prematurely. The state of a socket after a receive is cancelled is defined by the characteristics of the protocol.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-6F96C63A-1A5D-34ED-8376-CA0CE981046A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::Write(const TDesC8 &aDesc, TRequestStatus &aStatus)
+Sends data to a remote host.
+
+Write() should only be used with connected sockets.
+
+\param aDesc The data to be sent.
+
+\param aStatus On completion, KErrNone if successful, otherwise one of the system wide error codes. Note that KErrEof indicates that the socket has been shutdown with option EStopOutput.
+
+\par capability
+Dependent on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-7560E744-6174-3EBF-BDE3-20AA3E2520C3">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::CancelWrite()
+Cancels an outstanding Write() operation.
+
+Calling the function will cause any outstanding Write() operation to complete prematurely. The state of a socket after a send is cancelled is defined by the characteristics of the protocol.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-05E681D5-FB7A-3328-A343-2524C0251180">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::SendTo(const TDesC8 &aDesc, TSockAddr &anAddr, TUint flags, TRequestStatus &aStatus)
+Sends data to a remote host through a (possibly) unconnected socket to a specified destination address.
+
+Flags are provided to add protocol specific information. The length of the descriptor indicates the amount of data to be sent. A socket may only have one send operation in progress at any one time.
+
+\param aDesc The data to be sent.
+
+\param anAddr A remote destination address for unconnected sends
+
+\param flags Flags which are passed through to protocol
+
+\param aStatus On completion, KErrNone if successful, otherwise one of the system wide error codes. Note that KErrEof indicates that the socket has been shutdown with option EStopOutput.
+
+\par capability
+Dependent on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-F1278F21-46FA-3388-84E0-527E972D123F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::SendTo(const TDesC8 &aDesc, TSockAddr &anAddr, TUint flags, TRequestStatus &aStatus, TSockXfrLength &aLen)
+Sends data to a remote host through a (possibly) unconnected socket to a specified destination address.
+
+Flags are provided to add protocol specific information. The length of the descriptor indicates the amount of data to be sent. A socket may only have one send operation in progress at any one time. The TSockXfrLength argument will return the amount of data sent.
+
+\param aDesc The data to be sent.
+
+\param anAddr A remote destination address for unconnected sends
+
+\param flags Flags which are passed through to protocol
+
+\param aStatus On completion, KErrNone if successful, otherwise one of the system wide error codes. Note that KErrEof indicates that the socket has been shutdown with option EStopOutput. In the case of KSONonBlockingIO &amp; writeFlowedoff, it has to return KerrWouldBlock, but it returns KErrNone for compatibiity
+
+\param aLen Filled in with amount of data sent before completion
+
+\par capability
+Dependent on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-F699E19F-8A3F-34EF-8C3E-1A02B72E0D29">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::RecvFrom(TDes8 &aDesc, TSockAddr &anAddr, TUint flags, TRequestStatus &aStatus)
+Receives data from a remote host through a (possibly) unconnected socket and returns a source address.
+
+Flags are provided to add protocol specific information.
+
+A socket may only have one receive operation outstanding at any one time.
+
+\param aDesc A descriptor where data read will be placed.
+
+\param anAddr A remote source address for unconnected receives. Returns KAfInet6 in TSockAddr::Family() for IPv4 ICMP packets. Returns KAfInet for IPv4 TCP and UDP sockets.
+
+\param flags Flags which are passed through to protocol.
+
+\param aStatus On completion, KErrNone if successful, otherwise one of the system wide error codes. Note that KErrEof indicates either that a remote connection is closed, and that no more data is available for reading, or the socket has been shutdown with option RSocket::EStopInput.
+
+\par capability
+Dependent on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-4B00A4EA-C33D-33E0-A803-5664756606FE">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::RecvFrom(TDes8 &aDesc, TSockAddr &anAddr, TUint flags, TRequestStatus &aStatus, TSockXfrLength &aLen)
+Receives data from a remote host through a (possibly) unconnected socket where a source address is returned.
+
+Flags are provided to add protocol specific information.
+
+A socket may only have one receive operation outstanding at any one time.
+
+\param aDesc A descriptor where data read will be placed
+
+\param anAddr A remote source address for unconnected receives. Returns KAfInet6 in TSockAddr::Family() for IPv4 ICMP packets. Returns KAfInet for IPv4 TCP and UDP sockets.
+
+\param flags Flags which are passed through to protocol
+
+\param aStatus On completion, KErrNone if successful, otherwise one of the system wide error codes. Note that KErrEof indicates either that a remote connection is closed, and that no more data is available for reading, or the socket has been shutdown with option RSocket::EStopInput.
+
+\param aLen For non-datagram sockets, on return, a length which indicates how much data was read. This is the same as length of the returned aDesc. For datagram sockets, this parameter is not used.
+
+\par capability
+Dependent on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-6C857669-EC7A-3A86-B764-69EC8623E719">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::Connect(TSockAddr &anAddr, TRequestStatus &aStatus)
+Connects to a remote host asynchronously.
+
+The address provided specifies the address of the remote host.
+
+A socket may only have one connect operation outstanding at any one time. Once the connect is completed, the socket is ready to send or receive data. If a socket is unbound - i.e. Bind() has not been called yet - then it will automatically have a local address allocated.
+
+Connect() is always required for protocols which do not have the KSIConnectionLess flag in their protocol information. If a protocol has the KSIConnectionLess flag, then Connect() may be used to set the address for all data sent from the socket, in which case Send()/Write() may be used in addition to SendTo().
+
+To use data in connection a protocol must have the flag KSIConnectData in its protocol information.
+
+To cancel a connect use CancelConnect().
+
+\param anAddr Address of remote host.
+
+\param aStatus On completion, will contain an error code, see the system-wide error codes.
+
+\par capability
+Dependent on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-6DC25A65-B640-33A6-8DA2-DA332D61C155">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::Connect(TSockAddr &anAddr, const TDesC8 &aConnectDataOut, TDes8 &aConnectDataIn, TRequestStatus &aStatus)
+Connects to a remote host asynchronously.
+
+The address provided specifies the address of the remote host.
+
+Some protocols allow data to be sent in connect request packets which may be provided in the data-out descriptor. Some protocols may allow data to be sent in connect responses which may be collected in the data-in descriptor.
+
+A socket may only have one connect operation outstanding at any one time. Once the connect is completed, the socket is ready to send or receive data. If a socket is unbound - i.e. Bind() has not been called yet - then it will automatically have a local address allocated.
+
+Connect() is always required for protocols which do not have the KSIConnectionLess flag in their protocol information. If a protocol has the KSIConnectionLess flag, then Connect() may be used to set the address for all data sent from the socket, in which case Send()/Write() may be used in addition to SendTo().
+
+To use data in connection a protocol must have the flag KSIConnectData in its protocol information.
+
+To cancel a connect use CancelConnect().
+
+\param anAddr Address of remote host.
+
+\param aStatus On completion, will contain an error code. KErrBadHandle if the socket has already been closed by the client; KErrAlreadyExists if the socket is already connected and it isn't a blocking connection; otherwise one of the system-wide error codes.
+
+\panic EConnectingAlready if the socket is connection-oriented and a blocking connection is already in progress for the socket
+
+\par capability
+Dependent on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-0746AC98-36AD-3DCF-B004-40FBBC2CF6D4">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::CancelConnect()
+Cancels an outstanding connect operation.
+
+Will cause any outstanding connect operation to complete prematurely.
+
+The state of a socket after a connect is cancelled is defined by the characteristics of the protocol.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-73C2A902-7013-390A-A2B5-F35576476FC0">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::Bind(TSockAddr &anAddr)
+Sets the local address of a socket.
+
+When a socket is opened it has no name associated with it, and binding is required so data can be routed to the socket.
+
+Bind() should be called before Listen() or Connect(). The address supplied should be a derived class specific to the particular protocol the socket was opened on.
+
+\param anAddr Desired local address of socket.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-55048BBF-3374-3F5B-BA9B-C9853B451CFF">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::SetLocalPort(TInt aPort)
+Sets the local port of a socket. Setting the local port is equivalent to calling Bind() with only the port set in the address.
+
+\param aPort Desired local port of socket.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-BEA00FB1-4305-36E7-9D32-4412A992203D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::Accept(RSocket &aBlankSocket, TRequestStatus &aStatus)
+Facilitates a client/server connection from a remote socket.
+
+Extracts the first pending connection on a queue of sockets, the queue size being previously specified by Listen(). On successful completion the blank socket is given the handle of the new socket and it may then be used to transfer data. After completion the accept socket may be used to make further connections with new blank sockets (see Open() on how to open a blank socket).
+
+Accept() may be used for protocols which do not have the KSIConnectionLess flag in their protocol information.
+
+\param aBlankSocket A socket opened as a blank socket.
+
+\param aStatus On completion, will contain an error code: see the system-wide error codes.
+
+\par capability
+Dependent on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-83E5474F-4603-3682-B47B-281A4DC20358">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::Accept(RSocket &aBlankSocket, TDes8 &aConnectData, TRequestStatus &aStatus)
+Facilitates a client/server connection from a remote socket.
+
+Extracts the first pending connection on a queue of sockets, the queue size being previously specified by Listen(). On successful completion the blank socket is given the handle of the new socket and it may then be used to transfer data. After completion the accept socket may be used to make further connections with new blank sockets (see Open() on how to open a blank socket).
+
+This variant provides an additional descriptor argument to receive data which may have been sent in a connect request. If there is a pending connection in the listen queue when Accept() is called, the call will complete immediately. Otherwise it will wait until a socket becomes available in the queue and complete asynchronously.
+
+Accept() may be used for protocols which do not have the KSIConnectionLess flag in their protocol information.
+
+To receive data-in accepting, a protocol must have the flag KSIConnectData in its protocol information.
+
+\param aBlankSocket A socket opened as a blank socket.
+
+\param aConnectData Data which may have been received in connection.
+
+\param aStatus On completion, will contain an error code: see the system-wide error codes.
+
+\par capability
+Dependent on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-EEC97E2B-D73F-3A12-8F4E-4AA13C46AD44">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::CancelAccept()
+Cancels an outstanding accept operation.
+
+Will cause any outstanding accept operation to complete prematurely.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-450C42EF-0409-399E-9456-BAE7B8E80788">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::Listen(TUint qSize)
+Sets up a socket to listen for incoming connections.
+
+Before calling this procedure a socket should be opened on a specific protocol using Open() and the socket should be bound to a local address using Bind().
+
+Listen() creates a queue to hold incoming connections which can be married with blank sockets using Accept(). The call also allows data to be sent back to connecting peers if a protocol allows data to be passed in connect responses. Once a listen queue has been created it will continue to allow peers to connect until it is full, at which point it will reject any incoming connections as specified by protocol behaviour. When a socket is accepted by the client a space is made available in the queue.
+
+\param qSize Size of listen queue.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-20F73A44-9588-3EE9-AAE3-D093A7263C76">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::Listen(TUint qSize, const TDesC8 &aConnectData)
+Sets up a socket to listen for incoming connections.
+
+Before calling this procedure a socket should be opened on a specific protocol using Open() and the socket should be bound to a local address using Bind().
+
+Listen() creates a queue to hold incoming connections which can be married with blank sockets using Accept(). The call also allows data to be sent back to connecting peers if a protocol allows data to be passed in connect responses. Once a listen queue has been created it will continue to allow peers to connect until it is full, at which point it will reject any incoming connections as specified by protocol behaviour. When a socket is accepted by the client a space is made available in the queue.
+
+To use data-in listening, a protocol must have the flag KSIConnectData in its protocol information.
+
+\param qSize Size of listen queue.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-EC62C10E-899E-3556-9C23-A1C598A27C87">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::SetOpt(TUint anOptionName, TUint anOptionLevel, const TDesC8 &anOption=TPtrC8(NULL, 0))
+Sets a socket option. The socket server has options which are generic to all sockets and protocols may add specific options.
+
+Options available for all protocols can be set with anOptionLevel set to KSOLSocket. See individual protocol notes for other socket options.
+
+\param anOptionName An integer constant which identifies an option.
+
+\param anOptionLevel An integer constant which identifies level of an option: i.e. an option level groups related options together.
+
+\param anOption Option value packaged in a descriptor.
+
+\par capability
+Dependent on the type of operation so deferred to PRT. See documentation of constant values used in aOptionName and aOptionLevel for more information
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-264B6832-5AD7-3AF0-9362-1A9CD41AFB8E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::SetOpt(TUint anOptionName, TUint anOptionLevel, TInt anOption)
+Sets a socket option. The socket server has options which are generic to all sockets and protocols may add specific options.
+
+Options available for all protocols can be set with anOptionLevel set to KSOLSocket. See individual protocol notes for other socket options.
+
+\param anOptionName An integer constant which identifies an option.
+
+\param anOptionLevel An integer constant which identifies level of an option: i.e. an option level groups related options together.
+
+\param anOption Option value as an integer.
+
+\par capability
+Dependent on the type of operation so deferred to PRT. See documentation of constant values used in aOptionName and aOptionLevel for more information
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-254E953D-B75A-3E7D-BB1B-87FCAEC410D3">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::GetOpt(TUint anOptionName, TUint anOptionLevel, TDes8 &anOption)
+Gets a socket option. The socket server has options which are generic to all sockets and protocols may add specific options.
+
+Options available for all protocols can be got with anOptionLevel set to KSOLSocket. See individual protocol notes for other socket options.
+
+\param anOptionName An integer constant which identifies an option.
+
+\param anOptionLevel An integer constant which identifies level of an option.
+
+\param anOption On return, option value packaged in a descriptor.
+
+\par capability
+Dependent on the type of operation so deferred to PRT. See documentation of constant values used in aOptionName and aOptionLevel for more information
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-1B100D7D-8409-3B89-A330-9BAF12211C0B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::GetOpt(TUint anOptionName, TUint anOptionLevel, TInt &anOption)
+Gets a socket option. The socket server has options which are generic to all sockets and protocols may add specific options.
+
+Options available for all protocols can be got with anOptionLevel set to KSOLSocket. See individual protocol notes for other socket options.
+
+\param anOptionName An integer constant which identifies an option.
+
+\param anOptionLevel An integer constant which identifies level of an option.
+
+\param anOption On return, option value as an integer.
+
+\par capability
+Dependent on the type of operation so deferred to PRT. See documentation of constant values used in aOptionName and aOptionLevel for more information
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-2CB0DE03-A3B6-30EE-859D-67B7EF6CFC20">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::Ioctl(TUint aCommand, TRequestStatus &aStatus, TDes8 *aDesc=NULL, TUint aLevel=KLevelUnspecified)
+Applies an asynchronous I/O control operation on a socket. Data may be passed and received if a descriptor address is provided as an argument. Only one Ioctl() operation may be outstanding for each socket.
+
+Commands available for all protocols can be set withaLevel set to KSOLSocket. See individual protocol notes for other commands.
+
+\param aCommand Ioctl command.
+
+\param aStatus On completion, will contain an error code: see the system-wide error codes.
+
+\param aDesc Pointer to a descriptor in which data may be sent and received on completion
+
+\param aLevel Control operation level
+
+\par capability
+Dependent on the type of operation so deferred to PRT. See documentation of constant values used in aOptionName and aOptionLevel for more information
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-810F3C7A-D55C-36B4-95C0-F47EB8BE1D1A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::CancelIoctl()
+Cancels an outstanding Ioctl() operation.
+
+Will cause any outstanding Ioctl operation to complete prematurely.
+
+The state of a socket after a connect is cancelled is defined by the characteristics of the protocol.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-65077EEB-093C-35C1-BB3A-54898614C8A1">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::GetDisconnectData(TDes8 &aDesc)
+Gets data for use in the disconnection of a socket, namely the remote name of the connected socket.
+
+This data has been received in a protocol disconnect message.
+
+To use the data in disconnection, a protocol must have the flagKSIConnectData in its protocol information.
+
+\param aDesc A descriptor to receive data.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-47A9F290-189D-3BA8-B2C3-B4CFEFE055D4">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::LocalName(TSockAddr &anAddr)
+Gets the local address of a bound socket.
+
+The local address is set either by calling Bind(), or is automatically set when Connect() is called.
+
+If a socket is created through Accept() then a socket will inherit the port of its parent unless otherwise specified by a protocol's behaviour.
+
+Depending on a protocol implementation, additional information may be gained through this call.
+
+\param anAddr Local address which is filled in on return.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-70EE782E-C130-31AE-A77B-1C17CF8D784E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TUint RSocket::LocalPort()
+Gets the local port number of a bound socket.
+
+Getting the local port is similar to getting the local name.
+
+LocalName() for a description.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-F79175DF-82F8-3AEC-942D-8310D9A8CC42">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::RemoteName(TSockAddr &anAddr)
+Gets the remote name of a connected socket.
+
+The remote name of a socket is associated with the remote host a socket is connected to. The remote name is only valid for a connected socket. A socket is either connected through calling Connect() or Accept().
+
+\param anAddr Remote address which is filled in on return.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-C4D2799E-2923-3686-9E46-539799E6EE04">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::Close()
+Closes a socket.
+
+If a socket has been opened using Open() then it should be closed using Close(). This will ensure all associated resources are released.
+
+Closing serves two distinct purposes:
+
+To release resources associated with the IPC channel to the socket server.
+
+To disconnect a socket if it is connected.
+
+If a socket is connected, then calling close is equivalent to calling Shutdown() with an argument of RSocket::ENormal, synchronously waiting for the request to complete, and then closing the IPC channel. If asynchronous or alternative methods of disconnecting are required then Shutdown() should be called before Close().
+
+If the RSocketServ session on which a protocol was opened is closed, then all sockets associated with that session will be abortively closed and any further requests on the sockets will result in panics.
+
+If a protocol has the flag KSIGracefulClose in its protocol information, when Close() is called on a connected socket, the socket will synchronously block until a response to a close request has been received or some other protocol condition causes the call to complete.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-5186EADF-9DDF-3F11-833D-9F1907CE1401">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::Shutdown(TShutdown aHow, TRequestStatus &aStatus)
+Shuts down a connected socket - asynchronous.
+
+This method is asynchronous as non emergency shutdown may take a while.
+
+The shut down method allows input and output to be individually stopped for a protocol endpoint. For protocols which support data-in disconnect message, additional arguments are provided.
+
+Shutdown() can be used for protocols which do not have the KSIConnectionLess flag in their protocol information.
+
+To use data in disconnection a protocol must have the flag KSIDisconnectData in its protocol information.
+
+There is no way to cancel a socket shutdown once it has started.
+
+\param aHow Shutdown option. All variants complete when a socket is disconnected. If the parameter is within the range of TShutdown values, pending read and write operations are cancelled. If the parameter is outside the range of TShutdown values, then the behaviour is as if ENormal were specified except that pending read and write operations are not cancelled. Note that the behaviour of using parameters outside the range of TShutdown values may change in a future release and should not be relied upon.
+
+\param aStatus On return KErrNone if successful, otherwise another of the system-wide error codes.
+
+\par capability
+Dependent Capability required depends on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-0E448566-4C24-3E12-AF60-A99897C47ACC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::Shutdown(TShutdown aHow, const TDesC8 &aDisconnectDataOut, TDes8 &aDisconnectDataIn, TRequestStatus &aStatus)
+Shuts down a connected socket with disconnect data - asynchronous.
+
+This method is asynchronous as non emergency shutdown may take a while.
+
+The shut down method allows input and output to be individually stopped for a protocol endpoint. For protocols which support data-in disconnect message, additional arguments are provided.
+
+Shutdown() can be used for protocols which do not have the KSIConnectionLess flag in their protocol information.
+
+To use data in disconnection a protocol must have the flag KSIConnectData in its protocol information.
+
+There is no way to cancel a socket shutdown once it has started.
+
+\param aHow Shutdown option. All variants complete when a socket is disconnected.
+
+\param aDisconnectDataOut A descriptor containing data to be sent.
+
+\param aDisconnectDataIn A descriptor to receive data.
+
+\param aStatus On return KErrNone if successful, otherwise another of the system-wide error codes.
+
+\par capability
+Dependent Capability required depends on the type of socket so deferred to PRT
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-B4AFBE1B-5509-3F54-805F-E7DFA034C2C2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocket::CancelAll()
+Cancels all outstanding operations.
+
+Will cause all outstanding operations to complete prematurely.
+
+Outstanding operations for a socket include: read, write, Ioctl, connect, accept and shutdown. All of these operations will be completed by this call.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-80A2A4B7-871A-33AB-9867-B69A5933F89A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::Info(TProtocolDesc &aProtocol)
+Gets information in the protocol description for the protocol which a socket is opened on.
+
+\param aProtocol A protocol description type to hold protocol information.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-2B78DBD6-FE01-32C7-B23B-01786374F484">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::Name(TName &aName)
+Gets a unique system name for the socket. The purpose of this is to identify the socket in a call to Transfer().
+
+\param aName System name for the socket
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-8B876F42-63CF-3424-91A4-C80F9995FD3B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocket::Transfer(RSocketServ &aServer, const TDesC &aName)
+Transfers a socket from one socket server session to another. It creates the socket in the target session, and removes the socket from the source session. The call is made on an uninitialised RSocket object. The socket system name is used to identify the socket to transfer.
+
+If the call fails, the socket that is being transferred remains with the original session. Success or failure can be checked on the originating socket by calling Info(), which returns KErrNone if the transfer failed, and KErrBadHandle if it succeeded.
+
+Platsec considerations require that the source socket must set itself transferable before any attempt to transfer the socket to the destination socket. This is done using a setopt in the following way
+
+\code{.cpp}
+_LIT_SECURITY_POLICY_Cn(KProcPolicy, cap1, cap2, ... capn);
+ret = destsock.SetOpt(KSOEnableTransfer, KSOLSocket, KProcPolicy().Package());
+\endcode
+
+where cap1,cap2...capn are the capabilities that the destination process MUST have in order to affect the transfer.
+
+An example is:
+
+\code{.cpp}
+_LIT_SECURITY_POLICY_C2(KProcPolicy, ECapabilityNetworkServices,
+                        ECapabilityNetworkControl);
+ret = destsock.SetOpt(KSOEnableTransfer, KSOLSocket, KProcPolicy().Package());
+\endcode
+
+If the setOpt is not set or the destination process does not have sufficient capabilities then the function will return KErrPermissionDenied
+
+\param aServer The session into which to transfer the socket.
+
+\param aName The system name, as obtained from a call to Name(), of the socket that you want to transfer.
+
+\par capability
+Dependent on the capabilities defined in the setOpt by the source Socket
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-D4F08503-F1EF-3531-9C3C-4AF24A6255F0.html#GUID-937A7524-23DB-3EA6-BA4F-7DE107C35E73">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C RSocketServ::RSocketServ()
+Default Constructor
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-124D6B1F-5A9D-3E9F-8182-2A5C8A37B614">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocketServ::Connect(TUint aMessageSlots=(TUint) -1)
+Opens a session to the socket server.
+
+Each outstanding asynchronous request made upon the session (typically via a subsession such as RSocket) requires a message slot. If there is no free slot the request is immediately completed with KErrServerBusy. If a client specifies a fixed number of slots then they form an inelastic pool exclusive to the session. Alternatively a client can specify -1 to use the global free message pool, which can grow upon demand but has poorer time bounds and can in principle fail any request. For most clients the global pool will be appropriate since it removes the need to accurately determine the worst case size.
+
+Note that in previous releases the default value was KESockDefaultMessageSlots (8).
+
+RHandleBase::Close() should be called once the session is no longer required. All resources which are opened using the session will be automatically closed when the session terminates.
+
+When the last session which has open resources for a protocol is closed a protocol module will be unloaded automatically by the socket server.
+
+\param aMessageSlots The number of message slots required. If not specified then -1 to use the global pool of free messages.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-2EE85CAA-965F-3F75-8656-87884372794A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocketServ::Connect(const TSessionPref &aPref, TUint aMessageSlots=(TUint) -1)
+Opens a session to the socket server.
+
+By providing session prefs the client states what services they require of the server. This allows the server to configure the client connection in an optimal manner. Such a configuration may not support all normal abilities of a session. For example a connection opened specifying KAfInet for the address family will be able to create TCP sockets but might not be able to create SMS sockets.
+
+Each outstanding asynchronous request made upon the session (typically via a subsession such as RSocket) requires a message slot. If there is no free slot the request is immediately completed with KErrServerBusy. If a client specifies a fixed number of slots then they form an inelastic pool exclusive to the session. Alternatively a client can specify -1 to use the global free message pool, which can grow upon demand but has poorer time bounds and can in principle fail any request. For most clients the global pool will be appropriate since it removes the need to accurately determine the worst case size.
+
+Note that in previous releases the default value was KESockDefaultMessageSlots (8).
+
+RHandleBase::Close() should be called once the session is no longer required. All resources which are opened using the session will be automatically closed when the session terminates.
+
+When the last session which has open resources for a protocol is closed a protocol module will be unloaded automatically by the socket server.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-6830CED8-4ECF-31F8-8A27-AB704C4A7121">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TVersion RSocketServ::Version() const
+Gets the version number of this client.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-FA42B972-D7AF-3B4B-8AFC-BF387569193F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocketServ::NumProtocols(TUint &aCount)
+Gets the number of protocols the socket server is currently aware of.
+
+The count returned can be used in conjunction with GetProtocolInfo().
+
+\param aCount The number of protocols is returned in aCount
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-D4AD92AB-D386-31F8-B6B3-668335138CA5">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocketServ::GetProtocolInfo(TUint anIndex, TProtocolDesc &aProtocol)
+Gets information about a specific protocol.
+
+\param anIndex Index of required protocol description.
+
+\param aProtocol A protocol description type to hold protocol information.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-804C5ED0-6949-3760-A186-E7022AD8AC62">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocketServ::FindProtocol(const TProtocolName &aName, TProtocolDesc &aProtocol)
+Gets information about a specific protocol, identified by it's name.
+
+There is no wildcard support.
+
+\param aName Typed descriptor which identifies a protocol name.
+
+\param aProtocol A protocol description type to hold protocol information.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-6EBC4A27-8300-3D72-A62F-5A277FEEA050">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocketServ::StartProtocol(TUint anAddrFamily, TUint aSockType, TUint aProtocol, TRequestStatus &aStatus)
+Loads a specified protocol asynchronously.
+
+The protocol is specified by family, socket type and protocol identifier.
+
+Note that client programs do not normally need to call this function, as loading of a protocol is done automatically by the Sockets Server when a socket of that protocol is opened. Some applications may, however, need to ensure that an open socket call will not take a significant amount of time (e.g. IrCOMM). This function can be called by such applications to preload the protocol.
+
+There is no way to cancel this operation once it has been called.
+
+\param anAddrFamily Integer which identifies a protocol suite.
+
+\param aSockType Integer which identifies a type of socket.
+
+\param aProtocol Integer which identifies a specific protocol in a family.
+
+\param aStatus On completion will contain an error code: see the system-wide error codes.
+
+\par capability
+NetworkControl Protocol starting is a critical operation in the comms process and must be restricted
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-B2BB4462-3AA0-3ECC-A3EA-CF68C7FC4CEC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocketServ::StopProtocol(TUint anAddrFamily, TUint aSockType, TUint aProtocol, TRequestStatus &aStatus)
+Unload a protocol asynchronously - note it will fail if there are any resources open
+
+\param anAddrFamily Integer which identifies a protocol suite
+
+\param aSockType Integer which identifies a type of socket
+
+\param aProtocol Integer which identifies a specific protocol in a family
+
+\param aStatus On completion, will contain a system-wide error codes
+
+\par capability
+NetworkControl Protocol stopping is a critical operation in the comms process and must be restricted
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-7E1A1C1D-F76F-3DF9-AE90-B28926C3939A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocketServ::InstallExtension(const TDesC &aDllName, const TDesC &aArgs=TPtrC())
+Install an Esock Extension. PLEASE NOTE: This API is currently unsupported, calling it will always return KErrNotSupported.
+
+\param aDllName DllName for Esock Extension
+
+\param aArgs argument for Esock Extension
+
+\par capability
+NetworkControl Loading extensions to Esock will be behavioural changing and must be restricted to privileged apps
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-54D50FF5-4708-31F2-B75D-081A2C66861E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocketServ::SetExclusiveMode(TRequestStatus &aStatus)
+Set this session as the socket server exclusive session. PLEASE NOTE: This API is currently unsupported, calling it will always return KErrNone but without actually doing anything.
+
+\param aStatus On completion, will contain a system-wide error codes
+
+\par capability
+NetworkControl Restricting Esock to one session is very dangerous and must be highly restricted
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-4253D517-C080-3D2A-AAEC-DA6B32834146">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSocketServ::ClearExclusiveMode()
+Clear exclusive mode for this session PLEASE NOTE: This API is currently unsupported, calling it will always return KErrNone but without actually doing anything.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-953A5DBF-376A-3A2A-991F-8BB6575C995F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocketServ::__DbgMarkHeap()
+Set a heap mark in the socket server
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-4C4C98FE-24A6-344E-8BA9-86E04D4D1744">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocketServ::__DbgCheckHeap(TInt aCount)
+Set a heap mark in the socket server
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-9FF360C2-5BC3-3770-9179-4B1EBDB56699">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocketServ::__DbgMarkEnd(TInt aCount)
+Set a heap mark in the socket server
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-F64261C6-F298-3182-9571-FF4EC8F168EF">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocketServ::__DbgFailNext(TInt aCount)
+Set a heap mark in the socket server
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-836A7F3D-AC96-3C11-BBFF-4CEDADD36A96">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool RSocketServ::__DbgCheckFailNext() const
+Empty release implementation
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-E373AD59-44BF-3437-9176-A992D497FAE6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocketServ::__DbgFailNextMbuf(TInt aCount)
+Set a Mbuf mark in the socket server
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-25346A14-C171-3F75-80BE-65F62D687FD6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocketServ::__DbgSetMbufPoolLimit(TInt asize)
+Set the Mbuf pool limit
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-32C19E2C-3AAE-3102-9ECB-2F2C9DCA1967">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocketServ::__DbgCheckMbuf(TInt asize)
+Set the Mbuf pool limit
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-1CC87599-3BEB-3DAF-B912-21710DFA6446">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocketServ::__DbgMbufFreeSpace()
+Get the amount of free space in the MBuf manager
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-EBD7A286-DE12-3D70-B1F8-AE48C5C5AAD6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocketServ::__DbgMbufTotalSpace()
+Get the amount of free space in the MBuf manager
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-39F832E9-7B27-3876-96F1-E92055675E78">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSocketServ::__DbgControl(const ESockDebug::TControlMsg &aRequestMsg)
+General purpose control message for esock debug, self dispatching messages to be thrown over it
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EF29C1D7-B1E5-370F-AE37-66231A6BE449.html#GUID-4726F3FB-A9E2-3ADB-AA9F-15F7DD35DF08">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C RSubConnection::RSubConnection()
+Empty sub-connection handle constructor
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0AFDA357-EE44-3788-9CAB-162B874134BF.html#GUID-C9EC3942-428D-341C-924A-ECEFED89A418">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSubConnection::Open(RSocketServ &aServer, TSubConnType aSubConnType, RConnection &aConnection)
+Opens a new RSubConnection instance.
+
+\param aSubConnType specifies the type of sub connection, the different available types are defined by TSubConnType.
+
+\param aConnection Parent Connection that is to be sub divided by this sub-connection
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0AFDA357-EE44-3788-9CAB-162B874134BF.html#GUID-B004D6A7-5CBA-3778-B487-10CCBCC321DE">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSubConnection::Close()
+Closes the sub-connection.
+
+The sub-connection will not be dropped immediately: it will be dropped when there is no more data traffic on the sub-connection.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0AFDA357-EE44-3788-9CAB-162B874134BF.html#GUID-0D7FB684-F277-334B-9D9D-7D151B3D1EAF">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSubConnection::Start(TRequestStatus &aStatus)
+Unused
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0AFDA357-EE44-3788-9CAB-162B874134BF.html#GUID-425C783C-AD66-3BE4-9F5C-20F875D24F21">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSubConnection::Start()
+Unused
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0AFDA357-EE44-3788-9CAB-162B874134BF.html#GUID-667B8827-F9CE-318E-99B6-5E908DD107FA">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSubConnection::Stop()
+Unused
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0AFDA357-EE44-3788-9CAB-162B874134BF.html#GUID-E25294DA-633B-37BC-9921-09C4822C3B7A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSubConnection::Add(RSocket &aSocket, TRequestStatus &aStatus)
+Associate a socket with a subconnection. The socket must already be using the same connection or the association attempt will fail. The completion of this method does not indicate that the socket is now running over the sub-connection, it only indicates that the association is complete and a negotiation has started to move the socket onto the subconnection. An event (via eventNotification) will be sent once the socket is running on the sub-connection.
+
+\param aSocket Socket to be associated with the Sub-Connection
+
+\param aStatus Status to complete when socket has been added (or failed to add)
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0AFDA357-EE44-3788-9CAB-162B874134BF.html#GUID-AB698782-24ED-36CC-A4A5-B480B3141C4E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSubConnection::Remove(RSocket &aSocket, TRequestStatus &aStatus)
+Remove a socket from a subconnection. The socket will be moved back to the default sub-connection. The successful completion of this method does not indicate that the socket has moved back to the default sub-connection, it only indicates that the move negotiation has been successful. An event (via eventNotification) will be sent once the socket is running on the default sub-connection.
+
+\param aSocket Socket to be removed from the Sub-Connection
+
+\param aStatus Status to complete when socket has been removed (or failed to remove)
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0AFDA357-EE44-3788-9CAB-162B874134BF.html#GUID-C6F77A8D-A52E-31BD-950A-9099DABF479C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSubConnection::SetParameters(const RSubConParameterBundle &aParametersSet)
+Set Parameters of the sub-connection. Successful completion of this method only indicates that the negotiation has been successfully started. An event via eventNotification) will be sent once the granted parameters are available.
+
+\param aParametersSet bundle of parameters to be applied to the sub-connection
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0AFDA357-EE44-3788-9CAB-162B874134BF.html#GUID-297D9499-6C3B-3EED-82F5-4F2313D3D713">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSubConnection::GetParameters(RSubConParameterBundle &aParametersSet)
+Fetch the sub-connection's current parameters (Requested, Acceptable and Granted)
+
+\param aParametersSet bundle of parameters to write the current parameters into
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0AFDA357-EE44-3788-9CAB-162B874134BF.html#GUID-CD9163F9-A662-3E27-A0D0-DF9E6AA0AF39">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSubConnection::SetParameters(const RParameterFamilyBundle &aParametersSet)
+Set Parameters of the sub-connection. Successful completion of this method only indicates that the negotiation has been successfully started. An event via eventNotification) will be sent once the granted parameters are available.
+
+\param aParametersSet bundle of parameters to be applied to the sub-connection
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0AFDA357-EE44-3788-9CAB-162B874134BF.html#GUID-771E8DF0-03A1-3668-BDE6-7AEEBFEC8FB6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSubConnection::GetParameters(RParameterFamilyBundle &aParametersSet)
+Fetch the sub-connection's current parameters (Requested, Acceptable and Granted)
+
+\param aParametersSet bundle of parameters to write the current parameters into
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0AFDA357-EE44-3788-9CAB-162B874134BF.html#GUID-9DCBB8BF-3BA1-37A2-8CC9-9566F51C0A8A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSubConnection::EventNotification(TNotificationEventBuf &aEventBuffer, TBool aGenericEventsOnly, TRequestStatus &aStatus)
+Requests asynchronous event notification for the sub-connection.
+
+\param aEventBuffer A buffer to receive event notification.
+
+\param aStatus On return, the status of the request.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0AFDA357-EE44-3788-9CAB-162B874134BF.html#GUID-6A58BB88-0A40-329C-A033-24A46B44C40E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSubConnection::EventNotification(TNotificationEventBuf &aEventBuffer, TEventFilter aEventFilterList[], TUint aEventListLength, TRequestStatus &aStatus)
+Requests asynchronous notification of a specific list of events for the sub-connection.
+
+\param aEventBuffer A buffer to receive event notification.
+
+\param aEventFilterList list of event filters specifying a subset of events of interest.
+
+\param aEventListLength Length of the filter list provided
+
+\param aStatus On return, the status of the request.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0AFDA357-EE44-3788-9CAB-162B874134BF.html#GUID-9E6C0EEA-CBD3-3ABB-B6FD-87B9A1D89969">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSubConnection::CancelEventNotification()
+Cancel an outstanding Event Notification request
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0AFDA357-EE44-3788-9CAB-162B874134BF.html#GUID-ADCDEFFC-8622-3C77-91F0-2E3020745E46">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TBool RSubConnection::SameSession(TInt aSessionHandle)
+Checks that the Session Handle passed is the same as that of this RSubConnection.
+
+Use to verify the RSubConnection argument passed to the RSocket and RHostResolver Open(..., RSubConnection&amp; aSubConnection) methods.
+
+\param aSessionHandle The handle which is to be checked against that of this RSubConnection
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0AFDA357-EE44-3788-9CAB-162B874134BF.html#GUID-28362715-571B-3A64-B2D4-18AD96581ACE">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C RSubConParameterBundle::RSubConParameterBundle()
+Empty sub-connection parameter bundle constructor
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-27AA9BD2-9754-3BAE-8C2D-59937E1924CF.html#GUID-4CF336A5-F295-3016-97B1-F68FABCA9F25">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSubConParameterBundle::Close()
+Close the parameter bundle handle
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-27AA9BD2-9754-3BAE-8C2D-59937E1924CF.html#GUID-C2AD3440-F360-3FC8-B401-6DFAD3244211">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TUint RSubConParameterBundle::Length() const
+Calculates the length of buffer required to serialise this parameter set bundle.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-27AA9BD2-9754-3BAE-8C2D-59937E1924CF.html#GUID-E814EC7C-4269-353E-8FFE-BED01EE6BD86">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSubConParameterBundle::Load(const TDesC8 &aDes)
+Instructs this sub-connection bundle to set its members based on the serialiesd data in the buffer passed.
+
+\param aDes Buffer containing the serialised bundle object
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-27AA9BD2-9754-3BAE-8C2D-59937E1924CF.html#GUID-0FB4A864-E13C-3FA9-8F0C-A76A25A81540">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt RSubConParameterBundle::Store(TDes8 &aDes) const
+Instructs this sub-connection parameter bundle to create a serilised version of itself and append it to the buffer that has been passed.
+
+\param aDes Buffer to append the serialised object to
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-27AA9BD2-9754-3BAE-8C2D-59937E1924CF.html#GUID-9CE4B3D9-9F9E-3EF7-82BC-FAD7D1D02D64">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSubConParameterBundle::AddFamilyL(CSubConParameterFamily *aFamily)
+Add a sub-connection parameter family to the bundle.
+
+Note: The RSubConParameterBundle object takes ownership of the parameter family that is passed into this method. When the bundle object is destroyed, any family owned by this object will also be destroyed.
+
+\param aFamily Family to be added (bundle takes ownership)
+
+\par Exceptions
+leaves with KErrNoMemory in out of memory conditions
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-27AA9BD2-9754-3BAE-8C2D-59937E1924CF.html#GUID-295C8F95-F55B-3B9C-A1A0-3376E9D8D300">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CSubConParameterFamily * RSubConParameterBundle::FindFamily(TUint32 aFamilyId)
+Search the sub-connection parameter bundle for a parameter family
+
+\param aFamilyId Id of the family to match against. It is an identifier for the specific family type, currently only 4, QoS (KSubConQoSFamily),Authorisation (KSubConAuthorisationFamily), CallDescrParams (KSubConnCallDescrParamsFamily) and ContextDescrParams (KSubConnContextDescrParamsFamily), are defined.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-27AA9BD2-9754-3BAE-8C2D-59937E1924CF.html#GUID-5DECC591-E044-3F4B-BF30-64B25146D94B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void RSubConParameterBundle::ClearAllParameters(CSubConParameterFamily::TParameterSetType aType)
+Clears (removes and deletes) all parameter sets with the type specified (delegated to the families)
+
+\param aType The type of the set to be deleted(requested, acceptable or granted)
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-27AA9BD2-9754-3BAE-8C2D-59937E1924CF.html#GUID-A6D9FC9B-1886-394B-81A6-D60C26ED9BA1">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt RSubConParameterBundle::CheckBundle() const
+Check to see if the handle has a heap object. If it hasn't, it creates one
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-27AA9BD2-9754-3BAE-8C2D-59937E1924CF.html#GUID-71EC6282-4888-35CF-8695-6782A139ECA8">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TAccessPointInfo::TAccessPointInfo(TUint aApId=0)
+Initialises the object using the specified 32-bit long integer ID of the access point.
+
+\param aApId The 32-bit long integer ID of the access point to initialise the object with.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-9AC0F2EC-57FA-32E7-A80E-B4C724822CB2.html#GUID-FABFF088-09C5-397C-A745-99082D66FE8E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TUint TAccessPointInfo::AccessPoint() const
+Returns the 32-bit long integer ID of the access point.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-9AC0F2EC-57FA-32E7-A80E-B4C724822CB2.html#GUID-672B4E15-A510-3004-A1F4-0FC6AAAC81C8">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn void TAccessPointInfo::SetAccessPoint(TUint aAccessPoint)
+Sets the 32-bit long integer ID of the access point.
+
+\param aAccessPoint The 32-bit long integer ID of the access point.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-9AC0F2EC-57FA-32E7-A80E-B4C724822CB2.html#GUID-7FC571B0-AC76-3413-98D5-0AF0668C35F2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TBool TAccessPointInfo::operator==(const TAccessPointInfo &aRhs) const
+Compares the 32-bit long integer ID of the specified object with our own.
+
+\param aRhs The TAccessPointInfo to compare.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-9AC0F2EC-57FA-32E7-A80E-B4C724822CB2.html#GUID-A3022813-540C-3FBE-9A9C-73EC9B060610">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TNameRecord::TNameRecord()
+Trivial C++ constructor. This sets the fields in the class to suitable default values.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-567CF5B5-464F-37B7-A91E-6A672C39BA44.html#GUID-4635603E-3189-3149-8CC2-0B84DD6B948D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TNifProgress::TNifProgress()
+It sets the iStage data member to 0 and the iError data member to KErrNone.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-883CEFF1-146E-30FF-9AD7-E13D0E9C6183.html#GUID-5ACCA315-8D63-3A5E-BD28-33B8D68C2F92">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TNifProgress::TNifProgress(TInt aStage, TInt aError)
+It sets the iStage data member to aStage and the iError data member to aError.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-883CEFF1-146E-30FF-9AD7-E13D0E9C6183.html#GUID-38ECC001-54E8-3381-B81A-FDCB37B30E70">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TNotificationEventBuf::IsGeneric() const
+Check whether an event is a generic event (not an extension)
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-48B29695-E6D6-364F-A978-42520E3FAF1A.html#GUID-0E200CA2-D8D7-37BD-88D5-6F19D765C71B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt32 TNotificationEventBuf::GroupId() const
+Provides the group id (Uid) of the event
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-48B29695-E6D6-364F-A978-42520E3FAF1A.html#GUID-257E3F8B-92E8-3F18-A3DE-B67BC8AC657B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TUint32 TNotificationEventBuf::Id() const
+Provides the sub-type Id of the event
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-48B29695-E6D6-364F-A978-42520E3FAF1A.html#GUID-276298D2-CE1C-381E-A551-CBC854EB6469">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TSessionPref::TSessionPref()
+Default Constructor, makes sure that member data doesn't contain unnitialised values.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-25D00A40-4F8A-348C-95A5-E52EC416C325.html#GUID-65E8D1C9-35C4-3967-BBC6-96863E139AEB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TSockAddr::TSockAddr()
+Default constructor initialises the address to be zero-filled.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-66228064-B6E7-3CE9-8F5E-5DED4CD9A49B.html#GUID-76AD565E-2B50-3B04-BD42-FD63BBD1975E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TSockAddr::TSockAddr(TUint aFamily)
+Constructs the address with the family member data specified.
+
+\param aFamily Address family Id.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-66228064-B6E7-3CE9-8F5E-5DED4CD9A49B.html#GUID-8037749B-1F3E-3B95-8DE9-FF7ECDCC1B5B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TUint TSockAddr::Family() const
+Gets the address family and thereby the type of address. The family may be used to effect 'down-casting'.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-66228064-B6E7-3CE9-8F5E-5DED4CD9A49B.html#GUID-5B4E29AE-AEDA-32B0-A3EE-76E40E2177A0">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TSockAddr::SetFamily(TUint aFamily)
+Sets the address family of an address.
+
+\param aFamily Address family Id.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-66228064-B6E7-3CE9-8F5E-5DED4CD9A49B.html#GUID-7895908F-635D-3242-9E3D-F068D0EA17BA">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TUint TSockAddr::Port() const
+Gets the port value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-66228064-B6E7-3CE9-8F5E-5DED4CD9A49B.html#GUID-BB972818-B13D-3772-82C2-030194DE9E09">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TSockAddr::SetPort(TUint aPort)
+Sets the address port of an address.
+
+\param aPort New port value for address
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-66228064-B6E7-3CE9-8F5E-5DED4CD9A49B.html#GUID-CFC13880-DDB5-3D46-BEA7-5F4A96B1E261">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TSockAddr::CmpPort(const TSockAddr &anAddr) const
+Compare two ports.
+
+Compares ports in two addresses
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-66228064-B6E7-3CE9-8F5E-5DED4CD9A49B.html#GUID-9A8E2934-A68C-3926-AA91-30533BDD0B79">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TSockAddr::GetUserLen()
+Gets the number of bytes a derived class has set beyond the SSockAddr part of the address. This function is mainly intended for use in derived classes.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-66228064-B6E7-3CE9-8F5E-5DED4CD9A49B.html#GUID-A343BA3D-645A-3BB7-8641-F2EAD4EA5D44">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TSockAddr::SetUserLen(TInt aLen)
+Sets the length of data it appends after the base class' data. This function is mainly intended for use in derived classes.
+
+\param aLen New length for appended data.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-66228064-B6E7-3CE9-8F5E-5DED4CD9A49B.html#GUID-871D6939-DB38-39AC-AA5F-0AC7FEEBE75E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TUint8 * TSockAddr::UserPtr() const
+Gets an offset to place data after the base class data. This function is mainly intended for use in derived classes.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-66228064-B6E7-3CE9-8F5E-5DED4CD9A49B.html#GUID-D0DEED2A-F1B6-3FC5-9554-88EC8CC5C197">Symbian Developer Library</a>)</small></p>
+*/

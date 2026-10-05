@@ -20,10 +20,10 @@ header.
 | Socket Server | `es_sock.h` | `RSocketServ`, `RSocket`, native request cancellation |
 | Internet sockets | `in_sock.h` | `TInetAddr`, IPv4 and IPv6 protocol constants |
 
-The snapshot helps read **native, original platform capabilities**. It does not
-mean this SDK exports every symbol, that every ROM implements it, or that a
-Nokia 808 has been checked. For an application example, see the
-[Window Server tutorial](../../tutorials/gui-app.html), the
+These declarations describe services supplied by the target firmware. Check the
+SDK export index and your firmware's imports before using an original API. For
+an application example, see the
+[GUI application guide](../../guides/gui-build.html), the
 [C++ application guide](../../capabilities/cpp.html), and the
 [device API capability map](../../capabilities/device-apis.html).
 

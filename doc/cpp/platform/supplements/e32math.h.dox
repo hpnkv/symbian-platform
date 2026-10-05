@@ -1,0 +1,1071 @@
+// Documentation adapted from the Symbian Developer Library.
+// Original reference content is licensed under EPL-1.0.
+// SPDX-License-Identifier: EPL-1.0
+
+/** \fn static IMPORT_C TInt Math::ACos(TReal &aTrg, const TReal &aSrc)
+Calculates the principal value of the inverse cosine of a number.
+
+\param aTrg A reference containing the result in radians, a value between 0 and pi.
+
+\param aSrc The argument of the arccos function, a value between -1 and +1 inclusive.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-5767958F-C538-3C2C-AB3C-57E066D50CD6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::ASin(TReal &aTrg, const TReal &aSrc)
+Calculates the principal value of the inverse sine of a number.
+
+\param aTrg A reference containing the result in radians, a value between -pi/2 and +pi/2.
+
+\param aSrc The argument of the arcsin function, a value between -1 and +1 inclusive.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-F979EAE7-C409-36B6-B75B-CE88210BA0B7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::ATan(TReal &aTrg, const TReal &aSrc)
+Calculates the principal value of the inverse tangent of a number.
+
+\param aTrg A reference containing the result in radians, a value between -pi/2 and +pi/2.
+
+\param aSrc The argument of the arctan function, a value between +infinity and +infinity.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-C7F698A7-7A66-3966-9F6F-06CBFE9B3F77">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::ATan(TReal &aTrg, const TReal &aSrcY, const TReal &aSrcX)
+Calculates the angle between the x-axis and a line drawn from the origin to a point represented by its (x,y) co-ordinates.
+
+The co-ordinates are passed as arguments to the function. This function returns the same result as arctan(y/x), but:
+
+1. it adds +/-pi to the result, if x is negative
+
+2. it sets the result to +/-pi/2, if x is zero but y is non-zero.
+
+\param aTrg A reference containing the result in radians, a value between -pi exclusive and +pi inclusive.
+
+\param aSrcY The y argument of the arctan(y/x) function.
+
+\param aSrcX The x argument of the arctan(y/x) function.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-4EB8A16C-075E-305E-AD76-ECFB085439C7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::Cos(TReal &aTrg, const TReal &aSrc)
+Calculates the cosine of a number.
+
+\param aTrg A reference containing the result.
+
+\param aSrc The argument of the cos function in radians
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-10D6B0E1-C3EB-361D-95AB-B36A03CA81C2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::Exp(TReal &aTrg, const TReal &aSrc)
+Calculates the value of e to the power of x.
+
+\param aTrg A reference containing the result.
+
+\param aSrc The power to which e is to be raised.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-E9B2D23D-9285-34E7-9E55-2AB5346509B2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::Frac(TReal &aTrg, const TReal &aSrc)
+Calculates the fractional part of a number.
+
+The fractional part is that after a decimal point. Truncation is toward zero, so that Frac(2.4)=0.4, Frac(2)=0, Frac(-1)=0, Frac(-1.4)=0.4.
+
+\param aTrg A reference containing the result.
+
+\param aSrc The number whose fractional part is required.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-90C4752F-F3BF-3ACE-860A-529594FBD3CE">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::Int(TReal &aTrg, const TReal &aSrc)
+Calculates the integer part of a number.
+
+The integer part is that before a decimal point. Truncation is toward zero, so that int(2.4)=2, int(2)=2, int(-1)=-1, int(-1.4)=-1, int(-1.999)=-1.
+
+\param aTrg A reference containing the result.
+
+\param aSrc The number whose integer part is required.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-93793943-76F2-3D38-ADDF-7735F0FB39B7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::Int(TInt16 &aTrg, const TReal &aSrc)
+Calculates the integer part of a number.
+
+The integer part is that before a decimal point. Truncation is toward zero, so that int(2.4)=2, int(2)=2, int(-1)=-1, int(-1.4)=-1, int(-1.999)=-1.
+
+This function is suitable when the result is known to be small enough for a 16-bit signed integer.
+
+\param aTrg A reference containing the result.
+
+\param aSrc The number whose integer part is required.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-B6294803-D7B4-37A7-8FEC-F7FE58691358">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::Int(TInt32 &aTrg, const TReal &aSrc)
+Calculates the integer part of a number.
+
+The integer part is that before a decimal point. Truncation is toward zero, so that int(2.4)=2, int(2)=2, int(-1)=-1, int(-1.4)=-1, int(-1.999)=-1.
+
+This function is suitable when the result is known to be small enough for a 32-bit signed integer.
+
+\param aTrg A reference containing the result.
+
+\param aSrc The number whose integer part is required.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-2B41B316-18CB-3F93-A06A-5DF465EB0F21">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::Log(TReal &aTrg, const TReal &aSrc)
+Calculates the logarithm to base 10 of a number.
+
+\param aTrg A reference containing the result.
+
+\param aSrc The number whose logarithm is required.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-2511CC56-3213-3818-A6CE-ECAD83EDE4B5">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::Ln(TReal &aTrg, const TReal &aSrc)
+Calculates the natural logarithm of a number.
+
+\param aTrg A reference containing the result.
+
+\param aSrc The number whose natural logarithm is required.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-DC11E347-54CA-3619-BFCC-0317695F088D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::Mod(TReal &aTrg, const TReal &aSrc, const TReal &aModulus)
+Calculates the modulo remainder.
+
+This is the value of p mod q, the modulo remainder when dividing p by q. The result is given by p - q int (p/q): it has the same sign as p: thus, 5 mod 3 = 2, -5 mod 3 = -2. No error is raised if non-integer arguments are passed.
+
+\param aTrg A reference containing the result.
+
+\param aSrc The p argument to the mod function.
+
+\param aModulus The q argument to the mod function.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-226C05D5-7EB6-3181-B2C4-A822DFA0C438">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TReal Math::Poly(TReal aVal, const SPoly *aPoly) __SOFTFP
+Evaluates the polynomial: {a[n]X^n + a[n-1]X^(n-1) + ... + a[2]X^2 + a[1]X^1 + a[0]}.
+
+\param aVal The value of the x-variable
+
+\param aPoly A pointer to the structure containing the set of coefficients in the order: a[0], a[1], ..., a[n-1], a[n].
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-833029B4-6109-3B57-966E-04393DA8F320">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::Pow(TReal &aTrg, const TReal &aSrc, const TReal &aPower)
+Calculates the value of x raised to the power of y.
+
+The behaviour conforms to that specified for pow() in the ISO C Standard ISO/IEC 9899 (Annex F), although floating-point exceptions are not supported.
+
+\param aTrg A reference containing the result.
+
+\param aSrc The x argument of the function.
+
+\param aPower The y argument of the function.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-F368411E-5717-3553-9066-C219E6630D24">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::Pow10(TReal &aTrg, const TInt exp)
+Calculates the value of 10 to the power of x.
+
+\param aTrg A reference containing the result.
+
+\param exp The power to which 10 is to be raised.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-4B8A6064-9458-3BF4-8698-A62159AA9B5A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::Rand(TInt64 &aSeed)
+Generates a stream of uniformly distributed pseudo-random integers in the range, 0 to KMaxTInt.
+
+For each stream of pseudo-random numbers you wish to generate, you should pass the reference to the same 64-bit seed on each call to this function. You should not change the seed between calls.
+
+\param aSeed A reference to a 64-bit seed, which is updated as a result of the call.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-184ABAB1-A9B5-35D0-BB19-450513D53921">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TReal Math::FRand(TInt64 &aSeed) __SOFTFP
+Generates a stream of uniformly distributed pseudo-random real numbers in the range, 0 to 1.
+
+\param aSeed A reference to a 64-bit seed, which is updated as a result of the call.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-B2C7F36B-2416-3D58-A2CE-AA32D410F51A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TUint32 Math::Random()
+Gets 32 random bits from the kernel's random number generator.
+
+The returned random data may or may not be cryptographically secure but should be of a high quality for non-cryptographic purposes.
+
+This function uses a cryptographically strong random number generator to generate the random data, which can be slower than insecure generators. If security is not important, a faster generator may be used such as Math::Rand().
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-0B4A64E4-7EC3-300F-ACA0-7F53AAEF7066">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C void Math::Random(TDes8 &aRandomValue)
+Fills the provided descriptor with random data up to its current length. The number of random bytes required should be specified by setting the length of the descriptor that is passed to this function.
+
+The returned random data may or may not be cryptographically secure but should be of a high quality for non-cryptographic purposes.
+
+This function uses a cryptographically strong random number generator to generate the random data, which can be slower than insecure generators. If security is not important, a faster generator may be used such as Math::Rand().
+
+\param aRandomValue on return, the descriptor is filled with the requested number of random bytes.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-AB2A1071-980F-38AA-94E5-0AA5E9A799B6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C void Math::RandomL(TDes8 &aRandomValue)
+Fills the provided descriptor with random data up to its current length. The number of random bytes required should be specified by setting the length of the descriptor that is passed to the function.
+
+If the returned random data cannot be guaranteed to be cryptographically secure, the function will leave with KErrNotReady to indicate that the returned data should not be used for cryptographic purposes.
+
+The security strength of the cryptographically strong random number generator is 256 bits.
+
+\param aRandomValue on return, the descriptor is filled with the requested number of random bytes.
+
+\leave KErrNotReady if the returned random data cannot be guaranteed to be cryptographically secure.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-DF6CAE9A-AECB-35AD-901C-6A5E55E47A3D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TUint32 Math::RandomL()
+Gets 32 random bits from the kernel's random number generator.
+
+If the returned random data could not be guaranteed to be cryptographically secure, the function will instead leave with KErrNotReady to indicate that data was not available.
+
+The security strength of the cryptographically strong random number generator is 256 bits.
+
+\leave KErrNotReady if no data was returned as it could not be guaranteed to be cryptographically secure.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-5AE91EA6-A4D7-308C-B5D6-23E2409AF15E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::Round(TReal &aTrg, const TReal &aSrc, TInt aDecimalPlaces)
+Rounds to a specified number of decimal places.
+
+The function rounds a number to a given number, n, of decimal places. Rounding may be thought of as multiplying the number by 10 to the power of n, rounding to the nearest integer, and then dividing the result by 10 to the power of n and returning that as the answer.
+
+In the process of rounding, numbers ending with .5 are rounded away from zero, so that 1.5 becomes 2, 2.5 becomes 3, -1.5 becomes -2, etc.
+
+\param aTrg A reference containing the result.
+
+\param aSrc The number to be rounded.
+
+\param aDecimalPlaces The number of decimal places to round to: must be zero or positive.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-CFE6CAF3-C42B-378A-8351-DD08AB807CED">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::Sin(TReal &aTrg, const TReal &aSrc)
+Calculates the sine of a number.
+
+\param aTrg A reference containing the result.
+
+\param aSrc The argument of the sin function in radians.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-92DDF42E-C21C-3C7E-A957-21640E7EE88D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::Sqrt(TReal &aTrg, const TReal &aSrc)
+Calculates the square root of a number.
+
+\param aTrg A reference containing the result.
+
+\param aSrc The number whose square-root is required.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-D34F9459-0E46-3C9C-8F6C-7284D7F29F38">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt Math::Tan(TReal &aTrg, const TReal &aSrc)
+Calculates the tangent of a number.
+
+\param aTrg A reference containing the result.
+
+\param aSrc The argument of the tan function in radians.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-78C1288C-3A5D-3EFA-A23B-0C323A309902">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TBool Math::IsZero(const TReal &aVal)
+Determines whether a value is zero.
+
+\param aVal A reference to the value to be checked.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-25E228F0-9279-3937-A843-90E72B5A0897">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TBool Math::IsNaN(const TReal &aVal)
+Determines whether a value is not a number.
+
+\param aVal A reference to the value to be checked.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-8C2133A8-93AA-37C9-9557-18CAD690E7DD">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TBool Math::IsInfinite(const TReal &aVal)
+Determines whether a value is infinite.
+
+\param aVal A reference to the value to be checked.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-D805C156-FDD7-37EA-AD73-F4396ED3D77D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TBool Math::IsFinite(const TReal &aVal)
+Determines whether a value is finite.
+
+In this context, a value is finite if it is a valid number and is not infinite.
+
+\param aVal A reference to the value to be checked.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-0E0DE793-C271-3BA2-B357-6C2D5D6AB8C9">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C void Math::PolyX(TRealX &aY, const TRealX &aX, TInt aDeg, const TRealX *aCoef)
+Evaluates the polynomial: {a[n]X^n + a[n-1]X^(n-1) + ... + a[2]X^2 + a[1]X^1 + a[0]}.
+
+\param aY A reference containing the result.
+
+\param aX The value of the x-variable.
+
+\param aDeg The degree of the polynomial (the highest power of x which is present).
+
+\param aCoef A pointer to a contiguous set of TRealX values containing the coefficients. They must be in the order: a[0], a[1], ..., a[n-1], a[n].
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-68D7816E-DA6D-3093-A770-18A3B2F1179D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C void Math::Mul64(Int64 aX, Int64 aY, Int64 &aOutH, Uint64 &aOutL)
+Multiply aX by aY to generate a 128 bit result.
+
+The high order 64 bits of this calculation are stored in aOutH, and the low order 64 bits are stored in aOutL.
+
+\param aX The first 64-bit operand.
+
+\param aY The second 64-bit operand.
+
+\param aOutH The high order 64 bits of the result.
+
+\param aOutL The low order 64 bits of the result.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-AB561A09-BFAF-3749-BD41-814814F7FE8A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C void Math::UMul64(Uint64 aX, Uint64 aY, Uint64 &aOutH, Uint64 &aOutL)
+Multiply aX by aY to generate a 128 bit result.
+
+The high order 64 bits of this calculation are stored in aOutH, and the low order 64 bits are stored in aOutL.
+
+\param aX The first 64-bit operand.
+
+\param aY The second 64-bit operand.
+
+\param aOutH The high order 64 bits of the result.
+
+\param aOutL The low order 64 bits of the result.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-83E4A788-2886-3BC3-A59C-7C257BA68A61">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C Int64 Math::DivMod64(Int64 aDividend, Int64 aDivisor, Int64 &aRemainder)
+Divides aDividend by aDivisor.
+
+The quotient is returned, and the remainder is stored in aRemainder. The remainder has same sign as the dividend.
+
+\param aDividend The 64-bit dividend.
+
+\param aDivisor The 64-bit divisor.
+
+\param aRemainder The 64-bit remainder.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-B81389E9-CC09-369D-88CD-018AF664EE57">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C Uint64 Math::UDivMod64(Uint64 aDividend, Uint64 aDivisor, Uint64 &aRemainder)
+Divides aDividend by aDivisor.
+
+The quotient is returned, and the remainder is stored in aRemainder.
+
+\param aDividend The 64-bit dividend.
+
+\param aDivisor The 64-bit divisor.
+
+\param aRemainder The 64-bit remainder.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-1DB7AE7A-A505-3530-AC2B-EBAEFCD3F36A.html#GUID-5894BAE6-729B-3122-82CE-2AB051F2CA0B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX::TRealX()
+Constructs a default extended precision object.
+
+This sets the value to zero.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-566C6F65-287D-3DFD-BC85-2CFD8CB6F559">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX::TRealX(TInt aInt)
+Constructs an extended precision object from a signed integer value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-26351B00-4A1B-3039-B0B6-3F5A9251F087">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX::TRealX(TUint aInt)
+Constructs an extended precision object from an unsigned integer value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-0B270015-46CF-3A21-BFBE-0BF87E5B485B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX::TRealX(TUint aExp, TUint aMantHi, TUint aMantLo)
+Constructs an extended precision object from an explicit exponent and a 64 bit mantissa.
+
+\param aMantHi The high order 32 bits of the 64 bit mantissa
+
+\param aMantLo The low order 32 bits of the 64 bit mantissa
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-64FBDB8E-326D-3537-A48E-BC30BBF75DBF">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX::TRealX(const TInt64 &aInt)
+Constructs an extended precision object from a 64 bit integer.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-16C8402F-8883-3286-B867-BB4A46DF4B63">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX::TRealX(TReal32 aReal) __SOFTFP
+Constructs an extended precision object from a single precision floating point number.
+
+\param aReal The single precision floating point value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-2A605464-22DA-3ADA-88D4-B6A9DFDE5DB4">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX::TRealX(TReal64 aReal) __SOFTFP
+Constructs an extended precision object from a double precision floating point number.
+
+\param aReal The double precision floating point value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-43AFC7B3-F543-3222-9673-4F22FBBF9359">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX & TRealX::operator=(TInt aInt)
+Assigns the specified signed integer value to this extended precision object.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-105C2DBF-4E10-3FB5-B0D5-377BD674F8E7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX & TRealX::operator=(TUint aInt)
+Assigns the specified unsigned integer value to this extended precision object.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-6818B171-5F6D-3A8E-8D85-CE07E8A0E549">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX & TRealX::operator=(const TInt64 &aInt)
+Assigns the specified 64 bit integer value to this extended precision object.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-F9490C6E-4DAA-38F3-BF63-155EF8592421">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX & TRealX::operator=(TReal32 aReal) __SOFTFP
+Assigns the specified single precision floating point number to this extended precision object.
+
+\param aReal The single precision floating point value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-A8443C79-4299-3518-9657-581E10C5D34D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX & TRealX::operator=(TReal64 aReal) __SOFTFP
+Assigns the specified double precision floating point number to this extended precision object.
+
+\param aReal The double precision floating point value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-F12BBB70-4365-350B-A132-60B0DF2B6F91">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::Set(TInt aInt)
+Gives this extended precision object a new value taken from a signed integer.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-65AA73EE-BF0D-3E60-8432-115544EB51AC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::Set(TUint aInt)
+Gives this extended precision object a new value taken from an unsigned integer.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-039EE34B-186C-3AA1-86CD-F49614699DB4">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::Set(const TInt64 &aInt)
+Gives this extended precision object a new value taken from a 64 bit integer.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-7FCB3FC7-366A-3449-AE5F-A50D80A86113">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::Set(TReal32 aReal) __SOFTFP
+Gives this extended precision object a new value taken from a single precision floating point number.
+
+\param aReal The single precision floating point value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-C2C944C0-B5ED-3AF9-A200-517EB16AB734">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::Set(TReal64 aReal) __SOFTFP
+Gives this extended precision object a new value taken from a double precision floating point number.
+
+\param aReal The double precision floating point value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-AA605BF7-BE88-30D5-9713-BBD127A0D4B9">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX::operator TInt() const
+Gets the extended precision value as a signed integer value.
+
+The operator returns:
+
+1. zero , if the extended precision value is not a number
+
+2. 0x7FFFFFFF, if the value is positive and too big to fit into a TInt.
+
+3. 0x80000000, if the value is negative and too big to fit into a TInt.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-4B73F411-6247-3D27-BF22-54D1E283A31D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX::operator TUint() const
+Returns the extended precision value as an unsigned signed integer value.
+
+The operator returns:
+
+1. zero, if the extended precision value is not a number
+
+2. 0xFFFFFFFF, if the value is positive and too big to fit into a TUint.
+
+3. zero, if the value is negative and too big to fit into a TUint.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-1F5EC280-D27C-3EE4-8BCC-C7A9946C24CA">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX::operator TInt64() const
+Returns the extended precision value as a 64 bit integer value.
+
+The operator returns:
+
+1. zero, if the extended precision value is not a number
+
+2. 0x7FFFFFFF FFFFFFFF, if the value is positive and too big to fit into a TInt64
+
+3. 0x80000000 00000000, if the value is negative and too big to fit into a TInt.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-766036A0-3467-3709-A80D-4E824AEBA7AE">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX::operator TReal32() const __SOFTFP
+Returns the extended precision value as a single precision floating point value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-3EFB56F6-37B5-3D7A-ACC0-D832714D8645">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX::operator TReal64() const __SOFTFP
+Returns the extended precision value as a double precision floating point value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-A5AC0B6D-3507-3C0C-AC02-32B1E19346EE">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::GetTReal(TReal32 &aVal) const
+Extracts the extended precision value as a single precision floating point value.
+
+\param aVal A reference to a single precision object which contains the result of the operation.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-FA2CF3A1-A5AF-33F2-968B-09EC02C6A078">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::GetTReal(TReal64 &aVal) const
+Extracts the extended precision value as a double precision floating point value.
+
+\param aVal A reference to a double precision object which contains the result of the operation.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-759129D1-3623-34F5-971A-EA5D72DBBA36">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TRealX::SetZero(TBool aNegative=EFalse)
+Sets the value of this extended precision object to zero.
+
+\param aNegative ETrue, the value is a negative zero; EFalse, the value is a positive zero, this is the default.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-0B5011F3-066F-3061-B883-5A699B8FEDCA">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TRealX::SetNaN()
+Sets the value of this extended precision object to 'not a number'.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-5DC1E0C7-16C6-35BE-AD42-0FEE2D615B18">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TRealX::SetInfinite(TBool aNegative)
+Sets the value of this extended precision object to infinity.
+
+\param aNegative ETrue, the value is a negative zero; EFalse, the value is a positive zero.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-4C1E1CD8-6D92-3B01-93F1-45F5A87F0C3F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TRealX::IsZero() const
+Determines whether the extended precision value is zero.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-75E484BC-55CA-3604-BEBD-2361C7B53E0D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TRealX::IsNaN() const
+Determines whether the extended precision value is 'not a number'.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-0D29091F-DABC-337F-933A-3BCEFE5A9E8D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TRealX::IsInfinite() const
+Determines whether the extended precision value has a finite value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-F02D983E-DEAE-3E89-8CAE-7B6D8AEF4BC4">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TRealX::IsFinite() const
+Determines whether the extended precision value has a finite value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-6B32BDC0-60F4-33BB-9BE5-26AEE33F868A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C const TRealX & TRealX::operator+=(const TRealX &aVal)
+Adds an extended precision value to this extended precision number.
+
+\param aVal The extended precision value to be added.
+
+\panic MATHX KErrOverflow if the operation results in overflow.
+
+\panic MATHX KErrUnderflow if the operation results in underflow.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-2AD76723-BFD7-3317-B0CF-378FA5310214">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C const TRealX & TRealX::operator-=(const TRealX &aVal)
+Subtracts an extended precision value from this extended precision number.
+
+\param aVal The extended precision value to be subtracted.
+
+\panic MATHX KErrOverflow if the operation results in overflow.
+
+\panic MATHX KErrUnderflow if the operation results in underflow.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-BF9D722C-5583-36A5-B837-BE751A1D3C3A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C const TRealX & TRealX::operator*=(const TRealX &aVal)
+Multiplies this extended precision number by an extended precision value.
+
+\param aVal The extended precision value to be subtracted.
+
+\panic MATHX KErrOverflow if the operation results in overflow.
+
+\panic MATHX KErrUnderflow if the operation results in underflow.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-F59B37A8-FA38-30E5-B7AD-7C62CA407A55">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C const TRealX & TRealX::operator/=(const TRealX &aVal)
+Divides this extended precision number by an extended precision value.
+
+\param aVal The extended precision value to be used as the divisor.
+
+\panic MATHX KErrOverflow if the operation results in overflow.
+
+\panic MATHX KErrUnderflow if the operation results in underflow.
+
+\panic MATHX KErrDivideByZero if the divisor is zero.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-B6B8C824-3845-35F0-B8EA-C29BD49BED9F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C const TRealX & TRealX::operator%=(const TRealX &aVal)
+Modulo-divides this extended precision number by an extended precision value.
+
+\param aVal The extended precision value to be used as the divisor.
+
+\panic MATHX KErrTotalLossOfPrecision panic if precision is lost.
+
+\panic MATHX KErrUnderflow if the operation results in underflow.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-28FE6AD9-0FA6-36AF-BA7D-9CA862170652">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::AddEq(const TRealX &aVal)
+Adds an extended precision value to this extended precision number.
+
+\param aVal The extended precision value to be added.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-76CCEA11-005D-353D-8BA3-229A409E3B5A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::SubEq(const TRealX &aVal)
+Subtracts an extended precision value from this extended precision number.
+
+\param aVal The extended precision value to be subtracted.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-6A2F7FC2-AC34-341B-A08E-F4B064350F46">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::MultEq(const TRealX &aVal)
+Multiplies this extended precision number by an extended precision value.
+
+\param aVal The extended precision value to be used as the multiplier.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-E87D564F-2BFF-337E-8EC2-EDB1918D00D3">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::DivEq(const TRealX &aVal)
+Divides this extended precision number by an extended precision value.
+
+\param aVal The extended precision value to be used as the divisor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-DC8FCE43-E94D-3D0C-96D7-A4557B7DBBD4">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::ModEq(const TRealX &aVal)
+Modulo-divides this extended precision number by an extended precision value.
+
+\param aVal The extended precision value to be used as the divisor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-44A53920-8CA1-3617-9A13-B6AEBA8433BE">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX TRealX::operator+() const
+Returns this extended precision number unchanged.
+
+Note that this may also be referred to as a unary plus operator.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-202E9E8A-459B-3954-AA51-E240D527343D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX TRealX::operator-() const
+Negates this extended precision number.
+
+This may also be referred to as a unary minus operator.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-AE17C1A1-223E-3635-BF43-7873E1B8D713">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX & TRealX::operator++()
+Increments this extended precision number by one, and then returns a reference to it.
+
+This is also referred to as a prefix operator.
+
+\panic MATHX KErrOverflow if the operation results in overflow.
+
+\panic MATHX KErrUnderflow if the operation results in underflow.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-BF9F29E5-A591-3D1C-BC78-D127B081D942">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX TRealX::operator++(TInt)
+Returns this extended precision number before incrementing it by one.
+
+This is also referred to as a postfix operator.
+
+\panic MATHX KErrOverflow if the operation results in overflow.
+
+\panic MATHX KErrUnderflow if the operation results in underflow.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-F932FF90-6F47-31AD-AB17-0DB4A39E253E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX & TRealX::operator--()
+Decrements this extended precision number by one, and then returns a reference to it.
+
+This is also referred to as a prefix operator.
+
+\panic MATHX KErrOverflow if the operation results in overflow.
+
+\panic MATHX KErrUnderflow if the operation results in underflow.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-464CE600-BE26-3BC0-B3C2-CDB3A6F4A075">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX TRealX::operator--(TInt)
+Returns this extended precision number before decrementing it by one.
+
+This is also referred to as a postfix operator.
+
+\panic MATHX KErrOverflow if the operation results in overflow.
+
+\panic MATHX KErrUnderflow if the operation results in underflow.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-69040E2D-DDE6-3A6D-9BF5-56ACAC2365CD">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX TRealX::operator+(const TRealX &aVal) const
+Adds an extended precision value to this extended precision number.
+
+\param aVal The extended precision value to be added.
+
+\panic MATHX KErrOverflow if the operation results in overflow.
+
+\panic MATHX KErrUnderflow if the operation results in underflow.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-116EBB46-3C3B-3195-A0F3-DEB150585F6A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX TRealX::operator-(const TRealX &aVal) const
+Subtracts an extended precision value from this extended precision number.
+
+\param aVal The extended precision value to be subtracted.
+
+\panic MATHX KErrOverflow if the operation results in overflow.
+
+\panic MATHX KErrUnderflow if the operation results in underflow.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-42E35DD8-C95E-3A8F-903C-5A10CB091B82">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX TRealX::operator*(const TRealX &aVal) const
+Multiplies this extended precision number by an extended precision value.
+
+\param aVal The extended precision value to be used as the multiplier.
+
+\panic MATHX KErrOverflow if the operation results in overflow.
+
+\panic MATHX KErrUnderflow if the operation results in underflow.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-F732F543-8ADB-3E74-AAF5-D8B7CB8859D7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX TRealX::operator/(const TRealX &aVal) const
+Divides this extended precision number by an extended precision value.
+
+\param aVal The extended precision value to be used as the divisor.
+
+\panic MATHX KErrOverflow if the operation results in overflow.
+
+\panic MATHX KErrUnderflow if the operation results in underflow.
+
+\panic MATHX KErrDivideByZero if the divisor is zero.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-E2FAA023-7536-3158-82EB-492EE944253B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRealX TRealX::operator%(const TRealX &aVal) const
+Modulo-divides this extended precision number by an extended precision value.
+
+\param aVal The extended precision value to be used as the divisor.
+
+\panic MATHX KErrTotalLossOfPrecision if precision is lost.
+
+\panic MATHX KErrUnderflow if the operation results in underflow.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-CE087D03-22E1-39C4-B412-DCAFA1866747">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::Add(TRealX &aResult, const TRealX &aVal) const
+Adds an extended precision value to this extended precision number.
+
+\param aResult On return, a reference to an extended precision object containing the result of the operation.
+
+\param aVal The extended precision value to be added.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-910FA2A1-15B6-39BC-B482-15D526540B19">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::Sub(TRealX &aResult, const TRealX &aVal) const
+Subtracts an extended precision value from this extended precision number.
+
+\param aResult On return, a reference to an extended precision object containing the result of the operation.
+
+\param aVal The extended precision value to be subtracted.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-5488CC31-E171-3A0A-A5B9-1782EA52EBA6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::Mult(TRealX &aResult, const TRealX &aVal) const
+Multiplies this extended precision number by an extended precision value.
+
+\param aResult On return, a reference to an extended precision object containing the result of the operation.
+
+\param aVal The extended precision value to be used as the multiplier.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-C51F1F92-0A72-3144-B89E-16827B167925">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::Div(TRealX &aResult, const TRealX &aVal) const
+Divides this extended precision number by an extended precision value.
+
+\param aResult On return, a reference to an extended precision object containing the result of the operation.
+
+\param aVal The extended precision value to be used as the divisor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-D78D698F-3CC1-357D-A5FA-150A33F9DB71">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRealX::Mod(TRealX &aResult, const TRealX &aVal) const
+Modulo-divides this extended precision number by an extended precision value.
+
+\param aResult On return, a reference to an extended precision object containing the result of the operation.
+
+\param aVal The extended precision value to be used as the divisor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-F333FE03-44E8-3A0F-8BAC-0F988B7FB2F9">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TBool TRealX::operator==(const TRealX &aVal) const
+Compares this extended precision number for equality with another.
+
+\param aVal A reference to the extended precision value to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-C17BE78A-F6A4-3AA9-9C65-A128E1EBF3DE">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TBool TRealX::operator!=(const TRealX &aVal) const
+Compares this extended precision number for in-equality with another.
+
+\param aVal A reference to the extended precision value to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-B71D2601-E352-369C-8CC4-87CCBB377190">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TBool TRealX::operator>=(const TRealX &aVal) const
+Compares this extended precision number for being greater than or equal to another.
+
+\param aVal A reference to the extended precision value to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-FAE535EE-075C-3FE6-964F-CFF35DD5AD44">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TBool TRealX::operator<=(const TRealX &aVal) const
+Compares this extended precision number for being less than or equal to another.
+
+\param aVal A reference to the extended precision value to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-006DF423-A668-3117-AA1D-F2491A7A7FC7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TBool TRealX::operator>(const TRealX &aVal) const
+Compares this extended precision number for being greater than another.
+
+\param aVal A reference to the extended precision value to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-C07E6213-E232-3204-9837-E82FC155DBA2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TBool TRealX::operator<(const TRealX &aVal) const
+Compares this extended precision number for being less than another.
+
+\param aVal A reference to the extended precision value to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4AF7C5C2-7EB8-39A5-B3E6-75268DB11BD6.html#GUID-6E6C5815-F840-3F7E-99EB-40ADFE785C90">Symbian Developer Library</a>)</small></p>
+*/

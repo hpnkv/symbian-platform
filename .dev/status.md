@@ -2931,3 +2931,15 @@ Abseil patch inputs and exclude wheel-only CLI/acceptance changes. Actions
 replay and a future release are still required to ship this change beyond the
 already published 0.1.1 assets. No broader EKA1 or firmware-library support is
 implied.
+
+### Original-header documentation follow-up (2026-10-05)
+
+Offline source-linked Doxygen supplements now add 3,200 briefs and 3,502
+parameter names to the eleven-header index. Generated labels render in final
+paragraphs outside individual parameter descriptions. The generator checks
+const overloads, argument defaults/renames, fields/enums and ambiguous matches;
+six regressions pass. Strict MkDocs and both Doxygen indexes build, with missing
+parameter contracts and original-header warnings still visible. 826 semantic
+descriptions remain unresolved; complete original-symbol coverage is still open.
+The four-host/16-wheel build for 97a7f15 succeeds (37331396968); the new native
+startup/archive workflow is running as 37333156879 and remains an open gate.

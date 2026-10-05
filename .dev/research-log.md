@@ -6084,3 +6084,36 @@ acceptance helper changes no longer invalidate identical native payloads;
 acceptance still runs after cache restoration. Input membership checks and
 actionlint pass. Four-host Actions replay remains to be run for this revision;
 0.1.1's published archives are unchanged.
+
+## 2026-10-05 — Original API reference supplements
+
+Consulted the live hosted Developer Library, including CActive at
+https://akawolf.org/documentation/pdk/GUID-067293BF-B28C-3CEC-92F4-1351A795EA7F.html,
+and the previously downloaded reference cache. Five linked pages return 404
+(the four CSubCon parameter/event classes and TInetAddr); they are not cited as
+successful sources. No reference inventory or downloaded pages were committed.
+
+The supplement generator now matches exact type signatures including const
+qualification, distinguishes fields from their displayed types, extracts enum
+values and functional error/return notes, and recognizes defaulted parameter
+names. It accepts argument renames by position only after the complete type
+signature matches and the reference supplies the same number of parameters.
+Conflicting documented overloads fail rather than choosing an arbitrary page.
+Unknown behavior is left unresolved instead of publishing declaration-only
+fallback sentences. API-status-only annotations do not count as semantic
+function documentation. Private members outside the public index are skipped.
+
+Committed offline .dox supplements retain EPL notices and source links as a
+small final paragraph on each supplemented symbol. A real Doxygen XML audit
+finds 3,279 unique supplemented members, 3,200 new briefs and 3,502 new parameter
+names; all generated markers are outside parameter descriptions and in a final
+paragraph. Generated examples pass the same clang-format filter as public
+native examples. Six importer/contract/suffix regressions, seven release audit
+regressions, Ruff and the public C++ formatting check pass. Full strict
+MkDocs plus both Doxygen indexes builds successfully; log
+/tmp/symbian-original-docs-build.log. Missing source contracts still produce
+parameter warnings, alongside the pre-existing header warnings; these are not
+suppressed. 826 public/protected descriptions remain unresolved in the XML
+survey, so this batch is not complete symbol coverage. Next consult hosted
+original implementations/inline headers for those contracts, including unavailable
+networking pages, and give reserved/internal declarations accurate descriptions.

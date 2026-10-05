@@ -1,0 +1,23 @@
+// Documentation adapted from the Symbian Developer Library.
+// Original reference content is licensed under EPL-1.0.
+// SPDX-License-Identifier: EPL-1.0
+
+/** \fn static IMPORT_C TInt HAL::Set(TAttribute aAttribute, TInt aValue)
+\param aAttribute The HAL attribute.
+
+\param aValue The attribute value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BD00E7FC-C234-3111-87A5-10F79EB0F2B8.html#GUID-4AD85D23-8381-3049-BC70-30E91F0D523D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt HAL::Set(TInt aDeviceNumber, TAttribute aAttribute, TInt aValue)
+\param aDeviceNumber The device number. (eg: screen number)
+
+\param aAttribute The HAL attribute.
+
+\param aValue The attribute value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-BD00E7FC-C234-3111-87A5-10F79EB0F2B8.html#GUID-0E5B6040-4A64-3C0A-A4B3-772FB19359BD">Symbian Developer Library</a>)</small></p>
+*/

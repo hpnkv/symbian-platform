@@ -1,0 +1,2554 @@
+// Documentation adapted from the Symbian Developer Library.
+// Original reference content is licensed under EPL-1.0.
+// SPDX-License-Identifier: EPL-1.0
+
+/** \fn IMPORT_C TInt CBitmapContext::APIExtension(TUid aUid, TAny *&aOutput, TAny *aInput)
+\param aOutput is for output
+
+\param aInput is for input
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-FC746873-0570-3900-AD89-42B205FDC0D3.html#GUID-E8B5D108-F70A-3A4A-8352-CC98996C1911">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual TInt CBitmapDevice::GetNearestFontInPixels(CFont *&aFont, const TFontSpec &aFontSpec)=0
+\param aFont On return, contains a pointer to the nearest font.
+
+\param aFontSpec The specification of the font to be matched.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2DEFEC47-F36E-3133-A08D-55F7C2534CC0.html#GUID-EB89ED56-034E-3089-AB9E-134057A562A8">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt CBitmapDevice::CreateBitmapContext(CBitmapContext *&aGC)
+Creates a bitmap context for this bitmap device.
+
+\param aGC On return, holds a pointer to the created bitmap context.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2DEFEC47-F36E-3133-A08D-55F7C2534CC0.html#GUID-49950935-043B-3E63-850B-AC10D5E57D7E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C TCharacterDataAvailability CFont::DoGetCharacterData(TUint aCode, TOpenFontCharMetrics &aMetrics, const TUint8 *&aBitmap, TSize &aBitmapSize) const
+Gets the character metrics for a character.
+
+\param aCode The character code.
+
+\param aMetrics On return, contains the character bitmap.
+
+\param aBitmap On return, this points to NULL.
+
+\param aBitmapSize On return, this has a size of (0,0).
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-815A7570-B695-37B1-A102-3BE8DBF7DA20">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C TBool CFont::DoGetCharacterPosition(TPositionParam &aParam) const
+Overridable function innards of GetCharacterPosition and GetCharacterPosition2. It is generally not useful to override this function. GetCharacterPosition GetCharacterPosition2
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-4B31F09A-8482-3026-AA22-8302AFBD228C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C TInt CFont::DoExtendedFunction(TUid aFunctionId, TAny *aParam=NULL) const
+API extension system that enables the caller to access a particular API extension function. N.B. Any overload of this function in a derived class should call its immediate parent implementation for any extension function Uid that it does not recognize and handle.
+
+\param aParam Pointer to an arbitrary parameter block that can be used to provide and/or return information to/from the particular extension function, defaults to NULL.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-5CE9C544-35CE-3F07-8F00-D3676CC5299A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C CFont::~CFont()
+Default destructor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-9AFAA95F-E6CF-3D8B-BBD1-94B6F933A2FC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt CFont::FontCapitalAscent() const
+Gets the ascent of an ANSI capital letter in the font whether or not there are any ANSI capitals in the font.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-A001FDA1-92F1-365F-8EF9-8094A4B3A6FB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt CFont::FontMaxAscent() const
+Gets the max ascent of any pre-composed glyph in the font. This will include accents or diacritics that form part of pre-composed glyphs. It is not guaranteed to cover the max ascent of composite glyphs that have to be created by a layout engine. This is also the recommended distance between the top of a text box and the baseline of the first line of text.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-92C2FAA3-5BA2-3B93-A74C-13213852A6BD">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt CFont::FontStandardDescent() const
+Gets the descent of an ANSI descending character in the font. Whether or not there are any ANSI descenders in the font.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-D4A98DCB-D876-368E-BE19-6B6B0554FDDA">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt CFont::FontMaxDescent() const
+Gets the max descent of any pre-composed glyph in the font. This will include accents or diacritics that form part of pre-composed glyphs. It is not guaranteed to cover the max descent of composite glyphs that have to be created by a layout engine.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-92A8034B-05BC-324F-969D-C8F55D0EE2E2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt CFont::FontLineGap() const
+Gets the suggested line gap for the font. This is the recommended baseline to baseline distance between successive lines of text in the font.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-F07E8497-6B4A-39A9-A295-F1C585B703CB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt CFont::FontMaxHeight() const
+Gets the (positive) maximum height in pixels of the font. This may differ from the design height.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-6B169F02-636F-3B8D-83F3-C3DCE082C472">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TCharacterDataAvailability CFont::GetCharacterData(TUint aCode, TOpenFontCharMetrics &aMetrics, const TUint8 *&aBitmap, TSize &aBitmapSize) const
+Gets the character metrics for a character.
+
+\param aCode The character code.
+
+\param aMetrics On return, contains the character bitmap.
+
+\param aBitmap On return, this points to NULL.
+
+\param aBitmapSize On return, this has a size of (0,0).
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-140BA17F-0D20-3A78-85AF-D9601A4EAC5B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool CFont::GetCharacterPosition(TPositionParam &aParam) const
+Transforms one cluster of characters (base character plus combining marks, ligature or indic syllable) into one cluster of glyphs together with their positions. Repeated calls of this function (for the same input text) are considerably slower than repeated calls of GetCharacterPosition2 for Indic text (such as Hindi), as GetCharacterPosition2 can cache information between calls. GetCharacterPosition2
+
+\param aParam Input and output parameters
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-C0104839-2D17-3746-B7E4-ADEDB3D5F00F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CFont::WidthZeroInPixels() const
+Gets the width of the zero character of this font in pixels.
+
+This function is provided as the &quot;0&quot; character is roughly the average width of the characters of any font.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-BEBC3647-1791-3936-A7A3-E6172D6AC737">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CFont::MeasureText(const TDesC &aText, const TMeasureTextInput *aInput=NULL, TMeasureTextOutput *aOutput=NULL) const
+Text measurement function.
+
+This is a powerful text measurement function underlying all the other text measurement functions. It takes optional input and output parameter blocks, which may be null, and returns the advance width (change in pen position when drawn horizontally) of the text, or the advance height, if the text is drawn vertically.
+
+- Get the advance width or advance height (return value). The advance width is the amount by which the pen advances when drawing the text horizontally, while the advance height is the amount by which the pen advances when drawing the text vertically.
+
+- Measure some text in context, so that shaping behaviour (e.g. in Arabic) can be affected by what comes before and after the text. Do this using TMeasureTextInput::iStartInputChar and TMeasureTextInput::iEndInputChar to tell the function where to start and end in the supplied descriptor.
+
+- Determine how much text fits a given size by setting TMeasureTextInput::iMaxAdvance or TMeasureTextInput::iMaxBounds.
+
+- Specify letter spacing and word spacing using TMeasureTextInput::iCharJustNum, TMeasureTextInput::iCharJustExcess, TMeasureTextInput::iWordJustNum and TMeasureTextInput::iWordJustExcess.
+
+- Get the number of characters drawn in TMeasureTextOutput::iChars when applying the various constraints in TMeasureTextInput.
+
+- Get the number of glyphs drawn in TMeasureTextOutput::iGlyphs.
+
+- Get the number of groups (formed by ligation or diacritic placement) in TMeasureTextOutput::iGroups. Groups are units of cursor movement: the cursor hops over a character-plus-accent group or an Arabic or other ligature in one go.
+
+- Get the number of word spaces in TMeasureTextOutput::iSpaces.
+
+- Get the bounds of the inked-in pixels in TMeasureTextOutput::iBounds.
+
+- Get the size of the biggest glyph that would be drawn in TMeasureTextOutput::iMaxGlyphSize.
+
+\param aText The text to be measured.
+
+\param aInput The input block. This may be NULL.
+
+\param aOutput The output block. This may be NULL.
+
+\panic GDI 1 In debug builds only, if TMeasureTextInput::iStartInputChar is negative.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-5FAD60AB-CA8D-3127-A93F-C9DC6C41AF44">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CFont::ExtendedFunction(TUid aFunctionId, TAny *aParam=NULL) const
+Enables the caller to access a particular API extension function. N.B. Any overload of this function in a derived class should call its immediate parent implementation for any extension function UID that it does not recognize and handle.
+
+\param aFunctionId UID of the required extension function
+
+\param aParam Pointer to an arbitrary parameter block that can be used to provide and/or return information to/from the particular extension function, defaults to NULL.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-5C00D06F-1A98-37CA-852F-9987A24F275E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool CFont::GetCharacterPosition2(TPositionParam &aParam, RShapeInfo &aShapeInfo) const
+Takes Unicode text and produces the glyph cluster for the first character in that text plus any combining mark characters, or for the first indic syllable. It is responsible for contextual glyph selection, ligature creation and diacritic placement.
+
+CFont::TPositionParam
+
+\param aParam The input/output parameter of the text/glyph data for the algorithm.
+
+\param aShapeInfo The function will cache &quot;shaped&quot; text (e.g. complex scripts such as Devanagari) here. aShapeInfo must be freshly-constructed or closed for each new piece of text in aParam.iText. If aParam.iText is unchanged between calls, aShapeInfo should be passed back in unchanged as well.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-E0C92302-2574-3A76-B868-7AF415E52500">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TBool CFont::CharactersJoin(TInt aLeftCharacter, TInt aRightCharacter)
+Determines if aLeftCharacter and aRightCharacter affect each other's contextual glyph form if placed next to each other. If either character is a combining character, EFalse will be returned, which is not generally useful information. Pass in base characters ignoring intervening combining characters.
+
+\param aLeftCharacter Unicode code for the character that stands on the left.
+
+\param aRightCharacter Unicode code for the character that stands on the right.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2A12FE3B-47F2-3016-8161-A971CA506491.html#GUID-29FD048B-8792-3CAF-8012-43D6B857C1CB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CFontCache::CFontCache()
+Default constructor.
+
+This constructs a CFontCache of size KMaxFontCacheEntries.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B68B7BC8-CFBA-32F4-A0BE-8378F0C105DA.html#GUID-0E14DF07-94FD-3B02-93ED-90B50D5E6687">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CFontCache::CFontCache(TInt aMaxEntries)
+Constructor specifying the number of cache entries.
+
+\param aMaxEntries Number of entries for this cache. You must ensure this is less than or equal to KMaxFontCacheEntries.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B68B7BC8-CFBA-32F4-A0BE-8378F0C105DA.html#GUID-FA2747A9-98B3-3E59-92AA-C8723A8031C2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CFontCache::~CFontCache()
+Destructor.
+
+This destroys the cashe and releases its allocated memory.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B68B7BC8-CFBA-32F4-A0BE-8378F0C105DA.html#GUID-B7D58CC7-CCD0-35A7-A7DB-745BD16FDD8F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CFont * CFontCache::Search(const TFontSpec &aFontSpec)
+Searches the cache for a specified font.
+
+The CFont returned is that which corresponds to the font specification aFontSpec.
+
+\param aFontSpec The specification of the font to be searched for.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B68B7BC8-CFBA-32F4-A0BE-8378F0C105DA.html#GUID-A609C2F2-7A0C-3B97-B0DE-9674EF1588EB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CFont * CFontCache::AddEntryL(CFont *aFont, const TFontSpec &aFontSpec)
+Adds a font entry to the cache.
+
+The font, and the font specification required to extract it from the cache, are both specified. If the cache is already full, the font replaces the oldest entry already in the cache, which is returned.
+
+\param aFont The font to be stored in the cache.
+
+\param aFontSpec The font's corresponding font specification.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B68B7BC8-CFBA-32F4-A0BE-8378F0C105DA.html#GUID-C37E562D-935D-39B5-942E-F279D4DAC708">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CFont * CFontCache::RemoveFirstEntry()
+Removes the first entry from the font cache and returns it.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B68B7BC8-CFBA-32F4-A0BE-8378F0C105DA.html#GUID-0A275E3F-700D-3F89-A3AC-C995662145F9">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C void CGraphicsContext::DrawText(const TDesC &aText, const TPoint &aPosition, const TDrawTextParam &aParam)
+Draws the specified text at the given position using the parameters supplied.
+
+\param aText The text to be drawn.
+
+\param aPosition The position to draw the text at.
+
+\param aParam Parameters to use for text drawing.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DAD09DCF-3123-38B4-99E9-91FB24B92138.html#GUID-AFF51194-7D42-3D8D-BE51-734A9C1F38E8">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C void CGraphicsContext::Reserved()
+Reserved function for future use.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DAD09DCF-3123-38B4-99E9-91FB24B92138.html#GUID-046D601D-E198-3C2A-8E69-EF6E0FBB0BAC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CGraphicsContext::DrawTextExtended(const TDesC &aText, const TPoint &aPosition, const TDrawTextExtendedParam &aParam)
+Draws text, optionally changing its direction (right-to-left / left-to-right).
+
+Apart from reordering the text, the function is the same as the two parameter variant of DrawText(), described above.
+
+\param aText The text string to be drawn, optionally changing its direction (right-to-left / left-to-right).
+
+\param aPosition A point specifying the position of the left end of the text.
+
+\param aParam Indicates whether the text should be drawn from right-to-left (for scripts like Arabic and Hebrew) or left-to-right.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DAD09DCF-3123-38B4-99E9-91FB24B92138.html#GUID-05BE00F6-A21C-3E42-B252-0748E5516462">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CGraphicsContext::DrawTextExtended(const TDesC &aText, const TTextParameters *iParam, const TPoint &aPosition, const TDrawTextExtendedParam &aParam)
+Draws text, optionally changing its direction (right-to-left / left-to-right).
+
+Apart from reordering the text, the function is the same as the two parameter variant of DrawText(), described above.
+
+\param aText The text string to be drawn, optionally changing its direction (right-to-left / left-to-right).
+
+\param aPosition A point specifying the position of the left end of the text.
+
+\param aParam Indicates whether the text should be drawn from right-to-left (for scripts like Arabic and Hebrew) or left-to-right.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DAD09DCF-3123-38B4-99E9-91FB24B92138.html#GUID-6EC7602C-03B4-3370-A1B3-0CAE35B0BB0A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt CGraphicsContext::JustificationInPixels(TInt aExcessPixels, TInt aTotalUnits, TInt aFirstUnit, TInt aNumUnits)
+Gets the amount of space in pixels by which to adjust letter or word spacing, given the total number of words and spaces, a start space, and the number of units to be adjusted.
+
+The first two arguments are the number of pixels (character groups) and the number of units (word spaces) over which justification is to occur. The third argument specifies the current character group or word space, while the final argument specifies the number of units that are to be adjusted.
+
+A panic occurs if aExcessPixels is 0, aTotalUnits is not greater than 0, or aFirstUnit is not less than aTotalUnits.
+
+SetWordJustification() SetCharJustification()
+
+\param aExcessPixels The number of pixels by which the width of the text is to be changed. It may be positive, in which case the text is stretched, or negative, in which case it is shrunk.
+
+\param aTotalUnits The number of word spaces over which the change in width is to be distributed.
+
+\param aFirstUnit The current unit the character group or word space we are 'on'.
+
+\param aNumUnits The number of units that are to be adjusted starting at aFirstUnit.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DAD09DCF-3123-38B4-99E9-91FB24B92138.html#GUID-D8B430DD-702B-3FC8-92D9-3FE0CACD1C68">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt CGraphicsContext::JustificationInPixels(TInt &aExcessPixels, TInt &aTotalUnits)
+Gets the amount of space in pixels by which to adjust the current letter or word spacing, and also retrieves the number of excess pixels and word spaces remaining after the adjustment is performed.
+
+The arguments are the number of remaining pixels (character groups) and units (word spaces) over which justification is to occur. The function can be called repetitively until the number of units is zero, and hence justification is complete. A panic occurs if the number of units is less than one or the amount of pixels is zero.
+
+SetWordJustification() SetCharJustification()
+
+\param aExcessPixels The number of pixels by which the width of the text is to be changed. It may be positive, in which case the text is stretched, or negative, in which case it is shrunk. On return, this is equal to its old value minus the return value.
+
+\param aTotalUnits The number of word spaces over which the change in width is to be distributed. On return, this is reduced by one.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DAD09DCF-3123-38B4-99E9-91FB24B92138.html#GUID-C5BDB89F-C126-3BFA-BC22-ADC65C6415D1">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C TInt CGraphicsContext::APIExtension(TUid aUid, TAny *&aOutput, TAny *aInput)
+\param aOutput is for output
+
+\param aInput is for input
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DAD09DCF-3123-38B4-99E9-91FB24B92138.html#GUID-B9BB6CAD-762B-3638-B958-8B75AB9FF69D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C CPalette * CPalette::NewL(TInt aNumberOfEntries)
+Creates a new palette with the specified number of entries.
+
+\param aNumberOfEntries The number of entries in the palette being created.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-989FC4A8-1ED2-345E-BF10-6662CFA7ACF1.html#GUID-21B6A96C-5639-3DA8-9C0F-B587147CC3CD">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C CPalette * CPalette::NewDefaultL(TDisplayMode aDispMode)
+Creates a new default palette for the specified display mode. The default palette for a particular display mode has one entry for each possible colour in that display mode (2 entries for EGray2, 16 entries for EColor16 etc.); the colour of each index p in the default palette is set to its default value according to its display mode (e.g. if the mode is EColor16 then palette[p]==TRgbColor16(p); if the mode is EGray4 then palette[p]==TRgb_Gray4(p)).
+
+\param aDispMode The display mode for which the palette is to be created.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-989FC4A8-1ED2-345E-BF10-6662CFA7ACF1.html#GUID-90E944E4-2089-38FB-8ECD-3487E8665CA0">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CPalette::~CPalette()
+Destructor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-989FC4A8-1ED2-345E-BF10-6662CFA7ACF1.html#GUID-C7E0D153-B29D-3E5E-BC90-CBA69069B170">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CPalette::Clear()
+Clears all the entries in the palette to TRgb(0).
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-989FC4A8-1ED2-345E-BF10-6662CFA7ACF1.html#GUID-222B40EB-CC38-3197-AFA7-285597B11151">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt CPalette::Entries() const
+Gets the number of entries in the palette
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-989FC4A8-1ED2-345E-BF10-6662CFA7ACF1.html#GUID-51EF0798-F382-359E-B9F3-A282B601102B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRgb CPalette::GetEntry(TInt aPaletteIndex) const
+Gets the RGB value of the palette entry at aPaletteIndex.
+
+\param aPaletteIndex The index of the palette entry to get.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-989FC4A8-1ED2-345E-BF10-6662CFA7ACF1.html#GUID-A9700861-27D7-3BB3-AE33-8B0BF8745A48">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRgb CPalette::NearestEntry(const TRgb &aColor) const
+Gets the colour in the palette which is closest to the specified colour.
+
+\param aColor The colour to find.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-989FC4A8-1ED2-345E-BF10-6662CFA7ACF1.html#GUID-43FE015D-2A14-39DA-8F60-F70D8A5852EA">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CPalette::NearestIndex(const TRgb &aColor) const
+Gets the index of the colour in the palette which is closest to the specified colour.
+
+\param aColor The colour to find.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-989FC4A8-1ED2-345E-BF10-6662CFA7ACF1.html#GUID-70F1D8CC-FFBE-3F76-946A-9E7EFDF75739">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CPalette::SetEntry(TInt aPaletteIndex, const TRgb &aPaletteEntry)
+Sets the palette entry at aPaletteIndex to the RGB value aPaletteEntry.
+
+\param aPaletteIndex The index of the palette entry to be set.
+
+\param aPaletteEntry The RGB value to set that entry to.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-989FC4A8-1ED2-345E-BF10-6662CFA7ACF1.html#GUID-A7F632E8-94FA-340F-A80C-0DC0C8BD4162">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CPalette::GetDataPtr(TInt aFirstColor, TInt aNumColors, TPtr8 &aPtr)
+Returns a descriptor over the palette entries for the specifed colors. It is designed so that the descriptor can be passed to another thread and that thread copy the relevant entries.
+
+\param aFirstColor The first colour.
+
+\param aNumColors Number of colours.
+
+\param aPtr Descriptor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-989FC4A8-1ED2-345E-BF10-6662CFA7ACF1.html#GUID-99EBA3EA-2F86-3372-9C6F-7F328D2DFA24">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C CPdrModelList * CPdrModelList::NewL()
+Constructs, and returns a pointer to a new instance of the printer model list interface.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5B7318CF-F550-3B6F-B7B2-73B3ABB75C04.html#GUID-5B372B5D-D9FB-31AE-8B95-2AA9D4B4E928">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C CPdrModelList::~CPdrModelList()
+Virtual destructor. Frees resources owned by the object, prior to its destruction.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5B7318CF-F550-3B6F-B7B2-73B3ABB75C04.html#GUID-0278B880-22C3-355A-8A60-7A1EFF001ADD">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CPdrModelList::AddDirectoryL(const TDesC &aDir)
+Adds a directory to the list of directories to be scanned for printer models.
+
+\param aDir The directory to be added to the list.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5B7318CF-F550-3B6F-B7B2-73B3ABB75C04.html#GUID-54CB9D41-E3C8-3B40-BF6B-0792AD7B3833">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CPrinterModelList * CPdrModelList::ScanForModelsL()
+Scans through through the list of directories for all .pdr files and generates a list of printer models.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5B7318CF-F550-3B6F-B7B2-73B3ABB75C04.html#GUID-D09BCBDF-CC04-30ED-BA8C-A8BEF1000EC6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CPrinterDriver * CPdrModelList::CreatePrinterDriverL(TInt anIndex)
+Creates an object for accessing the specified store that contains printer specification data.
+
+\param anIndex An index into a list of files containing printer specification data. The files are the complete set of .pdr files found in the directories known to this object.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5B7318CF-F550-3B6F-B7B2-73B3ABB75C04.html#GUID-E6C444DD-B6C1-311A-8B8E-0B90CCFC5883">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C CPicture::~CPicture()
+Frees all resources owned by the object prior to its destruction.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-829D57CD-9659-347B-AAE9-5F0A0ECD555C.html#GUID-FD68B45F-C101-3481-A486-C589B4987447">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C TStreamId CPicture::StoreL(CStreamStore &aStore) const
+Stores the picture to the specified store.
+
+The default implementation assumes that the content of the picture is externalized to a single stream. The implementation may need to be changed for those derived classes that have components.
+
+\param aStore The store.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-829D57CD-9659-347B-AAE9-5F0A0ECD555C.html#GUID-40B60D58-AAB8-322C-B4CD-90B3CD31242D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C void CPicture::SetScaleFactor(TInt aScaleFactorWidth, TInt aScaleFactorHeight)
+Sets the picture's scale factors.
+
+\param aScaleFactorWidth The width scale factor, in percent.
+
+\param aScaleFactorHeight The height scale factor, in percent.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-829D57CD-9659-347B-AAE9-5F0A0ECD555C.html#GUID-37F8E3D4-CCB0-3009-B2BB-0B3ED40D79F3">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C void CPicture::SetCropInTwips(const TMargins &aMargins)
+Sets the cropping margins of a picture in twips.
+
+These are relative to the original unscaled size of the picture.
+
+\param aMargins The cropping margins of the picture, in twips.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-829D57CD-9659-347B-AAE9-5F0A0ECD555C.html#GUID-3B6DCEEA-2EB0-3D30-81A6-52A7C36B8CB5">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C TPictureCapability CPicture::Capability() const
+Gets the picture's capabilities.
+
+These include whether it is scalable and croppable.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-829D57CD-9659-347B-AAE9-5F0A0ECD555C.html#GUID-6B17E4E9-0EAA-31C4-A977-3CF9D1F15FB4">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C void CPicture::GetCropInTwips(TMargins &aMargins) const
+Gets the cropping margins of a picture in twips.
+
+These margins are relative to the original unscaled size of the picture.
+
+\param aMargins The cropping margins of the picture, in twips
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-829D57CD-9659-347B-AAE9-5F0A0ECD555C.html#GUID-3C6D8053-80DF-3980-9000-4BE297E17CA5">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C TInt CPicture::ScaleFactorWidth() const
+Gets the picture's width scale factor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-829D57CD-9659-347B-AAE9-5F0A0ECD555C.html#GUID-898CC312-242B-31F8-92EC-DBE0EF58BC1A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C TInt CPicture::ScaleFactorHeight() const
+Gets the pictures height scale factor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-829D57CD-9659-347B-AAE9-5F0A0ECD555C.html#GUID-303CC3B5-9686-30C3-8C09-85668AA7F353">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C TBool CPicture::LineBreakPossible(TUint aClass, TBool aBeforePicture, TBool aHaveSpaces) const
+States whether a line break is possible, either before or after a picture.
+
+The default implementation returns ETrue, implying that there is a break opportunity both before and after the picture, whether or not a space is present.
+
+This may be overridden for special types of pictures.
+
+\param aClass The line breaking class of the adjacent character. Line breaking classes are defined in the header file, tagma.h
+
+\param aBeforePicture ETrue, if the adjacent character is before the picture; EFalse, if the adjacent character is afterwards.
+
+\param aHaveSpaces ETrue, if spaces occur between the adjacent character and the picture; EFalse, otherwise.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-829D57CD-9659-347B-AAE9-5F0A0ECD555C.html#GUID-264E6355-F507-38CD-A010-D1AAE6CD22F2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C TBool CPicture::NativePixelSize(TSize &aPixelSize)
+Derived classes might be implemented as bitmaps, in that case it might be interesting to now the native pixel size of the bitmap.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-829D57CD-9659-347B-AAE9-5F0A0ECD555C.html#GUID-4BF52056-2982-30C4-8CFD-F7D9EB31A8C4">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CPicture::GetSizeInPixels(MGraphicsDeviceMap *aMap, TSize &aSize) const
+Gets the picture's size in pixels.
+
+This is calculated from the original size of the picture, taking cropping and scaling into account.
+
+\param aMap The pixels to twips mapping interface of the graphics device
+
+\param aSize The size of the picture, in pixels.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-829D57CD-9659-347B-AAE9-5F0A0ECD555C.html#GUID-111BD490-DCA9-376E-9EBB-BFACA3F86B28">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CPicture::SetSizeInPixels(MGraphicsDeviceMap *aMap, const TSize &aSize)
+Sets the picture's size in pixels.
+
+\param aMap The pixels to twips mapping interface of the graphics device.
+
+\param aSize The size of the picture, in pixels.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-829D57CD-9659-347B-AAE9-5F0A0ECD555C.html#GUID-56656958-3D06-3136-9F5F-9B1B60E2C6D8">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CPicture::AddCropInPixels(MGraphicsDeviceMap *aMap, const TMargins &aMargins)
+Adds pixel cropping margins to the picture.
+
+\param aMap The pixels to twips mapping interface of the graphics device
+
+\param aMargins The additional pixel cropping margins for the picture, in pixels.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-829D57CD-9659-347B-AAE9-5F0A0ECD555C.html#GUID-4A853907-26D5-35B8-B456-5AE90D5260E1">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CPicture::GetSizeInTwips(TSize &aSize) const
+Gets the picture's size, in twips.
+
+This size is calculated from the original size of the picture, taking cropping and scaling into account.
+
+\param aSize The size of the picture, in twips.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-829D57CD-9659-347B-AAE9-5F0A0ECD555C.html#GUID-D0456601-B773-32D6-9B28-BC773E861EBC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CPicture::SetSizeInTwips(const TSize &aSize)
+Sets the picture's size, in twips
+
+\param aSize The size of the picture, in twips.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-829D57CD-9659-347B-AAE9-5F0A0ECD555C.html#GUID-1A5F2404-7D69-3E27-ACA4-23B8C473B2FB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CPicture::ResetToOriginal()
+Resets the picture's scaling and cropping attributes to their original values.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-829D57CD-9659-347B-AAE9-5F0A0ECD555C.html#GUID-E51900A7-B9E1-3A87-ACC6-B2F60C60CCEA">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CPrinterControl::~CPrinterControl()
+Destructor.
+
+It frees all resources owned by the object, prior to its destruction.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-2E0F522C-2A42-3E2E-ADE8-43398BB86906.html#GUID-B452A08B-6CD0-33FC-863D-CD04DC7A7561">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CPrinterDevice::~CPrinterDevice()
+Destructor. It frees all resources owned by the object, prior to its destruction.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-02E9DA67-8CC0-3785-B917-A14C8AA7E714.html#GUID-6A0B9C68-8933-3DC7-99BE-759D1989FA29">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C TRect CPrinterDevice::PrintablePageInPixels() const
+Gets the dimensions of the area to which the printer device can print.
+
+These dimensions are normally less than those returned by TPageSpec::OrientedPageSize() because a margin exists between the boundary of the printable page and the absolute extent of the page.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-02E9DA67-8CC0-3785-B917-A14C8AA7E714.html#GUID-FDBE4ED9-23E8-3121-B5C9-1F7B94BEA30A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C void CPrinterDevice::DeleteControl()
+Deletes the printer control owned by this object.
+
+The function sets the iControl member to NULL.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-02E9DA67-8CC0-3785-B917-A14C8AA7E714.html#GUID-3ED71CA8-ABF3-3750-B9C8-FFAE55B4E382">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CPrinterDevice::RestorePropertiesL()
+Restores printer properties.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-02E9DA67-8CC0-3785-B917-A14C8AA7E714.html#GUID-D970CA0A-8119-3963-ABD2-413779100F40">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CPrinterDevice::StorePropertiesL() const
+Stores the printer properties.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-02E9DA67-8CC0-3785-B917-A14C8AA7E714.html#GUID-DF6A1B70-025A-3E91-8562-CE1B67B72691">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CPrinterDevice::CPrinterDevice()
+Standard constructor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-02E9DA67-8CC0-3785-B917-A14C8AA7E714.html#GUID-B6EE0A7B-0D4C-339F-BF5E-7BA830CABFB4">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C CPrinterDriver * CPrinterDriver::NewL()
+Constructs, and returns a pointer to a new instance for accessing a printer specification data store.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-812DCC89-1897-30FE-AD96-2A35DAF437D8.html#GUID-4BEBD9E9-7022-31E3-AE03-5662FE656548">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CPrinterDriver::~CPrinterDriver()
+Destructor.
+
+It frees all resources owned by the object, prior to its destruction. In particular, it closes the printer specification data store and any open session with the file server.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-812DCC89-1897-30FE-AD96-2A35DAF437D8.html#GUID-93C7A492-18A8-38FF-ABBC-47E26DB856BC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CPrinterDriver::OpenPdrL(const TDesC &aName)
+Opens the specified printer specification data store.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-812DCC89-1897-30FE-AD96-2A35DAF437D8.html#GUID-42BDFD2C-59E6-3DC7-8986-1588BE00BB38">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CPrinterDriver::Close()
+Closes the printer specification data store and frees resources.
+
+An open session with the file server remains open.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-812DCC89-1897-30FE-AD96-2A35DAF437D8.html#GUID-7BB3A6F2-5E53-3CB0-BE0A-7DACBB7841B3">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CPrinterDriver::NumModels() const
+Gets the number of printer models defined by the printer specification.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-812DCC89-1897-30FE-AD96-2A35DAF437D8.html#GUID-B82A7109-4EA2-3C8E-AFDD-63002EDBBABD">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TPrinterModelEntry CPrinterDriver::Model(TInt aNum) const
+Gets the specified printer model.
+
+\param aNum An index into the list of printer models defined in the printer specification data.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-812DCC89-1897-30FE-AD96-2A35DAF437D8.html#GUID-6D7F5EB2-B2F9-39EE-8746-9B21C01A8EB6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CPrinterDevice * CPrinterDriver::CreatePrinterDeviceL(TUid aModelUid)
+Creates the physical graphics device to be used for printing.
+
+\param aModelUid The UID of a specific model which is defined in the printer specification data.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-812DCC89-1897-30FE-AD96-2A35DAF437D8.html#GUID-6ADF01C5-D9E7-3F5B-999F-6F27C0215E30">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CPrinterDriverUI * CPrinterDriver::CreatePrinterDriverUIL()
+Constructs a printer specific user interface.
+
+The user interface object is optional, but if it exists, it is implemented as part of a UDL (i.e. a UI DLL).
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-812DCC89-1897-30FE-AD96-2A35DAF437D8.html#GUID-6A670FAA-0D1C-39F5-B34A-6798A40910AF">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C TBool CPrinterDriverUI::BeforePrintL()
+Provides an opportunity for a dialog to be put up before printing begins.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-409C6A2C-1F51-36AA-8ADA-2B8657A111B1.html#GUID-CA5D773C-12F9-395B-B8AC-21ACAB9B85F6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C void CPrinterDriverUI::AfterPrintL()
+Provides an opportunity for a dialog to be put up after printing is complete. The default implementation is empty.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-409C6A2C-1F51-36AA-8ADA-2B8657A111B1.html#GUID-DA43D2C8-D2A5-3FC1-8CE0-D40477CD0382">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C void CPrinterDriverUI::SetPropertiesL()
+Provides an opportunity for a dialog to be put up to capture or change printer properties. The default implementation is empty.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-409C6A2C-1F51-36AA-8ADA-2B8657A111B1.html#GUID-BB7AA751-4E99-32F9-8C6E-8E0B1B0EB4BC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C TBool CPrinterDriverUI::CanSetProperties()
+Tests whether printer properties can be set.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-409C6A2C-1F51-36AA-8ADA-2B8657A111B1.html#GUID-B349F4AC-938B-3067-BEDD-773C7994956F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CTypefaceStore::~CTypefaceStore()
+Destroys the typeface store and reclaims the memory allocated to it.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0CA79D2D-827F-3A20-A10C-1CC9C576E803.html#GUID-2235F0FC-034B-33D5-8A4C-D780DCB529F9">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual TInt CTypefaceStore::GetNearestFontInTwips(CFont *&aFont, const TFontSpec &aFontSpec)=0
+\param aFont On return, contains a pointer to the nearest font.
+
+\param aFontSpec The specification of the font to be matched.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0CA79D2D-827F-3A20-A10C-1CC9C576E803.html#GUID-C0C66116-94E1-34B0-9369-2074EFE28A6A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual TInt CTypefaceStore::GetNearestFontToDesignHeightInTwips(CFont *&aFont, const TFontSpec &aFontSpec)=0
+\param aFont On return, contains a pointer to the nearest font.
+
+\param aFontSpec The specification of the font to be matched.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0CA79D2D-827F-3A20-A10C-1CC9C576E803.html#GUID-19602339-ED4A-3CAE-8364-14812ABEF868">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual TInt CTypefaceStore::GetNearestFontToMaxHeightInTwips(CFont *&aFont, const TFontSpec &aFontSpec, TInt aMaxHeight)=0
+\param aFont On return, contains a pointer to the nearest font.
+
+\param aFontSpec The specification of the font to be matched.
+
+\param aMaxHeight The maximum height within which the font must fit.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0CA79D2D-827F-3A20-A10C-1CC9C576E803.html#GUID-B5BC1004-F449-3AE9-8B85-1F80D78F8BE9">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CTypefaceStore::ReleaseFont(CFont *aFont)
+Releases the hold of a typeface store client on a specified font.
+
+Decrements the access-count for the specified font by one. If this reduces the access-count to zero then the font is no longer needed by any client, and is deleted from the typeface store list.
+
+\param aFont The font to be released by the client.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0CA79D2D-827F-3A20-A10C-1CC9C576E803.html#GUID-7B1E8315-F4D2-3DE7-9902-C5514AEA8F5F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt CTypefaceStore::BaselineOffset(TInt aHeight, TFontPrintPosition aPos)
+Gets the baseline offset, in twips, for any font in subscript or superscript form.
+
+If the print position is normal then zero is returned. If it is superscript then the baseline offset returned is a percentage, KSuperscriptOffsetPercentage, of aHeight. If it is subscript then the baseline offset returned is a percentage, KSubscriptOffsetPercentage, of aHeight.
+
+\param aHeight The height of a font.
+
+\param aPos The print position of the required font: superscript, subscript or normal.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0CA79D2D-827F-3A20-A10C-1CC9C576E803.html#GUID-2502BA6F-9436-3891-9EF9-7EA7DE6D0884">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt CTypefaceStore::SuperSubHeight(TInt aHeight, TFontPrintPosition aPos)
+Gets the height for a font in subscript or superscript form.
+
+If the print position is normal then aHeight is returned unchanged. If it is superscript or subscript then the height returned is a percentage, KSuperSubScalingPercentage, of aHeight.
+
+\param aHeight The height of a font.
+
+\param aPos The print position of the font: superscript, subscript or normal.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0CA79D2D-827F-3A20-A10C-1CC9C576E803.html#GUID-A6AA637A-1D03-3C4B-9F5B-65C85E6BA875">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CTypefaceStore::ConstructL()
+Second phase constructor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0CA79D2D-827F-3A20-A10C-1CC9C576E803.html#GUID-23C087E5-8EFF-31AE-BBB3-1335BDEF199D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CTypefaceStore::AddFontL(CFont *aFont)
+Adds a hold, by a client of the typeface store, on the specified font.
+
+If the specified font is not currently accessed by any clients of the typeface store then the font is added to the font list and the access count set to 1. If it is currently accessed then the access count for the font is incremented by 1.
+
+\param aFont Pointer to the device specific font accessed.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0CA79D2D-827F-3A20-A10C-1CC9C576E803.html#GUID-8ABB31AB-09E4-39CA-8F7B-0FE868F1408B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool CTypefaceStore::IncrementFontCount(const CFont *aFont)
+Search for the font in iFontAccess and increment its count.
+
+\param aFont Font to search for.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0CA79D2D-827F-3A20-A10C-1CC9C576E803.html#GUID-81EB7B32-0717-35D2-BB4A-BE72627A25F6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C MGraphicsDeviceMap::MGraphicsDeviceMap()
+Default constructor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4791F2C1-C351-3824-8784-3161F5B65DCA.html#GUID-B19C30A3-2A2B-3C45-8C84-88F09C9FFF34">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual IMPORT_C MGraphicsDeviceMap::~MGraphicsDeviceMap()
+Destructor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4791F2C1-C351-3824-8784-3161F5B65DCA.html#GUID-97234709-D2FB-3180-B59F-607A08F923EB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TPoint MGraphicsDeviceMap::TwipsToPixels(const TPoint &aTwipPoint) const
+Converts a point in twips to a point in pixels.
+
+\param aTwipPoint A point on the graphics device in twips.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4791F2C1-C351-3824-8784-3161F5B65DCA.html#GUID-15533626-A885-3DD1-A661-FD4BB127A5FB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRect MGraphicsDeviceMap::TwipsToPixels(const TRect &aTwipRect) const
+Converts a rectangle in twips to a rectangle in pixels.
+
+\param aTwipRect A rectangle on the graphics device in twips
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4791F2C1-C351-3824-8784-3161F5B65DCA.html#GUID-81E9A1D5-90EA-36A6-9E4E-6DCA2450F4DF">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TPoint MGraphicsDeviceMap::PixelsToTwips(const TPoint &aPixelPoint) const
+Converts a point in pixels to a point in twips.
+
+\param aPixelPoint A point on the graphics device in pixels.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4791F2C1-C351-3824-8784-3161F5B65DCA.html#GUID-EC058D2F-E29B-37C7-B5AB-317F6B7242BF">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TRect MGraphicsDeviceMap::PixelsToTwips(const TRect &aPixelRect) const
+Converts a rectangle in pixels to a rectangle in twips.
+
+\param aPixelRect A rectangle on the graphics device in pixels.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4791F2C1-C351-3824-8784-3161F5B65DCA.html#GUID-CEABEC94-2DA0-3220-8493-C350C9BA922D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn virtual TInt MGraphicsDeviceMap::GetNearestFontInTwips(CFont *&aFont, const TFontSpec &aFontSpec)=0
+\param aFont On return, contains a pointer to the nearest font.
+
+\param aFontSpec The specification of the font to be matched.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-4791F2C1-C351-3824-8784-3161F5B65DCA.html#GUID-ECD05BF5-E3AB-3C18-A8E5-731081F45E3F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TColor256Util::Construct(const CPalette &aPalette)
+Initialises the two lookup tables using the specified palette.
+
+\param aPalette The palette of colours used to initialise the colour lookup tables.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-46E609EC-97EF-3738-9DEC-44E8698C97B3.html#GUID-DDDF29B5-26A1-34DF-B5E1-AE9ACA162F24">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TColor256Util::Color256(TRgb aRgb) const
+Gets the entry from the inverse colour lookup table for the colour that most closely matches the specified TRgb value.
+
+Entries in the inverse colour lookup table are indices into the palette that the object was created with. Essentially, this function matches aRgb to the index of the nearest colour in the palette.
+
+\param aRgb The conversion colour.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-46E609EC-97EF-3738-9DEC-44E8698C97B3.html#GUID-1CCE3166-F096-3441-B815-7517B6DD7944">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TColor256Util::Color256(TUint8 *aDestination, const TRgb *aSource, TInt aNumPixels) const
+Gets the entries from the inverse colour lookup table for the colours that most closely match the specified TRgb values.
+
+\param aDestination On return, a pointer to a buffer containing the entries from the inverse colour lookup table.
+
+\param aSource Pointer to the first TRgb value to match.
+
+\param aNumPixels The number of TRgb values to match.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-46E609EC-97EF-3738-9DEC-44E8698C97B3.html#GUID-5AA58AE2-C04F-34D5-9179-8A6D53FA5410">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TRgb TColor256Util::Color256(TInt aColor256) const
+Gets the TRgb value of the entry at the specified index in the colour lookup table.
+
+\param aColor256 The index into the colour lookup table.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-46E609EC-97EF-3738-9DEC-44E8698C97B3.html#GUID-7343D82F-FE49-3F71-8C6D-EF9F6187CE88">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C const TColor256Util * TColor256Util::Default()
+Returns a pointer to the system default 256 colour palette.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-46E609EC-97EF-3738-9DEC-44E8698C97B3.html#GUID-D438B7E2-B3C3-3B8B-9B9E-BFD837653C97">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TBool TDisplayModeUtils::IsDisplayModeColor(TDisplayMode aDispMode)
+Tests whether the display mode specified is colour or greyscale.
+
+\param aDispMode The display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-AB2A6324-F6AB-342A-9B5E-D7DFC672A293.html#GUID-5276F7CC-49B7-3886-9752-8B04C5C71741">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TBool TDisplayModeUtils::IsDisplayModeValid(TDisplayMode aDispMode)
+Tests whether the display mode specified is one of the valid values.
+
+\param aDispMode The display mode to be tested.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-AB2A6324-F6AB-342A-9B5E-D7DFC672A293.html#GUID-11F90D6A-DC73-30AD-B093-94C30F4E35DD">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt TDisplayModeUtils::NumDisplayModeColors(TDisplayMode aDispMode)
+Gets the number of colours or shades of grey supported by the specified display mode.
+
+For instance, a display mode of EGray4 returns 4, EColor4K returns 4096.
+
+\param aDispMode The display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-AB2A6324-F6AB-342A-9B5E-D7DFC672A293.html#GUID-EC791B29-2BF5-3F96-8896-CDA395FFA93E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt TDisplayModeUtils::NumDisplayModeBitsPerPixel(TDisplayMode aDispMode)
+Gets the number of bits required by each pixel when displayed in the specified display mode.
+
+\param aDispMode The display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-AB2A6324-F6AB-342A-9B5E-D7DFC672A293.html#GUID-74DA60A0-92DC-3FB6-B8AB-D7402424349C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TFontSpec::TFontSpec()
+Default constructor.
+
+The object's font style is set to the default: EPostureUpright, EStrokeWeightNormal, and EPrintPosNormal.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-052E4F6B-71C5-304C-B387-07A2F6F9900B.html#GUID-9063D95D-660E-3C32-A61E-E6876AD6F8BC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TFontSpec::TFontSpec(const TDesC &aTypefaceName, TInt aHeight)
+Constructs a TFontSpec object with the specified typeface and height.
+
+The object's font style is set to the default: EPostureUpright, EStrokeWeightNormal, and EPrintPosNormal.
+
+\param aTypefaceName The name of the typeface (e.g. &quot;Roman&quot;). It should be no longer than KMaxTypefaceNameLength characters in length.
+
+\param aHeight The height of the typeface, in twips.
+
+\panic GDI 6, if aTypefaceName is more than KMaxTypefaceNameLength characters long.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-052E4F6B-71C5-304C-B387-07A2F6F9900B.html#GUID-E2D03DE6-C40F-3086-80DA-B8C427E09E82">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TFontSpec::operator==(const TFontSpec &aFontSpec) const
+Compares this font specification with another.
+
+\param aFontSpec The font specification to be compared with this one.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-052E4F6B-71C5-304C-B387-07A2F6F9900B.html#GUID-23E21E14-E814-31BD-8DDE-3FF0B5794850">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TFontSpec::InternalizeL(RReadStream &aStream)
+Internalises a font specification from a read stream.
+
+The presence of this function means that the standard templated operator&gt;&gt;() (defined in s32strm.h) is available to internalise objects of this class.
+
+\param aStream The stream from which the font specification is to be internalised.
+
+\leave KErrNoMemory If internalisation causes an out of memory error.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-052E4F6B-71C5-304C-B387-07A2F6F9900B.html#GUID-768069FA-F677-392E-9476-928B7FE64384">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TFontSpec::ExternalizeL(RWriteStream &aStream) const
+Externalises the font specification to a write stream.
+
+The presence of this function means that the standard templated operator&lt;&lt;() (defined in s32strm.h) is available to externalise objects of this class.
+
+\param aStream The stream to which the font specification is to be externalised
+
+\leave KErrNoMemory If the write action causes the stream's resources to be exhausted.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-052E4F6B-71C5-304C-B387-07A2F6F9900B.html#GUID-634F60BD-83AC-37FF-9EE4-D1606B2727A3">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TFontSpec::SetScriptTypeForMetrics(TLanguage aLanguage)
+Specifies the script with which font metrics calculation will be based on.
+
+\param aLanguage The language used to derive the required script.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-052E4F6B-71C5-304C-B387-07A2F6F9900B.html#GUID-1C351CC1-514F-34E5-B73A-A4DB35418058">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TFontSpec::ScriptTypeForMetrics() const
+Returns the script with which font metrics calculation will be based on.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-052E4F6B-71C5-304C-B387-07A2F6F9900B.html#GUID-3DA9CF7B-8C47-32DF-B4B5-E7C81070FEB7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TFontStyle::TFontStyle()
+Default C++ constructor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-3842F4B8-EB6B-36B6-BF4A-27AE746FE02B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TFontStyle::TFontStyle(TFontPosture aPost, TFontStrokeWeight aStrWgt, TFontPrintPosition aPrintPos)
+Constructs a TFontStyle object with the specified attributes.
+
+\param aPost The posture attribute.
+
+\param aStrWgt The stroke weight attribute.
+
+\param aPrintPos The print position attribute.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-C4BD3432-FBC6-33D8-BF87-C8FD9CD18375">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TFontStyle::InternalizeL(RReadStream &aStream)
+Internalises a font style from a read stream.
+
+The presence of this function means that the standard templated operator&gt;&gt;() (defined in s32strm.h) is available to internalise objects of this class.
+
+\param aStream The stream from which the font style is to be internalised
+
+\leave KErrNoMemory If there is a problem reading from the stream. If internalisation causes an out of memory error.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-D03B8590-001F-31ED-97A6-17DD8145294D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TFontStyle::ExternalizeL(RWriteStream &aStream) const
+Externalises the font style to a write stream.
+
+The presence of this function means that the standard templated operator&lt;&lt;() (defined in s32strm.h) is available to externalise objects of this class.
+
+\param aStream The stream to which the font style is to be externalised.
+
+\leave KErrNoMemory This function may leave, if the write action causes the stream's resources to be exhausted.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-8F00EB07-6F1F-309A-BF68-BB2C54D7A9B8">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TFontPosture TFontStyle::Posture() const
+Gets the posture attribute.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-C74F4C8B-C146-3D65-9BEC-AC254156C184">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TFontStrokeWeight TFontStyle::StrokeWeight() const
+Gets the stroke weight attribute.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-B9E63893-999A-39AD-B811-EDB65E53E7B3">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TFontPrintPosition TFontStyle::PrintPosition() const
+Gets the print position attribute.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-F9175341-0D6B-32CC-A77F-4D9CACE4E540">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TFontStyle::SetPosture(TFontPosture aPosture)
+Sets the posture attribute.
+
+\param aPosture The posture to be set.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-338D5E45-1247-378D-8E5C-460653084E0C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TFontStyle::SetStrokeWeight(TFontStrokeWeight aStrokeWeight)
+Sets the stroke weight attribute.
+
+\param aStrokeWeight The stroke weight to be set.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-DAB6326A-4BC0-3334-B017-5D39DA1C2D28">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TFontStyle::SetPrintPosition(TFontPrintPosition aPrintPosition)
+Sets the print position attribute.
+
+\param aPrintPosition The print position to be set.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-B07DB012-38DE-38BA-968D-326FA57D9058">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TGlyphBitmapType TFontStyle::BitmapType() const
+Gets the anti-aliasing setting for the font, as set by SetBitmapType().
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-69540473-5927-30F6-A7E9-7967AFDB570A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn void TFontStyle::SetBitmapType(TGlyphBitmapType aBitmapType)
+Sets whether the font should be drawn using anti-aliasing. If set, this value overrides the default setting (set by CFbsTypefaceStore::SetDefaultBitmapType()) for this font.
+
+Anti-aliasing can only be used for scalable fonts. There is currently no anti-aliasing support for bitmapped fonts.
+
+\param aBitmapType Indicates whether or not this font should be drawn using anti-aliasing.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-F7C3732D-66BE-371B-8237-6BE2935770A0">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TFontStyle::operator==(const TFontStyle &aFontStyle) const
+Compares a font style for equality.
+
+\param aFontStyle The font style to be compared with this font style.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-0F7D8819-2521-31E1-9F5E-41675F983093">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TUint32 TFontStyle::Effects() const
+Gets the font effects flags. TFontStyle::SetEffects()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-F18F115E-EFE4-3620-BC4C-D35672E445C1">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TFontStyle::IsEffectOn(FontEffect::TEffect aEffect) const
+Checks if a font effect is on. TFontStyle::SetEffects()
+
+\param aEffect The font effect to be checked.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-A96E846A-8D2D-3C57-8E5B-A87410A0F3C7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TFontStyle::SetEffects(TUint32 aEffects)
+Sets the font effects flags. TFontStyle::Effects()
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-EB98CD57-947F-322F-804C-471FF4ED199D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TFontStyle::SetEffects(FontEffect::TEffect aEffect, TBool aOn)
+Sets a font effect to the given state. TFontStyle::IsEffectOn()
+
+\param aEffect The font effect to be set.
+
+\param aOn True represents on, otherwise off.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-E35C6B6B-CF60-3B91-A174-1B09077CBD76.html#GUID-CE2AC73A-03F7-3D9C-8E42-010ED59C2C30">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TLinearDDA::TLinearDDA()
+Constructs the default linear DDA.
+
+No start or end point is defined for the line.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-34BD6388-6939-3FEC-B7E3-7107733CD5C8.html#GUID-1B310F13-161A-30DC-99FD-20D656D4440D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TLinearDDA::TLinearDDA(const TLinearDDA &aLine)
+Copy constructs a linear DDA from the specified linear DDA.
+
+\param aLine The linear DDA to be copied.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-34BD6388-6939-3FEC-B7E3-7107733CD5C8.html#GUID-D8582326-5472-3B18-8D04-410FA6D6418F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TLinearDDA::Construct(const TPoint &aStart, const TPoint &aFinish, TLineMode aMode=ECenter)
+Constructs a linear DDA, setting the start and end points of the line.
+
+\param aStart The start point of the line.
+
+\param aFinish The end point of the line.
+
+\param aMode The mode of the line; defaults to centred.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-34BD6388-6939-3FEC-B7E3-7107733CD5C8.html#GUID-42438399-C82B-372B-9592-FAABB35FEA45">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TLinearDDA::SingleStep(TPoint &aPosition)
+Gets the pixel co-ordinates of the next pixel on the pixel line.
+
+The function is called repeatedly until the whole line has been traversed or, if JumpToRect() has been called, until the part of the line inside the rectangle has been traversed. Note that, for performance reasons, JumpToRect() may fail to detect the intersection of the line with the rectangle accurately and SingleStep() may return more points than strictly necessary.
+
+\param aPosition On entry to the first call, this can be a reference to any point. On return from the first call, this is the position of the first pixel in the line, as specified during construction of this object. On return from subsequent calls, this is the position of subsequent pixels in the line, as calculated by the function. On return from the final call, this is the position of the last pixel in the line, as specified during construction of this object.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-34BD6388-6939-3FEC-B7E3-7107733CD5C8.html#GUID-290C7D66-2A72-3FDF-A1AB-CACE76C12109">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TLinearDDA::SingleScanline(TPoint &aStartPosition, TPoint &aEndPosition)
+Gets the start and end pixel co-ordinates that define the next scan line.
+
+The best line that joins the start and end points is formed from all the scan lines returned by this function.
+
+The function is called repeatedly until the position of all scanlines has been returned.
+
+The start and end points passed to the constructor of this object define the boundaries of the line. Successive scan lines move from the start point to the end point.
+
+\param aStartPosition On entry to the first call, this can be a reference to any point. On return from the first call, this is the position of the pixel that defines the leftmost position of the first scan line. On return from subsequent calls, this is the position of the pixel that defines the leftmost position of the next scan line. On return from the final call, either this or aEndPosition is set to the end point, as specified during construction.
+
+\param aEndPosition On entry to the first call, this can be a reference to any point. On return from the first call, this is the position of the pixel that defines the rightmost position of the first scan line. On return from subsequent calls, this is the position of the pixel that defines the rightmost position of the next scan line. On return from the final call, either this or aStartPosition is set to the end point, as specified during construction.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-34BD6388-6939-3FEC-B7E3-7107733CD5C8.html#GUID-EFEA2C5F-3E2D-30DD-8724-ABF87A340C60">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TLinearDDA::NextStep(TPoint &aPosition)
+Gets the pixel co-ordinates of the start of the next scan line.
+
+The best line that joins the start and end points is formed from all the scan lines returned by this function.
+
+The function is called repeatedly until the start position of all scanlines has been returned.
+
+The start and end points passed to the constructor of this object define the boundaries of the line. Successive scan lines move from the start point to the end point.
+
+\param aPosition On entry to the first call, this can be a reference to any point. On return from the first call, this is the position of the pixel that defines the leftmost position of the first scan line. On return from subsequent calls, this is the position of the pixel that defines the leftmost position of the next scan line. On return from the final call, this is the position of the last pixel in the line, as specified during construction.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-34BD6388-6939-3FEC-B7E3-7107733CD5C8.html#GUID-2D6E534E-CBF7-3D27-B31F-D223365D0FCA">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TLinearDDA::JumpToRect(const TRect &aRect)
+Jumps to start of a clipping rectangle.
+
+This will accelerate the linear DDA to the vicinity of the specified rectangle. It is NOT guaranteed to reach the rectangle, but will reduce co-ordinates that are 1000's out to co-ordinates that are 10's out. Because of this, failure to intersect the rectangle may not be detected. If it is, or the line has not been constructed or has been run to completion, then a subsequent call to the stepping functions returns ETrue.
+
+\param aRect The rectangle to be jumped to.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-34BD6388-6939-3FEC-B7E3-7107733CD5C8.html#GUID-8B470B9B-5B3C-34AD-B254-88C14824C480">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TLinearDDA::JumpToXCoord(const TInt aXCoord, TInt &aYCoord)
+Jumps to x co-ordinate.
+
+The other co-ordinate of the intersection is returned through a reference argument. After a jump call, the line is ready to continue through calls to the stepping functions.
+
+This function accelerates the Linear DDA stepping functions (e.g. SingleStep()) making them return EFalse when they reach the specified co-ordinate. If the line does not cross the co-ordinate, has not been constructed, has been run to completion or the intersection is the end point of the line then the stepping functions will return ETrue.
+
+\param aXCoord x co-ordinate to jump to
+
+\param aYCoord On return, this parameter holds the y co-ordinate which corresponds to the specified x co-ordinate
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-34BD6388-6939-3FEC-B7E3-7107733CD5C8.html#GUID-7A6C4E64-6C4B-3554-88CF-1B20DF96C120">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TLinearDDA::JumpToYCoord(TInt &aXCoord, const TInt aYCoord)
+Jumps to a y co-ordinate.
+
+The other co-ordinate of the intersection is returned through a reference argument. After a jump call, the line is ready to continue through calls to the stepping functions.
+
+This function accelerates the Linear DDA stepping functions (e.g. SingleStep()) making them return EFalse when they reach the specified co-ordinate. If the line does not cross the co-ordinate, has not been constructed, has been run to completion or the intersection is the end point of the line then they will return ETrue.
+
+\param aXCoord On return, this parameter holds the x co-ordinate which corresponds to the specified y co-ordinate.
+
+\param aYCoord y co-ordinate to jump to
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-34BD6388-6939-3FEC-B7E3-7107733CD5C8.html#GUID-5057D1C9-3721-3876-B56C-7FD837D74877">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TLinearDDA::JumpToXCoord2(TInt aXCoord, TInt &aYCoord)
+Jumps to x co-ordinate.
+
+This works in the same way as TLinearDDA::JumpToXCoord except that it make sure that using the NextStep function does not return the same value twice.
+
+TLinearDDA::JumpToXCoord(TInt, TInt&amp;)
+
+\param aXCoord x co-ordinate to jump to
+
+\param aYCoord On return, this parameter holds the y co-ordinate which corresponds to the specified x co-ordinate
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-34BD6388-6939-3FEC-B7E3-7107733CD5C8.html#GUID-FF16FCC6-32C0-3707-B86A-556ACCD8D9FF">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TLinearDDA::JumpToYCoord2(TInt &aXCoord, TInt aYCoord)
+Jumps to a y co-ordinate.
+
+This works in the same way as TLinearDDA::JumpToYCoord except that it make sure that using the NextStep function does not return the same value twice.
+
+TLinearDDA::JumpToYCoord(TInt&amp;, TInt)
+
+\param aXCoord On return, this parameter holds the x co-ordinate which corresponds to the specified y co-ordinate.
+
+\param aYCoord y co-ordinate to jump to
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-34BD6388-6939-3FEC-B7E3-7107733CD5C8.html#GUID-9BF2B2B3-F2A1-374C-898D-82D21130E78C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TMargins::InternalizeL(RReadStream &aStream)
+Internalises a set of margins from a read stream.
+
+The presence of this function means that the standard templated stream operator&gt;&gt;() is available to internalise objects of this class.
+
+\param aStream Stream from which the object is internalised.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-A913910F-A61B-3551-87FE-FFDCBB58FE62.html#GUID-6725B5DD-CBFE-3CBA-93F7-853E80922F49">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TMargins::ExternalizeL(RWriteStream &aStream) const
+Externalises a set of margins to a write stream.
+
+The presence of this function means that the standard templated stream operator&lt;&lt;() is available to externalise objects of this class.
+
+\param aStream Stream to which the object is externalised.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-A913910F-A61B-3551-87FE-FFDCBB58FE62.html#GUID-3DE6C34D-8C61-32E9-9713-9CE48DD6C6C3">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TMargins::operator==(const TMargins &aMargins) const
+Tests margins for equality.
+
+\param aMargins The margin to be compared with this margin.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-A913910F-A61B-3551-87FE-FFDCBB58FE62.html#GUID-F4264A2E-5B72-32C1-83C2-6D4D17E0F57B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TMargins::operator!=(const TMargins &aMargins) const
+Tests margins for inequality.
+
+\param aMargins The margin to be compared with this margin.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-A913910F-A61B-3551-87FE-FFDCBB58FE62.html#GUID-D1207FB5-1A53-390B-8095-2109029E4FC0">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TPageSpec::TPageSpec()
+Default constructor.
+
+Initialises the page orientation to portrait and the page height and width to zero.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EAD42D35-CABC-3E21-AF87-DD87EF5BF835.html#GUID-0C5DD6FC-1CDE-3E0A-9598-84E6C709A627">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TPageSpec::TPageSpec(TPageOrientation aOrientation, const TSize &aSize)
+Constructor with page orientation and size.
+
+\param aOrientation Specifies the page orientation.
+
+\param aSize Specifies the page size.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EAD42D35-CABC-3E21-AF87-DD87EF5BF835.html#GUID-922D2410-9A68-348F-B669-5A5690A0E732">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TPageSpec::InternalizeL(RReadStream &aStream)
+Internalises a page specification object from a read stream.
+
+The presence of this function means that the standard templated stream operator&gt;&gt;(), defined in s32strm.h, is available to internalise objects of this class.
+
+\param aStream The read stream.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EAD42D35-CABC-3E21-AF87-DD87EF5BF835.html#GUID-DAC0945F-4086-35D0-AA0F-DA1FD0D8BEB9">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TPageSpec::ExternalizeL(RWriteStream &aStream) const
+Externalises the page specification object to a write stream.
+
+The presence of this function means that the standard templated stream operator&lt;&lt;(), defined in s32strm.h, is available to externalise objects of this class.
+
+\param aStream The write stream.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EAD42D35-CABC-3E21-AF87-DD87EF5BF835.html#GUID-6AF7A965-9C61-3008-8D36-3A8964F54DCC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TSize TPageSpec::OrientedPageSize() const
+Gets the oriented page size.
+
+The oriented page size is the absolute width and height of the page, respecting the page orientation.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EAD42D35-CABC-3E21-AF87-DD87EF5BF835.html#GUID-6AB98711-3B69-3BE4-9E8E-DDD8B2391BEA">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TPageSpec::operator==(const TPageSpec &aPageSpec) const
+Equality operator.
+
+This operator compares page specifications for equality. Two page specifications are equal if both their orientations and portrait page sizes are equal.
+
+\param aPageSpec Page specification to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EAD42D35-CABC-3E21-AF87-DD87EF5BF835.html#GUID-418BC9D4-4BE4-3301-8A0F-8B28D61D1951">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TPageSpec::operator!=(const TPageSpec &aPageSpec) const
+Inequality operator.
+
+This operator compares two page specifications for inequality. Two page specifications are unequal if one or both of their orientations and portrait page sizes differ.
+
+\param aPageSpec Page specification to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-EAD42D35-CABC-3E21-AF87-DD87EF5BF835.html#GUID-B4CE20CA-D358-321A-8C59-A2AD1A45C7DB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TPictureCapability::TPictureCapability(TScalingType aScalingType, TBool aCroppable)
+Constructs the object setting the scaling-type and croppability properties.
+
+\param aScalingType Whether or not the picture is scalable.
+
+\param aCroppable Whether or not the picture is croppable.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-912E395D-934D-39B0-89D7-520BB8A04424.html#GUID-B1F09F75-E5E0-3551-9B8B-383F5B1FD81D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TPictureHeader::TPictureHeader()
+Constructs a default picture header.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B92F8FF8-6940-389D-96F4-2271ECCF15D1.html#GUID-953AE1E3-70B3-3046-AC7D-D5DA38B600DB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TPictureHeader::InternalizeL(RReadStream &aStream)
+Internalises a picture header object from a read stream.
+
+The presence of this function means that the standard templated stream operator&gt;&gt;() is available to internalise objects of this class.
+
+\param aStream The read stream.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B92F8FF8-6940-389D-96F4-2271ECCF15D1.html#GUID-F9DF7AF2-E2A2-3677-A377-F8A783944C22">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TPictureHeader::ExternalizeL(RWriteStream &aStream) const
+Externalises a picture header object to a write stream.
+
+The presence of this function means that the standard templated stream operator&lt;&lt;() is available to externalise objects of this class.
+
+\param aStream The write stream.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B92F8FF8-6940-389D-96F4-2271ECCF15D1.html#GUID-3997A0F1-1578-32B1-80E3-B4E976318231">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TPictureHeader::DeletePicture()
+Deletes the internalised picture.
+
+The picture can only be deleted if the picture has been internalized.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B92F8FF8-6940-389D-96F4-2271ECCF15D1.html#GUID-C621C5D3-BB6A-3D24-A112-ABADB9E2B486">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TPrinterModelEntry::InternalizeL(RReadStream &aStream)
+Internalises a printer model entry from a read stream.
+
+The presence of this function means that the standard templated stream operator&gt;&gt;(), defined in s32strm.h, is available to internalise objects of this class.
+
+\param aStream The read stream.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5283437A-25EA-330E-9B93-F4288907A6E2.html#GUID-66A55135-10FF-3971-B8B5-A9346CCC963B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TPrinterModelEntry::ExternalizeL(RWriteStream &aStream) const
+Externalises the printer model entry to a write stream.
+
+The presence of this function means that the standard templated stream operator&lt;&lt;(), defined in s32strm.h, is available to externalise objects of this class.
+
+\param aStream The write stream.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-5283437A-25EA-330E-9B93-F4288907A6E2.html#GUID-9C8AF185-25DF-3DD7-89B0-64D48AA1F801">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TPrinterModelHeader::InternalizeL(RReadStream &aStream)
+Internalises a printer model header from a read stream.
+
+The presence of this function means that the standard templated stream operator&gt;&gt;(), defined in s32strm.h, is available to internalise objects of this class.
+
+\param aStream The read stream.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B9E439D5-809D-3064-B815-E03D18EC402C.html#GUID-3E62EAAC-06CE-326A-8C26-E839BBDE61EE">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TPrinterModelHeader::ExternalizeL(RWriteStream &aStream) const
+Externalises the printer model header to a write stream.
+
+The presence of this function means that the standard templated stream operator&lt;&lt;(), defined in s32strm.h, is available to externalise objects of this class.
+
+\param aStream The write stream.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-B9E439D5-809D-3064-B815-E03D18EC402C.html#GUID-7FBA42DB-A037-3B72-B7D2-14484CD26508">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TRgb::TRgb()
+Constructs a TRgb initialised to KRgbWhite.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-E9A37B70-3847-3567-8334-CD3BFAE2987E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TRgb::TRgb(TUint32 aValue)
+Constructs a TRgb directly from a single 32-bit integer.
+
+The integer is of the form 0xaabbggrr, where bb is the hex number for blue, gg is the hex number for green, rr is the hex number for red, and aa is the hex number for &quot;transparency&quot; alpha (0 means opaque, 255 means transparent).
+
+This constructor is deprecated. The byte order of Red ,Green and Blue does not match other constructors and methods in this class, and the meaning of alpha is reversed compared to current convention.
+
+For example, TRgb(0x00080402) using this constructor can be replaced with the 3 colour constructor TRgb(2,4,8). The equivalent explicit alpha constructors are TRgb(0x020408,0xff) and TRgb(2,4,8,255). The equivalent call to SetInternal is SetInternal(0xff020408).
+
+This constructor is deprecated. Use other constructors or SetInternal() instead.
+
+\param aValue Integer representing colour value. Takes form 0x00bbggrr.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-262BE683-10D0-329C-BF3D-660EA728DB01">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TRgb::TRgb(TUint32 aInternalValue, TInt aAlpha)
+Constructs a TRgb from a 32-bit integer (which corresponds to a colour) and from an alpha value.
+
+The first parameter is of the form 0x00rrggbb, where rr is the hex number for red, gg is the hex number for green, and bb is the hex number for blue.
+
+The second parameter corresponds to an alpha channel (0 means transparent, 255 means opaque).
+
+For example, TRgb(2,4,8,255) using the 3 colour+alpha constructor is equal to TRgb(0x00020408, 255) using this constructor.
+
+This constructor, which implements alpha in the conventional way, replaces TRgb( TUint32 aValue ) which is deprecated.
+
+\param aInternalValue Integer representing a colour value, which takes the form 0x00rrggbb.
+
+\param aAlpha Alpha component of the colour (0 - 255).
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-D15331A5-D371-3A53-894F-86EA671C1159">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TRgb::TRgb(TInt aRed, TInt aGreen, TInt aBlue)
+Constructs a TRgb from its three component colours.
+
+Each colour has a value between 0 and 255. The alpha component is always set to opaque (255)
+
+\param aRed Red component of the colour (0 - 255).
+
+\param aGreen Green component of the colour (0 - 255).
+
+\param aBlue Blue component of the colour (0 - 255).
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-36182D49-B798-302F-8F72-606C53495F51">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TRgb::TRgb(TInt aRed, TInt aGreen, TInt aBlue, TInt aAlpha)
+Constructs a TRgb from its three colour components and alpha component.
+
+Each component has a value between 0 and 255. The fourth parameter corresponds to an alpha channel (0 means transparent, 255 means opaque).
+
+This constructor, which implements alpha in the conventional way, replaces TRgb( TUint32 aValue ) which is deprecated.
+
+\param aRed Red component of the colour (0 - 255).
+
+\param aGreen Green component of the colour (0 - 255).
+
+\param aBlue Blue component of the colour (0 - 255).
+
+\param aAlpha Alpha component of the colour (0 - 255).
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-744C565B-B70C-358B-947D-D0D3FDD1F6F6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt TRgb::Red() const
+Gets the red component.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-F4F36D97-CBC5-3445-B43E-CC26FDD84378">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt TRgb::Green() const
+Gets the green component.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-2F6F836D-4E92-3570-81DF-94ED45BD7486">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt TRgb::Blue() const
+Gets the blue component.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-C2E9CD64-D3E5-30A8-8E5B-942B6B786EED">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt TRgb::Alpha() const
+Gets the alpha component.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-1E1C9110-851A-3C48-86FC-E0933175A71E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TRgb::SetRed(TInt aRed)
+Sets the red component.
+
+\param aRed Red component (0 - 255).
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-E8AD71DF-9D30-3BCE-9A1D-68E071F86169">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TRgb::SetGreen(TInt aGreen)
+Sets the green component.
+
+\param aGreen Green component (0 - 255).
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-96C0D4A0-737E-3F69-9F3D-9ED2770A5F15">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TRgb::SetBlue(TInt aBlue)
+Sets the blue component.
+
+\param aBlue Blue component (0 - 255).
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-7423132B-729E-36F7-AC60-BAF027AB8E31">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TRgb::SetAlpha(TInt aAlpha)
+Sets the alpha component.
+
+\param aAlpha Alpha component (0 - 255).
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-0A4909EF-D552-3893-A23A-3511D55DB0D8">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRgb::Gray2() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-E9FADC34-01D9-3315-A325-491FDE537393">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRgb::Gray4() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-A770A667-F139-3AE1-B78A-7A707416E51D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRgb::Gray16() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-4843D32E-AD3A-3401-BB2D-4CA75D9906A9">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRgb::Gray256() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-51871CE7-E266-38C9-BB32-3D1326233951">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRgb::Color16() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-E94826F3-47DB-3170-9707-109F75A29D67">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRgb::Color256() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-16D0E327-C535-31A2-8E62-84ED3E300A8B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRgb::Color4K() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-95E71E19-C6AB-3146-A217-652F657A02EF">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRgb::Color64K() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-A4983D8A-7540-3FF3-AE2E-CCF6F5526429">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRgb::Color16M() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-03D57380-F02A-3BA4-98FE-A7CC2C96FCDB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TBool TRgb::operator==(const TRgb &aColor) const
+Compares this colour with the specified colour for equality.
+
+For two colours to be equal, their red, green and blue components must all be equal.
+
+\param aColor Colour to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-0A0A68D6-2F74-3CB8-B0E5-27E00D4129DD">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TBool TRgb::operator!=(const TRgb &aColor) const
+Compares this colour with the specified colour for inequality.
+
+Two colours are unequal if one at least one of their red, green and blue components are unequal.
+
+\param aColor Colour to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-852BBC28-CD9E-3125-92A5-89A6DCA3AD16">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TRgb TRgb::operator~() const
+Bitwise logical inversion operator.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-C22CED66-A56A-31D7-8384-89986AB4A1D6">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TRgb TRgb::operator&(const TRgb &aColor)
+Bitwise logical AND operator.
+
+\param aColor Colour to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-CD02AA91-99DB-3290-A897-CFC5C763526B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TRgb TRgb::operator|(const TRgb &aColor)
+Bitwise logical OR operator.
+
+\param aColor Colour to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-69B5E804-981E-3DE3-9A26-91309266ECCB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TRgb TRgb::operator^(const TRgb &aColor)
+Bitwise EXCLUSIVE OR operator
+
+\param aColor Colour to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-FD1F35DB-558C-3DA5-94F8-A24320F961D1">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TRgb & TRgb::operator&=(const TRgb &aColor)
+Logical AND assignment operator.
+
+The operator ANDs the first operand with the second and then assigns the result back to the first operand.
+
+Note:
+
+This operates in the TRgb domain. Graphics defines logical operations for drawing primitives which operate in the device colour domain.
+
+\param aColor Colour to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-CA1B7601-063C-39DF-9067-BF0F7A7F9553">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TRgb & TRgb::operator|=(const TRgb &aColor)
+Logical OR assignment operator.
+
+The operator ORs the first operand with the second and then assigns the result back to the first operand.
+
+Note:
+
+This operates in the TRgb domain. Graphics defines logical operations for drawing primitives which operate in the device colour domain.
+
+\param aColor Colour to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-EF61FDB2-3771-3F3E-8BB2-BD2A367A4EE3">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TRgb & TRgb::operator^=(const TRgb &aColor)
+Logical EXCLUSIVE OR assignment operator.
+
+The operator Exclusive ORs the first operand with the second and then assigns the result back to the first operand.
+
+Note:
+
+This operates in the TRgb domain. Graphics defines logical operations for drawing primitives which operate in the device colour domain.
+
+\param aColor Colour to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-43A456CB-0D73-36ED-9DC0-499AD3070906">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TUint32 TRgb::Value() const
+Gets the 32-bit value of the TRgb as an integer. This function is deprecated. Use Internal() instead. Note: the order of Red, Green and Blue components returned by this method is reversed compared to all other methods. The alpha value is also reversed in meaning compared to current convention, such that 0 represents opaque and 0xff represents transparent.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-39B950CD-5AB2-3521-B8DF-29C9C1DBDF07">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TUint32 TRgb::Internal() const
+Gets the 32-bit value of the TRgb as an integer.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-E23B129A-8EEE-32D9-AEF4-DF94CF8A2F5E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn void TRgb::SetInternal(TUint32 aInternal)
+Sets the 32-bit value of the TRgb as a 32-bit integer.
+
+\param aInternal Colour internal representation. Has the form 0xaarrggbb.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-E9071ED5-2A02-3173-9711-DA171A62FF36">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRgb::Difference(const TRgb &aColor) const
+Gets the difference between two TRgbs.
+
+This difference is defined as the sum of the absolute values of the difference in the red, green and blue components.
+
+\param aColor The TRgb to be compared.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-7102FB31-67E5-30C1-AD67-2A3808F255D7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TRgb::InternalizeL(RReadStream &aStream)
+Internalises a TRgb object from a stream.
+
+The presence of this function means that the standard templated stream operator&gt;&gt;() is available to internalise objects of this class.
+
+operator&gt;&gt;()
+
+\param aStream Stream from which the object is internalised.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-A9D7D004-D170-3CCE-8028-908A0321E87C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TRgb::ExternalizeL(RWriteStream &aStream) const
+Externalises a TRgb object to a stream.
+
+The presence of this function means that the standard templated stream operator&lt;&lt;() is available to externalise objects of this class.
+
+\param aStream Stream to which the object is externalised.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-7EC56FDA-38B4-357C-9148-8A35AF5F2114">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TRgb::Color16MU() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-1375480C-BCDA-37EB-B93A-A2C0832398F2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TUint TRgb::Color16MA() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-CEEB3B50-A890-3B6D-8B03-F762EB6F245F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TUint TRgb::Color16MAP() const
+Gets the index of the closest TRgb value to this, based on the matching display mode. pre-multiplies the alpha channels with the color channel.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-3B4A232C-ED8C-3271-9C86-F3F5484F6785">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TUint TRgb::_Color16MAP() const
+Converts the TRgb to EColor16MAP (with color channels pre-multiplied with the alpha channel.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-A3538B99-9212-3B43-A131-2452A6EADF3A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt TRgb::_Gray2() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-4A5858ED-5315-3843-B9A1-CA6AFD56F1B8">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt TRgb::_Gray4() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-9970C873-7598-343B-BBD4-34C7F974BEDF">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt TRgb::_Gray16() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-BD961306-86CA-3D44-AE92-B419B0C4FDB3">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt TRgb::_Gray256() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-96EBD708-2A83-3878-9B27-BA9E171E7E14">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt TRgb::_Color4K() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-188E8BD3-A3C7-3E2D-BB03-329F9EFC86BB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt TRgb::_Color64K() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-EA231930-5402-36BE-A223-C7E8CC513AC0">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt TRgb::_Color16M() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-D8624E3F-7C95-38F6-BBEE-25F49CF78DE2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TInt TRgb::_Color16MU() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-CF359619-FCFC-327F-8E19-DA0F549FC99B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TUint TRgb::_Color16MA() const
+Gets the index of the closest TRgb value to this, based on the matching display mode.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-2F04EDA2-99B5-3B7B-A5B9-553E301F2DBD">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TRgb TRgb::Gray2(TInt aGray2)
+Gets TRgb from 2 level grayscale.
+
+The function takes a grayscale argument and return a TRgb whose red, green and blue values are set to an appropriate level.
+
+\param aGray2 Grayscale value to be converted.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-5AC1D4E4-D61D-3101-9F27-5D07FCB81079">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TRgb TRgb::Gray4(TInt aGray4)
+Gets TRgb from 4 level grayscale.
+
+The function takes a grayscale argument and return a TRgb whose red, green and blue values are set to an appropriate level.
+
+\param aGray4 Grayscale value to be converted.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-576D6BE5-3373-3425-A11D-EC8052DF6ADA">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TRgb TRgb::Gray16(TInt aGray16)
+Gets TRgb from 16 level grayscale.
+
+The function takes a grayscale argument and return a TRgb whose red, green and blue values are set to an appropriate level.
+
+\param aGray16 Grayscale value to be converted.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-F831ACDA-EE1E-3337-9443-D0C543FCC8F7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TRgb TRgb::Gray256(TInt aGray256)
+Gets TRgb from 256 level grayscale.
+
+The function takes a grayscale argument and return a TRgb whose red, green and blue values are set to an appropriate level.
+
+\param aGray256 Grayscale value to be converted.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-E2A4BCDB-D613-39BD-9B68-30E2EF5163B8">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TRgb TRgb::Color16(TInt aColor16)
+Gets TRgb from 4 bit colour index.
+
+The function takes a 4 bit index into a colour palette and returns a TRgb whose red, green and blue values are set to an appropriate level.
+
+\param aColor16 4 bit index into a colour palette
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-24D98F8F-98DB-3E37-85E4-497459701DEB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TRgb TRgb::Color256(TInt aColor256)
+Gets TRgb from 8 bit colour index.
+
+The function takes an 8 bit index into a colour palette and returns a TRgb whose red, green and blue values are set to an appropriate level.
+
+\param aColor256 8 bit index into a colour palette.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-106C8E58-4DAA-35A3-A20D-4F308A7C5156">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TRgb TRgb::Color4K(TInt aColor4K)
+Gets TRgb from 4K colour index.
+
+The function takes a 12 bit index into a colour palette and returns a TRgb whose red, green and blue values are set to an appropriate level.
+
+\param aColor4K 12 bit index into a colour palette
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-8940733A-4899-357B-8687-911875E00EF1">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TRgb TRgb::Color64K(TInt aColor64K)
+Gets TRgb from 64K colour index.
+
+The function takes a 16 bit index into a colour palette and returns a TRgb whose red, green and blue values are set to an appropriate level.
+
+\param aColor64K 16 bit index into a colour palette
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-0EACF869-119D-3555-B5DE-0C3864278A5C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TRgb TRgb::Color16M(TInt aColor16M)
+Gets TRgb from 16M colour index.
+
+The function takes a 24 bit index into a colour palette and returns the TRgb whose red, green and blue values represent it exactly.
+
+\param aColor16M 24 bit index into a colour palette
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-1E794857-0ECD-3609-AC9D-D8166BAA77DB">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TRgb TRgb::Color16MU(TInt a0RGB)
+Gets TRgb from 16MU colour index. The function takes a 24 bit colour value with eight bits for each component, blue in the low byte, and returns the TRgb whose red, green and blue values represent it exactly.
+
+\param a0RGB The color - 0, R, G, B bytes. / BGR0 - little endian format /
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-3A6952B3-399D-3F40-BA81-99BAB69A0625">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TRgb TRgb::Color16MA(TUint aARGB)
+Gets TRgb from 16MA colour index. The function takes a 32 bit colour value with eight bits for each component, blue in the low byte, and returns the TRgb whose red, green, blue and alpha values represent it exactly.
+
+\param aARGB The color - A, R, G, B bytes. / BGRA - little endian format /
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-93FCBC84-0D07-380F-94F6-E52B3A6CBB53">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TRgb TRgb::Color16MAP(TUint aARGB)
+Gets TRgb from 16MAP colour index. The function takes a 32 bit colour value with eight bits for each component, blue in the low byte, and returns the TRgb whose red, green, and blue vales are divided by the alpha value.
+
+\param aARGB The pre-multiplied (EColor16MAP) color value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-F76E2FE0-0FF1-3A12-8EE5-AA409466906C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TRgb TRgb::_Color16MAP(TUint aARGB)
+Gets TRgb from 16MAP colour index. The function takes a 32 bit colour value with eight bits for each component, blue in the low byte, and returns the TRgb whose red, green, and blue vales are divided by the alpha value.
+
+\param aARGB The pre-multiplied (EColor16MAP) color value.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-5FCA665A-DCE6-3DD3-AF43-ECC19A703CCD">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static TRgb TRgb::_Gray2(TInt aGray2)
+Gets TRgb from 2 level grayscale.
+
+The function takes a grayscale argument and return a TRgb whose red, green and blue values are set to an appropriate level.
+
+\param aGray2 Grayscale value to be converted.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-BD151210-C937-375C-BC7E-588590F621C3">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static TRgb TRgb::_Gray4(TInt aGray4)
+Gets TRgb from 4 level grayscale.
+
+The function takes a grayscale argument and return a TRgb whose red, green and blue values are set to an appropriate level.
+
+\param aGray4 Grayscale value to be converted.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-DE54141F-7423-349D-BD51-6B3EFCC3C598">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static TRgb TRgb::_Gray16(TInt aGray16)
+Gets TRgb from 16 level grayscale.
+
+The function takes a grayscale argument and return a TRgb whose red, green and blue values are set to an appropriate level.
+
+\param aGray16 Grayscale value to be converted.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-BA39CE18-07D5-3192-9885-BAAEDB112D9D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static TRgb TRgb::_Gray256(TInt aGray256)
+Gets TRgb from 256 level grayscale.
+
+The function takes a grayscale argument and return a TRgb whose red, green and blue values are set to an appropriate level.
+
+\param aGray256 Grayscale value to be converted.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-CB711F84-A093-358F-B1D8-2DC53B651314">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static TRgb TRgb::_Color4K(TInt aColor4K)
+Gets TRgb from 4K colour index.
+
+The function takes a 12 bit index into a colour palette and returns a TRgb whose red, green and blue values are set to an appropriate level.
+
+\param aColor4K 12 bit index into a colour palette
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-0CA77BEA-18A8-355B-9B97-C23CE8E45E06">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static TRgb TRgb::_Color64K(TInt aColor64K)
+Gets TRgb from 64K colour index.
+
+The function takes a 16 bit index into a colour palette and returns a TRgb whose red, green and blue values are set to an appropriate level.
+
+\param aColor64K 16 bit index into a colour palette
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-F402FADB-1671-3256-9521-7C71DCD1DA7F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static TRgb TRgb::_Color16M(TInt aColor16M)
+Gets TRgb from 16M colour index.
+
+The function takes a 24 bit index into a colour palette and returns the TRgb whose red, green and blue values represent it exactly.
+
+\param aColor16M 24 bit index into a colour palette
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-0A659F2E-472B-300C-A30B-B95D0D521C35">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static TRgb TRgb::_Color16MU(TInt a0RGB)
+Gets TRgb from 16MU colour index. The function takes a 24 bit colour value with eight bits for each component, blue in the low byte, and returns the TRgb whose red, green and blue values represent it exactly.
+
+\param a0RGB The color - 0, R, G, B bytes. / BGR0 - little endian format /
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-19328EA9-0759-32E8-8697-190659EE0A0E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static TRgb TRgb::_Color16MA(TUint aARGB)
+Gets TRgb from 16MA colour index. The function takes a 32 bit colour value with eight bits for each component, blue in the low byte, and returns the TRgb whose red, green, blue and alpha values represent it exactly.
+
+\param aARGB The color - A, R, G, B bytes. / BGR0 - little endian format /
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-F84C7F40-6DEB-39D1-B172-CB0CC3918E27.html#GUID-143BE37F-9214-3A5F-9F8B-B139122FECDC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TTypeface::TTypeface()
+Default C++ constructor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-BE905EF8-D295-33A6-B70F-74747637AF9C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TTypeface::operator==(const TTypeface &aTypeface) const
+Compares two typefaces for equality.
+
+\param aTypeface The typeface to be compared with.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-78BB1913-F91B-3557-9191-8DF06877DE94">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TTypeface::InternalizeL(RReadStream &aStream)
+Internalises a typeface from a read stream.
+
+The presence of this function means that the standard templated operator&gt;&gt;() (defined in s32strm.h) is available to internalise objects of this class.
+
+\param aStream Stream from which the typeface is to be internalised.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-220FBDE5-3EF9-3544-AFFF-F54AC6AB2AB7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TTypeface::ExternalizeL(RWriteStream &aStream) const
+Externalises a typeface to a write stream.
+
+The presence of this function means that the standard templated operator&lt;&lt;() (defined in s32strm.h) is available to externalise objects of this class.
+
+\param aStream The stream to which the typeface is to be externalised.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-202819D0-775D-3454-8A18-C9CD2E3C68DC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TTypeface::SetAttributes(TInt aAttributes)
+Set the combination of attributes for this typeface.
+
+\param aAttributes A bitmap defining the combination of attributes.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-14C9515B-2D53-3882-90F7-F80A53932A82">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TTypeface::SetIsProportional(TBool aIsProportional)
+Sets the typeface's proportional attribute.
+
+\param aIsProportional ETrue if the typeface is a proportional typeface, otherwise EFalse.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-22807C01-3285-3189-AFD4-3EED8782B60C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TTypeface::SetIsSerif(TBool aIsSerif)
+Sets the typeface's serif attribute.
+
+\param aIsSerif ETrue if the typeface is a serif typeface, otherwise EFalse.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-2DE7A2FA-09D8-377D-85C6-14826C8592D2">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TTypeface::SetIsSymbol(TBool aIsSymbol)
+Sets the typeface's symbol attribute.
+
+\param aIsSymbol ETrue if the typeface is a symbol typeface, otherwise EFalse.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-EC465849-DAB4-320E-85AD-09C52F57A3BA">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TTypeface::Attributes() const
+Gets the combination of attributes of the typeface.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-7D47A919-B1E5-39F8-9789-504A37FF8D1B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TTypeface::IsProportional() const
+Gets the typeface's proportional attribute.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-83BC2F7A-7D68-3938-A0A7-4C2365237665">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TTypeface::IsSerif() const
+Gets the typeface's serif attribute.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-76BDE3D5-5578-3919-B408-D2053824F4B7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TTypeface::IsSymbol() const
+Gets the typeface's symbol attribute.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-9CB2A032-C62B-302C-9B4F-0B215FB937C8">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TTypeface::SetScriptTypeForMetrics(TLanguage aLanguage)
+Specifies the script with which font metrics calculation will be based on.
+
+\param aLanguage The language used to derive the required script.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-AFC934E4-17AC-35C7-8B53-1D7D498E195B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TTypeface::SetScriptTypeForMetrics(TInt aScript)
+Specifies the script with which font metrics calculation will be based on.
+
+\param aScript The script.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-D8CB08D2-9126-3A73-A0BF-CF6E673DD342">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TTypeface::ScriptTypeForMetrics() const
+Gets the script with which font metrics calculation will be based on.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-79D6C388-E19A-39CA-8E70-A6820F440599">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TTypeface::SetName(const TDesC &aName)
+\param aName The name of the typeface (e.g. &quot;Roman&quot;). It should be no longer than KMaxTypefaceNameLength characters in length.
+
+\panic GDI 6, if aName is more than KMaxTypefaceNameLength characters long.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-FAF2D742-B074-31A0-B3A6-AEDC4870ABE1">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C const TDesC & TTypeface::Name() const
+Returns the name of the typeface.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-91F0F645-F565-3B8A-8FB1-FF4751AB0928.html#GUID-B6D4CF09-FEE2-3B8E-96CF-B80EB49071E4">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TZoomFactor::TZoomFactor()
+Constructs a default zoom factor object.
+
+Note that a TZoomFactor object cannot be used until a CGraphicsDevice to which it is associated is specified (by SetGraphicsDeviceMap()). Therefore the other constructor is normally used for constructing TZoomFactors. The default constructor function is provided for use in TZoomFactor-derived classes.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDE4C9C0-7218-385E-B239-0DEFDE19FCCC.html#GUID-7A98FFED-066A-3E94-BD71-FF68E8077DC0">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TZoomFactor::~TZoomFactor()
+Destructor.
+
+Frees resources owned by the object, prior to its destruction.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDE4C9C0-7218-385E-B239-0DEFDE19FCCC.html#GUID-99B1E638-795A-3F8B-8149-309254111517">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn TZoomFactor::TZoomFactor(const MGraphicsDeviceMap *aDevice)
+Constructs a zoom factor object for a specific graphics device map.
+
+The graphics map is either directly associated with a particular graphics device itself, or is associated with a hierarchy of device maps whose root map is associated with a particular graphics device.
+
+\param aDevice The graphics device map with which the zoom factor is associated.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDE4C9C0-7218-385E-B239-0DEFDE19FCCC.html#GUID-7779B869-5DD6-3C09-AB46-7002B7C41A10">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TZoomFactor::ZoomFactor() const
+Gets the zoom factor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDE4C9C0-7218-385E-B239-0DEFDE19FCCC.html#GUID-0EE8343D-0C05-3C5D-9FC5-57A56054B48B">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TZoomFactor::SetZoomFactor(TInt aZoomFactor)
+Sets the zoom factor.
+
+\param aZoomFactor The desired zoom factor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDE4C9C0-7218-385E-B239-0DEFDE19FCCC.html#GUID-FB2484E2-B79A-3744-874D-F0AA52D1F8A7">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn void TZoomFactor::SetGraphicsDeviceMap(const MGraphicsDeviceMap *aDevice)
+Sets the graphics device map for this zoom factor object.
+
+\param aDevice The graphics device map for this TZoomFactor.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDE4C9C0-7218-385E-B239-0DEFDE19FCCC.html#GUID-E73B0470-D7EC-3A4E-A767-D77C8422B3FC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn const MGraphicsDeviceMap * TZoomFactor::GraphicsDeviceMap() const
+Gets the graphics device map of this zoom factor object.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDE4C9C0-7218-385E-B239-0DEFDE19FCCC.html#GUID-8ABB0B37-A0C0-3751-A039-BD28BEB72AF0">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TZoomFactor::SetTwipToPixelMapping(const TSize &aSizeInPixels, const TSize &aSizeInTwips)
+Sets the twips to pixels mapping for the graphics device with which the zoom factor is associated.
+
+This setting is used by all the twips to pixels and pixels to twips conversion functions.
+
+\param aSizeInPixels The size of the graphics device area in pixels.
+
+\param aSizeInTwips The size of the graphics device area in twips.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDE4C9C0-7218-385E-B239-0DEFDE19FCCC.html#GUID-F363BE20-BDA0-364C-85A1-C5B890025741">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TZoomFactor::GetNearestFontToDesignHeightInTwips(CFont *&aFont, const TFontSpec &aFontSpec)
+\param aFont On return, contains a pointer to the nearest font.
+
+\param aFontSpec The specification of the font to be matched.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDE4C9C0-7218-385E-B239-0DEFDE19FCCC.html#GUID-95978926-10A5-37BF-8E2B-8399424C6EEF">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TZoomFactor::GetNearestFontToMaxHeightInTwips(CFont *&aFont, const TFontSpec &aFontSpec, TInt aMaxHeight)
+\param aFont On return, contains a pointer to the nearest font.
+
+\param aFontSpec The specification of the font to be matched.
+
+\param aMaxHeight The maximum height within which the font must fit. This overrides the height specified in aFontSpec. If maximum height is greater than 1024 pixels, the function returns KErrTooBig. And returns KErrArgument if equals to 1 pixel.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-DDE4C9C0-7218-385E-B239-0DEFDE19FCCC.html#GUID-DC3B1FB9-29D3-3D85-AD4C-3C9BE1B7C85B">Symbian Developer Library</a>)</small></p>
+*/

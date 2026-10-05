@@ -1,0 +1,177 @@
+// Documentation adapted from the Symbian Developer Library.
+// Original reference content is licensed under EPL-1.0.
+// SPDX-License-Identifier: EPL-1.0
+
+/** \fn IMPORT_C TBool TIp6Addr::IsUnicast() const
+\since 7.0
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0B7CE6DB-FFA4-38C6-8D2C-9BDE4488DF07.html#GUID-358851ED-2AEF-3857-8A90-FCD1E924B40C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TIp6Addr::IsMulticast() const
+\since 7.0
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0B7CE6DB-FFA4-38C6-8D2C-9BDE4488DF07.html#GUID-43051039-07D3-3C7F-B1BA-83E3AC6C0D5D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TIp6Addr::IsLoopback() const
+\since 7.0
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0B7CE6DB-FFA4-38C6-8D2C-9BDE4488DF07.html#GUID-8A83D3CE-EF86-312D-9F2A-045EB4523E1C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TIp6Addr::IsUnspecified() const
+\since 7.0
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0B7CE6DB-FFA4-38C6-8D2C-9BDE4488DF07.html#GUID-65C91241-D671-35AE-A33D-19467933DE42">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TIp6Addr::IsLinkLocal() const
+\since 7.0
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0B7CE6DB-FFA4-38C6-8D2C-9BDE4488DF07.html#GUID-3B1DF2C2-88ED-3966-A435-C1B6231BE693">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TIp6Addr::IsSiteLocal() const
+\since 7.0
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0B7CE6DB-FFA4-38C6-8D2C-9BDE4488DF07.html#GUID-82B5B99F-B6A2-30A4-B8D2-F7FD02235A6E">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TIp6Addr::IsV4Compat() const
+Tests if this address is an IPv4-compatible address.
+
+returns EFalse for ::0.0.0.0 (= ::) and ::0.0.0.1 (= ::1).
+
+\since 7.0
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0B7CE6DB-FFA4-38C6-8D2C-9BDE4488DF07.html#GUID-1631DAC5-EDAD-3B82-8B9A-2BE2CA2BAA25">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TIp6Addr::IsV4Mapped() const
+\since 7.0
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0B7CE6DB-FFA4-38C6-8D2C-9BDE4488DF07.html#GUID-196BCB2A-E275-38A5-99CD-B9CE91A677CC">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TIp6Addr::IsEqual(const TIp6Addr &aAddr) const
+Tests if two addresses are equal.
+
+\param aAddr Address to compare with
+
+\since 7.0
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0B7CE6DB-FFA4-38C6-8D2C-9BDE4488DF07.html#GUID-2E1FCBAD-3DBA-353A-80FA-C8C41B8B89DA">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TIp6Addr::Match(const TIp6Addr &aAddr) const
+Compares two raw IPv6 addresses from left to right and returns the number of bits that match.
+
+\param aAddr Address to compare with
+
+\since 7.0
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0B7CE6DB-FFA4-38C6-8D2C-9BDE4488DF07.html#GUID-372D876F-9EEE-32F0-BC0B-7EE126F8DA8D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TIp6Addr::Scope() const
+Return the scope level of the addres.
+
+All IP addresses (IPv4 and IPv6) have a scope level as defined by this function. The scope level is a positive integer in range [1..16].
+
+This function may also return 0, which is an invalid level. This can happen only, because IPv6 multicast addresses specify their scope level explicitly.
+
+The scope level determines the interpretation of the scope identifier in TInetAddr (see TInetAddr::Scope(), TInetAddr::SetScope()).
+
+Each network interface has a vector of 16 scope identifiers. The scope identifier in the destination address selects a subset of the possible interfaces: only the interfaces which have the correct matching scope identifier in the vector entry matching the scope level, are valid destinations for that address.
+
+The scope level of an IP address is computed as follows:
+
+- ffyz::/10 -- IPv6 multicast addressess, the scope level is extracted from the address (= z)
+
+- fe80::/10 -- IPv6 link local addresses, return KIp6AddrScopeLinkLocal
+
+- fec0::/10 -- IPv6 site local addresses, return KIp6AddrScopeSiteLocal
+
+- ::1/128 -- IPv6 loopback address, return KIp6AddrScopeNodeLocal
+
+- ::/128 -- IPv6 unspecified address, return KIp6AddrScopeNodeLocal
+
+- ffff:0.0.0.0 -- IPv4 unspecified address, return KIp6AddrScopeNodeLocal
+
+- ffff:169.254.x.x/112 -- IPv4 link local range, return KIp6AddrScopeLinkLocal
+
+- ffff:224.0.0.x/120 -- IPv4 link local multicast range, return KIp6AddrScopeLinkLocal
+
+- ffff:127.x.x.x/104 -- IPv4 loopback addresses, return KIp6AddrScopeNodeLocal
+
+- ffff:0.0.0.0/96 -- all other IPv4 addresses, return KIp6AddrScopeNetwork
+
+- None of the above -- assume global IPv6 addresses, return KIp6AddrScopeGlobal
+
+\since 7.0
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-0B7CE6DB-FFA4-38C6-8D2C-9BDE4488DF07.html#GUID-60152380-C917-3F23-8D69-C8CD9DB8DF7F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TLinkAddr::TLinkAddr()
+Default constructor initialises the address to be zero-filled.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-C1BE7BEA-2B04-3B12-BB34-B50A5B6A3A78.html#GUID-BE94140B-00E3-3B44-A122-BBCF6AD5391C">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TLinkAddr::SetAddress(const TDesC8 &aAddr)
+Assigns a string of octets as the address.
+
+\param aAddr The link layer address.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-C1BE7BEA-2B04-3B12-BB34-B50A5B6A3A78.html#GUID-BAEECC94-C06E-3101-B8A5-C98B5E14E071">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TPtrC8 TLinkAddr::Address() const
+Returns the current stored address as a pointer to string of octets.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-C1BE7BEA-2B04-3B12-BB34-B50A5B6A3A78.html#GUID-B1F42E57-9D8A-356C-AC2E-A169508A419D">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C static const TLinkAddr & TLinkAddr::Cast(const TSockAddr &aAddr)
+This function will cast the address to a TLinkAddr. This function has no way of verifying that the source address is actually a link layer address and should not be passed an IP address.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-C1BE7BEA-2B04-3B12-BB34-B50A5B6A3A78.html#GUID-F3A53251-BA8F-3EC6-A909-6AF1CE102B00">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TLinkAddr & TLinkAddr::Cast(TSockAddr &aAddr)
+This function will cast the address to a TLinkAddr. This function has no way of verifying that the source address is actually a link layer address and should not be passed an IP address.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-C1BE7BEA-2B04-3B12-BB34-B50A5B6A3A78.html#GUID-7C2DAE6A-C652-33F3-8EFD-3EE0C39E710F">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn IMPORT_C static const TLinkAddr * TLinkAddr::Cast(const TSockAddr *aAddr)
+This function will cast the address to a TLinkAddr. This function has no way of verifying that the source address is actually a link layer address and should . * not be passed an IP address.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-C1BE7BEA-2B04-3B12-BB34-B50A5B6A3A78.html#GUID-F90A806F-2662-3784-9545-E1AFF7A1A13A">Symbian Developer Library</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TLinkAddr * TLinkAddr::Cast(TSockAddr *aAddr)
+This function will cast the address to a TLinkAddr. This function has no way of verifying that the source address is actually a link layer address and should . * not be passed an IP address.
+
+
+<p><small>(generated from <a href="https://akawolf.org/documentation/pdk/GUID-C1BE7BEA-2B04-3B12-BB34-B50A5B6A3A78.html#GUID-AD109048-CA2C-3CDF-90FF-A15D516B5CAC">Symbian Developer Library</a>)</small></p>
+*/
