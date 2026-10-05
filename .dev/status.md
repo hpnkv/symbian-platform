@@ -3131,3 +3131,17 @@ and the captured macOS image shows the actual two-line button. Delivered
 bundles additionally pass all 19 bounded EKA1 cases and 11 live HTTP/TLS/server
 cases per host. Four Linux debugger checks pass with gdb-multiarch discovery.
 These results supersede the earlier insufficient Qt pixel claim.
+
+### Emulator tag and external Actions queue — 2026-10-05
+
+Corrected producer 37360525851 succeeds on all four native hosts and exports
+shared sources. All ten downloaded assets pass the full release audit locally;
+15 helper tests pass, one Linux-only case skips on macOS. Annotated
+emulator-v0.1.0 points at its tested d470570 commit. Tagged release 37367814604
+is queued during GitHub's confirmed runner-assignment incident
+(https://stspg.io/c11dc9nb1zdq); the redundant rehearsal was cancelled.
+No emulator release is published yet. The tagged workflow retains its own
+audit gate and an owned background watcher will replay actual public-download
+guide and Qt checks on both owner hosts after publication succeeds. Read the
+latest research-log entry and logs before claiming those gates complete.
+The mutable-reference/nullability migration has not started.

@@ -28,19 +28,22 @@ lives in [the source guide](../doc/docs/reference/emulator-source-build.md).
 The public guide must eventually consume the maintained acquisition driver
 rather than act as a second manually maintained build recipe.
 
-Implementation checkpoint: disposable acquisition/native builds, independent
-capability query, installation/selection, relocatable Qt bundles and independent
-release/source workflows exist. Local archive/startup and both-backend GUI
-acceptance pass on macOS arm64 and Linux x86_64. Four-host hosted delivered
-acceptance, exact corresponding-source rebuild and publication remain gates;
-the requested example is a guest Symbian Qt application, not a host Qt6 app.
+Implementation checkpoint: corrected producer 37360525851 passes native builds,
+upstream tests, SDK contracts and relocated Qt startup on all four hosts. The
+full ten-asset corresponding-source/binary audit passes locally. Delivered
+macOS arm64/Linux x86_64 archives pass named-firmware GUI, debugger, guest Qt,
+bounded EKA1 and live HTTP/TLS acceptance. The maintained examples/qt_app is a
+real guest Qt 4.8.1 button with normal pointer-triggered teardown. The stricter
+pixel oracle rejects unpainted black startup frames.
 
-Actual named-firmware application acceptance exists on macOS arm64 and Linux
-x86_64, including the restricted Nokia 7610 EKA1 process. These are source-built
-frontends, not proof of portable distributable bundles. Linux arm64 and macOS
-x86_64 emulator builds and execution remain gates even though their host SDKs
-and wheels already build. See [the Linux host plan](linux-host-plan.md) and
-[EKA1 restrictions](EKA1.md).
+The emulator-v0.1.0 tag points at tested component commit d470570. Tagged
+publication 37367814604 is queued during GitHub's runner-assignment incident;
+a watcher will run actual public-download guide and Qt acceptance on both owner
+hosts after publication. Publication, those final download checks, cold offline
+corresponding-source rebuild, remaining desktop/GPU/Wayland gates and physical
+device checks remain distinct. Named-firmware acceptance on Intel macOS and
+Linux arm64 remains unverified. See [the Linux host plan](linux-host-plan.md)
+and [EKA1 restrictions](EKA1.md).
 
 SDK compatibility requires the maintained control protocol
 `symbian.emulator-control/v1`, owned process startup/shutdown, isolated data

@@ -6578,3 +6578,35 @@ All 11 actual HTTP/TLS 1.2/1.3/HTTP2/server cases pass against the delivered
 Qt6.8.3 binaries on both hosts (macOS 81.09s; Linux 48.22s). Logs:
 /tmp/symbian-eka1-delivered-ci-{macos,linux}.log and
 /tmp/symbian-http-delivered-ci-{macos,linux}.log.
+
+### Four-host emulator release candidate and hosted-runner incident — 2026-10-05
+
+Corrected producer 37360525851 at d47057073555ca4f4787c431163b26ea5628a3ed
+completes successfully on macOS arm64/x86_64 and Linux arm64/x86_64. Each native
+job passes both upstream CTests, SDK control contracts, relocated Qt startup
+and dependency/license bundle checks. The shared corresponding-source archive
+also completes. Downloaded artifacts pass the entire ten-asset audit locally;
+15 release-helper tests pass, one Linux-only test skips on macOS. Logs:
+/tmp/symbian-emulator-corrected-release-audit.log and
+/tmp/symbian-emulator-corrected-release-helper-tests.log. This verifies archive
+inputs, not a cold offline rebuild of the complete source distribution.
+
+GitHub reports an Actions runner-assignment incident since 19:11 UTC:
+https://stspg.io/c11dc9nb1zdq . Its live status explicitly reports delayed
+workflow start times across runner configurations. Rehearsal 37360566823
+validated exact-source selection and completed one transfer, but four other
+transfers remained queued. After the full local asset audit, it was cancelled
+to avoid duplicate transfers and the annotated emulator-v0.1.0 tag was pushed
+at the tested d470570 commit. Actual tagged release 37367814604 is queued;
+no GitHub emulator release is published yet. Its workflow must pass its own
+audit before publishing. Existing PyPI/GitHub SDK 0.1.2 remains published.
+
+An owned background command (exec session 2842) watches the tagged workflow
+with --exit-status, then runs fresh public-download hello_time/gui_app guides
+and stricter Qt rendering/input/exit tests on macOS arm64 and Linux x86_64.
+Fresh public-wheel/native-SDK build, package and sign steps are already done
+on both hosts. Logs: /tmp/symbian-emulator-tagged-release-watch.log,
+/tmp/symbian-emulator-public-guide-{result,runs}-{macos,linux}.log and
+/tmp/symbian-qt-public-release-{macos,linux}.log. These latter runtime logs must
+be read before claiming public-release acceptance. Pointer/nullability migration
+remains deferred until publication and those checks succeed.
