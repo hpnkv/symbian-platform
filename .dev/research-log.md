@@ -6243,3 +6243,34 @@ sources. Independent emulator-v publication reuses successful exact-source
 artifacts and gates the full matrix. Publication and all four hosted delivered
 checks still need to pass; local Homebrew Qt6.11/system Qt6.4 prototypes do not
 establish pinned Qt6.8.3 or macOS15 release compatibility.
+
+## 2026-10-05 — Source replay and exact redistributed notices
+
+The exported Linux-patched source snapshot configures without dependency
+downloads, builds all 1,641 frontend/importer/test steps and passes both CTest
+suites on macOS arm64. Matching source-built FFmpeg/SDL prefixes were reused.
+Using qtbase alone failed to locate Homebrew LinguistTools; the common
+/opt/homebrew prefix succeeds. The public source reference now calls the same
+driver, including native aarch64 FFmpeg/SDL, rather than stale shell recipes.
+
+Live Homebrew metadata had advanced libpng past the installed version. Read the
+actual installed .brew formula, retain its source/resource URLs, mirrors and
+checksums, and reject checksum differences. Two independent regressions cover
+old-version/resource selection and altered downloads. All 27 script tests pass.
+The local source collector successfully fetched verified PNG/Brotli sources;
+the larger 15-library closure is being collected separately. Qt-provided ICU
+73.2 uses its actual upstream underscore source filename, confirmed live.
+
+Upstream macOS fixup rewrites dylib IDs before packaging, hiding their original
+license inputs. Match immutable Mach-O UUIDs to actual installed library inputs
+and inspect original Qt framework dependencies to recover notices, including
+keg-only ICU. Keep these identities transient; no inventory is produced.
+Homebrew glib retains LGPL-2.1-or-later.txt, so notice collection accepts SPDX
+license filenames. Corrected lipo's verify_arch argument order after a real
+archive audit rejected the wrong invocation. Updated deep signature, relocated
+Qt startup/importer and isolated-root archive checks pass. Production bundles
+require Qt6.8.3; local different-Qt prototypes need --development-qt.
+
+The owner requested a mutable-reference-to-nonnull-pointer/nullability revision
+only after emulator distribution and the guest Qt example are complete. Record
+the follow-up; do not start that repository-wide change during these streams.

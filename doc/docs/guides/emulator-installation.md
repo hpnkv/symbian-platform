@@ -39,9 +39,10 @@ directory. Old versions remain available for rollback. Installation does not
 replace firmware or emulator sessions. Explicit project, SDK or command tool
 paths take precedence; `symbian emu resolve` shows the effective selection.
 
-On Linux, use a desktop session with X11 or Wayland and working graphics
+On Linux, use glibc 2.39 or later, a desktop session with X11 or Wayland and working graphics
 drivers. The bundle supplies Qt and its non-system dependencies; the system
-supplies glibc and graphics-driver interfaces. On macOS, initial bundles use
+supplies glibc and graphics-driver interfaces. macOS bundles require macOS 15
+or later. Initial macOS bundles use
 ad hoc signatures. Gatekeeper may require approval to open downloaded code;
 use the normal macOS security settings after checking its origin.
 

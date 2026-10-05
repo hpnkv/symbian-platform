@@ -10,6 +10,7 @@ import shutil
 import tarfile
 from pathlib import Path
 
+from build_emulator import QT_VERSION
 from bundle_native_sdk import Closure, run
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -136,17 +137,50 @@ def mac_bundle(args, output):
     # Qt deployment does not copy licenses for prebundled system-package libs.
     # Reinspect their original link inputs so Closure retains those notices.
     original = args.workspace / "build/bin/EKA2L1.app/Contents/Frameworks"
+    brew = shutil.which("brew")
+    brew_lib = Path(run(brew, "--prefix")) / "lib" if brew else None
     for library in original.rglob("*"):
-        if (
-            library.is_file()
-            and not library.is_symlink()
-            and library.name.endswith(".dylib")
-        ):
-            for name, dependency in closure.mac_dependencies(library):
-                if str(dependency).startswith("/opt/homebrew/"):
-                    closure.copy(
-                        dependency, output / "libexec/host" / Path(name).name
+        if macho(library):
+            # Upstream fixup may already replace a library's own install name.
+            # Its UUID survives relocation/signing and identifies the actual
+            # installed keg. Do not choose a merely matching library filename.
+            candidate = brew_lib / library.name if brew_lib else None
+            own_ids = run("otool", "-D", str(library)).splitlines()[1:]
+            for name in own_ids:
+                if name.startswith("/opt/homebrew/") and Path(name).is_file():
+                    candidate = Path(name)
+            qt_candidate = (
+                args.qt_prefix / "lib" / library.relative_to(original)
+            )
+            if qt_candidate.is_file():
+                candidate = qt_candidate
+            if candidate is not None and candidate.is_file():
+
+                def uuids(path):
+                    return set(
+                        re.findall(
+                            r"UUID: ([0-9A-F-]+) \(([^)]+)\)",
+                            run("dwarfdump", "--uuid", str(path)),
+                        )
                     )
+
+                if uuids(library) and uuids(library) == uuids(candidate):
+                    # Qt's notices and corresponding sources are supplied
+                    # separately; its Homebrew keg omits root license files.
+                    if not any(
+                        part.startswith("Qt") and part.endswith(".framework")
+                        for part in candidate.parts
+                    ):
+                        closure.copy_notices(candidate)
+                    for _, dependency in closure.mac_dependencies(candidate):
+                        if str(dependency).startswith(
+                            "/opt/homebrew/"
+                        ) and not any(
+                            part.startswith("Qt")
+                            and part.endswith(".framework")
+                            for part in dependency.parts
+                        ):
+                            closure.copy_notices(dependency)
     closure.finish()
     plist = app / "Contents/Info.plist"
     value = plistlib.loads(plist.read_bytes())
@@ -283,7 +317,7 @@ def audit(output, system):
             b"\xca\xfe\xba\xbe",
             b"\xca\xfe\xba\xbf",
         ):
-            run("lipo", "-verify_arch", platform.machine(), str(path))
+            run("lipo", str(path), "-verify_arch", platform.machine())
             own_ids = run("otool", "-D", str(path)).splitlines()[1:]
             for line in run("otool", "-L", str(path)).splitlines()[1:]:
                 name = line.strip().split(" (compatibility", 1)[0]
@@ -319,9 +353,34 @@ def main():
     parser.add_argument("--qt-prefix", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--qt-source", type=Path, required=True)
+    parser.add_argument(
+        "--development-qt",
+        action="store_true",
+        help="Allow a local Qt version that differs from the release pin",
+    )
     args = parser.parse_args()
     args.workspace = args.workspace.resolve()
     args.qt_prefix = args.qt_prefix.resolve()
+    if not args.development_qt:
+        qmake = next(
+            (
+                path
+                for path in (
+                    args.qt_prefix / "bin/qmake",
+                    args.qt_prefix / "bin/qmake6",
+                    args.qt_prefix / "lib/qt6/bin/qmake",
+                )
+                if path.is_file()
+            ),
+            None,
+        )
+        if (
+            qmake is None
+            or run(str(qmake), "-query", "QT_VERSION") != QT_VERSION
+        ):
+            raise RuntimeError(
+                f"Release bundles require Qt {QT_VERSION} and matching source"
+            )
     args.version = (ROOT / "research/eka2l1/VERSION").read_text().strip()
     output = args.output.resolve()
     output.mkdir()

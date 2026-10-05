@@ -58,7 +58,7 @@ jobs:
       - name: Check native host matrix and corresponding source payloads
         run: |
           python -m pip install 'pytest>=9,<10'
-          python -m pytest scripts/tests/test_emulator_build.py scripts/tests/test_emulator_release.py -q
+          python -m pytest scripts/tests/test_emulator_build.py scripts/tests/test_emulator_release.py scripts/tests/test_emulator_sources.py -q
           python scripts/check_emulator_release.py release-assets --version '${{ needs.validate.outputs.version }}'
   publish:
     if: startsWith(github.ref, 'refs/tags/emulator-v')

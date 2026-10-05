@@ -2976,3 +2976,22 @@ hit GitHub HTTP 504 and Intel macOS is still building. Pinned shallow Git fetche
 now have bounded retries. Full four-host archive/source acceptance and actual
 publication remain gates. The requested example is guest Symbian Qt, requiring
 separately supplied Qt4 headers/imports/runtime; host Qt6 is not that runtime.
+
+Follow-up: the extracted patched/submodule source snapshot now configures with
+disconnected dependency sources, compiles all 1,641 native build steps and
+passes both upstream test suites on macOS arm64. FFmpeg/SDL prefixes were reused
+from their matching source builds. The local Qt modules require the common
+Homebrew prefix, rather than qtbase's individual prefix. Public source commands
+now use the maintained driver instead of a stale manual patch/FFmpeg recipe.
+Bundle audits verify binary architecture; macOS library UUID matching preserves
+notices for already-relocated Homebrew libraries, including keg-only ICU.
+Corresponding sources use installed keg recipes and their own checksums.
+The prototype's Qt6.11/system Qt6.4 remain development inputs: production
+bundling now requires pinned Qt6.8.3 unless explicitly opting into development.
+All 27 CI helper regressions and strict docs pass. Initial Intel emulator CI
+also completed successfully; Linux arm64's 504 replay remains necessary.
+
+Sequencing requested by the owner: only after the emulator distribution and
+guest Qt example are complete, revise mutable C++ reference parameters to
+`T* absl_nonnull` and consistently apply nullable/unknown annotations. No part
+of that repository-wide revision has started.

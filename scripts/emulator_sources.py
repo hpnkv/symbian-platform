@@ -7,7 +7,6 @@ Qt is fetched once and shared by all native host bundles.
 import argparse
 import ctypes
 import hashlib
-import json
 import os
 import re
 import shutil
@@ -126,29 +125,6 @@ def runtime_sources(prefix, destination):
     for path in (prefix / "licenses/tools").iterdir():
         if os.uname().sysname == "Darwin":
             package = path.name
-            info = json.loads(
-                subprocess.check_output(
-                    ["brew", "info", "--json=v2", package], text=True
-                )
-            )["formulae"][0]
-            stable = info["urls"]["stable"]
-            installed = {item["version"] for item in info["installed"]}
-            if info["versions"]["stable"] not in installed:
-                raise RuntimeError(
-                    f"Installed {package} differs from its source recipe"
-                )
-            url = stable["url"]
-            archive = destination / package / Path(url).name
-            archive.parent.mkdir()
-            run(["curl", "-fL", "--retry", "3", url, "-o", archive])
-            with archive.open("rb") as stream:
-                if (
-                    hashlib.file_digest(stream, "sha256").hexdigest()
-                    != stable["checksum"]
-                ):
-                    raise RuntimeError(
-                        f"Homebrew source checksum differs for {package}"
-                    )
             formula = (
                 Path(
                     subprocess.check_output(
@@ -158,7 +134,32 @@ def runtime_sources(prefix, destination):
                 / ".brew"
                 / (package + ".rb")
             )
-            shutil.copy(formula, archive.parent / formula.name)
+            # The installed keg's recipe describes its actual sources. The
+            # live Homebrew catalog may already describe a newer version.
+            sources = re.findall(
+                r'(?m)^[ \t]*url "([^"\n]+)"[^\n]*\n'
+                r'(?:(?![ \t]*(?:url |sha256 ))[^\n]*\n)*'
+                r'[ \t]*sha256 "([a-f0-9]{64})"',
+                formula.read_text(),
+            )
+            if not sources or any("#{" in url for url, _ in sources):
+                raise RuntimeError(
+                    f"Cannot resolve installed source recipe: {formula}"
+                )
+            target = destination / package
+            target.mkdir()
+            shutil.copy(formula, target / formula.name)
+            for index, (url, checksum) in enumerate(sources):
+                archive = target / f"{index}-{Path(url).name}"
+                run(["curl", "-fL", "--retry", "3", url, "-o", archive])
+                with archive.open("rb") as stream:
+                    if (
+                        hashlib.file_digest(stream, "sha256").hexdigest()
+                        != checksum
+                    ):
+                        raise RuntimeError(
+                            f"Installed source checksum differs: {archive}"
+                        )
         else:
             result = subprocess.check_output(
                 [
@@ -185,7 +186,7 @@ def qt_icu(workspace, qt_prefix):
     version = (ctypes.c_uint8 * 4)()
     getattr(runtime, f"u_getVersion_{major}")(version)
     number = f"{version[0]}-{version[1]}"
-    archive = workspace / f"icu4c-{number}-src.tgz"
+    archive = workspace / f"icu4c-{version[0]}_{version[1]}-src.tgz"
     if not archive.is_file():
         run(
             [

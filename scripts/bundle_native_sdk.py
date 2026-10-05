@@ -55,6 +55,11 @@ class Closure:
         target.chmod(target.stat().st_mode | 0o200)
         self.copied[original] = target
         self.pending.append((original, target))
+        self.copy_notices(original)
+
+    def copy_notices(self, original: Path) -> None:
+        """Retains original library notices without duplicating its binary."""
+        original = original.resolve(strict=True)
         # Homebrew bottles retain licenses at the keg root. Copy the notices,
         # not Homebrew's SBOMs or install receipts.
         for parent in original.parents:
@@ -63,7 +68,12 @@ class Closure:
                     file
                     for file in parent.iterdir()
                     if file.is_file()
-                    and re.match(r"(LICENSE|COPYING|NOTICE)", file.name, re.I)
+                    and re.match(
+                        r"(LICENSE|COPYING|NOTICE|COPYRIGHT|[AL]?GPL[-.]|"
+                        r"BSD[-.]|MIT[-.]|Apache[-.])",
+                        file.name,
+                        re.I,
+                    )
                 ]
                 if not notices:
                     raise RuntimeError(f"No bundled license for {original}")
