@@ -69,7 +69,6 @@ jobs:
           host: ${{ matrix.qt_host }}
           target: desktop
           arch: ${{ matrix.qt_arch }}
-          modules: qtsvg qttools
           cache: true
       - name: Restore pinned source checkout
         uses: actions/cache@v4

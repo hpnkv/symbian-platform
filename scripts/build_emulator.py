@@ -72,7 +72,14 @@ def expected_diff(source, patches):
         run(["git", "-C", source, "read-tree", "HEAD"], env=environment)
         for patch in patches:
             run(
-                ["git", "-C", source, "apply", "--cached", patch],
+                [
+                    "git",
+                    "-C",
+                    source,
+                    "apply",
+                    "--cached",
+                    *patch_arguments(patch),
+                ],
                 env=environment,
             )
         return subprocess.check_output(
@@ -128,14 +135,22 @@ def validate_source(source, patches, generated=()):
         )
 
 
+def patch_arguments(patch):
+    """Maps a vendored dependency patch to its actual owning repository."""
+    if isinstance(patch, tuple):
+        path, directory = patch
+        return [f"--directory={directory}", str(path)]
+    return [str(patch)]
+
+
 def source_patches(system):
     """Groups maintained patches by their owning Git repository."""
     patches = ROOT / "research/eka2l1"
     result = {".": [patches / (name + ".patch") for name in PATCHES]}
     result["src/external/ffmpeg"] = [patches / "ffmpeg-linux-compat.patch"]
     if system == "linux":
-        result["src/external/dynarmic/externals/mcl"] = [
-            patches / "mcl-integer-sequence.patch"
+        result["src/external/dynarmic"] = [
+            (patches / "mcl-integer-sequence.patch", "externals/mcl")
         ]
     return result
 
@@ -193,7 +208,7 @@ def acquire(workspace, system):
         if fresh:
             validate_source(directory, [])
             for patch in patches:
-                run(["git", "-C", directory, "apply", patch])
+                run(["git", "-C", directory, "apply", *patch_arguments(patch)])
         validate_source(
             directory,
             patches,
@@ -290,6 +305,20 @@ def configure(workspace, system, arch, cc, cxx, qt_prefix):
     }
     if qt_prefix:
         cache["CMAKE_PREFIX_PATH"] = str(qt_prefix)
+        candidates = [qt_prefix / "lib/cmake/Qt6"]
+        if system == "linux":
+            candidates.append(qt_prefix / f"lib/{arch}-linux-gnu/cmake/Qt6")
+        qt_config = next(
+            (
+                path
+                for path in candidates
+                if (path / "Qt6Config.cmake").is_file()
+            ),
+            None,
+        )
+        if qt_config is not None:
+            cache["QT_DIR"] = str(qt_config)
+            cache["Qt6_DIR"] = str(qt_config)
     if system == "macos":
         cache["CMAKE_OSX_DEPLOYMENT_TARGET"] = "15.0"
         cache["CMAKE_OSX_ARCHITECTURES"] = (

@@ -67,6 +67,18 @@ class EmulatorBuildTest(unittest.TestCase):
             _BUILD.validate_source(self.source, [])
         self.assertEqual("owner code\n", path.read_text())
 
+    def test_vendored_patch_applied_relative_to_owning_repository(self):
+        vendor = self.source / "vendor"
+        vendor.mkdir()
+        (vendor / "input.txt").write_text("original\n")
+        self.git("add", "vendor/input.txt")
+        self.git("commit", "--quiet", "-m", "Vendored input")
+        patch = (self.patch, "vendor")
+        self.git("apply", *_BUILD.patch_arguments(patch))
+        _BUILD.validate_source(self.source, [patch])
+        self.assertEqual("patched\n", (vendor / "input.txt").read_text())
+        self.assertEqual("original\n", (self.source / "input.txt").read_text())
+
     def test_host_matrix_and_no_unsupported_fallback(self):
         for system in ("Linux", "Darwin"):
             for arch in ("arm64", "aarch64", "x86_64"):
