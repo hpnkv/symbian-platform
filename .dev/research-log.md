@@ -5720,3 +5720,22 @@ on filter tracebacks as well as Doxygen errors. Final strict MkDocs, both
 Doxygen indices, local links and formatting passed in
 `/tmp/symbian-docs-final-all.log`, with remaining historical-header warnings.
 This ordering fix does not complete the separate all-symbol documentation work.
+
+## 2026-10-05 — Application-to-handset guide and clean-install acceptance
+
+Renamed the public GUI walkthrough to “Build a real GUI app”. The hello_time
+build guide now names the generated ELF/E32/SIS paths, packages menu resources,
+creates/reuses a private signing identity, signs to a new file, stages that exact
+signed package with device install --package, and walks through the handset file
+browser, installer, launcher and controls. Added desktop-user Linux USB access
+setup. CLI argument checks and strict documentation/link checks pass. No physical
+phone installation was performed by this documentation edit.
+
+After release CI and actual PyPI publication, replay Getting started, hello_time
+and gui_app on fresh macOS/Linux environments using published wheels and empty
+SDK/config/cache locations. Build, inspect, package, sign and verify resource
+contents; import separately supplied firmware and exercise both emulator
+backends where available. Keep physical-device staging/installation results
+separate from mocked transfer checks and emulator execution. Capture commands,
+versions and failures; fix the guides/tools rather than relying on prepared
+worktree state. This acceptance remains pending publication.

@@ -40,3 +40,14 @@ For PC Suite, MTP, OBEX and USB API details, see the [USB transport
 reference](../reference/device-usb.md). [Packaging](packaging.md) explains
 what goes into a SIS. Device recovery and firmware writing are outside this
 workflow.
+
+To stage an already signed package, supply `--package` so the SDK transfers
+that file without rebuilding:
+
+```sh
+symbian device install --device SELECTOR \
+  --package ~/dev/hello_time/.symbian/package/hello_time-signed.sis
+```
+
+Follow [Build and install an application](building.md#7-install-and-run-on-the-handset)
+for the complete `hello_time` packaging, signing and on-phone sequence.

@@ -104,7 +104,7 @@ nav:
   - Guides:
       - Standalone projects: guides/projects.md
       - Build an application: guides/building.md
-      - GUI source walkthrough:
+      - Build a real GUI app:
           - Overview: guides/from-source.md
           - Prepare tools and source: guides/source-prerequisites.md
           - Understand the example: guides/gui-architecture.md

@@ -61,7 +61,9 @@ The ticket is created once with owner-only permissions and no raw serial.
 interface descriptors. It reports `unchanged`, `device-unavailable`, or
 `usb-transition-observed`. It does not label a changed USB configuration as a
 verified PC Suite protocol session. The CLI cannot select the mode on the
-phone; the owner makes that choice on the handset. ## Inspecting the 808 in PC Suite mode
+phone; the owner makes that choice on the handset.
+
+## Inspecting the 808 in PC Suite mode
 
 With PC Suite / Nokia Suite selected on the handset, use the exact selector from
 `device list` if more than one candidate is connected. The commands below run

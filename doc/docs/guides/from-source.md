@@ -1,4 +1,4 @@
-# Building and investigating the GUI example
+# Build a real GUI app
 
 The native Window Server counter in `examples/gui_app` is a compact route from
 C++ source to a visible Symbian application. Window Server is the OS service

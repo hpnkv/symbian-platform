@@ -18,7 +18,7 @@ capture shows configuration and source indexing, not a running guest.*
 | 2 | [Run and debug](clion-run-debug.md) | Use GUI Run for a visible app and GUI Debug for guest breakpoints |
 | 3 | [Inspect indexing and advanced paths](clion-advanced.md) | Compilation databases, retained sessions and manual GDB |
 
-The [GUI source walkthrough](from-source.md) explains the underlying ELF, E32,
+The [Build a real GUI app](from-source.md) explains the underlying ELF, E32,
 firmware and emulator steps. CLion displays source and controls these tools;
 it does not turn an ARM ELF into a host executable. A generated app may use the
 [standalone project guide](projects.md) instead of the source example.

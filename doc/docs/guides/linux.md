@@ -53,3 +53,23 @@ when `arm-none-eabi-gdb` is absent. See [Run and Debug](clion-run-debug.md).
 For unattended Qt sessions on a host without a display, use `xvfb-run -a`
 with an owned disposable instance. Inspect the guest exit report as well as
 the frontend log when diagnosing failures.
+
+## 4. USB devices
+
+Use `symbian device list` to find the connected phone. If descriptor inspection
+or MTP transfer reports insufficient USB permissions, grant access to Nokia USB
+devices for the active desktop user with a udev rule:
+
+```sh
+sudo tee /etc/udev/rules.d/70-symbian-nokia.rules >/dev/null <<'EOF'
+SUBSYSTEM=="usb", ATTR{idVendor}=="0421", TAG+="uaccess"
+EOF
+sudo udevadm control --reload-rules
+```
+
+Disconnect and reconnect the phone, then list it again. This rule uses Nokia's
+USB vendor ID; adapt it for another manufacturer. A mounted mass-storage volume
+also needs normal filesystem write permissions. Close a desktop MTP browser
+before using the SDK's MTP session on the same phone. See
+[Connect a device](device.md) and the [complete application installation
+sequence](building.md#6-stage-the-signed-package-on-the-phone).
