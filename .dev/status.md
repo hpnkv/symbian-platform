@@ -3017,3 +3017,10 @@ source, release and installer regressions plus Black/Ruff/actionlint pass.
 All nineteen bounded EKA1 process/import/heap/copy and negative-control tests
 pass on both rebuilt development bundles and both CPU backends. This does not
 extend the restricted EKA1 API or runtime coverage.
+
+Pinned Qt6.8.3 Linux x86_64/arm64 CI compilation, native tests and executable
+queries pass in 37344027846. Both bundle audits exposed inherited Qt loader
+paths; the fix checks delivered ELF dependencies without LD_* overrides.
+Actual Linux archive reproduction and five release helper tests pass; clean
+candidate-wheel offline installation/selection/doctor checks pass on macOS
+arm64/Linux x86_64. Production bundle replay and publication remain required.

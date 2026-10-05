@@ -6335,3 +6335,27 @@ controls also pass all nineteen tests on each rebuilt development bundle,
 both CPU backends. Linux uses the published SDK's bin directory in PATH as
 well as SYMBIAN_LLVM_BIN for source-checkout probe builds. Logs:
 /tmp/symbian-emulator-network-fixes-eka1-{macos,linux}.log on their hosts.
+
+2026-10-05 production CI loader audit: both Linux hosts compiled/tested/query-
+checked pinned Qt6.8.3 bundles in 37344027846, then the bundle audit reported
+external QtNetwork. The Qt setup action's LD_LIBRARY_PATH selected its prefix
+ahead of delivered RUNPATH. A local delivered bundle reproduces the failure
+with LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu. Auditing now removes LD_* only
+from the loader subprocess, retaining the acquisition/build environment for
+source dependency resolution. Archive acceptance also removes all LD_*.
+A real native ELF/DSO regression proves the inherited path selects an external
+library but the delivery audit still checks the bundled tree; all five release
+helper tests and the actual polluted-environment archive audit pass on Linux.
+The full selected helper/installer suite passes on macOS with the ELF-only
+case skipped. Candidate-wheel offline install/doctor/list/select/resolve passes
+in separate clean environments on both owner hosts, using the actual rebuilt
+development archives; logs /tmp/symbian-emulator-offline-wheel-{macos,linux}.log.
+These are candidate wheels, not a claim of public 0.1.2 downloads.
+
+Guest Qt prerequisite research: preserved Belle qtcore.dll contains a 4.8.1
+version string. The original Qt v4.8.1 source at
+1e0021d8d9e374ae3959fcd4eac5d9e7238cbc54 supplies Symbian QtCoreu.def/QtGuiu.def
+and the real QApplication/QPushButton headers. The ignored research checkout
+retains its original licenses. Header/export availability does not prove the
+guest ABI or widget/service execution; example implementation remains after
+the emulator delivery/publication gate.

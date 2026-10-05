@@ -32,9 +32,7 @@ def main():
         env = {
             key: value
             for key, value in os.environ.items()
-            if not key.startswith(
-                ("QT_", "QML", "DYLD_", "LD_LIBRARY_PATH", "EKA2L1_")
-            )
+            if not key.startswith(("QT_", "QML", "DYLD_", "LD_", "EKA2L1_"))
         }
         env["PATH"] = "/usr/bin:/bin"
         env["HOME"] = str(root / "clean home")

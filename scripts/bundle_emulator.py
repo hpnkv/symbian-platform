@@ -7,6 +7,7 @@ import platform
 import plistlib
 import re
 import shutil
+import subprocess
 import tarfile
 from pathlib import Path
 
@@ -294,7 +295,15 @@ def audit(output, system):
             )
             if machine not in run("readelf", "-h", str(path)):
                 raise RuntimeError(f"Wrong runtime architecture: {path}")
-            dependencies = run("ldd", str(path))
+            dependencies = subprocess.check_output(
+                ["ldd", str(path)],
+                text=True,
+                env={
+                    key: value
+                    for key, value in os.environ.items()
+                    if not key.startswith("LD_")
+                },
+            )
             if "not found" in dependencies:
                 raise RuntimeError(
                     f"Missing runtime dependency for {path}: {dependencies}"

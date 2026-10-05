@@ -1,8 +1,12 @@
 """Rejects incomplete or mislabelled independently published emulator assets."""
 
+import importlib
 import importlib.util
 import io
 import json
+import platform
+import shutil
+import subprocess
 import tarfile
 from pathlib import Path
 
@@ -107,3 +111,50 @@ def test_empty_runtime_source_payload_fails(release):
     )
     with pytest.raises(ValueError, match="Empty runtime corresponding sources"):
         module.check(release, "0.1.0")
+
+
+@pytest.mark.skipif(platform.system() != "Linux", reason="ELF loader behavior")
+def test_bundle_audit_ignores_external_loader_overrides(tmp_path, monkeypatch):
+    monkeypatch.syspath_prepend(str(Path(__file__).parents[1]))
+    bundler = importlib.import_module("bundle_emulator")
+    compiler = shutil.which("cc")
+    assert compiler, "Install a native C compiler for the ELF audit regression"
+    prefix = tmp_path / "bundle with spaces"
+    library = prefix / "lib"
+    library.mkdir(parents=True)
+    external = tmp_path / "external"
+    external.mkdir()
+    source = tmp_path / "library.c"
+    source.write_text("int value(void) { return 7; }\n")
+    for directory in (library, external):
+        subprocess.run(
+            [
+                compiler,
+                "-shared",
+                "-fPIC",
+                str(source),
+                "-Wl,-soname,libfixture.so",
+                "-o",
+                str(directory / "libfixture.so"),
+            ],
+            check=True,
+        )
+    source.write_text("int value(void); int main(void) { return value(); }\n")
+    subprocess.run(
+        [
+            compiler,
+            str(source),
+            f"-L{library}",
+            "-lfixture",
+            "-Wl,-rpath,$ORIGIN/lib",
+            "-o",
+            str(prefix / "program"),
+        ],
+        check=True,
+    )
+    monkeypatch.setenv("LD_LIBRARY_PATH", str(external))
+    polluted = subprocess.check_output(
+        ["ldd", str(prefix / "program")], text=True
+    )
+    assert str(external / "libfixture.so") in polluted
+    bundler.audit(prefix, "linux")
