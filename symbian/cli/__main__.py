@@ -1046,6 +1046,7 @@ def _execute(args: argparse.Namespace) -> dict:
                     str(project),
                 ],
                 cwd=project,
+                timeout=600,
             )
             result["initial_build"] = True
         return result

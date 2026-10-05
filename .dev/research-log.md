@@ -5991,3 +5991,19 @@ GUI, legacy SIS or physical-device support. The initial invocation used system
 Ninja 1.11 and failed input-tracking preflight; selecting the installed 1.13
 binary corrected the environment. Public Linux/EKA1 guides include headless
 Xvfb usage; strict MkDocs and C++ snippet-format checks pass.
+
+## Tagged Intel starter timeout — 2026-10-05
+
+The audited manual release 37318601326 passed all four native archives and the
+16-wheel/10-archive gate. Its first tag replay 37321577822 reused host artifacts
+and native caches, but macOS Intel init exceeded the generic 30-second host-tool
+budget while its nested build was still compiling. No PyPI 0.1.1 or GitHub
+release was published (PyPI version JSON returned 404; release lookup absent).
+Init now gives the initial build 600 seconds, matching the build subprocess
+budget, and the outer installed acceptance budget is 660 seconds. The generic
+host-tool timeout remains unchanged. Revalidate before updating the unpublished
+v0.1.1 tag; do not publish a wheel that retains this starter timeout.
+
+Linux independent native EKA1 header/bounds and PE import/IAT oracles also pass:
+2 GTests in /tmp/symbian-linux-eka1-native-oracle.log, using the newly built
+accepted probe images. No further runtime capability is inferred.

@@ -38,7 +38,7 @@ def main() -> None:
                 cwd=root,
                 env=env,
                 check=True,
-                timeout=240,
+                timeout=660,
             )
 
         sdk = root / "installed SDK"
