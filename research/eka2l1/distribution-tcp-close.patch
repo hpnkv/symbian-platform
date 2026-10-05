@@ -1,0 +1,24 @@
+diff --git a/src/emu/services/src/internet/protocols/socket.cpp b/src/emu/services/src/internet/protocols/socket.cpp
+--- a/src/emu/services/src/internet/protocols/socket.cpp
++++ b/src/emu/services/src/internet/protocols/socket.cpp
+@@ -181,14 +181,12 @@
+         if (opaque_handle_) {
+             if (protocol_ == INET_TCP_PROTOCOL_ID) {
+                 looper_->one_shot([opaque_handle_copy = this->opaque_handle_] {
+-                    if (uv_tcp_close_reset(reinterpret_cast<uv_tcp_t *>(opaque_handle_copy), [](uv_handle_t *handle) {
+-                            delete handle;
+-                        })
+-                        < 0) {
+-                        uv_close(reinterpret_cast<uv_handle_t*>(opaque_handle_copy), [](uv_handle_t *handle) {
+-                            delete handle;
+-                        });
+-                    }
++                    // Completed guest sends must survive socket destruction.
++                    // An unconditional reset can discard the last HTTP/TLS
++                    // records before the peer reads them, especially on Linux.
++                    uv_close(reinterpret_cast<uv_handle_t*>(opaque_handle_copy), [](uv_handle_t *handle) {
++                        delete handle;
++                    });
+                 });
+             } else {
+                 looper_->one_shot([opaque_handle_copy = this->opaque_handle_] {

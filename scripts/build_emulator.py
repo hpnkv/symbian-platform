@@ -47,6 +47,8 @@ PATCHES = (
     "distribution-query",
     "distribution-sdl",
     "distribution-resources",
+    "distribution-tcp-close",
+    "distribution-control-start",
 )
 LIBRARIES = ("avformat", "avcodec", "swscale", "avutil", "swresample")
 

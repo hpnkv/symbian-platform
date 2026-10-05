@@ -1,0 +1,49 @@
+diff --git a/src/emu/qt/src/thread.cpp b/src/emu/qt/src/thread.cpp
+--- a/src/emu/qt/src/thread.cpp
++++ b/src/emu/qt/src/thread.cpp
+@@ -421,27 +421,29 @@
+             }
+         }
+ 
+-        state.ui_main = new main_window(application, nullptr, state);
+-        state.ui_main->setWindowTitle(get_emulator_window_title());
+-        state.ui_main->load_and_show();
+-
+-        eka2l1::drivers::ui::main_window_instance = state.ui_main;
+-        state.window = state.ui_main->render_window();
+-
+-        std::thread graphics_thread_obj(graphics_driver_thread, std::ref(state));
+-
+-        if (state.app_launch_from_command_line) {
+-            if (!state.launched_app_name_.empty()) {
+-                state.ui_main->set_discord_presence_current_playing(state.launched_app_name_);
+-            }
+-            state.ui_main->setup_and_switch_to_game_mode();
+-        }
+-
++        // Register exit observation before the UI releases the guest worker.
+         auto control = symbian::emulator::ControlServer::Start(
+             &state, std::getenv("EKA2L1_RESEARCH_CONTROL_SOCKET"));
+         if (!control.ok()) {
+             LOG_ERROR(FRONTEND_CMDLINE, "Emulator control rejected: {}", control.status().ToString());
+         }
++
++        state.ui_main = new main_window(application, nullptr, state);
++        state.ui_main->setWindowTitle(get_emulator_window_title());
++        state.ui_main->load_and_show();
++
++        eka2l1::drivers::ui::main_window_instance = state.ui_main;
++        state.window = state.ui_main->render_window();
++
++        std::thread graphics_thread_obj(graphics_driver_thread, std::ref(state));
++
++        if (state.app_launch_from_command_line) {
++            if (!state.launched_app_name_.empty()) {
++                state.ui_main->set_discord_presence_current_playing(state.launched_app_name_);
++            }
++            state.ui_main->setup_and_switch_to_game_mode();
++        }
++
+         const int exec_code = control.ok() ? application.exec() : 2;
+         if (control.ok() && *control) {
+             const auto status = (*control)->Stop();

@@ -6295,3 +6295,31 @@ controls accept exact archived inputs and reject altered content; all 29 CI
 script tests pass. The common patched-source rebuild and both upstream CTests
 pass; macOS relocated/signature/Qt/importer/isolated-root checks pass after
 complete 15-library notice recovery and source downloads.
+
+2026-10-05 delivered networking acceptance: the published 0.1.1 native SDK
+builds the current HTTP diagnostic probe against relocated emulator prototypes
+on macOS arm64 and Linux x86_64. Linux exposed three truncated/reset server
+responses despite guest success: inet_socket::close_down unconditionally used
+uv_tcp_close_reset. The maintained distribution-tcp-close patch uses normal
+libuv closure so completed sends survive destruction. A subsequent fast TLS
+server exit raced control callback registration; distribution-control-start
+registers observation before creating the UI and releasing the guest worker.
+All eleven HTTP tests now pass on each host, covering live example.com and
+Cloudflare, TLS1.2/TLS1.3, HTTP/2, trust rejection and streaming uploads.
+The copied-Z oracle allows only the three known disabled optional DLLs and
+checks retained backups; Linux and macOS disable different subsets. Both
+original stores remain unchanged. Logs: /tmp/symbian-emulator-network-fixes-
+http-macos.log and /tmp/symbian-emulator-network-fixes-http-linux-bundle.log.
+The rebuilt bundles pass both GUI backends on both hosts, all four macOS
+debugger checks, moved archive/Qt/importer/resource isolation, and macOS deep
+strict signatures. Native CTests pass on macOS. These still use development
+Qt versions, so the pinned four-host CI and publication remain required.
+Starting a frontend without firmware showed its setup UI but did not establish
+a control socket: firmware-backed service checks cannot be replaced by help
+or capability-query success.
+Exact Ubuntu runtime collection completed: 93 package source descriptors and
+their checksum-verified corresponding inputs occupy 414MiB; the macOS closure
+uses fifteen installed Homebrew source recipes. No provenance inventory is
+produced. SDK rehearsal 37340236532 passed all matrices and the archive/wheel
+audit; final installer-source rehearsal 37345071632 reuses the successful
+four-host/16-wheel matrix 37344027676.

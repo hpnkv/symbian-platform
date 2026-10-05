@@ -23,6 +23,18 @@ from symbian.emulator.launch import _digest, _stop
 from symbian.project.sdk import AppSdk
 
 ROOT = Path(__file__).parents[2]
+GOLDEN = Path(
+    os.environ.get(
+        "SYMBIAN_HTTP_GOLDEN_ROOT",
+        ROOT / ".symbian/instances/delight-import-01",
+    )
+)
+EMULATOR = Path(
+    os.environ.get(
+        "SYMBIAN_EKA2L1_EXECUTABLE",
+        ROOT / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1",
+    )
+)
 CASES = (
     ("example.com", 80, 0, False, False),
     ("example.com", 443, 12, False, False),
@@ -146,7 +158,7 @@ def http_image(tmp_path_factory):
 @pytest.mark.parametrize("case", range(len(CASES)))
 def test_live_native_http_client(http_image, tmp_path, case):
     """Checks guest sockets, authenticated TLS and streamed HTTP bodies."""
-    golden = ROOT / ".symbian/instances/delight-import-01"
+    golden = GOLDEN
     assert _digest(golden / "data/roms/rm-807/SYM.ROM") == ROM_808
     assert (
         _digest(golden / "data/drives/z/rm-807/sys/bin/euser.dll") == EUSER_808
@@ -163,7 +175,7 @@ def test_live_native_http_client(http_image, tmp_path, case):
         "data-storage: data\ncpu: dynarmic\ndevice: 0\nlanguage: 1\n"
         "enable-gdb-stub: false\nlog-svc: false\n"
     )
-    executable = ROOT / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+    executable = EMULATOR
     with tempfile.TemporaryDirectory(prefix="native-http-", dir="/tmp") as p:
         control = Control(Path(p) / "control.sock")
         env = dict(os.environ)
@@ -211,13 +223,15 @@ def test_live_native_http_client(http_image, tmp_path, case):
         json.dumps({"changed": changed, "missing": missing, "added": added})
     )
     assert not changed
-    assert missing == [
+    disabled = [
         "data/drives/z/rm-807/sys/bin/avkonfep.dll",
         "data/drives/z/rm-807/sys/bin/goommonitor.dll",
         "data/drives/z/rm-807/sys/bin/slpgw.dll",
     ]
-    for name in missing[:2]:
-        assert after[name + ".bak"] == before[name]
+    assert set(missing) <= set(disabled)
+    for name in disabled[:2]:
+        if name in missing:
+            assert after[name + ".bak"] == before[name]
     host, _, version, http2, reject = CASES[case]
     if reject:
         assert "TLS handshake failed" in result
@@ -248,7 +262,7 @@ def test_native_http_server(http_image, tmp_path, http2, version):
     from h2.connection import H2Connection
     from h2.events import DataReceived, ResponseReceived, StreamEnded
 
-    golden = ROOT / ".symbian/instances/delight-import-01"
+    golden = GOLDEN
     before = baseline_digest(golden)
     instance = tmp_path / "instance"
     shutil.copytree(golden, instance)
@@ -263,7 +277,7 @@ def test_native_http_server(http_image, tmp_path, http2, version):
         "data-storage: data\ncpu: dynarmic\ndevice: 0\nlanguage: 1\n"
         "enable-gdb-stub: false\nlog-svc: false\n"
     )
-    executable = ROOT / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+    executable = EMULATOR
     with tempfile.TemporaryDirectory(prefix="native-http-", dir="/tmp") as p:
         control = Control(Path(p) / "control.sock")
         env = dict(os.environ)

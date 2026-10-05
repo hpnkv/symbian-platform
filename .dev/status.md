@@ -2995,3 +2995,18 @@ Sequencing requested by the owner: only after the emulator distribution and
 guest Qt example are complete, revise mutable C++ reference parameters to
 `T* absl_nonnull` and consistently apply nullable/unknown annotations. No part
 of that repository-wide revision has started.
+
+2026-10-05 delivered networking follow-up: relocated development bundles pass
+all eleven native HTTP/live TLS1.2/TLS1.3/HTTP2/streaming-server tests on macOS
+arm64 and Linux x86_64 using the published native SDK. Linux acceptance found
+and corrected unconditional TCP resets and a fast guest-exit observation race.
+Both GUI backends pass on both hosts; macOS source stepping/debugger controls
+and native CTests pass. Relocated archive/Qt/importer/resource/root-isolation
+checks pass on both hosts; macOS deep strict signatures pass. The original
+firmware stores remain unchanged. Logs use /tmp/symbian-emulator-network-fixes-*
+on each host. Exact Linux runtime-source acquisition completed with 93 source
+descriptors and verified inputs (414MiB). SDK rehearsal 37340236532 and the
+latest four-host/16-wheel matrix 37344027676 succeed; final installer-source
+rehearsal 37345071632 is running. Emulator production Qt6.8.3 builds, release,
+public-download acceptance and the guest Qt example remain open. Pointer and
+nullability revision remains deferred until those two work streams complete.
