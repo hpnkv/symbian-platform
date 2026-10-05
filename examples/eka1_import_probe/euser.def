@@ -1,0 +1,8 @@
+; Legacy EUSER symbol/ordinal facts, cross-checked against the preserved
+; Nokia 7610 EUSER and EKA2L1's epoc6_n.def ordered export list.
+EXPORTS
+ AllocLen__4UserPCv @ 39 NONAME
+ AllocSize__4UserRi @ 41 NONAME
+ Alloc__4Useri @ 45 NONAME
+ Copy__3MemPvPCvi @ 243 NONAME
+ Free__4UserPv @ 476 NONAME

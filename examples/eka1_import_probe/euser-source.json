@@ -1,0 +1,9 @@
+{
+  "reference": "EKA2L1 epoc6_n.def ordered EUSER export facts",
+  "repository": "https://github.com/EKA2L1/EKA2L1",
+  "revision": "2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8",
+  "reference_file": "src/emu/bridge/include/bridge/epoc6_n.def",
+  "reference_sha256": "047ffa38a86e2a590f7488429e397ece5c58b361a2d1b0c2d9285bf0f3ddcb1c",
+  "scope": "Only symbol/ordinal facts transcribed; no upstream implementation copied. Simple pointer/integer signatures separately exercised against Nokia 7610 EUSER.",
+  "euser_sha256": "7ae4317ffb1fc4f29506439bc6a21392fe9dd9bfdfd75c07a9727ed677cabd51"
+}
