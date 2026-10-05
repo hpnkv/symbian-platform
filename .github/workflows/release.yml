@@ -13,6 +13,7 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-24.04
+    timeout-minutes: 75
     outputs:
       version: ${{ steps.version.outputs.version }}
       host_run: ${{ steps.host.outputs.run_id }}
@@ -42,12 +43,27 @@ jobs:
           import json
           import os
           import subprocess
+          import time
           endpoint = (
               f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/runs"
               f"?head_sha={os.environ['GITHUB_SHA']}"
-              "&status=success&per_page=50"
+              "&per_page=50"
           )
-          runs = json.loads(subprocess.check_output(["gh", "api", endpoint]))
+          # A push may already be building this exact host matrix. Wait for
+          # that producer instead of scheduling the same four builds again.
+          deadline = time.monotonic() + 65 * 60
+          while True:
+              runs = json.loads(subprocess.check_output(["gh", "api", endpoint]))
+              active = [
+                  run for run in runs["workflow_runs"]
+                  if run["path"] == ".github/workflows/host-sdk.yml"
+                  and run["status"] != "completed"
+              ]
+              if not active or time.monotonic() >= deadline:
+                  break
+              print("Waiting for exact-source host SDK build:",
+                    ", ".join(str(run["id"]) for run in active), flush=True)
+              time.sleep(30)
           required = {
               f"{kind}-{system}-{arch}"
               for kind in ("wheels", "host-sdk")
@@ -58,6 +74,8 @@ jobs:
           }
           run_id = ""
           for candidate in runs["workflow_runs"]:
+              if candidate["conclusion"] != "success":
+                  continue
               # A successful manual release has the same tested host matrix.
               # Reuse it when tagging the already-validated source commit.
               if candidate["path"] not in (

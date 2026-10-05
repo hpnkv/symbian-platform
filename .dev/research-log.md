@@ -5958,3 +5958,21 @@ while GNU tar's default zstd invocation accepts only 128 MiB. Both archive
 listing and selective extraction now explicitly use `zstd --long=30`.
 The pinned archive digest remains checked before decompression. Four-host
 native assembly and publication remain pending this release gate.
+
+## Fresh Linux native source and installed acceptance — 2026-10-05
+
+On helena@192.168.1.209, a new /tmp/symbian-native-fresh-source checkout acquired
+all pinned upstream source and applied LLVM patches successfully. The exact
+5457704 CI cp312 wheel in a new virtual environment compiled the shared ARMv5T
+and ARMv6 guest payload with the corrected pinned LLVM bootstrap. Assembly
+used the existing local host SDK/resource binaries and newly installed PyPI
+CMake/Ninja; relocation and installed-wheel hello_time build/package/sign plus
+copied gui_app build/package passed. Logs: /tmp/symbian-native-fresh-bundle.log
+and /tmp/symbian-native-fresh-acceptance.log. This verifies fresh guest inputs,
+not exact-source final host assets, emulator execution or device installation.
+
+Concurrent push and manual release runs exposed a shared reusable-workflow
+concurrency group. Host groups now include the caller workflow, and release
+validation waits up to 65 minutes for an existing exact-source standalone host
+producer before selecting successful, complete artifacts or building anew.
+Workflow lint passes; four-host hosted acceptance and publication remain pending.
