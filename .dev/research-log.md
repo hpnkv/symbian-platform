@@ -5543,3 +5543,20 @@ Host E32/import/project/CLI/Console/SDK regression selection70 passed,2 skipped
 (/tmp/eka1-import-host-final.log). See EKA1.md and the public guide for complete
 build/verification commands and restrictions. Broader ABI, writable state,
 lifecycle, networking, UI, legacy packaging and phone acceptance remain gates.
+
+## 2026-10-05 — SDK manifest policy
+
+At the owner's request, removed standalone A11, HTTP/WebSocket, network-header,
+EKA1 ordinal and Mbed TLS provenance JSON files, SDK provenance.json generation,
+and the source-inventory checker/tests/custom target. Retained upstream licenses
+and source references in research notes. The A11 upstream source snapshot stays
+because the full host concurrency implementation probe compiles it.
+Build-consumed GUI header selection and nghttp2 source-integrity contracts stay;
+sdk.json, payload digests and firmware preservation manifests are required by
+actual SDK/distribution/preservation APIs. They are not archaeology manifests.
+Guest SDK export still builds both architectures, validates archive closure,
+copies licenses and seals installed files. Source identity no longer adds an
+unused per-file inventory to installed SDKs. EKA1's five ordinal facts came from
+EKA2L1 revision2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8,
+src/emu/bridge/include/bridge/epoc6_n.def, hash
+047ffa38a86e2a590f7488429e397ece5c58b361a2d1b0c2d9285bf0f3ddcb1c.

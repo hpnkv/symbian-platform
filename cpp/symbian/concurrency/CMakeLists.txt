@@ -73,11 +73,3 @@ target_link_libraries(symbian_concurrency INTERFACE
   symbian_host_primitives)
 target_compile_definitions(symbian_concurrency INTERFACE
   SYMBIAN_CONCURRENCY_HOST_BOOST=1)
-
-if(BUILD_TESTING)
-  add_custom_target(symbian_a11_source_check
-    COMMAND "${Python3_EXECUTABLE}"
-            "${concurrency_workspace}/scripts/check_a11_concurrency.py"
-    SOURCES sources.json "${concurrency_workspace}/.dev/thread-a11.md"
-    VERBATIM)
-endif()

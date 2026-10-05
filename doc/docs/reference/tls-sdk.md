@@ -17,7 +17,8 @@ and original license notices. No sibling checkout is required. The SDK
 installs Mbed TLS 3.4.1 headers, the static `mbedcrypto`, `mbedx509` and
 `mbedtls` archives, architecture-specific CMake package targets, the
 Apache-2.0 license, a complete inspectable source copy in
-`source/mbedtls-symbian`, and source/build provenance with digests.
+`source/mbedtls-symbian`. The SDK digest inventory covers installed payload
+integrity; separate source provenance manifests are not maintained.
 Cloning an older installed SDK with `symbian sdk install` also fails with a
 message to use `--workspace` for a fresh export; it cannot silently copy an
 SDK without the default TLS package.

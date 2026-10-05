@@ -63,7 +63,7 @@ SYMBIAN_EKA1_TEST_IMAGE="$PWD/.symbian/eka1-build/eka1_probe.exe" \
 
 The complete `examples/eka1_import_probe/` uses `kind = "e32-eka1-import"`
 and a selected legacy-ordinal proxy. Its DEF records only symbol/ordinal facts;
-`euser-source.json` identifies the pinned source and original EUSER digest.
+The research log records the pinned ordinal source and original EUSER digest.
 Follow the [user guide](../doc/docs/guides/eka1.md) to build the proxy, build the
 process and run it on either backend. Modern Belle EUSER proxies are incompatible.
 

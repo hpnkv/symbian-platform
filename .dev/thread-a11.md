@@ -4,8 +4,8 @@ Implementation handoff, 2026-10-02. This is the concurrency workstream in
 [PLAN.md](plan.md), not a claim that the guest already has parity. The pinned
 A11 source and original tests are under
 `cpp/symbian/concurrency/upstream/` (revision
-`fcccb8cb6e1e67d7ba0822ac14cece9ee4c7091b`); verify their digests with
-`scripts/check_a11_concurrency.py` before adapting them. Preserve the original
+`fcccb8cb6e1e67d7ba0822ac14cece9ee4c7091b`). Source inventory manifests
+and archaeology-only checkers are no longer maintained. Preserve the original
 license and paths. Read [docs/RUNTIME.md](../doc/docs/capabilities/runtime.md),
 [docs/STATUS.md](status.md) and the newest entries in
 [docs/RESEARCH_LOG.md](research-log.md) before changing the backend.

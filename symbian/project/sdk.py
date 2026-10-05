@@ -156,7 +156,7 @@ def _build_runtime_variant(
 
 def _build_abseil(
     workspace: Path, output: Path, compiler: Path, linker: Path
-) -> tuple[dict[str, dict[str, str]], dict[str, str]]:
+) -> None:
     """Builds the pinned, patched StatusOr closure for both ARM targets."""
     source = workspace / "research/upstream/abseil-cpp"
     revision = "5650e9cf76d3be4318d5fa3af38ee483ddfd5e4a"
@@ -177,10 +177,6 @@ def _build_abseil(
         workspace / "research/abseil/symbian-low-level-alloc.patch",
         workspace / "research/abseil/symbian-container-no-elf-tls.patch",
     ]
-    patch_digests = {
-        patch.name: hashlib.sha256(patch.read_bytes()).hexdigest()
-        for patch in patches
-    }
     project = workspace / "examples/abseil_status_probe"
     archives_by_architecture = {}
     with tempfile.TemporaryDirectory(
@@ -254,7 +250,7 @@ def _build_abseil(
                 )
             destination = output / "lib" / architecture / "abseil"
             destination.mkdir(parents=True)
-            digests = {}
+            names = set()
             for artifact in artifacts:
                 target = destination / artifact.name
                 if target.exists():
@@ -263,21 +259,15 @@ def _build_abseil(
                         f"Duplicate Abseil archive: {artifact.name}",
                     )
                 shutil.copyfile(artifact, target)
-                digests[target.name] = hashlib.sha256(
-                    target.read_bytes()
-                ).hexdigest()
-            archives_by_architecture[architecture] = digests
-    if (
-        archives_by_architecture["armv5t"].keys()
-        != archives_by_architecture["armv6"].keys()
-    ):
+                names.add(target.name)
+            archives_by_architecture[architecture] = names
+    if archives_by_architecture["armv5t"] != archives_by_architecture["armv6"]:
         raise StatusError(
             Code.DATA_LOSS, "Abseil archive closure differs by architecture"
         )
-    return archives_by_architecture, patch_digests
 
 
-def _export_mbedtls_source(source: Path, output: Path) -> dict[str, object]:
+def _export_mbedtls_source(source: Path, output: Path) -> None:
     """Copy the vendored port sources without Git, caches or build products."""
     excluded = {
         ".git",
@@ -296,7 +286,6 @@ def _export_mbedtls_source(source: Path, output: Path) -> dict[str, object]:
         and not any(part in excluded for part in path.relative_to(source).parts)
     )
     destination = output / "source/mbedtls-symbian"
-    digest = hashlib.sha256()
     for relative in relative_paths:
         original = source / relative
         if not original.is_file() or not original.resolve().is_relative_to(
@@ -315,13 +304,6 @@ def _export_mbedtls_source(source: Path, output: Path) -> dict[str, object]:
             raise StatusError(
                 Code.ABORTED, "Mbed TLS source changed during export"
             )
-        digest.update(relative.as_posix().encode("utf-8"))
-        digest.update(hashlib.sha256(content).digest())
-    return {
-        "sdk_path": "source/mbedtls-symbian",
-        "file_count": len(relative_paths),
-        "sha256": digest.hexdigest(),
-    }
 
 
 def _build_mbedtls(
@@ -330,7 +312,7 @@ def _build_mbedtls(
     compiler: Path,
     linker: Path,
     archive_tools: dict[str, Path],
-) -> dict[str, object]:
+) -> Path:
     """Installs architecture-specific static TLS packages into the SDK.
 
     The vendored port has its own CMake targets. An application links TLS only
@@ -349,7 +331,6 @@ def _build_mbedtls(
     ninja_tool = shutil.which("ninja")
     if cmake_tool is None or ninja_tool is None:
         raise StatusError(Code.NOT_FOUND, "CMake and Ninja are required")
-    archives = {}
     for architecture in ("armv5t", "armv6"):
         with tempfile.TemporaryDirectory(
             prefix=f"symbian-mbedtls-{architecture}-"
@@ -399,12 +380,6 @@ def _build_mbedtls(
                     Code.DATA_LOSS,
                     f"Incomplete Mbed TLS package for {architecture}",
                 )
-            archives[architecture] = {
-                name: hashlib.sha256(
-                    (package / "lib" / name).read_bytes()
-                ).hexdigest()
-                for name in names
-            }
     # Keep the public C headers at the ordinary SDK include root as well as in
     # the relocatable CMake packages for direct, non-CMake consumers.
     shutil.copytree(
@@ -412,33 +387,8 @@ def _build_mbedtls(
         output / "include",
         dirs_exist_ok=True,
     )
-    source_inputs = [source / "CMakeLists.txt"]
-    for directory in ("cmake", "include", "library"):
-        source_inputs.extend(
-            path
-            for path in (source / directory).rglob("*")
-            if path.is_file()
-            and (
-                path.suffix in (".c", ".h", ".cmake", ".in")
-                or path.name == "CMakeLists.txt"
-            )
-        )
-    source_digest = hashlib.sha256()
-    for path in sorted(source_inputs):
-        source_digest.update(str(path.relative_to(source)).encode())
-        source_digest.update(hashlib.sha256(path.read_bytes()).digest())
-    source_export = _export_mbedtls_source(source, output)
-    upstream = json.loads((source / "SOURCE_PROVENANCE.json").read_text())
-    return {
-        "source": str(source),
-        "port_revision": upstream["port_revision"],
-        "source_input_sha256": source_digest.hexdigest(),
-        "source_export": source_export,
-        "version": "3.4.1",
-        "protocols": ["TLS 1.2", "TLS 1.3"],
-        "guest_tls_connection_verified": False,
-        "archives": archives,
-    }
+    _export_mbedtls_source(source, output)
+    return source
 
 
 def prepare(workspace: Path, output: Path) -> AppSdk:
@@ -492,7 +442,6 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
     nghttp2_manifest = json.loads(
         (workspace / "cpp/symbian/net/nghttp2-source.json").read_text()
     )
-    nghttp2_revision = nghttp2_manifest["revision"]
     for relative, expected in nghttp2_manifest["files"].items():
         source_input = nghttp2_source / relative
         if (
@@ -1143,9 +1092,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             .joinpath("templates", "SymbianHostConcurrency.cmake")
             .read_bytes()
         )
-        abseil_archives, abseil_patches = _build_abseil(
-            workspace, output, compiler, linker
-        )
+        _build_abseil(workspace, output, compiler, linker)
         cmake_tool = shutil.which("cmake")
         ninja_tool = shutil.which("ninja")
         if cmake_tool is None or ninja_tool is None:
@@ -1291,7 +1238,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                 build_tree / "concurrency/libsymbian_host_primitives.a",
                 host_library / "libsymbian_host_primitives.a",
             )
-        mbedtls_provenance = _build_mbedtls(
+        mbedtls_source = _build_mbedtls(
             workspace, output, compiler, linker, archive_tools
         )
         for architecture in ("armv5t", "armv6"):
@@ -1341,7 +1288,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             nghttp2_source / "COPYING", licenses / "nghttp2-LICENSE"
         )
         shutil.copyfile(
-            Path(mbedtls_provenance["source"]) / "LICENSE",
+            mbedtls_source / "LICENSE",
             licenses / "MbedTLS-Apache-2.0.txt",
         )
         shutil.copyfile(libcxx / "LICENSE.TXT", licenses / "LLVM-libcxx.txt")
@@ -1364,94 +1311,6 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
         shutil.copyfile(
             workspace / "third_party/symbian/EPL-1.0.html",
             licenses / "EPL-1.0.html",
-        )
-        (output / "provenance.json").write_text(
-            json.dumps(
-                {
-                    "platform_source_profile": gui,
-                    "runtime_build_inputs": {
-                        architecture: json.loads(
-                            (built / "report.json").read_text()
-                        )["inputs"]
-                        for architecture, built in runtimes.items()
-                    },
-                    "stream_runtime_archives": {
-                        architecture: hashlib.sha256(archive).hexdigest()
-                        for architecture, (
-                            archive,
-                            _,
-                        ) in stream_runtimes.items()
-                    },
-                    "native_atomic64_runtime_archives": {
-                        architecture: hashlib.sha256(archive).hexdigest()
-                        for architecture, (
-                            archive,
-                            _,
-                        ) in native_atomic64_runtimes.items()
-                    },
-                    "target_profiles": [
-                        json.loads((built / "report.json").read_text())[
-                            "target"
-                        ]
-                        for built in runtimes.values()
-                    ],
-                    "llvm_revision": "85ac560262434c9ccfc0c183ec22d4138ed647fb",
-                    "llvm_tag": "llvmorg-23.1.2",
-                    "mimalloc_revision": mimalloc_revision,
-                    "mimalloc_runtime_archives": {
-                        architecture: hashlib.sha256(
-                            (
-                                output
-                                / "lib"
-                                / architecture
-                                / "libsymbian_guest_runtime.a"
-                            ).read_bytes()
-                        ).hexdigest()
-                        for architecture in ("armv5t", "armv6")
-                    },
-                    "abseil_revision": (
-                        "5650e9cf76d3be4318d5fa3af38ee483ddfd5e4a"
-                    ),
-                    "abseil_patches": abseil_patches,
-                    "abseil_statusor_archives": abseil_archives,
-                    "nghttp2": {
-                        "revision": nghttp2_revision,
-                        "version": "1.70.0",
-                        "websocket_protocol": "RFC 8441 / RFC 6455",
-                        "http_protocols": ["HTTP/1.1", "HTTP/2"],
-                        "guest_execution_verified": False,
-                    },
-                    "http_a11": json.loads(
-                        (
-                            workspace / "cpp/symbian/http/a11-source.json"
-                        ).read_text()
-                    ),
-                    "mbedtls": mbedtls_provenance,
-                    "network_headers": json.loads(
-                        (
-                            workspace
-                            / "third_party/symbian-network-headers/source.json"
-                        ).read_text()
-                    ),
-                    "rcomp_revision": (
-                        "d3c2eadd3ff7826bdf9e1d92f447c357571af18b"
-                    ),
-                    "rcomp_host_patch_sha256": hashlib.sha256(
-                        (
-                            workspace / "research/rcomp/modern-host.patch"
-                        ).read_bytes()
-                    ).hexdigest(),
-                    "appinfo_header_source": (
-                        "research/upstream/appsupport/appfw/apparchitecture/inc"
-                        "/AppInfo.rh"
-                    ),
-                    "epl_license_source": "https://www.eclipse.org/legal/epl-v10.html",
-                    "profile": "bounded-w32-libcxx-v1",
-                    "physical_device_verified": False,
-                },
-                indent=2,
-            )
-            + "\n"
         )
         for tree in (
             "kernelhwsrv",

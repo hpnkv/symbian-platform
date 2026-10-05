@@ -1,19 +1,10 @@
 # Actual A11 concurrency sources
 
-`upstream/` is an unmodified, licensed snapshot of A11's `cpp/thread` and
-`cpp/a11/concurrency`, their complete quoted-include closure, original tests,
-and source CMake declarations. Original repository-relative paths are retained.
-`sources.json` pins every file and records include edges and external headers.
-No files were generated to impersonate A11. The original working tree matched
-these committed files at `fcccb8cb6e1e67d7ba0822ac14cece9ee4c7091b`.
-
-```sh
-cmake --build --preset debug --target symbian_a11_source_check
-.venv/bin/python scripts/check_a11_concurrency.py --upstream ~/dev/a11
-```
-
-The verification target checks source identity and closure. The full pinned
-host library can also be built and tested in isolation:
+`upstream/` retains the licensed A11 `cpp/thread` and `cpp/a11/concurrency`
+source, original tests and CMake declarations at revision
+`fcccb8cb6e1e67d7ba0822ac14cece9ee4c7091b`. Explicitly discarded Status values
+use `.IgnoreError()`. Separate source inventory manifests are not maintained.
+The full host library can be built and tested in isolation:
 
 ```sh
 cmake -S cpp/symbian/concurrency/full_host_probe -B build/a11-host-probe -G Ninja

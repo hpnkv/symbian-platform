@@ -2,9 +2,8 @@
 
 The implementation is ported from the actual A11 working tree at
 `fcccb8cb6e1e67d7ba0822ac14cece9ee4c7091b`, rather than a similar Python error
-class. `third_party/a11/provenance.json` records the hashes of the actual source
-files used, including working-tree contents. Original Apache notices and the
-complete license are retained.
+class. Original Apache notices and the complete license are retained. Source
+identity is recorded here; standalone provenance manifests are not maintained.
 
 * `cpp/symbian/status/` contains A11's status payload, HTTP/WebSocket, JSON,
   MessagePack and UTF-8 implementation, with namespace/include-path adaptation.
