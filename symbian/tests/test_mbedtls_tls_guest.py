@@ -65,7 +65,7 @@ def guest_binaries(tmp_path_factory):
         [
             "cmake",
             "-S",
-            str(ROOT / "examples/mbedtls_dll_probe"),
+            str(ROOT / "probes/mbedtls_dll_probe"),
             "-B",
             str(dll_build),
             "-G",
@@ -101,7 +101,7 @@ def guest_binaries(tmp_path_factory):
 def build_client(sdk, build, version, mode, ordinal=6, port=39095):
     """Builds one normal E32 consumer of the DLL's TLS export."""
     project = build / f"client-{ordinal}-{version}-{mode}"
-    shutil.copytree(ROOT / "examples/runtime_probe", project)
+    shutil.copytree(ROOT / "probes/runtime_probe", project)
     (project / "probe.cc").write_text(
         "#include <e32std.h>\n"
         '_LIT(KDll, "C:\\\\sys\\\\bin\\\\mbedcrypto_probe.dll");\n'

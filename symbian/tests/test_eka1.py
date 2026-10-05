@@ -21,7 +21,7 @@ def eka1_images(tmp_path_factory):
     reports = {}
     for reason in (7610, 7611):
         reports[reason] = toolchain.build(
-            ROOT / "examples/eka1_probe",
+            ROOT / "probes/eka1_probe",
             output / str(reason),
             str(compiler),
             str(linker),
@@ -68,7 +68,7 @@ def test_eka1_rejects_newer_isa_before_build(tmp_path):
     compiler = llvm_tool("clang++")
     with pytest.raises(StatusError) as caught:
         toolchain.build(
-            ROOT / "examples/eka1_probe",
+            ROOT / "probes/eka1_probe",
             tmp_path / "bad-isa",
             str(compiler),
             str(llvm_tool("ld.lld", sibling=compiler.parent)),

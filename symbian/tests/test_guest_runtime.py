@@ -358,7 +358,7 @@ def artifacts(tmp_path_factory):
     def build_artifact(architecture, mode):
         if (architecture, mode) not in result:
             project = output / (architecture + "-" + mode)
-            shutil.copytree(root / "examples/runtime_probe", project)
+            shutil.copytree(root / "probes/runtime_probe", project)
             if selected:
                 for source_file in project.glob("*.cc"):
                     source_file.write_text(

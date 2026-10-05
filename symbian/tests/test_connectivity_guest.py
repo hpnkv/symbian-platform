@@ -40,7 +40,7 @@ def guest_image(tmp_path_factory):
     assert (sdk.prefix / "proxies/insock/insock.dso").is_file()
     output = tmp_path_factory.mktemp("connectivity-guest")
     project = output / "project"
-    shutil.copytree(ROOT / "examples/connectivity_probe", project)
+    shutil.copytree(ROOT / "probes/connectivity_probe", project)
     presets = project / "CMakePresets.json"
     data = json.loads(presets.read_text())
     data["configurePresets"][0]["toolchainFile"] = str(
@@ -66,7 +66,7 @@ def listener_image(tmp_path_factory):
     sdk = AppSdk.load(Path(os.environ["SYMBIAN_SDK_MANIFEST"]))
     output = tmp_path_factory.mktemp("connectivity-listener")
     project = output / "project"
-    shutil.copytree(ROOT / "examples/connectivity_probe", project)
+    shutil.copytree(ROOT / "probes/connectivity_probe", project)
     cmake_file = project / "CMakeLists.txt"
     cmake_file.write_text(
         cmake_file.read_text().replace(
@@ -99,7 +99,7 @@ def active_listener_image(tmp_path_factory):
     sdk = AppSdk.load(Path(os.environ["SYMBIAN_SDK_MANIFEST"]))
     output = tmp_path_factory.mktemp("active-connectivity-listener")
     project = output / "project"
-    shutil.copytree(ROOT / "examples/connectivity_probe", project)
+    shutil.copytree(ROOT / "probes/connectivity_probe", project)
     cmake_file = project / "CMakeLists.txt"
     cmake_file.write_text(
         cmake_file.read_text().replace(
@@ -132,7 +132,7 @@ def worker_listener_image(tmp_path_factory):
     sdk = AppSdk.load(Path(os.environ["SYMBIAN_SDK_MANIFEST"]))
     output = tmp_path_factory.mktemp("worker-connectivity-listener")
     project = output / "project"
-    shutil.copytree(ROOT / "examples/connectivity_probe", project)
+    shutil.copytree(ROOT / "probes/connectivity_probe", project)
     cmake_file = project / "CMakeLists.txt"
     cmake_file.write_text(
         cmake_file.read_text().replace(

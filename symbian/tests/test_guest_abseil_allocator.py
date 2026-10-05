@@ -46,7 +46,7 @@ def test_pinned_abseil_low_level_alloc(tmp_path, guest_root, changed):
     ).strip()
     assert revision == expected_revision
 
-    project = root / "examples/abseil_allocator_probe"
+    project = root / "probes/abseil_allocator_probe"
     build = tmp_path / "build"
     environment = dict(os.environ)
     environment.update(

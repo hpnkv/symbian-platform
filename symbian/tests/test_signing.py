@@ -21,7 +21,7 @@ pytestmark = pytest.mark.skipif(
 def image(tmp_path_factory):
     if not shutil.which("clang++") or not shutil.which("ld.lld"):
         pytest.skip("Clang and LLD required")
-    project = Path(__file__).parents[2] / "examples/e32_probe"
+    project = Path(__file__).parents[2] / "probes/e32_probe"
     return Path(
         toolchain.build(project, tmp_path_factory.mktemp("signing-input"))[
             "artifact"

@@ -54,7 +54,7 @@ def http_image(tmp_path_factory):
     sdk = AppSdk.load(Path(os.environ["SYMBIAN_SDK_MANIFEST"]))
     output = tmp_path_factory.mktemp("http-guest-build")
     project = output / "project"
-    shutil.copytree(ROOT / "examples/http_probe", project)
+    shutil.copytree(ROOT / "probes/http_probe", project)
     roots = []
     context = ssl.create_default_context()
     for info, der in zip(

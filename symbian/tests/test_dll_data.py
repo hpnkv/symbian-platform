@@ -12,8 +12,8 @@ from symbian.sdk import build_import_proxy
 from symbian.toolchain.verification import run_oracles
 
 ROOT = Path(__file__).parents[2]
-DLL_PROJECT = ROOT / "examples/dll_data_probe"
-CLIENT_PROJECT = ROOT / "examples/import_probe"
+DLL_PROJECT = ROOT / "probes/dll_data_probe"
+CLIENT_PROJECT = ROOT / "probes/import_probe"
 COMPILER = os.environ.get("SYMBIAN_RUNTIME_COMPILER") or (
     "/opt/homebrew/opt/llvm/bin/clang++"
     if Path("/opt/homebrew/opt/llvm/bin/clang++").is_file()

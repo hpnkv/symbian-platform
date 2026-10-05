@@ -90,7 +90,7 @@ def _build_runtime_variant(
     ninja = shutil.which("ninja")
     if cmake is None or ninja is None:
         raise StatusError(Code.NOT_FOUND, "CMake and Ninja are required")
-    project = workspace / "examples/runtime_probe"
+    project = workspace / "probes/runtime_probe"
     toolchain_file = workspace / "symbian/toolchain/cmake/symbian-arm.cmake"
     outputs = []
     with tempfile.TemporaryDirectory(
@@ -177,7 +177,7 @@ def _build_abseil(
         workspace / "research/abseil/symbian-low-level-alloc.patch",
         workspace / "research/abseil/symbian-container-no-elf-tls.patch",
     ]
-    project = workspace / "examples/abseil_status_probe"
+    project = workspace / "probes/abseil_status_probe"
     archives_by_architecture = {}
     with tempfile.TemporaryDirectory(
         prefix="abseil-sdk-", dir=workspace / ".symbian"
@@ -459,7 +459,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
     for architecture in ("armv5t", "armv6"):
         runtime = workspace / f".symbian/runtime-probe-{architecture}"
         toolchain.build(
-            workspace / "examples/runtime_probe",
+            workspace / "probes/runtime_probe",
             runtime,
             str(compiler),
             str(linker),
@@ -560,7 +560,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
         )
         startup = output / "share/symbian/runtime"
         startup.mkdir(parents=True)
-        source_startup = workspace / "examples/runtime_probe"
+        source_startup = workspace / "probes/runtime_probe"
         shutil.copyfile(source_startup / "startup.S", startup / "startup.S")
         shutil.copyfile(source_startup / "image.ld", startup / "image.ld")
         startup_code = (source_startup / "startup.cc").read_text()

@@ -15,7 +15,7 @@ original heap counts; changed-result and corrupted-copy controls pass.
 From the prepared source worktree, with Clang/LLD on PATH:
 
 ```sh
-python -m symbian.cli build --project examples/eka1_probe \
+python -m symbian.cli build --project probes/eka1_probe \
   --output .symbian/eka1-build
 python -m symbian.cli toolchain verify-eka1 \
   .symbian/eka1-build/eka1_probe.exe \
@@ -35,7 +35,7 @@ image/frontend digests, firmware identity, native exits, frontend exit, logs
 and the disposable instance. A nonmatching reason or missing exit fails even
 when the frontend exits zero. `--expected-reason N` changes the exit oracle.
 
-The complete example lives in `examples/eka1_probe/`, using ordinary CMake
+The complete example lives in `probes/eka1_probe/`, using ordinary CMake
 presets/Ninja, with a compile database and two-tree reproducibility checks.
 Its entire application function is:
 
@@ -61,7 +61,7 @@ SYMBIAN_EKA1_TEST_IMAGE="$PWD/.symbian/eka1-build/eka1_probe.exe" \
 
 ## Original EUSER imports
 
-The complete `examples/eka1_import_probe/` uses `kind = "e32-eka1-import"`
+The complete `probes/eka1_import_probe/` uses `kind = "e32-eka1-import"`
 and a selected legacy-ordinal proxy. Its DEF records only symbol/ordinal facts;
 The research log records the pinned ordinal source and original EUSER digest.
 Follow the [user guide](../doc/docs/guides/eka1.md) to build the proxy, build the

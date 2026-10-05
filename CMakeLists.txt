@@ -41,13 +41,13 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
       dll_lifecycle_probe dll_probe e32_probe import_probe
       mbedtls_dll_probe pointer_probe runtime_probe)
   file(GLOB existing_probe_directories CONFIGURE_DEPENDS
-       RELATIVE "${CMAKE_SOURCE_DIR}/examples"
-       "${CMAKE_SOURCE_DIR}/examples/*_probe")
+       RELATIVE "${CMAKE_SOURCE_DIR}/probes"
+       "${CMAKE_SOURCE_DIR}/probes/*_probe")
   add_custom_target(symbian_probe_index)
   foreach(probe_directory IN LISTS existing_probe_directories)
     list(FIND indexed_probe_directories "${probe_directory}" probe_index)
     if(probe_index EQUAL -1)
-      set(probe_dir "${CMAKE_SOURCE_DIR}/examples/${probe_directory}")
+      set(probe_dir "${CMAKE_SOURCE_DIR}/probes/${probe_directory}")
       file(GLOB probe_sources CONFIGURE_DEPENDS
            "${probe_dir}/*.cc" "${probe_dir}/*.c" "${probe_dir}/*.S")
       if(probe_sources)
@@ -62,7 +62,7 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
   endforeach()
   foreach(probe IN ITEMS abi cxx20 dll_data dll_lifecycle dll e32 import
                          pointer runtime)
-    set(probe_dir "${CMAKE_SOURCE_DIR}/examples/${probe}_probe")
+    set(probe_dir "${CMAKE_SOURCE_DIR}/probes/${probe}_probe")
     file(GLOB probe_sources CONFIGURE_DEPENDS
          "${probe_dir}/*.cc" "${probe_dir}/*.S")
     add_library(symbian_index_${probe} OBJECT EXCLUDE_FROM_ALL ${probe_sources})
@@ -91,8 +91,8 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
   add_subdirectory(cpp/symbian/tls EXCLUDE_FROM_ALL)
   symbian_workspace_archive(SymbianTls symbian_api_tls)
   add_library(symbian_index_http OBJECT EXCLUDE_FROM_ALL
-    examples/http_probe/probe.cc examples/http_probe/startup.cc
-    examples/http_probe/startup.S)
+    probes/http_probe/probe.cc probes/http_probe/startup.cc
+    probes/http_probe/startup.S)
   target_link_libraries(symbian_index_http PRIVATE Symbian::Http Symbian::Tls
     Symbian::Storage)
   add_dependencies(symbian_probe_index symbian_index_http)
@@ -107,7 +107,7 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
       "Install and activate an SDK with these targets, then reload the "
       "CLion CMake profile")
   endif()
-  set(connectivity_dir "${CMAKE_SOURCE_DIR}/examples/connectivity_probe")
+  set(connectivity_dir "${CMAKE_SOURCE_DIR}/probes/connectivity_probe")
   file(GLOB connectivity_sources CONFIGURE_DEPENDS
        "${connectivity_dir}/*.cc" "${connectivity_dir}/*.S")
   add_library(symbian_index_connectivity OBJECT EXCLUDE_FROM_ALL
@@ -116,7 +116,7 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
                         Symbian::Connectivity Symbian::Stackless)
   add_dependencies(symbian_probe_index symbian_index_connectivity)
   foreach(probe IN ITEMS abseil_allocator abseil_status)
-    set(probe_dir "${CMAKE_SOURCE_DIR}/examples/${probe}_probe")
+    set(probe_dir "${CMAKE_SOURCE_DIR}/probes/${probe}_probe")
     file(GLOB probe_sources CONFIGURE_DEPENDS
          "${probe_dir}/*.cc" "${probe_dir}/*.S")
     add_library(symbian_index_${probe} OBJECT EXCLUDE_FROM_ALL ${probe_sources})
@@ -134,7 +134,7 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
       "Guest probe indexing requires upstream Clang with clang-scan-deps "
       "for the C++20 module probe; select a matching LLVM toolchain")
   endif()
-  set(module_dir "${CMAKE_SOURCE_DIR}/examples/cxx20_module_probe")
+  set(module_dir "${CMAKE_SOURCE_DIR}/probes/cxx20_module_probe")
   add_library(symbian_index_cxx20_module OBJECT EXCLUDE_FROM_ALL
               "${module_dir}/probe.cc" "${module_dir}/startup.S")
   target_sources(symbian_index_cxx20_module PRIVATE
@@ -156,7 +156,7 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
       message(FATAL_ERROR
         "The Mbed TLS probe needs SYMBIAN_SDK_PREFIX with target C headers")
     endif()
-    set(mbedtls_dir "${CMAKE_SOURCE_DIR}/examples/mbedtls_dll_probe")
+    set(mbedtls_dir "${CMAKE_SOURCE_DIR}/probes/mbedtls_dll_probe")
     add_library(symbian_index_mbedtls OBJECT EXCLUDE_FROM_ALL
                 "${mbedtls_dir}/bridge.c" "${mbedtls_dir}/startup.S")
     target_link_libraries(symbian_index_mbedtls PRIVATE Symbian::Runtime)
@@ -180,17 +180,18 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
     add_dependencies(symbian_probe_index symbian_index_mbedtls)
   endif()
   set_source_files_properties(
-    "${CMAKE_SOURCE_DIR}/examples/runtime_probe/locale_api_contract.cc"
+    "${CMAKE_SOURCE_DIR}/probes/runtime_probe/locale_api_contract.cc"
     PROPERTIES COMPILE_DEFINITIONS _LIBCPP_BUILDING_LIBRARY)
   set_source_files_properties(
-    "${CMAKE_SOURCE_DIR}/examples/runtime_probe/exception_contract.cc"
-    "${CMAKE_SOURCE_DIR}/examples/runtime_probe/exception_metadata_contract.cc"
+    "${CMAKE_SOURCE_DIR}/probes/runtime_probe/exception_contract.cc"
+    "${CMAKE_SOURCE_DIR}/probes/runtime_probe/exception_metadata_contract.cc"
     PROPERTIES COMPILE_OPTIONS "-fexceptions;-frtti;-fno-pic")
   # Registered applications own their actual CMake targets. Discover root
-  # projects and examples rather than adding an indexing rule per app.
+  # projects, examples and probes rather than adding a rule per app.
   file(GLOB application_manifests CONFIGURE_DEPENDS
        "${CMAKE_SOURCE_DIR}/*/symbian.toml"
-       "${CMAKE_SOURCE_DIR}/examples/*/symbian.toml")
+       "${CMAKE_SOURCE_DIR}/examples/*/symbian.toml"
+       "${CMAKE_SOURCE_DIR}/probes/*/symbian.toml")
   foreach(application_manifest IN LISTS application_manifests)
     get_filename_component(application_dir "${application_manifest}" DIRECTORY)
     if(EXISTS "${application_dir}/CMakeLists.txt")
@@ -211,7 +212,7 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
     endif()
   endforeach()
   symbian_index_remaining_native(symbian_index_remaining_guest
-    Symbian::AbseilStatusOr cpp/symbian agent_service examples)
+    Symbian::AbseilStatusOr cpp/symbian agent_service examples probes)
   return()
 endif()
 

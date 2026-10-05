@@ -8,9 +8,9 @@ on both emulator CPU backends. A packaged copy also installs and launches
 through the existing emulator kernel. Matched Belle remains unverified.
 
 ```sh
-uv run symbian build --project examples/pointer_probe \
+uv run symbian build --project probes/pointer_probe \
   --output .symbian/pointer-probe
-uv run symbian package --project examples/pointer_probe \
+uv run symbian package --project probes/pointer_probe \
   --artifact .symbian/pointer-probe/pointer_probe.exe \
   --output .symbian/pointer-package
 cmake --build build/eka2l1 --target symbian_pointer_probe symbian_package_probe

@@ -7,10 +7,10 @@ backends execute the maintained example's compiled development DLL function at
 ordinal 7 in a ROMless epoc10 configuration. Matched Belle remains unverified.
 
 ```sh
-uv run symbian toolchain import-proxy examples/import_probe/exports.def \
+uv run symbian toolchain import-proxy probes/import_probe/exports.def \
   --symbol SymbianProbeTransform --target-dll probe.dll \
   --output .symbian/probe-dll
-uv run symbian build --project examples/import_probe \
+uv run symbian build --project probes/import_probe \
   --output .symbian/import-probe
 uv run symbian inspect --format e32 .symbian/import-probe/import_probe.exe
 ```
@@ -82,7 +82,7 @@ DLL identity, header size, export addresses/absence and code relocation offsets.
 Build reports retain loader/runtime verification false.
 
 ```sh
-uv run symbian build --project examples/dll_probe --output .symbian/native-dll
+uv run symbian build --project probes/dll_probe --output .symbian/native-dll
 uv run symbian inspect --format e32 .symbian/native-dll/probe.dll
 cmake --build build/eka2l1 --target symbian_import_probe
 ctest --test-dir build/eka2l1 -R '^symbian_import_probe$' --output-on-failure

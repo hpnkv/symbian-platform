@@ -266,7 +266,7 @@ preset and packaged ARM toolchain/module files. The source graph is declared
 in CMakeLists; symbian.toml selects the target/preset and UID. The retained
 primary build tree supplies an actual compilation database and incremental
 dependency tracking. A fresh second tree verifies identical linked/converted
-bytes. The original ELF and E32 hashes remain unchanged for examples/e32_probe.
+bytes. The original ELF and E32 hashes remain unchanged for probes/e32_probe.
 
 Project metadata comes from CMake's
 [file API](https://cmake.org/cmake/help/latest/manual/cmake-file-api.7.html),

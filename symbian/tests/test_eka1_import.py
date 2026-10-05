@@ -30,7 +30,7 @@ def imported_images(tmp_path_factory):
     """Builds a legacy-ordinal proxy and reproducible import/control images."""
     output = tmp_path_factory.mktemp("eka1-import-build")
     project = output / "project"
-    shutil.copytree(ROOT / "examples/eka1_import_probe", project)
+    shutil.copytree(ROOT / "probes/eka1_import_probe", project)
     compiler = llvm_tool("clang++")
     linker = llvm_tool("ld.lld", sibling=compiler.parent)
     proxy = build_import_proxy(

@@ -8,7 +8,7 @@ and native networking currently use EKA2.
 From the source workspace, with Clang/LLD available:
 
 ```sh
-symbian build --project examples/eka1_probe --output .symbian/eka1-build
+symbian build --project probes/eka1_probe --output .symbian/eka1-build
 symbian toolchain verify-eka1 .symbian/eka1-build/eka1_probe.exe \
   --firmware 7610 --store .symbian/firmware-store \
   --backend dynarmic --output .symbian/eka1-dynarmic
@@ -36,7 +36,7 @@ The SISX builder rejects EKA1 images; legacy SIS packaging is unsupported.
 
 ## Allocate, copy and free through original EUSER
 
-The separate `examples/eka1_import_probe/` profile supports five original
+The separate `probes/eka1_import_probe/` profile supports five original
 EUSER functions through their legacy GNU2 names and ordinals. Build its selected
 proxy from the source workspace:
 
@@ -50,12 +50,12 @@ compiler = llvm_tool("clang++")
 symbols = ["AllocLen__4UserPCv", "AllocSize__4UserRi", "Alloc__4Useri",
            "Copy__3MemPvPCvi", "Free__4UserPv"]
 build_import_proxy(
-    Path("examples/eka1_import_probe/euser.def"), symbols, "euser.dll",
+    Path("probes/eka1_import_probe/euser.def"), symbols, "euser.dll",
     Path(".symbian/eka1-euser-proxy"), str(compiler),
     str(llvm_tool("ld.lld", sibling=compiler.parent)),
 )
 PY
-symbian build --project examples/eka1_import_probe \
+symbian build --project probes/eka1_import_probe \
   --output .symbian/eka1-import-build
 symbian toolchain verify-eka1 .symbian/eka1-import-build/eka1_import_probe.exe \
   --firmware 7610 --store .symbian/firmware-store \

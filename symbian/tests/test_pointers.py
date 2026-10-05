@@ -20,7 +20,7 @@ from symbian.toolchain.verification import (
     verify_probe,
 )
 
-PROJECT = Path(__file__).parents[2] / "examples/pointer_probe"
+PROJECT = Path(__file__).parents[2] / "probes/pointer_probe"
 TOOLS = shutil.which("clang++") and shutil.which("ld.lld")
 
 

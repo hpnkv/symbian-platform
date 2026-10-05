@@ -40,7 +40,7 @@ def images(tmp_path_factory):
         ).strip()
         assert revision == "5650e9cf76d3be4318d5fa3af38ee483ddfd5e4a"
     output = tmp_path_factory.mktemp("abseil-status-builds")
-    project = root / "examples/abseil_status_probe"
+    project = root / "probes/abseil_status_probe"
     proxies = [
         (sdk / "proxies" / name / f"{name}.dso").read_bytes()
         for name in ("euser", "libc", "libpthread", "libm", "drtaeabi")
@@ -166,7 +166,7 @@ def test_copied_project_uses_only_installed_abseil(tmp_path):
     root = Path(WORKSPACE).resolve()
     sdk = AppSdk.load(Path(SDK_MANIFEST)).prefix
     project = tmp_path / "project"
-    shutil.copytree(root / "examples/abseil_status_probe", project)
+    shutil.copytree(root / "probes/abseil_status_probe", project)
     build = tmp_path / "build"
     environment = dict(os.environ)
     environment.pop("SYMBIAN_ABSEIL_SOURCE", None)

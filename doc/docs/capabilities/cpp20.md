@@ -38,15 +38,15 @@ count and a representable row. Neither feature allocates or calls an OS service.
 From a source checkout:
 
 ```sh
-symbian build --project examples/cxx20_probe \
+symbian build --project probes/cxx20_probe \
   --output .symbian/cxx20-probe
-symbian package --project examples/cxx20_probe \
+symbian package --project probes/cxx20_probe \
   --artifact .symbian/cxx20-probe/cxx20_probe.exe \
   --output .symbian/cxx20-package
 symbian inspect --format e32 .symbian/cxx20-probe/cxx20_probe.exe
 ```
 
-This freestanding example uses no system C/C++ headers, allocation, exceptions
+This runnable diagnostic probe uses no system C/C++ headers, allocation, exceptions
 or RTTI. Its startup exits directly and owns no target resources. Use generated
 application startup when your program needs the guest runtime or OS handles.
 
@@ -56,15 +56,15 @@ Install upstream Clang with matching `clang-scan-deps`, CMake 3.28+ and
 Ninja 1.12+. Put the LLVM tools on `PATH` and build the module example:
 
 ```sh
-symbian build --project examples/cxx20_module_probe \
+symbian build --project probes/cxx20_module_probe \
   --compiler "$(command -v clang++)" \
   --output .symbian/cxx20-module
-symbian package --project examples/cxx20_module_probe \
+symbian package --project probes/cxx20_module_probe \
   --artifact .symbian/cxx20-module/cxx20_module_probe.exe \
   --output .symbian/cxx20-module-package
 ```
 
-The example uses a `CXX_MODULES` file set and enables scanning for its target.
+The module diagnostic probe uses a `CXX_MODULES` file set and enables scanning for its target.
 CMake/Ninja discovers imported BMIs and retains them in the build tree;
 ordinary SDK targets leave scanning off. See
 [CMake's module rules](https://cmake.org/cmake/help/latest/manual/cmake-cxxmodules.7.html).

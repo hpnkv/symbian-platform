@@ -25,11 +25,11 @@ UIDs are distinct. Use separate identities for a released application.
 
 ## Build, package and inspect
 
-From a source checkout:
+For the small diagnostic E32 probe, from a source checkout:
 
 ```sh
-symbian build --project examples/e32_probe --output .symbian/e32-probe
-symbian package --project examples/e32_probe \
+symbian build --project probes/e32_probe --output .symbian/e32-probe
+symbian package --project probes/e32_probe \
   --artifact .symbian/e32-probe/e32_probe.exe --output .symbian/package
 symbian inspect --format sis .symbian/package/probe.sis
 ```

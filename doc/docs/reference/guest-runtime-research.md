@@ -6,9 +6,9 @@ Symbian import proxies and CMake targets. Choose a
 
 | Application task | Example | What to inspect |
 | --- | --- | --- |
-| Strings and containers | `examples/runtime_probe` | Target headers and archive linkage |
-| Status and hash containers | `examples/abseil_status_probe` | `Symbian::AbseilStatusOr` target |
-| Dynamic libraries | `examples/mbedtls_dll_probe` | Exports, import proxies and lifetime |
+| Strings and containers | `probes/runtime_probe` | Target headers and archive linkage |
+| Status and hash containers | `probes/abseil_status_probe` | `Symbian::AbseilStatusOr` target |
+| Dynamic libraries | `probes/mbedtls_dll_probe` | Exports, import proxies and lifetime |
 | Window Server GUI and timer Tasks | `examples/gui_app` | Startup, redraw, input and cancellation |
 
 Guest code normally disables exceptions and returns explicit status values.

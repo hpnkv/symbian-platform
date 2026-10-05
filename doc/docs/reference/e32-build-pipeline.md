@@ -7,7 +7,7 @@ This is the advanced path for an explicit CMake source graph. Start with
 
 CMake owns source files, dependencies and `compile_commands.json`. A
 `symbian.toml` project selects the CMake target and preset; source files belong
-in `CMakeLists.txt`. The low-level `examples/e32_probe` illustrates an
+in `CMakeLists.txt`. The low-level `probes/e32_probe` illustrates an
 import-free PIC executable:
 
 ```toml
@@ -41,7 +41,7 @@ A `symbian-pic` CMake configure preset uses Ninja and a build directory under
 `.symbian/`. The CLI supplies the installed toolchain and output tree:
 
 ```sh
-symbian build --project examples/e32_probe --output .symbian/e32-probe
+symbian build --project probes/e32_probe --output .symbian/e32-probe
 symbian inspect --format e32 .symbian/e32-probe/e32_probe.exe
 ```
 

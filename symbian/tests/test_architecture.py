@@ -52,7 +52,7 @@ def test_unsupported_execution_has_recovery(architecture):
 @pytest.mark.skipif(not TOOLS, reason="Clang/LLD/CMake/Ninja required")
 def test_same_tree_architecture_change_rebuilds_and_matches_metadata(tmp_path):
     project = tmp_path / "project"
-    shutil.copytree(ROOT / "examples/e32_probe", project)
+    shutil.copytree(ROOT / "probes/e32_probe", project)
     output = tmp_path / "build"
     compiler = str(Path("/opt/homebrew/opt/llvm/bin/clang++"))
     if not Path(compiler).is_file():

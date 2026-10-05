@@ -14,7 +14,7 @@ from symbian.packaging.verification import verify_package
 from symbian.status import Code, StatusError
 from symbian.tests.cli_json import main
 
-PROJECT = Path(__file__).parents[2] / "examples/e32_probe"
+PROJECT = Path(__file__).parents[2] / "probes/e32_probe"
 
 
 @pytest.fixture(scope="module")

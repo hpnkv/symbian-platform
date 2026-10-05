@@ -58,7 +58,7 @@ def artifacts(tmp_path_factory):
     )
     archive = archive_build / "libmbedcrypto.a"
     assert archive.is_file()
-    example = Path(__file__).parents[2] / "examples/mbedtls_dll_probe"
+    example = Path(__file__).parents[2] / "probes/mbedtls_dll_probe"
     dll_build = tmp_path / "mbedtls DLL"
     run(
         [
@@ -119,7 +119,7 @@ def guest_client(artifacts):
     result = {}
     for changed in (False, True):
         project = output / ("changed-client" if changed else "client")
-        shutil.copytree(root / "examples/runtime_probe", project)
+        shutil.copytree(root / "probes/runtime_probe", project)
         source = (
             "#include <e32std.h>\n"
             "#include <stddef.h>\n"
@@ -274,7 +274,7 @@ def test_mbedtls_crypto_x509_executes_through_dynamic_dll(
 def rm807_entropy_dll(artifacts):
     """Builds the opt-in ROM-specific entropy adapter, never the default SDK."""
     source, sdk, _, output = artifacts
-    example = Path(__file__).parents[2] / "examples/mbedtls_dll_probe"
+    example = Path(__file__).parents[2] / "probes/mbedtls_dll_probe"
     dll_build = output / "rm807 entropy DLL"
     archive = output / "mbedtls archive" / "libmbedcrypto.a"
     run(
@@ -377,7 +377,7 @@ def test_rm807_nonblocking_receive_and_cancel_in_emulator(artifacts, tmp_path):
     source, sdk, _, _ = artifacts
     root = Path(__file__).parents[2]
     archive = artifacts[3] / "mbedtls archive" / "libmbedcrypto.a"
-    example = root / "examples/mbedtls_dll_probe"
+    example = root / "probes/mbedtls_dll_probe"
     dll_build = tmp_path / "socket DLL"
     run(
         [
@@ -398,7 +398,7 @@ def test_rm807_nonblocking_receive_and_cancel_in_emulator(artifacts, tmp_path):
     )
     run(["cmake", "--build", str(dll_build)], cwd=example)
     project = tmp_path / "client"
-    shutil.copytree(root / "examples/runtime_probe", project)
+    shutil.copytree(root / "probes/runtime_probe", project)
     (project / "probe.cc").write_text(
         "#include <e32std.h>\n"
         '_LIT(KName, "C:\\\\sys\\\\bin\\\\mbedcrypto_probe.dll");\n'

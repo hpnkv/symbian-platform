@@ -47,7 +47,7 @@ From the platform repository root:
 
 ```sh
 uv sync
-uv run symbian build --project examples/e32_probe --output .symbian/e32-probe
+uv run symbian build --project probes/e32_probe --output .symbian/e32-probe
 cmake -S research/upstream/EKA2L1 -B build/eka2l1 -G Ninja \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
   -DCMAKE_PREFIX_PATH=/opt/homebrew -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
@@ -58,7 +58,7 @@ cmake --build build/eka2l1 -j 8 \
   --target eka2l1_qt ekatests symbian_e32_oracle symbian_checksum_oracle \
     symbian_validator_oracle symbian_cpu_probe symbian_process_probe \
     symbian_sis_checksum_oracle symbian_package_probe
-uv run symbian package --project examples/e32_probe \
+uv run symbian package --project probes/e32_probe \
   --artifact .symbian/e32-probe/e32_probe.exe --output .symbian/package
 ctest --test-dir build/eka2l1 -R 'symbian_|^ekatests$' --output-on-failure
 uv run symbian toolchain verify-probe .symbian/e32-probe/e32_probe.exe
@@ -132,7 +132,7 @@ of throwing from a header. The ELF/E32 loading and kernel algorithms are unchang
 verify-probe runs all five oracle binaries with bounded execution and a private
 input copy, preserving 28 completed GTest cases, logs, artifact and binary hashes.
 Filtered, disabled, skipped or failing tests cannot produce a passing report.
-It is specific to examples/e32_probe. It reports eka2l1_process_verified and
+It is specific to probes/e32_probe. It reports eka2l1_process_verified and
 kernel_exit_verified true, while matched Belle loader/runtime verification
 remains false. The epoc10 enum selects emulator behavior; it does not identify
 an installed Belle/FP2 image. These tests do not cover DLL imports, User::Exit,
@@ -164,7 +164,7 @@ The maintained import harness now requires the native DLL, including count word
 and export-pointer relocations. Build it with:
 
 ```sh
-uv run symbian build --project examples/dll_probe --output .symbian/native-dll
+uv run symbian build --project probes/dll_probe --output .symbian/native-dll
 cmake --build build/eka2l1 --target symbian_import_probe
 ctest --test-dir build/eka2l1 -R '^symbian_import_probe$' --output-on-failure
 ```

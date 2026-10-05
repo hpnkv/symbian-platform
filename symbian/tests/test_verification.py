@@ -34,7 +34,7 @@ def _report(count: int) -> dict:
 def probe(tmp_path):
     if not shutil.which("clang++") or not shutil.which("ld.lld"):
         pytest.skip("Clang and LLD required")
-    project = Path(__file__).parents[2] / "examples/e32_probe"
+    project = Path(__file__).parents[2] / "probes/e32_probe"
     result = toolchain.build(project, tmp_path / "build")
     return Path(result["artifact"])
 

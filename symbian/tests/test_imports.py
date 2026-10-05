@@ -18,7 +18,7 @@ from symbian.e32 import convert_pic_executable
 from symbian.sdk import build_import_proxy
 from symbian.status import Code, StatusError
 
-PROJECT = Path(__file__).parents[2] / "examples/import_probe"
+PROJECT = Path(__file__).parents[2] / "probes/import_probe"
 TOOLS = shutil.which("clang++") and shutil.which("ld.lld")
 
 
@@ -228,7 +228,7 @@ def test_independent_import_runtime_uses_compiled_development_dll(
 
     report, _, _ = imported
     oracles = Path(os.environ["SYMBIAN_EKA2L1_ORACLES_BUILD"]).resolve()
-    source = PROJECT.parents[1] / "examples/dll_probe"
+    source = PROJECT.parents[1] / "probes/dll_probe"
     implementation = toolchain.build(source, tmp_path / "implementation")
     dll = Path(implementation["artifact"])
     checks, _ = run_oracles(

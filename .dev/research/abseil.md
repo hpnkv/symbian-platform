@@ -45,7 +45,7 @@ closure twice, for ARMv5T and ARMv6. It installs the original headers under
 the Apache-2.0 notice and `Symbian::AbseilStatusOr` CMake interface target.
 That target supplies the tested Status/StatusOr, Cord-payload and
 `flat_hash_map` closure with the matching stream-runtime profile and selected
-OS import proxies. The tracked `examples/abseil_status_probe` supports both
+OS import proxies. The tracked `probes/abseil_status_probe` supports both
 source replay and installed-SDK modes. A copied project built and converted
 with no source checkout on its target include/link paths.
 

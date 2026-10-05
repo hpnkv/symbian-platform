@@ -39,7 +39,7 @@ def artifacts(tmp_path_factory):
     for architecture in ("armv5t", "armv6"):
         source = output / architecture / "dll-source"
         build = output / architecture / "dll-build"
-        shutil.copytree(root / "examples/dll_lifecycle_probe", source)
+        shutil.copytree(root / "probes/dll_lifecycle_probe", source)
         run(
             [
                 "cmake",
@@ -73,7 +73,7 @@ def artifacts(tmp_path_factory):
         assert image["bss_size"] > 0 and image["code_relocations"]
 
         client = output / architecture / "client"
-        shutil.copytree(root / "examples/runtime_probe", client)
+        shutil.copytree(root / "probes/runtime_probe", client)
         (client / "probe.cc").write_text(
             'extern "C" int SymbianLifecycleState();\n'
             'extern "C" int RuntimeMain() {\n'
@@ -120,7 +120,7 @@ def artifacts(tmp_path_factory):
         }
 
         dynamic_client = output / architecture / "dynamic-client"
-        shutil.copytree(root / "examples/runtime_probe", dynamic_client)
+        shutil.copytree(root / "probes/runtime_probe", dynamic_client)
         (dynamic_client / "probe.cc").write_text(
             "#include <e32std.h>\n"
             '_LIT(KLifecycleName, "C:\\\\sys\\\\bin\\\\lifecycle_probe.dll");\n'

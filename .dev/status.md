@@ -1744,7 +1744,7 @@ its executable startup is not runnable DLL initialization evidence.
 The earlier research DLL omitted the count prefix and export-pointer relocations.
 Its successful structural validation and export lookup proved less than the
 public ELF loader contract. It remains research material; maintained runtime
-checks now use examples/dll_probe and the native converter. The installed wheel
+checks now use probes/dll_probe and the native converter. The installed wheel
 reproduces the native DLL and ELF and their metadata. Evidence is in
 .symbian/native-dll/report.json, verification-report.json and wheel-result.json.
 General pointer relocations, writable data/BSS/TLS, constructors, SDK startup,

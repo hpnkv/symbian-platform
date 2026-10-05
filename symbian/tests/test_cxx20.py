@@ -13,7 +13,7 @@ from symbian import packaging, toolchain
 from symbian.packaging.verification import verify_package
 from symbian.toolchain.verification import verify_pointers
 
-PROJECT = Path(__file__).parents[2] / "examples/cxx20_probe"
+PROJECT = Path(__file__).parents[2] / "probes/cxx20_probe"
 TOOLS = shutil.which("clang++") and shutil.which("ld.lld")
 LIBCXX_INCLUDE = os.environ.get("SYMBIAN_CXX20_LIBCXX_INCLUDE")
 LIBCXX_CONFIG = os.environ.get("SYMBIAN_CXX20_LIBCXX_CONFIG_INCLUDE")

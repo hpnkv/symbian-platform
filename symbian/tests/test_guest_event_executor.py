@@ -48,7 +48,7 @@ def images(tmp_path_factory):
                 [
                     "cmake",
                     "-S",
-                    str(root / "examples/runtime_probe"),
+                    str(root / "probes/runtime_probe"),
                     "-B",
                     str(build),
                     "-G",

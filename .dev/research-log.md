@@ -355,7 +355,7 @@ blocked. `research/eka2l1/belle-nonblocking-tcp.patch` now gives the pinned
 EKA2L1 internet TCP socket a background libuv read into its bounded ring,
 returns ESOCK `KErrWouldBlock` (`-1000`) when no bytes are ready, and records
 EOF/overflow as terminal errors. The opt-in guest probe in
-`examples/mbedtls_dll_probe/socket_probe.c` passed on Dynarmic with a local
+`probes/mbedtls_dll_probe/socket_probe.c` passed on Dynarmic with a local
 listener: empty read mapped to Mbed TLS `WANT_READ`, a delayed `R` arrived,
 and later reads were cancelled. The test verified pinned ROM/EUSER digests.
 The patch uses the existing EKA2L1 512 KiB ring; its memory cost and mode
@@ -385,7 +385,7 @@ returns `KErrNotReady` and clears bytes on a host-random failure. libuv's
 source contract guarantees an all-or-error fill; its synchronous call can
 block if the host entropy source stalls, so latency remains to measure.
 
-The opt-in DLL adapter in `examples/mbedtls_dll_probe` uses an ARM-state
+The opt-in DLL adapter in `probes/mbedtls_dll_probe` uses an ARM-state
 veneer because Thumb SVC immediates cannot encode `0x10A`. It passes a
 `TPtr8` to the original executive ABI, checks the native result, zeroizes on
 failure and sets the Mbed TLS produced-byte count only after success. The
@@ -1783,7 +1783,7 @@ its prior 2,591-file tree remains separately preserved and verifies.
 
 ## 2026-10-01: Root IDE indexing for guest probes
 
-The host root CMake profile did not own `examples/runtime_probe/chunk_bridge.cc`;
+The host root CMake profile did not own `probes/runtime_probe/chunk_bridge.cc`;
 CLion reported that the source belonged to no target and could not derive
 platform compiler information. The root CMake project now has a separate ARM
 analysis branch selected by `SYMBIAN_INDEX_GUEST_PROBES`, reached before host
@@ -2774,7 +2774,7 @@ also pass against each new EXE/DLL fixture. The missing-import negative control
 now clears iImportOffset explicitly, so it remains a meaningful missing-section
 check when testing an imported image. Core builds have no compiler warnings.
 Black/Ruff, clang-format, generated stubs and whitespace checks pass. Clangd
-checks examples/import_probe/probe.cc with its persistent database: zero errors.
+checks probes/import_probe/probe.cc with its persistent database: zero errors.
 The previous upstream 288-case suite concerns unchanged emulator sources and
 was not rerun for this converter/harness change.
 
@@ -2849,7 +2849,7 @@ GIL, releases it for native work, then reacquires it for results/status errors.
 No scheduler, callback, event loop or Python reference holder is needed.
 All six core translation units compile with exceptions disabled.
 
-examples/dll_probe provides our compiled integer transform at frozen ordinal 7.
+probes/dll_probe provides our compiled integer transform at frozen ordinal 7.
 Its linked Thumb address is 0x8021, resolved from the real static symbol table;
 there is no fixed function location assertion. Its minimal ARM startup retains
 the EKA2 marker/reserved word, makes an internal PC-relative call, preserves LR
@@ -2950,7 +2950,7 @@ supported behavior. No relocation producer/parser logic was added to Python.
 All six core translation units still compile without exceptions and return
 Abseil statuses; existing GIL release boundaries cover this native work.
 
-**Maintained vertical slice:** examples/pointer_probe builds four source units
+**Maintained vertical slice:** probes/pointer_probe builds four source units
 with its real CMake database and discovered header dependencies. It has two
 const callbacks (Thumb C++ and ARM assembly), a constant-text pointer with
 addend one, and a Thumb virtual method in a stack object. Its four E32 fixup
@@ -3029,7 +3029,7 @@ recovery baseline remain unknown. No device operation ran.
 **Question:** Can modern C++20 programs be supported, beyond selecting a compiler
 standard flag? What needs a target runtime rather than only compiler support?
 
-**Experiments:** Added examples/cxx20_probe with actual concepts/requires,
+**Experiments:** Added probes/cxx20_probe with actual concepts/requires,
 structural class template arguments, consteval, designated initialization,
 constrained generic lambdas, defaulted equality, constinit callback tables,
 char8_t and a no_unique_address layout assertion. C++17, signed constrained
@@ -3053,7 +3053,7 @@ binary, C library or host SDK is linked. Matching runtime/library configuration
 will be required for a real port, as LLVM's vendor documentation specifies.
 
 Upstream Clang 23.1.2 builds a minimal named module; the installed Apple compiler
-rejects it with the tested ARM flags. Added examples/cxx20_module_probe with a
+rejects it with the tested ARM flags. Added probes/cxx20_module_probe with a
 CMake CXX_MODULES file set and explicit target scanning. Independent CMake trees
 produce identical ELF/E32, retain a BMI and record actual compilation commands.
 Changing its immediate function and arithmetic body rebuilds an unchanged
@@ -4582,7 +4582,7 @@ were checked in the guest hash/stream contract. Source hash/stream normal and
 changed-result controls passed; the wider runtime selection passed 24 cases
 with one documented skip (200 deselected).
 
-The tracked `examples/abseil_status_probe` exercises original Abseil Status
+The tracked `probes/abseil_status_probe` exercises original Abseil Status
 code/message, Cord payload set/get, StatusOr failure and success with move,
 and `flat_hash_map<std::string, int>` insertion, lookup and erase. A changed
 result returns a distinct failure. Source-replay and sealed-SDK matrices each
@@ -5509,7 +5509,7 @@ ARMv5T and no writable data/fixups/lifecycle remain the supported boundary.
 Python copies proxy bytes under the GIL and delegates all format work natively.
 
 Symbol/ordinal facts come from pinned EKA2L1 bridge/epoc6_n.def; provenance and
-its hash are in examples/eka1_import_probe/euser-source.json. Original firmware
+its hash are in probes/eka1_import_probe/euser-source.json. Original firmware
 EUSER remains unchanged (digest in EKA1.md). Explicit GNU2 symbol declarations
 exercise User::AllocLen39, AllocSize41, Alloc45, Mem::Copy243 and Free476.
 No legacy compiler, C++ runtime, emulator shim or new scheduler was introduced.
@@ -5777,3 +5777,16 @@ https://sourceware.org/gdb/current/onlinedocs/gdb.html/ARM-Breakpoint-Kinds.html
 The Linux patched frontend now reaches both application/model source breakpoints
 and reads clock values. Logs: /tmp/symbian-linux-sdk-gui-r3.log and
 /tmp/symbian-linux-gui-negative-debug-r4.log. No phone compatibility claim follows.
+
+## 2026-10-05 — Separate runnable diagnostics from application examples
+
+Moved all seventeen root diagnostic projects to probes/, retaining gui_app in
+examples/. Updated explicit source paths, dynamic CMake discovery, native indexing,
+SDK runtime export inputs, test fixtures and documentation references. The
+probe catalog labels these as runnable diagnostic examples, not user-oriented
+apps. Both ARMv5T and ARMv6 root indexing presets configure/build from the new
+paths. The affected image/build/import/package/signing/language checks pass:
+80 passed, 23 optional guest cases skipped (/tmp/symbian-probes-move-tests.log).
+Strict MkDocs, both Doxygen indices and local links pass after the move.
+README now shares the requested community/ROM links. GitHub description and
+thirteen relevant topics were set and read back successfully.

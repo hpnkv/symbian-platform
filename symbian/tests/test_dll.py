@@ -12,7 +12,7 @@ from symbian._native import convert_dll, inspect_e32
 from symbian.status import Code, StatusError
 from symbian.toolchain.verification import run_oracles
 
-PROJECT = Path(__file__).parents[2] / "examples/dll_probe"
+PROJECT = Path(__file__).parents[2] / "probes/dll_probe"
 TOOLS = shutil.which("clang++") and shutil.which("ld.lld")
 
 

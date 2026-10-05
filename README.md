@@ -74,13 +74,15 @@ they are not implied by the current host wheel build.
 | Load CA roots and use TLS 1.2/1.3 | [TLS client/server examples](doc/docs/guides/tls.md) |
 | Use native TCP | [Connectivity API](doc/docs/capabilities/apis/connectivity.md) |
 | Understand the guest runtime and threading | [Runtime](doc/docs/capabilities/runtime.md), [concurrency](doc/docs/capabilities/concurrency.md) |
-| Build a Window Server GUI and debug the guest | [GUI walkthrough](doc/docs/guides/from-source.md), [CLion](doc/docs/guides/clion.md) |
+| Build a Window Server GUI and debug the guest | [Build a real GUI app](doc/docs/guides/from-source.md), [CLion](doc/docs/guides/clion.md) |
 | Build a legacy EKA1 executable | [EKA1 process profile](doc/docs/guides/eka1.md) |
 | Prepare a Linux development machine | [Linux host guide](doc/docs/guides/linux.md) |
 | Inspect USB or stage a package on a phone | [Device guide](doc/docs/guides/device.md) |
 | Run the authenticated read-only development agent | [Agent guide](doc/docs/guides/agent-emulator.md) |
 
-Runnable projects live in [examples/](examples/). The native reference covers
+Application examples live in [examples/](examples/); focused ABI, runtime and
+network diagnostics live in [probes/](probes/). The probes are runnable examples
+for checking specific platform contracts, rather than user-oriented apps. The native reference covers
 SDK symbols and eleven original Symbian headers; symbol descriptions are being
 expanded with links to hosted platform documentation. New generated descriptions use attribution markers in the reference. Local builds, firmware, private device data,
 external source checkouts and emulator state stay outside version control.
@@ -95,6 +97,17 @@ This project builds on [EKA2L1](https://github.com/EKA2L1/EKA2L1),
 [Abseil](https://github.com/abseil/abseil-cpp) and
 [mbedtls-symbian](https://github.com/shinovon/mbedtls-symbian).
 See [community credits](doc/docs/credits.md) for their contributions.
+
+For separately supplied ROMs and firmware, see EKA2L1's
+[Important Links](https://eka2l1.miraheze.org/wiki/Important_Links) and
+[Delight](https://www.symwld.com/delight/), the community firmware project.
+[Symbian World](https://www.symwld.com/) collects applications and resources;
+[NNProject](https://nnproject.cc/) develops mobile applications and utilities;
+the [Symbian World Telegram community](https://t.me/symbian_world) hosts
+discussion and support. The curated
+[hstsethi](https://github.com/hstsethi/awesome-symbian) and
+[gauravssnl](https://github.com/gauravssnl/awesome-symbian) Awesome Symbian lists
+link to software, tools and development resources.
 
 Project code is licensed under [Apache 2.0](LICENSE). Third-party sources and
 adaptations retain their original licenses and notices, including the separate

@@ -30,7 +30,7 @@ def doctor() -> dict:
         "next_steps": [
             "Import separately supplied ROM/Z using symbian firmware import",
             "Preserve firmware/ROM/Z artifacts with an offline reference copy",
-            "Build examples/e32_probe to test Clang/LLD and E32 conversion",
+            "Build probes/e32_probe to test Clang/LLD and E32 conversion",
             (
                 "Validate the executable against the selected device's"
                 " ABI/services"

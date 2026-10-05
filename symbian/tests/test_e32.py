@@ -11,7 +11,7 @@ from symbian.e32 import convert_pic_executable, inspect_image
 from symbian.status import Code, StatusError
 
 TOOLS_AVAILABLE = shutil.which("clang++") and shutil.which("ld.lld")
-PROJECT = Path(__file__).parents[2] / "examples/e32_probe"
+PROJECT = Path(__file__).parents[2] / "probes/e32_probe"
 
 
 @pytest.fixture

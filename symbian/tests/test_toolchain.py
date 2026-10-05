@@ -26,7 +26,7 @@ def test_real_clang_reproducibility_and_compilation_database(tmp_path):
 
 @pytest.mark.skipif(shutil.which("clang++") is None, reason="Clang unavailable")
 def test_example_build(tmp_path):
-    project = Path(__file__).parents[2] / "examples/abi_probe"
+    project = Path(__file__).parents[2] / "probes/abi_probe"
     report = toolchain.build(project, tmp_path / "output")
     assert Path(report["artifact"]).name == "abi_probe.o"
     assert report["elf"]["flags"] >> 24 == 5

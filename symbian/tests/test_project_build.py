@@ -11,7 +11,7 @@ import pytest
 from symbian import toolchain
 from symbian.status import Code, StatusError
 
-PROJECT = Path(__file__).parents[2] / "examples/e32_probe"
+PROJECT = Path(__file__).parents[2] / "probes/e32_probe"
 AVAILABLE = all(
     shutil.which(tool) for tool in ("clang++", "ld.lld", "cmake", "ninja")
 )

@@ -90,7 +90,7 @@ def test_c_dynamic_library_publishes_elf_dll_and_proxy(tmp_path, architecture):
     assert sdk.c_compiler is not None
     project = tmp_path / "C DLL source"
     shutil.copytree(
-        Path(__file__).parents[2] / "examples/dll_data_probe", project
+        Path(__file__).parents[2] / "probes/dll_data_probe", project
     )
     (project / "probe.c").write_text(
         "volatile unsigned SymbianProbeSeed = 0x808U;\n"
@@ -100,7 +100,7 @@ def test_c_dynamic_library_publishes_elf_dll_and_proxy(tmp_path, architecture):
         "}\n"
     )
     shutil.copyfile(
-        Path(__file__).parents[2] / "examples/import_probe/image.ld",
+        Path(__file__).parents[2] / "probes/import_probe/image.ld",
         project / "import.ld",
     )
     (project / "client.c").write_text(
