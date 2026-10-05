@@ -5,6 +5,8 @@ This builds executable inputs; it does not deploy Qt or publish an archive.
 """
 
 import argparse
+import hashlib
+import inspect
 import json
 import os
 import platform
@@ -433,6 +435,32 @@ def build_sdl(workspace, cc, cxx, jobs):
     run(["cmake", "--install", build])
 
 
+def dependency_cache_keys(source, cc, cxx):
+    """Hashes dependency recipes without unrelated frontend/SDK patches."""
+    common = [
+        subprocess.check_output([compiler, "--version"]).decode()
+        for compiler in (cc, cxx)
+    ] + [os.environ.get("MACOSX_DEPLOYMENT_TARGET", ""), inspect.getsource(run)]
+    ffmpeg = source / "src/external/ffmpeg"
+    revision = subprocess.check_output(
+        ["git", "-C", str(ffmpeg), "rev-parse", "HEAD"], text=True
+    ).strip()
+    recipes = {
+        "ffmpeg": [
+            revision,
+            (ROOT / "research/eka2l1/ffmpeg-linux-compat.patch").read_text(),
+            ffmpeg_arguments(Path("source"), Path("prefix"), *host(), cc, cxx),
+            inspect.getsource(build_ffmpeg),
+            LIBRARIES,
+        ],
+        "sdl": [SDL_VERSION, inspect.getsource(build_sdl)],
+    }
+    return {
+        name: hashlib.sha256(json.dumps([common, recipe]).encode()).hexdigest()
+        for name, recipe in recipes.items()
+    }
+
+
 def main():
     """Dispatches source, dependency, configure, build or test stages."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -440,6 +468,7 @@ def main():
         "stage",
         choices=(
             "acquire",
+            "cache-keys",
             "ffmpeg",
             "sdl",
             "configure",
@@ -485,6 +514,12 @@ def main():
             parser.error("Workspace already selects another source tree")
     else:
         source = acquire(workspace, system)
+    if args.stage == "cache-keys":
+        keys = dependency_cache_keys(source, args.cc, args.cxx)
+        with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+            for name, key in keys.items():
+                output.write(f"{name}={key}\n")
+        return
     dependencies = (
         args.dependency_sources.resolve() if args.dependency_sources else None
     )

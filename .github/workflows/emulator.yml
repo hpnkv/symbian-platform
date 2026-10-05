@@ -110,12 +110,15 @@ jobs:
         with:
           path: ${{ env.EMULATOR_WORKSPACE }}/source
           key: ${{ steps.source.outputs.cache-primary-key }}
+      - name: Select dependency caches by their own sources and build recipes
+        id: dependencies
+        run: python scripts/build_emulator.py cache-keys --workspace "$EMULATOR_WORKSPACE"
       - name: Restore native FFmpeg
         id: ffmpeg
         uses: actions/cache/restore@v4
         with:
           path: ${{ env.EMULATOR_WORKSPACE }}/dependencies/ffmpeg
-          key: emulator-ffmpeg-v1-${{ matrix.runner }}-${{ matrix.arch }}-${{ hashFiles('scripts/build_emulator.py', 'research/eka2l1/ffmpeg-linux-compat.patch') }}
+          key: emulator-ffmpeg-v2-${{ matrix.runner }}-${{ matrix.arch }}-${{ steps.dependencies.outputs.ffmpeg }}
       - name: Compile native FFmpeg once per host
         if: steps.ffmpeg.outputs.cache-hit != 'true'
         run: python scripts/build_emulator.py ffmpeg --workspace "$EMULATOR_WORKSPACE" --jobs 4
@@ -132,7 +135,7 @@ jobs:
             ${{ env.EMULATOR_WORKSPACE }}/dependencies/sdl
             ${{ env.EMULATOR_WORKSPACE }}/SDL2-2.30.11.tar.gz
             ${{ env.EMULATOR_WORKSPACE }}/SDL2-2.30.11
-          key: emulator-sdl-v1-${{ matrix.runner }}-${{ matrix.arch }}-${{ hashFiles('scripts/build_emulator.py') }}
+          key: emulator-sdl-v2-${{ matrix.runner }}-${{ matrix.arch }}-${{ steps.dependencies.outputs.sdl }}
       - name: Compile SDL from source once per host
         if: steps.sdl.outputs.cache-hit != 'true'
         run: python scripts/build_emulator.py sdl --workspace "$EMULATOR_WORKSPACE" --jobs 4

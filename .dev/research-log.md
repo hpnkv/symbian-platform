@@ -6323,3 +6323,15 @@ uses fifteen installed Homebrew source recipes. No provenance inventory is
 produced. SDK rehearsal 37340236532 passed all matrices and the archive/wheel
 audit; final installer-source rehearsal 37345071632 reuses the successful
 four-host/16-wheel matrix 37344027676.
+
+2026-10-05 dependency-cache separation: FFmpeg/SDL cache keys now hash their
+own pinned source/build recipes, compiler versions and deployment target rather
+than the entire emulator driver. Frontend patch/Qt changes preserve those
+keys, while FFmpeg option changes invalidate FFmpeg alone and compiler changes
+invalidate both dependencies. These are ephemeral Actions outputs, not source
+inventories. All 24 selected emulator helper/installer regressions pass;
+Black, Ruff and actionlint pass. EKA1 process/import/heap/copy and negative
+controls also pass all nineteen tests on each rebuilt development bundle,
+both CPU backends. Linux uses the published SDK's bin directory in PATH as
+well as SYMBIAN_LLVM_BIN for source-checkout probe builds. Logs:
+/tmp/symbian-emulator-network-fixes-eka1-{macos,linux}.log on their hosts.

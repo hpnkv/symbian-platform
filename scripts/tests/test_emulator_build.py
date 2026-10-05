@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 _SPEC = importlib.util.spec_from_file_location(
     "emulator_build", Path(__file__).parents[1] / "build_emulator.py"
@@ -113,6 +114,40 @@ class EmulatorBuildTest(unittest.TestCase):
             self.assertFalse(
                 any(x.startswith("--enable-nonfree") for x in args)
             )
+
+    def test_dependency_caches_follow_recipe_and_compiler_not_frontend(self):
+        def compiler(command, **kwargs):
+            return "revision" if kwargs.get("text") else b"clang version 20"
+
+        def keys():
+            return _BUILD.dependency_cache_keys(self.source, "clang", "clang++")
+
+        with mock.patch.object(
+            _BUILD.subprocess, "check_output", side_effect=compiler
+        ):
+            baseline = keys()
+            with mock.patch.object(_BUILD, "PATCHES", ("new-frontend",)):
+                with mock.patch.object(_BUILD, "QT_VERSION", "6.9.0"):
+                    self.assertEqual(baseline, keys())
+            arguments = _BUILD.ffmpeg_arguments
+            with mock.patch.object(
+                _BUILD,
+                "ffmpeg_arguments",
+                side_effect=lambda *args: arguments(*args) + ["--new-flag"],
+            ):
+                changed = keys()
+                self.assertNotEqual(baseline["ffmpeg"], changed["ffmpeg"])
+                self.assertEqual(baseline["sdl"], changed["sdl"])
+            with mock.patch.object(
+                _BUILD.subprocess,
+                "check_output",
+                side_effect=lambda command, **kwargs: (
+                    "revision" if kwargs.get("text") else b"clang version 21"
+                ),
+            ):
+                self.assertTrue(
+                    all(keys()[name] != baseline[name] for name in baseline)
+                )
 
 
 if __name__ == "__main__":

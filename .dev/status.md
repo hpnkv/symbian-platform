@@ -3010,3 +3010,10 @@ latest four-host/16-wheel matrix 37344027676 succeed; final installer-source
 rehearsal 37345071632 is running. Emulator production Qt6.8.3 builds, release,
 public-download acceptance and the guest Qt example remain open. Pointer and
 nullability revision remains deferred until those two work streams complete.
+
+Dependency cache keys now isolate FFmpeg/SDL recipes, pinned sources and
+compiler/deployment inputs from unrelated frontend changes; 24 selected build,
+source, release and installer regressions plus Black/Ruff/actionlint pass.
+All nineteen bounded EKA1 process/import/heap/copy and negative-control tests
+pass on both rebuilt development bundles and both CPU backends. This does not
+extend the restricted EKA1 API or runtime coverage.
