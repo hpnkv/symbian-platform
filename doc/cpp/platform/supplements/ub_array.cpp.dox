@@ -1,0 +1,388 @@
+// Copyright (c) 1994-2009 Nokia Corporation and/or its subsidiary(-ies).
+// All rights reserved.
+// This component and the accompanying materials are made available
+// under the terms of the License "Eclipse Public License v1.0"
+// which accompanies this distribution, and is available
+// at the URL "http://www.eclipse.org/legal/epl-v10.html".
+//
+// Initial Contributors:
+// Nokia Corporation - initial contribution.
+//
+// Contributors:
+//
+// Description:
+// e32\euser\cbase\ub_array.cpp
+//
+//
+
+// Documentation adapted from the implementation below.
+// SPDX-License-Identifier: EPL-1.0
+
+/** \fn IMPORT_C CArrayFixBase::CArrayFixBase(TBufRep aRep, TInt aRecordLength, TInt aGranularity)
+Constructor
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L304">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TAny * CArrayFixBase::At(TInt anIndex) const
+Index into the array.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L380">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TAny * CArrayFixBase::End(TInt anIndex) const
+Return a pointer past contiguous elements starting at anIndex.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L393">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TAny * CArrayFixBase::Back(TInt anIndex) const
+Return a pointer to contiguous elements before anIndex.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L407">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TAny * CArrayFixBase::ExpandL(TInt anIndex)
+Expand the array to make room for a new record at anIndex.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L475">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CArrayFixBase::Find(const TAny *aPtr, TKeyArrayFix &aKey, TInt &anIndex) const
+Find in the array using a sequential search.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L492">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CArrayFixBase::FindIsq(const TAny *aPtr, TKeyArrayFix &aKey, TInt &anIndex) const
+Find in the array using a binary search.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L524">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CArrayFixBase::InsertL(TInt anIndex, const TAny *aPtr)
+Insert a record into the array.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L543">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CArrayFixBase::InsertL(TInt anIndex, const TAny *aPtr, TInt aCount)
+Insert aCount records into the array.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L555">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CArrayFixBase::InsertRepL(TInt anIndex, const TAny *aPtr, TInt aReplicas)
+Insert aReplicas copies of a record into the array.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L574">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CArrayFixBase::InsertIsqL(const TAny *aPtr, TKeyArrayFix &aKey)
+Insert in sequence, no duplicates allowed.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L597">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CArrayFixBase::InsertIsqAllowDuplicatesL(const TAny *aPtr, TKeyArrayFix &aKey)
+Insert in sequence, allow duplicates.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L614">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CArrayFixBase::ResizeL(TInt aCount, const TAny *aPtr)
+Resize the array to contain aCount records, copying a record into any new slots.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L631">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CArrayFixBase::SetReserveFlatL(TInt aCount)
+Reserve space to contain aCount items. Only for flat arrays!
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L648">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CArrayFixBase::SetKey(TKeyArrayFix &aKey) const
+Set the key data.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L663">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt CArrayFixBase::CountR(const CBase *aPtr)
+Return the number of items in the array.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L675">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C const TAny * CArrayFixBase::AtR(const CBase *aPtr, TInt anIndex)
+Return the address of an item in the array.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L687">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CArrayVarBase::CArrayVarBase(TBufRep aRep, TInt aGranularity)
+Constructor
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L699">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TAny * CArrayVarBase::At(TInt anIndex) const
+Return a pointer to the data in the array.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L796">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TAny * CArrayVarBase::ExpandL(TInt anIndex, TInt aLength)
+Expand the array at anIndex.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L867">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CArrayVarBase::Find(const TAny *aPtr, TKeyArrayVar &aKey, TInt &anIndex) const
+Find using a sequential search.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L894">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CArrayVarBase::FindIsq(const TAny *aPtr, TKeyArrayVar &aKey, TInt &anIndex) const
+Find using a binary search.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L926">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CArrayVarBase::InsertL(TInt anIndex, const TAny *aPtr, TInt aLength)
+Insert a new record in the array.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L945">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CArrayVarBase::InsertIsqL(const TAny *aPtr, TInt aLength, TKeyArrayVar &aKey)
+Insert in sequence, no duplicates allowed.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L958">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CArrayVarBase::InsertIsqAllowDuplicatesL(const TAny *aPtr, TInt aLength, TKeyArrayVar &aKey)
+Insert in sequence, allow duplicates.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L975">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CArrayVarBase::SetKey(TKeyArrayVar &aKey) const
+Set the key data.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L992">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt CArrayVarBase::CountR(const CBase *aPtr)
+Return the number of items in the array.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L1004">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C const TAny * CArrayVarBase::AtR(const CBase *aPtr, TInt anIndex)
+Return the address of an item in the array.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L1016">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C CArrayPakBase::CArrayPakBase(TBufRep aRep, TInt aGranularity)
+Constructor
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L1028">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TAny * CArrayPakBase::At(TInt anIndex) const
+TAny points to the data associated with the record with anIndex.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L1155">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TAny * CArrayPakBase::ExpandL(TInt anIndex, TInt aLength)
+Expand the array at anIndex.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L1236">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CArrayPakBase::Find(const TAny *aPtr, TKeyArrayPak &aKey, TInt &anIndex) const
+Find using a sequential search.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L1259">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CArrayPakBase::FindIsq(const TAny *aPtr, TKeyArrayPak &aKey, TInt &anIndex) const
+Find using a binary search.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L1291">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CArrayPakBase::InsertL(TInt anIndex, const TAny *aPtr, TInt aLength)
+Inserts a record at index anIndex.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L1310">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CArrayPakBase::InsertIsqL(const TAny *aPtr, TInt aLength, TKeyArrayPak &aKey)
+Insert in sequence, no duplicates allowed.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L1323">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CArrayPakBase::InsertIsqAllowDuplicatesL(const TAny *aPtr, TInt aLength, TKeyArrayPak &aKey)
+Insert in sequence, allow duplicates.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L1340">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CArrayPakBase::SetKey(TKeyArrayPak &aKey) const
+Set the key data.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L1357">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt CArrayPakBase::GetOffset(TInt anIndex) const
+Return the offset into the buffer of the record with index anIndex;
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L1369">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void CArrayPakBase::BuildVarArrayL(CArrayVarFlat< TAny > *&aVarFlat)
+Make a copy of the current array as a CArrayVarFlat
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L1398">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C TInt CArrayPakBase::CountR(const CBase *aPtr)
+Return the number of items in the array.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L1418">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn static IMPORT_C const TAny * CArrayPakBase::AtR(const CBase *aPtr, TInt anIndex)
+Return the address of an item in the array.
+
+\par API status
+@internalComponent
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/euser/cbase/ub_array.cpp#L1430">Original Symbian implementation</a>)</small></p>
+*/

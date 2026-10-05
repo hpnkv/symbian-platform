@@ -6610,3 +6610,20 @@ on both hosts. Logs: /tmp/symbian-emulator-tagged-release-watch.log,
 /tmp/symbian-qt-public-release-{macos,linux}.log. These latter runtime logs must
 be read before claiming public-release acceptance. Pointer/nullability migration
 remains deferred until publication and those checks succeed.
+
+### Public emulator publication and original inline documentation — 2026-10-05
+
+Tagged workflow 37367814604 completed successfully and published all ten
+emulator-v0.1.0 assets. Fresh public PyPI/public-emulator installations on
+macOS arm64 and Linux x86_64 built, packaged, signed and launched hello_time
+and gui_app. The stricter Qt rendering/input/normal-exit tests passed on both
+CPU backends on each host (two cases each). Logs: /tmp/symbian-emulator-public-
+guide-result-macos.log and /tmp/symbian-qt-public-release-macos.log, with the
+corresponding Linux logs on the Linux host. Physical devices remain untested.
+
+Fifty additional original-symbol descriptions were generated from live pinned
+SymbianSource implementation/inline sources, covering CArray operations, Unicode
+surrogate helpers and buffer operations. Exact template/operator signature
+matching, API-only comment rejection and metadata suffix ordering have eight
+passing regression tests. Strict documentation builds passed; the complete
+original-header symbol index remains unfinished.

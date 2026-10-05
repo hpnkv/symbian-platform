@@ -170,6 +170,9 @@ def test_implementation_signatures_preserve_constness_and_initializers():
         "TBool TInetAddr::Match(const TInetAddr &aHost) const"
     ) == (("TInetAddr::Match", ("constTInetAddr&",), True), ["aHost"])
     assert _DOCS.implementation_key("TBool Match(TInt aValue)") is None
+    assert _DOCS.implementation_key(
+        "inline const T& Array< T >::operator[](TInt aIndex) const"
+    ) == (("Array<T>::operator[]", ("TInt",), True), ["aIndex"])
 
 
 def test_implementation_contract_renames_and_preserves_notice(
@@ -193,6 +196,11 @@ def test_implementation_contract_renames_and_preserves_notice(
         "<name>Output</name><definition>void Socket::Output</definition>"
         "<argsstring>(TDes &amp;aBuf) const</argsstring><type>void</type>"
         "<param><type>TDes &amp;</type><declname>aBuf</declname></param>"
+        "</memberdef>"
+        '<memberdef kind="function" id="range" prot="protected">'
+        "<name>Range</name><definition>TAny * Socket::Range</definition>"
+        "<argsstring>(TInt aIndex) const</argsstring><type>TAny *</type>"
+        "<param><type>TInt</type><declname>aIndex</declname></param>"
         "</memberdef></sectiondef></compounddef></doxygen>"
     )
     source = tmp_path / "socket.cpp"
@@ -208,6 +216,9 @@ def test_implementation_contract_renames_and_preserves_notice(
         "/** Wrong overload. */\n{ return 0; }\n"
         "EXPORT_C void Socket::Output(TDes &aBuffer) const\n"
         "/** Writes the address.\n@retval aBuffer Address text.\n*/\n{}\n"
+        "inline TAny *Socket::Range(TInt aIndex) const\n"
+        "// Returns the contiguous range containing the item.\n"
+        "/** @internalComponent */\n{ return 0; }\n"
     )
     monkeypatch.setattr(_DOCS, "format_examples", lambda source: source)
     _DOCS.generate_implementation(
@@ -221,11 +232,15 @@ def test_implementation_contract_renames_and_preserves_notice(
     assert "@param[out] aBuf Address text." in generated
     assert "@retval aBuf" not in generated
     assert "https://example.org/socket.cpp#L5" in generated
+    assert "Returns the contiguous range containing the item." in generated
+    assert generated.index("Returns the contiguous range") < generated.index(
+        "\\par API status"
+    )
     _DOCS.generate_implementation(
         xml,
         source,
         "https://example.org/socket.cpp",
         output,
-        {"open", "output"},
+        {"open", "output", "range"},
     )
     assert not (output / "socket.cpp.dox").exists()

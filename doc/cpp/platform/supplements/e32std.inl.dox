@@ -1,0 +1,81 @@
+// Copyright (c) 1994-2009 Nokia Corporation and/or its subsidiary(-ies).
+// All rights reserved.
+// This component and the accompanying materials are made available
+// under the terms of the License "Eclipse Public License v1.0"
+// which accompanies this distribution, and is available
+// at the URL "http://www.eclipse.org/legal/epl-v10.html".
+//
+// Initial Contributors:
+// Nokia Corporation - initial contribution.
+//
+// Contributors:
+//
+// Description:
+// e32\include\e32std.inl
+//
+//
+
+// Global leaving operator new
+// Documentation adapted from the implementation below.
+// SPDX-License-Identifier: EPL-1.0
+
+/** \fn static TBool TChar::IsSupplementary(TUint aChar)
+@param aChar The 32-bit code point value of a Unicode character.
+
+@return True, if aChar is supplementary character; false, otherwise.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/include/e32std.inl#L259">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn static TBool TChar::IsSurrogate(TText16 aInt16)
+@return True, if aText16 is high surrogate or low surrogate; false, otherwise.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/include/e32std.inl#L272">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn static TBool TChar::IsHighSurrogate(TText16 aInt16)
+@return True, if aText16 is high surrogate; false, otherwise.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/include/e32std.inl#L283">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn static TBool TChar::IsLowSurrogate(TText16 aInt16)
+@return True, if aText16 is low surrogate; false, otherwise.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/include/e32std.inl#L294">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn static TUint TChar::JoinSurrogate(TText16 aHighSurrogate, TText16 aLowSurrogate)
+Combine a high surrogate and a low surrogate into a supplementary character.
+
+@return The 32-bit code point value of the generated Unicode supplementary
+        character.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/include/e32std.inl#L305">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn static TText16 TChar::GetHighSurrogate(TUint aChar)
+Retrieve the high surrogate of a supplementary character.
+
+@param aChar The 32-bit code point value of a Unicode character.
+
+@return High surrogate of aChar, if aChar is a supplementary character;
+        aChar itself, if aChar is not a supplementary character.
+
+@see TChar::GetLowSurrogate
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/include/e32std.inl#L319">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn static TText16 TChar::GetLowSurrogate(TUint aChar)
+Retrieve the low surrogate of a supplementary character.
+
+@param aChar The 32-bit code point value of a Unicode character.
+
+@return Low surrogate of aChar, if aChar is a supplementary character;
+        zero, if aChar is not a supplementary character.
+
+@see TChar::GetHighSurrogate
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.kernelhwsrv/blob/0c3208650587ac0230aed8a74e9bddb5288023eb/kernel/eka/include/e32std.inl#L337">Original Symbian implementation</a>)</small></p>
+*/

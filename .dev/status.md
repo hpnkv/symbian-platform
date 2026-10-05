@@ -3145,3 +3145,15 @@ audit gate and an owned background watcher will replay actual public-download
 guide and Qt checks on both owner hosts after publication succeeds. Read the
 latest research-log entry and logs before claiming those gates complete.
 The mutable-reference/nullability migration has not started.
+
+### Published emulator and public-download acceptance — 2026-10-05
+
+The tagged workflow 37367814604 succeeded: emulator-v0.1.0 now contains all
+ten audited assets. Fresh public wheel/default emulator installations pass
+hello_time/gui_app build, packaging, signing, launch on macOS arm64 and Linux
+x86_64. Both Qt CPU backends pass the stricter real-render/input/normal-exit
+checks on each host. Physical-device execution remains unverified. Fifty more
+original symbols have source-backed descriptions (eight generator tests pass);
+full index coverage remains outstanding. SDK-owned application startup/import
+machinery is now required across applications, templates, libraries and probes.
+The repository-wide mutable-reference/nullability migration has not begun.

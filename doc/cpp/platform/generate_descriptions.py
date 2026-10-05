@@ -422,8 +422,13 @@ def generate(xml, cache, output):
 
 def implementation_key(declaration):
     """Identifies a qualified definition by argument types and constness."""
+    owner = r"(?:[A-Za-z_]\w*(?:\s*<[^<>]*>)?\s*::\s*)+"
+    method = (
+        r"(?:~?[A-Za-z_]\w*|operator\s*"
+        r"(?:\(\)|\[\]|new(?:\[\])?|delete(?:\[\])?|[+*/<>=!&|^~%,\-]+))"
+    )
     match = re.search(
-        r"([A-Za-z_][\w:]*::[~A-Za-z_][\w]*)\s*\(([^()]*)\)\s*(const)?",
+        rf"({owner}{method})\s*\(([^()]*)\)\s*(const)?",
         declaration,
     )
     if not match:
@@ -439,14 +444,15 @@ def implementation_key(declaration):
             return None
         arguments.append(signature(argument[: name.start()]))
         names.append(name[1])
-    return (match[1], tuple(arguments), bool(match[3])), names
+    return (signature(match[1]), tuple(arguments), bool(match[3])), names
 
 
 def generate_implementation(xml, source, url, output, documented=()):
     """Copies documented definitions after exact indexed type matching.
 
-    Handles definitions whose documentation follows their signature, as in
-    in_addr.cpp. Other source layouts need a separate supported parser.
+    Handles exported and inline definitions with documentation after their
+    signature. Exact indexed signatures keep overloaded and templated APIs
+    distinct; undocumented implementations remain unresolved.
     """
     indexed = {}
     for entry in ET.parse(xml / "index.xml").findall("compound"):
@@ -478,7 +484,9 @@ def generate_implementation(xml, source, url, output, documented=()):
     ):
         raise ValueError("Implementation needs its original EPL notice")
     pattern = re.compile(
-        r"\bEXPORT_C\s+(?P<declaration>[^;{}]*?)\s*"
+        r"\b(?:EXPORT_C|inline)\s+"
+        r"(?P<declaration>(?:(?!//|/\*)[^;{}])*?)\s*"
+        r"(?P<summary>(?://[^\n]*\n\s*)*)"
         r"/\*\*(?P<comment>.*?)\*/\s*\{",
         re.DOTALL,
     )
@@ -510,6 +518,23 @@ def generate_implementation(xml, source, url, output, documented=()):
                 body,
             )
         body = filter_comments("/**\n" + body + "\n*/")[3:-2].strip()
+        # Internal methods sometimes have a descriptive line comment followed
+        # by a documentation block containing only API visibility. Import that
+        # actual summary, rather than mistaking visibility for behavior.
+        if not body.split("\\par API status", 1)[0].strip():
+            summary = clean(
+                re.sub(r"^\s*//\s*", "", match["summary"], flags=re.MULTILINE)
+            )
+            if not summary:
+                continue
+            summary = re.sub(
+                r"\b[A-Za-z_]\w*\b",
+                lambda word, mapping=replacements: mapping.get(
+                    word[0], word[0]
+                ),
+                summary,
+            )
+            body = escape(summary) + "\n\n" + body
         line = original.count("\n", 0, match.start()) + 1
         suffix = (
             f'<p><small>(generated from <a href="{url}#L{line}">'
@@ -521,13 +546,14 @@ def generate_implementation(xml, source, url, output, documented=()):
     destination = output / (source.name + ".dox")
     output.mkdir(parents=True, exist_ok=True)
     if comments:
+        formatted = format_examples(
+            notice[0]
+            + "// Documentation adapted from the implementation below.\n"
+            + "// SPDX-License-Identifier: EPL-1.0\n\n"
+            + "\n".join(comments)
+        )
         destination.write_text(
-            format_examples(
-                notice[0]
-                + "// Documentation adapted from the implementation below.\n"
-                + "// SPDX-License-Identifier: EPL-1.0\n\n"
-                + "\n".join(comments)
-            )
+            "\n".join(line.rstrip() for line in formatted.splitlines()) + "\n"
         )
     else:
         destination.unlink(missing_ok=True)
