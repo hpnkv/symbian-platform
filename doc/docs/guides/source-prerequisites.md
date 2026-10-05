@@ -17,7 +17,7 @@ inputs. Follow the tab for your host system below.
     brew install uv cmake ninja lld llvm googletest openssl@3
     ```
 
-=== "Linux (provisional)"
+=== "Linux"
 
     On Ubuntu 24.04 or a comparable distribution, install a C++ toolchain,
     CMake 3.28+, Ninja 1.12+, Clang/LLD and the bootstrap prerequisites. Package
@@ -39,12 +39,11 @@ inputs. Follow the tab for your host system below.
     export PATH="$HOME/.local/bin:$PATH"
     ```
 
-    Host format libraries build with Clang 20. The pinned LLVM 23 libc++
+    Host format libraries require a C++20 compiler. The pinned LLVM 23 libc++
     guest sources require **Clang 23 or later**, with matching LLD, archive
     tools and `clang-scan-deps`. Select that toolchain before SDK export.
     Official LLVM Linux binaries may require older ICU shared libraries;
-    check `ldd` on every tool. An external ICU workaround is not a
-    redistributable tool closure.
+    check `ldd` on every tool and install any missing runtime libraries.
 
     Start a new shell if the uv installer added its directory to your `PATH`.
     The [uv installer](https://docs.astral.sh/uv/getting-started/installation/)
@@ -160,3 +159,73 @@ The target firmware must supply compatible system DLLs and services.
 
 The preparation report is `.symbian/gui-sdk/sdk-report.json`; each proxy also
 retains its own source, build trees, input digests and `report.json`.
+
+## 4. Prepare the runtime and SDK sources
+
+To build an installed native SDK, also acquire the runtime, camera and
+application-resource sources. The following commands supplement the five
+platform checkouts above; skip clones for checkouts you already prepared.
+
+```sh
+git clone --filter=blob:none --no-checkout \
+  https://github.com/llvm/llvm-project.git research/upstream/llvm-project
+git -C research/upstream/llvm-project checkout \
+  85ac560262434c9ccfc0c183ec22d4138ed647fb
+git clone --filter=blob:none --no-checkout \
+  https://github.com/abseil/abseil-cpp.git research/upstream/abseil-cpp
+git -C research/upstream/abseil-cpp checkout \
+  5650e9cf76d3be4318d5fa3af38ee483ddfd5e4a
+git clone --filter=blob:none --no-checkout \
+  https://github.com/microsoft/mimalloc.git research/upstream/mimalloc
+git -C research/upstream/mimalloc checkout \
+  d4881d338125e1cb7c47ba4cfb398d6f7c0c8d45
+git clone --filter=blob:none --no-checkout \
+  https://github.com/SymbianSource/oss.FCL.sf.os.mm.git research/upstream/mm
+git -C research/upstream/mm checkout \
+  ebaa78373866f90dbf706e8d4eeb59ff65f1e107
+git clone --filter=blob:none --no-checkout \
+  https://github.com/SymbianSource/oss.FCL.sf.mw.appsupport.git \
+  research/upstream/appsupport
+git -C research/upstream/appsupport checkout \
+  3efd2b6c5ad920873846770a70f9769721e494c8
+git clone --filter=blob:none --no-checkout \
+  https://github.com/nghttp2/nghttp2.git third_party/nghttp2
+git -C third_party/nghttp2 checkout \
+  85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2
+mkdir -p .symbian
+git clone --filter=blob:none --no-checkout \
+  https://github.com/SymbianRevive/symbian-build.git .symbian/rcomp-epl-research
+git -C .symbian/rcomp-epl-research checkout \
+  d3c2eadd3ff7826bdf9e1d92f447c357571af18b
+```
+
+Apply the three maintained LLVM source patches from the repository root.
+They supply the Symbian clock and atomic contracts and ARMv5-compatible
+software floating-point instructions:
+
+```sh
+git -C research/upstream/llvm-project apply \
+  ../../../research/llvm/symbian-libcxx-lock-free.patch
+git -C research/upstream/llvm-project apply \
+  ../../../research/llvm/symbian-libcxx-chrono.patch
+git -C research/upstream/llvm-project apply \
+  ../../../research/llvm/symbian-compiler-rt-armv5-softdouble.patch
+```
+
+Apply each patch once. To check an existing patched checkout, use
+`git apply --reverse --check` with the same path; preserve any other local
+changes. SDK installation builds the resource compiler with its maintained
+host patch and copies its licence alongside the installed tool.
+
+With the host tools installed, Clang 23 selected and the GUI headers staged:
+
+```sh
+symbian sdk install ~/dev/symbian-sdk --workspace "$PWD"
+symbian init ~/dev/hello_time --name hello_time --non-interactive
+symbian app build --project ~/dev/hello_time
+```
+
+The SDK provides target headers, static libraries, ordinal proxies and build
+tools. System services still come from the target firmware. For packaging,
+signing and installation on a device, continue with
+[Build an application](building.md).

@@ -36,7 +36,23 @@ not redistributed. An import library describes a system DLL's exports; it does
 not replace that DLL. Test your application's services and installation policy
 on its target device before deployment.
 
-## Start from source
+## Install the host tools
+
+Use Python 3.11–3.14 on macOS 15+ or Linux with glibc 2.28+, on x86_64 or
+arm64:
+
+```sh
+python3 -m venv ~/.venvs/symbian
+source ~/.venvs/symbian/bin/activate
+pip install symbian-platform
+symbian doctor
+```
+
+For application builds, also select a native target SDK. The
+[Getting started guide](doc/docs/getting-started.md) covers that step and keeps
+a separate path for working from a source checkout.
+
+## Work from a source checkout
 
 Use the [macOS/Linux prerequisites](doc/docs/guides/source-prerequisites.md)
 and [host build guide](doc/docs/guides/host-build.md) to prepare dependencies.

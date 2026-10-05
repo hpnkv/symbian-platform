@@ -7,6 +7,23 @@ version and host architecture; use the CLI if the Console's renderer is absent.
 
 ## 1. Install dependencies
 
+For the installed host tools, use Python 3.11–3.14 and a virtual environment:
+
+```sh
+sudo apt update
+sudo apt install python3 python3-venv
+python3 -m venv ~/.venvs/symbian
+source ~/.venvs/symbian/bin/activate
+pip install symbian-platform
+symbian doctor
+```
+
+The wheels support x86_64 and aarch64 with glibc 2.28 or later. The native host
+libraries are included; building applications also requires the native target
+SDK. Follow [Getting started](../getting-started.md) for SDK selection.
+
+### Building from a source checkout
+
 Follow the **Linux** tab in [Prepare tools and source](source-prerequisites.md)
 for Ubuntu dependency installation, static host libraries and the Python
 source environment. Use CMake 3.28+, Ninja 1.12+ and matching LLVM tools.

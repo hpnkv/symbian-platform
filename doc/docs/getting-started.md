@@ -20,7 +20,8 @@ device before deployment.
 
 ## 1. Install the host tools
 
-Install the distribution in a virtual environment on macOS or Linux:
+Use Python 3.11–3.14 on macOS 15 or later, or Linux with glibc 2.28 or later,
+on x86_64 or arm64. Install the distribution in a virtual environment:
 
 ```sh
 python3 -m venv ~/.venvs/symbian
@@ -31,6 +32,7 @@ symbian doctor
 ```
 
 The distribution provides the `symbian` command and native host libraries.
+On Ubuntu, install `python3-venv` if `python3 -m venv` is unavailable.
 Application builds also need an installed native SDK and its ARM compiler;
 firmware and the emulator are needed for emulator execution. Follow
 [Create a standalone application](guides/projects.md) for SDK selection, or
