@@ -5949,3 +5949,12 @@ and exit(system_status) could incorrectly report success. A maintained POSIX
 spawn/wait patch removes the shell/buffer and propagates helper failure.
 Both application sources are included in the native tree. The counter uses
 installed platform headers without requiring a research source staging tree.
+
+## Native release compiler extraction — 2026-10-05
+
+Manual release 37317673742 reused all four exact-source host builds, then failed
+before guest compilation: LLVM 23.1.2's zstd frame requests a 1 GiB window,
+while GNU tar's default zstd invocation accepts only 128 MiB. Both archive
+listing and selective extraction now explicitly use `zstd --long=30`.
+The pinned archive digest remains checked before decompression. Four-host
+native assembly and publication remain pending this release gate.

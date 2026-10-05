@@ -69,7 +69,13 @@ def main() -> None:
             archive = temporary / "llvm.tar.zst"
             download(url, archive, digest)
             members = subprocess.check_output(
-                ["tar", "--zstd", "-tf", str(archive)], text=True
+                [
+                    "tar",
+                    "--use-compress-program=zstd --long=30",
+                    "-tf",
+                    str(archive),
+                ],
+                text=True,
             ).splitlines()
             tools = {
                 "clang",
@@ -99,7 +105,7 @@ def main() -> None:
             subprocess.run(
                 [
                     "tar",
-                    "--zstd",
+                    "--use-compress-program=zstd --long=30",
                     "-xf",
                     str(archive),
                     "-C",
