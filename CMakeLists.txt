@@ -325,7 +325,8 @@ set(SYMBIAN_GUI_SDK_INCLUDE "${CMAKE_SOURCE_DIR}/.symbian/gui-sdk/include"
 if(SYMBIAN_BUILD_GUI_EXAMPLE)
   if(EXISTS "${SYMBIAN_GUI_SDK_INCLUDE}/w32std.h" AND
      CMAKE_CXX_COMPILER_ID MATCHES "^(AppleClang|Clang)$")
-    add_subdirectory(examples/gui_app EXCLUDE_FROM_ALL)
+    include(symbian/toolchain/cmake/SymbianSdk.cmake)
+    symbian_add_guest_subdirectory(examples/gui_app)
     # CLion can run an executable target. A custom build target only executes
     # its command during Build and has no application for the Run button.
     set(SYMBIAN_HOST_PYTHON "${CMAKE_SOURCE_DIR}/.venv/bin/python" CACHE FILEPATH

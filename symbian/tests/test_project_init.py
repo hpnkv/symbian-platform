@@ -12,6 +12,7 @@ import tarfile
 import time
 import tomllib
 import xml.etree.ElementTree as ET
+from importlib.resources import files
 from pathlib import Path
 
 import pytest
@@ -256,7 +257,11 @@ def test_cli_initial_build_sdk_copy_and_moved_project(tmp_path):
     assert (prefix / "include/config/stdarg_e.h").is_file()
     assert not (prefix / "include/a11").exists()
     template = prefix / "lib/python/symbian/project/templates/model.cc"
-    template.write_text("// Selected SDK template.\n" + template.read_text())
+    embedded_python = template.exists()
+    if embedded_python:
+        template.write_text(
+            "// Selected SDK template.\n" + template.read_text()
+        )
     project = tmp_path / "original app"
     initialized = json.loads(
         cli(
@@ -271,15 +276,28 @@ def test_cli_initial_build_sdk_copy_and_moved_project(tmp_path):
     )
     assert initialized["result"]["initial_build"] is True
     assert not (project / "sdk.json").exists()
-    assert (project / ".clang-format").read_bytes() == (
+    expected_format = (
         prefix / "lib/python/symbian/project/templates/.clang-format"
-    ).read_bytes()
-    assert 'libpthread" ON)' in (project / "CMakeLists.txt").read_text()
-    assert (
-        (project / "model.cc")
-        .read_text()
-        .startswith("// Selected SDK template.")
+        if embedded_python
+        else files("symbian.project").joinpath("templates", ".clang-format")
     )
+    assert (
+        project / ".clang-format"
+    ).read_bytes() == expected_format.read_bytes()
+    assert 'libpthread" ON)' in (project / "CMakeLists.txt").read_text()
+    if embedded_python:
+        assert (
+            (project / "model.cc")
+            .read_text()
+            .startswith("// Selected SDK template.")
+        )
+    else:
+        assert not (prefix / "lib/python").exists()
+        assert (project / "model.cc").read_bytes() == (
+            files("symbian.project")
+            .joinpath("templates", "model.cc")
+            .read_bytes()
+        )
     assert (project / ".symbian/build/relocated.elf").is_file()
     moved = tmp_path / "moved app"
     project.rename(moved)
@@ -304,7 +322,7 @@ def test_cli_initial_build_sdk_copy_and_moved_project(tmp_path):
     assert str(prefix / "include/platform") in command
     imported = subprocess.run(
         [
-            str(prefix / "bin/python"),
+            str(copied.python),
             "-c",
             "import symbian.cli, symbian._native; "
             "print(symbian.cli.__file__); print(symbian._native.__file__)",
@@ -313,9 +331,13 @@ def test_cli_initial_build_sdk_copy_and_moved_project(tmp_path):
         capture_output=True,
         text=True,
     ).stdout.splitlines()
-    assert all(
-        Path(path).is_relative_to(prefix / "lib/python") for path in imported
-    )
+    if embedded_python:
+        assert all(
+            Path(path).is_relative_to(prefix / "lib/python")
+            for path in imported
+        )
+    else:
+        assert all(Path(path).is_file() for path in imported)
     for selected in (original.prefix, prefix):
         (moved / "sdk-location.json").write_text(
             json.dumps({"sdk": os.path.relpath(selected, moved)})

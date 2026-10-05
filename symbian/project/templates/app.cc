@@ -258,7 +258,7 @@ extern "C" void AppHomeTime(ClockTime* result) {
              date.Hour(), date.Minute(),    date.Second()};
 }
 
-extern "C" int GuiMain() {
+int main() {
   RWsSession session;
   TInt result = session.Connect();
   if (result != KErrNone) {

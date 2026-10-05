@@ -1,4 +1,9 @@
 # Symbian ARM EABI cross toolchain. ISA, host tools and target ABI are separate.
+if(NOT DEFINED SYMBIAN_TARGET_ARCH AND
+   EXISTS "${CMAKE_SOURCE_DIR}/symbian-project.json")
+  file(READ "${CMAKE_SOURCE_DIR}/symbian-project.json" project_settings)
+  string(JSON SYMBIAN_TARGET_ARCH GET "${project_settings}" preferences architecture)
+endif()
 set(SYMBIAN_TARGET_ARCH armv6 CACHE STRING "Guest ISA: armv6 or armv5t")
 set_property(CACHE SYMBIAN_TARGET_ARCH PROPERTY STRINGS armv6 armv5t)
 if(NOT SYMBIAN_TARGET_ARCH MATCHES "^(armv5t|armv6)$")
@@ -11,36 +16,8 @@ set(CMAKE_SYSTEM_PROCESSOR "${SYMBIAN_TARGET_ARCH}")
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY CACHE STRING
     "Cross-compiler probes must not link a host executable" FORCE)
 
-# Root IDE profiles follow the activated SDK, including after an SDK export.
-# Standalone application profiles keep their explicit sdk.cmake selection.
-if(SYMBIAN_USE_ACTIVE_SDK)
-  if(DEFINED ENV{SYMBIAN_SDK_MANIFEST} AND
-     NOT "$ENV{SYMBIAN_SDK_MANIFEST}" STREQUAL "")
-    set(active_sdk_manifest "$ENV{SYMBIAN_SDK_MANIFEST}")
-    if(NOT EXISTS "${active_sdk_manifest}")
-      message(FATAL_ERROR "SDK manifest does not exist: ${active_sdk_manifest}")
-    endif()
-  else()
-    if(DEFINED ENV{XDG_CONFIG_HOME})
-      set(active_sdk_file "$ENV{XDG_CONFIG_HOME}/symbian/active-sdk.json")
-    else()
-      set(active_sdk_file "$ENV{HOME}/.config/symbian/active-sdk.json")
-    endif()
-    if(NOT EXISTS "${active_sdk_file}")
-      message(FATAL_ERROR "No active SDK; run symbian sdk install")
-    endif()
-    file(READ "${active_sdk_file}" active_sdk_json)
-    string(JSON active_sdk_manifest ERROR_VARIABLE active_sdk_error
-           GET "${active_sdk_json}" manifest)
-    if(active_sdk_error OR NOT EXISTS "${active_sdk_manifest}")
-      message(FATAL_ERROR "Active SDK manifest is invalid: ${active_sdk_file}")
-    endif()
-  endif()
-  get_filename_component(active_sdk_prefix "${active_sdk_manifest}" DIRECTORY)
-  set(SYMBIAN_SDK_PREFIX "${active_sdk_prefix}" CACHE PATH
-      "Active SDK used by the root guest IDE profile" FORCE)
-endif()
-
+include("${CMAKE_CURRENT_LIST_DIR}/SymbianSdk.cmake")
+symbian_select_sdk()
 if(SYMBIAN_SDK_PREFIX AND EXISTS "${SYMBIAN_SDK_PREFIX}/bin/clang++")
   set(CMAKE_CXX_COMPILER "${SYMBIAN_SDK_PREFIX}/bin/clang++")
   set(CMAKE_C_COMPILER "${SYMBIAN_SDK_PREFIX}/bin/clang")
@@ -50,10 +27,8 @@ else()
 endif()
 set(CMAKE_ASM_COMPILER "${CMAKE_CXX_COMPILER}")
 if(SYMBIAN_SDK_PREFIX AND EXISTS "${SYMBIAN_SDK_PREFIX}/bin/llvm-ar")
-  set(CMAKE_AR "${SYMBIAN_SDK_PREFIX}/bin/llvm-ar" CACHE FILEPATH
-      "Symbian ARM archiver" FORCE)
-  set(CMAKE_RANLIB "${SYMBIAN_SDK_PREFIX}/bin/llvm-ranlib" CACHE FILEPATH
-      "Symbian ARM archive indexer" FORCE)
+  set(CMAKE_AR "${SYMBIAN_SDK_PREFIX}/bin/llvm-ar")
+  set(CMAKE_RANLIB "${SYMBIAN_SDK_PREFIX}/bin/llvm-ranlib")
 endif()
 if(SYMBIAN_SDK_PREFIX AND EXISTS "${SYMBIAN_SDK_PREFIX}/bin/ld.lld")
   set(symbian_lld "${SYMBIAN_SDK_PREFIX}/bin/ld.lld")
@@ -62,7 +37,10 @@ else()
 endif()
 # CMake can seed CMAKE_LINKER with the host linker during compiler detection;
 # an ARM executable must always use the selected SDK's LLD driver.
-set(CMAKE_LINKER "${symbian_lld}" CACHE FILEPATH "Symbian ARM linker" FORCE)
+if(NOT SYMBIAN_WORKSPACE_BUILD)
+  set(CMAKE_LINKER "${symbian_lld}" CACHE FILEPATH "Symbian ARM linker" FORCE)
+endif()
+set(CMAKE_LINKER "${symbian_lld}")
 set(CMAKE_CXX_COMPILER_TARGET ${SYMBIAN_TARGET_ARCH}-none-eabi)
 set(CMAKE_C_COMPILER_TARGET ${SYMBIAN_TARGET_ARCH}-none-eabi)
 set(CMAKE_ASM_COMPILER_TARGET ${SYMBIAN_TARGET_ARCH}-none-eabi)
@@ -83,7 +61,21 @@ set(CMAKE_CXX_LINK_EXECUTABLE
     "<CMAKE_LINKER> -m armelf --target1-abs --no-undefined --emit-relocs --build-id=none <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
 set(CMAKE_C_LINK_EXECUTABLE
     "<CMAKE_LINKER> -m armelf --target1-abs --no-undefined --emit-relocs --build-id=none <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+# A Symbian shared-library target publishes an ordinal DSO for its consumers.
+# Its SDK post-link step retains the implementation ELF and publishes the E32
+# DLL; CMake therefore has a genuine library target with ordinary properties.
+set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
+set(CMAKE_CXX_CREATE_SHARED_LIBRARY
+    "<CMAKE_LINKER> -m armelf --target1-abs --no-undefined --emit-relocs --build-id=none <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+set(CMAKE_C_CREATE_SHARED_LIBRARY "${CMAKE_CXX_CREATE_SHARED_LIBRARY}")
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
+if(SYMBIAN_SDK_PREFIX)
+  if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/SymbianApp.cmake")
+    list(PREPEND CMAKE_MODULE_PATH "${SYMBIAN_SDK_PREFIX}/cmake")
+  else()
+    list(APPEND CMAKE_MODULE_PATH "${SYMBIAN_SDK_PREFIX}/cmake")
+  endif()
+endif()
 
 # Each Mbed TLS export carries one architecture's static archives. Merely
 # making the package discoverable does not add it to an application's link.

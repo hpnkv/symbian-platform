@@ -1,1 +1,10 @@
-{"version": 6, "configurePresets": [{"name": "symbian-pic", "generator": "Ninja"}]}
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "symbian-pic",
+      "generator": "Ninja",
+      "toolchainFile": "${sourceDir}/../../symbian/toolchain/cmake/symbian-arm.cmake"
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 
 EXTRA = {
+    "qt4": ("qt/qt", "1e0021d8d9e374ae3959fcd4eac5d9e7238cbc54"),
     "llvm-project": (
         "llvm/llvm-project",
         "85ac560262434c9ccfc0c183ec22d4138ed647fb",

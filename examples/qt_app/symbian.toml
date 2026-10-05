@@ -4,7 +4,6 @@ name = "qt_app"
 kind = "e32-import-experiment"
 cmake_preset = "symbian-pic"
 uid3 = 0xe0000821
-import_proxies = [".symbian/qt/proxies/euser/euser.dso", ".symbian/qt/proxies/qtcore/qtcore.dso", ".symbian/qt/proxies/qtgui/qtgui.dso", "${sdk}/proxies/libc/libc.dso", "${sdk}/proxies/libm/libm.dso", "${sdk}/proxies/libpthread/libpthread.dso", "${sdk}/proxies/drtaeabi/drtaeabi.dso"]
 
 [package]
 uid = 0xe0000822

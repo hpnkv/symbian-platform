@@ -110,7 +110,7 @@ uv run black --check symbian scripts
 uv run ruff check symbian scripts
 clang-format --dry-run --Werror \
   examples/gui_app/app.cc examples/gui_app/window_server.cc \
-  examples/gui_app/startup.cc \
+  symbian/toolchain/cmake/exe_startup.cc \
   examples/gui_app/model.h cpp/tests/gui_model_test.cc
 uv run pytest -q
 ```

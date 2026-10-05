@@ -23,35 +23,33 @@ replace the Qt DLLs in another device's firmware with this example's imports.
 
 ## Prepare the example
 
-Obtain the application source and the original Qt headers. You do not need to
-build desktop Qt or install Nokia's Windows tools:
+The native SDK supplies the original QtCore/QtGui headers, complete import
+libraries, compatibility settings and allocator hook. Obtain the example source:
 
 ```sh
 git clone https://github.com/hpnkv/symbian-platform.git
-git clone --depth 1 --branch v4.8.1 https://github.com/qt/qt.git qt-4.8.1
 cd symbian-platform
-python examples/qt_app/prepare.py --qt-source ../qt-4.8.1
 symbian build --project examples/qt_app --output .symbian/qt-app
 symbian inspect --format e32 .symbian/qt-app/qt_app.exe
 ```
 
-Preparation copies original QtCore/QtGui headers and their license notices,
-uses the original Qt allocator hook, and generates selected ordinal imports
-with the SDK's native proxy implementation. Generated inputs stay in the
-example's ignored `.symbian/qt` directory. `sdk-location.json` selects the
-installed native SDK; `--sdk /path/to/sdk` chooses another installation.
-The helper downloads the original EUSER export definition when needed;
-`--kernel-def /path/to/euseru.def` supports preparation without that download.
+The application build is an ordinary CMake target:
 
-On Debian or Ubuntu, install the host utilities used during preparation:
-
-```sh
-sudo apt-get update
-sudo apt-get install git perl cmake ninja-build
+```cmake
+include(SymbianApp)
+symbian_add_executable(qt_app app.cc)
+target_link_libraries(qt_app PRIVATE Symbian::Runtime Symbian::QtGui)
 ```
 
-On macOS, use `brew install cmake ninja`; Git and Perl come with the system
-development tools. Clang and LLD come from the native SDK on both hosts.
+`Symbian::QtGui` brings in QtCore. The SDK generates the needed E32 imports
+from the libraries actually linked; applications need no symbol list or
+startup files. `sdk-location.json` can select another installed native SDK.
+If `Symbian::QtGui` is unavailable, install a native SDK containing guest Qt
+support. Older SDK distributions do not provide this target.
+
+On Debian or Ubuntu, install Git with `sudo apt-get install git`; on macOS,
+install the command-line development tools with `xcode-select --install`.
+The native SDK supplies Clang, LLD, CMake and Ninja on both hosts.
 
 ## Run the button
 

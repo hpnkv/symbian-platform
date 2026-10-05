@@ -4,15 +4,6 @@ name = "gui_app"
 kind = "e32-import-experiment"
 cmake_preset = "symbian-pic"
 uid3 = 0xe0000811
-import_proxies = [
-  "${sdk}/proxies/euser/euser.dso",
-  "${sdk}/proxies/ws32/ws32.dso",
-  "${sdk}/proxies/gdi/gdi.dso",
-  "${sdk}/proxies/libc/libc.dso",
-  "${sdk}/proxies/libm/libm.dso",
-  "${sdk}/proxies/libpthread/libpthread.dso",
-  "${sdk}/proxies/drtaeabi/drtaeabi.dso",
-]
 
 [package]
 uid = 0xe0000812

@@ -16,14 +16,12 @@ The project is divided as follows:
 | `model.h` | Pure counter, geometry, pointer hit testing and integer division |
 | `app.cc` | C++20 launcher using shared ownership and `std::thread` for the event loop |
 | `window_server.cc` | Original SDK types, Window Server connection, drawing and request loop |
-| `startup.S` | ARM entry marker and ARM-to-Thumb entry transition |
-| `startup.cc` | Checked thread-create layout, SDK heap setup, process initialization and `User::Exit` |
-| `image.ld` | Retained-relocation ELF transport with independent code/data mappings and eager import tables |
-| `CMakeLists.txt`, `CMakePresets.json` | Target compilation, SDK definitions, debug flags and source path maps |
-| `symbian.toml` | E32 import profile, development UID `0xe0000811`, explicit OS import proxies and package identity |
+| `CMakeLists.txt`, `CMakePresets.json` | Application sources, library dependencies and build preset |
+| `symbian.toml` | Development UID `0xe0000811` and package identity |
 
-SDK source preparation uses `research/gui_app/source-profile.json`; its input
-digests are build data and are outside the application project.
+The SDK supplies startup, linker layout, platform headers, complete OS import
+libraries and debug path mappings. Applications select libraries with
+`target_link_libraries`; the SDK derives E32 imports from the link graph.
 
 The model is ordinary C++ with no SDK or host library dependency. It caps the
 counter at 9999, treats hit regions as half-open rectangles, and ignores input
@@ -49,9 +47,9 @@ Each increment schedules a 300-ms marker, and Reset cancels pending marker work.
 On exit, cancellation drains before statuses disappear and GUI objects close
 before the session.
 
-The process entry checks the thread-create layout and calls
+The SDK-owned process entry checks the thread-create layout and calls
 `UserHeap::SetupThreadHeap`. For the primary thread it initializes the process,
-runs global initializers, creates `CTrapCleanup`, calls `GuiMain`, runs finalizers
+runs global initializers, creates `CTrapCleanup`, calls standard `main`, runs finalizers
 and exits through `User::Exit`. Secondary threads enter their callback on the
 SDK-created thread heap. Failure to allocate cleanup state returns
 `KErrNoMemory`; unexpected entry reasons call `User::Invariant`.

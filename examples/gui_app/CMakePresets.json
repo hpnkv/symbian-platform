@@ -8,8 +8,7 @@
       "toolchainFile": "${sourceDir}/../../symbian/toolchain/cmake/symbian-arm.cmake",
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "SYMBIAN_TARGET_ARCH": "armv6",
-        "SYMBIAN_GUI_SDK_INCLUDE": "${sourceDir}/../../.symbian/gui-sdk/include"
+        "SYMBIAN_TARGET_ARCH": "armv6"
       }
     }
   ],

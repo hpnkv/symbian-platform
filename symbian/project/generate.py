@@ -114,9 +114,9 @@ def _ide(project: Path, settings: Preferences, sdk: AppSdk) -> None:
             sysroot="",
             toolchain="Default",
         )
-        ET.SubElement(
-            debug, "debugger", kind="GDB", isBundled="false"
-        ).text = "$PROJECT_DIR$/sdk-debug"
+        ET.SubElement(debug, "debugger", kind="GDB", isBundled="false").text = (
+            "$PROJECT_DIR$/sdk-debug"
+        )
         ET.SubElement(debug, "method", v="2")
         _xml(project / ".idea/runConfigurations/App_Debug.xml", container)
         profile_id = str(
@@ -250,9 +250,6 @@ def generate(destination: Path, settings: Preferences, sdk: AppSdk) -> dict:
         "clock_time.h",
         "app_bridge.h",
         "app_bridge.cc",
-        "startup.S",
-        "startup.cc",
-        "image.ld",
         "icon.svg",
     ):
         (project / name).write_bytes(
@@ -277,11 +274,10 @@ def configure_project(
     task_profile = "ON" if settings.timer_tasks else "OFF"
     (project / "CMakeLists.txt").write_text(
         f"""cmake_minimum_required(VERSION 3.28)
-include("${{CMAKE_CURRENT_SOURCE_DIR}}/sdk.cmake")
 project({name} LANGUAGES CXX ASM)
-include("${{SYMBIAN_SDK_PREFIX}}/cmake/SymbianApp.cmake")
-symbian_add_import_executable({name} STARTUP startup.S
-  LINKER_SCRIPT image.ld SOURCES app.cc model.cc app_bridge.cc startup.cc)
+include(SymbianApp)
+symbian_add_executable({name} app.cc model.cc app_bridge.cc)
+target_link_libraries({name} PRIVATE Symbian::WindowServer Symbian::Gdi)
 option(SYMBIAN_ENABLE_ABSEIL_STATUS
   "Use guest Abseil Status/StatusOr in application logic" {task_profile})
 option(SYMBIAN_ENABLE_TIMER_TASKS
@@ -302,31 +298,13 @@ if(SYMBIAN_ENABLE_TIMER_TASKS)
   target_link_libraries({name} PRIVATE Symbian::Stackless)
   target_compile_definitions({name} PRIVATE SYMBIAN_ENABLE_TIMER_TASKS=1)
 endif()
-target_link_options({name} PRIVATE --gc-sections)
-target_compile_options({name} PRIVATE -g -gdwarf-4
-  -fdebug-compilation-dir=/symbian-build/app
-  -fdebug-prefix-map=${{CMAKE_BINARY_DIR}}=/symbian-build/app
-  $<$<COMPILE_LANGUAGE:CXX>:-O0>)
 """
     )
-    proxies = [
-        "${sdk}/proxies/" + dll + "/" + dll + ".dso"
-        for dll in (
-            "euser",
-            "ws32",
-            "gdi",
-            "libc",
-            "libm",
-            "libpthread",
-            "drtaeabi",
-        )
-    ]
     (project / "symbian.toml").write_text(f"""[project]
 name = "{name}"
 kind = "e32-import"
 cmake_preset = "symbian-pic"
 uid3 = {settings.uid3:#x}
-import_proxies = {json.dumps(proxies)}
 
 [package]
 uid = {settings.uid3:#x}
@@ -352,7 +330,7 @@ icon = "icon.svg"
                     "name": "symbian-pic",
                     "generator": "Ninja",
                     "binaryDir": "${sourceDir}/.symbian/build/cmake",
-                    "toolchainFile": "${sourceDir}/sdk.cmake",
+                    "toolchainFile": "${sourceDir}/.symbian/sdk.cmake",
                     "cacheVariables": {
                         "CMAKE_BUILD_TYPE": "Debug",
                         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
@@ -368,8 +346,11 @@ icon = "icon.svg"
         project / "symbian-project.json", {"preferences": settings.model_dump()}
     )
     _json(project / "sdk-location.json", {"sdk": str(sdk.prefix)})
-    (project / "sdk.cmake").write_bytes(
-        files("symbian.project").joinpath("templates", "sdk.cmake").read_bytes()
+    local = project / ".symbian"
+    local.mkdir(exist_ok=True)
+    # Only a generated locator lives with the project; all policy is SDK-owned.
+    (local / "sdk.cmake").write_text(
+        f'include("{sdk.prefix}/cmake/symbian-arm.cmake")\n'
     )
     database = project / "compile_commands.json"
     if not database.exists() and not database.is_symlink():

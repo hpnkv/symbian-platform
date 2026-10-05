@@ -312,24 +312,19 @@ def bundle(args: argparse.Namespace) -> None:
     (output / "sdk.json").write_text(json.dumps(manifest, indent=2) + "\n")
     # Use the maintained toolchain rather than an older development export.
     root = Path(__file__).resolve().parent.parent
-    shutil.copy(
-        root / "symbian/toolchain/cmake/symbian-arm.cmake",
-        output / "cmake/symbian-arm.cmake",
+    shutil.copytree(
+        root / "symbian/toolchain/cmake", output / "cmake", dirs_exist_ok=True
     )
+    for module in (root / "symbian/project/templates").glob("*.cmake"):
+        shutil.copy(module, output / "cmake" / module.name)
     shutil.copy(root / "LICENSE", output / "licenses/Symbian-Apache-2.0.txt")
     shutil.copy(root / "VERSION", output / "VERSION")
-    shutil.copy(
-        root / "symbian/toolchain/cmake/SymbianPic.cmake",
-        output / "cmake/SymbianPic.cmake",
-    )
     write_example(output / "examples/hello_time", root)
     counter = output / "examples/gui_app"
     counter.mkdir()
     for pattern in (
         "*.cc",
         "*.h",
-        "*.S",
-        "*.ld",
         "CMakeLists.txt",
         "symbian.toml",
     ):
@@ -342,13 +337,24 @@ def bundle(args: argparse.Namespace) -> None:
     )
     preset = presets["configurePresets"][0]
     preset["toolchainFile"] = "${sourceDir}/../../cmake/symbian-arm.cmake"
-    preset["cacheVariables"][
-        "SYMBIAN_GUI_SDK_INCLUDE"
-    ] = "${sourceDir}/../../include/platform"
     (counter / "CMakePresets.json").write_text(
         json.dumps(presets, indent=2) + "\n"
     )
     (counter / "sdk-location.json").write_text('{"sdk": "../.."}\n')
+    qt = output / "examples/qt_app"
+    qt.mkdir()
+    for name in ("app.cc", "CMakeLists.txt", "symbian.toml", "README.md"):
+        shutil.copy(root / "examples/qt_app" / name, qt / name)
+    shutil.copytree(root / "examples/qt_app/assets", qt / "assets")
+    shutil.copy(root / ".clang-format", qt / ".clang-format")
+    presets = json.loads(
+        (root / "examples/qt_app/CMakePresets.json").read_text()
+    )
+    presets["configurePresets"][0][
+        "toolchainFile"
+    ] = "${sourceDir}/../../cmake/symbian-arm.cmake"
+    (qt / "CMakePresets.json").write_text(json.dumps(presets, indent=2) + "\n")
+    (qt / "sdk-location.json").write_text('{"sdk": "../.."}\n')
 
 
 def main() -> None:

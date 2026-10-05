@@ -7,9 +7,9 @@ static_assert(sizeof(TRequestStatus) == 8);
 static_assert(sizeof(SThreadCreateInfo) == 48);
 static_assert(sizeof(SStdEpocThreadCreateInfo) == 64);
 
-extern "C" int GuiMain();
+extern int main(int argc, char** argv);
 
-extern "C" void GuiRunThread(TInt reason, SStdEpocThreadCreateInfo* info) {
+extern "C" void SymbianRunThread(TInt reason, SStdEpocThreadCreateInfo* info) {
   if ((reason != 0 && reason != 1) || info == nullptr) {
     User::Invariant();
     return;
@@ -27,7 +27,9 @@ extern "C" void GuiRunThread(TInt reason, SStdEpocThreadCreateInfo* info) {
       if (cleanup == nullptr) {
         result = KErrNoMemory;
       } else {
-        result = GuiMain();
+        char name[] = "symbian-app";
+        char* argv[] = {name, nullptr};
+        result = main(1, argv);
       }
       SymbianRuntimeRunFinalizers();
       delete cleanup;

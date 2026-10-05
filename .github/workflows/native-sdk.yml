@@ -39,7 +39,7 @@ jobs:
         id: guest
         with:
           path: ${{ runner.temp }}/native-guest
-          key: native-guest-v2-${{ hashFiles('cpp/symbian/**', 'cmake/**', 'third_party/**', 'symbian/project/sdk.py', 'symbian/project/templates/*.cmake', 'symbian/toolchain/**', 'symbian/sdk/**', 'symbian/process.py', 'symbian/status.py', 'symbian/native.py', 'symbian/analysis/**', 'probes/runtime_probe/**', 'probes/abseil_status_probe/**', 'research/gui_app/source-profile.json', 'research/llvm/**', 'research/abseil/**', 'scripts/prepare_native_sources.py', 'scripts/build_native_guest.py', 'scripts/bootstrap_native_tools.py') }}
+          key: native-guest-v2-${{ hashFiles('cpp/symbian/**', 'cmake/**', 'third_party/**', 'symbian/project/sdk.py', 'symbian/project/qt.py', 'symbian/project/templates/*.cmake', 'symbian/toolchain/**', 'symbian/sdk/**', 'symbian/process.py', 'symbian/status.py', 'symbian/native.py', 'symbian/analysis/**', 'probes/runtime_probe/**', 'probes/abseil_status_probe/**', 'research/gui_app/source-profile.json', 'research/llvm/**', 'research/abseil/**', 'scripts/prepare_native_sources.py', 'scripts/build_native_guest.py', 'scripts/bootstrap_native_tools.py') }}
       - uses: actions/download-artifact@v4
         if: steps.guest.outputs.cache-hit != 'true'
         with:
@@ -124,7 +124,7 @@ jobs:
         id: assembled
         with:
           path: release-assets
-          key: native-archive-v2-${{ matrix.platform }}-${{ matrix.arch }}-ubuntu24-macos15-${{ hashFiles('cpp/**', 'cmake/**', 'third_party/**', 'CMakeLists.txt', 'VERSION', 'LICENSE', '.clang-format', 'pyproject.toml', 'symbian/project/sdk.py', 'symbian/project/templates/**', 'symbian/toolchain/**', 'symbian/sdk/**', 'symbian/process.py', 'symbian/status.py', 'symbian/native.py', 'symbian/analysis/**', 'probes/runtime_probe/**', 'probes/abseil_status_probe/**', 'examples/gui_app/**', 'research/gui_app/source-profile.json', 'research/llvm/**', 'research/abseil/**', 'research/rcomp/**', 'scripts/prepare_native_sources.py', 'scripts/build_native_guest.py', 'scripts/build_native_resources.py', 'scripts/bootstrap_native_tools.py', 'scripts/bundle_native_sdk.py', 'scripts/check_native_sdk.py', 'scripts/build_release_host.sh', 'scripts/bootstrap_wheel_deps.sh', 'scripts/bundle_static.py') }}
+          key: native-archive-v2-${{ matrix.platform }}-${{ matrix.arch }}-ubuntu24-macos15-${{ hashFiles('cpp/**', 'cmake/**', 'third_party/**', 'CMakeLists.txt', 'VERSION', 'LICENSE', '.clang-format', 'pyproject.toml', 'symbian/project/sdk.py', 'symbian/project/qt.py', 'symbian/project/templates/**', 'symbian/toolchain/**', 'symbian/sdk/**', 'symbian/process.py', 'symbian/status.py', 'symbian/native.py', 'symbian/analysis/**', 'probes/runtime_probe/**', 'probes/abseil_status_probe/**', 'examples/gui_app/**', 'examples/qt_app/**', 'research/gui_app/source-profile.json', 'research/llvm/**', 'research/abseil/**', 'research/rcomp/**', 'scripts/prepare_native_sources.py', 'scripts/build_native_guest.py', 'scripts/build_native_resources.py', 'scripts/bootstrap_native_tools.py', 'scripts/bundle_native_sdk.py', 'scripts/check_native_sdk.py', 'scripts/build_release_host.sh', 'scripts/bootstrap_wheel_deps.sh', 'scripts/bundle_static.py') }}
       - name: Install macOS build tools
         if: runner.os == 'macOS' && steps.assembled.outputs.cache-hit != 'true'
         run: |

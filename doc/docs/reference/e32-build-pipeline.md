@@ -7,30 +7,24 @@ This is the advanced path for an explicit CMake source graph. Start with
 
 CMake owns source files, dependencies and `compile_commands.json`. A
 `symbian.toml` project selects the CMake target and preset; source files belong
-in `CMakeLists.txt`. The low-level `probes/e32_probe` illustrates an
-import-free PIC executable:
-
-```toml
-[project]
-name = "e32_probe"
-kind = "e32-pic"
-cmake_preset = "symbian-pic"
-uid3 = 0xe0000808
-```
+in `CMakeLists.txt`. An application needs only its own source files and ordinary library targets:
 
 ```cmake
 cmake_minimum_required(VERSION 3.28)
-project(my_probe LANGUAGES CXX ASM)
-include(SymbianPic)
-symbian_add_pic_executable(e32_probe
-  STARTUP startup.S
-  LINKER_SCRIPT image.ld
-  SOURCES probe.cc algorithm.cc)
+project(my_app LANGUAGES CXX ASM)
+include(SymbianApp)
+symbian_add_executable(my_app app.cc algorithm.cc)
+target_link_libraries(my_app PRIVATE Symbian::Runtime Symbian::EUser)
 ```
 
-The helper applies ARMv5T/AAPCS settings, target headers, PIC, disabled
-exceptions and RTTI, and the selected linker. The linker keeps relocations
-for native E32 conversion. A tracked linker script defines image layout.
+Write `int main()` or `int main(int argc, char** argv)` in `app.cc`.
+The SDK supplies startup, image layout, platform headers, ABI settings and
+relocations. It discovers import libraries through the evaluated CMake link
+graph, including transitive dependencies. No per-application symbol list,
+import proxy, assembly entry or linker script is needed. The current startup
+passes one synthetic program name in `argv`; command-line decoding is not
+provided yet.
+
 The converter writes the process security header too. Declare
 `capabilities = ["NetworkServices"]` in `[project]` only when the application
 needs guest network sockets. See [project configuration](project-configuration.md).
@@ -41,8 +35,8 @@ A `symbian-pic` CMake configure preset uses Ninja and a build directory under
 `.symbian/`. The CLI supplies the installed toolchain and output tree:
 
 ```sh
-symbian build --project probes/e32_probe --output .symbian/e32-probe
-symbian inspect --format e32 .symbian/e32-probe/e32_probe.exe
+symbian build --project my_app --output .symbian/my-app
+symbian inspect --format e32 .symbian/my-app/my_app.exe
 ```
 
 The build publishes ELF/E32 plus a report with tool versions, inputs and logs.
@@ -50,13 +44,7 @@ It makes a second fresh build to compare output bytes on this host and toolchain
 That is a reproducibility check, not a hermetic build proof. The root
 `compile_commands.json` supports editor and clangd analysis.
 
-With the prepared research oracles, the maintained probe has an additional
-specific check:
-
-```sh
-symbian toolchain verify-probe .symbian/e32-probe/e32_probe.exe
-```
-
-The oracle checks this probe in a ROMless process harness. It is not a general
-application test. See the [runtime guide](../capabilities/runtime.md) for supported runtime
-profiles and [library targets](project-libraries.md) for DLL imports.
+The bundled `probes/` projects are runnable diagnostic probes. Their specific
+loader oracles do not replace testing your application against its selected
+firmware. See the [runtime guide](../capabilities/runtime.md) for supported
+runtime profiles and [library targets](project-libraries.md) for DLLs.

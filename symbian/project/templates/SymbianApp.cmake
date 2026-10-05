@@ -7,6 +7,33 @@ if(NOT SYMBIAN_WORKSPACE_BUILD)
   get_filename_component(SYMBIAN_SDK_PREFIX
     "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 endif()
+include(SymbianSdk)
+symbian_select_sdk()
+if(NOT SYMBIAN_WORKSPACE_BUILD)
+  # CMake reloads its saved compiler description during project(). Refresh
+  # driver paths afterwards too, so changing the SDK selector updates Ninja.
+  include("${SYMBIAN_SDK_PREFIX}/cmake/symbian-arm.cmake")
+endif()
+# Original OS libraries expose their full frozen ABI. Applications name targets;
+# only symbols used by the linker become dependencies in the E32 image.
+foreach(pair IN ITEMS "EUser:euser" "WindowServer:ws32" "Gdi:gdi" "Hal:hal"
+    "FileServer:efsrv" "SocketServer:esock" "Internet:insock" "C:libc"
+    "Math:libm" "Pthread:libpthread" "CxxAbi:drtaeabi" "CameraNative:ecam")
+  string(REPLACE ":" ";" fields "${pair}")
+  list(GET fields 0 name)
+  list(GET fields 1 dll)
+  set(proxy "${SYMBIAN_SDK_PREFIX}/proxies/${dll}/${dll}.dso")
+  if(EXISTS "${proxy}")
+    add_library(Symbian${name} SHARED IMPORTED GLOBAL)
+    set_target_properties(Symbian${name} PROPERTIES IMPORTED_LOCATION "${proxy}")
+    target_include_directories(Symbian${name} SYSTEM INTERFACE
+      "${SYMBIAN_SDK_PREFIX}/include/platform")
+    target_compile_definitions(Symbian${name} INTERFACE _UNICODE __GCC32__
+      __GCCV3__ __EABI__ __EPOC32__ __MARM__ __MARM_ARMV5__)
+    target_compile_options(Symbian${name} INTERFACE -fshort-wchar)
+    add_library(Symbian::${name} ALIAS Symbian${name})
+  endif()
+endforeach()
 set(SYMBIAN_CA_BUNDLE "" CACHE STRING
     "Project PEM CA bundle; empty means no packaged trust roots")
 if(SYMBIAN_CA_BUNDLE)
@@ -316,3 +343,26 @@ function(symbian_add_static_library target)
   set_target_properties(${target} PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 endfunction()
+
+# Guest Qt is an original OS DLL dependency, distinct from host emulator Qt.
+# Its headers need the SDK's standard C++ allocation declarations first.
+if(EXISTS "${SYMBIAN_SDK_PREFIX}/include/qt4/QtCore/qglobal.h")
+  foreach(module IN ITEMS Core Gui)
+    string(TOLOWER "qt${module}" dll)
+    add_library(SymbianQt${module} SHARED IMPORTED GLOBAL)
+    set_target_properties(SymbianQt${module} PROPERTIES IMPORTED_LOCATION
+      "${SYMBIAN_SDK_PREFIX}/proxies/${dll}/${dll}.dso")
+    target_include_directories(SymbianQt${module} SYSTEM INTERFACE
+      "${SYMBIAN_SDK_PREFIX}/include/qt4"
+      "${SYMBIAN_SDK_PREFIX}/include/qt4/QtCore")
+    target_compile_definitions(SymbianQt${module} INTERFACE
+      QT_KEYPAD_NAVIGATION QT_SOFTKEYS_ENABLED)
+    target_compile_options(SymbianQt${module} INTERFACE "SHELL:-fPIC"
+      "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-include ${SYMBIAN_SDK_PREFIX}/cmake/qt_compat.h>")
+    add_library(Symbian::Qt${module} ALIAS SymbianQt${module})
+  endforeach()
+  target_link_libraries(SymbianQtCore INTERFACE Symbian::EUser)
+  target_sources(SymbianQtCore INTERFACE
+    "${SYMBIAN_SDK_PREFIX}/share/symbian/qt/newallocator_hook.cpp")
+  target_link_libraries(SymbianQtGui INTERFACE Symbian::QtCore)
+endif()

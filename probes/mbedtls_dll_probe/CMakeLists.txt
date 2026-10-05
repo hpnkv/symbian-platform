@@ -87,36 +87,36 @@ symbian_add_dynamic_library(mbedcrypto_probe
   EXPORT_DEFINITION "${probe_export_definition}" UID3 0xE0000D18
   IMPORT_SYMBOLS ${probe_exports}
   IMPORT_PROXIES ${probe_imports})
-target_include_directories(mbedcrypto_probe_elf PRIVATE
+target_include_directories(mbedcrypto_probe PRIVATE
   "${MBEDTLS_SOURCE}/include" "${CMAKE_CURRENT_BINARY_DIR}")
-target_compile_definitions(mbedcrypto_probe_elf PRIVATE
+target_compile_definitions(mbedcrypto_probe PRIVATE
   MBEDTLS_STATIC MBEDTLS_SSL_PROTO_TLS1_3 SYMBIAN_MBEDTLS_GUEST=1
   MBEDTLS_USER_CONFIG_FILE="symbian_mbedtls/config.h")
 if(SYMBIAN_RM807_ENTROPY_PROBE OR SYMBIAN_RM807_TLS_HANDSHAKE_PROBE)
-  target_compile_definitions(mbedcrypto_probe_elf PRIVATE
+  target_compile_definitions(mbedcrypto_probe PRIVATE
     SYMBIAN_RM807_ENTROPY_PROBE=1)
 endif()
-target_link_libraries(mbedcrypto_probe_elf PRIVATE
+target_link_libraries(mbedcrypto_probe PRIVATE
   "${mbedtls_archive}" "${mbedx509_archive}" "${MBEDTLS_ARCHIVE}")
 if(SYMBIAN_RM807_TLS_HANDSHAKE_PROBE)
   if(NOT TARGET Symbian::Agent OR NOT TARGET Symbian::Tls)
     message(FATAL_ERROR "TLS control probe needs installed Agent and Tls targets")
   endif()
-  target_link_libraries(mbedcrypto_probe_elf PRIVATE
+  target_link_libraries(mbedcrypto_probe PRIVATE
     Symbian::Connectivity Symbian::Agent Symbian::Tls)
 endif()
 # The runtime archive contains optional mimalloc POSIX helpers that Belle does
 # not import. Retain the declared DLL export while discarding unused helpers.
-target_link_options(mbedcrypto_probe_elf PRIVATE
+target_link_options(mbedcrypto_probe PRIVATE
   --gc-sections --undefined=MbedSha256 --undefined=MbedUtcProbe
   --undefined=MbedVerifyCert --undefined=MbedSocketCancelProbe
   --undefined=MbedEntropyFailureProbe)
 if(SYMBIAN_RM807_SOCKET_PROBE)
-  target_link_options(mbedcrypto_probe_elf PRIVATE
+  target_link_options(mbedcrypto_probe PRIVATE
     --undefined=MbedConnectedSocketProbe)
 endif()
 if(SYMBIAN_RM807_TLS_HANDSHAKE_PROBE)
-  target_link_options(mbedcrypto_probe_elf PRIVATE
+  target_link_options(mbedcrypto_probe PRIVATE
     --undefined=MbedNativeTlsHandshakeProbe --undefined=MbedNativeTlsServerProbe
     --undefined=MbedOwnedTlsServerProbe)
 endif()

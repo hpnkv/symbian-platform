@@ -36,8 +36,8 @@ checkout.
    under **Settings → Build, Execution, Deployment → CMake**. Imported preset
    profiles can start disabled. [JetBrains' preset guide](https://www.jetbrains.com/help/clion/cmake-presets.html)
    shows the current controls.
-3. Reload CMake. Check that `app.cc`, `window_server.cc`, `startup.cc` and
-   `startup.S` belong to `gui_app`, and that the profile uses the ARM triple
+3. Reload CMake. Check that `app.cc`, `window_server.cc`, the SDK-owned `exe_startup.cc` and
+   `exe_startup.S` belong to `gui_app`, and that the profile uses the ARM triple
    rather than a host target. The expected compiler database is
    `.symbian/cmake/gui-app/compile_commands.json` for the shared preset.
 

@@ -9,15 +9,11 @@ from pathlib import Path
 
 CMAKE = """cmake_minimum_required(VERSION 3.28)
 project(hello_time LANGUAGES CXX ASM)
-include("${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
-foreach(dll euser ws32 gdi libc libm libpthread drtaeabi)
-  list(APPEND SYMBIAN_IMPORT_PROXIES
-    "${SYMBIAN_SDK_PREFIX}/proxies/${dll}/${dll}.dso")
-endforeach()
-symbian_add_import_executable(hello_time STARTUP startup.S
-  LINKER_SCRIPT image.ld SOURCES app.cc model.cc app_bridge.cc startup.cc)
+include(SymbianApp)
+symbian_add_executable(hello_time app.cc model.cc app_bridge.cc)
 target_link_libraries(hello_time PRIVATE
-  Symbian::AbseilStatusOr Symbian::Stackless)
+  Symbian::AbseilStatusOr Symbian::Stackless
+  Symbian::WindowServer Symbian::Gdi)
 target_compile_definitions(hello_time PRIVATE SYMBIAN_ENABLE_ABSEIL_STATUS=1
   SYMBIAN_ENABLE_TIMER_TASKS=1)
 target_link_options(hello_time PRIVATE --gc-sections)
@@ -26,10 +22,7 @@ symbian_publish_executable(hello_time UID3 0xe0000830)
 
 
 STARTUP_CMAKE = """
-set(startup "${SYMBIAN_SDK_PREFIX}/share/symbian/runtime")
-symbian_add_import_executable(startup_check STARTUP "${startup}/startup.S"
-  LINKER_SCRIPT "${startup}/image.ld"
-  SOURCES startup_check.cc "${startup}/startup.cc")
+symbian_add_executable(startup_check startup_check.cc)
 target_link_libraries(startup_check PRIVATE Symbian::Runtime)
 target_link_options(startup_check PRIVATE --gc-sections)
 symbian_publish_executable(startup_check UID3 0xe0000831)
@@ -42,7 +35,7 @@ namespace {
 const std::string label = "native SDK startup";
 }
 
-extern "C" int RuntimeMain() {
+int main() {
   const std::vector<int> values = {3, 5, 8};
   if (label != "native SDK startup" || values.size() != 3) {
     return 1;
@@ -62,9 +55,6 @@ def write_example(directory: Path, root: Path) -> None:
         "clock_time.h",
         "app_bridge.h",
         "app_bridge.cc",
-        "startup.S",
-        "startup.cc",
-        "image.ld",
     ):
         shutil.copy2(
             root / "symbian/project/templates" / name, directory / name
@@ -92,8 +82,7 @@ def check(sdk: Path) -> None:
         root = Path(d)
         moved = root / "SDK with spaces"
         shutil.copytree(sdk, moved, symlinks=True)
-        # Compile and link the exported startup in a separate executable. The
-        # GUI starter owns its startup files and cannot detect a dropped share/.
+        # Build another main() target through the same SDK startup machinery.
         example = moved / "examples/hello_time"
         (example / "startup_check.cc").write_text(STARTUP_SOURCE)
         with (example / "CMakeLists.txt").open("a") as cmake:

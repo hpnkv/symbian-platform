@@ -11,7 +11,7 @@ struct RunState {
 
 }  // namespace
 
-extern "C" int GuiMain() {
+int main() {
   // The worker owns the Window Server session, request statuses and event
   // dispatcher. The joining startup thread shares only its final result.
   auto run = std::make_shared<RunState>();

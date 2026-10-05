@@ -13,7 +13,7 @@ It launches a halted emulator and connects ARM GDB through the SDK wrapper.
 
 ## 2. Place a breakpoint
 
-Set a breakpoint in `GuiRunThread` for startup or `DrawGui` for drawing. Start
+Set a breakpoint in `SymbianRunThread` for startup or `DrawGui` for drawing. Start
 **GUI Debug**, continue from the initial halt, and use the guest input to reach
 your breakpoint. Inspect the call stack and local values in the ARM session.
 Host LLDB attached to the EKA2L1 process debugs the emulator itself, which is

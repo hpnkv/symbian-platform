@@ -16,35 +16,34 @@ remain in the linked ELF for debugging.
 
 ## Dynamic library
 
-A DLL has an explicit export definition and identity. The installed
-`SymbianPic` module supplies `symbian_add_dynamic_library` and companion import
-targets. A minimal shape is:
+A DLL is a normal linkable CMake target. The SDK supplies its entry, image
+layout and complete ordinal import library:
 
 ```cmake
-include(SymbianPic)
-symbian_add_dynamic_library(my_library
-  STARTUP startup.S
-  LINKER_SCRIPT image.ld
-  SOURCES api.c
-  EXPORT_DEFINITION exports.def
-  UID3 0xE0001234
-  IMPORT_SYMBOLS MyPublicFunction)
-target_link_libraries(my_app PRIVATE my_library_import)
+include(SymbianApp)
+symbian_add_dynamic_library(my_library SOURCES api.cc)
+target_include_directories(my_library PUBLIC include)
+target_compile_definitions(my_library PRIVATE MY_LIBRARY_BUILD=1)
+target_link_libraries(my_app PRIVATE my_library)
 ```
 
-The export definition freezes ordinals; the linker script separates executable
-code and writable data. The helper retains an ELF for symbols and produces an
-E32 DLL after link/conversion checks. The SDK entry handles process-attach
-constructors. Check the selected firmware's imports and ABI; see the
-[SDK C++ reference](native-sdk.md).
+The project identity comes from `symbian.toml`; `UID3` can override it when a
+project produces multiple DLLs. The helper retains `my_library_elf.elf` for
+debugging, publishes `my_library.dll`, and exposes its generated import library
+through the CMake target. The SDK discovers DLL dependencies from the linked
+target graph. Applications do not maintain export symbol selections or proxies.
 
-With the SDK's default DLL startup, `RUNTIME_TARGET` selects the one C++
-runtime archive for the image. It defaults to `Symbian::Runtime`. A DLL that
-uses `Symbian::Connectivity` or another Abseil status target must set
-`RUNTIME_TARGET Symbian::Streams`, since those targets require the streams
-configuration. Do not link both runtime archives into one image. Declare all
-import proxies used by the final ELF through `IMPORT_PROXIES`; the converter
-checks their exact DLL dependencies.
+Visible function definitions form the initial export interface. Mark internal
+helpers with hidden visibility. Automatic ordinals are deterministic for an
+unchanged interface; adding or removing functions can change them. An independently
+versioned DLL can optionally use `EXPORT_DEFINITION` to freeze its existing ABI.
+Automatic data exports are not supported. Imported data from original OS and
+Qt libraries is supported through their frozen import libraries.
+
+SDK startup handles process-attach constructors and finalizers. The default
+DLL runtime is `Symbian::Runtime`; a DLL using a streams-based SDK component
+must currently select `RUNTIME_TARGET Symbian::Streams`. Check the selected
+firmware's imports and ABI; see the [SDK C++ reference](native-sdk.md).
 
 ## Mbed TLS
 

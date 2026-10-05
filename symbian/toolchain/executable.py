@@ -3,6 +3,7 @@
 import hashlib
 import json
 import re
+import shlex
 import shutil
 import tempfile
 from pathlib import Path
@@ -130,8 +131,8 @@ def build_executable(
     proxy_names = options.get("import_proxies", [])
     if (
         not isinstance(proxy_names, list)
-        or (imported and not 1 <= len(proxy_names) <= 16)
-        or (dll and len(proxy_names) > 16)
+        or (imported and len(proxy_names) > 256)
+        or (dll and len(proxy_names) > 256)
         or (not imported and not dll and proxy_names)
         or any(
             not isinstance(path, str) or not path or ";" in path or "\0" in path
@@ -189,6 +190,8 @@ def build_executable(
     primary = output / "cmake"
     name = options["name"]
 
+    declared_proxies = proxies
+
     def configure(tree: Path) -> cmake_build.Target:
         return cmake_build.configure(
             project,
@@ -196,12 +199,22 @@ def build_executable(
             name,
             preset,
             **tools,
-            import_proxies=proxies,
+            import_proxies=declared_proxies,
             architecture=architecture,
             cmake_variables=options.get("_cmake_variables"),
         )
 
     target = configure(primary)
+    # CMake's evaluated link fragments include transitive imported libraries.
+    # Pass the same actual ordinal libraries to the native image converter.
+    linked_proxies = set(proxies)
+    for fragment in target.link_fragments:
+        if fragment.get("role") == "libraries":
+            for item in shlex.split(fragment["fragment"]):
+                if item.endswith(".dso"):
+                    linked_proxies.add((primary / item).resolve())
+    proxies = tuple(sorted(linked_proxies))
+    proxy_bytes = {path: path.read_bytes() for path in proxies}
     inputs = {path: path.read_bytes() for path in target.inputs}
     inputs.update(proxy_bytes)
     if definition is not None:
@@ -259,9 +272,7 @@ def build_executable(
         schema = (
             "symbian.e32-dll/v1"
             if dll
-            else "symbian.e32-import/v1"
-            if imported
-            else "symbian.e32-pic/v1"
+            else "symbian.e32-import/v1" if imported else "symbian.e32-pic/v1"
         )
         artifact_kind = "e32-dll" if dll else "e32-executable"
     else:

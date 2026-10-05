@@ -6653,3 +6653,31 @@ application-machinery integration checks pass, including both main signatures,
 both ISA profiles and malformed data-slot/relocation controls. Forty E32 and six
 SDK native tests pass. CMake policy/SDK selection consolidation, all-probe
 migration, Linux replay and distribution publication are still outstanding.
+
+### SDK-owned application and library construction — 2026-10-05
+
+GUI, Qt and generated applications now expose standard main and use shared SDK
+startup/layout, ABI/include targets, SDK selection and debug source mappings.
+Complete original OS import libraries and guest QtCore/QtGui headers, allocator
+hook, compatibility settings and full frozen imports are exported once in the
+SDK. Qt DATA imports were exercised against RM-807 firmware on both macOS CPU
+backends before centralization. The SDK's startup currently passes argc=1 and
+a synthetic program name; real command-line decoding remains open.
+
+Genuine CMake SHARED targets derive visible function exports without authored
+DEFs and publish ordinal proxies for direct target_link_libraries consumption.
+Frozen definitions remain optional for separately versioned ABI; automatic
+public data exports are unsupported. Nine real integration tests pass, including
+both main signatures and ARM ISAs, Qt data/import rejection controls, and a
+mixed host/guest workspace that retains its host linker. Root gui_app and
+its E32 publisher build. Python-free relocated SDK hello_time and startup
+checks pass on both ARM ISAs using the bundled tools. Reproducible maintained
+GUI/Qt builds pass. The wider application/init run had 32 passes, one skip and
+one SDK-switch failure; after fixing post-project compiler refresh, that exact
+relocation/switch regression passes. Strict docs build passed with existing
+Doxygen warnings. Black/Ruff and diff whitespace checks pass.
+
+This is a locally staged candidate derived from public SDK 0.1.2, not a newly
+published native distribution. All-probe migration, fresh complete export,
+Linux replay and four-host release/public-download acceptance remain required.
+Do not begin the broad mutable-reference/nullability sweep yet.

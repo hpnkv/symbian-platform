@@ -32,7 +32,7 @@ CMake target and has a different role.*
 
 ## Stop at a guest source line
 
-1. Put a breakpoint in `GuiMain` or `DrawGui` in the GUI source.
+1. Put a breakpoint in `main` or `DrawGui` in the GUI source.
 2. Select **GUI Debug** and its **Symbian GUI GDB** native debug profile.
    The host debugger follows the native launcher and cannot stop in ARM guest
    C++. The screenshot shows macOS **GUI Host LLDB**; Linux may have **GUI Host

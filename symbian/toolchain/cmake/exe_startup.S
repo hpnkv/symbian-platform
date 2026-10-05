@@ -15,7 +15,7 @@ _E32Startup:
   mov r0, r4
   mov r1, sp
   bic sp, sp, #7
-  bl GuiRunThread
+  bl SymbianRunThread
 .Lhalt:
   b .Lhalt
 .size _E32Startup, . - _E32Startup

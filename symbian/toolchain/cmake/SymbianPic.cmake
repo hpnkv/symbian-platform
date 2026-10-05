@@ -1,14 +1,21 @@
 include_guard(GLOBAL)
+if(CMAKE_SYSTEM_NAME STREQUAL "Generic")
+  set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)
+  set(CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS "")
+  set(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS "")
+endif()
 
 function(_symbian_project_file output filename)
   file(REAL_PATH "${filename}" resolved BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
   file(REAL_PATH "${CMAKE_SOURCE_DIR}" project_root)
   cmake_path(IS_PREFIX project_root "${resolved}" NORMALIZE inside)
+  file(REAL_PATH "${CMAKE_CURRENT_FUNCTION_LIST_DIR}" module_directory)
+  cmake_path(IS_PREFIX module_directory "${resolved}" NORMALIZE inside_module)
   file(REAL_PATH "${SYMBIAN_SDK_PREFIX}/cmake" sdk_cmake)
   cmake_path(IS_PREFIX sdk_cmake "${resolved}" NORMALIZE inside_sdk)
   file(REAL_PATH "${SYMBIAN_SDK_PREFIX}/share/symbian/runtime" sdk_runtime)
   cmake_path(IS_PREFIX sdk_runtime "${resolved}" NORMALIZE inside_runtime)
-  if((NOT inside AND NOT inside_sdk AND NOT inside_runtime) OR
+  if((NOT inside AND NOT inside_sdk AND NOT inside_runtime AND NOT inside_module) OR
      NOT EXISTS "${resolved}" OR
      IS_DIRECTORY "${resolved}")
     message(FATAL_ERROR "Symbian target input must be a project or selected SDK file: ${filename}")
@@ -35,9 +42,6 @@ function(_symbian_collect_native_files directory output)
 endfunction()
 
 function(symbian_add_import_executable target)
-  if(NOT SYMBIAN_IMPORT_PROXIES)
-    message(FATAL_ERROR "Imported application requires SYMBIAN_IMPORT_PROXIES")
-  endif()
   symbian_add_pic_executable(${target} ${ARGN})
   # A registered application owns native files anywhere in its source tree.
   # CMake tracks additions so new files join its real guest target and IDE
@@ -64,8 +68,8 @@ function(symbian_add_import_executable target)
       endforeach()
     endif()
   endif()
-  # A project declares every proxy the converter may recognize. Only used
-  # imports may become E32 DLL dependencies, including on older firmware.
+  # Imports flow through ordinary library targets. Legacy diagnostic overrides
+  # remain usable without making applications enumerate proxies.
   target_link_options(${target} PRIVATE --hash-style=sysv --no-dynamic-linker
     --as-needed)
   target_link_libraries(${target} PRIVATE ${SYMBIAN_IMPORT_PROXIES})
@@ -74,13 +78,21 @@ endfunction()
 function(symbian_add_pic_executable target)
   cmake_parse_arguments(PARSE_ARGV 1 PIC "" "STARTUP;LINKER_SCRIPT" "SOURCES")
   if(PIC_UNPARSED_ARGUMENTS OR PIC_KEYWORDS_MISSING_VALUES OR
-     NOT PIC_STARTUP OR NOT PIC_LINKER_SCRIPT OR NOT PIC_SOURCES)
-    message(FATAL_ERROR "symbian_add_pic_executable needs STARTUP, LINKER_SCRIPT and SOURCES")
+     NOT PIC_SOURCES)
+    message(FATAL_ERROR "symbian_add_pic_executable needs SOURCES")
   endif()
   if(NOT CMAKE_SYSTEM_NAME STREQUAL "Generic" OR
      NOT (CMAKE_CXX_COMPILER_TARGET MATCHES "^arm(v5t|v6)-none-eabi$" OR
           CMAKE_C_COMPILER_TARGET MATCHES "^arm(v5t|v6)-none-eabi$"))
     message(FATAL_ERROR "Use the Symbian symbian-arm.cmake toolchain (armv6 or armv5t)")
+  endif()
+  set(default_startup FALSE)
+  if(NOT PIC_STARTUP)
+    set(PIC_STARTUP "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/exe_startup.S")
+    set(default_startup TRUE)
+  endif()
+  if(NOT PIC_LINKER_SCRIPT)
+    set(PIC_LINKER_SCRIPT "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/exe_image.ld")
   endif()
   _symbian_project_file(startup "${PIC_STARTUP}")
   _symbian_project_file(script "${PIC_LINKER_SCRIPT}")
@@ -90,6 +102,13 @@ function(symbian_add_pic_executable target)
     list(APPEND sources "${resolved}")
   endforeach()
   add_executable(${target} "${startup}" ${sources})
+  if(default_startup)
+    target_sources(${target} PRIVATE "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/exe_startup.cc")
+    if(NOT TARGET Symbian::EUser)
+      message(FATAL_ERROR "Include SymbianApp before creating an application")
+    endif()
+    target_link_libraries(${target} PRIVATE Symbian::EUser)
+  endif()
   target_compile_options(${target} PRIVATE -fPIC)
   target_link_options(${target} PRIVATE -T "${script}")
   set_target_properties(${target} PROPERTIES
@@ -108,106 +127,107 @@ function(symbian_add_pic_dll target)
   endif()
 endfunction()
 
-# Publish an E32 DLL from an ordinary CMake target. The ELF remains the debug
-# symbol file. IMPORT_SYMBOLS creates a consumer-side ordinal proxy target.
-# RUNTIME_TARGET selects one runtime for the default startup; use
-# Symbian::Streams when linking Abseil-based SDK targets.
+# Creates an ordinary mutable CMake ELF target plus a published E32 DLL and a
+# complete consumer import target. A frozen definition is optional for libraries
+# that must preserve ABI across separate releases; no consumer lists symbols.
 function(symbian_add_dynamic_library target)
   cmake_parse_arguments(PARSE_ARGV 1 DLL "" "STARTUP;LINKER_SCRIPT;EXPORT_DEFINITION;UID3;RUNTIME_TARGET"
                         "SOURCES;IMPORT_SYMBOLS;IMPORT_PROXIES")
-  if(DLL_UNPARSED_ARGUMENTS OR DLL_KEYWORDS_MISSING_VALUES OR
-     NOT DLL_SOURCES OR
-     NOT DLL_EXPORT_DEFINITION OR NOT DLL_UID3)
-    message(FATAL_ERROR "symbian_add_dynamic_library needs SOURCES, EXPORT_DEFINITION and UID3")
+  if(DLL_UNPARSED_ARGUMENTS OR DLL_KEYWORDS_MISSING_VALUES OR NOT DLL_SOURCES)
+    message(FATAL_ERROR "symbian_add_dynamic_library needs SOURCES")
   endif()
-  if(NOT SYMBIAN_SDK_PREFIX OR
-     (NOT EXISTS "${SYMBIAN_SDK_PREFIX}/bin/symbian" AND
-      NOT EXISTS "${SYMBIAN_SDK_PREFIX}/bin/symbian-native"))
-    message(FATAL_ERROR "Dynamic-library publishing requires an installed Symbian SDK")
+  if(NOT DLL_UID3)
+    file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/symbian.toml" identity
+      REGEX "^uid3[ \t]*=[ \t]*0x[0-9A-Fa-f]+[ \t]*$")
+    list(GET identity 0 identity)
+    string(REGEX REPLACE "^uid3[ \t]*=[ \t]*" "" DLL_UID3 "${identity}")
   endif()
-  _symbian_project_file(definition "${DLL_EXPORT_DEFINITION}")
-  set(default_startup FALSE)
   if(NOT DLL_STARTUP)
     set(DLL_STARTUP "${SYMBIAN_SDK_PREFIX}/cmake/dll_startup.S")
-    set(default_startup TRUE)
+    if(NOT DLL_RUNTIME_TARGET)
+      set(DLL_RUNTIME_TARGET Symbian::Runtime)
+    endif()
   endif()
   if(NOT DLL_LINKER_SCRIPT)
     set(DLL_LINKER_SCRIPT "${SYMBIAN_SDK_PREFIX}/cmake/dll_image.ld")
   endif()
-  set(elf_target "${target}_elf")
-  symbian_add_pic_dll(${elf_target} STARTUP "${DLL_STARTUP}"
-    LINKER_SCRIPT "${DLL_LINKER_SCRIPT}" SOURCES ${DLL_SOURCES})
-  if(default_startup)
-    if(NOT DLL_RUNTIME_TARGET)
-      set(DLL_RUNTIME_TARGET Symbian::Runtime)
-    endif()
-    if(NOT TARGET ${DLL_RUNTIME_TARGET})
-      message(FATAL_ERROR "The SDK DLL entry needs ${DLL_RUNTIME_TARGET}; include(SymbianApp)")
-    endif()
-    target_link_libraries(${elf_target} PRIVATE ${DLL_RUNTIME_TARGET})
-    if(NOT DLL_IMPORT_PROXIES)
-      set(DLL_IMPORT_PROXIES
-        "${SYMBIAN_SDK_PREFIX}/proxies/euser/euser.dso")
-    endif()
+  _symbian_project_file(startup "${DLL_STARTUP}")
+  _symbian_project_file(script "${DLL_LINKER_SCRIPT}")
+  add_library(${target} SHARED "${startup}" ${DLL_SOURCES})
+  set_target_properties(${target} PROPERTIES PREFIX "" SUFFIX ".dso"
+    NO_SONAME TRUE LINK_DEPENDS "${script}" SYMBIAN_ORDINAL_LIBRARY TRUE)
+  target_link_options(${target} PRIVATE -T "${script}")
+  add_library(${target}_import ALIAS ${target})
+  if(DLL_RUNTIME_TARGET)
+    target_link_libraries(${target} PRIVATE ${DLL_RUNTIME_TARGET} Symbian::EUser)
   endif()
-  set(proxy_args)
-  if(DLL_IMPORT_PROXIES)
-    target_link_options(${elf_target} PRIVATE --hash-style=sysv --no-dynamic-linker)
-    target_link_libraries(${elf_target} PRIVATE ${DLL_IMPORT_PROXIES})
-    foreach(proxy IN LISTS DLL_IMPORT_PROXIES)
-      list(APPEND proxy_args --import-proxy "${proxy}")
-    endforeach()
-  endif()
-  set(dll "${CMAKE_BINARY_DIR}/${target}.dll")
-  if(EXISTS "${SYMBIAN_SDK_PREFIX}/bin/symbian-native")
-    set(publish_command "${SYMBIAN_SDK_PREFIX}/bin/symbian-native"
-      convert-dll --input "$<TARGET_FILE:${elf_target}>")
+  target_link_options(${target} PRIVATE --hash-style=sysv --no-dynamic-linker
+    --as-needed --exclude-libs=ALL --gc-sections --export-dynamic)
+  # Source functions form the public interface. Runtime archive implementation
+  # stays hidden; explicit source visibility still supports private helpers.
+  foreach(source IN LISTS DLL_SOURCES)
+    set_property(SOURCE "${source}" APPEND PROPERTY COMPILE_OPTIONS -fvisibility=default)
+  endforeach()
+  if(DLL_EXPORT_DEFINITION)
+    _symbian_project_file(definition "${DLL_EXPORT_DEFINITION}")
   else()
-    set(publish_command "${SYMBIAN_SDK_PREFIX}/bin/symbian"
-      toolchain convert-dll "$<TARGET_FILE:${elf_target}>")
+    set(definition "${CMAKE_CURRENT_BINARY_DIR}/${target}.def")
+    set_target_properties(${target} PROPERTIES SYMBIAN_AUTOMATIC_EXPORTS TRUE)
   endif()
-  add_custom_command(OUTPUT "${dll}"
-    COMMAND ${publish_command}
-      --definition "${definition}"
-      --uid3 "${DLL_UID3}" ${proxy_args} --output "${dll}"
-    DEPENDS ${elf_target} "${definition}" ${DLL_IMPORT_PROXIES}
-    VERBATIM)
-  add_custom_target(${target} ALL DEPENDS "${dll}")
-  if(DLL_IMPORT_SYMBOLS)
-    set(proxy_dir "${CMAKE_BINARY_DIR}/${target}-import")
-    set(proxy "${proxy_dir}/${target}.dso")
-    set(proxy_args)
-    foreach(symbol IN LISTS DLL_IMPORT_SYMBOLS)
-      list(APPEND proxy_args --symbol "${symbol}")
-    endforeach()
-    if(EXISTS "${SYMBIAN_SDK_PREFIX}/bin/symbian-native")
-      add_custom_command(OUTPUT "${proxy}"
-        COMMAND "${SYMBIAN_SDK_PREFIX}/bin/symbian-native" proxy-sources
-          --definition "${definition}" ${proxy_args}
-          --target-dll "${target}.dll" --output "${proxy_dir}"
-        COMMAND "${CMAKE_CXX_COMPILER}" --target=armv5t-none-eabi -march=armv5t
-          -c "${proxy_dir}/exports.S" -o "${proxy_dir}/exports.o"
-        COMMAND "${CMAKE_LINKER}" -m armelf -shared --hash-style=sysv
-          --build-id=none "--soname=${target}.dso"
-          "--version-script=${proxy_dir}/exports.map"
-          -T "${proxy_dir}/proxy.ld" "${proxy_dir}/exports.o" -o "${proxy}"
-        DEPENDS "${definition}"
-        VERBATIM)
-    else()
-      add_custom_command(OUTPUT "${proxy}"
-        COMMAND "${SYMBIAN_SDK_PREFIX}/bin/symbian" toolchain import-proxy
-          "${definition}" ${proxy_args} --target-dll "${target}.dll"
-          --output "${proxy_dir}"
-          --compiler "${CMAKE_CXX_COMPILER}" --linker "${CMAKE_LINKER}"
-        DEPENDS "${definition}"
-        VERBATIM)
-    endif()
-    add_custom_target(${target}_proxy DEPENDS "${proxy}")
-    add_library(${target}_import UNKNOWN IMPORTED GLOBAL)
-    set_target_properties(${target}_import PROPERTIES IMPORTED_LOCATION "${proxy}")
-    add_dependencies(${target}_import ${target}_proxy)
-  endif()
+  set_target_properties(${target} PROPERTIES SYMBIAN_UID3 "${DLL_UID3}"
+    SYMBIAN_EXPORT_DEFINITION "${definition}"
+    SYMBIAN_EXTRA_PROXIES "${DLL_IMPORT_PROXIES};${SYMBIAN_IMPORT_PROXIES}")
+  target_link_libraries(${target} PRIVATE ${DLL_IMPORT_PROXIES})
+  cmake_language(EVAL CODE
+    "cmake_language(DEFER CALL _symbian_publish_library ${target})")
+
 endfunction()
+
+function(_symbian_publish_library target)
+  _symbian_target_proxies(${target} "" proxies)
+  get_target_property(extra ${target} SYMBIAN_EXTRA_PROXIES)
+  list(APPEND proxies ${extra})
+  list(REMOVE_ITEM proxies "")
+  list(REMOVE_DUPLICATES proxies)
+  set(options)
+  foreach(proxy IN LISTS proxies)
+    list(APPEND options --import-proxy "${proxy}")
+  endforeach()
+  get_target_property(uid3 ${target} SYMBIAN_UID3)
+  get_target_property(definition ${target} SYMBIAN_EXPORT_DEFINITION)
+  get_target_property(automatic ${target} SYMBIAN_AUTOMATIC_EXPORTS)
+  set(export_command)
+  if(automatic)
+    set(export_command COMMAND "${SYMBIAN_SDK_PREFIX}/bin/symbian-native"
+      export-definition --input "$<TARGET_FILE:${target}>"
+      --output "${definition}")
+  else()
+    set_property(TARGET ${target} APPEND PROPERTY LINK_DEPENDS "${definition}")
+  endif()
+  set(proxy_dir "${CMAKE_CURRENT_BINARY_DIR}/${target}-import")
+  set(elf "${CMAKE_CURRENT_BINARY_DIR}/${target}_elf.elf")
+  set(image "${CMAKE_CURRENT_BINARY_DIR}/${target}.dll")
+  add_custom_command(TARGET ${target} POST_BUILD
+    ${export_command}
+    COMMAND "${CMAKE_COMMAND}" -E copy "$<TARGET_FILE:${target}>" "${elf}"
+    COMMAND "${SYMBIAN_SDK_PREFIX}/bin/symbian-native" convert-dll
+      --input "${elf}" --definition "${definition}"
+      --uid3 "${uid3}" ${options} --output "${image}"
+    COMMAND "${SYMBIAN_SDK_PREFIX}/bin/symbian-native" proxy-sources
+      --definition "${definition}" --target-dll "${target}.dll"
+      --output "${proxy_dir}"
+    COMMAND "${CMAKE_CXX_COMPILER}" --target=armv5t-none-eabi -march=armv5t
+      -c "${proxy_dir}/exports.S" -o "${proxy_dir}/exports.o"
+    COMMAND "${CMAKE_LINKER}" -m armelf -shared --hash-style=sysv
+      --build-id=none "--soname=${target}.dso"
+      "--version-script=${proxy_dir}/exports.map"
+      -T "${proxy_dir}/proxy.ld" "${proxy_dir}/exports.o"
+      -o "$<TARGET_FILE:${target}>"
+    BYPRODUCTS "${elf}" "${image}" VERBATIM)
+  # Retain the previous helper target spelling for source diagnostic consumers.
+  add_custom_target(${target}_proxy DEPENDS ${target})
+endfunction()
+
 
 # Convert the linked ELF to a runnable E32 image using the standalone host tool.
 # The ELF remains available for debugging. This step requires no Python runtime.
@@ -217,26 +237,100 @@ function(symbian_publish_executable target)
     message(FATAL_ERROR "symbian_publish_executable needs UID3")
   endif()
   set(converter "${SYMBIAN_SDK_PREFIX}/bin/symbian-native")
-  if(NOT EXISTS "${converter}")
+  set(converter_dependency "${converter}")
+  if(SYMBIAN_WORKSPACE_BUILD AND TARGET symbian_native_tool)
+    set(converter "$<TARGET_FILE:symbian_native_tool>")
+    set(converter_dependency symbian_native_tool)
+  elseif(NOT EXISTS "${converter}")
     message(FATAL_ERROR "E32 publishing needs the standalone symbian-native tool")
   endif()
-  if(NOT EXE_IMPORT_PROXIES)
-    set(EXE_IMPORT_PROXIES ${SYMBIAN_IMPORT_PROXIES})
-  endif()
+  set_target_properties(${target} PROPERTIES SYMBIAN_UID3 "${EXE_UID3}"
+    SYMBIAN_CONVERTER "${converter}"
+    SYMBIAN_CONVERTER_DEPENDENCY "${converter_dependency}"
+    SYMBIAN_CAPABILITIES "${EXE_CAPABILITIES}"
+    SYMBIAN_EXTRA_PROXIES "${EXE_IMPORT_PROXIES};${SYMBIAN_IMPORT_PROXIES}")
+  cmake_language(EVAL CODE
+    "cmake_language(DEFER CALL _symbian_publish_executable ${target})")
+endfunction()
+
+function(_symbian_publish_executable target)
+  get_target_property(converter ${target} SYMBIAN_CONVERTER)
+  get_target_property(converter_dependency ${target} SYMBIAN_CONVERTER_DEPENDENCY)
+  _symbian_target_proxies(${target} "" proxies)
+  get_target_property(extra ${target} SYMBIAN_EXTRA_PROXIES)
+  list(APPEND proxies ${extra})
+  list(REMOVE_ITEM proxies "")
+  list(REMOVE_DUPLICATES proxies)
   set(options)
-  foreach(proxy IN LISTS EXE_IMPORT_PROXIES)
+  foreach(proxy IN LISTS proxies)
     list(APPEND options --import-proxy "${proxy}")
   endforeach()
-  if(EXE_CAPABILITIES)
-    list(APPEND options --capabilities "${EXE_CAPABILITIES}")
+  get_target_property(uid3 ${target} SYMBIAN_UID3)
+  get_target_property(capabilities ${target} SYMBIAN_CAPABILITIES)
+  if(capabilities)
+    list(APPEND options --capabilities "${capabilities}")
   endif()
   set(image "${CMAKE_CURRENT_BINARY_DIR}/e32/${target}.exe")
   add_custom_command(OUTPUT "${image}"
-    COMMAND "${CMAKE_COMMAND}" -E make_directory
-      "${CMAKE_CURRENT_BINARY_DIR}/e32"
+    COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/e32"
     COMMAND "${converter}" convert-exe --input "$<TARGET_FILE:${target}>"
-      --uid3 "${EXE_UID3}" ${options} --output "${image}"
-    DEPENDS ${target} "${converter}" ${EXE_IMPORT_PROXIES}
-    VERBATIM)
+      --uid3 "${uid3}" ${options} --output "${image}"
+    DEPENDS ${target} "${converter_dependency}" ${proxies} VERBATIM)
   add_custom_target(${target}_e32 ALL DEPENDS "${image}")
+endfunction()
+
+# Standard application entry is main() or main(int, char**). Runtime selection
+# remains a target_link_libraries choice, so alternate profiles cannot collide.
+function(symbian_add_executable target)
+  if(ARGV1 STREQUAL "SOURCES")
+    symbian_add_import_executable(${target} ${ARGN})
+  else()
+    symbian_add_import_executable(${target} SOURCES ${ARGN})
+  endif()
+  # Clang gives main C linkage in hosted mode; prevent host libc builtins.
+  target_compile_options(${target} PRIVATE -fhosted -fno-builtin -g -gdwarf-4
+    "-fdebug-compilation-dir=/symbian-build/${target}"
+    "-fdebug-prefix-map=${CMAKE_BINARY_DIR}=/symbian-build/${target}"
+    "-fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=/symbian-src/${target}"
+    "-fdebug-prefix-map=${SYMBIAN_SDK_PREFIX}/include/platform=/symbian-sdk/include"
+    "$<$<CONFIG:Debug>:-O0>")
+  target_link_options(${target} PRIVATE --gc-sections)
+endfunction()
+
+# Traverse the target graph after all target_link_libraries calls. This is build
+# metadata, not an application-maintained import manifest. Cycles are harmless.
+function(_symbian_target_proxies target visited output)
+  if(target IN_LIST visited)
+    set(${output} "" PARENT_SCOPE)
+    return()
+  endif()
+  list(APPEND visited "${target}")
+  set(result)
+  get_target_property(ordinal_library ${target} SYMBIAN_ORDINAL_LIBRARY)
+  if(ordinal_library AND visited)
+    # The root DLL is being converted; its own proxy is not its dependency.
+    list(LENGTH visited depth)
+    if(depth GREATER 1)
+      list(APPEND result "$<TARGET_FILE:${target}>")
+    endif()
+  endif()
+  foreach(property IMPORTED_LOCATION LINK_LIBRARIES INTERFACE_LINK_LIBRARIES)
+    get_target_property(items ${target} ${property})
+    if(NOT items)
+      continue()
+    endif()
+    foreach(item IN LISTS items)
+      if(item MATCHES "^\\$<LINK_ONLY:([^>]+)>$")
+        set(item "${CMAKE_MATCH_1}")
+      endif()
+      if(TARGET "${item}")
+        _symbian_target_proxies("${item}" "${visited}" nested)
+        list(APPEND result ${nested})
+      elseif(item MATCHES "\\.dso$")
+        list(APPEND result "${item}")
+      endif()
+    endforeach()
+  endforeach()
+  list(REMOVE_DUPLICATES result)
+  set(${output} "${result}" PARENT_SCOPE)
 endfunction()
