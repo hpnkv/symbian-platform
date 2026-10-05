@@ -60,6 +60,13 @@ absl::StatusOr<std::vector<ImportBlock>> DecodeImports(std::string_view section,
                                                        std::string_view code,
                                                        uint32_t count);
 
+// Legacy EKA1 PE imports: block words are ordinals, and loader-owned slots
+// occupy a contiguous, zero-terminated IAT immediately after text_size.
+std::string EncodePeImports(const std::vector<ImportBlock>& imports);
+absl::StatusOr<std::vector<ImportBlock>> DecodePeImports(
+    std::string_view section, std::string_view code, uint32_t text_size,
+    uint32_t count);
+
 }  // namespace symbian::e32::internal
 
 #endif  // SYMBIAN_E32_IMPORTS_H_

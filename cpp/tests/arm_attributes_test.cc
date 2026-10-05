@@ -10,6 +10,7 @@
 #include "symbian/analysis/bytes.h"
 #include "symbian/analysis/elf.h"
 #include "symbian/e32/e32.h"
+#include "symbian/e32/imports.h"
 
 namespace symbian::analysis {
 namespace {
@@ -115,6 +116,34 @@ TEST(Eka1Test, RejectsUntestedAbiAndRuntimeRequirements) {
     Put32(unsupported, offset, 4);
     EXPECT_FALSE(e32::InspectImage(unsupported).ok());
   }
+}
+
+TEST(Eka1Test, ChecksPeOrdinalsAgainstContiguousTerminatedIat) {
+  std::string code(32, '\0');
+  Put32(code, 16, 45);
+  Put32(code, 20, 243);
+  Put32(code, 24, 476);
+  const std::vector<e32::ImportBlock> blocks{
+      {"euser.dll", {{16, 45}, {20, 243}, {24, 476}}}};
+  const auto section = e32::internal::EncodePeImports(blocks);
+  auto decoded = e32::internal::DecodePeImports(section, code, 16, 1);
+  ASSERT_TRUE(decoded.ok()) << decoded.status();
+  EXPECT_EQ(decoded->front().slots[0].code_offset, 16);
+  EXPECT_EQ(decoded->front().slots[0].ordinal, 45);
+  EXPECT_EQ(internal::Read32(section, 12), 45);  // Ordinal, not offset.
+  EXPECT_FALSE(e32::internal::DecodeImports(section, code, 1).ok());
+  for (size_t size = 0; size < section.size(); ++size) {
+    EXPECT_FALSE(e32::internal::DecodePeImports(
+                     std::string_view(section).substr(0, size), code, 16, 1)
+                     .ok());
+  }
+  auto mismatched = code;
+  Put32(mismatched, 20, 244);
+  EXPECT_FALSE(e32::internal::DecodePeImports(section, mismatched, 16, 1).ok());
+  Put32(code, 28, 1);
+  EXPECT_FALSE(e32::internal::DecodePeImports(section, code, 16, 1).ok());
+  EXPECT_FALSE(e32::internal::DecodePeImports(section, code, 15, 1).ok());
+  EXPECT_FALSE(e32::internal::DecodePeImports(section, code, 16, 0).ok());
 }
 
 TEST(ArmAttributesTest, ReadsBothSupportedIsasAndKeepsMissingMetadataUnknown) {

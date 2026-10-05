@@ -12,9 +12,11 @@ def convert_pic_executable(
     return require_native().convert_pic_executable(data, uid3, capabilities)
 
 
-def convert_eka1_executable(data: bytes, uid3: int) -> bytes:
+def convert_eka1_executable(
+    data: bytes, uid3: int, proxies: list[bytes] | None = None
+) -> bytes:
     """Converts the bounded EKA1 no-UI process profile in the native core."""
-    return require_native().convert_eka1_executable(data, uid3)
+    return require_native().convert_eka1_executable(data, uid3, proxies or [])
 
 
 def convert_imported_executable(

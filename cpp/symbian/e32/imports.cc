@@ -511,4 +511,59 @@ absl::StatusOr<std::vector<ImportBlock>> DecodeImports(std::string_view section,
   return blocks;
 }
 
+std::string EncodePeImports(const std::vector<ImportBlock>& imports) {
+  auto words = imports;
+  for (auto& block : words) {
+    for (auto& slot : block.slots) {
+      slot.code_offset = slot.ordinal;
+    }
+  }
+  return EncodeImports(words);
+}
+
+absl::StatusOr<std::vector<ImportBlock>> DecodePeImports(
+    std::string_view section, std::string_view code, uint32_t text_size,
+    uint32_t count) {
+  if (count == 0 || count > 16 || section.size() < 4 || section.size() > 8192 ||
+      section.size() % 4 || code.size() > UINT32_MAX - 4ULL ||
+      Read32(section, 0) != section.size() || text_size < 16 || text_size % 4 ||
+      !Within(code.size(), text_size, 4) || (code.size() - text_size) % 4) {
+    return absl::DataLossError("Invalid PE import section/IAT layout");
+  }
+  std::vector<ImportBlock> blocks;
+  size_t p = 4;
+  uint32_t iat = text_size;
+  for (uint32_t i = 0; i < count; ++i) {
+    if (!Within(section.size(), p, 8)) {
+      return absl::DataLossError("Truncated PE import block");
+    }
+    const auto dll = StringAt(section, Read32(section, p));
+    if (!dll.ok()) {
+      return dll.status();
+    }
+    const uint32_t slots = Read32(section, p + 4);
+    p += 8;
+    if (!DllName(*dll) || (!blocks.empty() && *dll <= blocks.back().dll) ||
+        slots == 0 || slots > 1024 ||
+        !Within(section.size(), p, uint64_t{slots} * 4) ||
+        !Within(code.size(), iat, uint64_t{slots} * 4 + 4)) {
+      return absl::DataLossError("Invalid PE DLL/ordinal count");
+    }
+    ImportBlock block{*dll, {}};
+    for (uint32_t j = 0; j < slots; ++j, p += 4, iat += 4) {
+      const uint32_t ordinal = Read32(section, p);
+      if (ordinal == 0 || ordinal > 65535 || ordinal != Read32(code, iat)) {
+        return absl::DataLossError("PE ordinal/IAT mismatch");
+      }
+      block.slots.push_back({iat, ordinal});
+    }
+    blocks.push_back(std::move(block));
+  }
+  if (iat + 4 != code.size() || Read32(code, iat) != 0 ||
+      EncodePeImports(blocks) != section) {
+    return absl::DataLossError("Noncanonical PE imports/IAT terminator");
+  }
+  return blocks;
+}
+
 }  // namespace symbian::e32::internal

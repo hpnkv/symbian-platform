@@ -904,27 +904,50 @@ absl::StatusOr<ImageInfo> InspectEka1Image(std::string_view bytes) {
   if (Read32(bytes, 20) != 0x2000 || Read32(bytes, 44) != 0) {
     return absl::UnimplementedError("Unsupported EKA1 CPU/header profile");
   }
-  // This profile intentionally has no imports, exports, data or relocations.
+  // Exports, data and relocation sections remain outside this profile.
   for (size_t offset :
-       {size_t{28}, size_t{52}, size_t{68}, size_t{80}, size_t{84}, size_t{88},
-        size_t{92}, size_t{104}, size_t{108}, size_t{112}, size_t{116}}) {
+       {size_t{28}, size_t{52}, size_t{68}, size_t{80}, size_t{88}, size_t{92},
+        size_t{104}, size_t{112}, size_t{116}}) {
     if (Read32(bytes, offset) != 0) {
       return absl::UnimplementedError("EKA1 probe requires read-only PIC code");
     }
   }
   const uint32_t size = Read32(bytes, 48), base = Read32(bytes, 76);
   const uint32_t entry = Read32(bytes, 72), uid3 = Read32(bytes, 8);
+  const uint32_t count = Read32(bytes, 84), text_size = Read32(bytes, 96);
+  const uint32_t import_offset = Read32(bytes, 108);
   if (Read32(bytes, 0) != 0x1000007a || Read32(bytes, 4) != 0 ||
       uid3 < 0xe0000000 || uid3 > 0xefffffff ||
       Read32(bytes, 12) != UidChecksum(bytes) ||
       Read32(bytes, 100) != kEka1HeaderSize || size < 16 || size % 4 ||
-      size != bytes.size() - kEka1HeaderSize || Read32(bytes, 96) != size ||
-      base % 4 || size > UINT32_MAX - base || entry % 4 ||
-      !Within(size, entry, 4) || Read32(bytes, 56) != 0x1000 ||
-      Read32(bytes, 60) != 0x100000 || Read32(bytes, 64) != 0x10000 ||
-      Read32(bytes, 120) != 350 ||
-      Read32(bytes, 24) != CodeChecksum(bytes.substr(kEka1HeaderSize))) {
+      !Within(bytes.size(), kEka1HeaderSize, size) || text_size < 16 ||
+      text_size > size || text_size % 4 || base % 4 ||
+      size > UINT32_MAX - base || entry % 4 || !Within(text_size, entry, 4) ||
+      Read32(bytes, 56) != 0x1000 || Read32(bytes, 60) != 0x100000 ||
+      Read32(bytes, 64) != 0x10000 || Read32(bytes, 120) != 350 ||
+      Read32(bytes, 24) != CodeChecksum(bytes.substr(kEka1HeaderSize, size))) {
     return absl::DataLossError("Invalid EKA1 probe identity/layout/checksum");
+  }
+  std::vector<ImportBlock> imports;
+  if (count == 0) {
+    if (import_offset != 0 || text_size != size ||
+        bytes.size() != kEka1HeaderSize + size) {
+      return absl::DataLossError("Unexpected EKA1 trailing/import bytes");
+    }
+  } else {
+    if (count != 1 || import_offset != kEka1HeaderSize + size) {
+      return absl::UnimplementedError("EKA1 supports one final EUSER IAT");
+    }
+    auto decoded = internal::DecodePeImports(
+        bytes.substr(import_offset), bytes.substr(kEka1HeaderSize, size),
+        text_size, count);
+    if (!decoded.ok()) {
+      return decoded.status();
+    }
+    if (decoded->front().dll != "euser.dll") {
+      return absl::UnimplementedError("EKA1 import profile requires EUSER");
+    }
+    imports = std::move(*decoded);
   }
   ImageInfo info;
   info.kernel = "eka1";
@@ -934,6 +957,7 @@ absl::StatusOr<ImageInfo> InspectEka1Image(std::string_view bytes) {
   info.code_base = base;
   info.entry_offset = entry;
   info.header_size = kEka1HeaderSize;
+  info.imports = std::move(imports);
   return info;
 }
 
@@ -945,8 +969,9 @@ absl::StatusOr<std::string> ConvertPicExecutable(std::string_view elf,
   return ConvertExecutable(elf, uid3, capabilities, nullptr);
 }
 
-absl::StatusOr<std::string> ConvertEka1Executable(std::string_view elf,
-                                                  uint32_t uid3) {
+absl::StatusOr<std::string> ConvertEka1Executable(
+    std::string_view elf, uint32_t uid3,
+    const std::vector<std::string>& proxies) {
   if (elf.size() > 64 * 1024 * 1024) {
     return absl::ResourceExhaustedError("ELF exceeds 64 MiB");
   }
@@ -965,7 +990,8 @@ absl::StatusOr<std::string> ConvertEka1Executable(std::string_view elf,
   Fixups fixups;
   DataLayout data;
   const auto segment =
-      ExtractCode(elf, *header, nullptr, &imports, &sections, &fixups, &data);
+      ExtractCode(elf, *header, proxies.empty() ? nullptr : &proxies, &imports,
+                  &sections, &fixups, &data);
   if (!segment.ok()) {
     return segment.status();
   }
@@ -986,7 +1012,36 @@ absl::StatusOr<std::string> ConvertEka1Executable(std::string_view elf,
       segment->size % 4) {
     return absl::DataLossError("EKA1 requires a word-aligned ARM entry/code");
   }
-  const auto code = elf.substr(segment->offset, segment->size);
+  uint32_t text_size = segment->size;
+  std::string code(elf.substr(segment->offset, segment->size));
+  if (!proxies.empty()) {
+    if (imports.blocks.size() != 1 ||
+        imports.blocks.front().dll != "euser.dll" ||
+        !imports.data_function_pointers.empty()) {
+      return absl::UnimplementedError(
+          "EKA1 supports one function-only EUSER proxy");
+    }
+    const auto& got = sections[imports.got_index];
+    text_size = got.address - segment->address + 12;
+    if (got.address - segment->address + got.size != segment->size) {
+      return absl::FailedPreconditionError(
+          "EKA1 .got.plt must end the RX mapping");
+    }
+    uint32_t location = text_size;
+    for (const auto& slot : imports.blocks.front().slots) {
+      if (slot.code_offset != location) {
+        return absl::DataLossError("EKA1 imports require a contiguous IAT");
+      }
+      Put32(code, location, slot.ordinal);
+      location += 4;
+    }
+    code.append(4, '\0');
+  }
+  if (code.size() > UINT32_MAX - segment->address ||
+      code.size() > kMaxImageSize - kEka1HeaderSize ||
+      !Within(text_size, header->entry - segment->address, 4)) {
+    return absl::DataLossError("EKA1 IAT/code bounds or entry invalid");
+  }
   std::string bytes(kEka1HeaderSize, '\0');
   Put32(bytes, 0, 0x1000007a);
   Put32(bytes, 8, uid3);
@@ -995,16 +1050,21 @@ absl::StatusOr<std::string> ConvertEka1Executable(std::string_view elf,
   Put32(bytes, 20, 0x2000);  // Legacy ARM CPU, not a header CRC.
   Put32(bytes, 24, CodeChecksum(code));
   bytes[33] = 1;
-  Put32(bytes, 48, segment->size);
+  Put32(bytes, 48, static_cast<uint32_t>(code.size()));
   Put32(bytes, 56, 0x1000);
   Put32(bytes, 60, 0x100000);
   Put32(bytes, 64, 0x10000);
   Put32(bytes, 72, header->entry - segment->address);
   Put32(bytes, 76, segment->address);
-  Put32(bytes, 96, segment->size);
+  Put32(bytes, 96, text_size);
   Put32(bytes, 100, kEka1HeaderSize);
   Put32(bytes, 120, 350);
   bytes.append(code);
+  if (!imports.blocks.empty()) {
+    Put32(bytes, 84, 1);
+    Put32(bytes, 108, static_cast<uint32_t>(bytes.size()));
+    bytes.append(internal::EncodePeImports(imports.blocks));
+  }
   return bytes;
 }
 

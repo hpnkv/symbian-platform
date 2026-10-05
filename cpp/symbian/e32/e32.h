@@ -73,12 +73,15 @@ absl::StatusOr<std::string> ConvertPicExecutable(std::string_view elf,
                                                  uint32_t capabilities = 0);
 
 // Opt-in EKA1 no-UI process profile: ARMv5T EABI input, an ARM callable
-// entry that returns an integer, one read-only PIC mapping, no imports,
-// data/BSS, pointer fixups, lifecycle or unwinding. The legacy E32 header
-// has no security/CRC fields. EABI input is NOT an EKA1 C++ ABI claim.
+// entry that returns an integer, one read-only PIC mapping, no writable
+// data/BSS, pointer fixups, lifecycle or unwinding. Optional proxies enable
+// one EUSER DLL with a final contiguous PE IAT, not EKA2 ELF imports.
+// The legacy E32 header has no security/CRC fields. EABI input does not
+// establish compatibility with the general EKA1 C++ ABI.
 // Execution currently depends on EKA2L1's existing EKA1 bootstrap.
-absl::StatusOr<std::string> ConvertEka1Executable(std::string_view elf,
-                                                  uint32_t uid3);
+absl::StatusOr<std::string> ConvertEka1Executable(
+    std::string_view elf, uint32_t uid3,
+    const std::vector<std::string>& proxies = {});
 
 // Eager function imports from validated ordinal proxies, retained call relocs,
 // one RX load containing GOT/PLT and dynamic metadata; optional bounded RW

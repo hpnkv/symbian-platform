@@ -88,15 +88,25 @@ def build_executable(
         for name, path in tools.items()
     }
     kind = options.get("kind")
-    eka1 = kind == "e32-eka1"
+    eka1 = kind in ("e32-eka1", "e32-eka1-import")
     if eka1 and (architecture != "armv5t" or capabilities):
         raise StatusError(
             Code.INVALID_ARGUMENT,
             "EKA1 requires armv5t and has no platform-security capabilities",
         )
     dll = kind in ("e32-dll", "e32-dll-experiment")
-    imported = kind in ("e32-import", "e32-import-experiment")
-    canonical = kind in ("e32-eka1", "e32-pic", "e32-import", "e32-dll")
+    imported = kind in (
+        "e32-import",
+        "e32-import-experiment",
+        "e32-eka1-import",
+    )
+    canonical = kind in (
+        "e32-eka1",
+        "e32-eka1-import",
+        "e32-pic",
+        "e32-import",
+        "e32-dll",
+    )
     definition_name = options.get("export_definition")
     if dll and (not isinstance(definition_name, str) or not definition_name):
         raise StatusError(
@@ -156,7 +166,9 @@ def build_executable(
 
     def convert(data: bytes) -> bytes:
         if eka1:
-            return convert_eka1_executable(data, uid3)
+            return convert_eka1_executable(
+                data, uid3, list(proxy_bytes.values())
+            )
         if dll:
             return convert_dll(
                 data,
@@ -262,7 +274,9 @@ def build_executable(
             "experimental-e32-dll" if dll else "experimental-e32-executable"
         )
     if eka1:
-        schema = "symbian.e32-eka1/v1"
+        schema = (
+            "symbian.e32-eka1-import/v1" if imported else "symbian.e32-eka1/v1"
+        )
     report = {
         "kernel": "eka1" if eka1 else "eka2",
         "schema": schema,
@@ -303,7 +317,7 @@ def build_executable(
         "import_execution_verified": False,
         "limitations": [
             (
-                "EKA1 read-only no-UI process; no imports, data/BSS, "
+                "EKA1 no-UI process, optional EUSER PE imports; no data/BSS, "
                 "pointer fixups, runtime, unwinding or packaging; "
                 "execution needs the tested emulator bootstrap"
                 if eka1
