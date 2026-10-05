@@ -35,6 +35,12 @@ py::bytes ConvertPicExecutable(const py::bytes& data, uint32_t uid3,
   }));
 }
 
+py::bytes ConvertEka1Executable(const py::bytes& data, uint32_t uid3) {
+  const std::string bytes = data;
+  return py::bytes(symbian::python::ValueWithoutGil(
+      [&] { return symbian::e32::ConvertEka1Executable(bytes, uid3); }));
+}
+
 symbian::e32::ImageInfo InspectE32(const py::bytes& data) {
   const std::string bytes = data;
   return symbian::python::ValueWithoutGil(
@@ -209,6 +215,7 @@ PYBIND11_MODULE(_native, module) {
       .def_readonly("slots", &ImportBlock::slots);
   py::class_<ImageInfo>(module, "E32ImageInfo",
                         "E32 application metadata; no runtime verdict.")
+      .def_readonly("kernel", &ImageInfo::kernel)
       .def_readonly("uid3", &ImageInfo::uid3)
       .def_readonly("header_crc", &ImageInfo::header_crc)
       .def_readonly("flags", &ImageInfo::flags)
@@ -234,6 +241,9 @@ PYBIND11_MODULE(_native, module) {
   module.def("convert_pic_executable", &ConvertPicExecutable, py::arg("data"),
              py::arg("uid3"), py::arg("capabilities") = 0,
              "Convert a restricted, retained-relocation ELF.");
+  module.def("convert_eka1_executable", &ConvertEka1Executable, py::arg("data"),
+             py::arg("uid3"),
+             "Convert the restricted EKA1 read-only process profile.");
   module.def("inspect_e32", &InspectE32, py::arg("data"),
              "Check the E32 application profile, releasing the GIL.");
   module.def(

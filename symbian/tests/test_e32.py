@@ -28,7 +28,12 @@ def test_link_conversion_reproducibility_and_limits(image):
     assert report["elf"]["type"] == 2
     assert report["e32"]["uid3"] == 0xE0000808
     assert report["e32"]["entry_offset"] == 0
-    assert report["e32"]["code_size"] == len(data) - 156
+    assert report["e32"]["kernel"] == "eka2"
+    code_end = report["e32"]["header_size"] + report["e32"]["code_size"]
+    # This probe retains its EHABI descriptor and absolute pointer fixups.
+    assert code_end <= len(data)
+    assert report["e32"]["code_relocations"]
+    assert len(data) > code_end
     assert inspect_image(Path(report["artifact"])) == report["e32"]
     assert not report["symbian_loader_verified"]
     assert not report["runtime_verified"]
@@ -65,7 +70,7 @@ def test_project_auxiliary_files_cannot_escape(tmp_path):
     with pytest.raises(StatusError) as caught:
         toolchain.build(project, tmp_path / "output")
     assert caught.value.code == Code.FAILED_PRECONDITION
-    assert "must be a file within the project" in str(caught.value)
+    assert "must be a project or selected SDK file" in str(caught.value)
 
 
 @pytest.mark.skipif(not TOOLS_AVAILABLE, reason="Clang/LLD unavailable")

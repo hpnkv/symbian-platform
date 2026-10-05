@@ -12,6 +12,11 @@ def convert_pic_executable(
     return require_native().convert_pic_executable(data, uid3, capabilities)
 
 
+def convert_eka1_executable(data: bytes, uid3: int) -> bytes:
+    """Converts the bounded EKA1 no-UI process profile in the native core."""
+    return require_native().convert_eka1_executable(data, uid3)
+
+
 def convert_imported_executable(
     data: bytes, proxies: list[bytes], uid3: int, capabilities: int = 0
 ) -> bytes:
@@ -40,6 +45,7 @@ def inspect_image(path: Path) -> dict:
     result = {
         field: getattr(info, field)
         for field in (
+            "kernel",
             "uid3",
             "header_crc",
             "flags",
@@ -84,6 +90,7 @@ def inspect_image(path: Path) -> dict:
 
 __all__ = [
     "convert_pic_executable",
+    "convert_eka1_executable",
     "convert_imported_executable",
     "inspect_image",
     "convert_dll",

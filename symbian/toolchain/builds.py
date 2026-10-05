@@ -165,6 +165,7 @@ def build(
         raise StatusError(Code.INVALID_ARGUMENT, "Missing [project] table")
     if options.get("kind") not in (
         "arm-object",
+        "e32-eka1",
         "e32-pic",
         "e32-import",
         "e32-dll",
@@ -190,6 +191,7 @@ def build(
     ):
         raise StatusError(Code.INVALID_ARGUMENT, "Invalid project name")
     if options["kind"] in (
+        "e32-eka1",
         "e32-pic",
         "e32-import",
         "e32-dll",

@@ -1,0 +1,14 @@
+{
+  "version": 6,
+  "configurePresets": [{
+    "name": "symbian-eka1",
+    "generator": "Ninja",
+    "binaryDir": "${sourceDir}/../../.symbian/cmake/eka1-probe",
+    "toolchainFile": "${sourceDir}/../../symbian/toolchain/cmake/symbian-arm.cmake",
+    "cacheVariables": {
+      "SYMBIAN_TARGET_ARCH": "armv5t",
+      "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+    }
+  }],
+  "buildPresets": [{"name": "symbian-eka1", "configurePreset": "symbian-eka1"}]
+}

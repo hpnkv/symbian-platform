@@ -10,6 +10,7 @@ from pathlib import Path
 from symbian.analysis import inspect_elf
 from symbian.e32 import (
     convert_dll,
+    convert_eka1_executable,
     convert_imported_executable,
     convert_pic_executable,
     inspect_image,
@@ -87,9 +88,15 @@ def build_executable(
         for name, path in tools.items()
     }
     kind = options.get("kind")
+    eka1 = kind == "e32-eka1"
+    if eka1 and (architecture != "armv5t" or capabilities):
+        raise StatusError(
+            Code.INVALID_ARGUMENT,
+            "EKA1 requires armv5t and has no platform-security capabilities",
+        )
     dll = kind in ("e32-dll", "e32-dll-experiment")
     imported = kind in ("e32-import", "e32-import-experiment")
-    canonical = kind in ("e32-pic", "e32-import", "e32-dll")
+    canonical = kind in ("e32-eka1", "e32-pic", "e32-import", "e32-dll")
     definition_name = options.get("export_definition")
     if dll and (not isinstance(definition_name, str) or not definition_name):
         raise StatusError(
@@ -148,6 +155,8 @@ def build_executable(
     proxy_bytes = {path: path.read_bytes() for path in proxies}
 
     def convert(data: bytes) -> bytes:
+        if eka1:
+            return convert_eka1_executable(data, uid3)
         if dll:
             return convert_dll(
                 data,
@@ -252,11 +261,17 @@ def build_executable(
         artifact_kind = (
             "experimental-e32-dll" if dll else "experimental-e32-executable"
         )
+    if eka1:
+        schema = "symbian.e32-eka1/v1"
     report = {
+        "kernel": "eka1" if eka1 else "eka2",
         "schema": schema,
         "artifact_kind": artifact_kind,
         "artifact": str(image),
-        "target": arm_target(architecture).model_dump(),
+        "target": {
+            **arm_target(architecture).model_dump(),
+            **({"e32_cpu": 0x2000} if eka1 else {}),
+        },
         "sha256": hashlib.sha256(first_image).hexdigest(),
         "linked_elf": str(elf),
         "linked_elf_sha256": hashlib.sha256(first_elf).hexdigest(),
@@ -288,19 +303,25 @@ def build_executable(
         "import_execution_verified": False,
         "limitations": [
             (
-                "Frozen function exports and eager imports only; "
-                "RELRO/local GOT and bounded per-process data/BSS allowed; "
-                "constructor arrays need the SDK DLL entry; "
-                "no TLS or general unload/lifetime contract"
-                if dll
+                "EKA1 read-only no-UI process; no imports, data/BSS, "
+                "pointer fixups, runtime, unwinding or packaging; "
+                "execution needs the tested emulator bootstrap"
+                if eka1
                 else (
-                    "Eager function imports, bounded local GOT "
-                    "and EXE data/BSS; "
-                    "no TLS/exports; constructors need SDK startup"
-                    if imported
-                    else "Internal RX pointers, RELRO and bounded local GOT; "
-                    "no SDK/imports, writable data, exports, "
-                    "constructors or packaging"
+                    "Frozen function exports and eager imports only; "
+                    "RELRO/local GOT and bounded per-process data/BSS allowed; "
+                    "constructor arrays need the SDK DLL entry; "
+                    "no TLS or general unload/lifetime contract"
+                    if dll
+                    else (
+                        "Eager function imports, bounded local GOT "
+                        "and EXE data/BSS; "
+                        "no TLS/exports; constructors need SDK startup"
+                        if imported
+                        else "Internal RX pointers, RELRO/local GOT; "
+                        "no SDK/imports, writable data, exports, "
+                        "constructors or packaging"
+                    )
                 )
             ),
             "All relocations must be retained by the trusted linker",
@@ -311,7 +332,11 @@ def build_executable(
                 else "Project startup, heap initialization and cleanup "
                 "are not established by conversion or static inspection"
             ),
-            "Matched Belle runtime and full target ABI are unverified",
+            (
+                "EKA1 C++/imports and physical-device behavior are unverified"
+                if eka1
+                else "Matched Belle runtime and full target ABI are unverified"
+            ),
         ],
     }
     (output / "report.json").write_text(

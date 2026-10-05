@@ -327,6 +327,9 @@ absl::StatusOr<std::string> BuildFiles(
   if (!image.ok()) {
     return image.status();
   }
+  if (image->kernel != "eka2") {
+    return absl::UnimplementedError("EKA1 requires legacy SIS, not SISX");
+  }
   if (image->dll) {
     return absl::UnimplementedError("SIS requires an executable, not a DLL");
   }

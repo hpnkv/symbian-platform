@@ -41,15 +41,80 @@ std::string WithAttributes(std::string elf, std::string_view attributes) {
     elf.push_back('\0');
   }
   const uint32_t table = static_cast<uint32_t>(elf.size());
-  // Preserve the original five section identities and their data locations.
-  elf.append(elf.substr(116, 5 * 40));
+  // Preserve section identities and their original data locations.
+  const uint32_t original_table = internal::Read32(elf, 32);
+  const uint16_t count = internal::Read16(elf, 48);
+  elf.append(elf.substr(original_table, count * 40));
   elf.append(40, '\0');
   Put32(elf, 32, table);
-  Put16(elf, 48, 6);
-  Put32(elf, table + 5 * 40 + 4, 0x70000003);
-  Put32(elf, table + 5 * 40 + 16, attribute_offset);
-  Put32(elf, table + 5 * 40 + 20, static_cast<uint32_t>(attributes.size()));
+  Put16(elf, 48, count + 1);
+  Put32(elf, table + count * 40 + 4, 0x70000003);
+  Put32(elf, table + count * 40 + 16, attribute_offset);
+  Put32(elf, table + count * 40 + 20, static_cast<uint32_t>(attributes.size()));
   return elf;
+}
+
+TEST(Eka1Test, PublishesLegacyHeaderWithoutEka2EntryOrSecurity) {
+  auto elf = WithAttributes(testing::Executable(), Attributes(3));
+  // Ordinary ARM return, not the EKA2 marker.
+  Put32(elf, 84, 0xe12fff1e);
+  const auto image = e32::ConvertEka1Executable(elf, 0xe0000761);
+  ASSERT_TRUE(image.ok()) << image.status();
+  EXPECT_EQ(image->size(), 124 + 32);
+  EXPECT_EQ(internal::Read32(*image, 20), 0x2000);
+  EXPECT_EQ(internal::Read32(*image, 44), 0);
+  const auto info = e32::InspectImage(*image);
+  ASSERT_TRUE(info.ok()) << info.status();
+  EXPECT_EQ(info->kernel, "eka1");
+  EXPECT_EQ(info->header_size, 124);
+  EXPECT_EQ(info->architecture, "armv5t");
+  EXPECT_EQ(info->secure_id, 0);
+  EXPECT_EQ(info->header_crc, 0);
+  EXPECT_TRUE(info->imports.empty());
+  for (size_t size = 0; size < image->size(); ++size) {
+    EXPECT_FALSE(
+        e32::InspectImage(std::string_view(*image).substr(0, size)).ok());
+  }
+  for (size_t offset : {size_t{8}, size_t{12}, size_t{24}, size_t{48},
+                        size_t{72}, size_t{100}, size_t{124}}) {
+    auto damaged = *image;
+    damaged[offset] ^= 1;
+    EXPECT_FALSE(e32::InspectImage(damaged).ok()) << offset;
+  }
+  EXPECT_FALSE(e32::ConvertPicExecutable(elf, 0xe0000761).ok());
+}
+
+TEST(Eka1Test, RejectsUntestedAbiAndRuntimeRequirements) {
+  EXPECT_FALSE(
+      e32::ConvertEka1Executable(testing::Executable(), 0xe0000761).ok());
+  EXPECT_FALSE(
+      e32::ConvertEka1Executable(
+          WithAttributes(testing::Executable(), Attributes(6)), 0xe0000761)
+          .ok());
+  auto elf = WithAttributes(testing::Executable(), Attributes(3));
+  EXPECT_FALSE(e32::ConvertEka1Executable(elf, 1).ok());
+  Put32(elf, 24, 0x8001);  // Thumb entry is not the ARM callable contract.
+  EXPECT_FALSE(e32::ConvertEka1Executable(elf, 0xe0000761).ok());
+  EXPECT_EQ(
+      e32::ConvertEka1Executable(
+          WithAttributes(testing::DataExecutable(), Attributes(3)), 0xe0000761)
+          .status()
+          .code(),
+      absl::StatusCode::kUnimplemented);
+  auto pointer = WithAttributes(testing::Executable(), Attributes(3));
+  Put32(pointer, 100, 0x8018);
+  Put32(pointer, 352, 0x102);  // Retained ABS32 requires a code fixup.
+  EXPECT_EQ(e32::ConvertEka1Executable(pointer, 0xe0000761).status().code(),
+            absl::StatusCode::kUnimplemented);
+  auto image = e32::ConvertEka1Executable(
+      WithAttributes(testing::Executable(), Attributes(3)), 0xe0000761);
+  ASSERT_TRUE(image.ok()) << image.status();
+  for (size_t offset : {size_t{44}, size_t{52}, size_t{68}, size_t{84},
+                        size_t{88}, size_t{108}, size_t{112}}) {
+    auto unsupported = *image;
+    Put32(unsupported, offset, 4);
+    EXPECT_FALSE(e32::InspectImage(unsupported).ok());
+  }
 }
 
 TEST(ArmAttributesTest, ReadsBothSupportedIsasAndKeepsMissingMetadataUnknown) {

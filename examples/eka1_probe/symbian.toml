@@ -1,0 +1,6 @@
+[project]
+name = "eka1_probe"
+kind = "e32-eka1"
+uid3 = 0xE0000761
+architecture = "armv5t"
+cmake_preset = "symbian-eka1"

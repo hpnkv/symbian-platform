@@ -887,12 +887,125 @@ absl::StatusOr<std::string> ConvertExecutable(
   return bytes;
 }
 
+constexpr uint32_t kEka1HeaderSize = 124;
+
+uint32_t CodeChecksum(std::string_view code) {
+  uint32_t checksum = 0;
+  for (size_t i = 0; i < code.size(); i += 4) {
+    checksum += Read32(code, i);
+  }
+  return checksum;
+}
+
+absl::StatusOr<ImageInfo> InspectEka1Image(std::string_view bytes) {
+  if (bytes.size() < kEka1HeaderSize || bytes.size() > kMaxImageSize) {
+    return absl::DataLossError("Truncated EKA1 header");
+  }
+  if (Read32(bytes, 20) != 0x2000 || Read32(bytes, 44) != 0) {
+    return absl::UnimplementedError("Unsupported EKA1 CPU/header profile");
+  }
+  // This profile intentionally has no imports, exports, data or relocations.
+  for (size_t offset :
+       {size_t{28}, size_t{52}, size_t{68}, size_t{80}, size_t{84}, size_t{88},
+        size_t{92}, size_t{104}, size_t{108}, size_t{112}, size_t{116}}) {
+    if (Read32(bytes, offset) != 0) {
+      return absl::UnimplementedError("EKA1 probe requires read-only PIC code");
+    }
+  }
+  const uint32_t size = Read32(bytes, 48), base = Read32(bytes, 76);
+  const uint32_t entry = Read32(bytes, 72), uid3 = Read32(bytes, 8);
+  if (Read32(bytes, 0) != 0x1000007a || Read32(bytes, 4) != 0 ||
+      uid3 < 0xe0000000 || uid3 > 0xefffffff ||
+      Read32(bytes, 12) != UidChecksum(bytes) ||
+      Read32(bytes, 100) != kEka1HeaderSize || size < 16 || size % 4 ||
+      size != bytes.size() - kEka1HeaderSize || Read32(bytes, 96) != size ||
+      base % 4 || size > UINT32_MAX - base || entry % 4 ||
+      !Within(size, entry, 4) || Read32(bytes, 56) != 0x1000 ||
+      Read32(bytes, 60) != 0x100000 || Read32(bytes, 64) != 0x10000 ||
+      Read32(bytes, 120) != 350 ||
+      Read32(bytes, 24) != CodeChecksum(bytes.substr(kEka1HeaderSize))) {
+    return absl::DataLossError("Invalid EKA1 probe identity/layout/checksum");
+  }
+  ImageInfo info;
+  info.kernel = "eka1";
+  info.uid3 = uid3;
+  info.architecture = "armv5t";
+  info.code_size = size;
+  info.code_base = base;
+  info.entry_offset = entry;
+  info.header_size = kEka1HeaderSize;
+  return info;
+}
+
 }  // namespace
 
 absl::StatusOr<std::string> ConvertPicExecutable(std::string_view elf,
                                                  uint32_t uid3,
                                                  uint32_t capabilities) {
   return ConvertExecutable(elf, uid3, capabilities, nullptr);
+}
+
+absl::StatusOr<std::string> ConvertEka1Executable(std::string_view elf,
+                                                  uint32_t uid3) {
+  if (elf.size() > 64 * 1024 * 1024) {
+    return absl::ResourceExhaustedError("ELF exceeds 64 MiB");
+  }
+  if (uid3 < 0xe0000000 || uid3 > 0xefffffff) {
+    return absl::InvalidArgumentError("Experimental unprotected UID3 required");
+  }
+  const auto header = analysis::InspectElf32(elf);
+  if (!header.ok()) {
+    return header.status();
+  }
+  if (header->arm.cpu_arch != 3) {
+    return absl::UnimplementedError("EKA1 probe requires ARMv5T input");
+  }
+  ResolvedImports imports;
+  std::vector<Section> sections;
+  Fixups fixups;
+  DataLayout data;
+  const auto segment =
+      ExtractCode(elf, *header, nullptr, &imports, &sections, &fixups, &data);
+  if (!segment.ok()) {
+    return segment.status();
+  }
+  if (data.file.size || data.bss_size || !fixups.code.empty() ||
+      !fixups.data.empty()) {
+    return absl::UnimplementedError("EKA1 probe requires read-only PIC code");
+  }
+  for (const auto& section : sections) {
+    if ((section.flags & 2) && section.size &&
+        (section.type == 14 || section.type == 15 || section.type == 16 ||
+         section.type == 0x70000001 || section.name == ".ARM.exidx" ||
+         section.name == ".ARM.extab")) {
+      return absl::UnimplementedError("EKA1 lifecycle/unwinding unsupported");
+    }
+  }
+  if (header->entry < segment->address || header->entry % 4 ||
+      !Within(segment->size, header->entry - segment->address, 4) ||
+      segment->size % 4) {
+    return absl::DataLossError("EKA1 requires a word-aligned ARM entry/code");
+  }
+  const auto code = elf.substr(segment->offset, segment->size);
+  std::string bytes(kEka1HeaderSize, '\0');
+  Put32(bytes, 0, 0x1000007a);
+  Put32(bytes, 8, uid3);
+  Put32(bytes, 12, UidChecksum(bytes));
+  Put32(bytes, 16, 0x434f5045);
+  Put32(bytes, 20, 0x2000);  // Legacy ARM CPU, not a header CRC.
+  Put32(bytes, 24, CodeChecksum(code));
+  bytes[33] = 1;
+  Put32(bytes, 48, segment->size);
+  Put32(bytes, 56, 0x1000);
+  Put32(bytes, 60, 0x100000);
+  Put32(bytes, 64, 0x10000);
+  Put32(bytes, 72, header->entry - segment->address);
+  Put32(bytes, 76, segment->address);
+  Put32(bytes, 96, segment->size);
+  Put32(bytes, 100, kEka1HeaderSize);
+  Put32(bytes, 120, 350);
+  bytes.append(code);
+  return bytes;
 }
 
 absl::StatusOr<std::string> ConvertImportedExecutable(
@@ -910,6 +1023,10 @@ absl::StatusOr<std::string> ConvertDll(std::string_view elf,
 }
 
 absl::StatusOr<ImageInfo> InspectImage(std::string_view bytes) {
+  if (bytes.size() >= 24 && bytes.substr(16, 4) == "EPOC" &&
+      Read32(bytes, 20) == 0x2000) {
+    return InspectEka1Image(bytes);
+  }
   if (bytes.size() < kHeaderSize || bytes.size() > kMaxImageSize ||
       bytes.substr(16, 4) != "EPOC") {
     return absl::DataLossError("Missing/truncated E32 V header");
