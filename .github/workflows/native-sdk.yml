@@ -118,30 +118,37 @@ jobs:
           python -m pip install wheelhouse/*cp312*
           mkdir host
           tar -xzf host-archive/*.tar.gz -C host
+      - uses: actions/cache@v4
+        id: assembled
+        with:
+          path: release-assets
+          key: native-archive-v1-${{ matrix.platform }}-${{ matrix.arch }}-ubuntu24-macos15-${{ hashFiles('cpp/**', 'cmake/**', 'symbian/**', 'third_party/**', 'examples/gui_app/**', 'CMakeLists.txt', 'VERSION', 'LICENSE', 'scripts/*native*', 'research/gui_app/source-profile.json', 'research/llvm/**', 'research/rcomp/**') }}
       - name: Install macOS build tools
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && steps.assembled.outputs.cache-hit != 'true'
         run: |
           brew install llvm lld cmake ninja
           echo "SYMBIAN_LLVM_BIN=$(brew --prefix llvm)/bin" >> "$GITHUB_ENV"
       - name: Install Linux build prerequisites
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && steps.assembled.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build patchelf zstd
           python -m pip install 'ninja>=1.12,<2'
       - uses: actions/cache@v4
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && steps.assembled.outputs.cache-hit != 'true'
         with:
           path: ${{ runner.temp }}/native-llvm
           key: native-llvm-linux-${{ matrix.arch }}-${{ hashFiles('scripts/bootstrap_native_tools.py') }}
       - name: Acquire pinned Linux compiler
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && steps.assembled.outputs.cache-hit != 'true'
         run: python scripts/bootstrap_native_tools.py --arch "${{ matrix.arch }}" --output "${{ runner.temp }}/native-llvm"
       - name: Build resource tools
+        if: steps.assembled.outputs.cache-hit != 'true'
         run: |
           python scripts/prepare_native_sources.py --workspace "$PWD" --resources-only
           python scripts/build_native_resources.py --workspace "$PWD" --output resources
       - name: Assemble native SDK with complete tool dependency closure
+        if: steps.assembled.outputs.cache-hit != 'true'
         shell: bash
         env:
           SDK_PLATFORM: ${{ matrix.platform }}
@@ -170,8 +177,19 @@ jobs:
           version=$(cat VERSION)
           mkdir release-assets
           COPYFILE_DISABLE=1 tar -C sdk -czf "release-assets/symbian-sdk-$version-$SDK_PLATFORM-$SDK_ARCH.tar.gz" .
-          python scripts/check_installed_native_sdk.py \
-            "release-assets/symbian-sdk-$version-$SDK_PLATFORM-$SDK_ARCH.tar.gz"
+      - name: Verify restored native SDK and installed-wheel workflows
+        env:
+          SDK_PLATFORM: ${{ matrix.platform }}
+          SDK_ARCH: ${{ matrix.arch }}
+        run: |
+          version=$(cat VERSION)
+          archive="release-assets/symbian-sdk-$version-$SDK_PLATFORM-$SDK_ARCH.tar.gz"
+          if [[ ! -d sdk ]]; then
+            mkdir sdk
+            tar -xzf "$archive" -C sdk
+            python scripts/check_native_sdk.py sdk
+          fi
+          python scripts/check_installed_native_sdk.py "$archive"
       - uses: actions/upload-artifact@v4
         with:
           name: native-sdk-${{ matrix.platform }}-${{ matrix.arch }}
