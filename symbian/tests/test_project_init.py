@@ -20,7 +20,7 @@ from symbian.emulator.launch import session
 from symbian.project.generate import Preferences, generate, wizard
 from symbian.project.sdk import AppSdk, activate_sdk, discover_sdk
 from symbian.status import Code, StatusError
-from symbian.tests.test_guest_gui import _ready
+from symbian.tests.test_guest_gui import _portrait_frame, _ready
 
 SDK = os.environ.get("SYMBIAN_APP_SDK")
 live = pytest.mark.skipif(not SDK, reason="Set SYMBIAN_APP_SDK to prepared SDK")
@@ -331,7 +331,7 @@ def _capture(control, label, expected_lines, output):
         )
         with Image.open(result["path"]) as image:
             image.save(output / f"last-{label}.png")
-            rgb = image.convert("RGB")
+            rgb = _portrait_frame(image)
 
             # The real font must put white ink in the greeting and in each
             # requested log row, leaving all unused log rows blank.
@@ -542,8 +542,8 @@ def test_generated_abseil_error_reaches_native_exit(app, tmp_path):
     with session(app, project=app, backend="dynarmic") as active:
         control = Control(active.endpoint)
         _capture(control, "status-error-ready", 0, tmp_path)
+        # The model rejects the press and exits before a release can arrive.
         _ready(lambda: control.pointer(100, 200, "press"))
-        _ready(lambda: control.pointer(100, 200, "release"))
         assert active.process.wait(timeout=15) == 0
     exits = Control(active.directory / "control.sock").exit_report()[
         "process_exits"
@@ -563,7 +563,8 @@ def test_generated_project_model_allocation_failure_closes_resources(
     bridge.write_text(
         text.replace(
             "return new (std::nothrow) AppModel;",
-            "return ::operator new(4 * 1024 * 1024, std::nothrow);",
+            # Above the native signed allocation limit for either heap backend.
+            "return ::operator new(0x80000000u, std::nothrow);",
         )
     )
     # Fast guest exit can precede the live endpoint readiness check. In either

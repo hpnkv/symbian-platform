@@ -5760,3 +5760,20 @@ host components; they do not yet claim the required complete no-Python native
 SDK. Linux archives are copied through cibuildwheel's /host mount so they survive
 container teardown. Shell/config checks passed; the actual four-host run and
 publication/native payload gates remain pending.
+
+## 2026-10-05 — Linux GUI checks and Thumb-2 GDB breakpoints
+
+The SDK-backed Linux GUI/generated-project rerun passed 35 cases; its four
+remaining failures now pass in a focused rerun. Capture scale is normalized
+without dropping the pixel/text assertions. The error-model test observes exit
+after the press instead of racing a release against teardown. The allocation
+control requests more than the native signed-size limit, remaining a real
+nothrow failure under both the original heap and mimalloc profiles.
+
+The live GDB failure was an emulator defect: RSP kind 3 means a 32-bit Thumb
+instruction, not a three-byte patch. The new GPL emulator patch uses a two-byte
+Thumb trap and restores that halfword, rejecting invalid execute kinds. Consulted
+https://sourceware.org/gdb/current/onlinedocs/gdb.html/ARM-Breakpoint-Kinds.html.
+The Linux patched frontend now reaches both application/model source breakpoints
+and reads clock values. Logs: /tmp/symbian-linux-sdk-gui-r3.log and
+/tmp/symbian-linux-gui-negative-debug-r4.log. No phone compatibility claim follows.

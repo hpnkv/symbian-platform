@@ -73,12 +73,17 @@ def _ready(operation, *, timeout=15):
             time.sleep(0.05)
 
 
+def _portrait_frame(image: Image.Image) -> Image.Image:
+    """Normalizes capture scale while retaining the logical portrait layout."""
+    assert image.width * 640 == image.height * 360, image.size
+    return image.convert("RGB").resize((720, 1280), Image.Resampling.NEAREST)
+
+
 def _counter(path: Path) -> int | None:
     """Reads independent seven-segment centers in the real captured pixels."""
     with Image.open(path) as image:
-        assert image.size == (720, 1280)
-        image = image.convert("RGB")
-        # Fixture: logical 360x640, display scale 2, digits 12 units thick.
+        image = _portrait_frame(image)
+        # Logical 360x640 normalized to scale 2, digits 12 units thick.
         # Explicit sample points keep this oracle independent of model code.
         centers = [
             (30, 6),

@@ -1,0 +1,20 @@
+--- a/src/emu/gdbstub/src/gdbstub.cpp
++++ b/src/emu/gdbstub/src/gdbstub.cpp
+@@ -1071,6 +1071,17 @@
+      * @param len Length of breakpoint.
+      */
+     bool gdbstub::commit_breakpoint(breakpoint_type type, std::uint32_t addr, std::uint32_t len) {
++        // ARM RSP kinds are instruction encodings, not byte counts. Kind 3
++        // denotes Thumb-2: insert a 16-bit Thumb trap and save only its two
++        // bytes, leaving the instruction's other halfword intact for restore.
++        // Treating kind 3 as a three-byte ARM trap corrupts adjacent code.
++        if (type == breakpoint_type::Execute) {
++            if (len == 3) {
++                len = 2;
++            } else if (len != 2 && len != 4) {
++                return false;
++            }
++        }
+         breakpoint_map &p = get_breakpoint_map(type);
+ 
+         breakpoint br;

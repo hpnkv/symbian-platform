@@ -18,6 +18,7 @@ git -C research/upstream/EKA2L1 checkout 2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e
 git -C research/upstream/EKA2L1 submodule update --init --recursive --depth 1
 for patch in \
   instance-root runtime-probe guest-debug-step guest-debug-library-query \
+  guest-debug-thumb32-breakpoint \
   symbian101-experimental guest-thread-register guest-control \
   firmware-import-bounds fbs-unsupported-request background-window \
   dll-wsd-dyncom-exit belle-library-entry-start belle-library-load-prepare \

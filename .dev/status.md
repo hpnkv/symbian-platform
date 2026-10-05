@@ -2775,3 +2775,11 @@ metadata; detailed descriptions put publication/capability information last.
 All eleven snapshots retain unchanged declarations and source-browser content.
 Strict documentation builds and rendered class-list/detail-order checks passed.
 The separate generated symbol-description coverage remains unfinished.
+
+## Linux GUI and debugger, 2026-10-05
+
+SDK-backed GUI/generated-project checks pass in the Linux reruns (35 initial
+passes plus four repaired negative/debug cases). Original normal pixel controls
+remain, with capture-scale normalization. The live GDB check now reaches both
+source breakpoints after correcting the emulator's Thumb-2 breakpoint-kind
+handling. Whole-suite and other host architecture release gates remain pending.
