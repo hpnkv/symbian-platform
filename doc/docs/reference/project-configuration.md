@@ -17,8 +17,16 @@ The path may be absolute or relative to the project. It is ignored by Git, so
 each collaborator can point to a local SDK. Selection order is explicit `--sdk`,
 project `sdk-location.json`, then the active SDK. Changing the setting and
 running `symbian app build --project PROJECT` refreshes the CMake cache as
-needed. An SDK installation records its own files and digests; moving an
-installed SDK directory without reinstalling does not rebase its manifest.
+needed. Native distribution manifests use relative paths and remain usable
+when their directory moves. Update the project's SDK selection and active user
+setting to point to the moved installation. Development source exports can
+retain absolute external tool paths.
+
+To install a downloaded [native release archive](../guides/native-distributions.md):
+
+```sh
+symbian sdk install ~/dev/symbian-sdk --archive symbian-sdk.tar.gz
+```
 
 To install from the prepared source checkout:
 
@@ -79,7 +87,7 @@ device.
 | `proxies` | Import libraries for selected OS services |
 | `cmake` | Toolchain and native CMake targets |
 | `bin`, `libexec` | Build, conversion and debugging tools |
-| `sdk.json`, `digests.json` | Installed entry points and file verification |
+| `sdk.json` | Installed entry points; relative paths in native distributions |
 
 The [SDK export reference](sdk.md) gives the fuller installed surface. The
 [capability guide](../capabilities/index.md) describes available native facilities

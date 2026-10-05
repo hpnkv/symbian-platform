@@ -102,6 +102,7 @@ nav:
   - Getting started: getting-started.md
   - Community credits: credits.md
   - Guides:
+      - Install a native SDK: guides/native-distributions.md
       - Standalone projects: guides/projects.md
       - Build an application: guides/building.md
       - Build a real GUI app:

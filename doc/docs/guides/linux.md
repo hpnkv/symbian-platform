@@ -47,8 +47,10 @@ uv run pytest -q
 
 ## 2. Build an application
 
-Prepare and install the source SDK, then follow
-[Create a standalone application](projects.md). The CMake toolchain selects
+[Install the native SDK archive](native-distributions.md), then follow
+[Create a standalone application](projects.md). Native archives need glibc 2.39
+or later and include LLVM, CMake, Ninja and resource tools. You can also build
+the SDK from the prepared source checkout. The CMake toolchain selects
 an ARM target independently of the host. Its compilation database contains
 `--target=armv6-none-eabi` or the selected ARMv5T triple.
 

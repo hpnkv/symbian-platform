@@ -5,10 +5,32 @@ C++ source to a visible Symbian application. Window Server is the OS service
 that owns windows and delivers drawing and pointer events. The example draws
 four digits and three touch controls, then exits through the guest runtime.
 
-Follow the steps in order for a source checkout. If you already have an
-installed SDK, start with [standalone projects](projects.md) and use this route
-when you want to inspect the underlying compiler, E32 image, emulator or
-runtime contracts.
+## Build from an installed distribution
+
+[Install the native SDK archive](native-distributions.md), then copy the
+included counter application into your own project directory:
+
+```sh
+cp -R ~/dev/symbian-sdk/examples/gui_app ~/dev/gui_app
+printf '%s\n' '{"sdk": "../symbian-sdk"}' > ~/dev/gui_app/sdk-location.json
+symbian build --project ~/dev/gui_app --output ~/dev/gui_app/.symbian/build
+symbian inspect ~/dev/gui_app/.symbian/build/gui_app.exe --format e32
+symbian package --project ~/dev/gui_app \
+  --artifact ~/dev/gui_app/.symbian/build/gui_app.exe \
+  --output ~/dev/gui_app/.symbian/package
+```
+
+Edit `app.cc`, `window_server.cc`, `model.h` and `symbian.toml` in your copied
+project. The selected SDK supplies the compiler, headers and libraries. Follow
+[the application installation guide](building.md#5-sign-the-sis) to sign the SIS,
+stage it and approve installation on a permissive device. Use the
+[firmware guide](firmware.md) to configure an emulator separately.
+
+## Build from a source checkout
+
+The steps below also show how to prepare the SDK itself and inspect the
+application's startup, compiler and emulator contracts. Run source-checkout
+commands from the repository root.
 
 | Step | Guide | You will have |
 | --- | --- | --- |

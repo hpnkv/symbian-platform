@@ -1,5 +1,9 @@
 # Build and inspect the GUI executable
 
+For a distribution installation, use the copied application and output paths
+from [Build a real GUI app](from-source.md#build-from-an-installed-distribution).
+The commands below use the repository's `examples/gui_app` source checkout.
+
 ```sh
 symbian build --project examples/gui_app --output .symbian/gui-app
 symbian inspect .symbian/gui-app/gui_app.elf --format elf32
@@ -25,8 +29,9 @@ the incremental build; the second build rechecks reproducibility. You can also
 use `cmake --build .symbian/gui-app/cmake` for quick compiler feedback, but that
 alone does not reconvert or update the published `.exe` and report.
 
-Changing the SDK path requires both a `SYMBIAN_GUI_SDK_INCLUDE` CMake cache
-override and updated `import_proxies` in the project manifest. An ignored
+Select another SDK with the project's `sdk-location.json`. The example uses
+that SDK's platform headers when the source-checkout header directory is absent,
+and `${sdk}` import paths follow the selection automatically. An ignored
 `CMakeUserPresets.json` can inherit `symbian-pic`; set `cmake_preset` to its
 name. The integration fixture in `symbian/tests/test_gui.py` demonstrates this
 with paths containing spaces. Do not copy an arbitrary SDK onto the source

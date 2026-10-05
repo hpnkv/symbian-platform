@@ -33,10 +33,13 @@ symbian doctor
 
 The distribution provides the `symbian` command and native host libraries.
 On Ubuntu, install `python3-venv` if `python3 -m venv` is unavailable.
-Application builds also need an installed native SDK and its ARM compiler;
-firmware and the emulator are needed for emulator execution. Follow
-[Create a standalone application](guides/projects.md) for SDK selection, or
-[the source guide](guides/from-source.md) to prepare an SDK from source.
+For application builds, [install the native SDK archive](guides/native-distributions.md)
+for your host. It includes the ARM compiler and build tools; no source checkout
+is needed. Native Linux archives require glibc 2.39 or later. Firmware and the
+emulator are configured separately for emulator execution.
+
+If you want to compile the SDK itself, follow
+[the source guide](guides/source-prerequisites.md).
 
 ### Working from a source checkout
 

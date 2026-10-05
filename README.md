@@ -79,8 +79,11 @@ wheels for macOS/Linux on x86_64 and arm64, plus a Python sdist.
 [GitHub releases](https://github.com/hpnkv/symbian-platform/releases) also
 provide source archives and standalone compiled C++ host SDKs. The host
 archives contain their static library dependencies and CMake configuration.
-Native target SDK installation currently requires the prepared source checkout;
-the host archives do not contain a compiled ARM SDK.
+Native SDK archives also include the compiled ARMv5T/ARMv6 EKA2 libraries,
+LLVM, resource tools, CMake and Ninja, with a relocatable installed file tree.
+[Install a native distribution](doc/docs/guides/native-distributions.md) to build
+applications without a source checkout. Native Linux archives require glibc
+2.39 or later; firmware and emulator setup remain separate.
 
 ## Examples and guides
 

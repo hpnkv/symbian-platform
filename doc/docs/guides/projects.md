@@ -6,11 +6,15 @@ firmware and add an emulator device when you are ready to run it.
 
 ## 1. Create the project
 
-Install the active SDK first if you have not done so:
+[Download the native archive for your host](native-distributions.md), then
+install it in your activated Python environment:
 
 ```sh
-symbian sdk install ~/dev/symbian-sdk --workspace ~/dev/symbian
+symbian sdk install ~/dev/symbian-sdk --archive symbian-sdk.tar.gz
 ```
+
+For a source checkout with the upstream inputs already prepared, use
+`--workspace ~/dev/symbian` instead of `--archive`.
 
 Then create an application:
 
