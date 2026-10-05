@@ -9,14 +9,22 @@ find_package(Boost 1.82 CONFIG REQUIRED COMPONENTS fiber context)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 get_filename_component(host_compiler_dir "${CMAKE_CXX_COMPILER}" DIRECTORY)
 find_program(SYMBIAN_HOST_ARCHIVE_MERGER NAMES llvm-ar
-  HINTS "${host_compiler_dir}" /opt/homebrew/opt/llvm/bin)
+  HINTS "${host_compiler_dir}" /opt/homebrew/opt/llvm/bin
+        /usr/local/opt/llvm/bin)
 # GNU ar also supports the MRI -M script used by bundle_static.py. Linux
 # manylinux images need not ship LLVM just to merge host static archives.
 if(NOT SYMBIAN_HOST_ARCHIVE_MERGER AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
-  set(SYMBIAN_HOST_ARCHIVE_MERGER "${CMAKE_AR}")
+  set(SYMBIAN_HOST_ARCHIVE_MERGER "${CMAKE_AR}" CACHE FILEPATH
+      "Host static archive merger" FORCE)
+endif()
+# Apple libtool merges static archives without installing an LLVM toolchain.
+if(NOT SYMBIAN_HOST_ARCHIVE_MERGER AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+  find_program(SYMBIAN_HOST_LIBTOOL NAMES libtool HINTS /usr/bin REQUIRED)
+  set(SYMBIAN_HOST_ARCHIVE_MERGER "${SYMBIAN_HOST_LIBTOOL}" CACHE FILEPATH
+      "Host static archive merger" FORCE)
 endif()
 if(NOT SYMBIAN_HOST_ARCHIVE_MERGER)
-  message(FATAL_ERROR "Install llvm-ar to merge host static archives")
+  message(FATAL_ERROR "A host static archive merger is required")
 endif()
 add_library(symbian_concurrency INTERFACE)
 add_library(symbian::concurrency ALIAS symbian_concurrency)

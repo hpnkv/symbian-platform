@@ -5790,3 +5790,16 @@ paths. The affected image/build/import/package/signing/language checks pass:
 Strict MkDocs, both Doxygen indices and local links pass after the move.
 README now shares the requested community/ROM links. GitHub description and
 thirteen relevant topics were set and read back successfully.
+
+## 2026-10-05 — Correct CI host archive merger selection
+
+The first shared-core matrix exposed two real build-system gaps: macOS runners
+have Apple's libtool but no LLVM ar, and the Linux GNU-ar fallback was a normal
+variable scoped only to the concurrency subdirectory. The parent host bundle
+then received SYMBIAN_HOST_ARCHIVE_MERGER-NOTFOUND. The fallback now publishes a
+cache FILEPATH, and Apple libtool -static can bundle the same archives without
+installing a second toolchain. Intel Homebrew LLVM hints are supported too.
+Forced Apple-libtool and GNU-ar builds both passed 13/13 native tests and the
+relocated host consumer/CLI check. Logs: /tmp/symbian-apple-libtool-tests.log,
+/tmp/symbian-apple-libtool-consumer.log and the Linux /tmp/symbian-gnu-ar-*-r4.log.
+The full CI wheel matrix must still pass before publication.
