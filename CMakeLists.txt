@@ -33,7 +33,7 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
   # profiles below retain their exact source and dependency choices.
   set(indexed_probe_directories
       abi_probe abseil_allocator_probe abseil_status_probe
-      connectivity_probe cxx20_probe cxx20_module_probe dll_data_probe
+      connectivity_probe http_probe cxx20_probe cxx20_module_probe dll_data_probe
       dll_lifecycle_probe dll_probe e32_probe import_probe
       mbedtls_dll_probe pointer_probe runtime_probe)
   file(GLOB existing_probe_directories CONFIGURE_DEPENDS
@@ -72,7 +72,8 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
     message(FATAL_ERROR
       "Abseil probe indexing needs SYMBIAN_SDK_PREFIX with an installed SDK")
   endif()
-  include("${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
+  set(SYMBIAN_WORKSPACE_BUILD ON)
+  include(symbian/project/templates/SymbianApp.cmake)
   if(NOT TARGET Symbian::AbseilStatusOr)
     message(FATAL_ERROR
       "The selected SDK has no Abseil StatusOr indexing profile; update it")
@@ -81,8 +82,18 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
   # paths. Loading them here makes SDK internals navigable in the same ARM
   # profile as applications, without per-file IDE registration.
   add_subdirectory(cpp/symbian/api EXCLUDE_FROM_ALL)
+  include(cmake/SymbianWorkspace.cmake)
+  symbian_workspace_components()
   add_subdirectory(cpp/symbian/tls EXCLUDE_FROM_ALL)
+  symbian_workspace_archive(SymbianTls symbian_api_tls)
+  add_library(symbian_index_http OBJECT EXCLUDE_FROM_ALL
+    examples/http_probe/probe.cc examples/http_probe/startup.cc
+    examples/http_probe/startup.S)
+  target_link_libraries(symbian_index_http PRIVATE Symbian::Http Symbian::Tls
+    Symbian::Storage)
+  add_dependencies(symbian_probe_index symbian_index_http)
   add_subdirectory(cpp/symbian/concurrency/guest EXCLUDE_FROM_ALL)
+  symbian_workspace_archive(SymbianGuestFibers symbian_guest_fiber)
   # The stackless runtime probes now use installed guest StatusOr and time.
   target_link_libraries(symbian_index_runtime PRIVATE
                         Symbian::AbseilStatusOr)
@@ -234,6 +245,9 @@ FetchContent_Declare(nlohmann_json
 FetchContent_MakeAvailable(nlohmann_json)
 add_subdirectory(cpp/symbian/status)
 add_subdirectory(cpp/symbian/agent)
+add_subdirectory(cpp/symbian/net)
+add_subdirectory(cpp/symbian/http)
+add_subdirectory(cpp/symbian/websocket)
 add_subdirectory(cpp/symbian/concurrency)
 add_subdirectory(cpp/symbian/analysis)
 add_subdirectory(cpp/symbian/e32)
@@ -258,6 +272,8 @@ endif()
 
 install(FILES third_party/a11/LICENSE
         DESTINATION symbian/licenses RENAME A11-LICENSE)
+install(FILES "${SYMBIAN_NGHTTP2_SOURCE}/COPYING"
+        DESTINATION symbian/licenses RENAME nghttp2-LICENSE)
 install(FILES third_party/boost/LICENSE_1_0.txt
         DESTINATION symbian/licenses RENAME Boost-LICENSE)
 install(FILES "${abseil_SOURCE_DIR}/LICENSE"

@@ -61,6 +61,46 @@ int OpenSession(NativeTcpSession** output) {
 
 }  // namespace
 
+extern "C" int SymbianDeviceResolveIpv4(const char* hostname, int length,
+                                        unsigned* address,
+                                        std::int64_t deadline) {
+  if (!hostname || !address || length < 1 || length > 253) {
+    return KErrArgument;
+  }
+  RSocketServ server;
+  TInt result = server.Connect();
+  if (result != KErrNone) {
+    return result;
+  }
+  RHostResolver resolver;
+  result = resolver.Open(server, KAfInet, KProtocolInetTcp);
+  if (result == KErrNone) {
+    TUint16 text[253];
+    for (int i = 0; i < length; ++i) {
+      text[i] = static_cast<TUint8>(hostname[i]);
+    }
+    TPtrC16 name(text, length);
+    TNameEntry entry;
+    TRequestStatus request;
+    resolver.GetByName(name, entry, request);
+    result = WaitForResolverRequest(resolver, request, deadline);
+    if (result == KErrNone) {
+      *address = TInetAddr::Cast(entry().iAddr).Address();
+    }
+    resolver.Close();
+  }
+  server.Close();
+  return result;
+}
+
+extern "C" int SymbianDeviceTcpSetNoDelay(NativeTcpClient* client,
+                                          bool enabled) {
+  if (client == nullptr || !client->socket_open) {
+    return KErrBadHandle;
+  }
+  return client->socket.SetOpt(KSoTcpNoDelay, KSolInetTcp, enabled ? 1 : 0);
+}
+
 extern "C" void SymbianDeviceTcpClose(NativeTcpClient* client) {
   if (client == nullptr) {
     return;

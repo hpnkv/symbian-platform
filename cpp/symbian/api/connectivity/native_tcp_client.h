@@ -19,6 +19,9 @@ struct NativeActiveTcpListener;
 using NativeAcceptCallback = void (*)(void* context, NativeTcpClient* accepted,
                                       int result);
 
+extern "C" int SymbianDeviceResolveIpv4(const char* hostname, int length,
+                                        unsigned* address,
+                                        std::int64_t deadline);
 extern "C" int SymbianDeviceTcpConnect(unsigned address, unsigned port,
                                        NativeTcpClient** output,
                                        std::int64_t deadline = INT64_MAX);
@@ -29,6 +32,8 @@ extern "C" int SymbianDeviceTcpReceive(NativeTcpClient* client,
                                        unsigned char* bytes, int capacity,
                                        int* received,
                                        std::int64_t deadline = INT64_MAX);
+extern "C" int SymbianDeviceTcpSetNoDelay(NativeTcpClient* client,
+                                          bool enabled);
 extern "C" void SymbianDeviceTcpClose(NativeTcpClient* client);
 extern "C" int SymbianDeviceTcpListen(unsigned address, unsigned port,
                                       bool share_with_workers,

@@ -22,3 +22,21 @@ The [GUI source walkthrough](from-source.md) explains the underlying ELF, E32,
 firmware and emulator steps. CLion displays source and controls these tools;
 it does not turn an ARM ELF into a host executable. A generated app may use the
 [standalone project guide](projects.md) instead of the source example.
+
+## Develop the SDK itself
+
+Open the repository root and select `guest-probes-armv6` or
+`guest-probes-armv5t` (the local IDE profiles have a `clion-` prefix).
+These profiles build the current runtime, device APIs, WebSocket codec,
+TLS wrapper and guest concurrency archives. Applications in that graph use
+the same archives and prefer the workspace's current public headers. Editing
+an SDK header or implementation therefore updates the application build and
+its compiler context without exporting an SDK first.
+
+The active SDK still supplies preserved platform headers, import proxies,
+host tools, and the pinned Abseil and Mbed TLS dependency archives. Standalone
+application projects consume the exported SDK. After changing the selected
+compiler installation, configure with `cmake --fresh --preset
+guest-probes-armv6` to replace its compiler cache. Each profile writes its
+own `compile_commands.json`; an ARM ELF build does not establish loader or
+physical device compatibility.

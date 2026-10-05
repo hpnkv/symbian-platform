@@ -1,0 +1,23 @@
+[project]
+name = "http_probe"
+kind = "e32-import-experiment"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000833
+capabilities = ["NetworkServices"]
+import_proxies = [
+  "${sdk}/proxies/euser/euser.dso",
+  "${sdk}/proxies/libc/libc.dso",
+  "${sdk}/proxies/libpthread/libpthread.dso",
+  "${sdk}/proxies/libm/libm.dso",
+  "${sdk}/proxies/drtaeabi/drtaeabi.dso",
+  "${sdk}/proxies/esock/esock.dso",
+  "${sdk}/proxies/insock/insock.dso",
+  "${sdk}/proxies/efsrv/efsrv.dso",
+]
+
+[package]
+uid = 0xe0000834
+name = "Symbian Native HTTP Probe"
+vendor = "Symbian research"
+executable_name = "http_probe.exe"
+version = [1, 0, 0]

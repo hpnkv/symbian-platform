@@ -41,6 +41,32 @@ absl::StatusOr<TcpClient> TcpClient::ConnectIpv4(
   return TcpClient(native);
 }
 
+absl::StatusOr<TcpClient> TcpClient::ConnectHost(std::string_view hostname,
+                                                 std::uint16_t port,
+                                                 absl::Time deadline) {
+  if (hostname.empty() || hostname.size() > 253 || port == 0) {
+    return absl::InvalidArgumentError("Invalid TCP hostname or port");
+  }
+  for (char c : hostname) {
+    if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+          (c >= '0' && c <= '9') || c == '-' || c == '.')) {
+      return absl::InvalidArgumentError("DNS hostname requires ASCII labels");
+    }
+  }
+  unsigned address = 0;
+  const int result = SymbianDeviceResolveIpv4(
+      hostname.data(), static_cast<int>(hostname.size()), &address,
+      NativeDeadline(deadline));
+  if (result != 0) {
+    return StatusFromNativeError(result, "Resolve TCP hostname");
+  }
+  return ConnectIpv4({static_cast<std::uint8_t>(address >> 24),
+                      static_cast<std::uint8_t>(address >> 16),
+                      static_cast<std::uint8_t>(address >> 8),
+                      static_cast<std::uint8_t>(address)},
+                     port, deadline);
+}
+
 TcpClient::TcpClient(TcpClient&& other) noexcept
     : native_(std::exchange(other.native_, nullptr)) {}
 
@@ -53,7 +79,19 @@ TcpClient& TcpClient::operator=(TcpClient&& other) noexcept {
 }
 
 TcpClient::~TcpClient() {
-  SymbianDeviceTcpClose(native_);
+  Close();
+}
+
+void TcpClient::Close() {
+  SymbianDeviceTcpClose(std::exchange(native_, nullptr));
+}
+
+absl::Status TcpClient::SetNoDelay(bool enabled) {
+  if (native_ == nullptr) {
+    return absl::FailedPreconditionError("TCP socket is closed");
+  }
+  return symbian::StatusFromNativeError(
+      SymbianDeviceTcpSetNoDelay(native_, enabled), "Set TCP no-delay");
 }
 
 absl::Status TcpClient::Send(std::span<const std::uint8_t> bytes,

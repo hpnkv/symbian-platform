@@ -7,6 +7,7 @@
 #include <cstdint>
 
 class RSocket;
+class RHostResolver;
 class TRequestStatus;
 
 namespace symbian::api::connectivity {
@@ -16,6 +17,9 @@ namespace symbian::api::connectivity {
 // On expiry, cancel and drain before the caller releases request buffers.
 int WaitForSocketRequest(RSocket& socket, TRequestStatus& request,
                          std::int64_t deadline, void (RSocket::*cancel)());
+
+int WaitForResolverRequest(RHostResolver& resolver, TRequestStatus& request,
+                           std::int64_t deadline);
 
 }  // namespace symbian::api::connectivity
 

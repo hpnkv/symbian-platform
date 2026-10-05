@@ -116,9 +116,12 @@ nav:
       - Firmware and emulator: guides/firmware.md
       - Emulator control: guides/emulator-control.md
       - Package an application: guides/packaging.md
+      - Native HTTP client and server: guides/http.md
+      - Native WebSockets: guides/websocket.md
       - TLS and CA bundles: guides/tls.md
       - Run the development agent: guides/agent-emulator.md
       - Desktop console: guides/console.md
+      - Signing applications: guides/signing.md
       - Connect a device: guides/device.md
       - CLion:
           - Overview: guides/clion.md

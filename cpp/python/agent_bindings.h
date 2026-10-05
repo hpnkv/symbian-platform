@@ -8,6 +8,8 @@
 
 namespace symbian::python {
 
+void BindWebSocket(pybind11::module_& module);
+
 void BindAgent(pybind11::module_& module);
 
 }  // namespace symbian::python

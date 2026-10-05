@@ -1,7 +1,12 @@
 include_guard(GLOBAL)
+if(TARGET Symbian::Runtime)
+  return()
+endif()
 include(SymbianPic)
-get_filename_component(SYMBIAN_SDK_PREFIX
-  "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+if(NOT SYMBIAN_WORKSPACE_BUILD)
+  get_filename_component(SYMBIAN_SDK_PREFIX
+    "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+endif()
 set(SYMBIAN_CA_BUNDLE "" CACHE STRING
     "Project PEM CA bundle; empty means no packaged trust roots")
 if(SYMBIAN_CA_BUNDLE)
@@ -166,7 +171,10 @@ foreach(component IN ITEMS system connectivity agent power media display sensors
                            camera storage)
   set(component_archive
     "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_api_${component}.a")
-  if(EXISTS "${component_archive}" AND TARGET Symbian::AbseilStatusOr)
+  if((EXISTS "${component_archive}" OR
+      (SYMBIAN_WORKSPACE_BUILD AND EXISTS
+       "${CMAKE_SOURCE_DIR}/cpp/symbian/api/${component}/CMakeLists.txt"))
+     AND TARGET Symbian::AbseilStatusOr)
     string(SUBSTRING "${component}" 0 1 component_initial)
     string(TOUPPER "${component_initial}" component_initial)
     string(SUBSTRING "${component}" 1 -1 component_rest)
@@ -203,6 +211,33 @@ foreach(component IN ITEMS system connectivity agent power media display sensors
   endif()
 endforeach()
 
+# RFC 8441 WebSocket codec and worker-facing client/server wrappers.
+set(http_archive "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_http.a")
+if((EXISTS "${http_archive}" OR SYMBIAN_WORKSPACE_BUILD)
+   AND TARGET Symbian::Connectivity)
+  add_library(SymbianHttp STATIC IMPORTED GLOBAL)
+  set_target_properties(SymbianHttp PROPERTIES IMPORTED_LOCATION "${http_archive}")
+  target_link_libraries(SymbianHttp INTERFACE Symbian::Connectivity
+    "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_nghttp2.a")
+  add_library(Symbian::Http ALIAS SymbianHttp)
+endif()
+
+set(websocket_archive "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_api_websocket.a")
+if((EXISTS "${websocket_archive}" OR SYMBIAN_WORKSPACE_BUILD)
+   AND TARGET Symbian::Connectivity)
+  add_library(SymbianWebSocket STATIC IMPORTED)
+  set_target_properties(SymbianWebSocket PROPERTIES IMPORTED_LOCATION "${websocket_archive}")
+  target_link_libraries(SymbianWebSocket INTERFACE Symbian::Connectivity
+    "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_websocket.a")
+  if(TARGET Symbian::Http)
+    target_link_libraries(SymbianWebSocket INTERFACE Symbian::Http)
+  else()
+    target_link_libraries(SymbianWebSocket INTERFACE
+      "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_nghttp2.a")
+  endif()
+  add_library(Symbian::WebSocket ALIAS SymbianWebSocket)
+endif()
+
 # The C++ TLS owner is opt-in and keeps Mbed TLS out of plain TCP projects.
 set(crypto_archive
   "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/mbedtls/lib/libmbedcrypto.a")
@@ -213,7 +248,8 @@ if(EXISTS "${crypto_archive}")
 endif()
 set(tls_archive
   "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_api_tls.a")
-if(EXISTS "${tls_archive}" AND TARGET Symbian::Connectivity)
+if((EXISTS "${tls_archive}" OR SYMBIAN_WORKSPACE_BUILD)
+   AND TARGET Symbian::Connectivity)
   set(tls_mbed_lib
     "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/mbedtls/lib")
   add_library(SymbianTls STATIC IMPORTED)
@@ -244,7 +280,7 @@ if(EXISTS "${thread_proxy}" AND EXISTS "${cxxabi_proxy}")
     add_library(Symbian::StacklessAbseil ALIAS SymbianStackless)
     set(fiber_archive
       "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_guest_fiber.a")
-    if(EXISTS "${fiber_archive}")
+    if(EXISTS "${fiber_archive}" OR SYMBIAN_WORKSPACE_BUILD)
       add_library(SymbianGuestFibers STATIC IMPORTED)
       set_target_properties(SymbianGuestFibers PROPERTIES
         IMPORTED_LOCATION "${fiber_archive}")

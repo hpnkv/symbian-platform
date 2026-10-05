@@ -31,6 +31,8 @@
 #ifndef _INTTYPES_H_
 #define _INTTYPES_H_
 
+#include <sys/cdefs.h>
+#include <sys/_types.h>
 #include <stdapis/machine/_inttypes.h>
 /* Clang and OpenC disagree on fast-width aliases. Use target stdint. */
 #include <_ansi.h>

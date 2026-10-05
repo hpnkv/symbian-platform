@@ -1,5 +1,5 @@
 """
-Stateless native Symbian analysis utilities.
+Native Symbian runtime and analysis utilities.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ import symbian.status
 
 __all__: list[str] = [
     "ArmAttributes",
+    "WebSocketCodec",
     "agent_control_payload_length",
     "pack_agent_read_request",
     "parse_agent_result_frame",
@@ -457,3 +458,25 @@ def status_code_to_http(
 def status_code_to_websocket(
     arg0: typing.SupportsInt | typing.SupportsIndex,
 ) -> int: ...
+
+class WebSocketCodec:
+    """Single-owner native nghttp2 RFC 8441 binary WebSocket endpoint."""
+
+    def __init__(
+        self,
+        server: bool = False,
+        path: str = "/symbian-agent",
+        maximum_message_bytes: int = 4100,
+    ) -> None: ...
+    def feed(self, data: bytes) -> None: ...
+    def take_output(self) -> bytes: ...
+    def send(self, message: bytes) -> None: ...
+    def receive(self) -> bytes | None: ...
+    def close(self) -> None: ...
+    def abort(self) -> None: ...
+    @property
+    def open(self) -> bool: ...
+    @property
+    def closed(self) -> bool: ...
+    @property
+    def buffered_amount(self) -> int: ...

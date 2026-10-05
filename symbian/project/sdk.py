@@ -480,6 +480,29 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
         raise StatusError(
             Code.FAILED_PRECONDITION, "Mimalloc source checkout is modified"
         )
+    nghttp2_source = Path(
+        os.environ.get(
+            "SYMBIAN_NGHTTP2_SOURCE", str(workspace / "third_party/nghttp2")
+        )
+    ).resolve()
+    if not (nghttp2_source / "COPYING").is_file():
+        raise StatusError(
+            Code.NOT_FOUND, "SDK export requires pinned nghttp2 source"
+        )
+    nghttp2_manifest = json.loads(
+        (workspace / "cpp/symbian/net/nghttp2-source.json").read_text()
+    )
+    nghttp2_revision = nghttp2_manifest["revision"]
+    for relative, expected in nghttp2_manifest["files"].items():
+        source_input = nghttp2_source / relative
+        if (
+            not source_input.is_file()
+            or hashlib.sha256(source_input.read_bytes()).hexdigest() != expected
+        ):
+            raise StatusError(
+                Code.FAILED_PRECONDITION,
+                f"nghttp2 release input mismatch: {relative}",
+            )
     archive_tools = {}
     for name in ("llvm-ar", "llvm-ranlib"):
         archive_tools[name] = llvm_tool(name, sibling=compiler.parent)
@@ -618,6 +641,16 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             output / "include/symbian",
             dirs_exist_ok=True,
         )
+        for component in ("http", "net"):
+            destination = output / "include/symbian" / component
+            destination.mkdir()
+            for header in (workspace / "cpp/symbian" / component).glob("*.h"):
+                shutil.copyfile(header, destination / header.name)
+        (output / "include/symbian/websocket").mkdir()
+        shutil.copyfile(
+            workspace / "cpp/symbian/websocket/websocket.h",
+            output / "include/symbian/websocket/websocket.h",
+        )
         (output / "include/symbian/agent").mkdir()
         shutil.copyfile(
             workspace / "cpp/symbian/agent/guest_control.h",
@@ -744,6 +777,9 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             "_ZN5TTime8HomeTimeEv",
             "_ZNK5TTime8DateTimeEv",
             "_ZN7TPtrC16C1EPKti",
+            "_ZN9TBufBase8C1Eii",
+            "_ZN9TBufBase8C2Eii",
+            "_ZN10TBufBase16C2Ei",
             "_ZN6TPtrC8C1EPKhi",
             "_ZNK7TDesC163PtrEv",
             "_ZN5TPtr8C1EPhii",
@@ -875,10 +911,16 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                 [
                     "_ZN11RSocketServ7ConnectEj",
                     "_ZN11RSocketServC1Ev",
+                    "_ZN13RHostResolver4OpenER11RSocketServjj",
+                    "_ZN13RHostResolver5CloseEv",
+                    "_ZN13RHostResolver6CancelEv",
+                    "_ZN13RHostResolver9GetByNameERK7TDesC16R8TPckgBufI11TNameRecordER14TRequestStatus",
+                    "_ZN9TSockAddrC1Ev",
                     "_ZN7RSocket4OpenER11RSocketServjjj",
                     "_ZN7RSocket4OpenER11RSocketServ",
                     "_ZN7RSocket4BindER9TSockAddr",
                     "_ZN7RSocket6ListenEj",
+                    "_ZN7RSocket6SetOptEjji",
                     "_ZN7RSocket6AcceptERS_R14TRequestStatus",
                     "_ZN7RSocket12CancelAcceptEv",
                     "_ZN7RSocket13CancelConnectEv",
@@ -954,6 +996,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                     "ioctl",
                     "localeconv",
                     "malloc",
+                    "calloc",
                     "mbrlen",
                     "mbrtowc",
                     "mbsnrtowcs",
@@ -1151,6 +1194,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                         cmake_tool,
                         "-S",
                         str(workspace / "cpp/symbian/api"),
+                        "-DSYMBIAN_NGHTTP2_SOURCE=" + str(nghttp2_source),
                         "-B",
                         str(build_tree),
                         "-G",
@@ -1171,6 +1215,7 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                 for component in (
                     "system",
                     "connectivity",
+                    "websocket",
                     "agent",
                     "power",
                     "display",
@@ -1189,8 +1234,23 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                         cwd=workspace,
                     )
                     shutil.copyfile(
-                        build_tree / component / f"lib{target}.a",
+                        build_tree
+                        / (
+                            "connectivity"
+                            if component == "websocket"
+                            else component
+                        )
+                        / f"lib{target}.a",
                         output / "lib" / architecture / f"lib{target}.a",
+                    )
+                for component, library in (
+                    ("websocket", "symbian_websocket"),
+                    ("http", "symbian_http"),
+                    ("net", "symbian_nghttp2"),
+                ):
+                    shutil.copyfile(
+                        build_tree / component / f"lib{library}.a",
+                        output / "lib" / architecture / f"lib{library}.a",
                     )
         with tempfile.TemporaryDirectory(
             prefix="symbian-host-concurrency-"
@@ -1278,6 +1338,9 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
         licenses = output / "licenses"
         licenses.mkdir()
         shutil.copyfile(
+            nghttp2_source / "COPYING", licenses / "nghttp2-LICENSE"
+        )
+        shutil.copyfile(
             Path(mbedtls_provenance["source"]) / "LICENSE",
             licenses / "MbedTLS-Apache-2.0.txt",
         )
@@ -1351,6 +1414,18 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                     ),
                     "abseil_patches": abseil_patches,
                     "abseil_statusor_archives": abseil_archives,
+                    "nghttp2": {
+                        "revision": nghttp2_revision,
+                        "version": "1.70.0",
+                        "websocket_protocol": "RFC 8441 / RFC 6455",
+                        "http_protocols": ["HTTP/1.1", "HTTP/2"],
+                        "guest_execution_verified": False,
+                    },
+                    "http_a11": json.loads(
+                        (
+                            workspace / "cpp/symbian/http/a11-source.json"
+                        ).read_text()
+                    ),
                     "mbedtls": mbedtls_provenance,
                     "network_headers": json.loads(
                         (

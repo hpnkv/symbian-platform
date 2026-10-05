@@ -136,6 +136,7 @@ std::size_t AgentControlPayloadLength(const py::bytes& input) {
 }  // namespace
 
 void BindAgent(py::module_& module) {
+  BindWebSocket(module);
   module.def("pack_agent_read_request", &PackAgentReadRequest,
              py::arg("request_id"), py::arg("kind"),
              py::arg("deadline_millis") = 0,

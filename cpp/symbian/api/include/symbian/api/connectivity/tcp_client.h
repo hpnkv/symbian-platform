@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string_view>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -39,11 +40,26 @@ class TcpClient {
       std::array<std::uint8_t, 4> address, std::uint16_t port,
       absl::Time deadline = absl::InfiniteFuture());
 
+  /** @brief Resolve an ASCII DNS hostname and connect by one deadline.
+   * Uses the native resolver, returning its first IPv4 result. International
+   * names must be supplied as ASCII A-labels. Resolution cancels and drains on
+   * expiry, like socket I/O. No resolver cache or scheduler is created.
+   */
+  static absl::StatusOr<TcpClient> ConnectHost(
+      std::string_view hostname, std::uint16_t port,
+      absl::Time deadline = absl::InfiniteFuture());
+
   TcpClient(TcpClient&& other) noexcept;
   TcpClient& operator=(TcpClient&& other) noexcept;
   TcpClient(const TcpClient&) = delete;
   TcpClient& operator=(const TcpClient&) = delete;
   ~TcpClient();
+
+  /** @brief Close on the owner thread; repeated calls are harmless. */
+  void Close();
+
+  /** @brief Disable Nagle buffering for interactive message transports. */
+  absl::Status SetNoDelay(bool enabled = true);
 
   /**
    * @brief Complete one native send request of at most 32 KiB by a deadline.

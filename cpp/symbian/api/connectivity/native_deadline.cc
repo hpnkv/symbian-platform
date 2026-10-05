@@ -12,8 +12,10 @@
 
 namespace symbian::api::connectivity {
 
-int WaitForSocketRequest(RSocket& socket, TRequestStatus& request,
-                         std::int64_t deadline, void (RSocket::*cancel)()) {
+namespace {
+template <class Owner>
+int WaitForRequest(Owner& socket, TRequestStatus& request,
+                   std::int64_t deadline, void (Owner::*cancel)()) {
   if (deadline == INT64_MAX) {
     User::WaitForRequest(request);
     return request.Int();
@@ -61,6 +63,18 @@ int WaitForSocketRequest(RSocket& socket, TRequestStatus& request,
   const TInt result = request.Int();
   timer.Close();
   return result;
+}
+
+}  // namespace
+
+int WaitForSocketRequest(RSocket& socket, TRequestStatus& request,
+                         std::int64_t deadline, void (RSocket::*cancel)()) {
+  return WaitForRequest(socket, request, deadline, cancel);
+}
+
+int WaitForResolverRequest(RHostResolver& resolver, TRequestStatus& request,
+                           std::int64_t deadline) {
+  return WaitForRequest(resolver, request, deadline, &RHostResolver::Cancel);
 }
 
 }  // namespace symbian::api::connectivity

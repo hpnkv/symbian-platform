@@ -1,0 +1,34 @@
+cmake_minimum_required(VERSION 3.28)
+project(http_probe LANGUAGES C CXX ASM)
+include(SymbianPic)
+# Optional source mode lets this acceptance probe exercise unexported changes.
+set(SYMBIAN_HTTP_WORKSPACE_SOURCE "" CACHE PATH "SDK source workspace")
+if(SYMBIAN_HTTP_WORKSPACE_SOURCE)
+  set(SYMBIAN_WORKSPACE_BUILD ON)
+  include("${SYMBIAN_HTTP_WORKSPACE_SOURCE}/symbian/project/templates/SymbianApp.cmake")
+  add_subdirectory("${SYMBIAN_HTTP_WORKSPACE_SOURCE}/cpp/symbian/api" api)
+  add_subdirectory("${SYMBIAN_HTTP_WORKSPACE_SOURCE}/cpp/symbian/tls" tls)
+endif()
+if(NOT TARGET Symbian::Runtime)
+  include("${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
+endif()
+symbian_add_import_executable(http_probe
+  STARTUP startup.S LINKER_SCRIPT image.ld
+  SOURCES startup.cc probe.cc)
+target_include_directories(http_probe PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+if(SYMBIAN_HTTP_WORKSPACE_SOURCE)
+  target_include_directories(http_probe BEFORE PRIVATE
+    "${SYMBIAN_HTTP_WORKSPACE_SOURCE}/cpp/symbian/api/include"
+    "${SYMBIAN_HTTP_WORKSPACE_SOURCE}/cpp")
+  target_link_libraries(http_probe PRIVATE symbian_http symbian_api_tls
+    symbian_api_connectivity symbian_api_storage)
+else()
+  target_link_libraries(http_probe PRIVATE Symbian::Http Symbian::Tls Symbian::Storage)
+endif()
+# Entropy implementation is supplied by the explicitly selected experiment.
+set(SYMBIAN_HTTP_ENTROPY_SOURCE "" CACHE FILEPATH "Target-specific entropy adapter")
+set(SYMBIAN_HTTP_ENTROPY_ASSEMBLY "" CACHE FILEPATH "Target-specific entropy boundary")
+if(SYMBIAN_HTTP_ENTROPY_SOURCE)
+  target_sources(http_probe PRIVATE "${SYMBIAN_HTTP_ENTROPY_SOURCE}" "${SYMBIAN_HTTP_ENTROPY_ASSEMBLY}")
+endif()
+target_link_options(http_probe PRIVATE --gc-sections)
