@@ -6274,3 +6274,24 @@ require Qt6.8.3; local different-Qt prototypes need --development-qt.
 The owner requested a mutable-reference-to-nonnull-pointer/nullability revision
 only after emulator distribution and the guest Qt example are complete. Record
 the follow-up; do not start that repository-wide change during these streams.
+
+## 2026-10-05 — Independent CI cache checkpoints and Ubuntu exact sources
+
+Source, FFmpeg, SDL and tested core caches now save immediately after their
+successful stage rather than after the entire packaging job. A later license,
+source-download or archive failure must not discard successful native builds.
+The superseded 7b8a0b8 run was cancelled after its Qt source cache completed,
+before compiling four bundles with the already-corrected ICU download filename.
+Its replacement uses that common Qt cache.
+
+The Linux owner has no deb-src entries; current APT can also lack an exact
+older installed library version. Corresponding-source collection now uses
+Ubuntu's hosted source publication API as a fallback, selects the exact
+package/version, downloads its .dsc/original/packaging sources and checks the
+descriptor's file sizes and SHA-256 values. Live Brotli API/sourceFileUrls
+queries succeeded; the owner-host closure collection is actively exercising
+the fallback. No source index/provenance inventory is retained. Two additional
+controls accept exact archived inputs and reject altered content; all 29 CI
+script tests pass. The common patched-source rebuild and both upstream CTests
+pass; macOS relocated/signature/Qt/importer/isolated-root checks pass after
+complete 15-library notice recovery and source downloads.

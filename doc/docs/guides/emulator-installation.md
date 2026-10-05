@@ -5,6 +5,8 @@ frontend with its Qt desktop libraries, plugins and firmware importer. The
 emulator is GPL-3.0-or-later; it runs as a separate executable. Firmware and
 guest libraries, including Symbian Qt, are supplied separately.
 
+The installation commands below require SDK 0.1.2 or later.
+
 With the SDK's Python commands installed, select a compatible native bundle:
 
 ```sh

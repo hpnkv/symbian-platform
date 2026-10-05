@@ -98,24 +98,35 @@ jobs:
           arch: ${{ matrix.qt_arch }}
           cache: true
       - name: Restore pinned source checkout
-        uses: actions/cache@v4
+        id: source
+        uses: actions/cache/restore@v4
         with:
           path: ${{ env.EMULATOR_WORKSPACE }}/source
           key: emulator-source-v1-${{ matrix.system }}-${{ matrix.arch }}-${{ hashFiles('scripts/build_emulator.py', 'research/eka2l1/*.patch') }}
       - name: Acquire and check exact patched sources
         run: python scripts/build_emulator.py acquire --workspace "$EMULATOR_WORKSPACE"
+      - uses: actions/cache/save@v4
+        if: steps.source.outputs.cache-hit != 'true'
+        with:
+          path: ${{ env.EMULATOR_WORKSPACE }}/source
+          key: ${{ steps.source.outputs.cache-primary-key }}
       - name: Restore native FFmpeg
         id: ffmpeg
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ${{ env.EMULATOR_WORKSPACE }}/dependencies/ffmpeg
           key: emulator-ffmpeg-v1-${{ matrix.runner }}-${{ matrix.arch }}-${{ hashFiles('scripts/build_emulator.py', 'research/eka2l1/ffmpeg-linux-compat.patch') }}
       - name: Compile native FFmpeg once per host
         if: steps.ffmpeg.outputs.cache-hit != 'true'
         run: python scripts/build_emulator.py ffmpeg --workspace "$EMULATOR_WORKSPACE" --jobs 4
+      - uses: actions/cache/save@v4
+        if: steps.ffmpeg.outputs.cache-hit != 'true'
+        with:
+          path: ${{ env.EMULATOR_WORKSPACE }}/dependencies/ffmpeg
+          key: ${{ steps.ffmpeg.outputs.cache-primary-key }}
       - name: Restore native SDL
         id: sdl
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             ${{ env.EMULATOR_WORKSPACE }}/dependencies/sdl
@@ -125,8 +136,17 @@ jobs:
       - name: Compile SDL from source once per host
         if: steps.sdl.outputs.cache-hit != 'true'
         run: python scripts/build_emulator.py sdl --workspace "$EMULATOR_WORKSPACE" --jobs 4
+      - uses: actions/cache/save@v4
+        if: steps.sdl.outputs.cache-hit != 'true'
+        with:
+          path: |
+            ${{ env.EMULATOR_WORKSPACE }}/dependencies/sdl
+            ${{ env.EMULATOR_WORKSPACE }}/SDL2-2.30.11.tar.gz
+            ${{ env.EMULATOR_WORKSPACE }}/SDL2-2.30.11
+          key: ${{ steps.sdl.outputs.cache-primary-key }}
       - name: Restore compiled emulator core
-        uses: actions/cache@v4
+        id: core
+        uses: actions/cache/restore@v4
         with:
           path: ${{ env.EMULATOR_WORKSPACE }}/build
           key: emulator-core-v1-${{ matrix.runner }}-${{ matrix.arch }}-qt683-${{ hashFiles('scripts/build_emulator.py', 'research/eka2l1/**', 'cpp/symbian/emulator/**') }}
@@ -145,6 +165,11 @@ jobs:
             frontend="$EMULATOR_WORKSPACE/build/bin/eka2l1_qt"
           fi
           "$frontend" --symbian-sdk-capabilities
+      - uses: actions/cache/save@v4
+        if: steps.core.outputs.cache-hit != 'true'
+        with:
+          path: ${{ env.EMULATOR_WORKSPACE }}/build
+          key: ${{ steps.core.outputs.cache-primary-key }}
       - uses: actions/download-artifact@v4
         with:
           name: emulator-qt-notices

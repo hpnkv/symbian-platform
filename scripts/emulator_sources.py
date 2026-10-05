@@ -7,12 +7,15 @@ Qt is fetched once and shared by all native host bundles.
 import argparse
 import ctypes
 import hashlib
+import json
 import os
 import re
 import shutil
 import subprocess
 import tarfile
 import tempfile
+import urllib.parse
+import urllib.request
 from pathlib import Path
 
 from build_emulator import QT_VERSION, ROOT, SDL_VERSION, acquire, host, run
@@ -118,6 +121,87 @@ def source_filter(member):
     return member
 
 
+def ubuntu_source(package, destination):
+    """Downloads exact retired Ubuntu sources when current APT lacks them."""
+    name, version = package.split("=", 1)
+    query = urllib.parse.urlencode(
+        {
+            "ws.op": "getPublishedSources",
+            "source_name": name,
+            "version": version,
+            "exact_match": "true",
+        }
+    )
+    endpoint = "https://api.launchpad.net/1.0/ubuntu/+archive/primary"
+    with urllib.request.urlopen(endpoint + "?" + query, timeout=30) as response:
+        publications = json.load(response)["entries"]
+    for publication in publications:
+        if (
+            publication["source_package_name"],
+            publication["source_package_version"],
+        ) != (name, version):
+            continue
+        with urllib.request.urlopen(
+            publication["self_link"] + "?ws.op=sourceFileUrls", timeout=30
+        ) as response:
+            urls = json.load(response)
+        if not urls:
+            continue
+        for url in urls:
+            filename = Path(
+                urllib.parse.unquote(urllib.parse.urlparse(url).path)
+            ).name
+            run(
+                [
+                    "curl",
+                    "-fL",
+                    "--retry",
+                    "3",
+                    url,
+                    "-o",
+                    destination / filename,
+                ]
+            )
+        descriptor = next(
+            (
+                destination / Path(url).name
+                for url in urls
+                if url.endswith(".dsc")
+            ),
+            None,
+        )
+        if descriptor is None:
+            raise RuntimeError(f"Missing Ubuntu source descriptor: {package}")
+        checksums = (
+            descriptor.read_text()
+            .split("Checksums-Sha256:\n", 1)[1]
+            .split("\n\n", 1)[0]
+        )
+        records = re.findall(r"(?m)^ ([a-f0-9]{64}) (\d+) (\S+)$", checksums)
+        if not records:
+            raise RuntimeError(f"Missing Ubuntu source checksums: {package}")
+        for checksum, size, filename in records:
+            source = destination / filename
+            if (
+                source.name != filename
+                or not source.is_file()
+                or source.stat().st_size != int(size)
+            ):
+                raise RuntimeError(f"Missing Ubuntu source input: {filename}")
+            with source.open("rb") as stream:
+                if (
+                    hashlib.file_digest(stream, "sha256").hexdigest()
+                    != checksum
+                ):
+                    raise RuntimeError(
+                        f"Ubuntu source checksum differs: {filename}"
+                    )
+        return
+    raise RuntimeError(
+        f"Exact Ubuntu corresponding sources unavailable: {package}"
+    )
+
+
 def runtime_sources(prefix, destination):
     """Collects package source and rebuild recipes for runtime libraries."""
     destination.mkdir()
@@ -138,7 +222,7 @@ def runtime_sources(prefix, destination):
             # live Homebrew catalog may already describe a newer version.
             sources = re.findall(
                 r'(?m)^[ \t]*url "([^"\n]+)"[^\n]*\n'
-                r'(?:(?![ \t]*(?:url |sha256 ))[^\n]*\n)*'
+                r"(?:(?![ \t]*(?:url |sha256 ))[^\n]*\n)*"
                 r'[ \t]*sha256 "([a-f0-9]{64})"',
                 formula.read_text(),
             )
@@ -172,7 +256,18 @@ def runtime_sources(prefix, destination):
             ).split()
             packages.add("=".join(result))
     for package in sorted(packages):
-        run(["apt-get", "source", "--download-only", package], cwd=destination)
+        result = subprocess.run(
+            ["apt-get", "source", "--download-only", package],
+            cwd=destination,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode:
+            print(
+                f"Looking up exact archived Ubuntu source: {package}",
+                flush=True,
+            )
+            ubuntu_source(package, destination)
 
 
 def qt_icu(workspace, qt_prefix):

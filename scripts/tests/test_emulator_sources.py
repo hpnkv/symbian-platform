@@ -2,6 +2,8 @@
 
 import hashlib
 import importlib
+import io
+import json
 from pathlib import Path
 
 import pytest
@@ -77,3 +79,57 @@ def test_installed_source_checksum_mismatch_fails(
     )
     with pytest.raises(RuntimeError, match="checksum differs"):
         sources.runtime_sources(prefix, tmp_path / "source")
+
+
+@pytest.mark.parametrize("altered", [False, True])
+def test_archived_ubuntu_exact_version_and_descriptor_checksums(
+    tmp_path,
+    monkeypatch,
+    sources,
+    altered,
+):
+    body = b"the archived source"
+    checksum = hashlib.sha256(body).hexdigest()
+    descriptor = (
+        "Format: 3.0 (quilt)\nChecksums-Sha256:\n"
+        f" {checksum} {len(body)} library_1.0.orig.tar.gz\n\n"
+    ).encode()
+    prefix = "https://source.test/library/1.0-1/"
+
+    def lookup(url, **kwargs):
+        if "getPublishedSources" in url:
+            assert "version=1.0-1" in url
+            value = {
+                "entries": [
+                    {
+                        "source_package_name": "library",
+                        "source_package_version": "1.0-1",
+                        "self_link": "https://api.test/sourcepub/1",
+                    }
+                ]
+            }
+        else:
+            value = [
+                prefix + "library_1.0-1.dsc",
+                prefix + "library_1.0.orig.tar.gz",
+            ]
+        return io.BytesIO(json.dumps(value).encode())
+
+    def download(argv, **kwargs):
+        path = Path(argv[-1])
+        path.write_bytes(
+            descriptor
+            if path.suffix == ".dsc"
+            else (b"x" * len(body) if altered else body)
+        )
+
+    monkeypatch.setattr(sources.urllib.request, "urlopen", lookup)
+    monkeypatch.setattr(sources, "run", download)
+    if altered:
+        with pytest.raises(
+            RuntimeError, match="Ubuntu source checksum differs"
+        ):
+            sources.ubuntu_source("library=1.0-1", tmp_path)
+    else:
+        sources.ubuntu_source("library=1.0-1", tmp_path)
+        assert (tmp_path / "library_1.0.orig.tar.gz").read_bytes() == body
