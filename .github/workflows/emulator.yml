@@ -1,0 +1,114 @@
+name: Emulator
+on:
+  workflow_dispatch:
+  workflow_call:
+  push:
+    branches: [main]
+    paths: ["research/eka2l1/**", "cpp/symbian/emulator/**", "scripts/build_emulator.py", "scripts/bundle_emulator.py", ".github/workflows/emulator.yml"]
+  pull_request:
+    paths: ["research/eka2l1/**", "cpp/symbian/emulator/**", "scripts/build_emulator.py", "scripts/bundle_emulator.py", ".github/workflows/emulator.yml"]
+permissions:
+  contents: read
+concurrency:
+  group: emulator-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            system: linux
+            arch: x86_64
+            qt_host: linux
+            qt_arch: linux_gcc_64
+          - runner: ubuntu-24.04-arm
+            system: linux
+            arch: aarch64
+            qt_host: linux_arm64
+            qt_arch: linux_gcc_arm64
+          - runner: macos-15
+            system: macos
+            arch: arm64
+            qt_host: mac
+            qt_arch: clang_64
+          - runner: macos-15-intel
+            system: macos
+            arch: x86_64
+            qt_host: mac
+            qt_arch: clang_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    env:
+      EMULATOR_WORKSPACE: ${{ runner.temp }}/symbian-emulator
+      MACOSX_DEPLOYMENT_TARGET: "15.0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Linux build prerequisites
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build nasm pkg-config \
+            libsdl2-dev libpulse-dev libasound2-dev libvulkan-dev \
+            libgl1-mesa-dev libx11-dev libxext-dev libxi-dev libxrandr-dev \
+            libxrender-dev libxcb-cursor0 libxkbcommon-x11-0 libegl1 \
+            libopengl0 xvfb patchelf
+      - name: Install macOS build prerequisites
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja nasm
+      - name: Install pinned Qt frontend modules
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.3"
+          host: ${{ matrix.qt_host }}
+          target: desktop
+          arch: ${{ matrix.qt_arch }}
+          modules: qtsvg qttools
+          cache: true
+      - name: Restore pinned source checkout
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.EMULATOR_WORKSPACE }}/source
+          key: emulator-source-v1-${{ matrix.system }}-${{ matrix.arch }}-${{ hashFiles('scripts/build_emulator.py', 'research/eka2l1/*.patch', '.github/workflows/emulator.yml') }}
+      - name: Acquire and check exact patched sources
+        run: python scripts/build_emulator.py acquire --workspace "$EMULATOR_WORKSPACE"
+      - name: Restore native FFmpeg
+        id: ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.EMULATOR_WORKSPACE }}/dependencies/ffmpeg
+          key: emulator-ffmpeg-v1-${{ matrix.runner }}-${{ matrix.arch }}-${{ hashFiles('scripts/build_emulator.py', 'research/eka2l1/ffmpeg-linux-compat.patch') }}
+      - name: Compile native FFmpeg once per host
+        if: steps.ffmpeg.outputs.cache-hit != 'true'
+        run: python scripts/build_emulator.py ffmpeg --workspace "$EMULATOR_WORKSPACE" --jobs 4
+      - name: Restore compiled emulator core
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.EMULATOR_WORKSPACE }}/build
+          key: emulator-core-v1-${{ matrix.runner }}-${{ matrix.arch }}-qt683-${{ hashFiles('scripts/build_emulator.py', 'research/eka2l1/**', 'cpp/symbian/emulator/**', '.github/workflows/emulator.yml') }}
+      - name: Configure native frontend and SDK adapters
+        run: python scripts/build_emulator.py configure --workspace "$EMULATOR_WORKSPACE" --qt-prefix "$QT_ROOT_DIR"
+      - name: Build both CPU backends, frontend and firmware importer
+        run: python scripts/build_emulator.py build --workspace "$EMULATOR_WORKSPACE" --jobs 4
+      - name: Run upstream native tests
+        run: python scripts/build_emulator.py test --workspace "$EMULATOR_WORKSPACE"
+      - name: Check actual display-independent SDK contract
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            frontend="$EMULATOR_WORKSPACE/build/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+          else
+            frontend="$EMULATOR_WORKSPACE/build/bin/eka2l1_qt"
+          fi
+          "$frontend" --symbian-sdk-capabilities
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emulator-build-${{ matrix.system }}-${{ matrix.arch }}
+          path: |
+            ${{ env.EMULATOR_WORKSPACE }}/build/bin/
+            ${{ env.EMULATOR_WORKSPACE }}/build/platform-control/symbian_firmware_tool
+          if-no-files-found: error

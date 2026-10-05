@@ -6158,3 +6158,28 @@ passes (/tmp/symbian-original-network-docs-final.log); real XML checks show all
 outside parameter descriptions, with Output/OutputWithScope parameter contracts.
 The remaining seven descriptions belong to other indexed networking symbols.
 The survey still has unresolved symbols; full original API coverage is open.
+
+## 2026-10-05 — Emulator acquisition and native build driver
+
+Implemented a disposable pinned acquisition driver, ordered patch replay and
+strict reuse checks against a temporary Git index. Unexpected tracked/untracked
+edits and changed recursive submodule revisions are rejected without resetting
+research checkouts. One out-of-tree FFmpeg recipe now supports macOS/Linux on
+x86_64/aarch64, disables incidental external codec/Vulkan dependencies, retains
+the accepted codec families, and exports its own headers/static archives.
+An upstream CMake patch consumes that prefix and compiles translations without
+mutating source .ts files. Production adapters now have a separate CMake hook
+from firmware-dependent historical oracles. Emulator VERSION starts at 0.1.0,
+independent of SDK VERSION; its native compatibility query works before Qt
+initialization and reports the existing control protocol and launch capabilities.
+
+Fresh macOS arm64 acquisition/configure/build and both upstream CTest suites
+pass; the actual frontend's headless query returns the 0.1.0/v1 contract.
+Logs: /tmp/symbian-emulator-{acquire,ffmpeg,configure,build,tests}.log.
+Five source-protection/architecture/dependency regressions and Black/Ruff pass.
+The Linux owner host compiled the new FFmpeg prefix and is building the frontend.
+Added a nonpublishing four-host CI build with Qt 6.8.3, source/dependency/core
+caches independent of Python and SDK VERSION, upstream tests and capability
+query. This initial workflow uploads build inputs, not consumer bundles. Qt
+runtime deployment, corresponding source/licence closure, delivered-bundle
+acceptance and independent release publication remain outstanding.

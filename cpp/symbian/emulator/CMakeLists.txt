@@ -1,6 +1,13 @@
 # Research-only GPL adapter. Never linked into the production Python wheel.
 find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
-add_library(symbian_emulator_control STATIC control.cc)
+add_library(symbian_emulator_control STATIC control.cc distribution.cc)
+file(STRINGS "${SYMBIAN_PLATFORM_ROOT}/research/eka2l1/VERSION"
+     SYMBIAN_EMULATOR_VERSION LIMIT_COUNT 1)
+if(NOT SYMBIAN_EMULATOR_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+  message(FATAL_ERROR "Invalid emulator distribution VERSION")
+endif()
+target_compile_definitions(symbian_emulator_control PRIVATE
+    SYMBIAN_EMULATOR_VERSION="${SYMBIAN_EMULATOR_VERSION}")
 target_compile_features(symbian_emulator_control PUBLIC cxx_std_20)
 target_compile_options(symbian_emulator_control PRIVATE -fno-exceptions)
 # Original kernel/window headers contain throwing templates. These foreign

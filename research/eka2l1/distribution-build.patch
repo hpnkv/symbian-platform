@@ -1,0 +1,44 @@
+diff --git a/src/external/CMakeLists.txt b/src/external/CMakeLists.txt
+--- a/src/external/CMakeLists.txt
++++ b/src/external/CMakeLists.txt
+@@ -341,7 +341,24 @@
+     endif()
+ else()
+     set(EKA2L1_HAVE_FFMPEG ON CACHE INTERNAL "FFmpeg is available for this build" FORCE)
+-    if (APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
++    set(SYMBIAN_EMULATOR_FFMPEG_PREFIX "" CACHE PATH
++        "Native FFmpeg prefix built by the SDK emulator driver")
++    if (SYMBIAN_EMULATOR_FFMPEG_PREFIX)
++        add_library(ffmpeg INTERFACE)
++        target_include_directories(ffmpeg INTERFACE
++            "${SYMBIAN_EMULATOR_FFMPEG_PREFIX}/include")
++        foreach(component avformat avcodec swscale avutil swresample)
++            set(archive "${SYMBIAN_EMULATOR_FFMPEG_PREFIX}/lib/lib${component}.a")
++            if (NOT EXISTS "${archive}")
++                message(FATAL_ERROR "Missing native FFmpeg archive: ${archive}")
++            endif()
++            target_link_libraries(ffmpeg INTERFACE "${archive}")
++        endforeach()
++        target_link_libraries(ffmpeg INTERFACE z)
++        if (APPLE)
++            target_link_libraries(ffmpeg INTERFACE "-framework CoreVideo" iconv)
++        endif()
++    elseif (APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+         # The prebuilt libraries in the submodule are x86_64 only; its own
+         # macos_arm64-build.sh produces the arm64 set from the same source.
+         set(FFMPEG_ARM64_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ffmpeg/macos/arm64/lib")
+diff --git a/src/emu/qt/CMakeLists.txt b/src/emu/qt/CMakeLists.txt
+--- a/src/emu/qt/CMakeLists.txt
++++ b/src/emu/qt/CMakeLists.txt
+@@ -36,9 +36,9 @@
+ list(REMOVE_ITEM TS_FILES ${TS_FOLDER}/eka2l1.ts)
+ 
+ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+-    qt_create_translation(QM_FILES ${CMAKE_CURRENT_SOURCE_DIR} ${TS_FILES})
++    qt_add_translation(QM_FILES ${TS_FILES})
+ else()
+-    qt5_create_translation(QM_FILES ${CMAKE_CURRENT_SOURCE_DIR} ${TS_FILES})
++    qt5_add_translation(QM_FILES ${TS_FILES})
+ endif()
+ 
+ set(LANGUAGE_QRC_FILE ${CMAKE_CURRENT_BINARY_DIR}/languages.qrc)
