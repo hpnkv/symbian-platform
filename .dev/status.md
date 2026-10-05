@@ -3024,3 +3024,23 @@ paths; the fix checks delivered ELF dependencies without LD_* overrides.
 Actual Linux archive reproduction and five release helper tests pass; clean
 candidate-wheel offline installation/selection/doctor checks pass on macOS
 arm64/Linux x86_64. Production bundle replay and publication remain required.
+
+### Published SDK 0.1.2 and emulator follow-up — 2026-10-05
+
+Rehearsal 37345071632 and tagged publication 37347154660 succeed at f66f610.
+GitHub v0.1.2 provides 26 assets: sixteen wheels, four compiled host archives,
+four native SDK archives, source and sdist. PyPI version JSON provides sixteen
+wheels and one sdist; actual public PyPI installs succeed on both owner hosts.
+Public wheel/native archive downloads pass isolated hello_time/gui_app build,
+inspect, package and sign workflows on macOS arm64 and Linux x86_64, without
+external compiler paths. Native distribution documentation uses 0.1.2 assets;
+strict docs pass. Physical staging/installation remains unverified.
+
+Both production Qt6.8.3 macOS bundle jobs pass in 37344027846. Its actual
+downloaded arm64 archive installs and passes both GUI backends and four live
+debugger checks (six tests) against the preserved Belle store. Linux x86_64/
+arm64 compile/native tests/query pass; their delivery audit failed on inherited
+Qt loader paths, corrected in 7f4a16a. Updated producer 37346894475 must pass
+before emulator-v0.1.0 publication. The guest Qt example, broader EKA1 and
+original-symbol documentation remain outstanding. Pointer/nullability changes
+remain explicitly deferred until emulator publication and guest Qt acceptance.

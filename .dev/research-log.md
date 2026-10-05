@@ -6359,3 +6359,29 @@ and the real QApplication/QPushButton headers. The ignored research checkout
 retains its original licenses. Header/export availability does not prove the
 guest ABI or widget/service execution; example implementation remains after
 the emulator delivery/publication gate.
+
+2026-10-05 SDK 0.1.2 publication: exact-source rehearsal 37345071632 passes
+all four native archives, sixteen wheels and source/sdist audit at f66f610.
+Annotated v0.1.2 tags that tested source; tagged run 37347154660 passes and
+publishes all 26 GitHub assets and sixteen PyPI wheels plus the sdist.
+https://github.com/hpnkv/symbian-platform/releases/tag/v0.1.2 and public PyPI
+version JSON confirm the assets. The simple index briefly lagged the uploads;
+ordinary PyPI installs then succeed on both owner hosts. Isolated configuration,
+HOME and PATH environments using public 0.1.2 wheels and native archives pass
+doctor, SDK install, hello_time init/default IDE/build, copied gui_app build,
+E32/SIS inspection, package, signing identity/signature creation and signed SIS
+inspection on macOS arm64/Linux x86_64. No external compiler is in PATH.
+Logs: /tmp/symbian-sdk012-{pypi,public-guides}-{macos,linux}.log on their hosts.
+Public archive instructions now point at actual 0.1.2 assets; strict docs pass.
+Physical staging/installation remains unverified; no hardware was written.
+
+Both production macOS jobs in 37344027846 pass complete Qt6.8.3 bundles,
+relocation/startup/signatures and corresponding runtime sources. The downloaded
+macOS arm64 artifact installs through the candidate wheel and passes both GUI
+backends plus all four guest debugger tests against the preserved Belle store;
+six tests pass, log /tmp/symbian-emulator-ci-qt683-gui-debug-macos.log. Both
+Linux native builds/tests/queries pass but hit the corrected inherited-loader
+audit failure. Latest corrected producer is 37346894475 at 7f4a16a; publication
+must use that source, including TCP/control fixes, rather than superseded
+f66f610. The independently versioned emulator and guest Qt example remain open.
+Actual dependency-cache-key generation also passes on both owner hosts.

@@ -76,7 +76,7 @@ in your environment, invoke `symbian` directly. To run an application, first
 The project version comes from [VERSION](VERSION).
 [PyPI](https://pypi.org/project/symbian-platform/) provides Python 3.11–3.14
 wheels for macOS/Linux on x86_64 and arm64, plus a Python sdist.
-[GitHub releases](https://github.com/hpnkv/symbian-platform/releases) also
+[SDK 0.1.2](https://github.com/hpnkv/symbian-platform/releases/tag/v0.1.2) also
 provide source archives and standalone compiled C++ host SDKs. The host
 archives contain their static library dependencies and CMake configuration.
 Native SDK archives also include the compiled ARMv5T/ARMv6 EKA2 libraries,
