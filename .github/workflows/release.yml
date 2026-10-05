@@ -1,0 +1,141 @@
+# Adapted from A11: shared native builds, checked artifacts, OIDC publication.
+name: Release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        name: Validate release version
+        shell: python
+        run: |
+          import os
+          import re
+          from pathlib import Path
+          version = Path("VERSION").read_text().strip()
+          if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
+              raise SystemExit("VERSION must contain a semantic release version")
+          if os.environ["GITHUB_REF_TYPE"] == "tag":
+              if os.environ["GITHUB_REF_NAME"] != f"v{version}":
+                  raise SystemExit("Release tag does not match VERSION")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"version={version}\n")
+  host:
+    needs: validate
+    uses: ./.github/workflows/host-sdk.yml
+  sources:
+    needs: validate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build Python and complete source archives
+        env:
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          python -m pip install 'build>=1.2,<2' 'twine>=6,<7'
+          python -m build --sdist --outdir dist
+          python -m twine check dist/*
+          mkdir -p release-assets
+          git archive --format=tar.gz --prefix="symbian-$RELEASE_VERSION/" \
+            --output="release-assets/symbian-source-$RELEASE_VERSION.tar.gz" HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-archive
+          path: release-assets/symbian-source-*.tar.gz
+          if-no-files-found: error
+  audit:
+    needs: [validate, host, sources]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: host-sdk-*
+          path: release-assets
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: source-archive
+          path: release-assets
+      - name: Check complete release matrix and package metadata
+        env:
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          python -m pip install 'packaging>=24' 'twine>=6,<7'
+          python -m unittest discover -s scripts/tests -v
+          python scripts/check_release_assets.py --version "$RELEASE_VERSION"
+          python -m twine check dist/*
+  publish:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [audit]
+    runs-on: ubuntu-24.04
+    environment: release
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: host-sdk-*
+          path: release-assets
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: source-archive
+          path: release-assets
+      - name: Publish Python distributions with trusted publishing
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+          skip-existing: true
+      - name: Publish GitHub release archives and wheels
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* release-assets/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* release-assets/* \
+              --generate-notes --verify-tag
+          fi

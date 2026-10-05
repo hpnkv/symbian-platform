@@ -10,6 +10,9 @@ on:
     paths: ["cpp/**", "cmake/**", "symbian/**", "third_party/**", "CMake*", "VERSION", "pyproject.toml", "scripts/**", ".github/workflows/host-sdk.yml"]
 permissions:
   contents: read
+concurrency:
+  group: host-sdk-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 jobs:
   host:
     strategy:
@@ -36,10 +39,15 @@ jobs:
           python-version: "3.12"
       - name: Install wheel builder
         run: python -m pip install "cibuildwheel==4.1.1"
+      - name: Restore static dependency prefix
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/symbian-deps
+          key: host-deps-${{ matrix.platform }}-${{ matrix.arch }}-macos15-manylinux228-${{ hashFiles('scripts/bootstrap_wheel_deps.sh') }}
       - name: Build native core, test, and reuse for all bindings
         run: python -m cibuildwheel --platform "${{ matrix.platform }}" --archs "${{ matrix.arch }}" --output-dir wheelhouse
         env:
-          SYMBIAN_DEPS_PREFIX: ${{ runner.os == 'Linux' && '/opt/symbian-deps' || format('{0}/symbian-deps', runner.temp) }}
+          SYMBIAN_DEPS_PREFIX: ${{ runner.os == 'Linux' && format('/host{0}/symbian-deps', runner.temp) || format('{0}/symbian-deps', runner.temp) }}
           SYMBIAN_PREBUILT_HOST_SDK: ${{ runner.os == 'Linux' && '/opt/symbian-host' || format('{0}/symbian-host', runner.temp) }}
           SYMBIAN_WHEEL_ARCH: ${{ matrix.arch }}
           SYMBIAN_RELEASE_ASSETS: ${{ github.workspace }}/release-assets

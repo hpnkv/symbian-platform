@@ -2791,3 +2791,12 @@ Linux arm64 exposed an idle worker-pool deadlock in old libstdc++'s condition-
 variable clock fallback. A minimal Linux old-fallback reproducer timed out with
 an infinite steady deadline and passed with A11's 50ms park cap. The repaired
 host fiber test passes locally on macOS and Ubuntu; CI wheels are still pending.
+
+The release workflow now builds the sdist and source archive once, reuses the
+four-host core/wheel workflow, validates all 16 CPython/host combinations and
+six host/source archives, then publishes tagged versions using PyPI OIDC in
+`release.yml` / environment `release`. Manual dispatch builds and audits without
+publishing. Five artifact-gate regressions and actionlint pass. Static dependency
+prefixes are cached outside the manylinux container via its `/host` mount.
+These archives are explicitly host components; full installed guest/tool SDK
+payloads remain unfinished and are not represented by the host archive names.

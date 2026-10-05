@@ -1,0 +1,104 @@
+"""Release gate regressions for incomplete and mixed-version artifacts."""
+
+import importlib.util
+import io
+import tarfile
+import tempfile
+import unittest
+from pathlib import Path
+
+_SPEC = importlib.util.spec_from_file_location(
+    "release_assets", Path(__file__).parents[1] / "check_release_assets.py"
+)
+assert _SPEC is not None and _SPEC.loader is not None
+_ASSETS = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(_ASSETS)
+
+
+class ReleaseAssetsTest(unittest.TestCase):
+    """Publication must reject partial, duplicated and stale matrices."""
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        root = Path(self.temporary.name)
+        self.dist = root / "dist"
+        self.assets = root / "assets"
+        self.dist.mkdir()
+        self.assets.mkdir()
+        for python in _ASSETS.PYTHONS:
+            for _, _, platform in _ASSETS.HOSTS:
+                name = (
+                    f"symbian_platform-0.1.0-{python}-{python}-{platform}.whl"
+                )
+                (self.dist / name).touch()
+        self.archive(
+            self.dist / "symbian_platform-0.1.0.tar.gz",
+            "symbian_platform-0.1.0",
+            [
+                "VERSION",
+                "cpp/python/CMakeLists.txt",
+                "cpp/symbian/concurrency/upstream/cpp/thread/thread/fiber.h",
+            ],
+        )
+        self.archive(
+            self.assets / "symbian-source-0.1.0.tar.gz",
+            "symbian-0.1.0",
+            ["VERSION", "LICENSE", "CMakeLists.txt"],
+        )
+        for system, arch, _ in _ASSETS.HOSTS:
+            self.archive(
+                self.assets / f"symbian-host-0.1.0-{system}-{arch}.tar.gz",
+                ".",
+                [
+                    "bin/symbian-native",
+                    "lib/cmake/SymbianHost/SymbianHostConfig.cmake",
+                    "share/symbian/LICENSE",
+                    "share/symbian/VERSION",
+                ],
+            )
+
+    @staticmethod
+    def archive(path, prefix, members):
+        with tarfile.open(path, "w:gz") as archive:
+            for name in members:
+                data = b"0.1.0\n" if name.endswith("VERSION") else b"fixture"
+                member = tarfile.TarInfo(f"{prefix}/{name}")
+                member.size = len(data)
+                archive.addfile(member, io.BytesIO(data))
+
+    def test_complete_matrix(self):
+        _ASSETS.check(self.dist, self.assets, "0.1.0")
+
+    def test_missing_python_target(self):
+        next(self.dist.glob("*cp314*arm64.whl")).unlink()
+        with self.assertRaisesRegex(ValueError, "Expected 16 wheels"):
+            _ASSETS.check(self.dist, self.assets, "0.1.0")
+
+    def test_duplicate_target_replaces_missing_architecture(self):
+        wheel = next(self.dist.glob("*cp314*arm64.whl"))
+        wheel.rename(
+            self.dist
+            / "symbian_platform-0.1.0-1-cp314-cp314-macosx_15_0_x86_64.whl"
+        )
+        with self.assertRaisesRegex(ValueError, "duplicate wheel"):
+            _ASSETS.check(self.dist, self.assets, "0.1.0")
+
+    def test_stale_release(self):
+        wheel = next(self.dist.glob("*cp314*arm64.whl"))
+        wheel.rename(wheel.with_name(wheel.name.replace("0.1.0", "0.0.9")))
+        with self.assertRaisesRegex(ValueError, "Unexpected distribution"):
+            _ASSETS.check(self.dist, self.assets, "0.1.0")
+
+    def test_missing_native_tool(self):
+        self.archive(
+            self.assets / "symbian-host-0.1.0-linux-aarch64.tar.gz",
+            ".",
+            ["share/symbian/VERSION"],
+        )
+        with self.assertRaisesRegex(ValueError, "missing"):
+            _ASSETS.check(self.dist, self.assets, "0.1.0")
+
+
+if __name__ == "__main__":
+    unittest.main()
