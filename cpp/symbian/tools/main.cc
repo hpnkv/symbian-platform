@@ -144,16 +144,16 @@ absl::Status Run(int argc, char** argv) {
     ABSL_ASSIGN_OR_RETURN(const auto definition, Read(definition_path));
     ABSL_ASSIGN_OR_RETURN(const auto dll, Single(options, "--target-dll"));
     const auto selected = options.find("--symbol");
-    if (selected == options.end()) {
-      return absl::InvalidArgumentError("Select --symbol");
-    }
     const auto suffix = dll.rfind(".dll");
     if (suffix == std::string::npos || suffix + 4 != dll.size()) {
       return absl::InvalidArgumentError("--target-dll must end in .dll");
     }
     ABSL_ASSIGN_OR_RETURN(
         const auto sources,
-        symbian::sdk::GenerateProxy(definition, selected->second,
+        symbian::sdk::GenerateProxy(definition,
+                                    selected == options.end()
+                                        ? std::vector<std::string>{}
+                                        : selected->second,
                                     dll.substr(0, suffix) + ".dso", dll));
     std::error_code error;
     fs::create_directories(output, error);

@@ -6627,3 +6627,13 @@ surrogate helpers and buffer operations. Exact template/operator signature
 matching, API-only comment rejection and metadata suffix ordering have eight
 passing regression tests. Strict documentation builds passed; the complete
 original-header symbol index remains unfinished.
+
+### Complete ordinal-library generation — 2026-10-05
+
+Native import generation now includes all present frozen exports when selection
+is empty, preserves DATA symbol typing and ordinals, and rejects absent explicit
+selections. Native bounds admit 65,535 exports/32 MiB proxies. Six native tests
+and five Python SDK tests pass (one original-header opt-in skips). Actual QtCore
+and QtGui definitions compile/link/inspect with 4,139 and 12,512 exports, including
+127 and 414 data exports respectively. This proves proxy ABI representation, not
+yet external-data E32 conversion or Qt execution using the new application graph.

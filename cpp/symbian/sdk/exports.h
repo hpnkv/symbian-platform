@@ -35,7 +35,8 @@ struct ProxyInfo {
 absl::StatusOr<std::vector<Export>> ParseExports(std::string_view text);
 
 // Generates source for Clang/LLD to build an ordinal proxy, NOT target DLL code.
-// Selected function exports must exist and be present. No format logic in Python.
+// Empty selection includes every present function/data export. Explicit selections
+// must exist and be present. Frozen ordinals are never renumbered.
 // Plain names only; decorated DLL version/UID names remain unimplemented.
 absl::StatusOr<ProxySources> GenerateProxy(
     std::string_view definition, const std::vector<std::string>& symbols,

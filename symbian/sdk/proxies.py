@@ -57,7 +57,7 @@ def _exports(items) -> list[dict]:
 def inspect_proxy(path: Path) -> dict:
     """Checks the generated ordinal proxy in the native core."""
     with path.open("rb") as stream:
-        data = stream.read(2 * 1024 * 1024 + 1)
+        data = stream.read(32 * 1024 * 1024 + 1)
     info = require_native().inspect_import_proxy(data)
     return {
         "soname": info.soname,
@@ -79,7 +79,7 @@ def build_import_proxy(
 
     Args:
         definition: Frozen EABI export definition, retained outside the wheel.
-        symbols: Exported function names to include without ordinal renumbering.
+        symbols: Export names; empty includes all present function/data exports.
         target_dll: Plain DLL basename; UID/version decoration is unsupported.
         output: Directory retaining source, primary CMake tree and reports.
         compiler: Host Clang driver with ARM code generation.

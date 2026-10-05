@@ -89,7 +89,7 @@ def test_aliases_and_absent_exports_do_not_become_proxies(tmp_path):
         build_import_proxy(
             definition, ["Removed"], "euser.dll", tmp_path / "out"
         )
-    assert caught.value.code == Code.UNIMPLEMENTED
+    assert caught.value.code == Code.FAILED_PRECONDITION
     with pytest.raises(StatusError):
         parse_def(b"EXPORTS\nA=B @ 1 NONAME\n")
     with pytest.raises(StatusError):
@@ -115,3 +115,26 @@ def test_original_public_headers_compile_and_link_user_exit(tmp_path):
     assert any(path.endswith("e32cmn.h") for path in result["inputs"])
     assert any(path.endswith("e32std.h") for path in result["inputs"])
     assert not result["import_execution_verified"]
+
+
+def test_complete_library_preserves_data_and_absent_ordinals(tmp_path):
+    if not shutil.which("clang++") or not shutil.which("ld.lld"):
+        pytest.skip("Clang/LLD required")
+    definition = tmp_path / "complete.def"
+    definition.write_text(
+        "EXPORTS\n"
+        + "".join(f"Function{i} @ {i} NONAME\n" for i in range(1, 4097))
+        + "Data @ 5000 NONAME DATA 16\nRemoved @ 5001 NONAME ABSENT\n"
+    )
+    result = build_import_proxy(
+        definition, [], "complete.dll", tmp_path / "out"
+    )
+    exports = result["proxy"]["exports"]
+    assert len(exports) == 4097
+    assert exports[-1] == {
+        "symbol": "Data",
+        "ordinal": 5000,
+        "data": True,
+        "absent": False,
+    }
+    assert inspect_proxy(Path(result["artifact"])) == result["proxy"]

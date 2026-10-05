@@ -4,6 +4,7 @@
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <set>
 #include <string>
 #include <string_view>
@@ -158,30 +159,45 @@ absl::StatusOr<ProxySources> GenerateProxy(
     return absl::InvalidArgumentError(
         "Proxy requires plain .dso/.dll basenames");
   }
-  if (symbols.empty() || symbols.size() > 256) {
-    return absl::InvalidArgumentError("Select 1..256 proxy functions");
+  if (symbols.size() > 65535) {
+    return absl::ResourceExhaustedError(
+        "Proxy selection exceeds 65535 exports");
   }
   const auto table = ParseExports(definition);
   if (!table.ok()) {
     return table.status();
   }
   ProxySources result;
-  std::set<std::string> selected;
-  for (const std::string& symbol : symbols) {
-    if (!selected.insert(symbol).second) {
-      return absl::InvalidArgumentError("Duplicate proxy selection");
+  if (symbols.empty()) {
+    // A library target exposes its complete frozen ABI, excluding tombstones.
+    for (const Export& item : *table) {
+      if (!item.absent) {
+        result.exports.push_back(item);
+      }
     }
-    const auto match =
-        std::find_if(table->begin(), table->end(),
-                     [&](const Export& e) { return e.symbol == symbol; });
-    if (match == table->end()) {
-      return absl::NotFoundError(absl::StrCat("DEF export missing: ", symbol));
+  } else {
+    std::map<std::string_view, const Export*> by_name;
+    for (const Export& item : *table) {
+      by_name.emplace(item.symbol, &item);
     }
-    if (match->absent || match->data) {
-      return absl::UnimplementedError(
-          "Absent/data exports cannot become function proxies");
+    std::set<std::string> selected;
+    for (const std::string& symbol : symbols) {
+      if (!selected.insert(symbol).second) {
+        return absl::InvalidArgumentError("Duplicate proxy selection");
+      }
+      const auto match = by_name.find(symbol);
+      if (match == by_name.end()) {
+        return absl::NotFoundError(
+            absl::StrCat("DEF export missing: ", symbol));
+      }
+      if (match->second->absent) {
+        return absl::FailedPreconditionError("Selected export is absent");
+      }
+      result.exports.push_back(*match->second);
     }
-    result.exports.push_back(*match);
+  }
+  if (result.exports.empty()) {
+    return absl::FailedPreconditionError("Library contains no present exports");
   }
   std::sort(
       result.exports.begin(), result.exports.end(),
@@ -191,8 +207,9 @@ absl::StatusOr<ProxySources> GenerateProxy(
   result.version_script = absl::StrCat(target_dll, " { global:\n");
   for (const Export& item : result.exports) {
     absl::StrAppend(&result.assembly, ".global ", item.symbol, "\n.type ",
-                    item.symbol, ", %function\n", item.symbol, ":\n.word ",
-                    item.ordinal, "\n.size ", item.symbol, ", 4\n");
+                    item.symbol, item.data ? ", %object\n" : ", %function\n",
+                    item.symbol, ":\n.word ", item.ordinal, "\n.size ",
+                    item.symbol, ", 4\n");
     absl::StrAppend(&result.version_script, "  ", item.symbol, ";\n");
   }
   result.version_script += "local: *; };\n";
@@ -216,8 +233,8 @@ SECTIONS {
 }
 
 absl::StatusOr<ProxyInfo> InspectProxy(std::string_view bytes) {
-  if (bytes.size() > 2 * 1024 * 1024) {
-    return absl::ResourceExhaustedError("Proxy exceeds 2 MiB");
+  if (bytes.size() > 32 * 1024 * 1024) {
+    return absl::ResourceExhaustedError("Proxy exceeds 32 MiB");
   }
   const auto header = analysis::InspectElf32(bytes);
   if (!header.ok()) {
@@ -277,7 +294,7 @@ absl::StatusOr<ProxyInfo> InspectProxy(std::string_view bytes) {
   const Section& dynamic = sections[dynamic_index];
   if (code.type != 1 || code.size == 0 || code.size % 4 ||
       code.address != code.offset || symbols.entry_size != 16 ||
-      symbols.size % 16 || symbols.size < 32 || symbols.size > 257 * 16 ||
+      symbols.size % 16 || symbols.size < 32 || symbols.size > 65536 * 16 ||
       symbols.link >= sections.size() || versions.size != symbols.size / 8 ||
       definitions.size != 56 || dynamic.size % 8 ||
       dynamic.link != symbols.link) {
@@ -406,7 +423,8 @@ absl::StatusOr<ProxyInfo> InspectProxy(std::string_view bytes) {
     const size_t p = i * 16;
     const uint32_t address = Read32(symbols.bytes, p + 4);
     if (Read16(symbols.bytes, p + 14) != 1 ||
-        static_cast<uint8_t>(symbols.bytes[p + 12]) != 0x12 ||
+        (static_cast<uint8_t>(symbols.bytes[p + 12]) != 0x12 &&
+         static_cast<uint8_t>(symbols.bytes[p + 12]) != 0x11) ||
         symbols.bytes[p + 13] != 0 || Read32(symbols.bytes, p + 8) != 4 ||
         Read16(versions.bytes, i * 2) != 2 || address % 4 ||
         address < code.address ||
@@ -423,7 +441,8 @@ absl::StatusOr<ProxyInfo> InspectProxy(std::string_view bytes) {
         !names.insert(*name).second || !ordinals.insert(ordinal).second) {
       return absl::DataLossError("Invalid proxy name or ordinal");
     }
-    info.exports.push_back(Export{*name, ordinal});
+    info.exports.push_back(
+        Export{*name, ordinal, symbols.bytes[p + 12] == 0x11});
   }
   std::sort(
       info.exports.begin(), info.exports.end(),

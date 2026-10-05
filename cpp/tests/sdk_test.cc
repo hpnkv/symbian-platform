@@ -62,12 +62,14 @@ TEST(SdkTest, MissingRemovedDataDuplicateAndUnsafeSelectionsAreRejected) {
                 .status()
                 .code(),
             absl::StatusCode::kNotFound);
-  for (const auto& name : {"Removed", "Data"}) {
-    EXPECT_EQ(GenerateProxy(kDefinition, {name}, "euser.dso", "euser.dll")
-                  .status()
-                  .code(),
-              absl::StatusCode::kUnimplemented);
-  }
+  EXPECT_EQ(GenerateProxy(kDefinition, {"Removed"}, "euser.dso", "euser.dll")
+                .status()
+                .code(),
+            absl::StatusCode::kFailedPrecondition);
+  const auto data =
+      GenerateProxy(kDefinition, {"Data"}, "euser.dso", "euser.dll");
+  ASSERT_TRUE(data.ok()) << data.status();
+  EXPECT_NE(data->assembly.find(".type Data, %object"), std::string::npos);
   EXPECT_FALSE(GenerateProxy(kDefinition, {"Function", "Function"}, "euser.dso",
                              "euser.dll")
                    .ok());
@@ -76,14 +78,33 @@ TEST(SdkTest, MissingRemovedDataDuplicateAndUnsafeSelectionsAreRejected) {
     EXPECT_FALSE(
         GenerateProxy(kDefinition, {"Function"}, "euser.dso", name).ok());
   }
-  EXPECT_FALSE(GenerateProxy(kDefinition, {}, "euser.dso", "euser.dll").ok());
+  const auto full = GenerateProxy(kDefinition, {}, "euser.dso", "euser.dll");
+  ASSERT_TRUE(full.ok()) << full.status();
+  ASSERT_EQ(full->exports.size(), 3);
+  EXPECT_EQ(full->exports[1].ordinal, 17);
+  EXPECT_TRUE(full->exports[1].data);
+  EXPECT_FALSE(GenerateProxy("EXPORTS\nGone @ 1 NONAME ABSENT", {}, "euser.dso",
+                             "euser.dll")
+                   .ok());
+}
+
+TEST(SdkTest, CompleteLibrariesAreNotLimitedToDiagnosticSelections) {
+  std::string definition = "EXPORTS\n";
+  for (int i = 1; i <= 4096; ++i) {
+    definition += "Function" + std::to_string(i) + " @ " + std::to_string(i) +
+                  " NONAME\n";
+  }
+  const auto full = GenerateProxy(definition, {}, "qtcore.dso", "qtcore.dll");
+  ASSERT_TRUE(full.ok()) << full.status();
+  ASSERT_EQ(full->exports.size(), 4096);
+  EXPECT_EQ(full->exports.back().ordinal, 4096);
 }
 
 TEST(SdkTest, ProxyInspectionRejectsUnboundedAndNonElfInput) {
   EXPECT_EQ(InspectProxy("not an ELF").status().code(),
             absl::StatusCode::kDataLoss);
   EXPECT_EQ(
-      InspectProxy(std::string(2 * 1024 * 1024 + 1, '\0')).status().code(),
+      InspectProxy(std::string(32 * 1024 * 1024 + 1, '\0')).status().code(),
       absl::StatusCode::kResourceExhausted);
 }
 
