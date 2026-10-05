@@ -2554,3 +2554,127 @@ outer view at the form's edge.
 
 - The worktree was clean and local `main` equalled `origin/main` at `0264821` when this stream began. An upstream and A11 review found libnghttp2 usable as an optional host HTTP/2 codec, with a plausible but untested guest lib-only port. ngtcp2 has no supported crypto helper for the SDK's Mbed TLS 3.4.1 profile, and HTTP/3 would also need nghttp3. No new transport dependency or protocol was added; the decision and evidence are in `.dev/research-log.md`.
 - `symbian agent listen --logs` now returns the newest bounded service events from a phone-initiated authenticated connection; `--after` and `--limit` allow a cursor page. The same native MessagePack codec and host `ReadOnlyAgentSession` serve this CLI path. Focused CLI dispatch passed, Black/Ruff passed, and strict MkDocs passed. This is host behavior only; after the unexplained reboot, no new phone check or package installation was attempted.
+
+### 2026-10-05 — reusable nghttp2 WebSocket runtime and live SDK workspace
+
+- Agent 1.1.0 now carries its authenticated native length/MessagePack stream in
+  binary RFC 6455 WebSockets over nghttp2 RFC 8441 extended CONNECT. The public
+  emulator listens; the private profile connects after keyed UDP discovery.
+  Native client/server codecs, TCP streams/listeners and Python transport
+  classes are reusable. A11's parser body and framing helpers are copied
+  verbatim, with recorded minimal WriteFrame boundary adaptations and licenses.
+  The nghttp2 1.70.0 core has pinned upstream provenance and checked input hashes.
+- The SDK exports Symbian::WebSocket on both ARM targets. Missing calloc and
+  RSocket SetOpt imports were found at application linking and added using
+  original ordinals. Steady-clock, endian and OpenC header adapters permit
+  nghttp2 without a new scheduler. Default bounds are 4,100-byte messages,
+  64 KiB queues, 16 received messages and 2 KiB/16 headers. This requires the
+  updated host and agent together; HTTP/1 Upgrade, browsers and TLS are outside
+  the implemented transport contract.
+- Nine native tests passed; the final focused host selection passed 25 tests
+  with one opt-in skip, including independent hyper-h2 interoperability in
+  both directions. Public RM-807/Dynarmic guest tests passed 4/4. Private keyed
+  discovery/authentication/status passed after moving its callback from the
+  worker OS stack to the same bounded A11 fiber stack as public sessions; the
+  original stack fault/reset is retained in the research log. No new package
+  was installed or request sent to a physical phone. ARMv5T archive/ELF builds
+  are not ARMv5T firmware or phone execution evidence.
+- The owner's exact ARMv6 CLion configure command succeeds. Root guest profiles
+  build and link current runtime, API, WebSocket, TLS wrapper and concurrency
+  sources and prefer their live headers, so simultaneous SDK/application edits
+  need no export. Pinned dependency archives/platform inputs still come from
+  the active SDK; generated standalone applications use its exported snapshot.
+  Both ARM profiles linked the agent from local archives. Fresh compiler-cache
+  configuration was needed for the old ARMv5T build directory. Actual editor
+  navigation and debugger observations remain separate gates.
+- The host codec-only benchmark measured 1.77414 microseconds per 4 KiB round
+  trip (4,403.55 MiB/s aggregate); it measures neither sockets nor guest/phone
+  performance and makes no direct comparison with A11. The inherited console
+  catalog/presentation test mismatch and physical lifecycle questions remain
+  unresolved. See the research log for retained failures and provenance.
+- Final SDK `.symbian/websocket-workspace-sdk-20261005` is installed and active;
+  all recorded digests match. Both IDE caches now select its compiler. The
+  exact ARMv6 configure command passes, and current API/runtime headers precede
+  exported copies in the agent's ARM compilation command. A root configure
+  against the older SDK without WebSocket also passes using the workspace's
+  current target definitions. Final exported-SDK guest reruns passed all four
+  public cases and the private case; both ARM workspace links, native tests,
+  Black/Ruff, whitespace and strict documentation checks passed.
+
+## 2026-10-05 — Standalone emulator and signing console
+
+- `symbian emu run` and Console → Emulator → Run emulator open the selected
+  verified firmware in fresh owned state without application compilation or
+  injection. The real 808 fixture frontend/control launch passed; teardown
+  reaped the child after escalation, removed its endpoint and verified all
+  baseline hashes. Full OS boot and normal human window-close are unverified.
+- Console → Signing lists certificate subjects/fingerprints/expiry, creates or
+  imports private named RSA identities, archives identities while preserving
+  keys, and signs existing SIS files through the native signer. Private key
+  bytes stay out of results; existing identities/output files are protected.
+  CLI parity is provided by `symbian signing list/create/import/archive/sign`.
+  Phone trust and physical installation are not established by signing.
+- Related regression run: 112 passed, 27 skipped; the previously recorded
+  agent CLI/console presentation mismatch is the sole failure. Final standalone
+  and web frontend follow-up: 22 passed. Changed Python formatting/lint,
+  JavaScript syntax and strict documentation checks pass. Replay and the exact
+  live firmware identity/session path are in the research log.
+
+## 2026-10-05 — Context application staging for standalone launch
+
+- Standalone `emu run` now builds and stages the CLI working-directory app or
+  explicitly selected application. GUI Run emulator uses its resolved app
+  context. It still omits `--run`; users launch the staged app themselves.
+  With no application context, the earlier empty standalone behavior remains.
+- App executables and SDK-compiled menu/icon/locale resources are staged in
+  disposable C drives, with optional CA bundles. The real RM-807 frontend
+  discovered Symbian GUI Counter (`0xE0000811`) in AppArc without automatic
+  launch; all preserved baseline digests remained unchanged. App validation
+  gates remain enforced. This is menu discovery, not new guest/phone execution.
+- Focused tests: 70 passed, 9 skipped. Black/Ruff and strict docs pass. The
+  upstream `--install` success-as-failure experiment and the successful direct
+  resource staging evidence are retained and recorded in the research log.
+
+## 2026-10-05 — Built-in application compatibility investigation
+
+- Fresh RM-807 cases disprove the context-only launch limitation: Calculator
+  renders and a real pointer tap changes 0 to 3; Settings renders its initial
+  list. Both GUI app-list and UID activation use the same AppArc launch path.
+- Both Gallery UIDs reproduce an entirely black screen. Gallery stays alive;
+  its media Harvester exits with KErrGeneral (-2). Dynarmic and Dyncom agree,
+  removing context injection does not help, and a 30-second Dynarmic wait
+  remains black. Clock also stays black; its cause is unresolved.
+- Gallery encounters missing executive calls (timer inactivity, process open
+  by ID and process rename) and unsupported loader/file-server plugin requests.
+  Original MDS source confirms those plugin dependencies. These are confirmed
+  compatibility gaps; the single causal blocker for Gallery's first frame and
+  Harvester's -2 exit have not been isolated. Missing MDS shutdown properties
+  must not be misreported as proven readiness gates. No emulator workaround
+  was implemented or claimed as a fix.
+- Private scripts, native exit records, logs and actual texture captures are in
+  `.symbian/app-launch-investigation-20261005/`; exact case paths and source
+  provenance are in the research log. Every case preserved all 13,438 baseline
+  hashes. These results establish bounded firmware execution, not full OS boot,
+  all application subviews, normal human close or physical-device behavior.
+- Retained texture/baseline checks, strict documentation build and whitespace
+  validation pass. No production code changed in this investigation.
+
+## 2026-10-05 — Native HTTP and shared secure transport
+
+- Native HTTP client/server now support HTTP1.1 and single-exchange HTTP2,
+  bounded pull bodies and Write/Finish response/request writers. Common byte
+  transport and nghttp2 DATA streams also back the existing RFC8441 WebSockets.
+  The exported SDK provides Symbian::Http and native IPv4 DNS.
+- Verified Mbed TLS client/server streams support TLS1.2 and TLS1.3, hostname
+  and trust validation, SNI and ALPN. Eleven exported-SDK RM-807/ARMv6/Dynarmic
+  cases pass: actual example.com/Cloudflare clients, two wrong-host controls,
+  HTTP1.1/h2c native servers and TLS1.2/HTTP1.1 + TLS1.3/h2 mTLS servers.
+  Golden firmware hashes are preserved; documented emulator changes affect
+  disposable copies only. ARMv5T builds do not prove loader/phone execution.
+- Native CTest 14/14; host regressions 101 passed, 17 skipped. Complete page,
+  header, WebSocket, HTTP server and TLS examples compile for ARM; strict docs
+  and formatting checks pass. The prior CLI presentation mismatch is fixed.
+- One exchange per connection, no pooling/redirect/decompression/multiplexing
+  or HTTP1 WebSocket Upgrade. Details/replay/failures are in the research log
+  and HTTP, WebSocket and TLS guides. Explicit Status discards use IgnoreError;
+  bool-returning local concurrency APIs retain their appropriate handling.

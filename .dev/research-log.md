@@ -5075,3 +5075,341 @@ installed while the earlier phone reboot is unexplained.
 The owner asked whether these libraries can serve the development-agent transport. The worktree is clean at pushed commit `0264821` before this review. A11's host HTTP stack already links static `libnghttp2` through `pkg-config` and wraps its byte-oriented callbacks in its own HTTP/2 connection and event loop. This Mac has libnghttp2 1.70.0 and a static archive. [nghttp2's upstream requirements](https://github.com/nghttp2/nghttp2#requirements) say its C library can be built alone without the application programs' TLS, libev, zlib and c-ares dependencies. Its [programmer's guide](https://nghttp2.org/documentation/programmers-guide.html) says the library performs no socket I/O; the caller supplies transport and lifecycle. Thus a future optional guest HTTP/2 client or server is plausible, but guest ARM compilation, ALPN over the SDK's Mbed TLS port, binary size, heap use, callbacks and cancellation are **not yet tested**. The resident agent presently speaks a small authenticated control protocol and has no HTTP interoperability need, so adding nghttp2 now would expand its protocol and memory surface without satisfying the next files/logs gate.
 
 [ngtcp2 upstream](https://github.com/ngtcp2/ngtcp2/blob/main/README.rst) describes a dependency-free C11 QUIC transport core, but its usable crypto helpers require a supported QUIC TLS backend. Its current list covers GnuTLS, BoringSSL/AWS-LC, Picotls, wolfSSL, LibreSSL and experimental OpenSSL 3.5; it does not list Mbed TLS. The [ngtcp2 programmer's guide](https://nghttp2.org/ngtcp2/programmers-guide.html#tls-integration) recommends those helpers and details the work needed for custom TLS integration. The SDK's Mbed TLS 3.4.1 tree has no QUIC-specific public integration API; [Mbed TLS's open QUIC API request](https://github.com/Mbed-TLS/mbedtls/issues/4731) is consistent with that local inspection, though absence of a supported backend is the decisive current limit. HTTP/3 would also require [nghttp3](https://github.com/ngtcp2/nghttp3/blob/main/README.rst), not nghttp2. No guest QUIC/TLS handshake, size or battery result exists. Do not add ngtcp2 to the SDK or agent until there is a concrete QUIC use case and a maintained compatible TLS backend that passes guest and physical gates.
+
+## 2026-10-05 — A11 WebSocket framing over guest nghttp2
+
+The owner requested WebSocket transport for the resident agent and verbatim
+A11 reuse wherever the runtime permits it. The codec now uses RFC 8441
+extended CONNECT over HTTP/2 prior knowledge, with RFC 6455 binary messages.
+A11 revision `fcccb8cb6e1e67d7ba0822ac14cece9ee4c7091b` supplies the
+opcode/endian/masking helpers, ParsedActions and ParseFrames body verbatim.
+The recorded parser-body comparison passed after formatting. WriteFrame keeps
+the A11 implementation with explicit single-owner/entropy/output adaptations;
+its unavailable asynchronous HTTP body stream is replaced by encoded bytes.
+Provenance and licenses are shipped. nghttp2 v1.70.0 is pinned to
+`85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2`. The owner-supplied archive has no
+.git directory: a Git query there initially inherited this repository's HEAD.
+An independent upstream checkout at that release and SHA-256 comparison of
+all declared core inputs corrected the provenance; builds check the manifest.
+
+Native socket-independent client/server endpoints and worker-owned TCP stream
+and listener classes are reusable. Python owns socket/deadline policy and uses
+the native codec with the GIL released; it contains no duplicated format
+implementation. Existing agent HMAC authentication, native MessagePack and
+length framing remain inside binary messages. The phone profile is a WebSocket
+client after keyed UDP discovery; the public emulator profile is a server.
+Agent 1.1.0 and the updated host must be deployed together. There is no browser
+HTTP/1 Upgrade compatibility or TLS claim for this cleartext transport.
+
+Guest runtime additions include the steady clock adapter for nghttp2's rate
+limiter, OpenC C-declaration compatibility in inttypes.h, byte-order adapters,
+calloc's original libc export (ordinal 47), and the original RSocket SetOpt
+integer overload (ESOCK ordinal 231) for TCP_NODELAY. Two earlier exported
+SDKs linked nghttp2 but failed at the actual application link because those
+imports were absent; neither ARM archive generation nor E32 conversion alone
+proved their availability. The verified export includes both imports and
+builds the nghttp2 core, codec and TCP wrapper on ARMv5T and ARMv6. Its exported
+file digests were independently checked with no mismatches. Defaults bound
+messages to 4,100 bytes, queues to 64 KiB and 16 received messages, and headers
+to 2 KiB/16 fields; configured messages are capped at 32 KiB. HPACK dynamic
+tables and server push are disabled, with bounded SETTINGS/ACK/continuations.
+
+Nine native GTests passed. Thirteen focused WebSocket/agent-session Pytests
+passed, including independent hyper-h2 peers in both directions. The final
+SDK/build/identity/transport host selection passed 25 tests with one opt-in
+skip. A wider console run encountered the inherited catalog/presentation
+mismatch for agent commands; that broader suite is not claimed passing.
+A host RelWithDebInfo in-memory codec benchmark completed 100,000 round trips
+of 4,096 bytes with OpenSSL mask entropy: 1.77414 microseconds per round trip,
+4,403.55 MiB/s aggregate payload. This excludes TCP, guest execution and Python
+policy; no direct A11 performance comparison or phone energy result exists.
+
+The named RM-807 preserved-firmware Dynarmic public guest suite passed all four
+cases. The first private client run reset the host connection and recorded
+KERN-EXEC 3 with a stack write fault. Its long-running discovery/connection
+callback used stackless WorkerExecutor::Post, unlike public sessions' 256 KiB
+fiber stack. Moving it to the same A11 PostFiber stack passed the private
+keyed-discovery/authentication/status test (11.01 seconds). A compile gate
+caught PostFiber's Task return type during that change; startup now inspects
+an immediately ready result for admission failure. No alternative scheduler
+was introduced. These are emulator results; physical installation, reconnect,
+sleep/reboot behavior and the earlier unexplained phone restart remain open.
+
+The IDE initially loaded an active SDK without Symbian::WebSocket. Activating
+the verified SDK made the owner's exact CLion configure command succeed.
+The owner then clarified that SDK development must consume current sources.
+The root guest graph now loads the current capability template and redirects
+runtime/API/WebSocket/TLS/guest-fiber capability archives to their real local
+CMake targets, with build dependencies and current public headers first.
+Installed platform headers/proxies and pinned Abseil/Mbed TLS remain external
+inputs. ARMv6 and ARMv5T agent ELF links passed using the local libraries;
+ARMv5T's TLS wrapper also built. Enabling the current stream runtime exposed
+a missing rune-table compile definition on the Runtime facade; propagating
+the source runtime definitions fixed it. An old ARMv5T compiler cache switched
+to host detection during CMake's automatic reset; explicit --fresh restored
+the ARM profile. This is compiler/index/build evidence, not a new guest loader
+or direct observation of IDE editor navigation.
+
+Final export/activation: `.symbian/websocket-workspace-sdk-20261005` packages
+the current capability template and both architecture archives. All recorded
+file digests match after tooling installation. ARMv5T core/codec/wrapper
+archives are 313,096/63,324/17,248 bytes; ARMv6 are
+312,660/63,124/17,200 bytes. These are archive file sizes, not resident heap
+measurements. Both IDE compiler caches were refreshed against that export;
+the owner's exact ARMv6 command then configured successfully. Both profiles
+linked the agent and built the TLS wrapper from workspace archives. A separate
+root configuration against the old SDK without WebSocket also succeeded,
+confirming that capability discovery uses the current workspace template.
+Compilation database checks locate real ARM commands for the agent, wrapper,
+codec and worker implementation, with current API/runtime headers ahead of
+exported copies. Native tests passed again, Black/Ruff and whitespace checks
+passed, and strict MkDocs succeeded. Against the final exported SDK, the public
+RM-807/Dynarmic suite passed 4/4 in 46.73 seconds and the private case passed
+in 14.91 seconds. No physical-device test was performed.
+
+## 2026-10-05 — Standalone emulator launch and console signing
+
+- Added `symbian emu run` and Console → Emulator → Run emulator. This uses the
+  existing resolved/verified firmware copy, owned frontend, private control
+  socket, retained launch/log evidence and teardown. It omits `--run`, builds
+  no application, injects no executable and requires no guest application exit
+  report. Project/SDK arguments select settings only. The EKA2 application ABI
+  gate remains on application launch; standalone EKA1/EKA2 policy branches have
+  controlled-child coverage, not new EKA1 runtime evidence.
+- Live experiment used the selected 808 PureView baseline
+  `sha256:e4502051aee69bb1b7060f47c4e5d5dbf63db3277f8ea918a81076b43ab47e8d`.
+  The real patched frontend reached its control endpoint with
+  `{"process_exits": []}` and no injected E32/ELF digest. Evidence is retained
+  privately under `.symbian/emulator-runs/run-05b_r461/`. Context teardown
+  escalated from terminate to kill (`frontend_exit: -9`); the child was reaped,
+  endpoint removed and all 13,438 baseline files retained their recorded hashes.
+  This proves frontend/control launch and ownership, not full OS boot or a
+  normal human window-close path.
+- Console → Signing has a live public certificate listing and guided creation,
+  PEM RSA pair import, archival and signing of existing SIS applications.
+  Identity picker entries come from that store; imported subject text is escaped.
+  Default storage follows XDG data paths outside projects. Private directories
+  and key files use 0700/0600; duplicate identities are refused. Archival retains
+  keys in `.archive/`. OpenSSL checks pair matching and public metadata; the
+  existing native `sign_sis` and `inspect_sis` own SIS/signature processing.
+  Existing output files and inputs are preserved, and invalid imports/packages
+  publish no identity/signed output. No private key bytes enter GUI results.
+- Regression command covered signing, standalone/IDE launch, CLI, console,
+  web frontend, packaging, emulator/control and firmware tests: 112 passed,
+  27 optional tests skipped, one inherited failure in
+  `test_catalog_tracks_cli_and_excludes_frontend` (agent hello/status/files/
+  listen/logs have CLI leaves without console presentations). Follow-up after
+  adding the supervisor no-guest-exit check and final frontend changes:
+  standalone + web frontend, 22 passed. Black/Ruff, Node syntax and strict
+  documentation build pass for the changed code.
+- Open questions: normal user window-close acceptance, interactive desktop
+  placement and complete firmware OS boot remain separate checks. Encrypted
+  private keys and broader SIS profiles are unsupported by this workflow;
+  self-signed certificates do not establish phone trust or capability rights.
+
+## 2026-10-05 — Stage context applications for standalone emulator launch
+
+- Follow-up changes standalone launch to build and inject an application when
+  `--project` names an application or the CLI workspace/current directory
+  declares one. GUI Run emulator already carries its resolved application
+  folder; a regression now verifies that default. Without an application
+  context, standalone launch still performs no application build. Automatic
+  execution remains disabled and no guest application-exit report is required.
+- Application validation, architecture/import compatibility and the EKA2 ABI
+  gate apply whenever an app is staged. An executable is copied to the private
+  C drive. For registered apps, the existing SDK resource compiler supplies
+  registration, translated captions and MIF assets; the selected CA bundle is
+  also staged when configured. Host path checks apply to these generated asset
+  targets. Resource compilation accepts the already selected application SDK.
+  No SIS/resource format parser, scheduler or native implementation was added.
+  Launch evidence records the staged app identity, assets, E32/ELF hashes and
+  `auto_run: false`.
+- Initial experiment built a registered SIS and used upstream `--install`.
+  The real installer logged success but the CLI handler converted its enum
+  success value (zero) to false and exited 255. Failure evidence remains in
+  `.symbian/emulator-runs/run-jinr6h2y/`. The maintained workflow instead stages
+  compiled resources directly; upstream code and the native installer were
+  not changed, and no failed status is treated as success.
+- Successful real RM-807 frontend experiment is retained at
+  `.symbian/emulator-runs/run-av0gq61g/`, using the previously recorded
+  `sha256:e4502051aee69bb1b7060f47c4e5d5dbf63db3277f8ea918a81076b43ab47e8d`
+  baseline. The frontend command contained only `--device RM-807`;
+  control reported no guest exits. All seven app files were present in the
+  copied C drive. AppArc logged `Found app: Symbian GUI Counter, uid:
+  0xE0000811`, independently establishing menu discovery before manual launch.
+  Teardown reaped the owned child and all baseline hashes remained unchanged.
+  This establishes staging/frontend menu discovery, not new guest execution,
+  full OS boot, normal human window-close or physical installation evidence.
+- Focused checks: 70 passed, 9 optional checks skipped across standalone/IDE
+  launch, CLI, web console, packaging and CA bundle tests. Controlled-child
+  cases cover explicit/implicit app context, registered/raw apps, absent app
+  context on EKA1/EKA2, no automatic `--run` and retained baseline integrity.
+  Changed Python passes Black/Ruff; strict documentation build passes.
+
+## 2026-10-05 — Built-in RM-807 applications and Gallery black screen
+
+The owner reported Gallery opening to a black screen after standalone emulator
+launch. Fresh-process UID controls establish that execution is not restricted
+to the injected context application. Both the upstream `--run UID` handler and
+Qt app-list activation use `applist_server::launch_app`. No launch selection,
+signing, staging or emulator implementation was changed in this investigation.
+
+Fixture: content identity
+`e4502051aee69bb1b7060f47c4e5d5dbf63db3277f8ea918a81076b43ab47e8d`,
+808 PureView/RM-807, epoc100 detector result, explicit
+`rm807-113.010.1508` executive profile, ROM digest
+`b5c1ea63cb6359270c5b7cfb1bb453594e208a01b8aeb5b5e020f37d546f7086`.
+The real local patched macOS frontend was used. Its source checkout has other
+existing local changes; these results characterize that binary, not pristine
+upstream. Every case copied the verified baseline into disposable writable
+state. All 13,438 baseline file hashes agreed after every case.
+
+Private replay scripts, individual `report.json`, frontend logs and real screen
+texture PNGs are under `.symbian/app-launch-investigation-20261005/`.
+`probe.py` runs the six-app comparison, `controls.py` the longer wait/backend
+controls, `isolation.py` the no-injection and Calculator input controls, and
+`dyncom.py` the successful short Dyncom reproduction. They use the native
+control socket and stop/reap only their owned children. Each report includes
+fixture identity, profile, command, exit records and baseline verification.
+
+| App / UID | Evidence directory | Observed result |
+| --- | --- | --- |
+| Context counter / `0xE0000811` | `context-bh5b49ax` | Nonblack 720×1280 frame, no process exits |
+| Gallery / `0x200009EE` | `gallery-sug7fqf0` | Entire RGB texture zero, frontend and Gallery remain alive |
+| Gallery/Photos / `0x200104E7` | `gallery-photos-pkzs28zo` | Same black texture and service exit pattern |
+| Calculator / `0x10005902` | `calculator-05b4tr5y` | Actual calculator initial UI |
+| Clock / `0x10005903` | `clock-l7__ig_m` | Black texture, DBMS server exits zero; cause unresolved |
+| Settings / `0x100058EC` | `settings-akrlaxs7` | Actual initial Profiles/Themes/Phone/etc. list; subviews untested |
+
+Additional controls:
+
+- `gallery-long-sd9iq_xr`: still entirely black after 30 seconds on Dynarmic.
+- `gallery-no-context-d7ai6lfv`: no injected SDK executable/resources; same
+  black texture and media service failure after eight seconds.
+- `gallery-dyncom-short-4qwntkgn`: no context injection, Dyncom; same black
+  texture and Harvester exit after eight seconds.
+- `calculator-input-4ryjjtrq`: no context injection. Real logical pointer
+  press/release at (225,482) changes the displayed digit from 0 to 3. Both
+  before/after texture captures retained. No Calculator process exit.
+- Initial long Dyncom case `gallery-dyncom-wamjccti` lost its endpoint during
+  the wait and the frontend ended with zero; no texture was captured. Treat
+  that attempt as inconclusive, not a successful frame or a backend crash.
+  The fresh short Dyncom case supplies the actual reproduction.
+
+Confirmed runtime observations and source contracts:
+
+- Both Gallery registrations start substantial real guest code and services.
+  Native status records `harvesterserver[200009f5]0001` exiting normally with
+  reason `-2` (`KErrGeneral`), cryptospisetup and BlacklistServer exiting zero.
+  No Gallery process exit is reported. This is a live guest with a failed media
+  dependency, not an absent executable or an emulator-wide rendering failure.
+- Gallery logs unsupported `!Loader` IPC `0xB` (`ELoadFSPlugin`), file-server
+  108 (`MountPlugin`), 111 (`PluginOpen`) and unidentified opcode 149. The
+  existing frontend completes these unsupported requests with -5; it does not
+  implement the file-system plugins. Original MDS file monitor initialization
+  calls AddPlugin/MountPlugin and opens its plugin engine; these are real media
+  stack dependencies. This proves missing support, not that one request alone
+  causes Gallery's first-frame failure. Do not fake success for those requests.
+- Missing SVCs in Gallery are `0x55`, `0x74` and `0x7B`. The previously retained
+  native-ROM/source-wrapper mapping identifies them as RTimer::Inactivity,
+  RProcess::Open(TProcessId, TOwnerType) and User::RenameProcess respectively.
+  Source executive numbers 0x53/0x72/0x79 map to these Belle numbers. They are
+  absent from the v10 handlers used to derive the experimental profile;
+  process open/rename handlers exist in the older v9 map. No permissive map or
+  synthetic inactivity completion was added. Their direct causal role in the
+  black screen remains unproven.
+- Repeated missing property `0x20022E94`, key 2 is the MDS **shutdown** property,
+  not a proven readiness signal. Original MDS definitions name it
+  `KMdSPSShutdown` / `KShutdown`. Do not infer an initialization gate solely
+  from that warning. Trapped leaves, missing optional settings and skin errors
+  likewise need causal controls before being called fatal.
+- Original MDS source was read from ignored upstream checkout
+  `research/upstream/mds`, repository
+  https://github.com/SymbianSource/oss.FCL.sf.mw.mds, commit
+  `6a336727266557c351987111e793a270f86a6291`. EPL notices remain untouched.
+  Relevant files: `inc/mdscommoninternal.h`,
+  `harvester/monitorplugins/fileplugin/src/filemonitorao.cpp`, and
+  `harvester/server/src/harvesterserver.cpp`. The server's outer trap returns
+  a startup/runtime leave code from E32Main, consistent with a normal -2 exit;
+  this is source comparison, not matched firmware debug symbols.
+
+Conclusion: launch and staging work for applications beyond the context app.
+Gallery exposes incomplete Belle/media/file-system/executive support, while
+Clock is another unresolved compatibility case. Calculator has real frame/input
+acceptance, Settings initial-frame acceptance only. This is neither full OS boot
+nor general built-in-app or physical-phone compatibility. Teardown usually
+escalated to kill (-9); children were reaped, but this is not normal human
+window-close evidence.
+
+Open questions: locate Gallery's exact blocked thread/request and Harvester's
+original -2 leave using bounded debugger/service tracing; independently verify
+file-system plugin contracts and timer-inactivity semantics before implementing
+fixes; diagnose Clock separately. Rendering Gallery requires a successful
+before/after guest oracle, not removal of log warnings. Updated the emulator
+user guide with the measured compatibility boundary. No firmware/private
+screenshots, runtime state or upstream checkout was added to version control.
+
+Verification: five retained Gallery texture captures independently checked as
+all-zero RGB; Calculator before/after captures differ and visual inspection
+confirms 0→3. All per-case baseline-verification fields are true. Strict MkDocs
+build and `git diff --check` pass. No production code changed in this
+investigation, so no additional unit-test suite was required.
+
+## 2026-10-05 — Shared native HTTP, WebSocket and TLS streams
+
+Implemented protocol-neutral byte streams, ordered HTTP heads, A11-derived
+HTTP/1 codecs, bounded pull bodies and explicit Write/Finish writers. HTTP/2
+DATA/flow control is shared with RFC8441 WebSockets, using pinned nghttp2;
+there is no second scheduler. Native TCP DNS resolves an ASCII hostname to its
+first IPv4 address. Mbed TLS client and server share the same stream/BIO with
+mandatory outbound chain, date and hostname verification, SNI and explicit
+TLS1.2/TLS1.3 plus ALPN. EOF without close_notify is a TLS truncation error.
+
+Final exported-SDK acceptance: 11/11 passed in 76.47 seconds, replay with
+SYMBIAN_HTTP_LIVE_GUEST=1 SYMBIAN_HTTP_EXPORTED_SDK=1 and
+SYMBIAN_SDK_MANIFEST=.symbian/http-final-sdk-r2-20261005/sdk.json,
+pytest symbian/tests/test_http_guest.py. Log:
+/tmp/symbian-http-exported-r2c.log; artifacts:
+.symbian/http-exported-r2c-20261005. Guest DNS connected to example.com over
+HTTP and verified TLS1.2/HTTP1.1 and TLS1.3/HTTP1.1; www.cloudflare.com over
+verified TLS1.2/h2 and TLS1.3/h2, including streamed megabyte-sized bodies.
+Wrong-hostname controls reject both TLS versions. Independent host clients
+exercise native HTTP1.1/h2c servers and mutual-authenticated
+TLS1.2/HTTP1.1 and TLS1.3/h2 servers. Test roots come from the host trust store;
+server/client test identities are the existing public fixture certificates.
+This is RM-807 Delight 113.010.1508, ARMv6, Dynarmic emulator evidence;
+ARMv5T compilation and physical-phone compatibility are separate gates.
+
+The preserved baseline ROM/Z hashes remain unchanged. EKA2L1 mutates only
+disposable Z: avkonfep.dll/goommonitor.dll are renamed to hash-identical .bak
+files, slpgw.dll removed and stubcached created. The test records these changes
+and verifies unchanged content; the first overstrict copy-equality assertion
+failed and is retained rather than described as preservation failure.
+
+Retained integration failures: mixing the two complete Runtime/Streams
+archives caused duplicate std::to_string definitions, fixed by using Streams
+consistently for networking/TLS. DNS revealed absent SDK proxy imports for
+RHostResolver and TSockAddr/TBufBase constructors. Added original esockU
+ordinals 120/122/125/127/262, EUSER C2 ordinals 1473/85; C1 ordinal1469 alone
+was insufficient. The final export was supplemented then resealed; exporter
+source includes these symbols for subsequent clean prepares. Supplement replay
+is /tmp/symbian-fix-dns-proxy.py and /tmp/symbian-http-dns-proxy.log. Earlier
+passed tests used host-resolved addresses; final 11 cases use guest DNS.
+
+Final host regressions: 101 passed, 17 opt-in skipped, in
+/tmp/symbian-outstanding-final-regressions.log. Fixed the inherited five agent
+CLI presentation omissions. Native CTest: 14/14 passed, including eight HTTP
+and nine WebSocket tests (/tmp/symbian-http-final-native-tests.log). Final
+ARMv6 HTTP probe and connectivity archives built; ARMv5T had earlier compiled.
+Complete HTTP/TLS/WebSocket documentation examples compile as one ARM TU at
+.symbian/http-docs-20261005/examples.cc. Strict MkDocs, Black/Ruff and whitespace
+checks pass. Status discards now use IgnoreError including the pinned A11
+continuation cancellation (adaptation/hash recorded); local bool-returning
+Future cancellation/value setters retain ordinary casts. An attempted blanket
+replacement exposed that bool distinction at compile time and was corrected.
+
+Restrictions: one exchange/connection, bounded buffering, no redirects,
+connection pooling, decompression, HTTP1 Upgrade or HTTP2 multiplexing/push.
+Streaming exposes independent read/write halves and caller deadlines; native
+synchronous work belongs on the existing SDK executor. Internet acceptance
+requires live DNS/network and the selected public roots; it is not hermetic.
