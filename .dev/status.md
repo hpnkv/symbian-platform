@@ -3053,3 +3053,21 @@ checks and native CTests pass on macOS. Logs use
 /tmp/symbian-emulator-control-preflight-*; selected helper/installer regressions
 pass (24 passed, one Linux-only skip on macOS), as do formatting and actionlint.
 Final production bundles must incorporate this additional startup fix.
+
+Final producer 37350832623 at 6e325c3 replaces the cancelled superseded run.
+Complete Linux x86_64/arm64 and macOS arm64 jobs pass; Intel macOS is still
+compiling. Rehearsal 37352847716 waits to reuse this exact-source acceptance.
+Downloaded final macOS arm64/Linux x86_64 archives install through public PyPI
+0.1.2. Private clean guide environments pass delivered-importer firmware import
+and hello_time/gui_app launch, rendering, input updates, reset/clear and normal
+guest/frontend exit through the installed CLI; saved reports confirm unchanged
+inputs. The installed macOS archive passes both GUI backends and all four live
+debugger tests (six pass). Logs use /tmp/symbian-emulator-final-ci-* on each host.
+Publication and acceptance of actual public emulator downloads remain required.
+
+The ignored guest Qt4.8.1 experiment compiles real headers/frozen imports and
+runs a QtCore timer/event loop with normal guest exit. The widget candidate
+still fails during S60 QApplication initialization (leave -1, KERN-EXEC/3);
+native debugger evidence points into eikcore. This does not establish QWidget
+rendering or complete the requested Qt example. Pointer/nullability revision
+remains deferred until emulator delivery and the Qt example are complete.

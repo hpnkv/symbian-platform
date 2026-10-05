@@ -6398,3 +6398,39 @@ on macOS. Logs: /tmp/symbian-emulator-control-preflight-* on the respective
 hosts. Selected helper/installer regressions pass (24 passed, one Linux-only
 skip on macOS); Black/Ruff/actionlint pass. Production CI must include this
 fix before publication; the pending pointer/nullability revision remains deferred.
+
+2026-10-05 final emulator candidate: producer 37350832623 at 6e325c3 succeeds
+through complete Linux x86_64/arm64 and macOS arm64 jobs. Intel macOS is still
+compiling; rehearsal 37352847716 waits for this exact-source producer. Actual
+final Qt6.8.3 archives install through the public PyPI 0.1.2 wheel on macOS
+arm64 and Linux x86_64. Private HOME/XDG/PATH guide environments import an
+existing firmware instance using the delivered importer, then launch the
+previously downloaded SDK's hello_time and gui_app with `symbian app run`.
+Both apps render, change visible output after pointer input, clear/reset and
+exit with guest reason zero and frontend exit zero on both hosts. Saved launch
+reports confirm unchanged inputs. macOS's installed archive also passes both
+GUI backends and all four live debugger checks (six tests). Logs:
+/tmp/symbian-emulator-final-ci-{install,gui-debug,guide-runs}-macos.log and
+/tmp/symbian-emulator-final-ci-guide-runs-linux.log on their respective hosts.
+The temporary acceptance harness initially assumed one session directory and
+an unwrapped JSON result; correcting those harness assumptions required no SDK
+changes. The failed JSON-envelope log is retained with .failed-envelope suffix.
+These are final CI candidates, not yet publicly published emulator downloads.
+
+Guest Qt research stays ignored under .symbian/guest-qt-research. Original
+Qt4.8.1 syncqt headers, Symbian qreal/architecture configuration and frozen
+QtCore/QtGui definitions compile and produce independently reproducible E32
+images with the public native SDK. Qt's upstream heap hook is retained with
+its LGPL notice. A QtCore application runs its QTimer single-shot/event loop
+and exits normally on Dyncom against the preserved Belle fixture. The widget
+candidate reaches GuiMain after DLL initialization, but QApplication's S60
+initialization leaves -1 and fails with KERN-EXEC/3 before any rendered widget.
+Dynarmic additionally faults in the host; Dyncom reports the guest exit. The
+upstream heap hook and documented no-application-panes/raster settings do not
+resolve it. Native LLDB plus generated dSYM obtains the real second-leave
+stack; its nearest non-ROM return address is in eikcore.dll (0x70714117 in this
+instance). Consulted the live SymbianSource classicui EIKENV.CPP implementation
+for further investigation. No working QWidget or complete Qt example is
+claimed; no pointer/nullability revision has started. Logs use
+/tmp/symbian-guest-qt-*; guest binaries, firmware copies and debug symbols remain
+outside version control.
