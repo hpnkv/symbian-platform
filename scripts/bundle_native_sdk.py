@@ -73,7 +73,10 @@ class Closure:
                 for file in notices:
                     shutil.copy(file, destination / file.name)
                 break
-        if "site-packages" in original.parts:
+        if (
+            original.name in ("cmake", "ninja")
+            or "site-packages" in original.parts
+        ):
             for distribution in distributions():
                 files = distribution.files or ()
                 if not any(
