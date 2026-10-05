@@ -3198,3 +3198,8 @@ converter tests and 55 integration checks pass; four library/debug checks also
 pass with LLVM diagnostics on PATH. Shipping those diagnostics in native SDKs.
 Public docs build strictly. Release version bump/publication remains pending;
 physical-device execution and general typed exception support remain unverified.
+
+2026-10-06: Full native CTest passes all 14 suites. Frozen-DLL and emulator
+CLI/Console regressions corrected (affected group: 60 passed, 4 skipped).
+Preparing VERSION 0.1.3; release gate now requires shared application modules,
+EKA1 import transport, Qt headers/import libraries and LLVM debug tools.

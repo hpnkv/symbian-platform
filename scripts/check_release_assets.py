@@ -38,12 +38,14 @@ def check(dist: Path, assets: Path, version: str) -> None:
     if actual != expected:
         raise ValueError(f"Missing wheel targets: {expected - actual}")
     archives = {
-        dist / f"symbian_platform-{version}.tar.gz": (
+        dist
+        / f"symbian_platform-{version}.tar.gz": (
             f"symbian_platform-{version}/VERSION",
             f"symbian_platform-{version}/cpp/python/CMakeLists.txt",
             f"symbian_platform-{version}/cpp/symbian/concurrency/upstream/cpp/thread/thread/fiber.h",
         ),
-        assets / f"symbian-source-{version}.tar.gz": (
+        assets
+        / f"symbian-source-{version}.tar.gz": (
             f"symbian-{version}/VERSION",
             f"symbian-{version}/LICENSE",
             f"symbian-{version}/CMakeLists.txt",
@@ -63,6 +65,8 @@ def check(dist: Path, assets: Path, version: str) -> None:
             "./bin/ld.lld",
             "./bin/llvm-ar",
             "./bin/llvm-ranlib",
+            "./bin/llvm-nm",
+            "./bin/llvm-dwarfdump",
             "./bin/clang-scan-deps",
             "./bin/symbian-native",
             "./bin/rcomp",
@@ -70,6 +74,16 @@ def check(dist: Path, assets: Path, version: str) -> None:
             "./bin/cmake",
             "./bin/ninja",
             "./cmake/SymbianApp.cmake",
+            "./cmake/SymbianSdk.cmake",
+            "./cmake/SymbianPlatform.cmake",
+            "./cmake/exe_startup.S",
+            "./cmake/exe_image.ld",
+            "./cmake/eka1_startup.S",
+            "./cmake/eka1_import_image.ld",
+            "./proxies/euser-eka1/euser.dso",
+            "./proxies/qtcore/qtcore.dso",
+            "./proxies/qtgui/qtgui.dso",
+            "./include/qt4/QtCore/qglobal.h",
             "./share/symbian/runtime/startup.S",
             "./share/symbian/runtime/startup.cc",
             "./share/symbian/runtime/image.ld",

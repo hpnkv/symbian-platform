@@ -2,7 +2,9 @@
 
 Build Symbian ARMv5T and ARMv6 applications with modern C++20, CMake and Ninja
 on macOS or Linux. The SDK provides native libraries, Python tools, E32/SIS
-conversion, emulator controls and guest debugging.
+conversion, emulator controls and guest debugging. Applications start at ordinary
+`main()` and link CMake library targets; the SDK supplies startup, executable
+image layout and OS import libraries.
 
 [Documentation](https://hpnkv.github.io/symbian-platform/) ·
 [Create a project](doc/docs/guides/projects.md) ·
@@ -76,7 +78,7 @@ in your environment, invoke `symbian` directly. To run an application, first
 The project version comes from [VERSION](VERSION).
 [PyPI](https://pypi.org/project/symbian-platform/) provides Python 3.11–3.14
 wheels for macOS/Linux on x86_64 and arm64, plus a Python sdist.
-[SDK 0.1.2](https://github.com/hpnkv/symbian-platform/releases/tag/v0.1.2) also
+[SDK releases](https://github.com/hpnkv/symbian-platform/releases/latest) also
 provide source archives and standalone compiled C++ host SDKs. The host
 archives contain their static library dependencies and CMake configuration.
 Native SDK archives also include the compiled ARMv5T/ARMv6 EKA2 libraries,
