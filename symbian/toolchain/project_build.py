@@ -195,6 +195,7 @@ def configure(
             *(f"-D{name}={value}" for name, value in sorted(variables.items())),
         ],
         cwd=project,
+        timeout=120,
     )
     identity_path.write_text(identity)
     return _target(tree, project, name)
@@ -202,7 +203,11 @@ def configure(
 
 def build(tree: Path, name: str, cmake: str) -> str:
     """Builds the named executable using its configured Ninja rules."""
-    return run([cmake, "--build", str(tree), "--target", name], cwd=tree)
+    return run(
+        [cmake, "--build", str(tree), "--target", name],
+        cwd=tree,
+        timeout=600,
+    )
 
 
 def dependencies(tree: Path, artifact: Path, ninja: str) -> frozenset[Path]:

@@ -6183,3 +6183,14 @@ caches independent of Python and SDK VERSION, upstream tests and capability
 query. This initial workflow uploads build inputs, not consumer bundles. Qt
 runtime deployment, corresponding source/licence closure, delivered-bundle
 acceptance and independent release publication remain outstanding.
+# 2026-10-05 — Installed Intel macOS build timeout
+
+Release job 111802379677 at ca6585d timed out in `symbian init` after
+30 seconds; its generated CMake build left an orphaned Clang child. The
+outer CLI build envelope already changed to 600 seconds, but the inner
+`project_build.build` still inherited the generic 30-second host-tool limit.
+Configure now permits 120 seconds and the application build 600 seconds.
+Five real graph/incremental/toolchain-change tests pass on macOS arm64
+(`/tmp/symbian-build-timeout-regressions.log`). Release rehearsal 37336662479
+at b723dde passed all four host/native assemblies and archive/wheel audit;
+the final change still needs an exact-source Intel CI replay.
