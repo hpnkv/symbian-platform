@@ -2949,3 +2949,30 @@ contracts now supplement the hosted library import, preserving exact overloads,
 EPL notices and final generated-source labels. Eight importer tests, Ruff,
 strict MkDocs/both Doxygen builds and TInetAddr rendered-XML suffix/output-buffer
 checks pass. Full original-symbol coverage remains incomplete.
+
+### Independently installed emulator bundles — 2026-10-05
+
+Versioned installation/rollback and protocol/capability discovery are committed
+in cd37b95; 22 policy/CLI/owned-session tests pass with ten opt-in skips. SDK
+release rehearsal 37336662479 passed all four host/native matrices and the
+16-wheel/10-archive audit. The remaining inner CMake build timeout from the
+Intel screenshot is fixed in bd28b56; exact-source replay 37340236532 is active.
+
+Local source-SDL bundles pass relocation through paths with spaces, clean-home
+Qt platform startup, native importer startup, resource deployment and isolated
+data roots on macOS arm64 and Linux x86_64. The macOS app passes deep strict ad
+hoc signature verification and has relative non-system dependency paths.
+Both backends pass rendered counter/input/reset/timer/normal exit checks on
+both hosts with the preserved RM-807 fixture. The capture oracle now accounts
+for independently rounded physical dimensions and normalizes timer pixels.
+Logs are /tmp/symbian-emulator-{archive-macos,archive-linux,delivered-gui}.log
+on their respective hosts. Local Qt versions differ from pinned release Qt;
+these are acceptance prototypes, not published release candidates.
+
+Four-host delivered bundle/source CI, independent release auditing, exact-source
+artifact reuse and corresponding runtime-source collection are implemented.
+Initial CI compiled and tested macOS arm64/Linux x86_64; arm64 Linux acquisition
+hit GitHub HTTP 504 and Intel macOS is still building. Pinned shallow Git fetches
+now have bounded retries. Full four-host archive/source acceptance and actual
+publication remain gates. The requested example is guest Symbian Qt, requiring
+separately supplied Qt4 headers/imports/runtime; host Qt6 is not that runtime.

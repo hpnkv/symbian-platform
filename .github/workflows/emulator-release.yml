@@ -1,0 +1,88 @@
+name: Emulator release
+on:
+  push:
+    tags: ["emulator-v*"]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: emulator-release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 160
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      reuse_run: ${{ steps.producer.outputs.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        shell: python
+        run: |
+          import os
+          import re
+          from pathlib import Path
+          version = Path("research/eka2l1/VERSION").read_text().strip()
+          if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
+              raise SystemExit("Invalid emulator VERSION")
+          if os.environ["GITHUB_REF_TYPE"] == "tag" and os.environ["GITHUB_REF_NAME"] != f"emulator-v{version}":
+              raise SystemExit("Tag does not match independent emulator VERSION")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"version={version}\n")
+      - id: producer
+        name: Reuse completed exact-source emulator acceptance
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/find_emulator_artifacts.py
+  bundles:
+    needs: validate
+    uses: ./.github/workflows/emulator.yml
+    with:
+      reuse_run_id: ${{ needs.validate.outputs.reuse_run }}
+  audit:
+    needs: [validate, bundles]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: emulator-bundle-*
+          path: release-assets
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: emulator-corresponding-source
+          path: release-assets
+      - name: Check native host matrix and corresponding source payloads
+        run: |
+          python -m pip install 'pytest>=9,<10'
+          python -m pytest scripts/tests/test_emulator_build.py scripts/tests/test_emulator_release.py -q
+          python scripts/check_emulator_release.py release-assets --version '${{ needs.validate.outputs.version }}'
+  publish:
+    if: startsWith(github.ref, 'refs/tags/emulator-v')
+    needs: [validate, audit]
+    runs-on: ubuntu-24.04
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: emulator-bundle-*
+          path: release-assets
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: emulator-corresponding-source
+          path: release-assets
+      - name: Publish the independently versioned emulator
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release create "$RELEASE_TAG" release-assets/* \
+            --verify-tag --title "Symbian emulator ${{ needs.validate.outputs.version }}" \
+            --notes 'Native EKA2L1 bundles with Qt for macOS and Linux on x86_64 and arm64. Install with symbian emulator install. Firmware and guest Symbian Qt are supplied separately. macOS bundles use ad hoc signatures; Linux requires glibc 2.39 and host graphics drivers. Corresponding emulator, Qt and per-host runtime sources are included.'

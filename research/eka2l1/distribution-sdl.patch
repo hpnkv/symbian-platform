@@ -1,0 +1,25 @@
+diff --git a/src/external/CMakeLists.txt b/src/external/CMakeLists.txt
+--- a/src/external/CMakeLists.txt
++++ b/src/external/CMakeLists.txt
+@@ -439,6 +439,13 @@
+ if (NOT ANDROID AND NOT EKA2L1_IOS)
+     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/sdl2-cmake-scripts")
+ 
++    set(SYMBIAN_EMULATOR_SDL2_PREFIX "" CACHE PATH "Native SDL2 prefix")
++    if (SYMBIAN_EMULATOR_SDL2_PREFIX)
++        find_package(SDL2 CONFIG REQUIRED PATHS
++            "${SYMBIAN_EMULATOR_SDL2_PREFIX}/lib/cmake/SDL2" NO_DEFAULT_PATH)
++        add_library(SDL2 INTERFACE)
++        target_link_libraries(SDL2 INTERFACE SDL2::SDL2-static)
++    else()
+     if(APPLE)
+         set(SDL2_PATH "${CMAKE_CURRENT_SOURCE_DIR}/sdl2/macos" CACHE PATH "Where SDL2 is located" FORCE)
+     elseif(WIN32)
+@@ -451,6 +458,7 @@
+ 
+     target_include_directories(SDL2 INTERFACE "${SDL2_INCLUDE_DIR}")
+     target_link_libraries(SDL2 INTERFACE "${SDL2_LIBRARY}")
++    endif()
+ endif()
+ 
+ # libuv

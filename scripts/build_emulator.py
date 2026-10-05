@@ -9,11 +9,16 @@ import json
 import os
 import platform
 import subprocess
+import tarfile
 import tempfile
+import time
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REVISION = "2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8"
+QT_VERSION = "6.8.3"
+SDL_VERSION = "2.30.11"
 PATCHES = (
     "instance-root",
     "runtime-probe",
@@ -40,6 +45,8 @@ PATCHES = (
     "belle-recv-one-or-more-no-length",
     "distribution-build",
     "distribution-query",
+    "distribution-sdl",
+    "distribution-resources",
 )
 LIBRARIES = ("avformat", "avcodec", "swscale", "avutil", "swresample")
 
@@ -48,6 +55,17 @@ def run(command, **kwargs):
     """Runs an argument vector, stopping on a failed build step."""
     print("+", " ".join(map(str, command)), flush=True)
     return subprocess.run(list(map(str, command)), check=True, **kwargs)
+
+
+def fetch(command):
+    """Retries bounded remote Git transfers, retaining pinned revisions."""
+    for attempt in range(3):
+        try:
+            return run(command, timeout=180)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            if attempt == 2:
+                raise
+            time.sleep(5 * (attempt + 1))
 
 
 def host(system=None, machine=None):
@@ -162,17 +180,23 @@ def acquire(workspace, system):
     fresh = not source.exists()
     if fresh:
         workspace.mkdir(parents=True, exist_ok=True)
+        run(["git", "init", source])
         run(
             [
                 "git",
-                "clone",
-                "--no-checkout",
-                "https://github.com/EKA2L1/EKA2L1",
+                "-C",
                 source,
+                "remote",
+                "add",
+                "origin",
+                "https://github.com/EKA2L1/EKA2L1",
             ]
         )
+        fetch(
+            ["git", "-C", source, "fetch", "--depth", "1", "origin", REVISION]
+        )
         run(["git", "-C", source, "checkout", "--detach", REVISION])
-        run(
+        fetch(
             [
                 "git",
                 "-C",
@@ -283,7 +307,9 @@ def build_ffmpeg(workspace, system, arch, cc, cxx, jobs):
         (licenses / notice.name).write_bytes(notice.read_bytes())
 
 
-def configure(workspace, system, arch, cc, cxx, qt_prefix):
+def configure(
+    workspace, system, arch, cc, cxx, qt_prefix, dependency_sources=None
+):
     """Writes a concrete Ninja preset with an external native FFmpeg prefix."""
     source = workspace / "source"
     cache = {
@@ -324,6 +350,16 @@ def configure(workspace, system, arch, cc, cxx, qt_prefix):
         cache["CMAKE_OSX_ARCHITECTURES"] = (
             "arm64" if arch == "aarch64" else arch
         )
+    sdl_prefix = workspace / "dependencies/sdl"
+    if sdl_prefix.is_dir():
+        cache["SYMBIAN_EMULATOR_SDL2_PREFIX"] = str(sdl_prefix)
+    if dependency_sources:
+        cache["FETCHCONTENT_FULLY_DISCONNECTED"] = "ON"
+        for name in ("abseil", "nlohmann_json", "libuv"):
+            path = dependency_sources / name
+            if not path.is_dir():
+                raise RuntimeError(f"Missing offline dependency source: {path}")
+            cache[f"FETCHCONTENT_SOURCE_DIR_{name.upper()}"] = str(path)
     presets = {
         "version": 3,
         "configurePresets": [
@@ -359,17 +395,71 @@ def configure(workspace, system, arch, cc, cxx, qt_prefix):
     run(["cmake", "--preset", "sdk-emulator"], cwd=source)
 
 
+def build_sdl(workspace, cc, cxx, jobs):
+    """Compiles SDL from its pinned source instead of vendored host binaries."""
+    archive = workspace / f"SDL2-{SDL_VERSION}.tar.gz"
+    if not archive.is_file():
+        urllib.request.urlretrieve(
+            f"https://www.libsdl.org/release/SDL2-{SDL_VERSION}.tar.gz", archive
+        )
+    source = workspace / f"SDL2-{SDL_VERSION}"
+    if not source.is_dir():
+        with tarfile.open(archive) as bundle:
+            bundle.extractall(workspace, filter="data")
+    build = workspace / "sdl-build"
+    run(
+        [
+            "cmake",
+            "-S",
+            source,
+            "-B",
+            build,
+            "-G",
+            "Ninja",
+            f"-DCMAKE_INSTALL_PREFIX={workspace / 'dependencies/sdl'}",
+            f"-DCMAKE_C_COMPILER={cc}",
+            f"-DCMAKE_CXX_COMPILER={cxx}",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DSDL_SHARED=OFF",
+            "-DSDL_STATIC=ON",
+            "-DSDL_TEST=OFF",
+            "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+            "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
+        ]
+    )
+    run(["cmake", "--build", build, "--parallel", jobs])
+    run(["cmake", "--install", build])
+
+
 def main():
     """Dispatches source, dependency, configure, build or test stages."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "stage",
-        choices=("acquire", "ffmpeg", "configure", "build", "test", "all"),
+        choices=(
+            "acquire",
+            "ffmpeg",
+            "sdl",
+            "configure",
+            "build",
+            "test",
+            "all",
+        ),
     )
     parser.add_argument("--workspace", required=True, type=Path)
     parser.add_argument("--cc", default="clang")
     parser.add_argument("--cxx", default="clang++")
     parser.add_argument("--qt-prefix", type=Path)
+    parser.add_argument(
+        "--source-tree",
+        type=Path,
+        help="Explicit patched source snapshot from a source archive",
+    )
+    parser.add_argument(
+        "--dependency-sources",
+        type=Path,
+        help="Offline Abseil, JSON, libuv and SDL sources",
+    )
     parser.add_argument("--jobs", type=int, default=min(os.cpu_count() or 2, 8))
     args = parser.parse_args()
     if args.jobs < 1:
@@ -379,18 +469,49 @@ def main():
     if system == "macos":
         os.environ["MACOSX_DEPLOYMENT_TARGET"] = "15.0"
     # Validate sources before every stage, including cache reuse.
-    source = acquire(workspace, system)
+    if args.source_tree:
+        source = args.source_tree.resolve()
+        if not (source / "CMakeLists.txt").is_file():
+            parser.error(
+                "--source-tree must contain the patched EKA2L1 sources"
+            )
+        workspace.mkdir(parents=True, exist_ok=True)
+        link = workspace / "source"
+        if not link.exists():
+            link.symlink_to(source, target_is_directory=True)
+        elif link.resolve() != source:
+            parser.error("Workspace already selects another source tree")
+    else:
+        source = acquire(workspace, system)
+    dependencies = (
+        args.dependency_sources.resolve() if args.dependency_sources else None
+    )
+    if dependencies:
+        import shutil
+
+        archive = dependencies / f"SDL2-{SDL_VERSION}.tar.gz"
+        if not archive.is_file():
+            parser.error("Offline SDL source archive is missing")
+        shutil.copy(archive, workspace / archive.name)
     stages = (
-        ("ffmpeg", "configure", "build", "test")
+        ("ffmpeg", "sdl", "configure", "build", "test")
         if args.stage == "all"
         else (args.stage,)
     )
     for stage in stages:
         if stage == "ffmpeg":
             build_ffmpeg(workspace, system, arch, args.cc, args.cxx, args.jobs)
+        elif stage == "sdl":
+            build_sdl(workspace, args.cc, args.cxx, args.jobs)
         elif stage == "configure":
             configure(
-                workspace, system, arch, args.cc, args.cxx, args.qt_prefix
+                workspace,
+                system,
+                arch,
+                args.cc,
+                args.cxx,
+                args.qt_prefix,
+                dependencies,
             )
         elif stage == "build":
             run(

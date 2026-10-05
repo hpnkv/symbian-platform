@@ -2,18 +2,44 @@ name: Emulator
 on:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      reuse_run_id:
+        type: string
+        default: ""
   push:
     branches: [main]
-    paths: ["research/eka2l1/**", "cpp/symbian/emulator/**", "scripts/build_emulator.py", "scripts/bundle_emulator.py", ".github/workflows/emulator.yml"]
+    paths: ["research/eka2l1/**", "cpp/symbian/emulator/**", "scripts/*emulator*.py", "scripts/bundle_native_sdk.py", ".github/workflows/emulator.yml"]
   pull_request:
-    paths: ["research/eka2l1/**", "cpp/symbian/emulator/**", "scripts/build_emulator.py", "scripts/bundle_emulator.py", ".github/workflows/emulator.yml"]
+    paths: ["research/eka2l1/**", "cpp/symbian/emulator/**", "scripts/*emulator*.py", "scripts/bundle_native_sdk.py", ".github/workflows/emulator.yml"]
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: emulator-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+  cancel-in-progress: false
 jobs:
+  qt-sources:
+    if: inputs.reuse_run_id == ''
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/cache@v4
+        with:
+          path: .symbian/emulator-sources/qt-everywhere-src-6.8.3.tar.xz
+          key: emulator-qt-source-683-v1
+      - name: Acquire corresponding Qt sources and notices once
+        run: python scripts/emulator_sources.py qt --workspace .symbian/emulator-sources
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emulator-qt-notices
+          path: .symbian/emulator-sources/qt-notices
+          if-no-files-found: error
   build:
+    if: inputs.reuse_run_id == ''
+    needs: qt-sources
     strategy:
       fail-fast: false
       matrix:
@@ -39,7 +65,7 @@ jobs:
             qt_host: mac
             qt_arch: clang_64
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 90
+    timeout-minutes: 150
     env:
       MACOSX_DEPLOYMENT_TARGET: "15.0"
     steps:
@@ -53,6 +79,7 @@ jobs:
       - name: Install Linux build prerequisites
         if: runner.os == 'Linux'
         run: |
+          sudo sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build nasm pkg-config \
             libsdl2-dev libpulse-dev libasound2-dev libvulkan-dev \
@@ -74,7 +101,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.EMULATOR_WORKSPACE }}/source
-          key: emulator-source-v1-${{ matrix.system }}-${{ matrix.arch }}-${{ hashFiles('scripts/build_emulator.py', 'research/eka2l1/*.patch', '.github/workflows/emulator.yml') }}
+          key: emulator-source-v1-${{ matrix.system }}-${{ matrix.arch }}-${{ hashFiles('scripts/build_emulator.py', 'research/eka2l1/*.patch') }}
       - name: Acquire and check exact patched sources
         run: python scripts/build_emulator.py acquire --workspace "$EMULATOR_WORKSPACE"
       - name: Restore native FFmpeg
@@ -86,11 +113,23 @@ jobs:
       - name: Compile native FFmpeg once per host
         if: steps.ffmpeg.outputs.cache-hit != 'true'
         run: python scripts/build_emulator.py ffmpeg --workspace "$EMULATOR_WORKSPACE" --jobs 4
+      - name: Restore native SDL
+        id: sdl
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.EMULATOR_WORKSPACE }}/dependencies/sdl
+            ${{ env.EMULATOR_WORKSPACE }}/SDL2-2.30.11.tar.gz
+            ${{ env.EMULATOR_WORKSPACE }}/SDL2-2.30.11
+          key: emulator-sdl-v1-${{ matrix.runner }}-${{ matrix.arch }}-${{ hashFiles('scripts/build_emulator.py') }}
+      - name: Compile SDL from source once per host
+        if: steps.sdl.outputs.cache-hit != 'true'
+        run: python scripts/build_emulator.py sdl --workspace "$EMULATOR_WORKSPACE" --jobs 4
       - name: Restore compiled emulator core
         uses: actions/cache@v4
         with:
           path: ${{ env.EMULATOR_WORKSPACE }}/build
-          key: emulator-core-v1-${{ matrix.runner }}-${{ matrix.arch }}-qt683-${{ hashFiles('scripts/build_emulator.py', 'research/eka2l1/**', 'cpp/symbian/emulator/**', '.github/workflows/emulator.yml') }}
+          key: emulator-core-v1-${{ matrix.runner }}-${{ matrix.arch }}-qt683-${{ hashFiles('scripts/build_emulator.py', 'research/eka2l1/**', 'cpp/symbian/emulator/**') }}
       - name: Configure native frontend and SDK adapters
         run: python scripts/build_emulator.py configure --workspace "$EMULATOR_WORKSPACE" --qt-prefix "$QT_ROOT_DIR"
       - name: Build both CPU backends, frontend and firmware importer
@@ -106,10 +145,119 @@ jobs:
             frontend="$EMULATOR_WORKSPACE/build/bin/eka2l1_qt"
           fi
           "$frontend" --symbian-sdk-capabilities
+      - uses: actions/download-artifact@v4
+        with:
+          name: emulator-qt-notices
+          path: ${{ env.EMULATOR_WORKSPACE }}/qt-notices
+      - name: Acquire source and notices for Qt's optional ICU runtime
+        run: python scripts/emulator_sources.py icu --workspace "$EMULATOR_WORKSPACE" --qt-prefix "$QT_ROOT_DIR"
+      - name: Deploy Qt and non-system runtime libraries
+        run: |
+          python scripts/bundle_emulator.py --workspace "$EMULATOR_WORKSPACE" \
+            --qt-prefix "$QT_ROOT_DIR" --qt-source "$EMULATOR_WORKSPACE/qt-notices" \
+            --output "$EMULATOR_WORKSPACE/delivered bundle"
+      - name: Check relocated archive and native Qt startup
+        shell: bash
+        run: |
+          archive=("$EMULATOR_WORKSPACE"/symbian-emulator-*.tar.gz)
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            xvfb-run -a python scripts/check_emulator_bundle.py "${archive[0]}"
+          else
+            python scripts/check_emulator_bundle.py "${archive[0]}"
+          fi
+      - name: Collect corresponding runtime sources and rebuild recipes
+        shell: bash
+        run: |
+          version=$(cat research/eka2l1/VERSION)
+          runtime="$EMULATOR_WORKSPACE/runtime-sources"
+          python scripts/emulator_sources.py runtime --workspace "$EMULATOR_WORKSPACE" \
+            --prefix "$EMULATOR_WORKSPACE/delivered bundle" --output "$runtime"
+          for source in "$EMULATOR_WORKSPACE"/icu4c-*-src.tgz; do
+            if [[ -f "$source" ]]; then cp "$source" "$runtime/"; fi
+          done
+          tar -czf "$EMULATOR_WORKSPACE/symbian-emulator-runtime-source-$version-${{ matrix.system }}-${{ matrix.arch }}.tar.gz" \
+            -C "$runtime" .
+      - name: Export shared patched emulator and dependency sources
+        if: matrix.system == 'linux' && matrix.arch == 'x86_64'
+        run: |
+          python scripts/emulator_sources.py snapshot --workspace "$EMULATOR_WORKSPACE" \
+            --output "$EMULATOR_WORKSPACE/emulator-core-source.tar.gz"
+      - uses: actions/upload-artifact@v4
+        if: matrix.system == 'linux' && matrix.arch == 'x86_64'
+        with:
+          name: emulator-core-source
+          path: ${{ env.EMULATOR_WORKSPACE }}/emulator-core-source.tar.gz
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
-          name: emulator-build-${{ matrix.system }}-${{ matrix.arch }}
+          name: emulator-bundle-${{ matrix.system }}-${{ matrix.arch }}
           path: |
-            ${{ env.EMULATOR_WORKSPACE }}/build/bin/
-            ${{ env.EMULATOR_WORKSPACE }}/build/platform-control/symbian_firmware_tool
+            ${{ env.EMULATOR_WORKSPACE }}/symbian-emulator-*.tar.gz
+            ${{ env.EMULATOR_WORKSPACE }}/symbian-emulator-*.json
+          if-no-files-found: error
+  sources:
+    if: inputs.reuse_run_id == ''
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/cache@v4
+        with:
+          path: .symbian/emulator-sources/qt-everywhere-src-6.8.3.tar.xz
+          key: emulator-qt-source-683-v1
+      - uses: actions/download-artifact@v4
+        with:
+          name: emulator-core-source
+          path: .symbian/emulator-sources
+      - name: Combine common corresponding source once
+        run: |
+          version=$(cat research/eka2l1/VERSION)
+          python scripts/emulator_sources.py complete --workspace .symbian/emulator-sources \
+            --snapshot .symbian/emulator-sources/emulator-core-source.tar.gz \
+            --output "symbian-emulator-source-$version.tar.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emulator-corresponding-source
+          path: symbian-emulator-source-*.tar.gz
+          if-no-files-found: error
+  reuse:
+    if: inputs.reuse_run_id != ''
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        artifact:
+          - emulator-bundle-linux-x86_64
+          - emulator-bundle-linux-aarch64
+          - emulator-bundle-macos-x86_64
+          - emulator-bundle-macos-arm64
+          - emulator-corresponding-source
+    steps:
+      - name: Check exact-source producer before reuse
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REUSE_RUN: ${{ inputs.reuse_run_id }}
+        shell: python
+        run: |
+          import json
+          import os
+          import subprocess
+          run = json.loads(subprocess.check_output([
+              "gh", "api", f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['REUSE_RUN']}"
+          ]))
+          if (run["head_sha"] != os.environ["GITHUB_SHA"] or run["conclusion"] != "success"
+              or run["path"] not in {".github/workflows/emulator.yml", ".github/workflows/emulator-release.yml"}):
+              raise SystemExit("Emulator producer is not tested at this source commit")
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          run-id: ${{ inputs.reuse_run_id }}
+          github-token: ${{ github.token }}
+          path: reused
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: reused/*
           if-no-files-found: error

@@ -75,7 +75,10 @@ def _ready(operation, *, timeout=15):
 
 def _portrait_frame(image: Image.Image) -> Image.Image:
     """Normalizes capture scale while retaining the logical portrait layout."""
-    assert image.width * 640 == image.height * 360, image.size
+    # Qt rounds physical framebuffer dimensions independently at fractional
+    # desktop scale factors. Allow one physical pixel, then sample the same
+    # normalized logical coordinates used by the input and segment oracles.
+    assert abs(image.width * 640 - image.height * 360) <= 640, image.size
     return image.convert("RGB").resize((720, 1280), Image.Resampling.NEAREST)
 
 
@@ -149,7 +152,7 @@ def _pulse(control, expected, label):
     while True:
         result = _ready(partial(control.capture, f"{label}-{attempt}"))
         with Image.open(result["path"]) as image:
-            pixel = image.convert("RGB").getpixel((40, 40))
+            pixel = _portrait_frame(image).convert("RGB").getpixel((40, 40))
         if pixel == ((118, 159, 78) if expected else (37, 28, 27)):
             return
         assert time.monotonic() < deadline, pixel

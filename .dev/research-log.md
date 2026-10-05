@@ -6210,3 +6210,36 @@ firmware-dependent skips. Black/Ruff pass. Documentation now covers separate
 installation, rollback, offline use and firmware/guest-Qt separation. These
 commands are not yet in published 0.1.1 wheels; final 0.1.2 publication and a
 usable independent emulator release remain required.
+
+## 2026-10-05 — Delivered Qt frontend archives
+
+Replaced prepared host SDL binaries with static/PIC SDL 2.30.11 source builds.
+Both upstream CTest suites pass locally on macOS arm64 and Linux x86_64. The
+macOS strict signing experiment rejected data/scripts under Contents/MacOS;
+the maintained resource patch now reads Contents/Resources and the bundler
+moves data there without symlinks. Nested code and framework signing followed
+by strict deep verification passes. Normalized deployed framework references
+to loader-relative paths; ignore Mach-O own IDs while auditing dependencies.
+Linux bundles include plugins and their actual ELF closure, Qt's dlopen OpenSSL
+libraries, launcher/icon and notices; ldd audit now handles paths with spaces.
+
+Actual archives pass moved-prefix, clean-home, Qt startup, importer, assets and
+two isolated-root checks on both hosts. Both CPU backends pass real GUI captures,
+counter taps, outside tap, reset, delayed timer marker and guest reason zero.
+The first macOS capture had 723x1286 physical pixels from independent Qt
+rounding; allow one physical pixel in aspect normalization. Linux's pulse
+oracle incorrectly sampled an unnormalized physical point; normalize it like
+the existing counter oracle. Logs use /tmp/symbian-emulator-{archive-macos,
+archive-linux,delivered-gui}.log. No firmware was added to artifacts.
+
+Source snapshots include patched tracked/submodule files, adapters, static SDL,
+configured Abseil/JSON/libuv and rebuild scripts. A Linux snapshot is 105 MiB.
+Qt's exact 6.8.3 source archive is hash-checked once and shared across hosts.
+Per-host sources use installed Debian source versions or matching Homebrew
+recipes; mismatched Homebrew source versions fail. Qt-provided ICU obtains its
+version from the actual library rather than guessing from a package inventory.
+The four-host pipeline now builds/audits bundles and collects common/per-host
+sources. Independent emulator-v publication reuses successful exact-source
+artifacts and gates the full matrix. Publication and all four hosted delivered
+checks still need to pass; local Homebrew Qt6.11/system Qt6.4 prototypes do not
+establish pinned Qt6.8.3 or macOS15 release compatibility.

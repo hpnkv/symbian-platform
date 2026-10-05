@@ -85,6 +85,13 @@ LLVM, resource tools, CMake and Ninja, with a relocatable installed file tree.
 applications without a source checkout. Native Linux archives require glibc
 2.39 or later; firmware and emulator setup remain separate.
 
+Install the compatible emulator separately with `symbian emulator install` and
+check it with `symbian emulator doctor`. Emulator releases have their own
+versions and can remain installed across compatible SDK upgrades. See
+[emulator installation](doc/docs/guides/emulator-installation.md) for offline
+archives, selection and rollback. Its bundled desktop Qt is separate from the
+Symbian Qt runtime needed by guest Qt applications.
+
 ## Examples and guides
 
 | Task | Guide |

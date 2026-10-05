@@ -1,0 +1,17 @@
+diff --git a/src/emu/qt/src/main.cpp b/src/emu/qt/src/main.cpp
+--- a/src/emu/qt/src/main.cpp
++++ b/src/emu/qt/src/main.cpp
+@@ -128,6 +128,13 @@
+     std::string data_path_str = data_path.toUtf8().toStdString();
+     
+     QString app_path = QDir(QCoreApplication::applicationDirPath()).path();
++#if EKA2L1_PLATFORM(MACOS)
++    // Deployed applications keep data outside the signed executable directory.
++    const QString bundle_resources = QDir(app_path).absoluteFilePath("../Resources");
++    if (QDir(bundle_resources + "/resources").exists()) {
++        app_path = bundle_resources;
++    }
++#endif
+     std::string app_path_str = app_path.toUtf8().toStdString();
+     eka2l1::common::copy_folder(app_path_str + "/patch", data_path_str + "/patch", 0, nullptr);
+     eka2l1::common::copy_folder(app_path_str + "/resources", data_path_str + "/resources", 0, nullptr);

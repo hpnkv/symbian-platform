@@ -33,8 +33,9 @@ def run(*args: str) -> str:
 class Closure:
     """Copies and relocates the complete non-system dynamic tool closure."""
 
-    def __init__(self, output: Path):
+    def __init__(self, output: Path, *, system_libraries=GLIBC):
         self.output = output
+        self.system_libraries = system_libraries
         self.libraries = output / "libexec/host"
         self.libraries.mkdir(parents=True)
         self.copied: dict[Path, Path] = {}
@@ -177,8 +178,8 @@ class Closure:
                         raise RuntimeError(
                             f"Unresolved tool dependency: {line}"
                         )
-                    match = re.match(r"\s*(\S+) => (/\S+) ", line)
-                    if match and not GLIBC.match(match[1]):
+                    match = re.match(r"\s*(\S+) => (/.+?) \(", line)
+                    if match and not self.system_libraries.match(match[1]):
                         dependencies.append((match[1], Path(match[2])))
             for name, dependency in dependencies:
                 destination = self.libraries / Path(name).name
@@ -331,9 +332,9 @@ def bundle(args: argparse.Namespace) -> None:
     )
     preset = presets["configurePresets"][0]
     preset["toolchainFile"] = "${sourceDir}/../../cmake/symbian-arm.cmake"
-    preset["cacheVariables"]["SYMBIAN_GUI_SDK_INCLUDE"] = (
-        "${sourceDir}/../../include/platform"
-    )
+    preset["cacheVariables"][
+        "SYMBIAN_GUI_SDK_INCLUDE"
+    ] = "${sourceDir}/../../include/platform"
     (counter / "CMakePresets.json").write_text(
         json.dumps(presets, indent=2) + "\n"
     )

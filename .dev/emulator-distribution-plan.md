@@ -15,7 +15,8 @@ wheel or public test artifact includes ROMs, Z-drive files or device data.
 
 The proposed interface is `symbian emulator install`, with automatic OS/CPU
 selection, an explicit version option and an offline archive option. These
-commands do not exist yet. Direct desktop launch must work too: the distributed
+commands are implemented in the source checkout. Direct desktop launch must
+work too: the distributed
 frontend remains a useful EKA2L1 application, not merely an SDK subprocess.
 
 ## Starting point and compatibility contract
@@ -26,6 +27,13 @@ maintained patches in `research/eka2l1/`. The ordered patch recipe currently
 lives in [the source guide](../doc/docs/reference/emulator-source-build.md).
 The public guide must eventually consume the maintained acquisition driver
 rather than act as a second manually maintained build recipe.
+
+Implementation checkpoint: disposable acquisition/native builds, independent
+capability query, installation/selection, relocatable Qt bundles and independent
+release/source workflows exist. Local archive/startup and both-backend GUI
+acceptance pass on macOS arm64 and Linux x86_64. Four-host hosted delivered
+acceptance, exact corresponding-source rebuild and publication remain gates;
+the requested example is a guest Symbian Qt application, not a host Qt6 app.
 
 Actual named-firmware application acceptance exists on macOS arm64 and Linux
 x86_64, including the restricted Nokia 7610 EKA1 process. These are source-built
