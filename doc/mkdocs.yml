@@ -106,6 +106,7 @@ nav:
       - Install the emulator: guides/emulator-installation.md
       - Standalone projects: guides/projects.md
       - Build an application: guides/building.md
+      - Build a Symbian Qt app: guides/qt-app.md
       - Build a real GUI app:
           - Overview: guides/from-source.md
           - Prepare tools and source: guides/source-prerequisites.md

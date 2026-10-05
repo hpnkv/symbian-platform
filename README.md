@@ -109,7 +109,9 @@ Symbian Qt runtime needed by guest Qt applications.
 | Inspect USB or stage a package on a phone | [Device guide](doc/docs/guides/device.md) |
 | Run the authenticated read-only development agent | [Agent guide](doc/docs/guides/agent-emulator.md) |
 
-Application examples live in [examples/](examples/); focused ABI, runtime and
+Application examples include the native Window Server counter and a
+[guest Symbian Qt button](doc/docs/guides/qt-app.md) using Qt 4.8.1 supplied by
+your firmware. They live in [examples/](examples/); focused ABI, runtime and
 network diagnostics live in [probes/](probes/). The probes are runnable examples
 for checking specific platform contracts, rather than user-oriented apps. The native reference covers
 SDK symbols and eleven original Symbian headers; symbol descriptions are being

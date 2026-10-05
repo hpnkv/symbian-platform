@@ -3102,3 +3102,13 @@ producer. Both runs predate these new Qt teardown fixes and cannot establish
 acceptance of the updated emulator. A new producer/rehearsal and public release
 installation are required. The example remains under preparation; pointer and
 nullability revision has not started.
+
+The maintained Qt example's installed-wheel preparation, reproducible build,
+SIS packaging and inspection pass on macOS arm64 and Linux x86_64. Actual
+render/input/destructor/host-shutdown tests pass on Dyncom and Dynarmic on each
+host (two per host). The guide includes original Qt header acquisition,
+Linux/macOS dependencies, emulator staging/launch and packaging; strict docs
+pass. Corrected producer 37360525851 at d470570 is queued behind the older
+producer, with exact-source rehearsal 37360566823 waiting for it. Public
+emulator publication and replay of its downloaded archives remain required
+before the emulator/Qt stream and deferred pointer migration can be closed.

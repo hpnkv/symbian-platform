@@ -1,0 +1,1 @@
+{"version": 6, "configurePresets": [{"name": "symbian-pic", "generator": "Ninja"}]}

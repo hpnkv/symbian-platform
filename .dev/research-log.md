@@ -6501,3 +6501,19 @@ Mac button48 and timer unload47 also have guest reason/type 0 and host exit 0.
 Both hosts pass the two upstream CTests, including Bluetooth netplay. The
 maintained example's preparation/build, both CPU backends and delivered release
 acceptance remain required; these scratch results do not prove device support.
+
+The maintained examples/qt_app now prepares copied original Qt headers and
+selected native-generated proxies, builds reproducible ELF/E32 and packages
+registration resources using actual public PyPI 0.1.2 installations on macOS
+arm64 and Linux x86_64. On Linux the preparation helper must put the installed
+SDK compiler/linker directories on PATH: the public wheel's proxy toolchain
+also resolves ld.lld by name. No separately installed LLVM is required.
+Both hosts' two CPU backends pass the new opt-in test_guest_qt.py: actual
+framebuffer text, no automatic timer exit, press/release, guest reason/type 0
+and frontend exit 0. Linux uses Xvfb. Logs:
+/tmp/symbian-qt-example-tests-macos.log and -linux.log (two pass each),
+/tmp/symbian-qt-example-{prepare,build,package,inspect}-{macos,linux}.log.
+Online acquisition of the pinned original EUSER DEF also succeeds on macOS.
+Strict MkDocs, Black, Ruff and patch whitespace checks pass. Documentation
+keeps the guest Qt requirement, raster/Plastique/no-animation setup and EKA2
+scope explicit. Acceptance against the actual published emulator remains open.
