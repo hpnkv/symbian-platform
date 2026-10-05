@@ -21,7 +21,25 @@ def dll(tmp_path_factory):
     if not TOOLS:
         pytest.skip("Clang/LLD required")
     root = tmp_path_factory.mktemp("Native DLL with spaces")
-    report = toolchain.build(PROJECT, root / "build")
+    project = root / "project"
+    shutil.copytree(PROJECT, project)
+    (project / "exports.def").write_text(
+        "EXPORTS\nSymbianProbeTransform @ 7 NONAME\n"
+    )
+    cmake = project / "CMakeLists.txt"
+    cmake.write_text(
+        cmake.read_text().replace(
+            "SOURCES probe.cc",
+            'SOURCES probe.cc EXPORT_DEFINITION "exports.def"',
+        )
+    )
+    manifest = project / "symbian.toml"
+    manifest.write_text(
+        manifest.read_text().replace(
+            "[project]", '[project]\nexport_definition = "exports.def"'
+        )
+    )
+    report = toolchain.build(project, root / "build")
     return report, Path(report["linked_elf"]).read_bytes()
 
 
@@ -36,14 +54,15 @@ def test_frozen_dll_build_records_definition_and_actual_symbol(dll):
     assert info["dll"]
     assert info["header_size"] == 156
     assert len(info["exports"]) == 7
-    assert len(info["code_relocations"]) == 11
+    assert len(info["code_relocations"]) == 8
     assert info["exports"][-1]["ordinal"] == 7
     assert not info["exports"][-1]["absent"]
     assert info["exports"][-1]["address"] != 0x8080  # No fixed fixture address.
     assert all(slot["absent"] for slot in info["exports"][:-1])
-    assert str(PROJECT / "exports.def") in report["inputs"]
+    definition = Path(report["linked_elf"]).parents[1] / "project/exports.def"
+    assert str(definition) in report["inputs"]
     assert (
-        convert_dll(elf, (PROJECT / "exports.def").read_bytes(), [], 0xE0000810)
+        convert_dll(elf, definition.read_bytes(), [], 0xE0000810)
         == Path(report["artifact"]).read_bytes()
     )
 
@@ -74,7 +93,7 @@ def test_frozen_ordinal_header_and_relocation_page_bounds(
     info = inspect_e32(image)
     assert info.header_size == header_size
     assert len(info.exports) == ordinal
-    assert len(info.code_relocations) == ordinal + 4
+    assert len(info.code_relocations) == ordinal + 1
     assert not info.exports[-1].absent
     assert all(slot.absent for slot in info.exports[:-1])
     if ordinal == 1:

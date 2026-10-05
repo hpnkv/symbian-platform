@@ -67,7 +67,11 @@ def catalog() -> CommandCatalog:
             None,
         )
         if nested is not None:
+            seen = set()
             for command, child in nested.choices.items():
+                if id(child) in seen:
+                    continue
+                seen.add(id(child))
                 visit(child, (*path, command))
             return
         if not path or path == ("console",):

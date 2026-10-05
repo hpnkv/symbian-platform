@@ -52,6 +52,30 @@ class TaskStep(ConsoleModel):
 # for flags, choices, defaults and execution semantics.
 _TASKS = (
     (
+        "emu install",
+        "Emulator",
+        "Install an emulator",
+        "Install a compatible release or a local distribution archive.",
+    ),
+    (
+        "emu select",
+        "Emulator",
+        "Select an emulator version",
+        "Activate an installed emulator version or roll back.",
+    ),
+    (
+        "emu list",
+        "Emulator",
+        "Browse installed emulators",
+        "Show retained emulator versions and the active selection.",
+    ),
+    (
+        "emu doctor",
+        "Emulator",
+        "Check emulator compatibility",
+        "Check the selected emulator against this SDK and project.",
+    ),
+    (
         "agent hello",
         "Devices",
         "Inspect agent handshake",

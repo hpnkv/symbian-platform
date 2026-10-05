@@ -141,10 +141,12 @@ def test_complete_library_preserves_data_and_absent_ordinals(tmp_path):
 
 
 def test_proxy_compiler_switch_preserves_target_and_output_name(tmp_path):
-    compiler = shutil.which("clang++")
-    linker = shutil.which("ld.lld")
-    if not compiler or not linker:
+    from symbian.toolchain.host_tools import llvm_tool
+
+    if not shutil.which("clang++") or not shutil.which("ld.lld"):
         pytest.skip("Clang/LLD required")
+    compiler = str(llvm_tool("clang++"))
+    linker = str(llvm_tool("ld.lld"))
     definition = tmp_path / "test.def"
     definition.write_text("EXPORTS\nFunction @ 7 NONAME\n")
     output = tmp_path / "proxy"

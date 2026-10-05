@@ -6726,3 +6726,17 @@ installed users do not need platform-specific diagnostic paths.
 
 Strict public documentation and C++ snippet formatting pass, with existing
 Doxygen parsing warnings. New published artifacts are still pending.
+
+### 2026-10-06 — Release regression pass
+
+Full host CTest: 14 suites passed. The first unrestricted Python run found nine
+failures: six frozen-ABI assertions still used the former bundled DLL ordinal
+and startup relocation count, one compiler-switch fixture selected Apple's
+argv-sensitive developer-tool shim, and two emulator CLI/Console checks lacked
+new command metadata or duplicated command aliases. Corrected the frozen ABI
+fixture in tests (without restoring application-owned symbol lists), selected
+upstream LLVM for the compiler alias control, supplied emulator option help and
+Console tasks, and deduplicated aliases in the derived catalog. The affected
+CLI/Console/DLL/proxy group passes 60 checks, with 4 optional skips.
+Both ARM metadata-only exception profiles build reproducibly with SDK-owned
+exception layout and automatic CxxAbi linkage. This does not prove typed throws.

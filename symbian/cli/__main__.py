@@ -553,10 +553,17 @@ def _parser() -> argparse.ArgumentParser:
     ).add_subparsers(dest="emu_command", required=True)
     emulator_install = emulator_commands.add_parser("install")
     emulator_install.add_argument("--archive", type=Path)
-    emulator_install.add_argument("--version")
-    emulator_install.add_argument("--sha256")
+    emulator_install.add_argument(
+        "--version",
+        help="Released version; defaults to the latest compatible emulator.",
+    )
+    emulator_install.add_argument(
+        "--sha256", help="Expected SHA-256 digest of an offline archive."
+    )
     emulator_select = emulator_commands.add_parser("select")
-    emulator_select.add_argument("version")
+    emulator_select.add_argument(
+        "version", help="Installed emulator version to activate."
+    )
     emulator_commands.add_parser("list")
     emulator_doctor = emulator_commands.add_parser("doctor")
     emulator_doctor.add_argument("--project", type=Path)
