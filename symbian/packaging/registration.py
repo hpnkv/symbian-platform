@@ -108,7 +108,12 @@ def _resource(sdk: AppSdk, root: Path, kind: str, source: str) -> bytes:
 
 
 def compile_registration(
-    project: Path, application: dict, executable_name: str, uid3: int
+    project: Path,
+    application: dict,
+    executable_name: str,
+    uid3: int,
+    *,
+    sdk: AppSdk | None = None,
 ) -> tuple[list[tuple[str, bytes]], dict[str, str]]:
     """Compile registration, locale resources and optional project SVG icon.
 
@@ -117,6 +122,7 @@ def compile_registration(
         application: Parsed application TOML table.
         executable_name: Package executable filename.
         uid3: Executable UID3.
+        sdk: Optional SDK override for resource tools and headers.
 
     Returns:
         Ordered SIS targets and bytes, plus source asset SHA-256 digests.
@@ -149,7 +155,7 @@ def compile_registration(
     stem = Path(executable_name).stem
     if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,59}", stem):
         raise StatusError(Code.INVALID_ARGUMENT, "Invalid executable name")
-    sdk = (
+    sdk = sdk or (
         ProjectConfiguration.load(project).sdk
         if (project / "sdk-location.json").is_file()
         else AppSdk.load(discover_sdk())

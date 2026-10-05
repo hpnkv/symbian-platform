@@ -86,11 +86,11 @@ class Session(BaseModel):
     process: subprocess.Popen = Field(exclude=True)
     directory: Path
     endpoint: Path
-    symbols: Path
-    source: Path
-    headers: Path
-    port: int
-    image: dict
+    symbols: Path | None = None
+    source: Path | None = None
+    headers: Path | None = None
+    port: int = 24689
+    image: dict = Field(default_factory=dict)
     name: str = "gui_app"
 
     def wait_ready(self, *, debug: bool, timeout: float = 20) -> None:
@@ -159,6 +159,8 @@ def session(
     project: Path | None = None,
     backend: str | None = None,
     overrides: dict | None = None,
+    standalone: bool = False,
+    sdk: Path | None = None,
 ):
     """Builds and launches one fixture copy, retaining logs and reaping it.
 
@@ -166,60 +168,80 @@ def session(
         root: Prepared repository workspace for this bounded GUI application.
         debug: Starts the guest halted at its loopback GDB listener.
         port: Reserved configuration port for the IDE's remote connection.
+        project: Optional project for application inputs or emulator settings.
+        backend: Optional CPU backend override.
+        overrides: Explicit emulator settings.
+        standalone: Open the frontend without automatically running an app.
+        sdk: Optional SDK used to resolve standalone emulator settings.
 
     Yields:
         Session with an owned child and private native control endpoint.
     """
+    if standalone and debug:
+        raise StatusError(
+            Code.INVALID_ARGUMENT, "Standalone debug is unsupported"
+        )
+    from symbian.project.layout import has_application_manifest
+
     root = root.resolve()
+    if standalone and project is None and has_application_manifest(root):
+        project = root
+    prepare_application = not standalone or (
+        project is not None and has_application_manifest(project)
+    )
     name, uid = "gui_app", 0xE0000811
     source = root / "examples/gui_app"
     build = root / ".symbian/gui-app"
     headers = root / ".symbian/gui-sdk/include"
     compiler, linker = None, None
-    if project is not None:
-        from symbian.project.configuration import ProjectConfiguration
-        from symbian.project.sdk import AppSdk, discover_sdk
+    project_manifest = None
+    if prepare_application:
+        if project is not None:
+            from symbian.project.configuration import ProjectConfiguration
+            from symbian.project.sdk import AppSdk, discover_sdk
 
-        project = project.resolve()
-        generated = (project / "symbian-project.json").is_file()
-        if generated:
-            configuration = ProjectConfiguration.load(project)
-            sdk = configuration.sdk
-            port = configuration.preferences.port
-        else:
-            location = project / "sdk-location.json"
-            if location.is_file():
-                sdk_path = Path(json.loads(location.read_text())["sdk"])
-                if not sdk_path.is_absolute():
-                    sdk_path = (project / sdk_path).resolve()
-                sdk = AppSdk.load(discover_sdk(sdk_path))
+            project = project.resolve()
+            generated = (project / "symbian-project.json").is_file()
+            if generated:
+                configuration = ProjectConfiguration.load(project)
+                app_sdk = configuration.sdk
+                port = configuration.preferences.port
             else:
-                sdk = AppSdk.load(discover_sdk())
-        compiler, linker = str(sdk.compiler), str(sdk.linker)
-        source, build = project, project / ".symbian/build"
-        headers = sdk.prefix / "include/platform"
-        options = tomllib.loads((project / "symbian.toml").read_text())[
-            "project"
-        ]
-        name, uid = options["name"], options["uid3"]
-    if not source.is_dir():
-        raise StatusError(
-            Code.FAILED_PRECONDITION, f"Application source missing: {source}"
-        )
-    if compiler is None:
-        selected_compiler = llvm_tool("clang++")
-        compiler = str(selected_compiler)
-        linker = str(llvm_tool("ld.lld", sibling=selected_compiler.parent))
+                location = project / "sdk-location.json"
+                if location.is_file():
+                    sdk_path = Path(json.loads(location.read_text())["sdk"])
+                    if not sdk_path.is_absolute():
+                        sdk_path = (project / sdk_path).resolve()
+                    app_sdk = AppSdk.load(discover_sdk(sdk_path))
+                else:
+                    app_sdk = AppSdk.load(discover_sdk())
+            compiler, linker = str(app_sdk.compiler), str(app_sdk.linker)
+            source, build = project, project / ".symbian/build"
+            headers = app_sdk.prefix / "include/platform"
+            project_manifest = tomllib.loads(
+                (project / "symbian.toml").read_text()
+            )
+            options = project_manifest["project"]
+            name, uid = options["name"], options["uid3"]
+        if not source.is_dir():
+            raise StatusError(
+                Code.FAILED_PRECONDITION,
+                f"Application source missing: {source}",
+            )
+        if compiler is None:
+            selected_compiler = llvm_tool("clang++")
+            compiler = str(selected_compiler)
+            linker = str(llvm_tool("ld.lld", sibling=selected_compiler.parent))
     command = dict(overrides or {})
     if backend is not None:
         command["backend"] = backend
-    resolution = resolve(project=project, root=root, overrides=command)
+    resolution = resolve(project=project, sdk=sdk, root=root, overrides=command)
     golden, firmware = selected(resolution)
     profile = svc_profile(firmware, resolution.settings.profile)
     executable = resolution.settings.emulator
     backend = resolution.settings.backend or "dynarmic"
     language = resolution.settings.language or 1
-    if firmware.device.kernel != "eka2":
+    if prepare_application and firmware.device.kernel != "eka2":
         raise StatusError(
             Code.FAILED_PRECONDITION,
             f"{firmware.device.model} uses EKA1; the current ARM EABI/E32-V"
@@ -230,13 +252,16 @@ def session(
     if backend not in ("dynarmic", "dyncom"):
         raise StatusError(Code.INVALID_ARGUMENT, "Unknown emulator CPU backend")
     inputs = {golden / path: value for path, value in firmware.files.items()}
-    for dll in ("euser.dll", "ws32.dll", "gdi.dll"):
-        if not (golden / firmware.device.z_drive / "sys/bin" / dll).is_file():
-            raise StatusError(
-                Code.FAILED_PRECONDITION,
-                f"GUI requires {dll}; unavailable in selected firmware"
-                f" {firmware.identity}",
-            )
+    if prepare_application:
+        for dll in ("euser.dll", "ws32.dll", "gdi.dll"):
+            if not (
+                golden / firmware.device.z_drive / "sys/bin" / dll
+            ).is_file():
+                raise StatusError(
+                    Code.FAILED_PRECONDITION,
+                    f"GUI requires {dll}; unavailable in selected firmware"
+                    f" {firmware.identity}",
+                )
     if executable is None or not executable.is_file():
         raise StatusError(
             Code.NOT_FOUND, f"Build patched emulator: {executable}"
@@ -249,25 +274,41 @@ def session(
                 reservation.bind(("127.0.0.1", port))
         except OSError as error:
             raise StatusError(Code.ALREADY_EXISTS, "GDB port busy") from error
-    toolchain.build(source, build, compiler, linker)
-    image = inspect_image(build / f"{name}.exe")
-    imported_dlls = {entry["dll"].lower() for entry in image["imports"]}
-    pthread_path = firmware.device.z_drive + "/sys/bin/libpthread.dll"
-    if "libpthread.dll" in imported_dlls and pthread_path not in firmware.files:
-        raise StatusError(
-            Code.FAILED_PRECONDITION,
-            f"{firmware.device.model} has no libpthread.dll in drive Z, but "
-            f"{name}.exe imports it. Generate with 'symbian init "
-            "--portable-runtime' or set SYMBIAN_ENABLE_TIMER_TASKS=OFF "
-            "and SYMBIAN_ENABLE_ABSEIL_STATUS=OFF, then rebuild.",
+    image = {}
+    if prepare_application:
+        toolchain.build(source, build, compiler, linker)
+        image = inspect_image(build / f"{name}.exe")
+        imported_dlls = {entry["dll"].lower() for entry in image["imports"]}
+        pthread_path = firmware.device.z_drive + "/sys/bin/libpthread.dll"
+        if (
+            "libpthread.dll" in imported_dlls
+            and pthread_path not in firmware.files
+        ):
+            raise StatusError(
+                Code.FAILED_PRECONDITION,
+                f"{firmware.device.model} has no libpthread.dll in drive Z, "
+                "but "
+                f"{name}.exe imports it. Generate with 'symbian init "
+                "--portable-runtime' or set SYMBIAN_ENABLE_TIMER_TASKS=OFF "
+                "and SYMBIAN_ENABLE_ABSEIL_STATUS=OFF, then rebuild.",
+            )
+        from symbian.toolchain.architecture import (
+            require_execution_architecture,
         )
-    from symbian.toolchain.architecture import require_execution_architecture
 
-    require_execution_architecture(image["architecture"], backend)
-    if image["uid3"] != uid or image["dll"]:
-        raise StatusError(Code.FAILED_PRECONDITION, "Unexpected GUI executable")
+        require_execution_architecture(image["architecture"], backend)
+        if image["uid3"] != uid or image["dll"]:
+            raise StatusError(
+                Code.FAILED_PRECONDITION, "Unexpected GUI executable"
+            )
     output = (
-        (project / ".symbian/runs") if project else root / ".symbian/gui-runs"
+        root / ".symbian/emulator-runs"
+        if standalone
+        else (
+            (project / ".symbian/runs")
+            if project
+            else root / ".symbian/gui-runs"
+        )
     )
     output.mkdir(parents=True, exist_ok=True)
     directory = Path(
@@ -278,16 +319,67 @@ def session(
         Path(run_session_path).write_text(str(directory), encoding="utf-8")
     instance = directory / "instance"
     shutil.copytree(golden, instance)
-    target = instance / firmware.device.c_drive / "sys/bin" / f"{name}.exe"
-    target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(build / f"{name}.exe", target)
+    application_assets = []
+    if prepare_application:
+        drive = instance / firmware.device.c_drive
+        target = drive / "sys/bin" / f"{name}.exe"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(build / f"{name}.exe", target)
+        if (
+            standalone
+            and project_manifest
+            and "application" in project_manifest
+        ):
+            from symbian.packaging.ca_bundle import selected_bundle
+            from symbian.packaging.registration import compile_registration
+
+            assets, _ = compile_registration(
+                source,
+                project_manifest["application"],
+                f"{name}.exe",
+                uid,
+                sdk=app_sdk,
+            )
+            ca_bundle = selected_bundle(source, build / f"{name}.exe")
+            if ca_bundle is not None:
+                assets.append(
+                    (f"!:\\resource\\apps\\{name}_ca.pem", ca_bundle[1])
+                )
+            for virtual_path, data in assets:
+                parts = virtual_path.removeprefix("!:\\").split("\\")
+                if not virtual_path.startswith("!:\\") or any(
+                    part in {"", ".", ".."} or ":" in part for part in parts
+                ):
+                    raise StatusError(
+                        Code.INVALID_ARGUMENT, "Unsafe application asset path"
+                    )
+                target = drive.joinpath(*parts)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(data)
+                application_assets.append(virtual_path)
     (instance / "config.yml").write_text(
         f"data-storage: data\ncpu: {backend}\ndevice: 0\nlanguage: {language}\n"
         f"enable-gdb-stub: {'true' if debug else 'false'}\n"
         f"gdb-port: {port}\nlog-svc: true\n"
     )
     manifest = {
-        "schema": "symbian.gui-launch/v1",
+        "schema": (
+            "symbian.emulator-launch/v1"
+            if standalone
+            else "symbian.gui-launch/v1"
+        ),
+        "standalone": standalone,
+        "application": (
+            {
+                "project": str(source),
+                "name": name,
+                "uid3": uid,
+                "auto_run": not standalone,
+                "assets": application_assets,
+            }
+            if prepare_application
+            else None
+        ),
         "debug": debug,
         "firmware": f"sha256:{firmware.identity}",
         "device": firmware.device.model_dump(),
@@ -295,8 +387,12 @@ def session(
         "svc_profile": profile,
         "gdb_port": port if debug else None,
         "inputs": {str(p): digest for p, digest in inputs.items()},
-        "e32_sha256": _digest(build / f"{name}.exe"),
-        "elf_sha256": _digest(build / f"{name}.elf"),
+        "e32_sha256": (
+            _digest(build / f"{name}.exe") if prepare_application else None
+        ),
+        "elf_sha256": (
+            _digest(build / f"{name}.elf") if prepare_application else None
+        ),
         "emulator_sha256": _digest(executable),
     }
     process = None
@@ -325,8 +421,11 @@ def session(
                         str(launch_executable),
                         "--device",
                         firmware.device.firmware_code,
-                        "--run",
-                        f"C:\\sys\\bin\\{name}.exe",
+                        *(
+                            []
+                            if standalone
+                            else ["--run", f"C:\\sys\\bin\\{name}.exe"]
+                        ),
                     ],
                     cwd=directory,
                     env=env,
@@ -346,9 +445,11 @@ def session(
                     process=process,
                     directory=directory,
                     endpoint=endpoint,
-                    symbols=build / f"{name}.elf",
-                    source=source,
-                    headers=headers,
+                    symbols=(
+                        build / f"{name}.elf" if prepare_application else None
+                    ),
+                    source=source if prepare_application else None,
+                    headers=headers if prepare_application else None,
                     name=name,
                     port=port,
                     image=image,
@@ -379,6 +480,8 @@ def main(argv: list[str] | None = None, *, raise_errors: bool = False) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path.cwd())
     parser.add_argument("--project", type=Path)
+    parser.add_argument("--sdk", type=Path)
+    parser.add_argument("--standalone", action="store_true")
     parser.add_argument("--gdb", type=Path)
     parser.add_argument("--port", type=int, default=24689)
     add_options(parser)
@@ -402,6 +505,8 @@ def main(argv: list[str] | None = None, *, raise_errors: bool = False) -> int:
             port=args.port,
             project=args.project,
             overrides=options(args),
+            standalone=args.standalone,
+            sdk=args.sdk,
         ) as active:
             if args.gdb:
                 debugger = subprocess.Popen(
@@ -415,7 +520,7 @@ def main(argv: list[str] | None = None, *, raise_errors: bool = False) -> int:
                 result = debugger.wait()
             else:
                 result = active.process.wait()
-        if not args.gdb and result == 0:
+        if not args.standalone and not args.gdb and result == 0:
             guest_outcome(
                 active.directory / "control.sock.status.json",
                 active.image["uid3"],

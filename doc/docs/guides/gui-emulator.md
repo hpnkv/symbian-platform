@@ -36,3 +36,64 @@ exits normally. Keep the selected firmware identity, CPU backend, screenshots,
 guest exit reason and instance log. If the GUI fails before drawing, retain
 the failure log and use [guest debugging](gui-debug.md). A working emulator
 session does not prove Nokia 808 compatibility.
+
+## Open the emulator for manual application launch
+
+Run the frontend using the selected firmware without automatically starting an
+application:
+
+```sh
+uv run symbian emu run
+uv run symbian emu run --firmware my-phone --backend dynarmic
+```
+
+In **Symbian Console → Emulator**, choose **Run emulator**. Optional settings
+select the firmware, SDK, project configuration or CPU backend. A project is
+used to resolve settings and, when it declares an application, to build and
+stage that application. The CLI detects an application in its working directory;
+`--project /path/to/app` selects one explicitly. The GUI uses its selected
+application context. Registered applications receive their SDK-compiled menu
+resources in the private emulator C drive so they appear in EKA2L1's application list. Select the
+application there when ready to run it. Plain executable projects are copied
+to `C:\sys\bin`; they have no application-menu registration.
+
+Without an application context, the emulator opens without a build or injection.
+EKA1 firmware can open in that mode; staging an SDK application still requires
+the supported EKA2 application ABI.
+
+Each launch copies the verified baseline into `.symbian/emulator-runs/` under
+the chosen workspace. Close the EKA2L1 window to finish, or press Ctrl+C in the
+CLI to stop its owned child. The session retains `frontend.log`, `launch.json`
+and any final control report. Changes to the copied instance do not carry into
+the next launch. Opening the frontend does not establish full OS boot or
+physical-device compatibility.
+
+## Built-in firmware application compatibility
+
+An application appearing in EKA2L1's list establishes registration discovery;
+each application still depends on the emulator's kernel and service support.
+The SDK counter exercises a small Window Server path. Firmware applications
+can require additional AVKON, media, database and file-system services.
+
+Fresh-instance checks against the preserved RM-807 113.010.1508 fixture with
+the experimental Belle profile found:
+
+| Application | Observed result |
+| --- | --- |
+| SDK counter | Renders |
+| Calculator | Renders and accepts a digit tap |
+| Settings | Renders its initial list; subviews untested |
+| Gallery, both registered entries | Black screen; media Harvester exits with `KErrGeneral` (`-2`) |
+| Clock | Black screen; cause not yet isolated |
+
+Gallery reproduces on Dynarmic and Dyncom, with and without an injected SDK
+application. Waiting 30 seconds on Dynarmic does not produce a display.
+Its logs expose unsupported file-system plugin loading/mounting/opening and
+missing executive calls. These are emulator compatibility gaps; the precise
+dependency that prevents Gallery's first frame remains unresolved. A working
+Calculator or Settings screen does not establish complete firmware support.
+
+For a failed app, retain the session's `frontend.log`, selected firmware and
+profile, app name/UID, capture and native process-exit report. The investigation
+and private evidence paths are recorded in the repository's
+`.dev/research-log.md`.
