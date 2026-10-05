@@ -8,10 +8,10 @@ with the emulator serve its host interface and cannot provide guest widgets.
 ## Install the SDK and emulator
 
 Follow [Getting started](../getting-started.md) to install `symbian-platform`
-into a Python environment, then install the native SDK and compatible emulator:
+into a Python environment. [Install the native SDK archive](native-distributions.md)
+for your host, then install and check the compatible emulator:
 
 ```sh
-symbian sdk install
 symbian emulator install
 symbian emulator doctor
 ```
