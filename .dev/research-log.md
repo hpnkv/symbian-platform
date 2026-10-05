@@ -5871,3 +5871,33 @@ were reused, so full clean-machine instructions remain unaccepted. Physical
 installation was not performed. Native archives with tool closure and full
 EKA1/stdlib coverage remain engineering gaps, rather than suppressed release
 failures. The release currently publishes compiled standalone host components.
+
+## Native archive relocation — 2026-10-05
+
+Added a Python-free SDK assembler with a recursive dynamic-library closure,
+Mach-O install-name rewriting/ad-hoc signing, and ELF relative RPATHs. The
+assembler combines target exports with the independently tested host SDK,
+compiler, resource tools, CMake and Ninja. Relative SDK manifest paths resolve
+from the manifest location; the wheel interpreter can supply Python policy.
+Unused `digests.json` and `host-dependencies.json` generation was removed.
+
+The copied compiler/build tools built the complete hello_time GUI sources,
+including Abseil and timer/fiber closure, and converted ARMv5T and ARMv6 ELF into
+E32 on both macOS arm64 and Linux x86_64. The check relocates into a directory
+with spaces and removes LLVM/library/SDK environment overrides and package
+manager PATH entries. Logs: `/tmp/symbian-native-sdk-relocation-macos.log` and
+Linux `/tmp/symbian-native-sdk-relocation-linux.log`. This establishes build
+and format acceptance, not execution on a physical device. The Linux prototype
+reused the previously prepared guest export and existing official LLVM tools.
+
+Relocation found two real defects: Homebrew CMake uses `share/cmake` rather
+than a version-suffixed directory, and macOS temporary-directory aliases made
+CMake's canonical source path fail the project containment check. Both were
+corrected. E32 output uses an `e32/` subdirectory to avoid CMake interpreting
+`hello_time.exe` as a dependency on the `hello_time` executable target and
+silently discarding the conversion custom command.
+
+Archive installation from a fresh configuration and unsafe archive rejection
+now pass regression tests (9 passed, 16 fixture-dependent skips). Remaining:
+release source acquisition, four-host tool closure/relocation CI, publication,
+clean installed-wheel guide acceptance, and full EKA1 runtime coverage.

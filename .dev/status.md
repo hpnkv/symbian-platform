@@ -2870,3 +2870,14 @@ payload closure and full EKA1/runtime/library support remain open. The published
 symbian-host archives are honest host components, not the requested complete
 no-Python host-plus-native distributions. README now links actual publications
 and describes that distinction.
+
+### Native distribution assembly — 2026-10-05
+
+The Python-free assembler now copies LLVM/build/resource tools and their dynamic
+closure beside the guest headers/libraries and the standalone host SDK. A
+relocated SDK with no Homebrew/LLVM/library overrides builds and converts
+hello_time for both ARM targets on macOS arm64 and Linux x86_64. This verifies
+compiler/linker/E32 build acceptance, not physical execution. Relative manifests
+and `symbian sdk install --archive` are implemented with archive path-escape
+rejection. Shipping all four host archives and full EKA1 API/runtime remains
+outstanding; these prototypes must not be described as published distributions.

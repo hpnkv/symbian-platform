@@ -1,5 +1,6 @@
 """Wizard preferences, independent app builds and actual owned GUI launches."""
 
+import io
 import json
 import os
 import re
@@ -7,6 +8,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tarfile
 import time
 import tomllib
 import xml.etree.ElementTree as ET
@@ -18,7 +20,7 @@ from PIL import Image
 from symbian.emulator import Control
 from symbian.emulator.launch import session
 from symbian.project.generate import Preferences, generate, wizard
-from symbian.project.sdk import AppSdk, activate_sdk, discover_sdk
+from symbian.project.sdk import AppSdk, activate_sdk, discover_sdk, install
 from symbian.status import Code, StatusError
 from symbian.tests.test_guest_gui import _portrait_frame, _ready
 
@@ -53,6 +55,66 @@ def _fake_sdk(tmp_path):
     )
     (prefix / "sdk.json").write_text(sdk.model_dump_json())
     return sdk
+
+
+@pytest.mark.parametrize("relative", [True, False])
+def test_sdk_manifest_survives_relocation(tmp_path, relative):
+    sdk = _fake_sdk(tmp_path)
+    data = sdk.model_dump(mode="json")
+    if relative:
+        for name in ("prefix", "compiler", "linker", "emulator", "golden"):
+            data[name] = str(Path(data[name]).relative_to(sdk.prefix))
+        data["python"] = None
+    (sdk.prefix / "sdk.json").write_text(json.dumps(data))
+    moved = tmp_path / "relocated SDK"
+    if relative:
+        shutil.move(sdk.prefix, moved)
+    else:
+        moved = sdk.prefix
+    # Loading from another working directory must use the manifest location.
+    loaded = AppSdk.load(moved / "sdk.json")
+    assert loaded.prefix == moved
+    assert loaded.compiler == moved / "compiler"
+    assert loaded.python == Path(sys.executable)
+
+
+def test_install_native_archive_without_active_sdk(tmp_path, monkeypatch):
+    sdk = _fake_sdk(tmp_path)
+    data = sdk.model_dump(mode="json")
+    for name in ("prefix", "compiler", "linker", "emulator", "golden"):
+        data[name] = str(Path(data[name]).relative_to(sdk.prefix))
+    data["python"] = None
+    (sdk.prefix / "sdk.json").write_text(json.dumps(data))
+    archive = tmp_path / "native.tar.gz"
+    with tarfile.open(archive, "w:gz") as bundle:
+        bundle.add(sdk.prefix, arcname=".")
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    destination = tmp_path / "installed SDK"
+    loaded = install(destination, archive=archive)
+    assert loaded.compiler == destination / "compiler"
+    assert loaded.python == Path(sys.executable)
+    assert discover_sdk() == destination / "sdk.json"
+    assert not (destination / "lib/python").exists()
+
+
+@pytest.mark.parametrize("kind", ["traversal", "symlink"])
+def test_install_archive_rejects_external_writes(tmp_path, kind):
+    archive = tmp_path / "unsafe.tar.gz"
+    with tarfile.open(archive, "w:gz") as bundle:
+        if kind == "traversal":
+            item = tarfile.TarInfo("../outside")
+            item.size = 1
+            bundle.addfile(item, io.BytesIO(b"x"))
+        else:
+            item = tarfile.TarInfo("link")
+            item.type = tarfile.SYMTYPE
+            item.linkname = str(tmp_path / "outside")
+            bundle.addfile(item)
+    with pytest.raises(StatusError) as caught:
+        install(tmp_path / "installed", archive=archive)
+    assert caught.value.code == Code.INVALID_ARGUMENT
+    assert not (tmp_path / "outside").exists()
+    assert not (tmp_path / "installed").exists()
 
 
 def test_wizard_choices_and_nonempty_project_preserved(tmp_path, monkeypatch):

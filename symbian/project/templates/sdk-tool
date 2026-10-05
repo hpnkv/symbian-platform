@@ -12,6 +12,8 @@ if not prefix.is_absolute():
     prefix = (project / prefix).resolve()
 if Path(sys.argv[0]).name == "sdk-debug":
     command = prefix / "bin/python"
+    if not command.is_file():
+        command = Path(sys.executable)
     arguments = [
         str(command),
         "-m",
@@ -24,12 +26,18 @@ if Path(sys.argv[0]).name == "sdk-debug":
     ]
 else:
     command = prefix / "bin/symbian"
+    module_args = []
+    if not command.is_file():
+        command = Path(sys.executable)
+        module_args = ["-m", "symbian.cli"]
     arguments = [
         str(command),
+        *module_args,
         "app",
         "run",
         "--project",
         str(project),
         *sys.argv[1:],
     ]
+os.environ["SYMBIAN_SDK_MANIFEST"] = str(prefix / "sdk.json")
 os.execv(str(command), arguments)

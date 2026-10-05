@@ -6,6 +6,7 @@ import os
 import platform
 import shutil
 import sys
+import tarfile
 import tempfile
 from importlib.resources import files
 from pathlib import Path
@@ -32,8 +33,8 @@ class AppSdk(BaseModel):
     linker: Path
     ar: Path | None = None
     ranlib: Path | None = None
-    python: Path
-    emulator: Path
+    python: Path | None = None
+    emulator: Path | None = None
     # Deprecated development-export field; firmware now lives in a shared store.
     golden: Path | None = None
     firmware_importer: Path | None = None
@@ -48,6 +49,29 @@ class AppSdk(BaseModel):
         """Loads and validates the materialized SDK's declared dependencies."""
         try:
             sdk = cls.model_validate_json(path.read_text())
+            # Distribution paths are relative to the manifest, including the
+            # prefix itself. Development exports may retain external paths.
+            directory = path.resolve().parent
+            updates = {}
+            for name in (
+                "prefix",
+                "compiler",
+                "c_compiler",
+                "linker",
+                "ar",
+                "ranlib",
+                "python",
+                "emulator",
+                "golden",
+                "firmware_importer",
+                "gdb",
+            ):
+                value = getattr(sdk, name)
+                if value is not None and not value.is_absolute():
+                    updates[name] = directory / value
+            if sdk.python is None:
+                updates["python"] = Path(sys.executable).absolute()
+            sdk = sdk.model_copy(update=updates)
         except ValidationError as error:
             raise StatusError(Code.INVALID_ARGUMENT, str(error)) from error
         for dependency in (
@@ -391,12 +415,16 @@ def _build_mbedtls(
     return source
 
 
-def prepare(workspace: Path, output: Path) -> AppSdk:
+def prepare(
+    workspace: Path, output: Path, *, include_host: bool = True
+) -> AppSdk:
     """Exports target headers/runtime/proxies without source-tree symlinks.
 
     Args:
         workspace: Prepared platform source checkout with preserved inputs.
         output: New SDK prefix, outside the upstream research source trees.
+        include_host: Build the development host primitives too. Release builds
+            reuse their independently built host SDK instead.
 
     Returns:
         SDK dependency manifest. LLVM, GDB and the emulator are external host
@@ -1199,45 +1227,46 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
                         build_tree / component / f"lib{library}.a",
                         output / "lib" / architecture / f"lib{library}.a",
                     )
-        with tempfile.TemporaryDirectory(
-            prefix="symbian-host-concurrency-"
-        ) as temporary:
-            build_tree = Path(temporary) / "build"
-            configure = [
-                cmake_tool,
-                "-S",
-                str(workspace / "cpp/symbian/concurrency/host_package"),
-                "-B",
-                str(build_tree),
-                "-G",
-                "Ninja",
-                f"-DCMAKE_MAKE_PROGRAM={ninja_tool}",
-            ]
-            deps_prefix = os.environ.get("SYMBIAN_DEPS_PREFIX")
-            if deps_prefix:
-                configure.append(f"-DCMAKE_PREFIX_PATH={deps_prefix}")
-            run(configure, cwd=workspace, timeout=120)
-            run(
-                [
+        if include_host:
+            with tempfile.TemporaryDirectory(
+                prefix="symbian-host-concurrency-"
+            ) as temporary:
+                build_tree = Path(temporary) / "build"
+                configure = [
                     cmake_tool,
-                    "--build",
+                    "-S",
+                    str(workspace / "cpp/symbian/concurrency/host_package"),
+                    "-B",
                     str(build_tree),
-                    "--target",
-                    "symbian_host_primitives_bundle",
-                ],
-                cwd=workspace,
-                timeout=300,
-            )
-            host_library = (
-                output
-                / "lib/host"
-                / f"{platform.system()}-{platform.machine()}"
-            )
-            host_library.mkdir(parents=True)
-            shutil.copyfile(
-                build_tree / "concurrency/libsymbian_host_primitives.a",
-                host_library / "libsymbian_host_primitives.a",
-            )
+                    "-G",
+                    "Ninja",
+                    f"-DCMAKE_MAKE_PROGRAM={ninja_tool}",
+                ]
+                deps_prefix = os.environ.get("SYMBIAN_DEPS_PREFIX")
+                if deps_prefix:
+                    configure.append(f"-DCMAKE_PREFIX_PATH={deps_prefix}")
+                run(configure, cwd=workspace, timeout=120)
+                run(
+                    [
+                        cmake_tool,
+                        "--build",
+                        str(build_tree),
+                        "--target",
+                        "symbian_host_primitives_bundle",
+                    ],
+                    cwd=workspace,
+                    timeout=300,
+                )
+                host_library = (
+                    output
+                    / "lib/host"
+                    / f"{platform.system()}-{platform.machine()}"
+                )
+                host_library.mkdir(parents=True)
+                shutil.copyfile(
+                    build_tree / "concurrency/libsymbian_host_primitives.a",
+                    host_library / "libsymbian_host_primitives.a",
+                )
         mbedtls_source = _build_mbedtls(
             workspace, output, compiler, linker, archive_tools
         )
@@ -1344,16 +1373,6 @@ def prepare(workspace: Path, output: Path) -> AppSdk:
             gdb=Path(guest_gdb) if guest_gdb else None,
         )
         (output / "sdk.json").write_text(sdk.model_dump_json(indent=2) + "\n")
-        digests = {
-            str(p.relative_to(output)): hashlib.sha256(
-                p.read_bytes()
-            ).hexdigest()
-            for p in output.rglob("*")
-            if p.is_file()
-        }
-        (output / "digests.json").write_text(
-            json.dumps(digests, indent=2) + "\n"
-        )
         return AppSdk.load(output / "sdk.json")
     except BaseException:
         shutil.rmtree(output)
@@ -1613,43 +1632,66 @@ def install_tools(sdk: AppSdk, workspace: Path | None = None) -> AppSdk:
             "gdb": bin_path / "arm-none-eabi-gdb" if sdk.gdb else None,
         }
     )
-    (prefix / "host-dependencies.json").write_text(
-        sdk.model_dump_json(indent=2) + "\n"
-    )
     (prefix / "sdk.json").write_text(result.model_dump_json(indent=2) + "\n")
-    seal_sdk(prefix)
     return result
 
 
-def seal_sdk(prefix: Path) -> None:
-    """Records materialized files, excluding its own digest manifest."""
-    digests = {
-        str(p.relative_to(prefix)): hashlib.sha256(p.read_bytes()).hexdigest()
-        for p in prefix.rglob("*")
-        if p.is_file()
-        and p.name != "digests.json"
-        and p != prefix / "emulator.json"
-        and "__pycache__" not in p.parts
-    }
-    (prefix / "digests.json").write_text(json.dumps(digests, indent=2) + "\n")
-
-
-def install(destination: Path, workspace: Path | None = None) -> AppSdk:
+def install(
+    destination: Path,
+    workspace: Path | None = None,
+    *,
+    archive: Path | None = None,
+) -> AppSdk:
     """Installs an observable SDK tree from source inputs or the active SDK.
 
     Args:
         destination: New directory for visible headers, libraries and tools.
-        workspace: Prepared research checkout for the first installation.
+        workspace: Prepared research checkout for a source installation.
+        archive: Downloaded native SDK release archive.
 
     Returns:
-        Installed SDK manifest. Host interpreter dependencies and the emulator
-        remain explicit external dependencies until their payloads are bundled.
+        Installed and activated SDK manifest. Native release archives contain
+        the compiler and build tools; emulator and firmware setup are separate.
     """
     destination = destination.resolve()
     if destination.exists():
         raise StatusError(
             Code.ALREADY_EXISTS, f"SDK already exists: {destination}"
         )
+    if archive is not None:
+        if workspace is not None:
+            raise StatusError(
+                Code.INVALID_ARGUMENT, "Select --archive or --workspace"
+            )
+        with tempfile.TemporaryDirectory(prefix="symbian-sdk-install-") as d:
+            extracted = Path(d).resolve()
+            try:
+                with tarfile.open(archive) as bundle:
+                    # Reject path escapes and external symlinks/hardlinks.
+                    bundle.extractall(extracted, filter="data")
+            except (OSError, tarfile.TarError) as error:
+                raise StatusError(Code.INVALID_ARGUMENT, str(error)) from error
+            original = AppSdk.load(extracted / "sdk.json")
+            for name in (
+                "prefix",
+                "compiler",
+                "c_compiler",
+                "linker",
+                "ar",
+                "ranlib",
+            ):
+                value = getattr(original, name)
+                if value is not None and not value.resolve().is_relative_to(
+                    extracted
+                ):
+                    raise StatusError(
+                        Code.INVALID_ARGUMENT,
+                        f"Native archive has an external {name}: {value}",
+                    )
+            shutil.copytree(extracted, destination, symlinks=True)
+        sdk = AppSdk.load(destination / "sdk.json")
+        activate_sdk(sdk)
+        return sdk
     if workspace:
         sdk = install_tools(
             prepare(workspace, destination), workspace=workspace
@@ -1678,9 +1720,14 @@ def install(destination: Path, workspace: Path | None = None) -> AppSdk:
             original.prefix,
             destination,
             symlinks=True,
-            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+            ignore=shutil.ignore_patterns(
+                "__pycache__", "*.pyc", "digests.json", "host-dependencies.json"
+            ),
         )
-        if not (destination / "bin/symbian").exists():
+        if (
+            not (destination / "bin/symbian").exists()
+            and not (destination / "bin/symbian-native").exists()
+        ):
             sdk = install_tools(
                 original.model_copy(update={"prefix": destination})
             )
@@ -1710,6 +1757,5 @@ def install(destination: Path, workspace: Path | None = None) -> AppSdk:
             (destination / "sdk.json").write_text(
                 sdk.model_dump_json(indent=2) + "\n"
             )
-            seal_sdk(destination)
     activate_sdk(sdk)
     return AppSdk.load(destination / "sdk.json")

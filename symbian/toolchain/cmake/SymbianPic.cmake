@@ -2,8 +2,9 @@ include_guard(GLOBAL)
 
 function(_symbian_project_file output filename)
   file(REAL_PATH "${filename}" resolved BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
-  cmake_path(IS_PREFIX CMAKE_SOURCE_DIR "${resolved}" NORMALIZE inside)
-  set(sdk_cmake "${SYMBIAN_SDK_PREFIX}/cmake")
+  file(REAL_PATH "${CMAKE_SOURCE_DIR}" project_root)
+  cmake_path(IS_PREFIX project_root "${resolved}" NORMALIZE inside)
+  file(REAL_PATH "${SYMBIAN_SDK_PREFIX}/cmake" sdk_cmake)
   cmake_path(IS_PREFIX sdk_cmake "${resolved}" NORMALIZE inside_sdk)
   if((NOT inside AND NOT inside_sdk) OR NOT EXISTS "${resolved}" OR
      IS_DIRECTORY "${resolved}")
@@ -203,4 +204,36 @@ function(symbian_add_dynamic_library target)
     set_target_properties(${target}_import PROPERTIES IMPORTED_LOCATION "${proxy}")
     add_dependencies(${target}_import ${target}_proxy)
   endif()
+endfunction()
+
+# Convert the linked ELF to a runnable E32 image using the standalone host tool.
+# The ELF remains available for debugging. This step requires no Python runtime.
+function(symbian_publish_executable target)
+  cmake_parse_arguments(PARSE_ARGV 1 EXE "" "UID3;CAPABILITIES" "IMPORT_PROXIES")
+  if(EXE_UNPARSED_ARGUMENTS OR EXE_KEYWORDS_MISSING_VALUES OR NOT EXE_UID3)
+    message(FATAL_ERROR "symbian_publish_executable needs UID3")
+  endif()
+  set(converter "${SYMBIAN_SDK_PREFIX}/bin/symbian-native")
+  if(NOT EXISTS "${converter}")
+    message(FATAL_ERROR "E32 publishing needs the standalone symbian-native tool")
+  endif()
+  if(NOT EXE_IMPORT_PROXIES)
+    set(EXE_IMPORT_PROXIES ${SYMBIAN_IMPORT_PROXIES})
+  endif()
+  set(options)
+  foreach(proxy IN LISTS EXE_IMPORT_PROXIES)
+    list(APPEND options --import-proxy "${proxy}")
+  endforeach()
+  if(EXE_CAPABILITIES)
+    list(APPEND options --capabilities "${EXE_CAPABILITIES}")
+  endif()
+  set(image "${CMAKE_CURRENT_BINARY_DIR}/e32/${target}.exe")
+  add_custom_command(OUTPUT "${image}"
+    COMMAND "${CMAKE_COMMAND}" -E make_directory
+      "${CMAKE_CURRENT_BINARY_DIR}/e32"
+    COMMAND "${converter}" convert-exe --input "$<TARGET_FILE:${target}>"
+      --uid3 "${EXE_UID3}" ${options} --output "${image}"
+    DEPENDS ${target} "${converter}" ${EXE_IMPORT_PROXIES}
+    VERBATIM)
+  add_custom_target(${target}_e32 ALL DEPENDS "${image}")
 endfunction()

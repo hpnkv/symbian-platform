@@ -354,7 +354,9 @@ def _parser() -> argparse.ArgumentParser:
         "install", help="Install an observable SDK directory"
     )
     install.add_argument("destination", type=Path)
-    install.add_argument("--workspace", type=Path)
+    inputs = install.add_mutually_exclusive_group()
+    inputs.add_argument("--workspace", type=Path)
+    inputs.add_argument("--archive", type=Path)
     agent_commands = commands.add_parser("agent").add_subparsers(
         dest="agent_command", required=True
     )
@@ -940,7 +942,9 @@ def _execute(args: argparse.Namespace) -> dict:
     if args.command == "sdk":
         from symbian.project.sdk import install
 
-        return install(args.destination, args.workspace).model_dump(mode="json")
+        return install(
+            args.destination, args.workspace, archive=args.archive
+        ).model_dump(mode="json")
     if args.command == "prepare-app-sdk":
         from symbian.project.sdk import activate_sdk, install_tools, prepare
 
