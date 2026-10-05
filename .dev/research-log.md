@@ -5852,3 +5852,22 @@ RSA signing all pass. This is a prepublication installed-wheel/source-SDK
 experiment, not a clean published SDK installation or device execution result.
 Logs: /tmp/symbian-pip-sdk-install.log, symbian-pip-hello-time-{init,package}.log,
 symbian-pip-guide-sign.log. The signing config is isolated under /tmp.
+
+## 2026-10-05 — public release and published-wheel checks
+
+Released v0.1.0 at f84519c after complete host run 37306013453. Release run
+37306898498 reused the exact successful host artifacts, rebuilt only source
+archives, checked 16 wheel targets and six archives, and published with trusted
+OIDC. Direct public index JSON lists all 16 wheels and the sdist. GitHub's release
+API lists all 22 assets. Public links:
+https://pypi.org/project/symbian-platform/0.1.0/ and
+https://github.com/hpnkv/symbian-platform/releases/tag/v0.1.0.
+
+Fresh PyPI-installed venvs pass doctor outside the repository on macOS/Linux.
+The published macOS installer, without file patching, compiles resource tools
+from the explicitly supplied existing workspace, initializes/builds hello_time,
+packages/signs SIS and builds gui_app. Prepared compiler/header/runtime inputs
+were reused, so full clean-machine instructions remain unaccepted. Physical
+installation was not performed. Native archives with tool closure and full
+EKA1/stdlib coverage remain engineering gaps, rather than suppressed release
+failures. The release currently publishes compiled standalone host components.

@@ -73,11 +73,14 @@ in your environment, invoke `symbian` directly. To run an application, first
 [import local firmware](doc/docs/guides/firmware.md), then use
 `symbian app run --project ~/dev/hello_time`.
 
-The project version comes from [VERSION](VERSION). Release packaging is being
-prepared for macOS/Linux on x86_64 and arm64, Python 3.11–3.14 wheels, a Python
-sdist, a source archive and standalone SDK distributions. Full EKA1 library
-coverage and complete native distribution packaging are still in progress;
-they are not implied by the current host wheel build.
+The project version comes from [VERSION](VERSION).
+[PyPI](https://pypi.org/project/symbian-platform/) provides Python 3.11–3.14
+wheels for macOS/Linux on x86_64 and arm64, plus a Python sdist.
+[GitHub releases](https://github.com/hpnkv/symbian-platform/releases) also
+provide source archives and standalone compiled C++ host SDKs. The host
+archives contain their static library dependencies and CMake configuration.
+Native target SDK installation currently requires the prepared source checkout;
+the host archives do not contain a compiled ARM SDK.
 
 ## Examples and guides
 

@@ -2845,3 +2845,28 @@ native distributions and published clean-environment guide replay remain open.
 PyPI attestations are disabled: OIDC publishing does not require additional
 provenance documents. Expired/missing host artifacts now trigger a fresh build
 rather than failing the release's artifact reuse path.
+
+### 2026-10-05 — v0.1.0 actually published
+
+Final host run 37306013453 succeeds on all four native runners, with 16 installed
+wheel audits. Each architecture restored the tested c8c266b4 host-core cache;
+Linux x86_64 logs confirm reuse plus the relocated consumer audit before all
+four CPython wheels. Tag v0.1.0 points to f84519c. Release run 37306898498 succeeds:
+all four host jobs reused exact-commit artifacts, source/sdist jobs and the full
+matrix audit passed, and PyPI trusted OIDC publication and GitHub release both
+completed. Public PyPI JSON has version 0.1.0, 16 wheels and one sdist. GitHub
+has 22 attached assets: 16 wheels, four host SDK archives, source archive, sdist.
+No optional provenance attestations were produced.
+
+Fresh public-PyPI virtual environments outside the checkout pass pip install
+and symbian doctor on macOS arm64 and Linux x86_64. The unchanged published
+installer builds SDK resource tools using an explicit prepared source workspace.
+With that source SDK, published CLI hello_time init/build, package and sign pass,
+as does the real gui_app build. Public wheel smoke logs use the
+/tmp/symbian-pypi-* prefix on macOS and /tmp/symbian-linux-pypi-* on Linux.
+These checks reuse prepared source/toolchain inputs; they are not clean-machine
+native SDK installation or emulator/device guide acceptance. Full native SDK
+payload closure and full EKA1/runtime/library support remain open. The published
+symbian-host archives are honest host components, not the requested complete
+no-Python host-plus-native distributions. README now links actual publications
+and describes that distinction.
