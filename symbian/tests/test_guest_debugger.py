@@ -109,7 +109,7 @@ def test_live_source_breakpoints_and_single_step_remain_halted(
     tmp_path, experimental
 ):
     """Checks actual GDB stops under default and guarded firmware profiles."""
-    gdb = shutil.which("arm-none-eabi-gdb")
+    gdb = shutil.which("arm-none-eabi-gdb") or shutil.which("gdb-multiarch")
     assert gdb, "Install the ARM GDB prerequisite for this opt-in test"
     golden = Path(GOLDEN).resolve()
     build = Path(BUILD).resolve()

@@ -6549,3 +6549,10 @@ The same fresh-venv and isolated-HOME public SDK build/package/sign walkthrough
 also passes on Linux x86_64; /tmp/symbian-emulator-public-guide-build-linux.log
 on the owner Linux host. Neither guide build requires the SDK source checkout
 or external LLVM. Physical-device installation remains untested.
+
+Delivered Linux GUI/input checks pass (two cases); its debugger rejection and
+live source-step checks also pass (four cases, 44.34s). The debugger test's
+macOS-only executable name was corrected to discover gdb-multiarch, matching
+the documented Linux prerequisite and existing production launcher. Logs:
+/tmp/symbian-gui-delivered-ci-current-tests-linux.log (initial discovery
+failure) and /tmp/symbian-debugger-delivered-ci-linux.log (successful rerun).
