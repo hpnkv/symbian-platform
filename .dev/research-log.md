@@ -5976,3 +5976,18 @@ concurrency group. Host groups now include the caller workflow, and release
 validation waits up to 65 minutes for an existing exact-source standalone host
 producer before selecting successful, complete artifacts or building anew.
 Workflow lint passes; four-host hosted acceptance and publication remain pending.
+
+## EKA1 acceptance on Linux — 2026-10-05
+
+Transferred a private portable export of the existing Nokia 7610 fixture to
+helena@192.168.1.209 and imported it under the same content identity. With Ninja
+1.13 on PATH and Xvfb, test_eka1.py, test_eka1_guest.py and test_eka1_import.py
+pass: 19 passed in 14.22 s. Both Dynarmic and Dyncom record the normal/changed
+process results, original heap/copy imports and corrupt-copy controls. The
+preserved store validation remains part of every run. Log:
+/tmp/symbian-linux-eka1-acceptance-r2.log. This extends the existing bounded
+EKA1 profile to Linux x86_64; it does not add broader ABI, runtime, networking,
+GUI, legacy SIS or physical-device support. The initial invocation used system
+Ninja 1.11 and failed input-tracking preflight; selecting the installed 1.13
+binary corrected the environment. Public Linux/EKA1 guides include headless
+Xvfb usage; strict MkDocs and C++ snippet-format checks pass.

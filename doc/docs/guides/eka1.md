@@ -20,6 +20,8 @@ symbian toolchain verify-eka1 .symbian/eka1-build/eka1_probe.exe \
 Use your imported fixture alias. Output directories must be new. The default
 expected reason is 7610; a different native result fails even if the frontend
 exits successfully. `--expected-reason N` selects another oracle.
+On a headless Linux host, install Xvfb as described in the
+[Linux guide](linux.md) and prefix each verifier command with `xvfb-run -a`.
 The complete CMake example's application is:
 
 ```cpp

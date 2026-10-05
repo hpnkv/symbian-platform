@@ -1,7 +1,7 @@
 # EKA1 support and limits
 
-Implemented and exercised on 2026-10-05: the first capability scoped by
-[eka1-plan.md](eka1-plan.md), a freestanding **no-UI ARMv5T process** on preserved
+Implemented and exercised on macOS and Linux on 2026-10-05: the first capability
+scoped by [eka1-plan.md](eka1-plan.md), a freestanding **no-UI ARMv5T process** on preserved
 Nokia 7610 RH-51 / Symbian OS 8.0 firmware. Both Dynarmic and Dyncom run it and
 record a normal process exit with reason 7610. A separately built version
 returns 7611 on both backends; checking it against 7610 fails as intended.
@@ -161,7 +161,8 @@ are retained privately in `.symbian/eka1-20261005/original-rom-contract.json`.
 
 ## Restrictions and remaining gates
 
-- Only the named Nokia 7610 fixture and both tested macOS emulator backends.
+- Only the named Nokia 7610 fixture and both tested emulator backends on
+  macOS arm64 and Linux x86_64.
   P900 import remains available, but its process ABI has not been exercised.
 - No Window Server/font/UI application profile, generated GUI app, normal
   Console app Run/Debug, AppArc registration or general OS boot claim.

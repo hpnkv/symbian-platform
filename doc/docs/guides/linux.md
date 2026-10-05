@@ -73,6 +73,11 @@ For unattended Qt sessions on a host without a display, use `xvfb-run -a`
 with an owned disposable instance. Inspect the guest exit report as well as
 the frontend log when diagnosing failures.
 
+```sh
+sudo apt install xvfb
+xvfb-run -a symbian app run --project ~/dev/hello_time
+```
+
 ## 4. USB devices
 
 Use `symbian device list` to find the connected phone. If descriptor inspection

@@ -2888,3 +2888,12 @@ Archive metadata, SDK wrapper assumptions, CMake scratch-build tool selection,
 absolute GUI SDK paths and rcomp helper spawning were corrected. Release CI
 will exercise this path on all four hosts before publication. These local
 checks do not establish full EKA1, physical installation or firmware execution.
+
+### Restricted EKA1 profile on Linux — 2026-10-05
+
+The named Nokia 7610 EKA1 process and original-EUSER heap/copy profile now pass
+on Linux x86_64 with both CPU backends: 19 tests, including changed-result and
+corrupt-copy controls, in /tmp/symbian-linux-eka1-acceptance-r2.log. The private
+fixture was transferred through the portable firmware format and imported with
+its unchanged content identity. Broad EKA1 SDK/runtime/GUI/networking and legacy
+packaging remain unsupported. Public guides include headless Linux execution.
