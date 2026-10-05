@@ -6131,3 +6131,12 @@ the two unproven emulator-host architectures, signing/notarization credentials
 and trusted private-fixture acceptance as real gates rather than existing
 capabilities. No emulator build, installation or publication was performed by
 this planning step.
+
+## 2026-10-05 — Independent emulator release cadence
+
+The owner clarified that emulator releases may be rarer than SDK releases.
+Revised emulator-distribution-plan.md to require an independent single-source
+emulator VERSION, emulator-v tags and GitHub releases, with protocol/capability
+compatibility across multiple SDK versions. SDK publication must consume a
+compatible existing emulator release rather than rebuild or republish it.
+No separate emulator version or installer has been implemented at this point.

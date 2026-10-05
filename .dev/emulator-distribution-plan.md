@@ -49,13 +49,29 @@ configuration, firmware resolver and launch supervisor.
 
 ## Versions and artifacts
 
-Initially use root `VERSION` as the single package-version authority and the
-existing `vX.Y.Z` release tag. Do not invent a second maintained version string
-for Qt bundles, installers or Python configuration. Emulator package versions
-can follow SDK releases without recompiling an unchanged emulator core: the
-assembly step supplies the package version and filenames. If independent
-emulator releases later become necessary, design that tag/version policy
-explicitly; do not silently introduce another version file now.
+The emulator has an independent release cadence: it may be released much less
+frequently than the SDK. Keep root `VERSION` as the SDK authority, and add
+`research/eka2l1/VERSION` as the single authority for the emulator distribution,
+initially `0.1.0`. Derive archive names, bundle versions and installer metadata
+from that file. Use `emulator-vX.Y.Z` tags and separate GitHub releases; preserve
+SDK `vX.Y.Z` tags and PyPI publishing. An SDK release must neither bump the
+emulator version nor rebuild, reassemble or republish unchanged emulator assets.
+
+Define compatibility by control-protocol version and required capabilities,
+including firmware-import and launch contracts, rather than equality between
+SDK and emulator package versions. The SDK installer can discover the newest
+published compatible emulator and reuse an already-installed compatible version.
+Support an explicit emulator version and offline archive for repeatability.
+Default selection must inspect release metadata, exclude prereleases unless
+requested, and confirm the running frontend's actual capabilities. An older
+emulator remains usable across multiple SDK releases until a concrete contract
+change requires an upgrade; diagnose that requirement before launch.
+
+When an SDK changes required emulator behavior, land and validate the emulator
+change first, publish its independent release, then require that capability in
+the SDK. New emulator binaries must continue supporting the existing v1 control
+contract when feasible; a breaking protocol change needs a deliberate migration
+and compatibility policy. Keep old downloads available for existing SDK users.
 
 Produce four portable emulator archives, matching the SDK host matrix:
 
@@ -218,21 +234,24 @@ Cache dependency prefixes using OS/CPU/minimum OS, compiler ABI, Qt/FFmpeg pins,
 enabled modules and dependency patches. Cache the tested emulator core using
 upstream/submodule pins, emulator patches, build drivers and relevant CMake
 inputs. Cache assembled payloads using that core, deployment scripts, notices,
-resources and package VERSION. CLI-only/documentation changes must not trigger
+resources and emulator VERSION. CLI-only/documentation changes must not trigger
 fresh Qt/FFmpeg/core builds. Never use an approximate cache hit to replace
 required validation; rerun relocation/install acceptance on restored archives.
 
-Use successful exact-source standalone artifacts in the release workflow, as
-with the SDK. Wait for an existing producer instead of starting a duplicate
+Use successful exact-source standalone artifacts in the independent emulator
+release workflow, as with the SDK. Wait for an existing producer instead of starting a duplicate
 matrix. Keep nonpublishing manual/PR validation separate from protected tag
 publication; do not execute untrusted PR code on private-fixture runners or
 under signing credentials. Scope permissions to the publication/signing jobs.
 
 Release audit requires all four correctly named/versioned bundles, corresponding
 source material, compatibility metadata and license closure. Publish only after
-that audit and the applicable runtime gates pass. Add the emulator assets to
-the GitHub release, outside PyPI wheels and native SDK archives so users can
-update/select the emulator without replacing their compiler SDK. Preserve
+that audit and the applicable runtime gates pass. Publish emulator assets in their `emulator-vX.Y.Z` GitHub release, outside
+PyPI wheels and native SDK archives so users can update/select the emulator
+without replacing their compiler SDK. SDK release audits verify the required
+emulator contract has a published compatible package; they consume that release
+without scheduling the emulator matrix. Documentation links to emulator
+installation independently of SDK download versions. Preserve
 published tags/assets; repair failures before publication and use a new version
 for released corrections.
 
@@ -281,3 +300,11 @@ bundle passes the appropriate host and named-firmware gates above.
 5. Configure signing/notarization, finish all clean-download/desktop gates,
    publish all four assets, and replace public source-build prerequisites with
    the installed route.
+
+## Release-cadence decision — 2026-10-05
+
+The owner explicitly expects less frequent emulator releases. Independent
+versioning and publication are therefore initial requirements, superseding the
+original proposal to share SDK VERSION and tags. Pin only the minimum contract
+needed by each SDK, and keep installation, discovery and rollback independent
+of SDK upgrades. Root VERSION remains the sole SDK version source.
