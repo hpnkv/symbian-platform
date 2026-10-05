@@ -90,6 +90,8 @@ def check(dist: Path, assets: Path, version: str) -> None:
             missing = set(required) - members
             if missing:
                 raise ValueError(f"{archive.name}: missing {missing}")
+            if any(Path(member).name.startswith("._") for member in members):
+                raise ValueError(f"{archive.name}: unexpected macOS metadata")
             if archive.name.startswith("symbian-sdk-"):
                 forbidden = {
                     member

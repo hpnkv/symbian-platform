@@ -2881,3 +2881,10 @@ compiler/linker/E32 build acceptance, not physical execution. Relative manifests
 and `symbian sdk install --archive` are implemented with archive path-escape
 rejection. Shipping all four host archives and full EKA1 API/runtime remains
 outstanding; these prototypes must not be described as published distributions.
+
+The fresh-wheel native archive path now passes hello_time creation/build/SIS
+packaging/signing and a separately copied gui_app build/package on macOS.
+Archive metadata, SDK wrapper assumptions, CMake scratch-build tool selection,
+absolute GUI SDK paths and rcomp helper spawning were corrected. Release CI
+will exercise this path on all four hosts before publication. These local
+checks do not establish full EKA1, physical installation or firmware execution.

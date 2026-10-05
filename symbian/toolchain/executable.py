@@ -77,11 +77,13 @@ def build_executable(
     ):
         raise StatusError(Code.INVALID_ARGUMENT, "Invalid CMake preset name")
     architecture = project_architecture(project, options, preset)
+    compiler_path = _compiler(compiler)
+    compiler_bin = Path(compiler_path).parent
     tools = {
-        "compiler": _compiler(compiler),
+        "compiler": compiler_path,
         "linker": _compiler(linker),
-        "cmake": _compiler("cmake"),
-        "ninja": _compiler("ninja"),
+        "cmake": _compiler("cmake", sibling=compiler_bin),
+        "ninja": _compiler("ninja", sibling=compiler_bin),
     }
     versions = {
         name: run([path, "--version"], cwd=project)
@@ -257,7 +259,9 @@ def build_executable(
         schema = (
             "symbian.e32-dll/v1"
             if dll
-            else "symbian.e32-import/v1" if imported else "symbian.e32-pic/v1"
+            else "symbian.e32-import/v1"
+            if imported
+            else "symbian.e32-pic/v1"
         )
         artifact_kind = "e32-dll" if dll else "e32-executable"
     else:

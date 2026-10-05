@@ -1,0 +1,67 @@
+--- a/bintools/rcomp/src/main.cpp
++++ b/bintools/rcomp/src/main.cpp
+@@ -21,6 +21,13 @@
+ #include <string.h>
+ 
+ #include "unistd.h"
++
++#ifdef __LINUX__
++#include <errno.h>
++#include <spawn.h>
++#include <sys/wait.h>
++extern char** environ;
++#endif
+ 
+ #if defined( __MSVCDOTNET__) || defined(__TOOLS2__)
+ #include <iostream>
+@@ -513,26 +520,31 @@
+ 									DataOutputFileName.GetAssertedNonEmptyBuffer(),
+ 									NULL);
+ #else
+-		char uidcrc_params[256];
+-		const int ret = snprintf(uidcrc_params,
+-					 sizeof(uidcrc_params),
+-					 "%s %s %s %s %s",
+-					 uidcrcTool,
+-					 uidcrcUIDs[0],
+-					 uidcrcUIDs[1],
+-					 uidcrcUIDs[2],
+-					 DataOutputFileName.GetBuffer());
+-		if(ret <= 0) {
++        char* uidcrcArguments[] = {
++            const_cast<char*>(uidcrcTool), uidcrcUIDs[0], uidcrcUIDs[1],
++            uidcrcUIDs[2],
++            const_cast<char*>(DataOutputFileName.GetBuffer()), nullptr};
++        pid_t child;
++        int error = posix_spawnp(&child, uidcrcTool, nullptr, nullptr,
++                                uidcrcArguments, environ);
++        if (error == 0) {
++            int childStatus = 0;
++            pid_t waited;
++            do {
++                waited = waitpid(child, &childStatus, 0);
++            } while (waited < 0 && errno == EINTR);
++            if (waited < 0) {
++                error = errno;
++            } else {
++                error = WIFEXITED(childStatus) ? WEXITSTATUS(childStatus) : 1;
++            }
++        }
++#endif //__LINUX__
++
++		if(error != 0)
++			{
+ 			cerr << "Failed to write UIDs to " << DataOutputFileName << endl;
+-			exit(ret);
+-		}
+-		const int error = system(uidcrc_params);
+-#endif //__LINUX__
+-
+-		if(error != 0)
+-			{
+-			cerr << "Failed to write UIDs to " << DataOutputFileName << endl;
+-			exit(error);
++			exit(1);
+ 			}
+ 		RCBinaryStream RSCStream;
+ 		RSCStream.OpenForAppend(DataOutputFileName);

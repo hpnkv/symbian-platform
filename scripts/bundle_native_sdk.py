@@ -50,7 +50,7 @@ class Closure:
             )
             return
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(original, target)
+        shutil.copy(original, target)
         target.chmod(target.stat().st_mode | 0o200)
         self.copied[original] = target
         self.pending.append((original, target))
@@ -71,7 +71,7 @@ class Closure:
                 )
                 destination.mkdir(parents=True, exist_ok=True)
                 for file in notices:
-                    shutil.copy2(file, destination / file.name)
+                    shutil.copy(file, destination / file.name)
                 break
         if "site-packages" in original.parts:
             for distribution in distributions():
@@ -89,7 +89,7 @@ class Closure:
                 for file in files:
                     if "licenses" in file.parts:
                         destination.mkdir(parents=True, exist_ok=True)
-                        shutil.copy2(
+                        shutil.copy(
                             distribution.locate_file(file),
                             destination / file.name,
                         )
@@ -120,7 +120,7 @@ class Closure:
             notice = Path("/usr/share/doc") / package / "copyright"
             destination = self.output / "licenses/tools" / package
             destination.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(notice, destination / "copyright")
+            shutil.copy(notice, destination / "copyright")
 
     def mac_dependencies(self, original: Path) -> list[tuple[str, Path]]:
         """Resolves Mach-O install names using the original binary's rpaths."""
@@ -261,7 +261,7 @@ def bundle(args: argparse.Namespace) -> None:
         shutil.copytree(
             resource, output / "lib/clang" / resource.parent.name / "include"
         )
-    shutil.copy2(
+    shutil.copy(
         args.resources.parent / "licenses/rcomp-EPL-1.0.html",
         output / "licenses/rcomp-EPL-1.0.html",
     )
@@ -274,7 +274,7 @@ def bundle(args: argparse.Namespace) -> None:
             )
         else:
             destination.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(notices, destination / notices.name)
+            shutil.copy(notices, destination / notices.name)
     manifest = dict(
         schema_version=1,
         prefix=".",
@@ -290,17 +290,43 @@ def bundle(args: argparse.Namespace) -> None:
     (output / "sdk.json").write_text(json.dumps(manifest, indent=2) + "\n")
     # Use the maintained toolchain rather than an older development export.
     root = Path(__file__).resolve().parent.parent
-    shutil.copy2(
+    shutil.copy(
         root / "symbian/toolchain/cmake/symbian-arm.cmake",
         output / "cmake/symbian-arm.cmake",
     )
-    shutil.copy2(root / "LICENSE", output / "licenses/Symbian-Apache-2.0.txt")
-    shutil.copy2(root / "VERSION", output / "VERSION")
-    shutil.copy2(
+    shutil.copy(root / "LICENSE", output / "licenses/Symbian-Apache-2.0.txt")
+    shutil.copy(root / "VERSION", output / "VERSION")
+    shutil.copy(
         root / "symbian/toolchain/cmake/SymbianPic.cmake",
         output / "cmake/SymbianPic.cmake",
     )
     write_example(output / "examples/hello_time", root)
+    counter = output / "examples/gui_app"
+    counter.mkdir()
+    for pattern in (
+        "*.cc",
+        "*.h",
+        "*.S",
+        "*.ld",
+        "CMakeLists.txt",
+        "symbian.toml",
+    ):
+        for source in (root / "examples/gui_app").glob(pattern):
+            shutil.copy(source, counter / source.name)
+    shutil.copytree(root / "examples/gui_app/assets", counter / "assets")
+    shutil.copy(root / ".clang-format", counter / ".clang-format")
+    presets = json.loads(
+        (root / "examples/gui_app/CMakePresets.json").read_text()
+    )
+    preset = presets["configurePresets"][0]
+    preset["toolchainFile"] = "${sourceDir}/../../cmake/symbian-arm.cmake"
+    preset["cacheVariables"]["SYMBIAN_GUI_SDK_INCLUDE"] = (
+        "${sourceDir}/../../include/platform"
+    )
+    (counter / "CMakePresets.json").write_text(
+        json.dumps(presets, indent=2) + "\n"
+    )
+    (counter / "sdk-location.json").write_text('{"sdk": "../.."}\n')
 
 
 def main() -> None:

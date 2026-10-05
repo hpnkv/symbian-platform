@@ -8,8 +8,7 @@ from pathlib import Path
 
 from symbian.native import require_native
 from symbian.process import run
-from symbian.project.configuration import ProjectConfiguration
-from symbian.project.sdk import AppSdk, discover_sdk
+from symbian.project.sdk import AppSdk, project_sdk
 from symbian.status import Code, StatusError
 
 # e32lang.h TLanguage IDs; tags are BCP 47 spellings.
@@ -155,11 +154,7 @@ def compile_registration(
     stem = Path(executable_name).stem
     if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,59}", stem):
         raise StatusError(Code.INVALID_ARGUMENT, "Invalid executable name")
-    sdk = sdk or (
-        ProjectConfiguration.load(project).sdk
-        if (project / "sdk-location.json").is_file()
-        else AppSdk.load(discover_sdk())
-    )
+    sdk = sdk or project_sdk(project)
     if (
         not (sdk.prefix / "bin/rcomp").is_file()
         or not (sdk.prefix / "include/platform/AppInfo.rh").is_file()

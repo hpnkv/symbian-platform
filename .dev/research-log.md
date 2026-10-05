@@ -5922,3 +5922,30 @@ prepared inputs; Linux x86_64 assembly with Debian and ICU license closure passe
 both ARM build checks again. Clean Actions source acquisition and all four host
 assembly jobs still need execution. VERSION advances to 0.1.1 because the PyPI
 0.1.0 wheels cannot be overwritten with the relative-manifest/archive installer.
+
+## Installed native archive acceptance — 2026-10-05
+
+A fresh macOS virtual environment installed a locally built 0.1.1 wheel; its
+CLI installed a tar archive with relative paths, created and built hello_time,
+packaged and signed its SIS, then built and packaged a separately copied
+native gui_app counter. Configuration/data HOME and PATH were isolated, with
+no package-manager LLVM/CMake/Ninja paths. Acceptance passed in
+`/tmp/symbian-native-wheel-macos-acceptance-r6.log`. This is build/package/sign
+acceptance, not emulator or physical installation acceptance.
+
+The installed check found additional real gaps, now fixed: init's initial
+build still required bin/symbian; app build/package re-executed missing SDK
+Python wrappers; CMake try_compile lost the SDK prefix and searched external
+LLD; standalone GUI selection mishandled absolute sdk-location paths; resource
+packaging assumed every selected example had generated-project metadata.
+CLI policy now remains in the wheel for native archives, while sibling CMake
+and Ninja and propagated SDK paths provide the native build tools.
+
+macOS tar archives also included AppleDouble `._` files, causing CMake's glob
+of compiler modules to parse binary metadata. Release packaging now disables
+those entries and the publication gate rejects them. The rcomp UNIX shim used
+a shell command and 256-byte buffer for uidcrc: spaces split the tool path,
+and exit(system_status) could incorrectly report success. A maintained POSIX
+spawn/wait patch removes the shell/buffer and propagates helper failure.
+Both application sources are included in the native tree. The counter uses
+installed platform headers without requiring a research source staging tree.

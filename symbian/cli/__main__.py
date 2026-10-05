@@ -1031,9 +1031,15 @@ def _execute(args: argparse.Namespace) -> dict:
 
             project = Path(result["project"])
             sdk = ProjectConfiguration.load(project).sdk
+            entry = sdk.prefix / "bin/symbian"
+            command = (
+                [str(entry)]
+                if entry.is_file()
+                else [sys.executable, "-m", "symbian.cli"]
+            )
             run(
                 [
-                    str(sdk.prefix / "bin/symbian"),
+                    *command,
                     "app",
                     "build",
                     "--project",
@@ -1079,7 +1085,9 @@ def _execute(args: argparse.Namespace) -> dict:
         sdk = configuration.sdk
         import os
 
-        if os.environ.get("SYMBIAN_ACTIVE_SDK") != str(sdk.prefix):
+        if (sdk.prefix / "bin/symbian").is_file() and os.environ.get(
+            "SYMBIAN_ACTIVE_SDK"
+        ) != str(sdk.prefix):
             os.execv(
                 str(sdk.prefix / "bin/symbian"),
                 [
@@ -1269,10 +1277,12 @@ def _execute(args: argparse.Namespace) -> dict:
         if (args.project / "sdk-location.json").is_file():
             import os
 
-            from symbian.project.configuration import ProjectConfiguration
+            from symbian.project.sdk import project_sdk
 
-            sdk = ProjectConfiguration.load(args.project.resolve()).sdk
-            if os.environ.get("SYMBIAN_ACTIVE_SDK") != str(sdk.prefix):
+            sdk = project_sdk(args.project.resolve())
+            if (sdk.prefix / "bin/symbian").is_file() and os.environ.get(
+                "SYMBIAN_ACTIVE_SDK"
+            ) != str(sdk.prefix):
                 os.execv(
                     str(sdk.prefix / "bin/symbian"),
                     [
@@ -1319,10 +1329,12 @@ def _execute(args: argparse.Namespace) -> dict:
         if (args.project / "sdk-location.json").is_file():
             import os
 
-            from symbian.project.configuration import ProjectConfiguration
+            from symbian.project.sdk import project_sdk
 
-            sdk = ProjectConfiguration.load(args.project.resolve()).sdk
-            if os.environ.get("SYMBIAN_ACTIVE_SDK") != str(sdk.prefix):
+            sdk = project_sdk(args.project.resolve())
+            if (sdk.prefix / "bin/symbian").is_file() and os.environ.get(
+                "SYMBIAN_ACTIVE_SDK"
+            ) != str(sdk.prefix):
                 command = [
                     str(sdk.prefix / "bin/symbian"),
                     "package",

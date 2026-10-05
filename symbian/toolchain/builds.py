@@ -32,8 +32,13 @@ PROBE_SOURCE = (
 )
 
 
-def _compiler(name: str) -> str:
-    path = shutil.which(name)
+def _compiler(name: str, *, sibling: Path | None = None) -> str:
+    candidate = sibling / name if sibling is not None else None
+    path = (
+        str(candidate)
+        if candidate is not None and candidate.is_file()
+        else shutil.which(name)
+    )
     if path is None:
         raise StatusError(Code.NOT_FOUND, f"Tool not found: {name}")
     # Multi-call LLVM tools select their driver using argv[0]. Preserve the

@@ -114,9 +114,9 @@ def _ide(project: Path, settings: Preferences, sdk: AppSdk) -> None:
             sysroot="",
             toolchain="Default",
         )
-        ET.SubElement(debug, "debugger", kind="GDB", isBundled="false").text = (
-            "$PROJECT_DIR$/sdk-debug"
-        )
+        ET.SubElement(
+            debug, "debugger", kind="GDB", isBundled="false"
+        ).text = "$PROJECT_DIR$/sdk-debug"
         ET.SubElement(debug, "method", v="2")
         _xml(project / ".idea/runConfigurations/App_Debug.xml", container)
         profile_id = str(
@@ -435,17 +435,12 @@ behavior. `app.cc` converts ASCII to UTF-16 only at the W32 API. The SDK-owned
 application model code needs neither `extern "C"` nor opaque `void*` handles.
 No Qt dependency is needed by this native W32 app.
 
-This is a bounded no-exceptions, no-RTTI runtime, not a complete hosted
-C++20 library: writable EXE globals/BSS, bounded local GOT and global
-construction/destruction, selected guest Abseil Status/StatusOr and time,
-and timer-backed stackless Tasks are supported. Full A11 fibers, general
-TLS, complete DLL lifetime and general JSON remain gates.
-Ordinary allocation failure exits with KErrNoMemory; STL allocation is
-not a recoverable StatusOr API. The SDK prefix contains target headers,
-selected frozen ordinal proxies and the built libc++ subset. Host LLVM,
-GDB, patched EKA2L1 and your private firmware remain declared local
-prerequisites in `sdk-location.json`; they are not embedded in this
-project or in the current host wheel. Firmware is copied for each run.
+The runtime disables C++ exceptions and RTTI. Ordinary allocation failure
+exits with KErrNoMemory; STL allocation is not a recoverable StatusOr API.
+The selected SDK supplies the target headers, frozen ordinal proxies,
+runtime libraries and compiler. Firmware, the emulator and guest GDB are
+configured separately; firmware is copied into a disposable instance for
+each run.
 
 Target ISA: **{settings.architecture}**, 32-bit ARM EABI soft-float.
 New projects use armv6 by default. Use `symbian init --architecture armv5t`

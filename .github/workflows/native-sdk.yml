@@ -169,7 +169,9 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           version=$(cat VERSION)
           mkdir release-assets
-          tar -C sdk -czf "release-assets/symbian-sdk-$version-$SDK_PLATFORM-$SDK_ARCH.tar.gz" .
+          COPYFILE_DISABLE=1 tar -C sdk -czf "release-assets/symbian-sdk-$version-$SDK_PLATFORM-$SDK_ARCH.tar.gz" .
+          python scripts/check_installed_native_sdk.py \
+            "release-assets/symbian-sdk-$version-$SDK_PLATFORM-$SDK_ARCH.tar.gz"
       - uses: actions/upload-artifact@v4
         with:
           name: native-sdk-${{ matrix.platform }}-${{ matrix.arch }}

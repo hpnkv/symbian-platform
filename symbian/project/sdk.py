@@ -1403,6 +1403,20 @@ def discover_sdk(explicit: Path | None = None) -> Path:
     )
 
 
+def project_sdk(project: Path) -> AppSdk:
+    """Loads an SDK for generated projects or standalone source examples."""
+    location = project / "sdk-location.json"
+    if not location.is_file():
+        return AppSdk.load(discover_sdk())
+    try:
+        prefix = Path(json.loads(location.read_text())["sdk"])
+    except (ValueError, KeyError, TypeError) as error:
+        raise StatusError(Code.INVALID_ARGUMENT, str(error)) from error
+    if not prefix.is_absolute():
+        prefix = (project / prefix).resolve()
+    return AppSdk.load(prefix / "sdk.json")
+
+
 def activate_sdk(sdk: AppSdk) -> None:
     """Records the active SDK for CLI use from arbitrary directories."""
     config = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
@@ -1435,26 +1449,27 @@ def _install_resource_tools(
         raise StatusError(
             Code.FAILED_PRECONDITION, "Unexpected rcomp source pin"
         )
-    patch = support / "modern-host.patch"
-    try:
-        run(
-            [
-                "git",
-                "-C",
-                str(source),
-                "apply",
-                "--reverse",
-                "--check",
-                str(patch),
-            ],
-            cwd=workspace,
-        )
-    except StatusError:
-        run(
-            ["git", "-C", str(source), "apply", "--check", str(patch)],
-            cwd=workspace,
-        )
-        run(["git", "-C", str(source), "apply", str(patch)], cwd=workspace)
+    for name in ("modern-host.patch", "uidcrc-spawn.patch"):
+        patch = support / name
+        try:
+            run(
+                [
+                    "git",
+                    "-C",
+                    str(source),
+                    "apply",
+                    "--reverse",
+                    "--check",
+                    str(patch),
+                ],
+                cwd=workspace,
+            )
+        except StatusError:
+            run(
+                ["git", "-C", str(source), "apply", "--check", str(patch)],
+                cwd=workspace,
+            )
+            run(["git", "-C", str(source), "apply", str(patch)], cwd=workspace)
     compiler = shutil.which("clang++") or shutil.which("g++")
     if compiler is None:
         raise StatusError(Code.NOT_FOUND, "Host C++ compiler for rcomp")
