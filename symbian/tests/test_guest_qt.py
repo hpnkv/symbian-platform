@@ -99,22 +99,25 @@ def test_original_qt_button_and_shutdown(tmp_path, backend):
             )
             try:
                 deadline = time.monotonic() + 60
+                attempt = 0
                 while True:
                     assert process.poll() is None
-                    frame = _ready(lambda: control.capture("qt-button"))
+                    name = f"qt-button-{attempt}"
+                    frame = _ready(lambda name=name: control.capture(name))
+                    attempt += 1
                     assert frame["source"] == "eka2l1-screen-texture"
                     with Image.open(frame["path"]) as captured:
                         image = captured.convert("RGB").resize((360, 640))
-                        # Both text lines occupy the center of the full-screen
-                        # Plastique button. The background and unpainted screen
-                        # do not contain this many dark pixels in this region.
+                        # Text needs contrast against the Plastique button;
+                        # a black frame during startup must not pass.
                         histogram = (
                             image.convert("L")
                             .crop((90, 290, 270, 350))
                             .histogram()
                         )
                         dark = sum(histogram[:100])
-                    if dark > 150:
+                        light = sum(histogram[150:])
+                    if 150 < dark < 3000 and light > 6000:
                         shutil.copyfile(frame["path"], tmp_path / "button.png")
                         break
                     assert time.monotonic() < deadline

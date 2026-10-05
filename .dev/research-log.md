@@ -6556,3 +6556,25 @@ macOS-only executable name was corrected to discover gdb-multiarch, matching
 the documented Linux prerequisite and existing production launcher. Logs:
 /tmp/symbian-gui-delivered-ci-current-tests-linux.log (initial discovery
 failure) and /tmp/symbian-debugger-delivered-ci-linux.log (successful rerun).
+
+### Tightened Qt rendering acceptance — 2026-10-05
+
+Visual inspection found that the first Qt test saved an initially black frame:
+its unbounded dark-pixel threshold accepted black startup as text. That earlier
+result established pointer-triggered normal exit, but did not prove rendering.
+The oracle now requires bounded dark text against a predominantly light button
+background, and uses unique capture names while waiting for painting. Both
+backends pass on macOS arm64 and Linux x86_64 with clean copied Qt projects
+built through the freshly installed public wheel/native SDK. The saved macOS
+image was inspected directly and shows both actual text lines. Logs:
+/tmp/symbian-qt-delivered-contrast-{macos,linux}.log; images remain private under
+.symbian/qt-delivered-contrast-*-rerun.
+
+Delivered corrected bundles also pass the 19-case EKA1 suite on each host
+(macOS 31.14s; Linux 14.21s), preserving the original bounded 7610 scope. Linux
+source-test compilation needed explicit installed SDK LLVM/Ninja on PATH; the
+initial default system compiler lacked ld.lld and failed before guest launch.
+All 11 actual HTTP/TLS 1.2/1.3/HTTP2/server cases pass against the delivered
+Qt6.8.3 binaries on both hosts (macOS 81.09s; Linux 48.22s). Logs:
+/tmp/symbian-eka1-delivered-ci-{macos,linux}.log and
+/tmp/symbian-http-delivered-ci-{macos,linux}.log.

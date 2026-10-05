@@ -3123,3 +3123,11 @@ a stale diagnostic GUI input. A fresh public-wheel/native-SDK environment
 builds, packages and signs both application guides on macOS. Exact-source
 release rehearsal and actual public emulator downloads remain the next gates.
 Pointer/nullability changes have not begun.
+
+The Qt rendering oracle was corrected after direct image inspection exposed
+black-startup acceptance. It now requires light button background and bounded
+dark text; both backends pass on each host with clean public-SDK Qt builds,
+and the captured macOS image shows the actual two-line button. Delivered
+bundles additionally pass all 19 bounded EKA1 cases and 11 live HTTP/TLS/server
+cases per host. Four Linux debugger checks pass with gdb-multiarch discovery.
+These results supersede the earlier insufficient Qt pixel claim.
