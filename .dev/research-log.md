@@ -6740,3 +6740,23 @@ Console tasks, and deduplicated aliases in the derived catalog. The affected
 CLI/Console/DLL/proxy group passes 60 checks, with 4 optional skips.
 Both ARM metadata-only exception profiles build reproducibly with SDK-owned
 exception layout and automatic CxxAbi linkage. This does not prove typed throws.
+
+### 2026-10-06 — Qt relocation and standalone EKA1 publication
+
+Fresh exact-source Linux Qt build and live acceptance pass both backends
+(`/tmp/symbian-linux-qt-fresh-live.log`: 2 passed). Extended the Python-free
+archive gate to compile/link/publish Qt on both ARM ISAs and an EKA1 original
+EUSER allocation/free control after moving the SDK into a directory with spaces.
+Qt first failed because a SHELL compile option split the compatibility-header
+path. Quoted that path inside the option's shell expression. The shared native
+publisher also needed the startup profile's kernel selection; it now passes
+that selection to the standalone converter. The EKA1 control exercises retained
+legacy imports rather than an unused library dependency.
+
+Expanded relocation checks pass on macOS arm64 and Linux x86_64
+(`/tmp/symbian-native-relocation-expanded.log`,
+`/tmp/symbian-linux-native-relocation-expanded.log`). They establish actual
+compiler/linker and image-converter execution using relocated bundled tools;
+EKA1 runtime acceptance and physical execution remain separate gates. Stopped
+release run 37385341979 before publication and retained immutable v0.1.3.
+Prepare v0.1.4 with these fixes and the stronger release gate.

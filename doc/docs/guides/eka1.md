@@ -43,6 +43,11 @@ EUSER functions through their legacy GNU2 names and ordinals. The installed SDK
 provides `Symbian::Eka1EUser`; the probe links that normal CMake target. No
 project-owned symbol list or import proxy is needed.
 
+For a Python-free build, add
+`symbian_publish_executable(eka1_import_probe UID3 0xe0000761)` after linking
+that target. The helper selects legacy EKA1 conversion from the project's
+profile and writes `e32/eka1_import_probe.exe` in the build directory.
+
 ```sh
 symbian build --project probes/eka1_import_probe \
   --output .symbian/eka1-import-build

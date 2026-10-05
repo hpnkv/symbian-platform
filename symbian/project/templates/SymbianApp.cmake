@@ -339,7 +339,7 @@ if(EXISTS "${SYMBIAN_SDK_PREFIX}/include/qt4/QtCore/qglobal.h")
     target_compile_definitions(SymbianQt${module} INTERFACE
       QT_KEYPAD_NAVIGATION QT_SOFTKEYS_ENABLED)
     target_compile_options(SymbianQt${module} INTERFACE "SHELL:-fPIC"
-      "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-include ${SYMBIAN_SDK_PREFIX}/cmake/qt_compat.h>")
+      "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-include \"${SYMBIAN_SDK_PREFIX}/cmake/qt_compat.h\">")
     add_library(Symbian::Qt${module} ALIAS SymbianQt${module})
   endforeach()
   target_link_libraries(SymbianQtCore INTERFACE Symbian::EUser)

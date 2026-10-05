@@ -44,6 +44,44 @@ int main() {
 }
 """
 
+QT_CMAKE = """
+symbian_add_executable(qt_check qt_check.cc)
+target_link_libraries(qt_check PRIVATE Symbian::Runtime Symbian::QtGui)
+symbian_publish_executable(qt_check UID3 0xe0000832)
+"""
+
+QT_SOURCE = """#include <QtGui/QApplication>
+#include <QtGui/QPushButton>
+
+int main(int argc, char** argv) {
+  QApplication application(argc, argv);
+  QPushButton button(QString::fromUtf8("Native SDK Qt"));
+  button.show();
+  return application.exec();
+}
+"""
+
+EKA1_CMAKE = """cmake_minimum_required(VERSION 3.28)
+project(eka1_check LANGUAGES CXX ASM)
+include(SymbianPic)
+symbian_add_executable(eka1_check main.cc)
+target_link_libraries(eka1_check PRIVATE Symbian::Eka1EUser)
+symbian_publish_executable(eka1_check UID3 0xe0000833)
+"""
+
+EKA1_SOURCE = """extern "C" void* Alloc(int size) asm("Alloc__4Useri");
+extern "C" void Free(void* data) asm("Free__4UserPv");
+
+int main() {
+  void* allocation = Alloc(16);
+  if (allocation == nullptr) {
+    return -4;
+  }
+  Free(allocation);
+  return 0;
+}
+"""
+
 
 def write_example(directory: Path, root: Path) -> None:
     """Includes a complete GUI application's owned source in the archive."""
@@ -85,8 +123,16 @@ def check(sdk: Path) -> None:
         # Build another main() target through the same SDK startup machinery.
         example = moved / "examples/hello_time"
         (example / "startup_check.cc").write_text(STARTUP_SOURCE)
+        (example / "qt_check.cc").write_text(QT_SOURCE)
         with (example / "CMakeLists.txt").open("a") as cmake:
-            cmake.write(STARTUP_CMAKE)
+            cmake.write(STARTUP_CMAKE + QT_CMAKE)
+        eka1 = root / "eka1 application"
+        eka1.mkdir()
+        (eka1 / "CMakeLists.txt").write_text(EKA1_CMAKE)
+        (eka1 / "main.cc").write_text(EKA1_SOURCE)
+        (eka1 / "symbian.toml").write_text(
+            '[project]\nkind = "e32-eka1-import"\n'
+        )
         env = {
             key: value
             for key, value in os.environ.items()
@@ -130,10 +176,38 @@ def check(sdk: Path) -> None:
                 check=True,
                 timeout=180,
             )
-            for name in ("hello_time", "startup_check"):
+            for name in ("hello_time", "startup_check", "qt_check"):
                 image = (build / "e32" / f"{name}.exe").read_bytes()
                 if image[16:20] != b"EPOC":
                     raise RuntimeError(f"Missing E32 signature in {name}")
+        eka1_build = root / "eka1 build"
+        subprocess.run(
+            [
+                str(moved / "bin/cmake"),
+                "-S",
+                str(eka1),
+                "-B",
+                str(eka1_build),
+                "-G",
+                "Ninja",
+                f"-DCMAKE_TOOLCHAIN_FILE={moved}/cmake/symbian-arm.cmake",
+                f"-DSYMBIAN_SDK_PREFIX={moved}",
+                "-DSYMBIAN_TARGET_ARCH=armv5t",
+                f"-DCMAKE_MAKE_PROGRAM={moved}/bin/ninja",
+            ],
+            env=env,
+            check=True,
+            timeout=120,
+        )
+        subprocess.run(
+            [str(moved / "bin/cmake"), "--build", str(eka1_build)],
+            env=env,
+            check=True,
+            timeout=180,
+        )
+        eka1_image = eka1_build / "e32/eka1_check.exe"
+        if eka1_image.read_bytes()[16:20] != b"EPOC":
+            raise RuntimeError("Missing E32 signature in EKA1 image")
         for tool in ("clang-scan-deps", "llvm-ar", "rcomp", "uidcrc"):
             # These helpers have different help exit conventions. A missing
             # dynamic loader or executable is a failure regardless of that.
@@ -146,8 +220,8 @@ def check(sdk: Path) -> None:
             if result.returncode < 0 or result.returncode in (126, 127):
                 raise RuntimeError(f"Bundled helper cannot run: {tool}")
     print(
-        "Relocated native SDK: ARMv5T and ARMv6 GUI and shared-startup "
-        "E32 builds passed"
+        "Relocated native SDK: ARMv5T and ARMv6 GUI, Qt and shared-startup "
+        "E32 builds, plus ARMv5T EKA1 imports, passed"
     )
 
 

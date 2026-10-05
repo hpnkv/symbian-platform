@@ -3203,3 +3203,20 @@ physical-device execution and general typed exception support remain unverified.
 CLI/Console regressions corrected (affected group: 60 passed, 4 skipped).
 Preparing VERSION 0.1.3; release gate now requires shared application modules,
 EKA1 import transport, Qt headers/import libraries and LLVM debug tools.
+
+### SDK 0.1.4 relocation and release checks — 2026-10-06
+
+Full Python suite after the probe migration: 346 passed, 433 optional skips.
+Fresh Linux Qt acceptance: 2 passed, verifying real rendered pixels, delivered
+button input, guest exit reason zero and host frontend shutdown on both CPU
+backends. The tagged 0.1.3 release was cancelled before publication when an
+extended archive check found an unquoted Qt compatibility-header path.
+The tag is retained unchanged; VERSION advances to 0.1.4 for the fix.
+
+Expanded Python-free archive checks build the GUI, main/constructor runtime
+control and Qt on both ARM ISAs after relocation into a path with spaces.
+They also build and publish an ARMv5T original-EUSER EKA1 process using the
+shared CMake helper. These checks pass on macOS arm64 and Linux x86_64.
+The publisher now retains the startup's kernel selection for native conversion.
+Public artifact publication and clean installed-wheel acceptance remain pending.
+Physical-device execution and the broad nullability migration remain unverified.
