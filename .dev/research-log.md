@@ -6778,3 +6778,20 @@ with one optional skip; its SDK-install isolation check also passes after
 unsetting the inherited explicit SDK override (33 checks total). No product
 change was needed for that environment conflict. These runs do not establish
 physical-device behavior or availability of the not-yet-published 0.1.4 assets.
+
+### 2026-10-06 — Clean SDK bootstrap regression
+
+Host run 37386155938 passed all four hosts and all Python wheel versions.
+Release 37386159202 failed in the shared native payload before publication:
+prepare() built the source runtime probe without the bootstrap EUSER proxy.
+An active SDK masked that gap during earlier development exports. Export now
+passes its internally prepared bootstrap import through the shared target
+machinery; no application owns this selection. Source imported targets use
+the prepared platform headers when no installed prefix exists, and input
+validation no longer probes fabricated /cmake and /share paths.
+
+A fresh macOS native guest export succeeds with an empty XDG_CONFIG_HOME and
+SYMBIAN_APP_SDK/SYMBIAN_SDK_MANIFEST unset; its runtime probe caches contain
+the internal EUSER proxy and no SYMBIAN_SDK_PREFIX. Linux clean export also passes, with no selected SDK prefix
+(`/tmp/symbian-linux-native-clean-bootstrap.log`).
+The failed v0.1.4 tag stays unchanged. Advance VERSION to 0.1.5 for the fix.

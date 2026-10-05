@@ -492,6 +492,11 @@ def prepare(
             str(compiler),
             str(linker),
             architecture=architecture,
+            cmake_variables={
+                "SYMBIAN_IMPORT_PROXIES": str(
+                    workspace / ".symbian/runtime-sdk/euser/euser.dso"
+                ),
+            },
         )
         runtimes[architecture] = runtime
     default_runtimes = {

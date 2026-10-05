@@ -17,8 +17,13 @@ foreach(pair IN ITEMS "EUser:euser" "WindowServer:ws32" "Gdi:gdi" "Hal:hal"
   if(EXISTS "${proxy}" AND NOT TARGET Symbian::${name})
     add_library(Symbian${name} SHARED IMPORTED GLOBAL)
     set_target_properties(Symbian${name} PROPERTIES IMPORTED_LOCATION "${proxy}")
-    target_include_directories(Symbian${name} SYSTEM INTERFACE
-      "${SYMBIAN_SDK_PREFIX}/include/platform")
+    if(SYMBIAN_SDK_PREFIX)
+      target_include_directories(Symbian${name} SYSTEM INTERFACE
+        "${SYMBIAN_SDK_PREFIX}/include/platform")
+    elseif(SYMBIAN_GUI_SDK_INCLUDE)
+      target_include_directories(Symbian${name} SYSTEM INTERFACE
+        "${SYMBIAN_GUI_SDK_INCLUDE}")
+    endif()
     target_compile_definitions(Symbian${name} INTERFACE _UNICODE __GCC32__
       __GCCV3__ __EABI__ __EPOC32__ __MARM__ __MARM_ARMV5__)
     target_compile_options(Symbian${name} INTERFACE -fshort-wchar)

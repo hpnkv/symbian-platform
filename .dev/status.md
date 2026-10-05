@@ -3229,3 +3229,10 @@ errors; an isolated active-SDK configuration selecting the freshly staged
 SDK resolves them. Additional live application/library checks pass 33
 (one optional skip); the isolated SDK-install fixture passes without an
 explicit inherited SYMBIAN_SDK_MANIFEST override.
+
+2026-10-06: All four 0.1.4 host jobs/wheel matrices passed. Native guest
+publication failed because SDK export had depended on an active installed
+SDK for its initial runtime probe. The SDK now selects its prepared bootstrap
+EUSER proxy internally and supplies source platform headers without an
+installed prefix. Fresh macOS and Linux no-active-SDK guest exports pass. Nothing
+from 0.1.4 was published; retaining the failed tag and preparing 0.1.5.
