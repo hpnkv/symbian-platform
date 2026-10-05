@@ -35,6 +35,47 @@ code or arbitrary continuation fan-out. Tune them for memory and responsiveness.
 A worker fiber defaults to a 16 KiB stack; TLS handshakes can require a larger
 stack. See the [concurrency guide](concurrency.md).
 
+### Copy a file without loading it all
+
+`FileCopy` reuses a 32 KiB buffer and exposes progress after each transfer. This
+helper creates a new destination so that an existing backup is not overwritten:
+
+```cpp
+#include <functional>
+
+#include "symbian/api/storage/storage.h"
+
+absl::Status CopyBackup(
+    std::u16string_view source, std::u16string_view destination,
+    const std::function<void(symbian::api::storage::CopyProgress)>& progress) {
+  namespace files = symbian::api::storage;
+  auto copy =
+      files::FileCopy::Open(source, destination, files::WriteMode::kCreateNew);
+  if (!copy.ok()) {
+    return copy.status();
+  }
+  for (;;) {
+    auto step = copy->Step();
+    if (!step.ok()) {
+      return step.status();
+    }
+    if (progress) {
+      progress(*step);
+    }
+    if (step->complete) {
+      return absl::OkStatus();
+    }
+  }
+}
+```
+
+Link `Symbian::Storage`, create the destination's parent directory first, and
+run the whole helper on one worker. Its callback runs there too: post progress
+to the event thread rather than touching a window directly. A failure can leave
+a partial destination; choose a cleanup policy for your application. For
+cancellable jobs, retain `FileCopy` in the worker's job state and request
+`Cancel()` while that state remains alive.
+
 ## Clocks, atomics and formatting
 
 Use `absl::Time` and `absl::Duration` for deadlines. For short measurements,

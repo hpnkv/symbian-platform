@@ -40,22 +40,33 @@ short reads and truncation:
 ```cpp
 #include <span>
 #include <string>
+
 #include "symbian/api/storage/storage.h"
 
 absl::StatusOr<std::string> LoadPem(std::u16string_view path) {
   auto file = symbian::api::storage::ReadOnlyFile::Open(path);
-  if (!file.ok()) return file.status();
+  if (!file.ok()) {
+    return file.status();
+  }
   auto size = file->Size();
-  if (!size.ok()) return size.status();
-  if (*size == 0 || *size > 262144)
+  if (!size.ok()) {
+    return size.status();
+  }
+  if (*size == 0 || *size > 262144) {
     return absl::InvalidArgumentError("PEM file is empty or too large");
+  }
   std::string pem(static_cast<std::size_t>(*size), '\0');
   std::size_t offset = 0;
   while (offset < pem.size()) {
-    auto count = file->ReadAt(offset, std::as_writable_bytes(
-        std::span(pem.data(), pem.size()).subspan(offset)));
-    if (!count.ok()) return count.status();
-    if (*count == 0) return absl::DataLossError("Truncated PEM file");
+    auto count = file->ReadAt(
+        offset, std::as_writable_bytes(
+                    std::span(pem.data(), pem.size()).subspan(offset)));
+    if (!count.ok()) {
+      return count.status();
+    }
+    if (*count == 0) {
+      return absl::DataLossError("Truncated PEM file");
+    }
     offset += *count;
   }
   return pem;
@@ -73,6 +84,7 @@ read chunk directly when you want a streamed download.
 ```cpp
 #include <memory>
 #include <string>
+
 #include "absl/time/clock.h"
 #include "symbian/api/connectivity/http.h"
 #include "symbian/api/connectivity/tls_stream.h"
@@ -80,13 +92,20 @@ read chunk directly when you want a streamed download.
 absl::StatusOr<std::string> LoadSecurePage() {
   namespace net = symbian::api::connectivity;
   auto roots = LoadPem(u"C:\\resource\\apps\\my_app_ca.pem");
-  if (!roots.ok()) return roots.status();
+  if (!roots.ok()) {
+    return roots.status();
+  }
   const auto deadline = absl::Now() + absl::Seconds(30);
   auto tcp = net::TcpClient::ConnectHost("example.com", 443, deadline);
-  if (!tcp.ok()) return tcp.status();
-  auto tls = net::TlsStream::Connect(std::move(*tcp), "example.com", *roots,
-      net::TlsVersion::kTls13, "http/1.1", deadline);
-  if (!tls.ok()) return tls.status();
+  if (!tcp.ok()) {
+    return tcp.status();
+  }
+  auto tls =
+      net::TlsStream::Connect(std::move(*tcp), "example.com", *roots,
+                              net::TlsVersion::kTls13, "http/1.1", deadline);
+  if (!tls.ok()) {
+    return tls.status();
+  }
   symbian::http::RequestHead request;
   request.scheme = "https";
   request.authority = "example.com";
@@ -94,18 +113,29 @@ absl::StatusOr<std::string> LoadSecurePage() {
   auto exchange = symbian::http::Connection::Client(
       std::make_unique<net::TlsStream>(std::move(*tls)), std::move(request),
       symbian::http::Protocol::kHttp11, {}, 0, deadline);
-  if (!exchange.ok()) return exchange.status();
+  if (!exchange.ok()) {
+    return exchange.status();
+  }
   auto status = (*exchange)->Finish(deadline);
-  if (!status.ok()) return status;
+  if (!status.ok()) {
+    return status;
+  }
   status = (*exchange)->ReceiveHeaders(deadline);
-  if (!status.ok()) return status;
-  if ((*exchange)->response().status != 200)
+  if (!status.ok()) {
+    return status;
+  }
+  if ((*exchange)->response().status != 200) {
     return absl::UnavailableError("The page did not return HTTP 200");
+  }
   std::string page;
   while (true) {
     auto chunk = (*exchange)->Read(deadline);
-    if (!chunk.ok()) return chunk.status();
-    if (!chunk->has_value()) return page;
+    if (!chunk.ok()) {
+      return chunk.status();
+    }
+    if (!chunk->has_value()) {
+      return page;
+    }
     page.append(**chunk);
   }
 }
@@ -132,38 +162,57 @@ negotiate both versions in one configuration.
 ```cpp
 #include <memory>
 #include <string_view>
+
 #include "absl/time/clock.h"
 #include "symbian/api/connectivity/http.h"
 #include "symbian/api/connectivity/tls_stream.h"
 
 absl::Status ServeHttpsOnce(std::string_view certificate_pem,
-                           std::string_view private_key_pem,
-                           std::string_view client_ca_pem) {
+                            std::string_view private_key_pem,
+                            std::string_view client_ca_pem) {
   namespace net = symbian::api::connectivity;
   auto tls = net::TlsStream::Create(certificate_pem, private_key_pem,
                                     client_ca_pem, net::TlsVersion::kTls13);
-  if (!tls.ok()) return tls.status();
+  if (!tls.ok()) {
+    return tls.status();
+  }
   auto status = tls->SetAlpnProtocol("http/1.1");
-  if (!status.ok()) return status;
+  if (!status.ok()) {
+    return status;
+  }
   auto listener = net::TcpListener::ListenIpv4({127, 0, 0, 1}, 8443);
-  if (!listener.ok()) return listener.status();
+  if (!listener.ok()) {
+    return listener.status();
+  }
   const auto deadline = absl::Now() + absl::Seconds(30);
   auto tcp = listener->Accept(deadline);
-  if (!tcp.ok()) return tcp.status();
+  if (!tcp.ok()) {
+    return tcp.status();
+  }
   status = tls->Accept(std::move(*tcp), deadline);
-  if (!status.ok()) return status;
+  if (!status.ok()) {
+    return status;
+  }
   auto exchange = symbian::http::Connection::Accept(
       std::make_unique<net::TlsStream>(std::move(*tls)),
       symbian::http::Protocol::kHttp11, {}, deadline);
-  if (!exchange.ok()) return exchange.status();
+  if (!exchange.ok()) {
+    return exchange.status();
+  }
   while (true) {
     auto chunk = (*exchange)->Read(deadline);
-    if (!chunk.ok()) return chunk.status();
-    if (!chunk->has_value()) break;
+    if (!chunk.ok()) {
+      return chunk.status();
+    }
+    if (!chunk->has_value()) {
+      break;
+    }
   }
-  status = (*exchange)->SendHeaders(
-      {200, {{"content-type", "text/plain"}}}, deadline);
-  if (!status.ok()) return status;
+  status = (*exchange)->SendHeaders({200, {{"content-type", "text/plain"}}},
+                                    deadline);
+  if (!status.ok()) {
+    return status;
+  }
   status = (*exchange)->Write("Authenticated HTTPS response\n", deadline);
   return status.ok() ? (*exchange)->Finish(deadline) : status;
 }

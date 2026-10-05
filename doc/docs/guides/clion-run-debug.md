@@ -20,7 +20,7 @@ CMake target and has a different role.*
 1. [Load the ARM CMake profile](clion-profiles.md) in the `examples/gui_app`
    project and [import compatible firmware](firmware.md). A named ROM/Z
    fixture is required for this workflow.
-2. Run `uv run symbian emu configure-ide` from the repository root if the
+2. Run `symbian emu configure-ide` from the repository root if the
    saved configurations are absent. Reopen the project to load the generated
    `.idea` settings.
 3. Select **GUI Run** and press **Run**. The configured executable is the host

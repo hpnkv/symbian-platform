@@ -52,11 +52,11 @@ EKA2L1_RESEARCH_CONTROL_SOCKET="$SYMBIAN_CONTROL_SOCKET" \
 Use a second terminal to set `SYMBIAN_CONTROL_SOCKET` to the printed path:
 
 ```sh
-uv run symbian emu status --endpoint "$SYMBIAN_CONTROL_SOCKET"
-uv run symbian emu screenshot --endpoint "$SYMBIAN_CONTROL_SOCKET" --name initial
-uv run symbian emu pointer --endpoint "$SYMBIAN_CONTROL_SOCKET" 64 575 press
-uv run symbian emu pointer --endpoint "$SYMBIAN_CONTROL_SOCKET" 64 575 release
-uv run symbian emu screenshot --endpoint "$SYMBIAN_CONTROL_SOCKET" --name after-tap
+symbian emu status --endpoint "$SYMBIAN_CONTROL_SOCKET"
+symbian emu screenshot --endpoint "$SYMBIAN_CONTROL_SOCKET" --name initial
+symbian emu pointer --endpoint "$SYMBIAN_CONTROL_SOCKET" 64 575 press
+symbian emu pointer --endpoint "$SYMBIAN_CONTROL_SOCKET" 64 575 release
+symbian emu screenshot --endpoint "$SYMBIAN_CONTROL_SOCKET" --name after-tap
 ```
 
 Allow guest startup/redraw to complete between commands. A busy response means
@@ -76,7 +76,7 @@ After the guest exit the frontend closes its endpoint. Read its explicit saved
 status with:
 
 ```sh
-uv run symbian emu status --endpoint "$SYMBIAN_CONTROL_SOCKET" --saved
+symbian emu status --endpoint "$SYMBIAN_CONTROL_SOCKET" --saved
 ```
 
 The native report is `$SYMBIAN_CONTROL_SOCKET.status.json`; it retains the exit

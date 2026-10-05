@@ -16,15 +16,34 @@ local-static initialization, `import std`, and header units are unsupported.
 
 ## A small language example
 
+For a thumbnail layout, designated initialization names each coordinate and
+defaulted equality makes detecting an unchanged position straightforward:
+
+```cpp
+struct GridPosition {
+  int column;
+  int row;
+  bool operator==(const GridPosition&) const = default;
+};
+
+GridPosition ThumbnailPosition(unsigned index) {
+  return {.column = static_cast<int>(index % 3),
+          .row = static_cast<int>(index / 3)};
+}
+```
+
+This three-column layout assumes the caller has bounded `index` to its item
+count and a representable row. Neither feature allocates or calls an OS service.
+
 From a source checkout:
 
 ```sh
-uv run symbian build --project examples/cxx20_probe \
+symbian build --project examples/cxx20_probe \
   --output .symbian/cxx20-probe
-uv run symbian package --project examples/cxx20_probe \
+symbian package --project examples/cxx20_probe \
   --artifact .symbian/cxx20-probe/cxx20_probe.exe \
   --output .symbian/cxx20-package
-uv run symbian inspect --format e32 .symbian/cxx20-probe/cxx20_probe.exe
+symbian inspect --format e32 .symbian/cxx20-probe/cxx20_probe.exe
 ```
 
 This freestanding example uses no system C/C++ headers, allocation, exceptions
@@ -37,10 +56,10 @@ Install upstream Clang with matching `clang-scan-deps`, CMake 3.28+ and
 Ninja 1.12+. Put the LLVM tools on `PATH` and build the module example:
 
 ```sh
-uv run symbian build --project examples/cxx20_module_probe \
+symbian build --project examples/cxx20_module_probe \
   --compiler "$(command -v clang++)" \
   --output .symbian/cxx20-module
-uv run symbian package --project examples/cxx20_module_probe \
+symbian package --project examples/cxx20_module_probe \
   --artifact .symbian/cxx20-module/cxx20_module_probe.exe \
   --output .symbian/cxx20-module-package
 ```

@@ -14,9 +14,9 @@ OpenSSL is required for identity creation and certificate checks. The GUI's
 view options can select another identity folder.
 
 ```sh
-uv run symbian signing create --identity developer --common-name "Developer"
-uv run symbian signing list
-uv run symbian signing import --identity imported \
+symbian signing create --identity developer --common-name "Developer"
+symbian signing list
+symbian signing import --identity imported \
   --certificate /private/certificate.pem --private-key /private/key.pem
 ```
 
@@ -28,7 +28,7 @@ signature before writing output. Existing output files are never overwritten.
 Already signed or unsupported packages are rejected by the native signer.
 
 ```sh
-uv run symbian signing sign .symbian/package/my_app.sis \
+symbian signing sign .symbian/package/my_app.sis \
   --identity developer --destination .symbian/package/my_app-signed.sis
 ```
 
@@ -36,7 +36,7 @@ uv run symbian signing sign .symbian/package/my_app.sis \
 retaining its certificate and key in the store's private `.archive/` directory:
 
 ```sh
-uv run symbian signing archive --identity developer
+symbian signing archive --identity developer
 ```
 
 Self-signing does not establish phone trust or grant restricted capabilities.

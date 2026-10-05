@@ -23,7 +23,9 @@ exits successfully. `--expected-reason N` selects another oracle.
 The complete CMake example's application is:
 
 ```cpp
-extern "C" int Eka1Main() { return 7610; }
+extern "C" int Eka1Main() {
+  return 7610;
+}
 ```
 
 Its separate ARM entry calls this function and returns to the emulator's
@@ -72,9 +74,11 @@ application to copy stack bytes into a heap allocation and release it:
 extern "C" int Eka1Main() {
   const unsigned char source[4] = {1, 2, 3, 4};
   auto* dest = static_cast<unsigned char*>(LegacyAlloc(4));
-  if (dest == nullptr) return -4;
-  const bool copied = LegacyCopy(dest, source, 4) == dest + 4 &&
-                      dest[0] == 1 && dest[3] == 4;
+  if (dest == nullptr) {
+    return -4;
+  }
+  const bool copied =
+      LegacyCopy(dest, source, 4) == dest + 4 && dest[0] == 1 && dest[3] == 4;
   LegacyFree(dest);
   return copied ? 7610 : 41;
 }

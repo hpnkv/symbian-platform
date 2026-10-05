@@ -14,7 +14,7 @@ E32 separately when launching by hand:
 
 ```sh
 cd /path/to/symbian-platform
-uv run symbian build --project examples/gui_app --output .symbian/gui-app
+symbian build --project examples/gui_app --output .symbian/gui-app
 ```
 
 Point `/path/to/symbian-platform` to your checkout. If you prefer an IDE

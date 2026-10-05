@@ -37,6 +37,33 @@ allocation returns null. Zero-size allocation requests at least one byte, and
 sizes above the native signed-size limit are rejected. Container growth does
 not turn allocation failure into a recoverable `StatusOr`.
 
+For a download scratch buffer whose allocation failure should be recoverable,
+choose nothrow allocation explicitly and enforce an application limit:
+
+```cpp
+#include <cstddef>
+#include <memory>
+#include <new>
+
+#include "absl/status/statusor.h"
+
+absl::StatusOr<std::unique_ptr<std::byte[]>> AllocateDownloadBuffer(
+    std::size_t bytes) {
+  if (bytes == 0 || bytes > 64 * 1024) {
+    return absl::InvalidArgumentError("Buffer must be 1–65536 bytes");
+  }
+  auto buffer =
+      std::unique_ptr<std::byte[]>(new (std::nothrow) std::byte[bytes]);
+  if (!buffer) {
+    return absl::ResourceExhaustedError("No download buffer");
+  }
+  return buffer;
+}
+```
+
+This handles this allocation only; later container or Status payload allocations
+still follow the ordinary allocation policy.
+
 The default `SYMBIAN_RUNTIME_MIMALLOC=ON` profile uses mimalloc 3.5.3 with
 process-owned `RChunk` storage, reserve/commit/decommit support and pthread
 cleanup. It reserves 8 MiB per virtual arena and defaults to a 64 MiB total
@@ -146,4 +173,4 @@ git -C research/upstream/llvm-project sparse-checkout set libcxx libcxxabi \
 The SDK source build applies its target patches and generates the matching
 libc++ configuration. Use [SDK installation](../reference/project-configuration.md)
 to export headers, archives and import proxies. The
-[runtime tutorial](../tutorials/runtime-probe.md) shows a complete example.
+[runtime guide](../guides/guest-runtime-source.md) shows a complete example.

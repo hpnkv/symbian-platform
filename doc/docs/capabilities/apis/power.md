@@ -20,6 +20,34 @@ values stay unknown. The snapshot owns no native handle and allocates no
 buffers. It is read on demand, without caching dynamic power state. A caller
 that needs a bounded event callback should issue the query from a worker.
 
+## Decide whether to postpone background sync
+
+Link `Symbian::Power`. This policy postpones work when the battery is low,
+empty or needs replacement, unless an external supply is known to be present.
+An unknown battery produces an unknown decision instead of a guessed percentage.
+
+```cpp
+#include "symbian/api/power/power.h"
+
+absl::StatusOr<std::optional<bool>> ShouldPostponeSync() {
+  auto power = symbian::api::power::ReadPowerSnapshot();
+  if (!power.ok()) {
+    return power.status();
+  }
+  if (power->external_power == true) {
+    return std::optional<bool>{false};
+  }
+  if (!power->battery) {
+    return std::optional<bool>{};
+  }
+  return std::optional<bool>{*power->battery !=
+                             symbian::api::power::BatteryCondition::kGood};
+}
+```
+
+The caller decides how to handle an unknown result. External supply here affects
+work policy only; it does not imply that the battery is charging.
+
 ## Restrictions
 
 The snapshot is not atomic across its three HAL calls. Change subscriptions

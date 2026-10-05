@@ -21,6 +21,28 @@ heap buffer or long-lived session. Results are not cached because a display
 profile can change. A caller that cannot tolerate those calls on an event
 thread can run the query on a worker.
 
+## Choose an initial grid density
+
+Link `Symbian::Display`. Use the primary width to choose an initial thumbnail
+column count; confirm the actual client rectangle with Window Server when the
+window opens or its size changes.
+
+```cpp
+#include <algorithm>
+
+#include "symbian/api/display/display.h"
+
+absl::StatusOr<int> InitialThumbnailColumns() {
+  auto screen = symbian::api::display::ReadPrimaryDisplayGeometry();
+  if (!screen.ok()) {
+    return screen.status();
+  }
+  return std::clamp(screen->width_pixels / 160, 1, 3);
+}
+```
+
+This uses pixel geometry rather than inventing a DPI from missing twip fields.
+
 ## Resident control panel
 
 `RunResidentPanel` creates a minimal Window Server view for a manually started

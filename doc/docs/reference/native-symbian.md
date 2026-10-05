@@ -12,7 +12,7 @@ to original declarations alongside its [SDK C++ reference](../cpp/index.html).
 | --- | --- | --- |
 | Handle process, thread or time state | `e32std.h` | [Runtime support](../capabilities/runtime.md) |
 | Use descriptors, leaves or cleanup | `e32cmn.h`, `e32base.h` | [C++ usage](../capabilities/cpp.md) |
-| Create a window and receive input | `w32std.h`, `gdi.h` | [GUI tutorial](../tutorials/gui-app.md) |
+| Create a window and receive input | `w32std.h`, `gdi.h` | [GUI walkthrough](../guides/gui-architecture.md) |
 | Open a file or query a volume | `f32file.h` | [Storage API](../capabilities/apis/storage.md) |
 | Read HAL attributes or camera contracts | `hal.h`, `ecam.h` | [Device API map](../capabilities/device-apis.md) |
 | Request secure random bytes | `e32math.h` | [TLS guide](../guides/tls.md) |

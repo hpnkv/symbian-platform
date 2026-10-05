@@ -5681,3 +5681,27 @@ settled. Local GTest came from a newer host floor, affecting test binaries only.
 The entire no-Python guest/tool payload, four-host release matrix, all Python
 versions, manylinux repair and full EKA1 runtime/API port remain unfinished.
 No host-only archive is being presented as the requested complete native SDK.
+
+## 2026-10-05 — Hands-on public guides and C++ snippet formatting
+
+Added small application helpers to the capability/API-family articles: bounded
+preview/draft I/O, battery-aware sync policy, display grid selection, camera
+inventory, counter intervals, TCP notification/accept, full numeric-field parsing,
+fallible scratch allocation, timer/worker Futures, bounded-memory copying and
+C++20 positions. Fourteen complete helpers passed ARMv5T and ARMv6 syntax checks
+against the exported guest headers; the C++20 layout helper passed separately
+for both targets. These checks do not establish execution or loader behavior.
+Logs: `/tmp/symbian-doc-snippets-armv5t.log` and
+`/tmp/symbian-doc-snippets-armv6.log`.
+
+Public CLI examples use `symbian` directly; source setup explicitly activates
+its virtual environment. Source-only development/test commands retain `uv run`.
+Removed the Tutorials navigation and redundant pages, preserving the runtime
+build recipe in its guide and redirecting the GUI reference to its walkthrough.
+All public Markdown C++ examples now use the root clang-format rules, including
+InsertBraces. `doc/build.sh` checks future examples; Doxygen examples format at
+build time without editing licensed native headers. Formatter checks passed
+with macOS clang-format 23.1.2 and Ubuntu clang-format 18.1.3. The local link
+checker now ignores fenced examples instead of interpreting lambda captures as
+Markdown links. Strict MkDocs and both Doxygen indices passed; historical-header
+warnings remain. No wheels were published by this documentation pass.

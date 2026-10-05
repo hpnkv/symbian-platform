@@ -29,6 +29,19 @@ ownership, threading, performance considerations and restrictions:
 The [sensors](sensors.md) and [media](media.md) notes describe proposed models
 only. No target or header is exported for those components yet.
 
+## Link only the services you use
+
+A note-taking application that stores files and checks power can select just
+those components:
+
+```cmake
+target_link_libraries(my_app PRIVATE Symbian::Storage Symbian::Power)
+```
+
+Use [storage](storage.md#save-a-small-draft) for draft persistence and
+[power](power.md#decide-whether-to-postpone-background-sync) for a background-sync
+policy. Their errors and unknown values remain explicit in application code.
+
 ## Original API escape hatch
 
 The installed SDK also retains the original EPL-licensed platform headers

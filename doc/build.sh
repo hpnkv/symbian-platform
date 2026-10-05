@@ -17,6 +17,7 @@ if ! command -v dot >/dev/null 2>&1; then
   exit 1
 fi
 
+python3 format_cpp.py --check
 python3 check_links.py
 mkdocs build "$@"
 log="$(mktemp)"
@@ -26,7 +27,7 @@ trap 'rm -f "$log"' EXIT
   exit 1
 }
 cat "$log"
-if grep -E '(^|[[:space:]])error:' "$log" >/dev/null; then
+if grep -E '(^|[[:space:]])error:|^Traceback|Error:|problems executing filter' "$log" >/dev/null; then
   echo "Doxygen reported errors" >&2
   exit 1
 fi
@@ -36,7 +37,7 @@ test -f site/cpp/index.html
   exit 1
 }
 cat "$log"
-if grep -E '(^|[[:space:]])error:' "$log" >/dev/null; then
+if grep -E '(^|[[:space:]])error:|^Traceback|Error:|problems executing filter' "$log" >/dev/null; then
   echo "Platform Doxygen reported errors" >&2
   exit 1
 fi

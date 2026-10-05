@@ -53,6 +53,34 @@ The current runtime's SDK adapter also isolates a real placement-new header
 conflict; see the [runtime guide](runtime.md). Do not work around that conflict by editing OS headers
 or disabling exception-specification checks in your application.
 
+## Validate a numeric field before using it
+
+Parse the entire field and reject overflow or trailing bytes. This keeps a
+wire-format count independent of the host's pointer and integer sizes:
+
+```cpp
+#include <charconv>
+#include <cstdint>
+#include <string_view>
+
+#include "absl/status/statusor.h"
+
+absl::StatusOr<std::uint32_t> ParseItemCount(std::string_view text) {
+  if (text.empty()) {
+    return absl::InvalidArgumentError("Missing count");
+  }
+  std::uint32_t count = 0;
+  auto parsed = std::from_chars(text.data(), text.data() + text.size(), count);
+  if (parsed.ec != std::errc{} || parsed.ptr != text.data() + text.size()) {
+    return absl::InvalidArgumentError("Invalid item count");
+  }
+  return count;
+}
+```
+
+A successful parse establishes a numeric value. Apply the operation's own
+size or admission limit before allocating or scheduling that many items.
+
 ## Treat descriptors as views or buffers with an explicit encoding
 
 Application-menu captions are configured in `symbian.toml` with fallback

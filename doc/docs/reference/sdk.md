@@ -21,12 +21,12 @@ Use plain DLL/DSO names.
 From a prepared source checkout:
 
 ```sh
-uv run symbian toolchain import-proxy \
+symbian toolchain import-proxy \
   research/upstream/kernelhwsrv/kernel/eka/eabi/euseru.def \
   --symbol _ZN4User4ExitEi --target-dll euser.dll \
   --headers research/upstream/kernelhwsrv/kernel/eka/include \
   --output .symbian/euser-proxy
-uv run symbian inspect --format import-proxy .symbian/euser-proxy/euser.dso
+symbian inspect --format import-proxy .symbian/euser-proxy/euser.dso
 ```
 
 `--headers` is optional. When supplied, the command compiles an original-header

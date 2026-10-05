@@ -28,10 +28,10 @@ UIDs are distinct. Use separate identities for a released application.
 From a source checkout:
 
 ```sh
-uv run symbian build --project examples/e32_probe --output .symbian/e32-probe
-uv run symbian package --project examples/e32_probe \
+symbian build --project examples/e32_probe --output .symbian/e32-probe
+symbian package --project examples/e32_probe \
   --artifact .symbian/e32-probe/e32_probe.exe --output .symbian/package
-uv run symbian inspect --format sis .symbian/package/probe.sis
+symbian inspect --format sis .symbian/package/probe.sis
 ```
 
 The writer validates the E32 payload, uses uncompressed streams and a fixed
@@ -54,9 +54,9 @@ application-menu entry.
 For the GUI example:
 
 ```sh
-uv run symbian package --project examples/gui_app \
+symbian package --project examples/gui_app \
   --artifact .symbian/gui-app/gui_app.exe --output .symbian/gui-package
-uv run symbian inspect --format sis .symbian/gui-package/gui_app.sis
+symbian inspect --format sis .symbian/gui-package/gui_app.sis
 ```
 
 Use the [TLS guide](tls.md) to package a PEM CA bundle. Packaging roots does

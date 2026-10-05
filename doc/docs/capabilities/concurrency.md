@@ -25,6 +25,34 @@ Link `Symbian::Stackless` in a guest application. `Promise<T>` produces a
 Retain request buffers, statuses and handles until completion has drained.
 Cancellation requested does not mean ownership can be released.
 
+### Turn a timer into a reminder
+
+Pass an already-open event-thread timer pump. The returned Future carries the
+reminder text or the timer's error; it does not block the event loop.
+
+```cpp
+#include <string>
+
+#include "symbian/concurrency/timer_pump.h"
+
+symbian::concurrency::Future<std::string> ReminderAfter(
+    symbian::concurrency::TimerPump& timers) {
+  namespace tasks = symbian::concurrency;
+  return tasks::Then(timers.ScheduleAfter(absl::Seconds(30)),
+                     [](const absl::StatusOr<tasks::Unit>& result)
+                         -> absl::StatusOr<std::string> {
+                       if (!result.ok()) {
+                         return result.status();
+                       }
+                       return std::string("Time to check the oven");
+                     });
+}
+```
+
+Keep pumping native completions while the reminder is pending. Retain the
+Future to observe the result or request cancellation; the pump must stay alive.
+An `OnReady` observer may run immediately when attached to a completed Future.
+
 ## Native request owners and the event loop
 
 `NativeTimer` owns one thread-relative `RTimer`. Create, arm, cancel and close
@@ -67,6 +95,40 @@ Use `WorkerExecutor` for blocking I/O and long computation.
 owner. `future.ThenOnWorker(event_executor, transform)` copies the result and
 runs the transformation there; `Then` and `OnReady` remain inline.
 The lower-level `ThenOn(future, worker, transform)` selects a worker explicitly.
+
+For example, count lines in a downloaded text result on a worker. Here
+`downloaded` is a Future produced by your download operation, and `worker` is
+an existing executor:
+
+```cpp
+#include <algorithm>
+#include <cstddef>
+#include <string>
+
+#include "symbian/concurrency/worker_executor.h"
+
+symbian::concurrency::Future<std::size_t> CountDownloadedLines(
+    const symbian::concurrency::Future<std::string>& downloaded,
+    symbian::concurrency::WorkerExecutor& worker) {
+  return symbian::concurrency::ThenOn(
+      downloaded, worker,
+      [](const absl::StatusOr<std::string>& text)
+          -> absl::StatusOr<std::size_t> {
+        if (!text.ok()) {
+          return text.status();
+        }
+        if (text->empty()) {
+          return std::size_t{0};
+        }
+        return std::count(text->begin(), text->end(), '\n') +
+               (text->back() != '\n');
+      });
+}
+```
+
+The download should already have a body-size limit. The worker must remain
+available through completion. This result's inline observers run on the worker;
+post any label update to the UI owner's mailbox.
 
 `PostFiber(work, stack_bytes)` schedules a fiber on the worker's own scheduler.
 The default stack is 16 KiB; accepted sizes are word-aligned from 4 KiB to

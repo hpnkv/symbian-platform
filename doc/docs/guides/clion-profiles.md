@@ -17,7 +17,7 @@ emulator can load it.
    cmake --build --preset symbian-pic
    ```
 
-3. Return to the repository root and run `uv run symbian emu configure-ide` to
+3. Return to the repository root and run `symbian emu configure-ide` to
    create local Run/Debug settings for the prepared example. These settings
    live in ignored `.idea` files because they contain machine paths.
 

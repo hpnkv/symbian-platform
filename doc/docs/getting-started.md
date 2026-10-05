@@ -20,10 +20,14 @@ device before deployment.
 
 ## 1. Install the host tools
 
+For a source checkout, install the host tools into a virtual environment and
+activate it so that the `symbian` command is on `PATH`:
+
 ```sh
 uv sync
-uv run symbian doctor
-uv run symbian toolchain probe
+source .venv/bin/activate
+symbian doctor
+symbian toolchain probe
 ```
 
 `doctor` reports available compilers and tools. The probe checks that the

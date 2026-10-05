@@ -7,7 +7,8 @@ settings as A11. `doc/cpp/Doxyfile` builds the SDK-owned native reference;
 original Symbian headers. Both use the Doxygen Awesome theme. The original
 header notices and copied theme/style licenses remain with their files.
 
-Install the `docs` dependency group, Doxygen and Graphviz, then run:
+Install the `docs` dependency group, Doxygen, Graphviz and clang-format 15+,
+then run:
 
 ```sh
 uv sync --only-group docs --no-install-project
@@ -28,3 +29,10 @@ They show CMake, Run and debugger configuration, not guest execution.
 Refreshing them requires Screen Recording permission; keep other windows,
 desktop notifications and private paths outside the final crops. The older
 `clion-workflow.svg` remains a separate configuration illustration.
+
+C++ Markdown examples use the root `.clang-format`, including braces for all
+conditional and loop bodies. Format new or edited examples with
+`python3 doc/format_cpp.py`; `doc/build.sh` checks them before building the site.
+Use `--clang-format /path/to/clang-format` when it is not on `PATH`; the
+Doxygen build also needs it on `PATH`. Doxygen comment examples are formatted
+at build time by `doc/cpp/filter_examples.py`, preserving source files.

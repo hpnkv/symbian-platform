@@ -22,6 +22,32 @@ handle. The metadata call is repeated because the public result must describe
 the current platform rather than a cached assumption. These calls are small,
 but a caller with a strict event-thread budget should measure its device.
 
+## Measure a short interval
+
+Link `Symbian::System`. Keep a `TickReading` when work starts, then use unsigned
+subtraction to include one counter wrap. The interval must be shorter than a
+full wrap, and the reported period must stay unchanged.
+
+```cpp
+#include "symbian/api/system/counters.h"
+
+absl::StatusOr<absl::Duration> ElapsedSince(
+    symbian::api::system::TickReading started) {
+  auto now = symbian::api::system::ReadTickCounter();
+  if (!now.ok()) {
+    return now.status();
+  }
+  if (now->period != started.period) {
+    return absl::FailedPreconditionError("Tick period changed");
+  }
+  const std::uint32_t ticks = now->count - started.count;
+  return now->period * ticks;
+}
+```
+
+Use the SDK's absolute deadlines for timeouts; this counter calculation is for
+short elapsed-time measurements.
+
 ## Resident service loop
 
 `RunActiveService` installs the native active scheduler on the calling thread,

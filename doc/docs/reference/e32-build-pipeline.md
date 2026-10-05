@@ -41,8 +41,8 @@ A `symbian-pic` CMake configure preset uses Ninja and a build directory under
 `.symbian/`. The CLI supplies the installed toolchain and output tree:
 
 ```sh
-uv run symbian build --project examples/e32_probe --output .symbian/e32-probe
-uv run symbian inspect --format e32 .symbian/e32-probe/e32_probe.exe
+symbian build --project examples/e32_probe --output .symbian/e32-probe
+symbian inspect --format e32 .symbian/e32-probe/e32_probe.exe
 ```
 
 The build publishes ELF/E32 plus a report with tool versions, inputs and logs.
@@ -54,7 +54,7 @@ With the prepared research oracles, the maintained probe has an additional
 specific check:
 
 ```sh
-uv run symbian toolchain verify-probe .symbian/e32-probe/e32_probe.exe
+symbian toolchain verify-probe .symbian/e32-probe/e32_probe.exe
 ```
 
 The oracle checks this probe in a ROMless process harness. It is not a general

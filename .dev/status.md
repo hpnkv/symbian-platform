@@ -2759,3 +2759,13 @@ both hosts. The macOS OpenSSL-header omission was caught and fixed. This enables
 reusing the core per host architecture, but does not establish the other host/
 Python combinations or complete guest/no-Python release payloads. Fresh macOS
 core minOS is 14.4; release floor/tag policy still needs resolution.
+
+## Hands-on documentation, 2026-10-05
+
+Capabilities and API-family pages now include short application helpers with
+explicit failures and ownership. Fourteen examples and the C++20 layout helper
+pass ARMv5T/ARMv6 syntax checks against guest headers; this adds no loader or
+execution coverage. Ordinary commands use the activated/installed `symbian`
+entry point, Tutorials is removed, and the runtime recipe remains in a guide.
+Public Markdown formatting checks pass on macOS clang-format 23 and Linux
+clang-format 18; documentation builds enforce braces and other root style rules.

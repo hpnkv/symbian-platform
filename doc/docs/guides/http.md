@@ -22,6 +22,7 @@ process each `chunk` immediately instead of appending it.
 
 ```cpp
 #include <string>
+
 #include "absl/time/clock.h"
 #include "symbian/api/connectivity/http.h"
 
@@ -33,20 +34,31 @@ absl::StatusOr<std::string> LoadPage() {
   request.path = "/";
   request.headers = {{"user-agent", "MySymbianApp/1.0"},
                      {"accept", "text/html"}};
-  auto exchange = net::HttpClient::ConnectHost(
-      "example.com", 80, std::move(request), deadline);
-  if (!exchange.ok()) return exchange.status();
+  auto exchange = net::HttpClient::ConnectHost("example.com", 80,
+                                               std::move(request), deadline);
+  if (!exchange.ok()) {
+    return exchange.status();
+  }
   auto status = (*exchange)->Finish(deadline);
-  if (!status.ok()) return status;
+  if (!status.ok()) {
+    return status;
+  }
   status = (*exchange)->ReceiveHeaders(deadline);
-  if (!status.ok()) return status;
-  if ((*exchange)->response().status != 200)
+  if (!status.ok()) {
+    return status;
+  }
+  if ((*exchange)->response().status != 200) {
     return absl::UnavailableError("The page did not return HTTP 200");
+  }
   std::string page;
   while (true) {
     auto chunk = (*exchange)->Read(deadline);
-    if (!chunk.ok()) return chunk.status();
-    if (!chunk->has_value()) return page;
+    if (!chunk.ok()) {
+      return chunk.status();
+    }
+    if (!chunk->has_value()) {
+      return page;
+    }
     page.append(**chunk);
   }
 }
@@ -81,23 +93,37 @@ requests. Accepted connections own their sockets independently of the listener.
 absl::Status ServeOnce() {
   namespace net = symbian::api::connectivity;
   auto server = net::HttpServer::ListenIpv4({127, 0, 0, 1}, 8080);
-  if (!server.ok()) return server.status();
+  if (!server.ok()) {
+    return server.status();
+  }
   const auto deadline = absl::Now() + absl::Seconds(30);
   auto exchange = server->Accept(deadline);
-  if (!exchange.ok()) return exchange.status();
+  if (!exchange.ok()) {
+    return exchange.status();
+  }
   while (true) {
     auto chunk = (*exchange)->Read(deadline);
-    if (!chunk.ok()) return chunk.status();
-    if (!chunk->has_value()) break;
+    if (!chunk.ok()) {
+      return chunk.status();
+    }
+    if (!chunk->has_value()) {
+      break;
+    }
     // Process this request-body chunk here.
   }
   auto status = (*exchange)->SendHeaders(
       {200, {{"content-type", "text/plain; charset=utf-8"}}}, deadline);
-  if (!status.ok()) return status;
+  if (!status.ok()) {
+    return status;
+  }
   status = (*exchange)->Write("Hello ", deadline);
-  if (!status.ok()) return status;
+  if (!status.ok()) {
+    return status;
+  }
   status = (*exchange)->Write("from Symbian!\n", deadline);
-  if (!status.ok()) return status;
+  if (!status.ok()) {
+    return status;
+  }
   return (*exchange)->Finish(deadline);
 }
 ```

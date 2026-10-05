@@ -41,8 +41,8 @@ Run the frontend using the selected firmware without automatically starting an
 application:
 
 ```sh
-uv run symbian emu run
-uv run symbian emu run --firmware my-phone --backend dynarmic
+symbian emu run
+symbian emu run --firmware my-phone --backend dynarmic
 ```
 
 In **Symbian Console → Emulator**, choose **Run emulator**. Optional settings

@@ -1,9 +1,9 @@
 # Build and inspect the GUI executable
 
 ```sh
-uv run symbian build --project examples/gui_app --output .symbian/gui-app
-uv run symbian inspect .symbian/gui-app/gui_app.elf --format elf32
-uv run symbian inspect .symbian/gui-app/gui_app.exe --format e32
+symbian build --project examples/gui_app --output .symbian/gui-app
+symbian inspect .symbian/gui-app/gui_app.elf --format elf32
+symbian inspect .symbian/gui-app/gui_app.exe --format e32
 ```
 
 The CLI loads `symbian.toml`, resolves the selected SDK's proxy paths and
@@ -39,10 +39,10 @@ declares package UID
 `0xe0000812`, independently of executable UID `0xe0000811`:
 
 ```sh
-uv run symbian package --project examples/gui_app \
+symbian package --project examples/gui_app \
   --artifact .symbian/gui-app/gui_app.exe --output .symbian/gui-package
-uv run symbian inspect .symbian/gui-package/gui_app.sis --format sis
-uv run symbian toolchain verify-gui-package .symbian/gui-package/gui_app.sis \
+symbian inspect .symbian/gui-package/gui_app.sis --format sis
+symbian toolchain verify-gui-package .symbian/gui-package/gui_app.sis \
   --executable .symbian/gui-app/gui_app.exe \
   --oracles-build build/eka2l1 --output .symbian/gui-package-check
 ```
@@ -87,7 +87,7 @@ path:
 SYMBIAN_GUI_SOURCE_ROOT="$PWD/research/upstream" \
   SYMBIAN_EKA2L1_ORACLES_BUILD="$PWD/build/eka2l1" \
   uv run pytest symbian/tests/test_gui.py -q
-uv run symbian toolchain verify-gui .symbian/gui-app/gui_app.exe \
+symbian toolchain verify-gui .symbian/gui-app/gui_app.exe \
   --oracles-build build/eka2l1 --output .symbian/gui-validation
 ```
 

@@ -40,16 +40,9 @@ Example application CMake:
 target_link_libraries(my_app PRIVATE Symbian::System)
 ```
 
-Example C++:
-
-```cpp
-#include "symbian/api/system/counters.h"
-
-auto reading = symbian::api::system::ReadFastCounter();
-if (reading.ok()) {
-  const auto ticks_per_second = reading->ticks_per_second;
-}
-```
+Use a [counter reading](apis/system.md#measure-a-short-interval) to measure a
+short operation, preserving its period and handling wrap rather than treating a
+bare count as wall time.
 
 ## Additional device slices
 
@@ -88,19 +81,7 @@ target_link_libraries(my_app PRIVATE Symbian::Power Symbian::Display
   Symbian::Storage)
 ```
 
-For example, a worker can keep one read-only file open for repeated reads:
-
-```cpp
-#include <array>
-#include <cstddef>
-#include <utility>
-#include "symbian/api/storage/storage.h"
-
-auto opened = symbian::api::storage::ReadOnlyFile::Open(u"C:\\Data\\sample.bin");
-if (opened.ok()) {
-  auto file = std::move(*opened);
-  std::array<std::byte, 4096> block{};
-  auto bytes_read = file.ReadAt(0, block);
-  // Use the first *bytes_read bytes only when bytes_read.ok().
-}
-```
+For a file preview, use the [bounded read helper](apis/storage.md#read-only-a-bounded-prefix).
+For persistence, [save a draft](apis/storage.md#save-a-small-draft) with explicit
+replacement and error handling. Both helpers keep the file lifetime on the
+calling worker and report native failures to the application.

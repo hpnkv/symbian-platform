@@ -20,13 +20,17 @@ original DLL ordinals:
 ```cpp
 #include <array>
 #include <cstdint>
+
 #include "symbian/api/connectivity/tcp_client.h"
 
-auto opened = symbian::api::connectivity::TcpClient::ConnectIpv4(
-    {127, 0, 0, 1}, 39094);
-if (opened.ok()) {
-  std::array<std::uint8_t, 1> request{'N'};
-  absl::Status sent = opened->Send(request);
+absl::Status NotifyLocalService() {
+  auto client =
+      symbian::api::connectivity::TcpClient::ConnectIpv4({127, 0, 0, 1}, 39094);
+  if (!client.ok()) {
+    return client.status();
+  }
+  const std::array<std::uint8_t, 1> request{'N'};
+  return client->Send(request);
 }
 ```
 
@@ -40,18 +44,54 @@ bounded wait matters, such as `absl::Now() + absl::Minutes(1)`. On expiry they
 cancel and drain the native request before returning a deadline status. A send can already be delivered before its deadline fires;
 the application protocol must acknowledge work when delivery matters.
 
+## Send a bounded status query
+
+This complete worker function resolves a host, connects and sends a small
+application request under one deadline. Pass a hostname for a server running
+this application's protocol; it is not an HTTP request.
+
+```cpp
+#include <span>
+#include <string_view>
+
+#include "absl/time/clock.h"
+#include "symbian/api/connectivity/tcp_client.h"
+
+absl::Status SendStatusQuery(std::string_view hostname) {
+  namespace net = symbian::api::connectivity;
+  const auto deadline = absl::Now() + absl::Seconds(5);
+  auto client = net::TcpClient::ConnectHost(hostname, 39094, deadline);
+  if (!client.ok()) {
+    return client.status();
+  }
+  constexpr std::string_view request = "STATUS\n";
+  const auto bytes = std::span(
+      reinterpret_cast<const std::uint8_t*>(request.data()), request.size());
+  return client->Send(bytes, deadline);
+}
+```
+
+This returns the native send result. Add an application-level reply when you
+need confirmation that the server processed the query. For web protocols, use
+[HTTP](../../guides/http.md), [TLS](../../guides/tls.md) or
+[WebSockets](../../guides/websocket.md) instead of building framing yourself.
+
 ## Accept one host connection
+
+Link `Symbian::Connectivity` and call this on the accepting worker. The caller
+owns the returned connection and must use and destroy it on that same worker.
 
 ```cpp
 #include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "symbian/api/connectivity/tcp_listener.h"
 
-auto listener = symbian::api::connectivity::TcpListener::ListenIpv4(
-    {127, 0, 0, 1}, 39096);
-if (listener.ok()) {
-  auto client = listener->Accept(absl::Now() + absl::Seconds(5));
-  // Check client.ok() before using the connected stream.
+absl::StatusOr<symbian::api::connectivity::TcpClient> AcceptLocalClient() {
+  auto listener = symbian::api::connectivity::TcpListener::ListenIpv4(
+      {127, 0, 0, 1}, 39096);
+  if (!listener.ok()) {
+    return listener.status();
+  }
+  return listener->Accept(absl::Now() + absl::Seconds(5));
 }
 ```
 

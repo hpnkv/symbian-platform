@@ -4,7 +4,7 @@ The [Console guide](../guides/console.md) covers the first application workflow.
 
 ## Launch and navigate
 
-Run `symbian console` (or `uv run symbian console`). Pass
+Run `symbian console`. Pass
 `--workdir /path/to/application` to start in a chosen directory; its
 `symbian.toml` is selected automatically and a local
 `.symbian/app-sdk/sdk.json` is preferred when present. The command starts a

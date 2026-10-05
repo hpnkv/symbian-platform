@@ -62,15 +62,16 @@ checks the source archive hashes. The export/build tools require `clang`,
 export SYMBIAN_DEPS_PREFIX="$PWD/.symbian/host-deps"
 scripts/bootstrap_wheel_deps.sh
 uv sync
-uv run symbian doctor
-uv run symbian toolchain probe
+source .venv/bin/activate
+symbian doctor
+symbian toolchain probe
 ```
 
 Build the GUI source example after preparing its headers below and selecting
 an installed SDK:
 
 ```sh
-uv run symbian build --project examples/gui_app \
+symbian build --project examples/gui_app \
   --output .symbian/gui-app \
   --compiler "$(command -v clang++)" --linker "$(command -v ld.lld)"
 ```
@@ -132,7 +133,7 @@ the straightforward starting point.
 Prepare the source profile:
 
 ```sh
-uv run symbian toolchain prepare-gui-sdk \
+symbian toolchain prepare-gui-sdk \
   --profile research/gui_app/source-profile.json \
   --sources-root research/upstream \
   --output .symbian/gui-sdk

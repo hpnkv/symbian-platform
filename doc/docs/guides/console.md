@@ -7,7 +7,7 @@ use the actual frontend with sample paths and no connected phone.
 
 ## Create and select an application
 
-1. Start the Console with `uv run symbian console` from the repository root.
+1. Start the Console with `symbian console` from the repository root.
 2. Choose **Applications** and **Create an application**. Enter a new folder,
    name and application UID3, then review the proposed settings.
 3. Select the created project in the sidebar. Its application page collects

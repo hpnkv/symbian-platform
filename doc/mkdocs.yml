@@ -131,9 +131,6 @@ nav:
           - Source indexing: guides/clion-advanced.md
       - Host builds: guides/host-build.md
       - Linux host: guides/linux.md
-  - Tutorials:
-      - GUI application: tutorials/gui-app.md
-      - Runtime probe: tutorials/runtime-probe.md
   - Capabilities:
       - What is available: capabilities/index.md
       - Firmware compatibility: capabilities/firmware.md
