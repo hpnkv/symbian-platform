@@ -6117,3 +6117,17 @@ suppressed. 826 public/protected descriptions remain unresolved in the XML
 survey, so this batch is not complete symbol coverage. Next consult hosted
 original implementations/inline headers for those contracts, including unavailable
 networking pages, and give reserved/internal declarations accurate descriptions.
+
+## 2026-10-05 — Plan for publishable emulator distributions
+
+Added emulator-distribution-plan.md at the owner's request. Reviewed the
+maintained patch/source-build recipe, existing control schema and macOS owned
+symlink launch, upstream Qt plugin/bundle postprocessing, FFmpeg configuration,
+Linux host gates and A11's reusable release/dependency patterns. The plan keeps
+EKA2L1 a separately delivered GPL executable, uses root VERSION initially,
+bundles Qt and non-system dependency/plugin closure, supplies corresponding
+source material, and separates firmware from every published payload. It names
+the two unproven emulator-host architectures, signing/notarization credentials
+and trusted private-fixture acceptance as real gates rather than existing
+capabilities. No emulator build, installation or publication was performed by
+this planning step.
