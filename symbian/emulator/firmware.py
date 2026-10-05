@@ -528,8 +528,9 @@ def describe(resolution: Resolution) -> dict:
             "supported EKA2 generation; device execution requires validation"
             if manifest.device.kernel == "eka2"
             else (
-                "current ARM EABI/E32-V application startup requires EKA2; EKA1"
-                " import and emulator boot remain available"
+                "EKA1 no-UI ARMv5T process profile is available for the tested "
+                "Nokia 7610 fixture (toolchain verify-eka1); GUI starters "
+                "still require EKA2 startup/import ABI"
             )
         )
     except StatusError as error:

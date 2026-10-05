@@ -35,6 +35,43 @@ class E32OracleTest : public ::testing::Test {
   std::string bytes_;
 };
 
+TEST(Eka1OracleTest, IndependentlyChecksLegacyHeaderAndBounds) {
+  const char* path = std::getenv("SYMBIAN_EKA1_TEST_IMAGE");
+  if (path == nullptr) {
+    GTEST_SKIP() << "Set SYMBIAN_EKA1_TEST_IMAGE";
+  }
+  std::ifstream file(path, std::ios::binary);
+  ASSERT_TRUE(file.is_open());
+  std::string bytes{std::istreambuf_iterator<char>(file),
+                    std::istreambuf_iterator<char>()};
+  auto parse = [&]() {
+    eka2l1::common::ro_buf_stream stream(
+        reinterpret_cast<uint8_t*>(bytes.data()), bytes.size());
+    return eka2l1::loader::parse_e32img(&stream, true);
+  };
+  const auto image = parse();
+  ASSERT_TRUE(image.has_value());
+  EXPECT_EQ(image->epoc_ver, epocver::epoc6);
+  EXPECT_EQ(image->header.uid1, eka2l1::loader::e32_img_type::exe);
+  EXPECT_EQ(image->header.uid3, 0xe0000761);
+  EXPECT_EQ(image->header.code_offset, 124);
+  EXPECT_EQ(image->header.code_size, bytes.size() - 124);
+  EXPECT_EQ(image->header.text_size, image->header.code_size);
+  EXPECT_EQ(image->header.entry_point, 0);
+  EXPECT_EQ(image->header.flags, 0);
+  EXPECT_EQ(static_cast<uint32_t>(image->header.cpu), 0x2000);
+  EXPECT_EQ(image->header.data_size, 0);
+  EXPECT_EQ(image->header.bss_size, 0);
+  EXPECT_TRUE(image->import_section.imports.empty());
+  EXPECT_TRUE(image->code_reloc_section.entries.empty());
+  EXPECT_FALSE(image->has_extended_header);
+  bytes[12] ^= 1;
+  EXPECT_FALSE(parse().has_value());
+  bytes[12] ^= 1;
+  bytes.pop_back();
+  EXPECT_FALSE(parse().has_value());
+}
+
 TEST_F(E32OracleTest, AcceptsNativeConverterOutputAndMetadata) {
   const auto image = Parse();
   ASSERT_TRUE(image.has_value());

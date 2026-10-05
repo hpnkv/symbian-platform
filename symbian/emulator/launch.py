@@ -246,8 +246,8 @@ def session(
             Code.FAILED_PRECONDITION,
             f"{firmware.device.model} uses EKA1; the current ARM EABI/E32-V"
             " starter requires EKA2 startup/import ABI. Firmware import is"
-            " supported; EKA1 application ABI adaptation remains"
-            " unimplemented",
+            " supported; use toolchain verify-eka1 for the bounded no-UI"
+            " Nokia 7610 profile. GUI adaptation remains unimplemented",
         )
     if backend not in ("dynarmic", "dyncom"):
         raise StatusError(Code.INVALID_ARGUMENT, "Unknown emulator CPU backend")

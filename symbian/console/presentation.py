@@ -243,6 +243,12 @@ _TASKS = (
         "Compile a small reproducible ARM object.",
     ),
     (
+        "toolchain verify-eka1",
+        "Inspection",
+        "Verify an EKA1 process",
+        "Check the bounded Nokia 7610 process profile and expected exit.",
+    ),
+    (
         "toolchain verify-probe",
         "Inspection",
         "Verify an executable",

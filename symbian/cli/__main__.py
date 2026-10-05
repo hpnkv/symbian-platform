@@ -177,6 +177,7 @@ _COMMAND_DESCRIPTIONS = {
     ("package",): "Package an application executable and resources into a SIS.",
     ("preserve",): "Create or verify digested copies of source inputs.",
     ("toolchain",): "Build and validate ARM/E32 application artifacts.",
+    ("toolchain", "verify-eka1"): "Check the named-fixture EKA1 process exit.",
     ("console",): "Open the graphical SDK and device console.",
 }
 
@@ -194,6 +195,7 @@ _OPTION_DESCRIPTIONS = {
     "package": "Input SIS package file.",
     "endpoint": "Control socket of the owned emulator instance.",
     "timeout": "Maximum wait time in seconds.",
+    "expected_reason": "Expected native EKA1 process exit reason.",
     "format": "Input artifact format to inspect.",
     "non_interactive": "Use supplied options and defaults without prompting.",
     "name": "Name for the created application or imported item.",
@@ -445,6 +447,15 @@ def _parser() -> argparse.ArgumentParser:
     probe.add_argument(
         "--architecture", choices=("armv6", "armv5t"), default="armv6"
     )
+    eka1 = compiler_commands.add_parser(
+        "verify-eka1", help="Run the tested Nokia 7610 no-UI EKA1 profile"
+    )
+    eka1.add_argument("artifact", type=Path)
+    eka1.add_argument("--output", type=Path, required=True)
+    eka1.add_argument("--expected-reason", type=int, default=7610)
+    eka1.add_argument("--sdk", type=Path)
+    eka1.add_argument("--root", type=Path, default=Path.cwd())
+    add_options(eka1)
     verify_probe = compiler_commands.add_parser(
         "verify-probe", help="Run independent E32, CPU and kernel checks"
     )
@@ -1099,6 +1110,16 @@ def _execute(args: argparse.Namespace) -> dict:
             )
         return {"frontend_exit": result}
     if args.command == "toolchain":
+        if args.toolchain_command == "verify-eka1":
+            from symbian.emulator.configuration import resolve
+            from symbian.emulator.eka1 import run_probe
+
+            return run_probe(
+                args.artifact,
+                args.output,
+                resolve(root=args.root, sdk=args.sdk, overrides=options(args)),
+                expected_reason=args.expected_reason,
+            )
         if args.toolchain_command == "verify-gui-package":
             from symbian.packaging.verification import verify_gui_package
 
