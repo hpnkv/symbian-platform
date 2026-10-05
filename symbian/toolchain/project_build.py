@@ -207,6 +207,14 @@ def build(tree: Path, name: str, cmake: str) -> str:
 
 def dependencies(tree: Path, artifact: Path, ninja: str) -> frozenset[Path]:
     """Collects graph inputs, including compiler-discovered local headers."""
+    version = run([ninja, "--version"], cwd=tree)
+    match = re.match(r"(\d+)\.(\d+)", version)
+    if match is None or tuple(map(int, match.groups())) < (1, 12):
+        raise StatusError(
+            Code.FAILED_PRECONDITION,
+            "SDK input tracking requires Ninja 1.12 or later; "
+            "install it with uv tool install ninja and update PATH",
+        )
     listing = run(
         [
             ninja,

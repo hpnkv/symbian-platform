@@ -59,7 +59,7 @@ def test_cxx20_language_build_has_real_compiler_and_loader_inputs(cxx20):
     assert cxx20["reproducible"]
     assert not cxx20["runtime_verified"]
     assert not cxx20["symbian_loader_verified"]
-    assert len(cxx20["e32"]["code_relocations"]) == 4
+    assert len(cxx20["e32"]["code_relocations"]) == 8
     assert not cxx20["e32"]["imports"]
     assert str(PROJECT / "probe.h") in cxx20["inputs"]
     database = json.loads(Path(cxx20["compile_commands"]).read_text())
@@ -150,7 +150,7 @@ def test_target_header_subset_retains_dependencies_and_distinct_code(
     assert report["reproducible"]
     assert report["sha256"] != cxx20["sha256"]
     assert not report["e32"]["imports"]
-    assert len(report["e32"]["code_relocations"]) == 4
+    assert len(report["e32"]["code_relocations"]) == 8
     configuration = (Path(LIBCXX_CONFIG) / "__config_site").resolve()
     assert str(configuration) in report["inputs"]
     for header in ("bit", "concepts", "span"):

@@ -146,7 +146,12 @@ def test_wrong_architecture_stops_before_guest_state_is_created(
     monkeypatch.setattr(
         launch,
         "inspect_image",
-        lambda _: {"architecture": "armv7", "uid3": 0xE0000811, "dll": False},
+        lambda _: {
+            "architecture": "armv7",
+            "uid3": 0xE0000811,
+            "dll": False,
+            "imports": [],
+        },
     )
     with pytest.raises(StatusError) as failure:
         with launch.session(root, overrides={"emulator": emulator}):

@@ -112,9 +112,9 @@ std::string ExportBitmap(const std::vector<ExportSlot>& exports) {
 absl::StatusOr<std::string> EncodeCodeRelocations(
     const std::vector<uint32_t>& offsets,
     const std::set<uint32_t>& data_targets) {
-  if (offsets.empty() || offsets.size() > 65535) {
+  if (offsets.empty() || offsets.size() > 131070) {
     return absl::InvalidArgumentError(
-        "Code relocations require 1..65535 offsets");
+        "Code relocations require 1..131070 offsets");
   }
   std::string bytes(8, '\0');
   for (const auto offset : data_targets) {
@@ -158,7 +158,7 @@ absl::StatusOr<std::vector<uint32_t>> DecodeCodeRelocations(
     std::set<uint32_t>* data_targets) {
   if (bytes.size() < 16 || bytes.size() > 1024 * 1024 ||
       Read32(bytes, 0) != bytes.size() - 8 || bytes.size() % 4 ||
-      Read32(bytes, 4) == 0 || Read32(bytes, 4) > 65535) {
+      Read32(bytes, 4) == 0 || Read32(bytes, 4) > 131070) {
     return absl::DataLossError("Invalid E32 code relocation section");
   }
   std::vector<uint32_t> offsets;
@@ -181,7 +181,7 @@ absl::StatusOr<std::vector<uint32_t>> DecodeCodeRelocations(
       const auto type = word & 0xf000;
       if ((type != 0x1000 && (type != 0x2000 || data_targets == nullptr)) ||
           offset % 4 || !Within(code_size, offset, 4) ||
-          offsets.size() >= 65535) {
+          offsets.size() >= 131070) {
         return absl::DataLossError("Invalid E32 text relocation entry");
       }
       offsets.push_back(static_cast<uint32_t>(offset));

@@ -828,11 +828,13 @@ absl::StatusOr<std::string> ConvertExecutable(
   bytes[154] = bitmap.empty() ? 0 : 1;  // No holes or full bitmap.
   bytes.replace(155, bitmap.size(), bitmap);
   bytes.append(code);
+  // The publisher extends the RX mapping with the frozen export directory.
+  // Keep the validated EHABI descriptor's read-only limit in that mapping.
+  if (definition != nullptr && *exception_descriptor != 0) {
+    Put32(bytes, header_size + (*exception_descriptor & ~uint32_t{1}) + 12,
+          segment->address + code_size);
+  }
   if (definition != nullptr) {
-    if (exports.size() > 65535 - relocations.size()) {
-      return absl::ResourceExhaustedError(
-          "Combined E32 pointer/export relocation limit exceeded");
-    }
     bytes.resize(header_size + code_size, '\0');
     Put32(bytes, 88, header_size + export_prefix + 4);
     Put32(bytes, 92, static_cast<uint32_t>(exports.size()));

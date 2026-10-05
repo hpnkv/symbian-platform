@@ -43,7 +43,7 @@ def test_real_pointer_build_retains_four_fixups_and_header_dependencies(
     assert report["reproducible"]
     assert not report["runtime_verified"]
     assert not report["symbian_loader_verified"]
-    assert len(report["e32"]["code_relocations"]) == 4
+    assert len(report["e32"]["code_relocations"]) == 8
     assert report["e32"]["imports"] == []
     assert not report["e32"]["dll"]
     assert str(PROJECT / "probe.h") in report["inputs"]
@@ -118,8 +118,8 @@ def test_native_dll_keeps_code_pointer_and_export_fixups(pointers):
         0xE0000810,
     )
     info = inspect_e32(image)
-    assert len(info.code_relocations) == 11
-    assert info.code_relocations[:4] == report["e32"]["code_relocations"]
+    assert len(info.code_relocations) == 15
+    assert info.code_relocations[:8] == report["e32"]["code_relocations"]
     assert len(info.exports) == 7
     assert info.dll
 

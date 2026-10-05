@@ -1,6 +1,12 @@
 # Bounded no-exceptions guest runtime: actual LLVM sources and Symbian heap.
 # It deliberately lives outside the host target graph.
 enable_language(C)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND
+   CMAKE_CXX_COMPILER_VERSION VERSION_LESS 23)
+  message(FATAL_ERROR
+    "The pinned LLVM 23 libc++ guest runtime requires Clang 23 or later; "
+    "select the matching LLVM toolchain with SYMBIAN_LLVM_BIN")
+endif()
 foreach(input SYMBIAN_LIBCXX_SOURCE SYMBIAN_OPENC_SOURCE SYMBIAN_GUI_SDK_INCLUDE)
   if(NOT IS_DIRECTORY "${${input}}")
     message(FATAL_ERROR "${input} must name preserved target sources/headers")

@@ -35,7 +35,8 @@ def test_frozen_dll_build_records_definition_and_actual_symbol(dll):
     info = report["e32"]
     assert info["dll"]
     assert info["header_size"] == 156
-    assert len(info["exports"]) == len(info["code_relocations"]) == 7
+    assert len(info["exports"]) == 7
+    assert len(info["code_relocations"]) == 11
     assert info["exports"][-1]["ordinal"] == 7
     assert not info["exports"][-1]["absent"]
     assert info["exports"][-1]["address"] != 0x8080  # No fixed fixture address.
@@ -72,7 +73,8 @@ def test_frozen_ordinal_header_and_relocation_page_bounds(
     image = convert_dll(elf, definition, [], 0xE0000810)
     info = inspect_e32(image)
     assert info.header_size == header_size
-    assert len(info.exports) == len(info.code_relocations) == ordinal
+    assert len(info.exports) == ordinal
+    assert len(info.code_relocations) == ordinal + 4
     assert not info.exports[-1].absent
     assert all(slot.absent for slot in info.exports[:-1])
     if ordinal == 1:
