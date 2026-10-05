@@ -14,6 +14,7 @@ _ROWS = (
     ("applications", "Applications", None),
     ("firmware", "Firmware", None),
     ("emulator", "Emulator", None),
+    ("signing", "Signing", None),
     ("sdk", "SDK tools", None),
     ("sdk_setup", "Setup", "sdk"),
     ("sdk_inspection", "Inspection", "sdk"),

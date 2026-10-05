@@ -4,6 +4,7 @@
 const ConsoleLiveViews = (() => {
   const nokia808Image = "__NOKIA_808_IMAGE__";
   const settings = {
+    "signing list": ["identities"],
     "firmware list": ["store", "project", "sdk", "root", "emulator", "importer", "backend", "language", "profile"],
     "emu resolve": ["project", "sdk", "firmware", "store", "root", "emulator", "importer", "backend", "language", "profile"],
   };
@@ -72,6 +73,12 @@ const ConsoleLiveViews = (() => {
       `<section class="result-data"><h3>Settings sources</h3>${ConsoleResultViews.render({origins: data.origins, layers: data.layers}, `task:${key}`, escapeHtml)}</section>` +
       renderRawDetails(state.outcomes[key], `task:${key}`);
   }
+  function signing(state) {
+    const key = "signing list";
+    const data = outcomeData(state, key);
+    if (!data) return status(state, key) + '<div class="loading-state">Reading signing identities…</div>';
+    return status(state, key) + `<section class="panel result-panel"><h2>Signing identities</h2><p class="muted">${escapeHtml(data.directory)}</p>${ConsoleResultViews.render({identities: data.identities || []}, `task:${key}`, escapeHtml)}</section>`;
+  }
   function doctor(state) {
     const key = "doctor";
     const data = outcomeData(state, key);
@@ -101,6 +108,7 @@ const ConsoleLiveViews = (() => {
     const key = task.command.path.join(" ");
     if (key === "firmware list") return firmware(state);
     if (key === "emu resolve") return emulator(state);
+    if (key === "signing list") return signing(state);
     if (key === "doctor") return doctor(state);
     if (key === "device list") return devices(state);
     return "";
@@ -112,7 +120,7 @@ const ConsoleLiveViews = (() => {
     if (!names) return "";
     const values = formValues(task);
     const byName = new Map(task.command.arguments.map(argument => [argument.name, argument]));
-    const mainNames = key === "firmware list" ? ["store"] : ["project", "sdk", "firmware", "store"];
+    const mainNames = key === "signing list" ? ["identities"] : key === "firmware list" ? ["store"] : ["project", "sdk", "firmware", "store"];
     const extraNames = names.filter(name => !mainNames.includes(name));
     const renderFields = names => names.map(name => byName.has(name) ? fieldMarkup(byName.get(name), values[name], []) : "").join("");
     return `<h2>Resolve with</h2>${renderFields(mainNames)}` +

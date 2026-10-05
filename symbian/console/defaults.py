@@ -24,6 +24,8 @@ def initial_value(
     if context is None:
         return argument.default or ""
     if argument.name == "project":
+        if path == ("emu", "run"):
+            return context.project or ""
         return context.project or context.workspace
     if argument.name in {"root", "workspace"}:
         return context.workspace

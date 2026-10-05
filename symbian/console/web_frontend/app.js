@@ -4,6 +4,7 @@ const pageInfo = {
   applications: ["Applications", "Create, build, run and package Symbian applications."],
   application_detail: ["Application", "Identity, build output and emulator controls."],
   firmware: ["Firmware", "Browse, import and export local firmware content."],
+  signing: ["Signing", "Manage local signing identities and sign SIS applications."],
   emulator: ["Emulator", "Configure, inspect and control emulator sessions."],
   sdk_setup: ["SDK setup", "Check this computer and prepare development tools."],
   sdk_inspection: ["Artifact inspection", "Examine and verify native outputs."],
@@ -15,7 +16,7 @@ const pageInfo = {
   activity: ["Activity", "Requests completed during this local console session."],
 };
 const groupPages = {
-  "Applications": "applications", "Firmware": "firmware", "Emulator": "emulator",
+  "Applications": "applications", "Firmware": "firmware", "Emulator": "emulator", "Signing": "signing",
   "Getting started": "sdk_setup", "SDK and toolchain": "sdk_setup",
   "Inspection": "sdk_inspection", "Preservation": "sdk_preservation",
   "Devices": "device_actions",
@@ -26,10 +27,11 @@ const pathNames = new Set([
   "instance", "bundle", "rpkg", "z_drive", "archive", "ticket",
   "headers", "sources_root", "oracles_build", "definition", "elf",
   "import_proxy", "root", "firmware", "manifest",
+  "identities", "certificate", "private_key", "signing_certificate", "signing_key",
 ]);
 const folderNames = new Set([
   "project", "store", "workspace", "output", "archive", "headers",
-  "sources_root", "oracles_build", "root", "instance",
+  "sources_root", "oracles_build", "root", "instance", "identities",
 ]);
 const advancedNames = new Set([
   "at_status", "backend", "clear_firmware", "compiler", "emulator",
@@ -43,6 +45,7 @@ const navSections = [
   ["applications", "Applications", "app"],
   ["firmware", "Firmware", "firmware"],
   ["emulator", "Emulator", "screen"],
+  ["signing", "Signing", "shield"],
   ["sdk_setup", "SDK tools", "tools"],
   ["device_actions", "Devices", "phone"],
   ["development_agents", "Development Agents", "connection"],
@@ -55,13 +58,14 @@ const subpages = {
 const liveWorkspaces = {
   firmware: "firmware list",
   emulator: "emu resolve",
+  signing: "signing list",
   sdk_setup: "doctor",
   device_actions: "device list",
 };
 const refreshLiveAfter = new Set([
   "firmware import", "emu configure", "emu configure-ide",
   "prepare-app-sdk", "sdk install", "toolchain prepare-gui-sdk",
-  "device install",
+  "device install", "signing create", "signing import", "signing archive",
 ]);
 const icons = {
   app: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
@@ -88,7 +92,7 @@ const state = {
   initialApplicationView: false,
   deviceStatus: null, localPending: null, workStatus: "Connecting to the local SDK…",
   selectedTask: {}, step: {}, optionalOpen: {}, advanced: {}, drafts: {},
-  defaults: {}, errors: {}, outcomes: {}, detailsOpen: {},
+  defaults: {}, errors: {}, outcomes: {}, detailsOpen: {}, taskBusy: {},
   inventory: [], inventoryLoading: false, inventorySelection: null,
   inspection: {}, lastInspection: {}, activity: [], pageScroll: {},
   contextLoading: false, mtpLimit: 8,
@@ -412,6 +416,9 @@ function formValues(task) {
     values[argument.name] = Object.prototype.hasOwnProperty.call(draft, argument.name) ? draft[argument.name]
       : argument.kind === "flag" ? false : defaults[argument.name] ?? argument.default ?? "";
   }
+  if (task.command.path[0] === "signing" && key !== "signing list" && !values.identities) {
+    values.identities = state.outcomes["signing list"]?.result?.result?.directory || "";
+  }
   return values;
 }
 function fieldMarkup(argument, value, issues, binding = "data-field", prefix = "field") {
@@ -423,6 +430,9 @@ function fieldMarkup(argument, value, issues, binding = "data-field", prefix = "
   let control;
   if (argument.kind === "flag") {
     control = `<div class="check-row"><input id="${id}" type="checkbox" ${binding}="${name}" ${value ? "checked" : ""}><span>${escapeHtml(help || "Enable this option")}</span></div>`;
+  } else if (name === "identity" && ["signing sign", "signing archive"].includes(taskKey(selectedTask() || {command: {path: []}}))) {
+    const identities = state.outcomes["signing list"]?.result?.result?.identities || [];
+    control = `<div class="field-control"><select id="${id}" ${binding}="${name}" class="${issue ? "invalid" : ""}"><option value="">Choose a signing identity</option>${identities.map(identity => `<option value="${escapeHtml(identity.name)}" ${identity.name === value ? "selected" : ""}>${escapeHtml(identity.name)} · ${escapeHtml(identity.subject)}</option>`).join("")}</select></div>`;
   } else if (name === "device") {
     control = `<div class="field-control"><select id="${id}" ${binding}="${name}" class="${issue ? "invalid" : ""}"><option value="">Choose a connected phone</option>${phoneOptions(value)}</select></div>`;
   } else if (argument.choices?.length) {
@@ -467,7 +477,7 @@ function renderTask(task) {
     ...(state.optionalOpen[key] ? task.steps.filter(item => item.optional && !steps.includes(item)).flatMap(item => item.arguments) : []),
   ];
   const errorBanner = issues.find(issue => !shownArguments.some(argument => argument.name === issue.field));
-  return `<section class="panel task-panel" aria-label="Selected action">${content}${errorBanner ? `<div class="inline-alert">${escapeHtml(errorBanner.message)}</div>` : ""}<div class="form-actions">${index > 0 ? '<button class="button" data-back="true">Back</button>' : ""}<span class="spacer"></span><button class="button primary" data-forward="true">${escapeHtml(forward)}</button></div></section>`;
+  return `<section class="panel task-panel" aria-label="Selected action">${content}${errorBanner ? `<div class="inline-alert">${escapeHtml(errorBanner.message)}</div>` : ""}<div class="form-actions">${index > 0 ? '<button class="button" data-back="true">Back</button>' : ""}<span class="spacer"></span><button class="button primary" data-forward="true" ${state.taskBusy[key] ? "disabled" : ""}>${escapeHtml(state.taskBusy[key] ? "Working…" : forward)}</button></div></section>`;
 }
 async function fetchDefaults(task) {
   const key = taskKey(task);
@@ -510,7 +520,10 @@ async function advanceTask(task) {
 async function runTask(task, values) {
   const key = taskKey(task);
   const label = task.presentation.title;
+  if (state.taskBusy[key]) return;
+  state.taskBusy[key] = true;
   setWork(`Working · ${label}`);
+  renderMain();
   if (task.command.path[0] === "device") setPending(label);
   try {
     const outcome = await window.pywebview.api.run_form({path: task.command.path, values});
@@ -523,6 +536,7 @@ async function runTask(task, values) {
     appendActivity(label, `Error: ${error.message || error}`);
     setWork(`Error · ${label}`);
   } finally {
+    state.taskBusy[key] = false;
     state.localPending = null;
     await refreshStatus();
     refreshContext();

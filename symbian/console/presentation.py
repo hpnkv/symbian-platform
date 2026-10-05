@@ -52,6 +52,36 @@ class TaskStep(ConsoleModel):
 # for flags, choices, defaults and execution semantics.
 _TASKS = (
     (
+        "agent hello",
+        "Devices",
+        "Inspect agent handshake",
+        "Authenticate the development agent and inspect its protocol greeting.",
+    ),
+    (
+        "agent status",
+        "Devices",
+        "Read agent status",
+        "Read bounded status from an authenticated development agent.",
+    ),
+    (
+        "agent logs",
+        "Devices",
+        "Read recent agent logs",
+        "Read a bounded page of development-agent service events.",
+    ),
+    (
+        "agent files",
+        "Devices",
+        "List agent workspace",
+        "List the authenticated agent's read-only development workspace.",
+    ),
+    (
+        "agent listen",
+        "Devices",
+        "Listen for agent connection",
+        "Accept a phone-initiated authenticated status or log session.",
+    ),
+    (
         "doctor",
         "Getting started",
         "Check this computer",
@@ -122,6 +152,47 @@ _TASKS = (
         "Firmware",
         "Examine a firmware source",
         "Read an archive or source without importing it.",
+    ),
+    (
+        "emu run",
+        "Emulator",
+        "Run emulator",
+        "Open a fresh emulator session without launching an application. "
+        "The selected application is built and staged for manual launch. "
+        "Close the emulator window to finish the session.",
+    ),
+    (
+        "signing list",
+        "Signing",
+        "Browse signing identities",
+        "View local identities, certificate fingerprints and expiry dates.",
+    ),
+    (
+        "signing create",
+        "Signing",
+        "Create signing identity",
+        "Create a private RSA key and self-signed certificate.",
+    ),
+    (
+        "signing import",
+        "Signing",
+        "Import signing identity",
+        "Copy a matching PEM certificate and unencrypted RSA key "
+        "into private storage.",
+    ),
+    (
+        "signing archive",
+        "Signing",
+        "Archive signing identity",
+        "Remove an identity from active use and retain its keys "
+        "in the archive.",
+    ),
+    (
+        "signing sign",
+        "Signing",
+        "Sign an application",
+        "Sign an existing SIS with a local identity and save a new SIS file. "
+        "Self-signing does not establish trust on a phone.",
     ),
     (
         "emu resolve",
@@ -292,6 +363,12 @@ _ACTIONS = {
     "firmware import": "Import firmware",
     "firmware export": "Export bundle",
     "emu configure": "Save settings",
+    "emu run": "Run emulator",
+    "signing list": "Refresh identities",
+    "signing create": "Create identity",
+    "signing import": "Import identity",
+    "signing archive": "Archive identity",
+    "signing sign": "Sign application",
     "emu screenshot": "Capture screenshot",
     "emu pointer": "Send pointer action",
     "inspect": "Inspect file",
@@ -317,6 +394,7 @@ PRESENTATIONS = {
                 ("doctor",),
                 ("firmware", "list"),
                 ("emu", "resolve"),
+                ("signing", "list"),
                 ("device", "list"),
             }
             else "workflow"
@@ -340,6 +418,7 @@ GROUPS = (
     "Applications",
     "Firmware",
     "Emulator",
+    "Signing",
     "Inspection",
     "SDK and toolchain",
     "Preservation",
@@ -348,6 +427,11 @@ GROUPS = (
 
 LABELS = {
     "destination": "Destination",
+    "identities": "Signing identity folder",
+    "identity": "Signing identity name",
+    "common_name": "Certificate display name",
+    "certificate": "PEM certificate file",
+    "private_key": "PEM private key file",
     "sdk": "Installed SDK",
     "name": "Name",
     "ide": "IDE integration",
@@ -554,6 +638,8 @@ def summarize_command(result: CommandResult) -> OutcomeSummary:
         ("destination", "Saved to"),
         ("firmware", "Firmware identity"),
         ("output", "Output folder"),
+        ("name", "Identity"),
+        ("certificate", "Certificate"),
     ):
         value = payload.get(key)
         if isinstance(value, (str, int)) and value:

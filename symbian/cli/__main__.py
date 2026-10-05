@@ -123,6 +123,27 @@ _COMMAND_DESCRIPTIONS = {
         "firmware",
         "export",
     ): "Make a portable bundle of one imported firmware identity.",
+    (
+        "emu",
+        "run",
+    ): "Open an emulator session without launching an application.",
+    (
+        "signing",
+    ): "Manage private signing identities and sign SIS applications.",
+    (
+        "signing",
+        "list",
+    ): "List local signing identities and public certificate details.",
+    ("signing", "create"): "Create a named private RSA signing identity.",
+    ("signing", "import"): "Import a matching PEM certificate and RSA key.",
+    (
+        "signing",
+        "archive",
+    ): "Retire an identity while preserving its key material.",
+    (
+        "signing",
+        "sign",
+    ): "Sign an existing SIS application into a new output file.",
     ("emu",): "Resolve emulator settings and inspect a running instance.",
     (
         "emu",
@@ -521,6 +542,17 @@ def _parser() -> argparse.ArgumentParser:
             )
             command.add_argument("--unset", action="append", default=[])
             command.add_argument("--clear-firmware", action="store_true")
+    emulator_run = emulator_commands.add_parser(
+        "run", help="Open the emulator without launching an application"
+    )
+    emulator_run.add_argument(
+        "--project",
+        type=Path,
+        help="Application to stage; defaults to the current app folder.",
+    )
+    emulator_run.add_argument("--sdk", type=Path)
+    emulator_run.add_argument("--root", type=Path, default=Path.cwd())
+    add_options(emulator_run)
     firmware_commands = commands.add_parser(
         "firmware", help="Import and select shared ROM / drive Z baselines"
     ).add_subparsers(dest="firmware_command", required=True)
@@ -601,6 +633,45 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         help="Private key matching the signing certificate.",
     )
+    signing = commands.add_parser(
+        "signing", help="Manage local identities and sign SIS applications"
+    ).add_subparsers(dest="signing_command", required=True)
+    for action in ("list", "create", "import", "archive", "sign"):
+        command = signing.add_parser(action)
+        command.add_argument(
+            "--identities", type=Path, help="Private signing identity folder."
+        )
+        if action != "list":
+            command.add_argument(
+                "--identity", required=True, help="Local signing identity name."
+            )
+        if action == "create":
+            command.add_argument(
+                "--common-name",
+                required=True,
+                help="Display name for the self-signed certificate.",
+            )
+        elif action == "import":
+            command.add_argument(
+                "--certificate",
+                type=Path,
+                required=True,
+                help="PEM certificate file to import.",
+            )
+            command.add_argument(
+                "--private-key",
+                type=Path,
+                required=True,
+                help="Matching unencrypted PEM RSA key file.",
+            )
+        elif action == "sign":
+            command.add_argument("package", type=Path)
+            command.add_argument(
+                "--destination",
+                type=Path,
+                required=True,
+                help="New signed SIS file; must not exist.",
+            )
     inspect = commands.add_parser(
         "inspect", help="Inspect native format metadata"
     )
@@ -1088,6 +1159,24 @@ def _execute(args: argparse.Namespace) -> dict:
 
         return verify_probe(args.artifact, args.oracles_build, args.output)
     if args.command == "emu":
+        if args.emu_command == "run":
+            from symbian.emulator.launch import main as launch
+            from symbian.status import Code, StatusError
+
+            arguments = ["--standalone", "--root", str(args.root)]
+            for key in ("project", "sdk"):
+                value = getattr(args, key)
+                if value is not None:
+                    arguments.extend([f"--{key}", str(value)])
+            result = launch(
+                [*arguments, *option_arguments(args)], raise_errors=True
+            )
+            if result:
+                raise StatusError(
+                    Code.CANCELLED if result == 130 else Code.INTERNAL,
+                    f"Emulator supervisor exited {result}",
+                )
+            return {"frontend_exit": result, "standalone": True}
         if args.emu_command in ("resolve", "configure"):
             from symbian.emulator.configuration import configure, resolve
             from symbian.emulator.firmware import describe
@@ -1185,6 +1274,22 @@ def _execute(args: argparse.Namespace) -> dict:
             args.linker,
             architecture=args.architecture,
         )
+    if args.command == "signing":
+        from symbian.packaging.signing import IdentityStore, sign_package
+
+        store = IdentityStore(args.identities)
+        if args.signing_command == "list":
+            return store.list()
+        if args.signing_command == "create":
+            return store.create(args.identity, args.common_name)
+        if args.signing_command == "import":
+            return store.import_identity(
+                args.identity, args.certificate, args.private_key
+            )
+        if args.signing_command == "archive":
+            return store.archive(args.identity)
+        certificate, key = store.paths(args.identity)
+        return sign_package(args.package, args.destination, certificate, key)
     if args.command == "package":
         if (args.project / "sdk-location.json").is_file():
             import os

@@ -48,7 +48,7 @@ def run_cli(request: CommandRequest) -> CommandResult:
             environment["SYMBIAN_CONSOLE_RUN_SESSION_PATH"] = (
                 request.run_session_path
             )
-        if request.path == ("app", "run"):
+        if request.path in {("app", "run"), ("emu", "run")}:
             environment["SYMBIAN_CONSOLE_FOREGROUND_EMULATOR"] = "1"
         options = dict(
             stdin=subprocess.DEVNULL,

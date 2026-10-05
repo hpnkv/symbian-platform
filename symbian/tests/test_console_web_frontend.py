@@ -232,7 +232,8 @@ let html = vm.runInContext('renderAgents()', context);
 if (!html.includes('Agent installation unknown')) process.exit(3);
 if (!html.includes('Build for this phone')) process.exit(4);
 if (!html.includes('data-agent-stage="usb:808" disabled')) process.exit(5);
-vm.runInContext("state.agentPackages['usb:808'] = {package: '/tmp/agent_service.sis', pairing_code: '1234ABCD'}", context);
+vm.runInContext("state.agentPackages['usb:808'] = " +
+  "{package: '/tmp/agent_service.sis', pairing_code: '1234ABCD'}", context);
 html = vm.runInContext('renderAgents()', context);
 if (html.includes('data-agent-stage="usb:808" disabled')) process.exit(6);
 if (html.includes('Agent installed')) process.exit(7);
@@ -246,7 +247,8 @@ vm.runInContext(`
 `, context);
 html = vm.runInContext('renderAgents()', context);
 if (!html.includes('data-agent-stage="usb:pc-suite" disabled')) process.exit(8);
-vm.runInContext("state.agentPackages['usb:pc-suite'] = {package: '/tmp/agent_service.sis', pairing_code: '1234ABCD'}", context);
+vm.runInContext("state.agentPackages['usb:pc-suite'] = " +
+  "{package: '/tmp/agent_service.sis', pairing_code: '1234ABCD'}", context);
 html = vm.runInContext('renderAgents()', context);
 if (html.includes('data-agent-stage="usb:pc-suite" disabled')) process.exit(13);
 if (!html.includes('PC Suite MTP')) process.exit(9);
@@ -412,6 +414,12 @@ def test_workdir_selects_application_and_local_sdk(
         assert snapshot["context"]["project"] == str(tmp_path)
         assert snapshot["context"]["sdk_manifest"] == str(sdk / "sdk.json")
         assert bridge.get_application_overview()["name"] == "app"
+        bridge.get_catalog()
+        defaults = FormDefaults.model_validate(
+            bridge.get_form_defaults(["emu", "run"])
+        )
+        values = {field.name: field.value for field in defaults.values}
+        assert values["project"] == str(tmp_path)
     finally:
         bridge.shutdown()
 
@@ -421,7 +429,9 @@ def test_web_bridge_exposes_catalog_and_resolved_defaults() -> None:
     bridge = ConsoleWebBridge()
     try:
         catalog = DesktopCatalog.model_validate(bridge.get_catalog())
-        assert len(catalog.tasks) == 38
+        from symbian.console.presentation import PRESENTATIONS
+
+        assert len(catalog.tasks) == len(PRESENTATIONS)
         live = {
             task.command.path
             for task in catalog.tasks
@@ -431,6 +441,7 @@ def test_web_bridge_exposes_catalog_and_resolved_defaults() -> None:
             ("doctor",),
             ("firmware", "list"),
             ("emu", "resolve"),
+            ("signing", "list"),
             ("device", "list"),
         }
         doctor = next(
@@ -547,5 +558,69 @@ def test_host_selection_controls_context_and_child_directory(
         assert bridge.get_context()["context"]["workspace"] == str(
             workspace.resolve()
         )
+    finally:
+        bridge.shutdown()
+
+
+def test_signing_view_lists_identities_and_offers_identity_picker():
+    """Render public certificate details and the signing identity picker."""
+    import json
+
+    if not shutil.which("node"):
+        pytest.skip("Node.js is needed for the frontend render check")
+    bridge = ConsoleWebBridge()
+    try:
+        tasks = bridge.get_catalog()["tasks"]
+    finally:
+        bridge.shutdown()
+    script = """
+const fs = require('fs');
+const vm = require('vm');
+const context = vm.createContext({window: {addEventListener: () => {}}});
+for (const path of ['result_views.js', 'live_views.js', 'app.js']) {
+  const source = fs.readFileSync(
+    'symbian/console/web_frontend/' + path, 'utf8');
+  vm.runInContext(source, context);
+}
+vm.runInContext(`
+state.tasks = TASKS;
+state.page = 'signing';
+state.selectedTask.signing = 'signing sign';
+state.outcomes['signing list'] = {result: {result: {
+  directory: '/private/identities', identities: [{
+    name: 'developer', subject: '<Developer>', expires_at: 'Oct 1 2036',
+    fingerprint_sha256: 'AA:BB'
+  }]
+}}};
+`, context);
+process.stdout.write(vm.runInContext('renderActions()', context));
+""".replace("TASKS", json.dumps(tasks))
+    result = subprocess.run(
+        ["node", "-e", script], capture_output=True, text=True, check=True
+    )
+    html = result.stdout
+    assert 'data-task="signing create"' in html
+    assert 'data-task="signing import"' in html
+    assert 'data-task="signing archive"' in html
+    assert 'data-field="identity"' in html
+    assert '<option value="developer"' in html
+    assert "&lt;Developer&gt;" in html
+    assert "<Developer>" not in html
+    assert "AA:BB" in html
+    assert 'data-browse="package"' in html
+    assert 'data-browse="destination"' in html
+
+
+def test_emulator_view_offers_standalone_run_action():
+    """The public standalone command is reachable without selecting an app."""
+    bridge = ConsoleWebBridge()
+    try:
+        tasks = DesktopCatalog.model_validate(bridge.get_catalog()).tasks
+        run = next(
+            task for task in tasks if task.command.path == ("emu", "run")
+        )
+        assert run.presentation.group == "Emulator"
+        assert "without launching an application" in run.presentation.summary
+        assert not any(argument.required for argument in run.command.arguments)
     finally:
         bridge.shutdown()

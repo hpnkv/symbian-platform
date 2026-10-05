@@ -148,6 +148,12 @@ class ConsoleFrame(wx.Frame):
             "Configure and inspect emulator sessions.",
             ("Emulator",),
         )
+        self.signing = self._actions(
+            self.pages,
+            "Signing",
+            "Manage local identities and sign SIS applications.",
+            ("Signing",),
+        )
         self.sdk_setup = self._actions(
             self.pages,
             "SDK setup",
@@ -183,6 +189,7 @@ class ConsoleFrame(wx.Frame):
             "applications",
             "firmware",
             "emulator",
+            "signing",
             "sdk_setup",
             "sdk_inspection",
             "sdk_preservation",
@@ -195,6 +202,7 @@ class ConsoleFrame(wx.Frame):
             (self.applications, "Applications"),
             (self.firmware, "Firmware"),
             (self.emulator, "Emulator"),
+            (self.signing, "Signing"),
             (self.sdk_setup, "SDK setup"),
             (self.sdk_inspection, "Inspection"),
             (self.sdk_preservation, "Preservation"),
@@ -283,6 +291,7 @@ class ConsoleFrame(wx.Frame):
             self.applications,
             self.firmware,
             self.emulator,
+            self.signing,
             self.sdk_setup,
             self.sdk_inspection,
             self.sdk_preservation,

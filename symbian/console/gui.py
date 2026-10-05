@@ -76,6 +76,12 @@ class ConsoleWindow:
             "Configure and inspect emulator sessions.",
             ("Emulator",),
         )
+        self.signing_tab, self.signing = self._task_panel(
+            self.tabs,
+            "Signing",
+            "Manage local identities and sign SIS applications.",
+            ("Signing",),
+        )
         self.sdk_tab = ttk.Notebook(self.tabs)
         self.sdk_setup_tab, self.sdk_setup = self._task_panel(
             self.sdk_tab,
@@ -138,6 +144,7 @@ class ConsoleWindow:
         self.tabs.add(self.applications_tab, text="Applications")
         self.tabs.add(self.firmware_tab, text="Firmware")
         self.tabs.add(self.emulator_tab, text="Emulator")
+        self.tabs.add(self.signing_tab, text="Signing")
         self.tabs.add(self.sdk_tab, text="SDK tools")
         self.tabs.add(self.device_tab, text="Devices")
         self.tabs.add(self.activity_tab, text="Activity")
@@ -273,6 +280,7 @@ class ConsoleWindow:
             self.applications,
             self.firmware,
             self.emulator,
+            self.signing,
             self.sdk_setup,
             self.sdk_inspection,
             self.sdk_preservation,
