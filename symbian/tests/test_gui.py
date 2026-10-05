@@ -275,7 +275,9 @@ def test_gui_original_image_validation_keeps_all_execution_flags_false(
 def test_gui_validator_rejects_integer_probe(tmp_path):
     if not shutil.which("clang++") or not shutil.which("ld.lld"):
         pytest.skip("Clang/LLD required")
-    report = toolchain.build(PROJECT.parent / "e32_probe", tmp_path / "build")
+    report = toolchain.build(
+        PROJECT.parents[1] / "probes/e32_probe", tmp_path / "build"
+    )
     with pytest.raises(StatusError) as caught:
         verify_gui(Path(report["artifact"]), tmp_path, tmp_path / "checks")
     assert caught.value.code == Code.INVALID_ARGUMENT
@@ -296,7 +298,9 @@ def test_imported_gui_package_keeps_native_digest_and_rejects_dll(
     )
     assert not packaged["runtime_verified"]
     assert packaged["sis"]["target"] == "!:\\sys\\bin\\gui_app.exe"
-    dll = toolchain.build(PROJECT.parent / "dll_probe", tmp_path / "dll")
+    dll = toolchain.build(
+        PROJECT.parents[1] / "probes/dll_probe", tmp_path / "dll"
+    )
     with pytest.raises(StatusError) as caught:
         packaging.package(PROJECT, Path(dll["artifact"]), tmp_path / "bad")
     assert caught.value.code == Code.UNIMPLEMENTED

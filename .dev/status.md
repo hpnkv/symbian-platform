@@ -2800,3 +2800,25 @@ publishing. Five artifact-gate regressions and actionlint pass. Static dependenc
 prefixes are cached outside the manylinux container via its `/host` mount.
 These archives are explicitly host components; full installed guest/tool SDK
 payloads remain unfinished and are not represented by the host archive names.
+
+### 2026-10-05 — complete enabled Linux suite after source sync
+
+The Linux checkout at ~/dev/symbian-platform now follows eff8e9f; previous
+uncommitted validation edits remain in a reversible Git stash. The full suite
+with source GUI headers, the prepared SDK, historical oracle build root and
+Xvfb passes: 330 passed, 387 optional skips, one upstream Starlette warning
+(170.72s). The preceding run's missing display and doubled platform-tests path
+were harness setup mistakes, not SDK failures. Two dynamic GUI-test references
+to relocated probes were corrected. Root guest ARMv5T and ARMv6 presets both
+configure/build with explicit SYMBIAN_SDK_MANIFEST; the toolchain now follows
+that override before the user activation record. Native Linux CTest passes
+13/13 (0.42s). Logs are /tmp/symbian-linux-full-sdk-tests-r6.log,
+/tmp/symbian-linux-host-tests-r6.log and symbian-linux-probes-*-r6.log on Linux.
+
+Release host caching now keys the tested installed core on native sources,
+CMake/build scripts, dependency inputs and VERSION, while Python-only/docs
+changes reuse it. A cache hit still builds/runs the relocated standalone
+consumer before archiving and rebuilding interpreter-specific bindings.
+The cache-hit script branch and archive creation passed on macOS; Bash syntax
+and actionlint pass. The active dry run has all eight Linux and four macOS
+arm64 wheels/audits complete, with Intel still running.

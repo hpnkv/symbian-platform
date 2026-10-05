@@ -5818,3 +5818,18 @@ the same old-fallback reproducer terminate. Host fiber CTest passes on macOS and
 Ubuntu after the fix. The regression now parks workers with an infinite timer
 before immediate posts; the manylinux matrix remains the platform acceptance
 check. No guest scheduler implementation changed.
+
+## 2026-10-05 — Linux source sync and SDK preset selection
+
+Preserved the prior Linux working-tree edits in a stash, then fast-forwarded
+to the published source. Full source-GUI/oracle tests uncovered two derived
+PROJECT.parent probe paths missed by literal relocation searches. Both now
+select root probes. The root guest preset ignored SYMBIAN_SDK_MANIFEST and
+required a user activation record even with an explicitly selected SDK; it
+now uses the same environment-before-activation order as the Python selector.
+Both ARM indexing/probe presets build on Linux with that override. Full enabled
+Pytest under Xvfb, with the oracle build root (not its platform-tests subdir),
+passes 330 tests with 387 optional skips. Native CTest passes 13 targets.
+Source onboarding also needs the actual libc++/compiler-rt, Abseil, mimalloc,
+MM/appsupport, nghttp2 and resource-compiler inputs, plus the maintained LLVM
+patches. The public source guide now gives the missing source acquisition steps.
