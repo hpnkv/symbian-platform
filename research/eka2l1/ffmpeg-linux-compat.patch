@@ -1,0 +1,30 @@
+diff --git a/libavcodec/x86/mathops.h b/libavcodec/x86/mathops.h
+--- a/libavcodec/x86/mathops.h
++++ b/libavcodec/x86/mathops.h
+@@ -114,6 +114,6 @@ static inline  int32_t NEG_SSR32( int32_t a, int8_t s){
+     __asm__ ("sarl %1, %0\n\t"
+          : "+r" (a)
+-         : "ic" ((uint8_t)(-s))
++         : "Ic" ((uint8_t)(-s))
+     );
+     return a;
+ }
+@@ -125,6 +125,6 @@ static inline uint32_t NEG_USR32(uint32_t a, int8_t s){
+     __asm__ ("shrl %1, %0\n\t"
+          : "+r" (a)
+-         : "ic" ((uint8_t)(-s))
++         : "Ic" ((uint8_t)(-s))
+     );
+     return a;
+ }
+diff --git a/linux_x64-build.sh b/linux_x64-build.sh
+--- a/linux_x64-build.sh
++++ b/linux_x64-build.sh
+@@ -107,6 +107,7 @@ ./configure \
+     ${MUXERS} \
+     ${PARSERS} \
+     ${PROTOCOLS} \
++    --disable-vulkan \
+     --arch=${ARCH}
+ 
+ make clean

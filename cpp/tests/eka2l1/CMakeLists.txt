@@ -208,3 +208,10 @@ target_link_libraries(symbian_control_probe PRIVATE
                       GTest::gtest_main)
 add_test(NAME symbian_control_probe COMMAND symbian_control_probe)
 set_tests_properties(symbian_control_probe PROPERTIES TIMEOUT 15)
+
+# These GPL integration TUs include original emulator throwing templates.
+# Their foreign-library boundary needs exceptions; SDK native libraries do not.
+file(GLOB symbian_eka2l1_boundary_sources CONFIGURE_DEPENDS
+     "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
+set_source_files_properties(${symbian_eka2l1_boundary_sources}
+  PROPERTIES COMPILE_OPTIONS -fexceptions)

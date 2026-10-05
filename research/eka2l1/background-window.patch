@@ -51,12 +51,14 @@ diff --git a/src/emu/qt/src/mainwindow.cpp b/src/emu/qt/src/mainwindow.cpp
 index 5e4005c..697783f 100644
 --- a/src/emu/qt/src/mainwindow.cpp
 +++ b/src/emu/qt/src/mainwindow.cpp
-@@ -71,12 +71,15 @@
+@@ -71,12 +71,17 @@
  #include <QDropEvent>
  #include <QEventLoop>
  #include <QFileDialog>
 +#include <QGuiApplication>
++#ifdef __APPLE__
 +extern "C" void eka2l1_configure_background_window(void* raw_view);
++#endif
  #include <QFuture>
  #include <QFutureWatcher>
  #include <QInputDialog>
@@ -67,7 +69,7 @@ index 5e4005c..697783f 100644
  #include <QLineEdit>
  #include <QThreadPool>
  #include <QtConcurrent/QtConcurrent>
-@@ -1735,7 +1738,35 @@ void main_window::on_action_check_for_update_triggered() {
+@@ -1735,7 +1738,37 @@ void main_window::on_action_check_for_update_triggered() {
  }
  
  void main_window::load_and_show() {
@@ -89,7 +91,9 @@ index 5e4005c..697783f 100644
 +    if (qEnvironmentVariable("EKA2L1_RESEARCH_BACKGROUND_WINDOW") == "1") {
 +        // Qt may replace Cocoa window flags during show(); apply the Space
 +        // behavior to the final native window after that transition.
++#ifdef __APPLE__
 +        eka2l1_configure_background_window(reinterpret_cast<void*>(winId()));
++#endif
 +    }
 +    // Suppress activation for the initial show only. Keeping this attribute
 +    // set prevents a later user click from selecting the normal title bar.

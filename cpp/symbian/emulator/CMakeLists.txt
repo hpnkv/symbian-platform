@@ -3,6 +3,11 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
 add_library(symbian_emulator_control STATIC control.cc)
 target_compile_features(symbian_emulator_control PUBLIC cxx_std_20)
 target_compile_options(symbian_emulator_control PRIVATE -fno-exceptions)
+# Original kernel/window headers contain throwing templates. These foreign
+# implementation boundaries need exceptions even though our API uses
+# Status; the other native adapters retain the default no-exceptions policy.
+set_source_files_properties(control.cc firmware.cc firmware_main.cc
+  PROPERTIES COMPILE_OPTIONS -fexceptions)
 target_include_directories(symbian_emulator_control PUBLIC
                            "${SYMBIAN_PLATFORM_ROOT}/cpp")
 target_include_directories(symbian_emulator_control PRIVATE

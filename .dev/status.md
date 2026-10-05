@@ -2716,3 +2716,15 @@ outer view at the form's edge.
   HTTP/TLS, legacy SIS, P900 and physical-device behavior remain unverified.
   [EKA1.md](EKA1.md) and the user guide describe replay, provenance and caveats;
   the research log retains the initial Mem::Copy return-oracle failure.
+
+### Linux x86_64 host and emulator build checkpoint — 2026-10-05
+
+Ubuntu 24.04.4 at the requested `~/dev/symbian-platform` checkout: fresh host
+CTest **13/13**, rebuilt-module Pytest **294 passed, 423 skipped**. The pinned
+patched Qt 6 emulator frontend and all configured native oracle executables
+build with Clang 20.1.8/Ninja 1.13.2. Original LLVM guest runtime requires
+Clang 23+; the exported SDK built **121 target archives** before host resource
+compiler installation, which now succeeds with the Linux limits-header fix.
+SDK relocation, tool dependency closure, oracle-enabled integration and Linux
+GUI/guest-debugger execution are still separate acceptance gates. See the
+research log for exact private logs and failed controls.

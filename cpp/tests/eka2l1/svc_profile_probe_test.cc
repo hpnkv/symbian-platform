@@ -39,6 +39,8 @@ TEST(SvcProfileProbeTest, RoutesObservedRomCallsToTheirExistingHandlers) {
   EXPECT_STREQ(HandlerName(profile, 0xe1), "leave_start");
   EXPECT_STREQ(HandlerName(profile, 0xf7), "thread_user_exiting");
   EXPECT_STREQ(HandlerName(profile, 0x10c), "static_call_done");
+  EXPECT_STREQ(HandlerName(profile, 0x10d), "library_entry_call_start");
+  EXPECT_STREQ(HandlerName(profile, 0x10e), "library_load_prepare");
   EXPECT_STREQ(HandlerName(profile, 0x800002), "heap_switch");
 }
 
@@ -46,8 +48,6 @@ TEST(SvcProfileProbeTest, LeavesUnverifiedSlotsUnregistered) {
   const auto& profile = eka2l1::epoc::svc_register_funcs_v101;
   EXPECT_EQ(profile.count(0x11), 0);
   EXPECT_EQ(profile.count(0x12), 0);
-  EXPECT_EQ(profile.count(0x10d), 0);
-  EXPECT_EQ(profile.count(0x10e), 0);
   EXPECT_EQ(profile.count(0xff), 0);
 }
 

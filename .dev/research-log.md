@@ -5560,3 +5560,29 @@ unused per-file inventory to installed SDKs. EKA1's five ordinal facts came from
 EKA2L1 revision2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8,
 src/emu/bridge/include/bridge/epoc6_n.def, hash
 047ffa38a86e2a590f7488429e397ece5c58b361a2d1b0c2d9285bf0f3ddcb1c.
+
+### Linux x86_64 portability verification — 2026-10-05
+
+On `helena@192.168.1.209`, Ubuntu 24.04.4, the pinned patched EKA2L1
+frontend now builds with Clang 20.1.8, Qt 6 and Ninja 1.13.2. The FFmpeg
+compatibility patch constrains x86 shift immediates and disables its obsolete
+Vulkan video acceleration; it does not disable emulator graphics. Dynarmic's
+MCL template needs an explicit `std::integer_sequence` specialization with
+contemporary libstdc++. Both patches apply-check against clean pinned source
+files. The updated background-window patch replays after reversing its previous
+version and guards the Cocoa-only hook on Linux.
+
+Original emulator headers contain throwing templates, so the owned integration
+translation units and three emulator adapter boundaries explicitly enable
+exceptions. General SDK libraries retain their Status/no-exceptions policy.
+The initial emulator CTest run failed because experiment artifacts were absent;
+it also exposed an obsolete assertion that the previously verified Belle DLL
+entry/load-preparation hooks were absent. The assertion now checks their actual
+handler names and retains the unverified-slot controls. Preserve this failed run
+at `/tmp/symbian-linux-emulator-tests-r1.log` rather than reporting it as a pass.
+
+Fresh host native CTest passed 13/13 (`/tmp/symbian-linux-native-tests-final.log`);
+a rebuilt Python module passed 294 tests with 423 explicitly skipped opt-in
+cases (`/tmp/symbian-linux-pytest-final-r1.log`). An oracle-enabled run is in
+progress. The frontend build does not prove Linux GUI interaction or firmware
+execution; neither result establishes physical-device compatibility.

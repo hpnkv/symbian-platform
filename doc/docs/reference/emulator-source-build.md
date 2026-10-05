@@ -38,17 +38,37 @@ algorithms are not linked into the SDK's native format implementation.
     cmake --build build/eka2l1 -j 8 --target eka2l1_qt
     ```
 
-=== "Linux x86_64 (provisional)"
+=== "Linux x86_64"
 
-    Install Qt 6 development packages and other dependencies required by the
-    [pinned EKA2L1 source](https://github.com/EKA2L1/EKA2L1). Verify the
-    version of each tool and library on the host; this command sequence has
-    not completed a Linux GUI build in this project.
+    The frontend builds on Ubuntu 24.04 x86_64 with Clang 20. Install the
+    build dependencies (package names below are for Ubuntu):
 
     ```sh
-    (cd research/upstream/EKA2L1/src/external/ffmpeg && sh linux_x64-build.sh)
+    sudo apt-get update
+    sudo apt-get install -y build-essential clang-20 lld-20 cmake ninja-build \
+      pkg-config nasm qt6-base-dev qt6-base-private-dev qt6-tools-dev \
+      qt6-svg-dev qt6-multimedia-dev libsdl2-dev libpulse-dev libasound2-dev \
+      libvulkan-dev libgl1-mesa-dev libx11-dev xvfb gdb-multiarch
+    ```
+
+    After the ordered root patches, apply the two submodule compatibility
+    patches. They constrain x86 shift immediates, disable old FFmpeg's
+    incompatible Vulkan video acceleration, and specialize Dynarmic's
+    integer-sequence template for contemporary libstdc++. The emulator's
+    graphics backend remains available.
+
+    ```sh
+    git -C research/upstream/EKA2L1/src/external/ffmpeg apply \
+      "$PWD/research/eka2l1/ffmpeg-linux-compat.patch"
+    git -C research/upstream/EKA2L1/src/external/dynarmic/externals/mcl apply \
+      "$PWD/research/eka2l1/mcl-integer-sequence.patch"
+    (cd research/upstream/EKA2L1/src/external/ffmpeg && \
+      MAKEFLAGS=-j8 sh linux_x64-build.sh)
     cmake -S research/upstream/EKA2L1 -B build/eka2l1 -G Ninja \
       -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+      -DCMAKE_C_COMPILER=clang-20 -DCMAKE_CXX_COMPILER=clang++-20 \
+      -DQT_DIR=/usr/lib/x86_64-linux-gnu/cmake/Qt6 \
+      -DQT_DEFAULT_MAJOR_VERSION=6 \
       -DEKA2L1_ENABLE_QT_CAMERA=OFF -DEKA2L1_SCRIPTING_LUA=OFF \
       -DCMAKE_PROJECT_EKA2L1_INCLUDE="$PWD/research/eka2l1/project-tests.cmake"
     cmake --build build/eka2l1 -j 8 --target eka2l1_qt
