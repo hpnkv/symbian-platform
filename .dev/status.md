@@ -2783,3 +2783,11 @@ passes plus four repaired negative/debug cases). Original normal pixel controls
 remain, with capture-scale normalization. The live GDB check now reaches both
 source breakpoints after correcting the emulator's Thumb-2 breakpoint-kind
 handling. Whole-suite and other host architecture release gates remain pending.
+
+### 2026-10-05 — release matrix debugging
+
+The static-archive merger repair reached native tests in the four-host CI matrix.
+Linux arm64 exposed an idle worker-pool deadlock in old libstdc++'s condition-
+variable clock fallback. A minimal Linux old-fallback reproducer timed out with
+an infinite steady deadline and passed with A11's 50ms park cap. The repaired
+host fiber test passes locally on macOS and Ubuntu; CI wheels are still pending.

@@ -151,6 +151,12 @@ TEST(ConcurrencyFiberTest, SchedulerPolicyAndHostLockParkGuard) {
 }
 
 TEST(ConcurrencyFiberTest, SharedPoolRunsStacklessPostsAndAbsoluteTimers) {
+  static std::atomic<int> never{0};
+  thread::PostAt(absl::InfiniteFuture(),
+                 [] { never.fetch_add(1, std::memory_order_relaxed); });
+  // Let every idle worker park before posting. An unbounded steady-clock wait
+  // can overflow libstdc++'s system-clock fallback and retain the pool mutex.
+  std::this_thread::sleep_for(std::chrono::milliseconds(60));
   std::atomic<int> completed{0};
   std::thread::id worker_id;
   const std::thread::id caller = std::this_thread::get_id();
@@ -178,10 +184,7 @@ TEST(ConcurrencyFiberTest, SharedPoolRunsStacklessPostsAndAbsoluteTimers) {
   EXPECT_GE(std::chrono::steady_clock::now() - started,
             std::chrono::milliseconds(20));
 
-  static std::atomic<int> never{0};
   std::atomic<int> past{0};
-  thread::PostAt(absl::InfiniteFuture(),
-                 [] { never.fetch_add(1, std::memory_order_relaxed); });
   thread::PostAt(absl::InfinitePast(),
                  [&] { past.fetch_add(1, std::memory_order_release); });
   const auto immediate_limit =

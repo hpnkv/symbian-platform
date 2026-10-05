@@ -5803,3 +5803,18 @@ Forced Apple-libtool and GNU-ar builds both passed 13/13 native tests and the
 relocated host consumer/CLI check. Logs: /tmp/symbian-apple-libtool-tests.log,
 /tmp/symbian-apple-libtool-consumer.log and the Linux /tmp/symbian-gnu-ar-*-r4.log.
 The full CI wheel matrix must still pass before publication.
+
+## 2026-10-05 — manylinux worker-pool idle wait
+
+Host SDK run 37301042669 reached 12 passing native targets on Linux arm64;
+`SharedPoolRunsStacklessPostsAndAbsoluteTimers` timed out inside the remaining
+fiber target. The pool passed `steady_clock::time_point::max()` to a predicate
+condition-variable wait. A standalone Linux reproducer disabling libstdc++'s
+`_GLIBCXX_USE_PTHREAD_COND_CLOCKWAIT` fallback completed with ordinary clockwait,
+but timed out after the producer attempted the pool mutex in the old fallback.
+Its steady-to-system deadline conversion overflowed, causing an immediate-wait
+loop with the mutex held. Capping the idle deadline at 50ms, as A11 does, let
+the same old-fallback reproducer terminate. Host fiber CTest passes on macOS and
+Ubuntu after the fix. The regression now parks workers with an infinite timer
+before immediate posts; the manylinux matrix remains the platform acceptance
+check. No guest scheduler implementation changed.

@@ -107,8 +107,12 @@ class WorkerPool {
         std::move(callback)();
         continue;
       }
+      // Match A11's bounded idle park. Older libstdc++ translates a steady
+      // deadline into system_clock before waiting; time_point::max() overflows
+      // that conversion and can spin while holding mu_, blocking all posters.
+      const auto cap = Clock::now() + std::chrono::milliseconds(50);
       const auto next =
-          timers_.empty() ? Clock::time_point::max() : timers_.begin()->first;
+          timers_.empty() ? cap : std::min(cap, timers_.begin()->first);
       parked_.fetch_add(1, std::memory_order_release);
       cv_.wait_until(lock, next, [this, seen] {
         return stopping_ ||
