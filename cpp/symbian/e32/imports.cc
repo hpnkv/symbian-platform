@@ -84,8 +84,8 @@ absl::StatusOr<std::string> SymbolName(std::string_view elf,
 absl::StatusOr<ResolvedImports> ResolveImports(
     std::string_view elf, const std::vector<Section>& sections,
     const Segment& code, const std::vector<std::string>& proxies) {
-  if (proxies.empty() || proxies.size() > 16) {
-    return absl::InvalidArgumentError("Supply 1..16 ordinal proxies");
+  if (proxies.empty() || proxies.size() > 256) {
+    return absl::InvalidArgumentError("Supply 1..256 ordinal proxies");
   }
   std::map<std::string, sdk::ProxyInfo> libraries;
   std::set<std::string> dlls;
@@ -339,8 +339,90 @@ absl::StatusOr<ResolvedImports> ResolveImports(
     blocks[library.target_dll].push_back(
         {location - code.address, function->ordinal});
   }
-  if (symbol_indices.size() + 1 != symbols.size / 16 ||
-      blocks.size() != needed_count) {
+  // Imported objects use an eager GOT word, just like a function PLT slot.
+  // Never copy proxy ordinal bytes into application data (R_ARM_COPY).
+  if (result.data_relocation_index != 0) {
+    const Section& data_relocs = sections[result.data_relocation_index];
+    const Section* object_got = nullptr;
+    for (const Section& section : sections) {
+      if (section.name == ".got") {
+        object_got = &section;
+      }
+    }
+    for (size_t i = 0; i < data_relocs.size; i += 8) {
+      const uint32_t location = Read32(elf, data_relocs.offset + i);
+      const uint32_t info = Read32(elf, data_relocs.offset + i + 4);
+      if ((info & 0xff) != 21) {  // R_ARM_GLOB_DAT
+        continue;
+      }
+      const uint32_t symbol = info >> 8;
+      if (symbol == 0 || symbol >= symbols.size / 16 || object_got == nullptr ||
+          object_got->type != 1 || object_got->flags != 3 || location % 4 ||
+          location < object_got->address ||
+          object_got->address < code.address ||
+          !Within(object_got->size, location - object_got->address, 4) ||
+          !Within(code.size, location - code.address, 4) ||
+          Read32(elf, object_got->offset + location - object_got->address) !=
+              0 ||
+          !locations.insert(location).second ||
+          !symbol_indices.insert(symbol).second) {
+        return absl::DataLossError("Invalid imported object GOT slot");
+      }
+      const size_t p = symbols.offset + symbol * 16;
+      if (Read32(elf, p + 4) != 0 ||
+          static_cast<uint8_t>(elf[p + 12]) != 0x11 || elf[p + 13] != 0 ||
+          Read16(elf, p + 14) != 0) {
+        return absl::UnimplementedError(
+            "GOT data import requires an undefined object");
+      }
+      const auto version =
+          version_libraries.find(Read16(elf, versions.offset + symbol * 2));
+      if (version == version_libraries.end()) {
+        return absl::DataLossError("Imported object has unknown DLL version");
+      }
+      const auto name = SymbolName(elf, sections, symbols, symbol);
+      if (!name.ok()) {
+        return name.status();
+      }
+      const auto& library = libraries.at(version->second);
+      const auto item =
+          std::find_if(library.exports.begin(), library.exports.end(),
+                       [&](const sdk::Export& e) { return e.symbol == *name; });
+      if (item == library.exports.end() || !item->data ||
+          !result.objects.emplace(*name, location - code.address).second) {
+        return absl::FailedPreconditionError(
+            "Missing/ambiguous imported object");
+      }
+      result.object_slots.insert(location - code.address);
+      blocks[library.target_dll].push_back(
+          {location - code.address, item->ordinal});
+    }
+  }
+  // A complete import library can name a function also provided by a static
+  // runtime archive. LLD retains that definition in dynsym; it is executable
+  // code, not an unresolved loader import. Validate it rather than rejecting
+  // the application's ordinary symbol preemption.
+  for (size_t symbol = 1; symbol < symbols.size / 16; ++symbol) {
+    if (symbol_indices.contains(static_cast<uint32_t>(symbol))) {
+      continue;
+    }
+    const size_t p = symbols.offset + symbol * 16;
+    const uint16_t index = Read16(elf, p + 14);
+    const uint32_t address = Read32(elf, p + 4) & ~uint32_t{1};
+    const uint32_t size = Read32(elf, p + 8);
+    if (index == 0 || index >= sections.size() ||
+        static_cast<uint8_t>(elf[p + 12]) != 0x12 || elf[p + 13] != 0 ||
+        Read16(elf, versions.offset + symbol * 2) != 1 || size == 0 ||
+        (sections[index].flags & 6) != 6 || address < code.address ||
+        !Within(code.size, address - code.address, size) ||
+        address < sections[index].address ||
+        !Within(sections[index].size, address - sections[index].address,
+                size)) {
+      return absl::UnimplementedError(
+          "Unreferenced dynamic symbol is not local code");
+    }
+  }
+  if (blocks.size() != needed_count) {
     return absl::UnimplementedError("Unreferenced dynamic symbols/proxies");
   }
   if (result.data_relocation_index != 0) {
@@ -349,6 +431,9 @@ absl::StatusOr<ResolvedImports> ResolveImports(
       const uint32_t location = Read32(elf, data_relocs.offset + i);
       const uint32_t info = Read32(elf, data_relocs.offset + i + 4);
       const uint32_t symbol = info >> 8;
+      if ((info & 0xff) == 21) {
+        continue;  // Validated imported object above.
+      }
       if ((info & 0xff) != 2 || symbol == 0 ||
           !symbol_indices.contains(symbol) || location % 4) {
         return absl::UnimplementedError(

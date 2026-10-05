@@ -110,7 +110,7 @@ absl::Status Run(int argc, char** argv) {
   }
   const std::string command = argv[1];
   if (command != "proxy-sources" && command != "convert-exe" &&
-      command != "convert-dll") {
+      command != "convert-dll" && command != "export-definition") {
     return absl::InvalidArgumentError("Unknown command: " + command);
   }
   Options options;
@@ -168,6 +168,11 @@ absl::Status Run(int argc, char** argv) {
   }
   ABSL_ASSIGN_OR_RETURN(const auto input, Single(options, "--input"));
   ABSL_ASSIGN_OR_RETURN(const auto elf, Read(input));
+  if (command == "export-definition") {
+    ABSL_ASSIGN_OR_RETURN(const auto definition,
+                          symbian::sdk::GenerateExportDefinition(elf));
+    return Write(output, definition, options);
+  }
   ABSL_ASSIGN_OR_RETURN(const auto uid_text, Single(options, "--uid3"));
   ABSL_ASSIGN_OR_RETURN(const auto uid, Number(uid_text));
   uint32_t capabilities = 0;

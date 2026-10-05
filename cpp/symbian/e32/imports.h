@@ -35,6 +35,8 @@ struct Section {
 struct ResolvedImports {
   std::vector<ImportBlock> blocks;
   std::map<std::string, uint32_t> functions;
+  std::map<std::string, uint32_t> objects;
+  std::set<uint32_t> object_slots;
   std::map<std::string, uint32_t> plt_functions;
   std::map<uint32_t, uint32_t> data_function_pointers;
   size_t got_index = 0;

@@ -241,6 +241,15 @@ absl::Status CheckRelocations(std::string_view elf,
         if (!name.ok()) {
           return name.status();
         }
+        const auto object = imports->objects.find(*name);
+        if (object != imports->objects.end()) {
+          if (symbol_type != 1 || type != 96 || target_in_data ||
+              location % 4) {
+            return absl::UnimplementedError(
+                "Imported object requires a code GOT_PREL reference");
+          }
+          continue;  // The loader resolves the validated GOT slot by ordinal.
+        }
         const auto function = imports->functions.find(*name);
         if (function == imports->functions.end()) {
           return absl::UnimplementedError("Unresolved external reference");
@@ -463,6 +472,10 @@ absl::Status CheckRelocations(std::string_view elf,
     const Section& got = sections[local_got_index];
     std::set<uint32_t> resolved;
     for (uint32_t i = 0; i < got.size; i += 4) {
+      const uint32_t slot = got.address - code.address + i;
+      if (imports != nullptr && imports->object_slots.contains(slot)) {
+        continue;  // Eager imported object, not a local pointer relocation.
+      }
       const uint32_t value = Read32(elf, got.offset + i);
       if (!got_symbols.contains(value)) {
         return absl::DataLossError("Local GOT word lacks a retained symbol");

@@ -34,6 +34,11 @@ struct ProxyInfo {
 // and ABSENT. Bounded ASCII input; aliases and other directives are unsupported.
 absl::StatusOr<std::vector<Export>> ParseExports(std::string_view text);
 
+// Creates an initial DLL interface from the linked ELF's visible definitions.
+// Names are sorted deterministically. Retain a frozen DEF when preserving ABI
+// across independently released DLL versions; consumers never select symbols.
+absl::StatusOr<std::string> GenerateExportDefinition(std::string_view elf);
+
 // Generates source for Clang/LLD to build an ordinal proxy, NOT target DLL code.
 // Empty selection includes every present function/data export. Explicit selections
 // must exist and be present. Frozen ordinals are never renumbered.

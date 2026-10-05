@@ -152,6 +152,83 @@ absl::StatusOr<std::vector<Export>> ParseExports(std::string_view text) {
   return exports;
 }
 
+absl::StatusOr<std::string> GenerateExportDefinition(std::string_view elf) {
+  if (elf.size() > 64 * 1024 * 1024) {
+    return absl::ResourceExhaustedError("DLL ELF exceeds 64 MiB");
+  }
+  const auto header = analysis::InspectElf32(elf);
+  if (!header.ok()) {
+    return header.status();
+  }
+  if (header->machine != 40 || header->type != 2) {
+    return absl::InvalidArgumentError("DLL exports require a linked ARM ELF");
+  }
+  std::set<std::string> names;
+  bool found_table = false;
+  const uint32_t sections = Read32(elf, 32);
+  const uint16_t stride = Read16(elf, 46);
+  for (size_t index = 1; index < header->section_count; ++index) {
+    const size_t p = sections + index * stride;
+    if (Read32(elf, p + 4) != 2) {
+      continue;
+    }
+    if (found_table) {
+      return absl::DataLossError("Multiple DLL symbol tables");
+    }
+    found_table = true;
+    const uint32_t offset = Read32(elf, p + 16);
+    const uint32_t size = Read32(elf, p + 20);
+    const uint32_t strings_index = Read32(elf, p + 24);
+    if (Read32(elf, p + 36) != 16 || size % 16 ||
+        !Within(elf.size(), offset, size) ||
+        strings_index >= header->section_count) {
+      return absl::DataLossError("Invalid DLL symbol table");
+    }
+    const size_t strings_header = sections + strings_index * stride;
+    const uint32_t strings_offset = Read32(elf, strings_header + 16);
+    const uint32_t strings_size = Read32(elf, strings_header + 20);
+    if (Read32(elf, strings_header + 4) != 3 ||
+        !Within(elf.size(), strings_offset, strings_size)) {
+      return absl::DataLossError("Invalid DLL symbol names");
+    }
+    const auto strings = elf.substr(strings_offset, strings_size);
+    for (size_t i = 1; i < size / 16; ++i) {
+      const size_t symbol = offset + i * 16;
+      const uint8_t info = static_cast<uint8_t>(elf[symbol + 12]);
+      const uint16_t owner = Read16(elf, symbol + 14);
+      if ((info >> 4 != 1 && info >> 4 != 2) || elf[symbol + 13] != 0 ||
+          owner == 0 || owner >= header->section_count) {
+        continue;
+      }
+      const auto name = Text(strings, Read32(elf, symbol));
+      if (!name.ok()) {
+        return name.status();
+      }
+      if (*name == "_E32Startup" || !SymbolName(*name)) {
+        continue;
+      }
+      const uint32_t flags = Read32(elf, sections + owner * stride + 8);
+      if ((flags & 2) == 0 || (info & 15) == 0) {
+        continue;
+      }
+      if ((info & 15) != 2 || (flags & 6) != 6) {
+        return absl::UnimplementedError(
+            absl::StrCat("Automatic DLL exports require functions: ", *name));
+      }
+      names.insert(*name);
+    }
+  }
+  if (names.empty() || names.size() > 65535) {
+    return absl::FailedPreconditionError("DLL needs 1..65535 visible exports");
+  }
+  std::string definition = "EXPORTS\n";
+  uint32_t ordinal = 0;
+  for (const std::string& name : names) {
+    absl::StrAppend(&definition, name, " @ ", ++ordinal, " NONAME\n");
+  }
+  return definition;
+}
+
 absl::StatusOr<ProxySources> GenerateProxy(
     std::string_view definition, const std::vector<std::string>& symbols,
     std::string_view soname, std::string_view target_dll) {

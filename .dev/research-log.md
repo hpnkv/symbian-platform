@@ -6637,3 +6637,19 @@ and five Python SDK tests pass (one original-header opt-in skips). Actual QtCore
 and QtGui definitions compile/link/inspect with 4,139 and 12,512 exports, including
 127 and 414 data exports respectively. This proves proxy ABI representation, not
 yet external-data E32 conversion or Qt execution using the new application graph.
+
+### SDK-owned import conversion and automatic DLL interfaces — 2026-10-05
+
+The native converter now resolves imported objects through validated eager
+R_ARM_GLOB_DAT slots; proxy-copy relocations remain rejected. Full OS libraries
+can expose symbols also defined by runtime archives; validated local function
+definitions are accepted without becoming loader imports. New native
+export-definition generation derives a deterministic initial DLL interface
+from visible linked function definitions. This was exercised by an application
+linking a CMake DLL target without a handwritten export list on ARMv5T/ARMv6.
+The simplified Qt app additionally exercises QByteArray shared-null DATA; both
+macOS emulator backends pass real rendering, input and normal exit. Eight new
+application-machinery integration checks pass, including both main signatures,
+both ISA profiles and malformed data-slot/relocation controls. Forty E32 and six
+SDK native tests pass. CMake policy/SDK selection consolidation, all-probe
+migration, Linux replay and distribution publication are still outstanding.
