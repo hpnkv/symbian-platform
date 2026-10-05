@@ -3185,3 +3185,7 @@ This is a locally staged candidate derived from public SDK 0.1.2, not a newly
 published native distribution. All-probe migration, fresh complete export,
 Linux replay and four-host release/public-download acceptance remain required.
 Do not begin the broad mutable-reference/nullability sweep yet.
+
+2026-10-05: Fixed stale active-SDK selection in guest workspace presets.
+Both local CLion ARM presets configure/generate with the staged Qt SDK;
+SDK-selection regression: 1 passed. Full probe migration remains in progress.

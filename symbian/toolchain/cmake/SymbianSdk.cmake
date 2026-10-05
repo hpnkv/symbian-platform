@@ -12,7 +12,7 @@ function(symbian_select_sdk)
     string(JSON prefix GET "${selection}" sdk)
     get_filename_component(prefix "${prefix}" ABSOLUTE
       BASE_DIR "${selection_directory}")
-  elseif(SYMBIAN_SDK_PREFIX)
+  elseif(SYMBIAN_SDK_PREFIX AND NOT SYMBIAN_USE_ACTIVE_SDK)
     set(prefix "${SYMBIAN_SDK_PREFIX}")
   elseif(DEFINED ENV{SYMBIAN_SDK_MANIFEST})
     get_filename_component(prefix "$ENV{SYMBIAN_SDK_MANIFEST}" DIRECTORY)

@@ -6681,3 +6681,14 @@ This is a locally staged candidate derived from public SDK 0.1.2, not a newly
 published native distribution. All-probe migration, fresh complete export,
 Linux replay and four-host release/public-download acceptance remain required.
 Do not begin the broad mutable-reference/nullability sweep yet.
+
+### 2026-10-05 — Guest workspace active-SDK refresh
+
+The CLion ARMv6 guest preset retained the older websocket SDK, which lacks
+Qt headers/proxies. The root loaded its targets before visiting qt_app, so the
+example's separate selector could not replace that graph. Presets explicitly
+using the active SDK now refresh discovery instead of allowing a cached prefix
+to mask activation. Explicit SDK prefixes remain supported outside that mode.
+Activated application-machinery-sdk locally; both CLion ARMv6 and ARMv5T
+presets configure and generate successfully. The selection regression passes.
+These are CMake checks, not guest execution or a newly published SDK.
