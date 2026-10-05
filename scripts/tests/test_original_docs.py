@@ -160,3 +160,72 @@ def test_api_status_is_not_a_function_description():
     assert not _DOCS.has_description(symbol)
     symbol.find("briefdescription").text = "Opens the file."
     assert _DOCS.has_description(symbol)
+
+
+def test_implementation_signatures_preserve_constness_and_initializers():
+    assert _DOCS.implementation_key(
+        "TInetAddr::TInetAddr(TUint aPort) : TSockAddr(KAFUnspec)"
+    ) == (("TInetAddr::TInetAddr", ("TUint",), False), ["aPort"])
+    assert _DOCS.implementation_key(
+        "TBool TInetAddr::Match(const TInetAddr &aHost) const"
+    ) == (("TInetAddr::Match", ("constTInetAddr&",), True), ["aHost"])
+    assert _DOCS.implementation_key("TBool Match(TInt aValue)") is None
+
+
+def test_implementation_contract_renames_and_preserves_notice(
+    tmp_path, monkeypatch
+):
+    xml = tmp_path / "xml"
+    xml.mkdir()
+    output = tmp_path / "supplements"
+    (xml / "index.xml").write_text(
+        '<doxygenindex><compound refid="socket" kind="class">'
+        "<name>Socket</name></compound></doxygenindex>"
+    )
+    (xml / "socket.xml").write_text(
+        "<doxygen><compounddef><sectiondef>"
+        '<memberdef kind="function" id="open" prot="public">'
+        "<name>Open</name><definition>TInt Socket::Open</definition>"
+        "<argsstring>(TInt aMode)</argsstring><type>TInt</type>"
+        "<param><type>TInt</type><declname>aMode</declname></param>"
+        "</memberdef>"
+        '<memberdef kind="function" id="output" prot="public">'
+        "<name>Output</name><definition>void Socket::Output</definition>"
+        "<argsstring>(TDes &amp;aBuf) const</argsstring><type>void</type>"
+        "<param><type>TDes &amp;</type><declname>aBuf</declname></param>"
+        "</memberdef></sectiondef></compounddef></doxygen>"
+    )
+    source = tmp_path / "socket.cpp"
+    notice = "// Copyright Example contributors.\n"
+    notice += "// SPDX-License-Identifier: EPL-1.0\n\n"
+    source.write_text(
+        notice + "#include <socket.h>\n"
+        "EXPORT_C TInt Socket::Open(TInt aConnectionMode)\n"
+        "/** Opens the socket.\n"
+        " * @param aConnectionMode Selects the connection mode.\n"
+        " * @return Zero on success.\n */\n{ return 0; }\n"
+        "EXPORT_C TInt Socket::Open(TBool aWrongType)\n"
+        "/** Wrong overload. */\n{ return 0; }\n"
+        "EXPORT_C void Socket::Output(TDes &aBuffer) const\n"
+        "/** Writes the address.\n@retval aBuffer Address text.\n*/\n{}\n"
+    )
+    monkeypatch.setattr(_DOCS, "format_examples", lambda source: source)
+    _DOCS.generate_implementation(
+        xml, source, "https://example.org/socket.cpp", output
+    )
+    generated = (output / "socket.cpp.dox").read_text()
+    assert generated.startswith(notice)
+    assert "@param aMode Selects the connection mode." in generated
+    assert "aConnectionMode" not in generated
+    assert "Wrong overload" not in generated
+    assert "@param[out] aBuf Address text." in generated
+    assert "@retval aBuf" not in generated
+    assert "https://example.org/socket.cpp#L5" in generated
+    _DOCS.generate_implementation(
+        xml,
+        source,
+        "https://example.org/socket.cpp",
+        output,
+        {"open", "output"},
+    )
+    assert not (output / "socket.cpp.dox").exists()

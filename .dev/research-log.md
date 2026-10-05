@@ -6140,3 +6140,21 @@ emulator VERSION, emulator-v tags and GitHub releases, with protocol/capability
 compatibility across multiple SDK versions. SDK publication must consume a
 compatible existing emulator release rather than rebuild or republish it.
 No separate emulator version or installer has been implemented at this point.
+
+## 2026-10-05 — Hosted implementation contracts for networking
+
+Fetched the live hosted original in_addr.cpp at networking revision
+b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9 and compared its bytes with the retained
+source. Added 48 exact-signature implementation-backed descriptions, including
+TInetAddr overloads whose Developer Library mirror is unavailable. Importer
+matches full argument types and constness, preserves EPL notices and renames
+parameter names only after matching; previously documented members are skipped.
+Original void-method output-buffer @retval annotations become @param[out],
+retaining their meaning without Doxygen's invalid-return warning.
+
+Eight generator regressions and Ruff pass. Full strict documentation build
+passes (/tmp/symbian-original-network-docs-final.log); real XML checks show all
+41 supplemented TInetAddr members have one final generated-source paragraph
+outside parameter descriptions, with Output/OutputWithScope parameter contracts.
+The remaining seven descriptions belong to other indexed networking symbols.
+The survey still has unresolved symbols; full original API coverage is open.

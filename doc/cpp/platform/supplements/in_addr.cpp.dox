@@ -1,0 +1,803 @@
+// Copyright (c) 2004-2009 Nokia Corporation and/or its subsidiary(-ies).
+// All rights reserved.
+// This component and the accompanying materials are made available
+// under the terms of "Eclipse Public License v1.0"
+// which accompanies this distribution, and is available
+// at the URL "http://www.eclipse.org/legal/epl-v10.html".
+//
+// Initial Contributors:
+// Nokia Corporation - initial contribution.
+//
+// Contributors:
+//
+// Description:
+// in_addr.cpp - IPv6/IPv4 socket library
+//
+
+// Documentation adapted from the implementation below.
+// SPDX-License-Identifier: EPL-1.0
+
+/** \fn IMPORT_C TBool TIp6Addr::IsUnicast() const
+Tests if the address is IPv6 unicast.
+@return
+	ETrue, if the address is unicast (not IPv6 unspecified or multicast);
+	EFalse, otherwise.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L35">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TIp6Addr::IsMulticast() const
+Tests if the IPv6 address is multicast.
+@return
+	ETrue, if the IP address value is IPv6 multicast (<tt>ff00::/8</tt>);
+	EFalse, otherwise.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L47">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TIp6Addr::IsLoopback() const
+Tests if the address is IPv6 loopback. 
+@return
+	ETrue, if the address is loopback  (<tt>::1</tt>);
+	EFalse, otherwise.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L59">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TIp6Addr::IsUnspecified() const
+Tests if the address is IPv6 unspecified.
+@return
+	ETrue, if the IP address value is zero (= <tt>::</tt>);
+	EFalse, otherwise.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L77">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TIp6Addr::IsLinkLocal() const
+Tests if the address is an IPv6 link-local address.
+@return
+	ETrue, if this address is an IPv6 link-local address (<tt>fe80::/10</tt>);
+	EFalse, otherwise.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L93">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TIp6Addr::IsSiteLocal() const
+Tests if this address is an IPv6 site-local address (fec0::/10).
+@return
+	ETrue, if this is an IPv6 site-local address (<tt>fec0::/10</tt>);
+	EFalse, otherwise.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L105">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TIp6Addr::IsV4Mapped() const
+Tests if this address is an IPv4-mapped address.
+@return
+	ETrue, if this address is an IPv4-mapped address (<tt>::ffff:x.x.x.x</tt>);
+	EFalse, otherwise.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L142">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::Init(TUint aFamily)
+Initialises the object properly according to the address family
+passed in.
+
+@param aFamily The address family. Valid values are
+@li #KAfInet,
+	plain IPv4 address format
+@li #KAfInet6,
+	combined IPv4 and IPv6 format, including fields for the scope id and
+	flow label.
+@li anything else,
+	initialized to KAFUnspec, with empty content.
+
+@post
+	In all above cases, IsUnspecified() returns ETrue after
+	this function.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L308">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInetAddr::TInetAddr()
+Constructs a basic TInetAddr object.
+
+The port is initialised to 0, and the IP address is unspecified.
+The resulting address family is KAFUnspec.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L345">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInetAddr::TInetAddr(const TSockAddr &aAddr)
+Constructs a TInetAddr from a TSockAddr.
+
+The port and IP address values are copied from aAddr.
+The resulting address family is same as that of aAddr.
+
+The function does a raw copy operation of the TSockAddr.
+No checks are made at this point.
+
+@param aAddr  TSockAddr to be used as initial content.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L357">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInetAddr::TInetAddr(TUint aPort)
+Constructs a TInetAddr and initialises the port to the specified value, 
+and the IP address is unspecified.
+
+The resulting address family is KAFUnspec.
+
+@param aPort Value to which to set the port.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L372">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInetAddr::TInetAddr(TUint32 aAddr, TUint aPort)
+Constructs a TInetAddr and initialise the specified port value
+to aPort and the IP address to aAddr.
+
+The resulting address family is #KAfInet
+
+@param aAddr Value to which to set the IP address.
+@param aPort Value to which to set the port.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L386">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInetAddr::TInetAddr(const TIp6Addr &aAddr, TUint aPort)
+Constructs a TInetAddr and initialises the port to the
+specified value, and the IPv6 address to aAddr.
+
+The resulting address family is #KAfInet6.
+
+@param aAddr Value to which to set the IPv6 address.  
+@param aPort Value to which to set the port.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L402">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::SetAddress(TUint32 aAddr)
+Sets the IPv4 address value.
+
+@note
+	An IP address in dotted-decimal form can be converted into
+	a TUint32 by the INET_ADDR macro.
+
+The resulting address family is #KAfInet.
+
+@param aAddr Value to which to set the IPv4 address.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L420">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::SetAddress(const TIp6Addr &aAddr)
+Sets the IPv6 address value. 
+
+The resulting address family is #KAfInet6.
+The scope id and flow label are zeroed.
+
+@param aAddr Value to which to set the IPv6 address. 
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L437">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::SetV4CompatAddress(TUint32 aAddr)
+Creates an IPv4-compatible IPv6 address.
+
+The <em>IPv4-compatible format</em> is <tt>::x.x.x.x</tt>. 
+
+The resulting address family is #KAfInet6.
+The scope id and flow label are zeroed.
+
+@param aAddr IPv4 address from which the IPv6 address is generated.
+
+@deprecated This address format is deprecated and should not be used.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L452">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::SetV4MappedAddress(TUint32 aAddr)
+Creates an IPv4-mapped IPv6 address.
+
+The <em>IPv4-mapped format</em> is <tt>::ffff:x.x.x.x</tt>. Internally, all
+IPv4 addresses are stored in this format. 
+
+The resulting address family is #KAfInet6.
+The scope id and flow label are zeroed.
+
+@param aAddr IPv4 address from which the IPv6 address is generated.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L479">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::ConvertToV4Compat()
+Converts an IPv4 address to an IPv4-compatible IPv6 address. 
+
+The function assumes that the previous content is IPv4 address and
+accesses this using TInetAddr::Address() function. If the previous
+content was not IPv4 address (in any format), function acts as if
+the old content was <tt>0.0.0.0</tt>.
+
+The <em>IPv4-compatible format</em> is <tt>::x.x.x.x</tt>.
+
+The resulting address family is #KAfInet6.
+The scope id and flow label are zeroed.
+
+@deprecated This address format is deprecated and should not be used.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L507">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::ConvertToV4Mapped()
+Converts an IPv4 address to an IPv4-mapped IPv6 address.
+
+The function assumes that the previous content is IPv4 address and
+accesses this using TInetAddr::Address() function. If the previous
+content was not IPv4 address (in any format), function acts as if
+the old content was "0.0.0.0".
+
+The <em>IPv4-mapped format</em> is <tt>::ffff:x.x.x.x</tt>. Internally, all
+IPv4 addresses are stored in this format.
+
+The resulting address family is #KAfInet6.
+The scope id and flow label are zeroed.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L528">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::ConvertToV4()
+Converts an IPv4-mapped or IPv4-comptatible address to IPv4.
+
+The function assumes that the previous content is IPv4 address
+and accesses this using TInetAddr::Address()
+function. If the previous content was not IPv4 address (in any format),
+function acts as if the old content was <tt>0.0.0.0</tt>.
+
+The address family is set to #KAfInet.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L548">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C const TIp6Addr & TInetAddr::Ip6Address() const
+Gets the IPv6 address
+
+Only for #KAfInet6, undefined for #KAfInet.
+
+This function returns a reference to a location where IPv6
+address would be stored.
+No check on family is made, and
+using this function for any other address family except KAfInet6
+does not cause an error, but returned reference does not point
+to valid IPv6 address (unless content is converted to KAfInet6).
+
+@return The IPv6 address
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L564">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::SetFlowLabel(TInt aLabel)
+Sets the Flow Label.
+
+Only for #KAfInet6, undefined (ignored) for #KAfInet.
+
+@param aLabel The flow label (only low 20 bits used)
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L584">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TInetAddr::FlowLabel() const
+Gets the Flow Label.
+
+Only for #KAfInet6, return zero for #KAfInet.
+
+@return The flow label
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L599">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::SetScope(TUint32 aScope)
+Sets the scope id value
+
+Only for #KAfInet6, undefined (ignored) for #KAfInet.
+
+When an IPv4 address is stored in IPv4-mapped format (KAfInet6),
+then non-zero scopes are also possible for IPv4 (and needed for
+proper handling of overlapping private address ranges or for
+IPv4 link local addresses).
+
+@param aScope The scope id of the address.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L612">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TUint32 TInetAddr::Scope() const
+Gets the scope id value
+
+Only for #KAfInet6, return zero for #KAfInet.
+
+When an IPv4 address is stored in IPv4-mapped format (KAfInet6),
+then non-zero scopes are also possible for IPv4 (and needed for
+proper handling of overlapping private address ranges or for
+IPv4 link local addresses).
+
+@return The scope id of the address.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L632">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TInetAddr::IsUnicast() const
+Tests if address is unicast address.
+
+This is just a "shorthand" notation for a test
+that none of the following is true
+
+@li TInetAddr::IsMulticast()
+@li TInetAddr::IsBroadcast()
+@li TInetAddr::IsUnspecified()
+
+For exact semantics of IsUnicast, see the descriptions
+of the above functions.
+
+Caution: the test is based purely on the address, and it should be
+kept in mind that this test has no way of detecting IPv4 net
+broadcast addresses (because the netmask is not known).
+
+@return
+	ETrue if the address is unicast:
+	EFalse, otherwise
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L650">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TInetAddr::IsMulticast() const
+Tests if the IP address is a multicast address.
+
+For IPv4 addresses this returns true, if address
+is Class D (multicast). IPv4 address can be in
+#KAfInet or #KAfInet6 (<em>IPv4-mapped</em> or
+<em>IPv4-compatible</em>) formats.
+
+For IPv6 addresses this returns true, if address
+is IPv6 multicast address (start with <tt>0xff</tt> byte).
+
+@return
+	ETrue if the IP address value is multicast;
+	EFalse, otherwise
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L677">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TInetAddr::IsUnspecified() const
+Tests if the IP address is unspecified.
+
+The address is unspecified if the
+@li family is KAFUnspec
+@li family is #KAfInet6 and address is <tt>::</tt>
+@li family is #KAfInet6 and address is IPv4-mapped <tt>0.0.0.0</tt>
+@li family is #KAfInet and address is <tt>0.0.0.0</tt>
+
+@return
+	ETrue if the IP address is unspecified;
+	EFalse, otherwise
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L699">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TInetAddr::IsLoopback() const
+Tests if the IP address is a loopback address.
+
+For IPv4 addresses this returns true, if address
+belongs to the loopback net (<tt>127.x.x.x</tt>). IPv4 address
+can be in KAfInet or in IPv4-mapped/compatible
+formats.
+
+For IPv6 address this returns true for IPv6 loopback
+address (= <tt>::1</tt>).
+
+@return
+	ETrue, if the address is loopback;
+	EFalse, otherwise
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L720">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TInetAddr::IsLinkLocal() const
+Tests if IP address is link-local address
+
+For IPv4 this returns true, if the address belongs to the
+link-local net (<tt>169.254.x.x</tt>).
+
+For IPv6 this returns true, if the address is IPv6 link-local
+address (<tt>fe80:..</tt>).
+
+@note
+	Does not return true for multicast addresses
+	which are in the link-local scope.
+
+@return
+	ETrue, if this address is a link-local address;
+	EFalse, otherwise
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L742">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TInetAddr::IsSiteLocal() const
+Tests if IP address is site-local address.
+
+Always false for IPv4 addressess.
+
+For IPv6 this returns true, if the address is IPv6 site-local
+address (<tt>fec0:...</tt>)
+
+@note
+	Does not return true for multicast addresses
+	which are in the site-local scope.
+
+@return
+	ETrue, if this is a site-local address;
+	EFalse, otherwise
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L766">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TInetAddr::IsV4Compat() const
+Tests if this address is an IPv4-compatible address.
+
+This is always false, if address is in #KAfInet format.
+
+@return
+	ETrue, if this is a IPv4 compatible address;
+	EFalse, otherwise.
+
+@deprecated IPv4-compatible addresses should not be used.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L788">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TInetAddr::IsV4Mapped() const
+Tests if this address is an IPv4-mapped address.
+
+This is always false, if address is in #KAfInet format.
+
+@return
+	ETrue, if this address is an IPv4-mapped address;
+	EFalse, otherwise.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L805">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TUint32 TInetAddr::Address() const
+Gets the IPv4 address value.
+
+If the stored address is not an IPv4 address, the returned
+value is ZERO.
+
+This works also for IPv4 addresses which
+are stored in <em>IPv4-mapped</em> or <em>IPv4-compatible</em>
+format. (since 7.0).
+
+@return The IP address value.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L820">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TInetAddr::CmpAddr(const TInetAddr &aAddr) const
+Compares IP address and port values with 
+those in another TInetAddr.
+
+@param aAddr
+	TInetAddr with which to compare
+@return
+	ETrue if IP address and port values are the same;
+	EFalse, otherwise.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L850">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TInetAddr::Match(const TInetAddr &aHost) const
+Tests the IP address value with that in another TInetAddr.
+
+@note
+	The function matches IPv4 addresses even if they are
+	stored in different formats (#KAfInet or #KAfInet6 using
+	<em>IPv4-mapped</em> format) (since Symbian OS 7.0s).
+
+@param aHost TInetAddr with which to compare
+@return
+	ETrue if IP address value is the same as this,
+	EFalse, otherwise.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L865">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TInetAddr::Match(const TInetAddr &aNet, const TInetAddr &aMask) const
+Tests if another TInetAddr is in the same subnet.
+
+The function applies the subnet mask passed through aMask to the IP
+address and to the IP address in aNet. If the resulting values are
+the same, this indicates that the addresses are part of the same subnet,
+and ETrue is returned.
+
+@note
+	The function matches IPv4 addresses even if they are
+	stored in different formats (#KAfInet or #KAfInet6 using
+	<em>IPv4-mapped</em> format). (since Symbian OS 7.0s).
+
+@param aNet
+	TInetAddr with which to compare. 
+@param aMask
+	TInetAddr object with the IP address set to the relevant subnet mask. 
+@return
+	ETrue if both IP address values are the members of the same subnet;
+	EFalse, otherwise.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L908">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TBool TInetAddr::Match(const TInetAddr &aNet, TInt aPrefixLen) const
+Tests if the specified number of left-most bits on addresses are same.
+
+Return ETrue if leftmost aPrefixLen bits on addresses are same (both 
+families must be the same).
+
+@param aNet
+	TInetAddr with which to compare.
+@param aPrefixLen
+	Number of left-most bits to compare.
+@return
+	ETrue, if the bits match;
+	EFalse, otherwise.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L959">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::PrefixMask(TInt aPrefixLen)
+Creates an IPv6 address with the specified number of left-most bits set to 
+1, and the rest set to 0. 
+
+The previous content does not matter, and is overwritten.
+
+ @param aPrefixLen
+	Number of left-most bits to set to 1.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L1022">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::Prefix(const TInetAddr &aAddr, TInt aPrefixLen)
+Creates an IPv6 address with the specified number of left-most bits
+copied from another address, and remaining bits set to 0.
+
+The function does not check the family of the aAddr, and for anything
+else but KAfInet6 the resulting prefix value is undefined.
+
+The resulting address family is #KAfInet6.
+The scope id and flow label are zeroed.
+
+@param aAddr
+	The address to copy the prefix from.
+@param aPrefixLen
+	Number of left-most bits to set to copy from aAddr.
+@since 7.0
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L1055">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::Output(TDes &aBuf) const
+Writes the IP address into a string.
+
+For an IPv4 address, the format is <tt>d.d.d.d</tt>, where "d" is an 8-bit
+decimal number. (An example IPv4 address: <tt>127.0.0.1</tt>). 
+
+For an IPv6 address, the format is <tt>h:h:h:h:h:h:h:h</tt>,
+where "h" is a 16-bit hexadecimal number.
+(An example IPv6 address: <tt>2001:618:40C:20:2C0:4FFF:FE24:AA79</tt>). 
+
+If address family is not #KAfInet or #KAfInet6, then empty
+string is returned (aBuf.Length() == 0).
+
+If the family is KAfInet6, the output buffer must be at least
+39 characters. If less, the buffer is filled with '*' characters.
+
+@param[out] aBuf
+	contains a string representation of the IP address.
+@since 7.0 (IPv6 support)
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L1100">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::OutputWithScope(TDes &aBuf) const
+Writes the IP address into a string and appends the scope id.
+
+The IP address is formatted with as with the standard
+Output.
+
+If the scope id has non-zero value and if there is
+room in the output buffer, the scope id is appended to the address
+using the "%scope-id"-notation.
+
+@param[out] aBuf
+	contains a string representation of the address.
+@since after 7.0s
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L1200">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C TInt TInetAddr::Input(const TDesC &aBuf)
+Sets the IP address from a string containing a representation of an 
+IP address, such as might be entered in a dialog.
+
+The string must contain an ASCII representation of the address. 
+The format may be one of the following examples:
+@li Four 8-bit decimal numbers separated by '.' (eg. <tt>192.168.40.4</tt>)
+@li Two 8-bit decimal numbers and a 16 bit decimal (eg. <tt>192.168.10244</tt>)
+@li One 8-bit decimal number and a 24-bit decimal (eg. <tt>192.11020292</tt>)
+@li One 32 decimal number (eg. <tt>3232245764</tt>)
+@li Eight 16-bit hex numbers separated by ':' (eg.<tt>2001:618:400:6a:0:0:0:abc</tt>)
+
+Use at most one '<tt>::</tt>' to denote consecutive zeroes
+(eg. <tt>2001:618:400:6a::abc</tt>),
+IPv4-compatible address (eg. <tt>::192.168.40.4</tt>), and
+IPv4-mapped address (eg. <tt>::ffff:192.168.40.4</tt>)
+
+Any of the address notations above can be followed by "%scope-id" and
+the scope id of the TInetAddress is also set accordingly. If a dotted
+IPv4 address is associated with scope id, the address is stored as
+IPv4-mapped. If scope is not specified, the value defaults to zero.
+The flow label is set to zero.
+
+The hexadecimal numbers may be either upper or lower case.
+
+@param aBuf
+	Descriptor containing a string representation of an IP address 
+@return
+	KErrNone, if address syntax was correct and input succeeded;
+	otherwise, one of the system-wide error codes.
+@since 7.0 (IPv6 support)
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L1406">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::NetMask(const TInetAddr &aAddr)
+Sets the IP address to a mask suitable for extracting the network number
+part of the IP address (deprecated).
+
+This function assumes the IPv4 address classes (A, B, C). Applications
+using this function may not work properly in the current internet
+environment. 
+
+The function tests whether the IP 
+address in aAddr is a Class A, B, C, or other address. It then sets 
+the IP address to suitable mask values as follows:
+
+@li Class A addresses: mask 255.0.0.0
+@li Class B addresses: mask 255.255.0.0
+@li Class C addresses: mask 255.255.255.0
+@li other addresses: mask 255.255.255.255
+
+The resulting address family is #KAfInet.
+
+@param aAddr
+	TInetAddr from which to obtain IP address
+
+@deprecated
+	Works only for IPv4. The length of the network prefix needs to be
+	aqcuired by other means. When prefix length is known, PrefixMask()
+	function can be used.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L1654">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::Net(const TInetAddr &aAddr)
+Obtains a network mask corresponding to the class of the IP address,
+using the NetMask() function, and then applies this mask to the current
+IP address (deprecated).
+
+The resulting address family is #KAfInet
+
+@param aAddr
+	TInetAddr from which to obtain IP address for creating the
+	network mask. 
+
+@deprecated
+	Works only for IPv4. Prefix() should be used instead.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L1696">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::SubNet(const TInetAddr &aAddr, const TInetAddr &aMask)
+Sets the IP address to the network number and subnet parts of the IP 
+address (that is, the original IP address with the host number part 
+cleared).
+
+This is obtained by applying the mask value in aMask to the 
+IP address in aAddr. The result is undefined if address and
+mask have different address family.
+
+@param aAddr
+	TInetAddr from which to obtain IP address
+@param aMask
+	TInetAddr object with the IP address set to the relevant subnet mask.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L1716">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::SubNetBroadcast(const TInetAddr &aAddr, const TInetAddr &aMask)
+Sets the IP address to be suitable for a subnet-directed broadcast
+address. 
+
+To achieve this, the subnet mask value in aMask is applied to the IP
+address in aAddr. The mask is then used again to set all host number
+bits to 1 (which  signifies, broadcast to all hosts on the subnet).
+
+Only for IPv4. The function does not have a sensible interpretation in 
+IPv6. An application that uses this needs to code separate branches for 
+IPv4 and IPv6 cases.
+
+@param aAddr
+	TInetAddr from which to obtain IP address
+@param aMask
+	TInetAddr object with the IP address set to the relevant subnet mask.
+
+@deprecated
+	Works only for IPv4. IPv6 has all-nodes link local multicast
+	address (ff02::1) for this purpose.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L1748">Original Symbian implementation</a>)</small></p>
+*/
+
+/** \fn IMPORT_C void TInetAddr::NetBroadcast(const TInetAddr &aAddr)
+Sets the IP address to be suitable for a network-directed broadcast
+address (deprecated).
+
+The function obtains a network mask corresponding to the class of
+the IP address in aAddr, using the NetMask() function. It then
+applies this mask to the current IP address to separate the network
+number part of the address. The mask is then used again to set all
+host number bits to 1 (which signifies, broadcast to all hosts on
+the network).
+
+The resulting address family is #KAfInet
+
+@param aAddr
+	TInetAddr from which to obtain IP address for creating the network mask. 
+
+@deprecated Works only for IPv4.
+@deprecated
+	This function works only for IPv4. It assumes the old 
+	IPv4 address classes (A, B, C). Applications using this
+	function may not work properly in the current internet environment.
+
+<p><small>(generated from <a href="https://github.com/SymbianSource/oss.FCL.sf.os.networkingsrv/blob/b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9/esockapiextensions/internetsockets/src/in_addr.cpp#L1776">Original Symbian implementation</a>)</small></p>
+*/

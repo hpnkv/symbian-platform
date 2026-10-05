@@ -2943,3 +2943,9 @@ parameter contracts and original-header warnings still visible. 826 semantic
 descriptions remain unresolved; complete original-symbol coverage is still open.
 The four-host/16-wheel build for 97a7f15 succeeds (37331396968); the new native
 startup/archive workflow is running as 37333156879 and remains an open gate.
+
+2026-10-05 original networking documentation: 48 additional original-source
+contracts now supplement the hosted library import, preserving exact overloads,
+EPL notices and final generated-source labels. Eight importer tests, Ruff,
+strict MkDocs/both Doxygen builds and TInetAddr rendered-XML suffix/output-buffer
+checks pass. Full original-symbol coverage remains incomplete.

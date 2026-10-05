@@ -16,6 +16,8 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from filter_comments import filter_comments  # noqa: E402
 from filter_examples import format_examples  # noqa: E402
 
 
@@ -256,6 +258,7 @@ def generate(xml, cache, output):
     files = defaultdict(list)
     files["types"] = []
     seen = set()
+    documented = set()
     matched = missing = parameters = enum_values = 0
     for index in ET.parse(xml / "index.xml").findall("compound"):
         if index.get("kind") not in {
@@ -348,6 +351,7 @@ def generate(xml, cache, output):
                         )
                     )
                     matched += 1
+                    documented.add(member.get("id"))
                 else:
                     missing += 1
             for param in undocumented_params:
@@ -413,6 +417,121 @@ def generate(xml, cache, output):
         f"{missing}; parameter supplements: {parameters}; "
         f"enum-value supplements: {enum_values}"
     )
+    return documented
+
+
+def implementation_key(declaration):
+    """Identifies a qualified definition by argument types and constness."""
+    match = re.search(
+        r"([A-Za-z_][\w:]*::[~A-Za-z_][\w]*)\s*\(([^()]*)\)\s*(const)?",
+        declaration,
+    )
+    if not match:
+        return None
+    arguments = []
+    names = []
+    for argument in match[2].split(","):
+        argument = argument.split("=", 1)[0].strip()
+        if not argument or argument == "void":
+            continue
+        name = re.search(r"\b([A-Za-z_]\w*)\s*$", argument)
+        if name is None:
+            return None
+        arguments.append(signature(argument[: name.start()]))
+        names.append(name[1])
+    return (match[1], tuple(arguments), bool(match[3])), names
+
+
+def generate_implementation(xml, source, url, output, documented=()):
+    """Copies documented definitions after exact indexed type matching.
+
+    Handles definitions whose documentation follows their signature, as in
+    in_addr.cpp. Other source layouts need a separate supported parser.
+    """
+    indexed = {}
+    for entry in ET.parse(xml / "index.xml").findall("compound"):
+        if entry.get("kind") not in {"class", "struct", "namespace", "file"}:
+            continue
+        compound = ET.fromstring(
+            (xml / (entry.get("refid") + ".xml")).read_text(errors="replace")
+        )
+        for member in compound.findall(".//memberdef"):
+            if (
+                member.get("kind") != "function"
+                or member.get("prot") == "private"
+            ):
+                continue
+            declaration = text(member.find("definition")) + text(
+                member.find("argsstring")
+            )
+            item = implementation_key(declaration)
+            if item:
+                indexed[item[0]] = (member, item[1])
+    original = source.read_text(errors="replace")
+    notice = re.match(r"\A(?:[ \t]*//[^\n]*\n|[ \t]*\n)+", original)
+    if notice is None or not any(
+        license in notice[0]
+        for license in (
+            "Eclipse Public License",
+            "SPDX-License-Identifier: EPL-1.0",
+        )
+    ):
+        raise ValueError("Implementation needs its original EPL notice")
+    pattern = re.compile(
+        r"\bEXPORT_C\s+(?P<declaration>[^;{}]*?)\s*"
+        r"/\*\*(?P<comment>.*?)\*/\s*\{",
+        re.DOTALL,
+    )
+    comments = []
+    for match in pattern.finditer(original):
+        parsed = implementation_key(match["declaration"])
+        if not parsed or parsed[0] not in indexed:
+            continue
+        member, declared_names = indexed[parsed[0]]
+        if has_description(member) or member.get("id") in documented:
+            continue
+        body = re.sub(r"^\s*\* ?", "", match["comment"], flags=re.MULTILINE)
+        replacements = dict(zip(parsed[1], declared_names, strict=True))
+        body = re.sub(
+            r"\b[A-Za-z_]\w*\b",
+            lambda word, mapping=replacements: mapping.get(word[0], word[0]),
+            body,
+        )
+        # Some original void methods describe an output argument as a return
+        # value. Retain its contract under the actual parameter instead.
+        if signature(text(member.find("type"))) in {"void", "IMPORT_Cvoid"}:
+            body = re.sub(
+                r"([@\\])retval\s+(\w+)\b",
+                lambda tag, names=declared_names: (
+                    tag[1] + "param[out] " + tag[2]
+                    if tag[2] in names
+                    else tag[0]
+                ),
+                body,
+            )
+        body = filter_comments("/**\n" + body + "\n*/")[3:-2].strip()
+        line = original.count("\n", 0, match.start()) + 1
+        suffix = (
+            f'<p><small>(generated from <a href="{url}#L{line}">'
+            "Original Symbian implementation</a>)</small></p>"
+        )
+        comments.append(
+            "/** " + command(member) + "\n" + body + "\n\n" + suffix + "\n*/\n"
+        )
+    destination = output / (source.name + ".dox")
+    output.mkdir(parents=True, exist_ok=True)
+    if comments:
+        destination.write_text(
+            format_examples(
+                notice[0]
+                + "// Documentation adapted from the implementation below.\n"
+                + "// SPDX-License-Identifier: EPL-1.0\n\n"
+                + "\n".join(comments)
+            )
+        )
+    else:
+        destination.unlink(missing_ok=True)
+    print(f"Implementation-backed descriptions: {len(comments)}")
 
 
 def main():
@@ -421,8 +540,20 @@ def main():
     parser.add_argument("--xml", required=True, type=Path)
     parser.add_argument("--cache", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--implementation", type=Path)
+    parser.add_argument("--implementation-url")
     args = parser.parse_args()
-    generate(args.xml, args.cache, args.output)
+    if bool(args.implementation) != bool(args.implementation_url):
+        parser.error("--implementation and --implementation-url must be paired")
+    documented = generate(args.xml, args.cache, args.output)
+    if args.implementation:
+        generate_implementation(
+            args.xml,
+            args.implementation,
+            args.implementation_url,
+            args.output,
+            documented,
+        )
 
 
 if __name__ == "__main__":
