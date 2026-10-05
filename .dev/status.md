@@ -3044,3 +3044,12 @@ Qt loader paths, corrected in 7f4a16a. Updated producer 37346894475 must pass
 before emulator-v0.1.0 publication. The guest Qt example, broader EKA1 and
 original-symbol documentation remain outstanding. Pointer/nullability changes
 remain explicitly deferred until emulator publication and guest Qt acceptance.
+
+Missing-firmware control preflight now rejects an absent kernel before socket
+creation and joins the emulator worker cleanly (exit 2). Actual rebuilt relocated
+development bundles pass the new fresh-install rejection case on macOS arm64
+and Linux x86_64. Both GUI backends still pass on each host; four live debugger
+checks and native CTests pass on macOS. Logs use
+/tmp/symbian-emulator-control-preflight-*; selected helper/installer regressions
+pass (24 passed, one Linux-only skip on macOS), as do formatting and actionlint.
+Final production bundles must incorporate this additional startup fix.

@@ -323,6 +323,11 @@ absl::StatusOr<std::unique_ptr<ControlServer>> ControlServer::Start(
   if (!state || !state->symsys) {
     return absl::FailedPreconditionError("Emulator system unavailable");
   }
+  auto* kernel = state->symsys->get_kernel_system();
+  if (!kernel) {
+    return absl::FailedPreconditionError(
+        "Emulator kernel unavailable; configure firmware first");
+  }
   const std::string report = path + ".status.json";
   if (QFileInfo::exists(QString::fromStdString(report)) ||
       QFileInfo(QString::fromStdString(report)).isSymLink()) {
@@ -335,7 +340,6 @@ absl::StatusOr<std::unique_ptr<ControlServer>> ControlServer::Start(
   }
   QObject::connect(&impl->server, &QLocalServer::newConnection, &impl->server,
                    [pointer = impl.get()] { pointer->ConnectClient(); });
-  auto* kernel = state->symsys->get_kernel_system();
   {
     eka2l1::kernel_lock lock(kernel);
     impl->exit_callback = kernel->register_process_exit_callback(

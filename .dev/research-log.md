@@ -6385,3 +6385,16 @@ audit failure. Latest corrected producer is 37346894475 at 7f4a16a; publication
 must use that source, including TCP/control fixes, rather than superseded
 f66f610. The independently versioned emulator and guest Qt example remain open.
 Actual dependency-cache-key generation also passes on both owner hosts.
+
+2026-10-05 control startup preflight: early exit observation exposed a real
+SIGSEGV when an explicit control socket was requested before firmware setup.
+ControlServer now rejects a missing kernel before opening its socket; the
+frontend wakes and joins its worker before returning 2. The archive acceptance
+check reproduces this case in a fresh data root and requires the clear firmware
+diagnostic, exit 2 and no residual socket. Rebuilt relocated development bundles
+pass on macOS arm64/Linux x86_64, with both GUI backends passing on each host.
+All four live debugger/negative-profile tests and both native CTest suites pass
+on macOS. Logs: /tmp/symbian-emulator-control-preflight-* on the respective
+hosts. Selected helper/installer regressions pass (24 passed, one Linux-only
+skip on macOS); Black/Ruff/actionlint pass. Production CI must include this
+fix before publication; the pending pointer/nullability revision remains deferred.

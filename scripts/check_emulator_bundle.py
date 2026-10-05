@@ -79,10 +79,21 @@ def main():
         assert "--listdevices" in run(frontend, "--help")
         assert not (Path(env["EKA2L1_DATA_ROOT"]) / marker.name).exists()
         assert marker.read_text() == "first instance\n"
+        # A fresh install has no kernel until firmware is configured. An
+        # explicit control request must reject that state without crashing or
+        # blocking in a setup dialog.
+        with tempfile.TemporaryDirectory(
+            prefix="emulator-control-", dir="/tmp"
+        ) as private:
+            endpoint = Path(private) / "control.sock"
+            env["EKA2L1_RESEARCH_CONTROL_SOCKET"] = str(endpoint)
+            diagnostic = run(frontend, accepted=(2,))
+            assert "configure firmware first" in diagnostic, diagnostic
+            assert not endpoint.exists()
         shutil.rmtree(instance)
     print(
-        "Relocated emulator: query, Qt startup, importer, assets "
-        "and isolated roots passed"
+        "Relocated emulator: query, Qt startup, importer, assets, "
+        "isolated roots and missing-firmware control rejection passed"
     )
 
 
