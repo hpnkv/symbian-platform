@@ -41,13 +41,15 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     env:
-      EMULATOR_WORKSPACE: ${{ runner.temp }}/symbian-emulator
       MACOSX_DEPLOYMENT_TARGET: "15.0"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Select disposable build workspace
+        shell: bash
+        run: echo "EMULATOR_WORKSPACE=$RUNNER_TEMP/symbian-emulator" >> "$GITHUB_ENV"
       - name: Install Linux build prerequisites
         if: runner.os == 'Linux'
         run: |
