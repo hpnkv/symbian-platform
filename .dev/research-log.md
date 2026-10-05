@@ -6434,3 +6434,37 @@ for further investigation. No working QWidget or complete Qt example is
 claimed; no pointer/nullability revision has started. Logs use
 /tmp/symbian-guest-qt-*; guest binaries, firmware copies and debug symbols remain
 outside version control.
+
+### 2026-10-05 — Guest Qt exposed broken POSIX replacement paths
+
+The original Qt 4.8.1 QApplication's first Main-thread leave was
+RApaLsSession::GetAppInfo (apgrfx ordinal 147, IPC 6) for the example UID.
+Generating the SDK's existing application registration resources fixed that
+lookup. The native S60 style next left with KErrNotSupported inside bitgdi's
+CFbsBitmapDevice::NewL; the public Qt Plastique style avoids that path.
+
+A later KErrNotFound was the missing avkonfep.dll. The Qt frontend had renamed
+both avkonfep.dll and goommonitor.dll to backups and attempted to copy from
+Windows-style host paths (`patch\\avkonfep_general.dll`). POSIX fopen does not
+normalize those separators. The shipped assets existed, but neither replacement
+was installed. The maintained distribution-guest-patches patch uses portable
+host paths, checks source availability before moving the original, checks the
+backup and copy results, and restores the original if the initial copy fails.
+The HTTP fixture oracle now requires exact delivered replacement bytes and
+unchanged original backup bytes, instead of accepting missing optional DLLs.
+
+The patched macOS development frontend renders the real Qt push button from
+original headers and firmware Qt DLLs; a native framebuffer capture shows its
+text and geometry. Both replacement DLLs exist and the input plugin loads.
+The same patch builds on Linux x86_64. A pointer press/release experiment has
+not yet produced the expected quit signal; do not count this as completed Qt
+application acceptance. Logs: /tmp/symbian-qt-patchpaths-build{,-linux}.log,
+/tmp/symbian-guest-qt-run-widget-fixedpaths.log,
+/tmp/symbian-guest-qt-run-widget-click-retry.log. Build/release helper checks:
+15 passed, one Linux-only skip on macOS.
+
+All four previous producer jobs in Actions run 37350832623 passed, including
+Intel macOS. That candidate predates the guest replacement correction; defer
+publication and build/test the correction before choosing the initial emulator
+tag. The reference-to-pointer/nullability migration remains deferred until the
+emulator and guest Qt example streams are complete, as instructed by the owner.

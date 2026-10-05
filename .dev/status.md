@@ -3071,3 +3071,15 @@ still fails during S60 QApplication initialization (leave -1, KERN-EXEC/3);
 native debugger evidence points into eikcore. This does not establish QWidget
 rendering or complete the requested Qt example. Pointer/nullability revision
 remains deferred until emulator delivery and the Qt example are complete.
+
+### Emulator guest replacement correction — 2026-10-05
+
+All four native emulator host jobs in run 37350832623 passed. Publication is
+held for a subsequently reproduced runtime defect: POSIX host patch paths
+renamed two guest DLLs without copying their replacements. Portable paths and
+checked backup/copy recovery now build on macOS arm64 and Linux x86_64; the
+HTTP fixture oracle requires replacement and backup byte equality. The actual
+Qt 4.8.1 guest widget now renders using Plastique after application registration
+and the path correction. Pointer-triggered Qt quit remains unverified, so the
+example and pointer/nullability migration are not complete. See the latest
+research-log entry for exact logs and the superseded candidate run.

@@ -49,6 +49,7 @@ PATCHES = (
     "distribution-query",
     "distribution-sdl",
     "distribution-resources",
+    "distribution-guest-patches",
     "distribution-tcp-close",
     "distribution-control-start",
 )

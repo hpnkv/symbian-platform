@@ -222,16 +222,17 @@ def test_live_native_http_client(http_image, tmp_path, case):
     (tmp_path / "disposable-z-changes.json").write_text(
         json.dumps({"changed": changed, "missing": missing, "added": added})
     )
-    assert not changed
-    disabled = [
-        "data/drives/z/rm-807/sys/bin/avkonfep.dll",
-        "data/drives/z/rm-807/sys/bin/goommonitor.dll",
-        "data/drives/z/rm-807/sys/bin/slpgw.dll",
-    ]
-    assert set(missing) <= set(disabled)
-    for name in disabled[:2]:
-        if name in missing:
-            assert after[name + ".bak"] == before[name]
+    replacements = {
+        "data/drives/z/rm-807/sys/bin/avkonfep.dll": "avkonfep_general.dll",
+        "data/drives/z/rm-807/sys/bin/goommonitor.dll": (
+            "goommonitor_general.dll"
+        ),
+    }
+    assert set(changed) == set(replacements)
+    assert set(missing) <= {"data/drives/z/rm-807/sys/bin/slpgw.dll"}
+    for name, replacement in replacements.items():
+        assert after[name] == _digest(instance / "patch" / replacement)
+        assert after[name + ".bak"] == before[name]
     host, _, version, http2, reject = CASES[case]
     if reject:
         assert "TLS handshake failed" in result
