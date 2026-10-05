@@ -5833,3 +5833,22 @@ passes 330 tests with 387 optional skips. Native CTest passes 13 targets.
 Source onboarding also needs the actual libc++/compiler-rt, Abseil, mimalloc,
 MM/appsupport, nghttp2 and resource-compiler inputs, plus the maintained LLVM
 patches. The public source guide now gives the missing source acquisition steps.
+
+## 2026-10-05 — installed-wheel SDK source installation
+
+Dry release run 37302095376 completed all four native host builds, 16 CPython
+wheels, the sdist/source archive and the six-archive matrix audit. Publishing
+was deliberately skipped for workflow_dispatch. Host run 37304344750 also
+completed all 16 wheels and populated all four tested-core caches.
+
+A fresh /tmp Python 3.12 environment installed the CI macOS arm64 wheel using
+pip outside the checkout. Installing tools into a copied export reproduced
+FileNotFoundError under site-packages/cpp/symbian/sdk/probes/header_probe.cc.
+The corrected installer reads the packaged header resource and forwards the
+explicit source workspace to resource-tool construction. With only the Python
+installer updated in that isolated wheel environment, actual rcomp/uidcrc
+builds, SDK CLI doctor, hello_time init/ARMv6 build, SIS packaging and ephemeral
+RSA signing all pass. This is a prepublication installed-wheel/source-SDK
+experiment, not a clean published SDK installation or device execution result.
+Logs: /tmp/symbian-pip-sdk-install.log, symbian-pip-hello-time-{init,package}.log,
+symbian-pip-guide-sign.log. The signing config is isolated under /tmp.

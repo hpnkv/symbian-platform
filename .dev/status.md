@@ -2831,3 +2831,17 @@ artifacts. This avoids rebuilding interpreter bindings when a tested main
 commit is tagged; a cache miss retains the full four-host build path. Workflow
 lint and the empty-candidate discovery query pass; hosted reuse acceptance is
 pending the first completed matching host run. Host jobs have a 60-minute cap.
+
+### 2026-10-05 — all host wheel combinations built
+
+Dry release 37302095376 succeeded: 16 audited wheels, four standalone host
+archives, the source archive and sdist. Host run 37304344750 succeeded for the
+final artifact-reuse workflow and saved all four tested host-core caches.
+An isolated pip-installed CI wheel exposed/fixed the installer's checkout-only
+header-probe path and missing explicit workspace forwarding for resource tools.
+The patched installed-wheel experiment compiles rcomp/uidcrc, builds hello_time
+ARMv6 and creates/signs its SIS outside the checkout. PyPI publication, complete
+native distributions and published clean-environment guide replay remain open.
+PyPI attestations are disabled: OIDC publishing does not require additional
+provenance documents. Expired/missing host artifacts now trigger a fresh build
+rather than failing the release's artifact reuse path.

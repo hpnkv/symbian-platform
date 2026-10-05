@@ -1393,9 +1393,11 @@ def activate_sdk(sdk: AppSdk) -> None:
     temporary.replace(active)
 
 
-def _install_resource_tools(bin_path: Path) -> None:
+def _install_resource_tools(
+    bin_path: Path, workspace: Path | None = None
+) -> None:
     """Builds the pinned EPL resource compiler and its UID helper."""
-    workspace = Path(__file__).resolve().parents[2]
+    workspace = (workspace or Path(__file__).resolve().parents[2]).resolve()
     source = workspace / ".symbian/rcomp-epl-research"
     support = workspace / "research/rcomp"
     if not (source / "bintools/rcomp/src/main.cpp").is_file():
@@ -1472,7 +1474,7 @@ def _install_resource_tools(bin_path: Path) -> None:
     )
 
 
-def install_tools(sdk: AppSdk) -> AppSdk:
+def install_tools(sdk: AppSdk, workspace: Path | None = None) -> AppSdk:
     """Exposes Python utilities/native modules and host command shims in SDK."""
     import shlex
 
@@ -1511,11 +1513,15 @@ def install_tools(sdk: AppSdk) -> AppSdk:
     # implementation; the wheel normally installs it as Python package data.
     resource_dir = tools / "symbian/sdk/resources"
     resource_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(
-        Path(__file__).resolve().parents[2]
-        / "cpp/symbian/sdk/probes/header_probe.cc",
-        resource_dir / "header_probe.cc",
-    )
+    resource = files("symbian.sdk").joinpath("resources", "header_probe.cc")
+    if resource.is_file():
+        (resource_dir / "header_probe.cc").write_bytes(resource.read_bytes())
+    else:
+        source_root = workspace or Path(__file__).resolve().parents[2]
+        shutil.copyfile(
+            source_root / "cpp/symbian/sdk/probes/header_probe.cc",
+            resource_dir / "header_probe.cc",
+        )
     shutil.copytree(
         Path(pybind11_abseil.__file__).parent,
         tools / "pybind11_abseil",
@@ -1552,7 +1558,7 @@ def install_tools(sdk: AppSdk) -> AppSdk:
     )
     bin_path = prefix / "bin"
     bin_path.mkdir()
-    _install_resource_tools(bin_path)
+    _install_resource_tools(bin_path, workspace=workspace)
     dependencies = {
         "clang++": sdk.compiler,
         "clang": sdk.c_compiler or sdk.compiler.parent / "clang",
@@ -1645,7 +1651,9 @@ def install(destination: Path, workspace: Path | None = None) -> AppSdk:
             Code.ALREADY_EXISTS, f"SDK already exists: {destination}"
         )
     if workspace:
-        sdk = install_tools(prepare(workspace, destination))
+        sdk = install_tools(
+            prepare(workspace, destination), workspace=workspace
+        )
     else:
         original = AppSdk.load(discover_sdk())
         if any(
