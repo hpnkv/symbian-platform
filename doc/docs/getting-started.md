@@ -20,8 +20,25 @@ device before deployment.
 
 ## 1. Install the host tools
 
-For a source checkout, install the host tools into a virtual environment and
-activate it so that the `symbian` command is on `PATH`:
+Install the distribution in a virtual environment on macOS or Linux:
+
+```sh
+python3 -m venv ~/.venvs/symbian
+source ~/.venvs/symbian/bin/activate
+python -m pip install --upgrade pip
+pip install symbian-platform
+symbian doctor
+```
+
+The distribution provides the `symbian` command and native host libraries.
+Application builds also need an installed native SDK and its ARM compiler;
+firmware and the emulator are needed for emulator execution. Follow
+[Create a standalone application](guides/projects.md) for SDK selection, or
+[the source guide](guides/from-source.md) to prepare an SDK from source.
+
+### Working from a source checkout
+
+In the repository root, install and activate the development environment:
 
 ```sh
 uv sync
