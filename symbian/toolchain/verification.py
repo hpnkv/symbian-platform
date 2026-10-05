@@ -164,9 +164,7 @@ def verify_probe(artifact: Path, oracles_build: Path, output: Path) -> dict:
     metadata = inspect_image(artifact)
     descriptor = metadata["exception_descriptor_offset"]
     expected_relocations = (
-        [descriptor + offset for offset in (0, 4, 8, 12)]
-        if descriptor
-        else []
+        [descriptor + offset for offset in (0, 4, 8, 12)] if descriptor else []
     )
     if (
         metadata["uid3"] != 0xE0000808

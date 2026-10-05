@@ -129,7 +129,9 @@ def configure(
         or any(character in value for character in "\0\r\n;")
         for name, value in variables.items()
     ):
-        raise StatusError(Code.INVALID_ARGUMENT, "Invalid CMake cache variables")
+        raise StatusError(
+            Code.INVALID_ARGUMENT, "Invalid CMake cache variables"
+        )
     identity = json.dumps(
         {
             "architecture": architecture,

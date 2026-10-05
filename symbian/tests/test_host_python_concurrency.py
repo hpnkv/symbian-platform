@@ -5,7 +5,6 @@ import subprocess
 import sys
 import textwrap
 import zipfile
-from pathlib import Path
 
 import pytest
 
@@ -17,8 +16,7 @@ def test_wheel_scheduler_park_releases_and_reacquires_gil(tmp_path):
     """A parked native fiber permits Python work and returns with GIL held."""
     with zipfile.ZipFile(WHEEL) as archive:
         archive.extractall(tmp_path)
-    code = textwrap.dedent(
-        """
+    code = textwrap.dedent("""
         import sys
         import asyncio
         import threading
@@ -67,8 +65,7 @@ def test_wheel_scheduler_park_releases_and_reacquires_gil(tmp_path):
 
         asyncio.run(run_future())
         assert _native._deferred_ref_roundtrip(object()) == (1, 0)
-        """
-    )
+        """)
     result = subprocess.run(
         [sys.executable, "-c", code, str(tmp_path)],
         cwd=tmp_path,
