@@ -43,33 +43,41 @@ jobs:
           import os
           import subprocess
           endpoint = (
-              f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/workflows/"
-              f"host-sdk.yml/runs?head_sha={os.environ['GITHUB_SHA']}"
-              "&status=success&per_page=1"
+              f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/runs"
+              f"?head_sha={os.environ['GITHUB_SHA']}"
+              "&status=success&per_page=50"
           )
           runs = json.loads(subprocess.check_output(["gh", "api", endpoint]))
-          candidates = runs["workflow_runs"]
-          run_id = str(candidates[0]["id"]) if candidates else ""
-          if run_id:
+          required = {
+              f"{kind}-{system}-{arch}"
+              for kind in ("wheels", "host-sdk")
+              for system, arch in (
+                  ("linux", "x86_64"), ("linux", "aarch64"),
+                  ("macos", "x86_64"), ("macos", "arm64"),
+              )
+          }
+          run_id = ""
+          for candidate in runs["workflow_runs"]:
+              # A successful manual release has the same tested host matrix.
+              # Reuse it when tagging the already-validated source commit.
+              if candidate["path"] not in (
+                  ".github/workflows/host-sdk.yml",
+                  ".github/workflows/release.yml",
+              ):
+                  continue
+              candidate_id = str(candidate["id"])
               artifacts = json.loads(subprocess.check_output([
                   "gh", "api",
                   f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/runs/"
-                  f"{run_id}/artifacts?per_page=100",
+                  f"{candidate_id}/artifacts?per_page=100",
               ]))
               available = {
                   item["name"] for item in artifacts["artifacts"]
                   if not item["expired"]
               }
-              required = {
-                  f"{kind}-{system}-{arch}"
-                  for kind in ("wheels", "host-sdk")
-                  for system, arch in (
-                      ("linux", "x86_64"), ("linux", "aarch64"),
-                      ("macos", "x86_64"), ("macos", "arm64"),
-                  )
-              }
-              if not required.issubset(available):
-                  run_id = ""
+              if required.issubset(available):
+                  run_id = candidate_id
+                  break
           with open(os.environ["GITHUB_OUTPUT"], "a") as output:
               output.write(f"run_id={run_id}\n")
   host:

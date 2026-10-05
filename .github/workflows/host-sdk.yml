@@ -82,7 +82,10 @@ jobs:
           conclusion=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$REUSE_RUN_ID" --jq .conclusion)
           test "$conclusion" = success
           workflow_path=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$REUSE_RUN_ID" --jq .path)
-          test "$workflow_path" = .github/workflows/host-sdk.yml
+          case "$workflow_path" in
+            .github/workflows/host-sdk.yml|.github/workflows/release.yml) ;;
+            *) echo "Unrecognized artifact producer: $workflow_path" >&2; exit 1 ;;
+          esac
       - uses: actions/download-artifact@v4
         if: inputs.reuse_run_id != ''
         with:
