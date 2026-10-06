@@ -8067,3 +8067,19 @@ public-surface commit and still pass the embedded-inventory validator. Both
 cache keys now include those inputs. A focused workflow test checks the two
 keys, and the fresh source export will establish the current payload from
 source independently of a cache hit.
+
+### 2026-10-06: fresh export and relocated consumption after native slices
+
+An uncached `symbian sdk install --workspace .` completed at
+`.symbian/sdk-surface/complete-export-7b5c380` after the HTTP, Versit and
+CryptoSPI inventory commits. Its embedded native inventory matched the
+current tracked inventory byte-for-byte, and the native payload validator
+checked delivered header, license, DEF and full import-proxy digests. A copied
+SDK under a path containing spaces passed the same payload validator.
+Disposable consumers for HTTP/service/URI-list, vCard/vCalendar and default
+CryptoSPI then configured, linked and converted to E32 against that relocated
+copy (three of three). Their imports were not executed. This is source export,
+relocation, compiler/linker and E32-format evidence; it does not establish
+named-firmware execution, DLL ordinal equivalence or physical-device support.
+The export was started before the later CI cache-key-only commit, which did
+not change its staged payload or embedded inventory.

@@ -3803,3 +3803,12 @@ now include the public inventory/manifests, native-surface staging code and
 inventory generator. A focused test passes. This prevents a cached archive
 from silently retaining a previous public surface after these source changes;
 workflow execution on Linux/macOS and final bundle acceptance remain open.
+
+Fresh source SDK export after the three native slices succeeded. Its embedded
+inventory is byte-identical to the tracked version and its native payload
+validated. A copied SDK under a path with spaces passed payload validation;
+three independent HTTP, Versit and CryptoSPI consumers configured, linked and
+converted to E32 from that relocated copy. No new API calls were run. This
+closes the local source-export/relocation checkpoint for the current inventory,
+while macOS/Linux native bundles, full manifest coverage and release 0.2.0
+remain open.
