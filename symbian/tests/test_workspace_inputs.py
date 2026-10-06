@@ -26,3 +26,24 @@ def test_publish_preserves_unchanged_files_and_live_source_links(tmp_path):
     _publish(staged, output)
     assert not (output / "header.h").exists()
     assert header.read_text() == "new"
+
+
+def test_changing_input_links_never_writes_into_source_files(tmp_path):
+    original = tmp_path / "original"
+    original.mkdir()
+    header = original / "header.h"
+    header.write_text("source header")
+    staged, output = tmp_path / "staged", tmp_path / "output"
+    staged.mkdir()
+    output.mkdir()
+    (output / "header.h").symlink_to(header)
+    (output / "nested").symlink_to(original, target_is_directory=True)
+    (staged / "header.h").write_text("generated header")
+    (staged / "nested").mkdir()
+    (staged / "nested/config.h").write_text("generated config")
+    _publish(staged, output)
+    assert header.read_text() == "source header"
+    assert not (original / "config.h").exists()
+    assert not (output / "header.h").is_symlink()
+    assert not (output / "nested").is_symlink()
+    assert (output / "header.h").read_text() == "generated header"

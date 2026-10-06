@@ -32,11 +32,16 @@ def _publish(staged: Path, output: Path) -> None:
                 destination.unlink(missing_ok=True)
             destination.symlink_to(source.readlink())
         elif source.is_dir():
+            if destination.is_symlink():
+                destination.unlink()
             destination.mkdir(parents=True, exist_ok=True)
         elif (
-            not destination.is_file()
+            destination.is_symlink()
+            or not destination.is_file()
             or destination.read_bytes() != source.read_bytes()
         ):
+            if destination.is_symlink():
+                destination.unlink()
             shutil.copy2(source, destination)
     for destination in sorted(output.rglob("*"), reverse=True):
         if destination == output / ".prepared":
