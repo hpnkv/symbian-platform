@@ -1,5 +1,38 @@
 # Research log
 
+2026-10-06: The source-backed inventory already named the original
+`centralrepository.dll` and `cenrepnotifhandler.dll` DEFs and public headers.
+The new read-only `central_repository_app_classic` calls `CRepository::NewL`
+and `Get` for the SIP T1 timer, using public `sipsdkcrkeys.h` constants. That
+header was present in the public SIP export manifest but lacked target
+ownership, and its original bytes omitted the `TUid` declaration prerequisite.
+Assigning it to the Central Repository target and pinning an `e32std.h`
+compatibility include made the header independently compilable without
+altering its constants. Initial ARMv5T/ARMv6 links failed because `TRAPD` requires the
+SDK's native leave personality; declaring
+`symbian_enable_native_leaves(... SOURCES main.cc)` supplied the required
+implementation. A relocated installed SDK then compiled, linked and converted
+the example on both architectures, importing `centralrepository.dll` and
+`euser.dll`; ARMv6 also produced a one-executable SIS. Independent canaries
+compiled `centralrepository.h`, `sipsdkcrkeys.h` and
+`cenrepnotifyhandler.h` with only their owning public targets. The root Debug
+source graph exposes and built the new ARMv6 E32 target. A disposable named
+RM-807/Dynarmic run opened the repository, read a positive SIP T1 timer and
+exited with guest type/reason `0/0`. The earlier read of an unrelated key `0`
+returned app exit `2`, providing a changed-key control. Open questions:
+Central Repository data/API version equivalence on Belle FP2, other firmware
+access policy and physical-device behavior. A root `cmake --preset debug`
+configure took 171.9 seconds while waiting for CLion's concurrent shared
+input refresh; its persistent log advanced through base-platform import
+counts, and the root target then built after a cached 7.2-second guest
+configure. The remaining wall time was lock contention, not repeated work.
+Root IDE exposure and native bundle copying had separate example-name lists;
+they now consume the same `cmake/SymbianNativeExamples.json` manifest, with a
+directory-discovery test for future `_classic` examples. This prevents a new
+capability example from appearing only in one distribution path.
+The full relocated installed-SDK native-example suite passed 14 cases in
+160.74 seconds after this change.
+
 2026-10-06: The saved root `GUI Debug` Remote Debug configuration used its
 generated GDB supervisor correctly, but local emulator resolution had no
 firmware selection and pointed at the empty default store

@@ -1,5 +1,24 @@
 # Status
 
+2026-10-06 Central Repository native slice: `Symbian::CentralRepository`
+and `Symbian::CenRepNotification` retained their original frozen interfaces;
+three independent ARMv6 public-header canaries passed, including the
+manifest-exported SIP settings header with a pinned prerequisite include. The new
+`central_repository_app_classic` direct API consumer built from a relocated
+installed SDK for ARMv5T and ARMv6, converted to E32 with the expected
+`centralrepository.dll`/`euser.dll` imports and packaged as an ARMv6
+one-file SIS. The root Debug project exposed and built its E32 target. A
+disposable named RM-807/Dynarmic instance read a positive SIP T1 timer and
+exited with guest type/reason `0/0`; an unrelated key returned app exit `2`.
+The opt-in named-firmware regression test passed, as did relocated installed
+SDK canaries and the full 14-case native-example build/package suite. The root Debug configure
+waited 171.9 seconds behind a concurrent CLion SDK-input refresh and then
+reused its staged inputs; the root E32 target built. A shared JSON manifest
+now drives the root native-example target list and native bundle copy list;
+an inventory test catches newly added `_classic` projects missing from it.
+Other firmware, Belle version equivalence and physical-device behavior remain
+unknown; no setting was modified.
+
 2026-10-06 GUI Debug firmware selection: the local saved GDB supervisor now
 resolves the preserved RM-807 fixture by its exact SHA-256 identity from the
 ignored repository store after an explicit machine-local global selection.

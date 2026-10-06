@@ -1,4 +1,4 @@
-"""Independent AppArc, Eikon and CONE public-header compilation."""
+"""Independent application-framework and Central Repository header checks."""
 
 import json
 import os
@@ -26,7 +26,13 @@ def test_public_s60_framework_headers_compile_independently(tmp_path):
         "add_custom_target(s60_header_canaries ALL)",
     ]
     count = 0
-    for name in ("AppArc", "Eikon", "Cone"):
+    for name in (
+        "AppArc",
+        "Eikon",
+        "Cone",
+        "CentralRepository",
+        "CenRepNotification",
+    ):
         facility = next(
             item for item in inventory["facilities"] if item["target"] == name
         )
@@ -44,7 +50,7 @@ def test_public_s60_framework_headers_compile_independently(tmp_path):
                 ]
             )
             count += 1
-    assert count == 9
+    assert count == 12
     (tmp_path / "CMakeLists.txt").write_text("\n".join(cmake) + "\n")
     build = tmp_path / "build"
     configure = subprocess.run(

@@ -378,17 +378,10 @@ def bundle(args: argparse.Namespace) -> None:
     presets["configurePresets"][0]["toolchainFile"] = "${sourceDir}/sdk.cmake"
     (qt / "CMakePresets.json").write_text(json.dumps(presets, indent=2) + "\n")
     (qt / "sdk-location.json").write_text('{"sdk": "../.."}\n')
-    for example_name in (
-        "audio_app_classic",
-        "bitmap_app_classic",
-        "image_app_classic",
-        "vibra_app_classic",
-        "openc_app_classic",
-        "apparc_app_classic",
-        "qt_modules_app_classic",
-        "qt_mobility_app_classic",
-        "linking_app",
-    ):
+    native_examples = json.loads(
+        (root / "cmake/SymbianNativeExamples.json").read_text()
+    )["examples"]
+    for example_name in native_examples:
         example = output / "examples" / example_name
         shutil.copytree(
             root / "examples" / example_name,

@@ -84,3 +84,22 @@ def test_avkon_generated_resource_block_keeps_frozen_interface():
     assert "avkon.rsg" in avkon["selection_blocked"]
     assert avkon["definition"]["source"].endswith("AVKONU.def")
     assert not avkon.get("blocked")
+
+
+def test_native_example_manifest_covers_root_and_bundle_projects():
+    root = Path(__file__).resolve().parents[2]
+    names = json.loads((root / "cmake/SymbianNativeExamples.json").read_text())[
+        "examples"
+    ]
+    assert len(names) == len(set(names))
+    discovered = {
+        path.name for path in (root / "examples").glob("*_app_classic")
+    }
+    # Qt's original GUI starter has its own source/bundle workflow.
+    discovered.remove("qt_app_classic")
+    assert set(names) == discovered | {"linking_app"}
+    for name in names:
+        project = root / "examples" / name
+        assert (project / "CMakeLists.txt").is_file()
+        assert (project / "symbian.toml").is_file()
+        assert (project / "sdk.cmake").is_file()

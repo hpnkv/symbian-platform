@@ -982,7 +982,8 @@
       "target": "CentralRepository",
       "dll": "centralrepository.dll",
       "headers": [
-        "centralrepository.h"
+        "centralrepository.h",
+        "sipsdkcrkeys.h"
       ],
       "dependencies": [],
       "classification": "public_base_platform",

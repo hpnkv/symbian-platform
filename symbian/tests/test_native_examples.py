@@ -205,3 +205,33 @@ def test_apparc_example_links_original_application_service(
         assert [item["target"] for item in files] == [
             "!:\\sys\\bin\\apparc_app_classic.exe"
         ]
+
+
+@pytest.mark.parametrize("architecture", ["armv5t", "armv6"])
+def test_central_repository_example_links_original_client(
+    tmp_path, architecture
+):
+    """Compiles and converts a read-only Central Repository consumer."""
+    sdk = AppSdk.load(Path(SDK))
+    source = tmp_path / "central repository classic"
+    shutil.copytree(ROOT / "examples/central_repository_app_classic", source)
+    (source / "sdk-location.json").write_text(
+        json.dumps({"sdk": str(sdk.prefix)})
+    )
+    report = build(
+        source,
+        tmp_path / "output",
+        str(sdk.compiler),
+        str(sdk.linker),
+        architecture=architecture,
+    )
+    imports = {item["dll"] for item in report["e32"]["imports"]}
+    assert {"centralrepository.dll", "euser.dll"} <= imports
+    assert report["e32"]["architecture"] == architecture
+    assert not report["runtime_verified"]
+    if architecture == "armv6":
+        built = package(source, Path(report["artifact"]), tmp_path / "package")
+        files = inspect_package(Path(built["artifact"]))["files"]
+        assert [item["target"] for item in files] == [
+            "!:\\sys\\bin\\central_repository_app_classic.exe"
+        ]

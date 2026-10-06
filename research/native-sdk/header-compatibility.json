@@ -1,4 +1,11 @@
 {
+  "sipsdkcrkeys.h": [
+    {
+      "before": "#define SIPCRKEYS_H",
+      "after": "#define SIPCRKEYS_H\n#include <e32std.h>",
+      "reason": "The original public SIP settings header names TUid but includes only e32def.h; include its original defining header for independent consumer compilation."
+    }
+  ],
   "biditext.h": [
     {
       "before": "enum CGraphicsContext::TTextAlign;",

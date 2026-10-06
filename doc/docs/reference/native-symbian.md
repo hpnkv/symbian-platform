@@ -95,3 +95,13 @@ fails during CMake configuration: its public `AknUtils.h` needs generated
 `avkon.rsg`, and the original resource manifest requires generated icon and
 Eikon resource headers that are not yet available from a reviewed SDK export.
 This prevents an Avkon example from being presented as functional.
+
+`Symbian::CentralRepository` supplies `<centralrepository.h>` and the frozen
+`centralrepository.dll` imports. `Symbian::CenRepNotification` supplies
+`<cenrepnotifyhandler.h>` and depends on the Central Repository target.
+`examples/central_repository_app_classic` is a read-only original-API consumer;
+its SIP repository and timer-key IDs come from the original public
+`<sipsdkcrkeys.h>`, now delivered with the Central Repository target.
+The read returned a positive timer value and exited normally in the preserved
+RM-807/Dynarmic emulator. Other firmware and physical-device behavior remain
+unknown.
