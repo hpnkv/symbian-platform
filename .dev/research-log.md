@@ -7328,3 +7328,30 @@ relocated fixture's native inventory validator accepted the new usage map,
 all copied headers and complete import interfaces. Thirty-one focused native
 configuration/payload controls passed; strict documentation and owned C++
 style checks passed.
+
+### 2026-10-06: S60 application-framework resource gate
+
+Nine independent public-header canaries for `Symbian::AppArc`, `Symbian::Eikon`
+and `Symbian::Cone` compiled on ARMv6 with only their owning target and runtime.
+The `apparc_app_classic` example connects to `RApaLsSession`; relocated
+ARMv5T and ARMv6 builds imported `apgrfx.dll` and converted to E32. This does
+not show that the AppArc server started on any firmware. The ARMv6 E32 also
+packaged into a one-executable SIS with the expected `sys/bin` target.
+
+Avkon remains a distinct blocked selection. The original
+`classicui/uifw/AvKon/group/avkon.mmp` declares `START RESOURCE avkon.rss`
+with `HEADER`, so public `AknUtils.h` expects generated `avkon.rsg`.
+`avkon.rss` also includes `avkon.mbg`, `callstatus.mbg`, `smiley.mbg` and
+`eikctl.rsg`. Original `bld.inf` names Iconlist2/smileyiconlist2 mifconv
+inputs, while the current prepared source/SDK has neither those generated MBG
+headers nor a reviewed generator path for the icon resource contract.
+Compiling the resource with placeholder enum values would hide a real ABI and
+resource-ID uncertainty. The inventory now distinguishes selection blocking
+from missing frozen imports: it keeps the original complete `AVKONU.def` and
+proxy, while CMake rejects `Symbian::Avkon` transitively with the exact
+resource reason. A real fixture CMake negative control produced that error.
+Resource generation and then a real Avkon application example remain open.
+After the IDE's source-input refresh completed, the root source Debug graph
+also exposed and built `apparc_app_classic_e32`; cached CMake configure took
+7.1 seconds. This is the same compiler/converter level of evidence as the
+relocated project build, not an AppArc server run.

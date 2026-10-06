@@ -43,8 +43,20 @@ def configure(tmp_path):
             "dependencies": [],
             "blocked": "Missing frozen EABI evidence",
         },
+        {
+            "target": "ResourceBlocked",
+            "dll": "resourceblocked.dll",
+            "headers": ["resourceblocked.h"],
+            "dependencies": [],
+            "selection_blocked": (
+                "Original generated resource header is unavailable"
+            ),
+            "definition": {
+                "destination": "share/symbian/native/defs/resourceblocked.def"
+            },
+        },
     ]
-    for entry in entries[:2]:
+    for entry in [entries[0], entries[1], entries[3]]:
         dll = entry["dll"].removesuffix(".dll")
         for relative in [
             f"proxies/{dll}/{dll}.dso",
@@ -155,6 +167,20 @@ def test_blocked_facility_is_actionable_through_interface_dependency(configure):
     )
     assert result.returncode != 0
     assert "Missing frozen EABI evidence" in result.stderr
+
+
+def test_resource_blocked_facility_retains_import_and_rejects_selection(
+    configure,
+):
+    run, sdk = configure
+    assert (sdk / "proxies/resourceblocked/resourceblocked.dso").is_file()
+    result = run(
+        "add_library(wrapper INTERFACE)\n"
+        "target_link_libraries(wrapper INTERFACE Symbian::ResourceBlocked)\n"
+        "target_link_libraries(app PRIVATE wrapper)"
+    )
+    assert result.returncode != 0
+    assert "Original generated resource header is unavailable" in result.stderr
 
 
 def test_selected_complete_firmware_rejects_missing_transitive_dll(

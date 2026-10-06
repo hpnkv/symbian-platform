@@ -384,6 +384,7 @@ def bundle(args: argparse.Namespace) -> None:
         "image_app_classic",
         "vibra_app_classic",
         "openc_app_classic",
+        "apparc_app_classic",
         "qt_modules_app_classic",
         "qt_mobility_app_classic",
         "linking_app",

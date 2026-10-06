@@ -3461,3 +3461,15 @@ Open C libraries, named-firmware execution and release 0.2.0 remain open.
 The root Debug project built `openc_app_classic_e32`, the relocated native
 payload validator accepted the usage map, 31 native configuration/payload
 controls passed, and strict documentation and style checks passed.
+
+2026-10-06 S60 application frameworks: nine public AppArc/Eikon/CONE headers
+compile independently with their owner targets. `apparc_app_classic` links
+and converts to E32 on ARMv5T and ARMv6; its ARMv6 SIS contains the expected
+executable. Avkon retains its complete frozen
+interface, but a selected `Symbian::Avkon` now fails CMake configuration with
+the missing generated `avkon.rsg`/MBG dependency reason. The original resource
+manifest and icon lists were located; no placeholder resource or firmware DLL
+was shipped. Named-firmware execution, Avkon resource generation and the
+standard application lifecycle remain open.
+The root Debug graph built `apparc_app_classic_e32` after a cached 7.1-second
+configure; no firmware or physical-device result follows.

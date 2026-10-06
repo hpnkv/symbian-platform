@@ -53,6 +53,8 @@ foreach(index RANGE 0 ${last})
   string(JSON name GET "${entry}" target)
   string(JSON dll GET "${entry}" dll)
   string(JSON blocked ERROR_VARIABLE available GET "${entry}" blocked)
+  string(JSON selection_blocked ERROR_VARIABLE selection_available
+    GET "${entry}" selection_blocked)
   string(REGEX REPLACE "\\.dll$" "" basename "${dll}")
   set(proxy "${SYMBIAN_SDK_PREFIX}/proxies/${basename}/${basename}.dso")
   add_library(SymbianNative${name} INTERFACE)
@@ -60,6 +62,10 @@ foreach(index RANGE 0 ${last})
   set_target_properties(SymbianNative${name} PROPERTIES
     SYMBIAN_NATIVE_API "${name}" SYMBIAN_NATIVE_DLL "${dll}"
     SYMBIAN_NATIVE_ENTRY "${entry}")
+  if(NOT selection_available)
+    set_property(TARGET SymbianNative${name} PROPERTY
+      SYMBIAN_NATIVE_BLOCKED "${selection_blocked}")
+  endif()
   target_link_libraries(SymbianNative${name} INTERFACE SymbianNativeAbi Symbian::EUser)
   if(available)
     # Every selected definition retains the complete frozen ordinal table.

@@ -2750,6 +2750,7 @@
       ],
       "classification": "public_base_platform",
       "availability": "unknown_firmware",
+      "selection_blocked": "Public AknUtils.h requires generated avkon.rsg. Original avkon.rss compilation also needs avkon.mbg, callstatus.mbg, smiley.mbg and eikctl.rsg; a reviewed redistributable generation path for these inputs is not established.",
       "definition": {
         "source": "classicui/uifw/AvKon/EABI/AVKONU.def",
         "sha256": "2967cf9636c5f587cdd220a6fe4c2517e885a881ec4d6642a59b71fb2d778b49",
@@ -7836,18 +7837,14 @@
       ],
       "classification": "public_standard_extension",
       "availability": "unknown_firmware",
-      "definition": {
-        "source": "ossrv/stdlibs/libcrypt/eabi/libcrypt.def",
-        "sha256": "1d64ae05891d4ec5d8cff737f8488aa7a83818d8c2d7160bc243d3bd67f20123",
-        "destination": "share/symbian/native/defs/libcrypt.dll.def"
-      },
+      "definition": "ossrv/stdlibs/libcrypt/eabi/libcrypt.def",
       "mmp": "ossrv/stdlibs/libcrypt/group/libcrypt.mmp",
       "implementation_dependencies": [
         "ewsd",
         "euser",
         "libc"
       ],
-      "blocked": "Public header export not established: crypt.h",
+      "blocked": "libcrypt public SDK header export and redistribution contract not established",
       "header_payloads": [],
       "ms_extensions": false
     },

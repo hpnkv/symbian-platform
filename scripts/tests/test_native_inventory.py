@@ -73,3 +73,14 @@ def test_qt_mobility_aliases_exclude_private_classes(tmp_path):
     assert public_aliases(tmp_path, "contacts", ["qcontact.h"]) == [
         {"include": "QtContacts/QContact", "header": "qcontact.h"}
     ]
+
+
+def test_avkon_generated_resource_block_keeps_frozen_interface():
+    root = Path(__file__).resolve().parents[2]
+    inventory = json.loads(
+        (root / "research/native-sdk/inventory.json").read_text()
+    )
+    avkon = next(f for f in inventory["facilities"] if f["target"] == "Avkon")
+    assert "avkon.rsg" in avkon["selection_blocked"]
+    assert avkon["definition"]["source"].endswith("AVKONU.def")
+    assert not avkon.get("blocked")

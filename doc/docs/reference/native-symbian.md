@@ -54,6 +54,9 @@ equivalence as open work; do not infer a runtime guarantee from a header.
 | `QtMultimediaKit/QMediaPlayer` | `Symbian::QtMobilityMultimediaKit` | Mobility media API; distinct from QtMultimedia. |
 | `QtVersit/QVersitContactExporter` | `Symbian::QtMobilityVersit` | Includes Mobility Contacts transitively. |
 | `stdio.h`, `stdlib.h`, `string.h` | `Symbian::OpenC` | Original Open C `libc.dll` imports; C and pthread prerequisites follow transitively. |
+| `apgcli.h`, `apgtask.h` | `Symbian::AppArc` | Application list and task services. |
+| `eikapp.h`, `eikappui.h` | `Symbian::Eikon` | Eikon application framework. |
+| `coecntrl.h`, `coemain.h` | `Symbian::Cone` | CONE controls and environment. |
 
 Qt targets also include `Symbian::QtCore`, `QtGui`, `QtSvg`, `QtScript`,
 `QtXmlPatterns`, `QtDeclarative`, `QtMultimedia`, `QtOpenVG` and `QtTest`.
@@ -82,3 +85,13 @@ cannot be compiled from this source release because it contains an undefined
 It remains recorded as blocked rather than presented as a working event API.
 The `examples/openc_app_classic` project uses the original libc functions
 directly.
+
+AppArc, Eikon and CONE retain separate targets, original frozen imports and
+their own public headers. The nine representative framework headers compile
+independently with their owner targets. `examples/apparc_app_classic` opens an
+`RApaLsSession` through the original AppArc API. Avkon's complete frozen
+`avkon.dll` interface is retained, but selecting `Symbian::Avkon` currently
+fails during CMake configuration: its public `AknUtils.h` needs generated
+`avkon.rsg`, and the original resource manifest requires generated icon and
+Eikon resource headers that are not yet available from a reviewed SDK export.
+This prevents an Avkon example from being presented as functional.

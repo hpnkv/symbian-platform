@@ -514,6 +514,7 @@
       ],
       "classification": "public_base_platform",
       "availability": "unknown_firmware",
+      "selection_blocked": "Public AknUtils.h requires generated avkon.rsg. Original avkon.rss compilation also needs avkon.mbg, callstatus.mbg, smiley.mbg and eikctl.rsg; a reviewed redistributable generation path for these inputs is not established.",
       "definition": "classicui/uifw/AvKon/EABI/AVKONU.def",
       "mmp": "classicui/uifw/AvKon/group/avkon.mmp",
       "implementation_dependencies": [

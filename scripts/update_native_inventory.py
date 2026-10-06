@@ -309,7 +309,7 @@ def generate(workspace: Path) -> dict:
         choices = libraries[dll]
         if (
             choices
-            and facility.get("blocked")
+            and facility.get("blocked", "").startswith("No reviewed MMP")
             and len({c["definition"] for c in choices}) == 1
         ):
             facility.pop("blocked")

@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from symbian.e32 import convert_imported_executable, inspect_image
+from symbian.packaging.packages import inspect_package, package
 from symbian.project.sdk import AppSdk
 from symbian.status import StatusError
 from symbian.toolchain import build
@@ -174,3 +175,33 @@ def test_open_c_example_links_original_libc(tmp_path, architecture):
     assert {"libc.dll", "libpthread.dll", "euser.dll"} <= imports
     assert report["e32"]["architecture"] == architecture
     assert not report["runtime_verified"]
+
+
+@pytest.mark.parametrize("architecture", ["armv5t", "armv6"])
+def test_apparc_example_links_original_application_service(
+    tmp_path, architecture
+):
+    """Builds a real AppArc session consumer against frozen native imports."""
+    sdk = AppSdk.load(Path(SDK))
+    source = tmp_path / "apparc classic"
+    shutil.copytree(ROOT / "examples/apparc_app_classic", source)
+    (source / "sdk-location.json").write_text(
+        json.dumps({"sdk": str(sdk.prefix)})
+    )
+    report = build(
+        source,
+        tmp_path / "output",
+        str(sdk.compiler),
+        str(sdk.linker),
+        architecture=architecture,
+    )
+    imports = {item["dll"] for item in report["e32"]["imports"]}
+    assert {"apgrfx.dll", "euser.dll"} <= imports
+    assert report["e32"]["architecture"] == architecture
+    assert not report["runtime_verified"]
+    if architecture == "armv6":
+        built = package(source, Path(report["artifact"]), tmp_path / "package")
+        files = inspect_package(Path(built["artifact"]))["files"]
+        assert [item["target"] for item in files] == [
+            "!:\\sys\\bin\\apparc_app_classic.exe"
+        ]
