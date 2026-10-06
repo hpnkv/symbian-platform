@@ -18,6 +18,7 @@ from pathlib import Path
 from symbian import packaging, toolchain
 from symbian.device.connection import ConnectedDevice
 from symbian.packaging.signing import create_self_signed_identity
+from symbian.paths import asset_directory
 from symbian.project.sdk import AppSdk
 from symbian.status import Code, StatusError
 
@@ -38,9 +39,7 @@ def _anchor(device: ConnectedDevice) -> str:
 
 def identity_dir(device: ConnectedDevice) -> Path:
     """Return private storage for one serial-derived phone anchor."""
-    return (
-        Path.home() / ".local/share/symbian/agent-identities" / _anchor(device)
-    )
+    return asset_directory("data") / "agent-identities" / _anchor(device)
 
 
 def key_file(device: ConnectedDevice, *, create: bool = False) -> Path:

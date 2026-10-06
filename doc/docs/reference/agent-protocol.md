@@ -55,7 +55,7 @@ raw-TCP agent and the new host require matching transport versions. Physical
 ## Pairing and authentication
 
 The console creates one private key for each serial-derived USB identity
-anchor. It stores the key under `~/.local/share/symbian/agent-identities/`
+anchor. It stores the key under `~/.symbian/agent-identities/`
 with owner-only permissions, outside the repository. The key is embedded in
 a phone-specific build. The handset panel displays an eight-character code
 derived from the key. The owner must compare that code with the console's card

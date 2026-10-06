@@ -3277,3 +3277,14 @@ that toolchain path. Both Linux guest-index presets build using the public
 Root macOS qt_app and gui_app ARMv6 executables compile and link. Source guide
 now shows the installed native SDK bin directory as a complete toolchain;
 the Linux guide installs the bundled emulator by default. Strict docs pass.
+
+### 2026-10-06: publication and user-scoped assets
+
+SDK 0.1.7 is published on GitHub and PyPI (16 wheels, sdist, complete native
+and host archives). Clean installed guide workflows for hello_time, gui_app
+and qt_app passed on macOS arm64 and Linux x86_64, including rendering/input
+and normal guest exits. Physical devices remain untested.
+User assets now default to ~/.symbian; obsolete SDK paths are removed.
+Emulator diagnostics distinguish an ordinary incompatible frontend from a
+broken SDK-managed bundle and prefer SDK-owned installations by default.
+Source CMake isolation from installed SDK state is undergoing regression checks.

@@ -26,6 +26,7 @@ from symbian.emulator.firmware import (
 from symbian.emulator.launch import _digest, _stop
 from symbian.project.sdk import AppSdk
 from symbian.sdk import build_import_proxy, inspect_proxy
+from symbian.paths import asset_directory
 from symbian.status import StatusException
 
 WORKSPACE = os.environ.get("SYMBIAN_RUNTIME_WORKSPACE")
@@ -1126,7 +1127,7 @@ def test_native_atomic64_on_other_eka2_roms(
 ):
     """Runs the same cross-thread atomic contract on imported EKA2 ROMs."""
     root = Path(WORKSPACE).resolve()
-    store = Path.home() / ".local/share/symbian/firmware"
+    store = asset_directory("data") / "firmware"
     source = locate(store, reference)
     manifest = validate_manifest(source)
     assert manifest.device.kernel == "eka2"
@@ -1182,7 +1183,7 @@ def test_native_atomic64_on_other_eka2_roms(
 )
 def test_other_rom_atomic_exports_and_exclusive_instructions():
     """Distinguishes supported exclusive ROM paths from missing ordinals."""
-    store = Path.home() / ".local/share/symbian/firmware"
+    store = asset_directory("data") / "firmware"
     images = {}
     for reference in ("nokia808", "c7", "e6", "6120", "e71"):
         source = locate(store, reference)

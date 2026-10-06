@@ -12,7 +12,6 @@ from symbian.emulator.configuration import (
     atomic_json,
     configure,
     resolve,
-    xdg,
 )
 from symbian.emulator.firmware import (
     Device,
@@ -28,6 +27,7 @@ from symbian.emulator.firmware import (
     svc_profile,
     validate_manifest,
 )
+from symbian.paths import asset_directory
 from symbian.status import Code, StatusError
 from symbian.tests.cli_json import main
 
@@ -84,7 +84,7 @@ def test_precedence_provenance_and_relative_paths(tmp_path):
     )
     assert resolution.settings.firmware == "command"
     assert resolution.settings.backend == "dyncom"
-    assert resolution.settings.store == xdg("CONFIG") / "symbian/relative-store"
+    assert resolution.settings.store == asset_directory("config") / "relative-store"
     assert resolution.settings.emulator == sdk / "bin/emulator"
     assert resolution.origins["firmware"] == "command"
     assert resolution.origins["emulator"] == str(sdk / "emulator.json")
@@ -127,11 +127,11 @@ def test_invalid_configuration_never_falls_back(tmp_path):
 
 def test_no_default_firmware_guess_or_hidden_808(tmp_path):
     resolution = resolve()
-    assert resolution.settings.store == xdg("DATA") / "symbian/firmware"
+    assert resolution.settings.store == asset_directory("data") / "firmware"
     assert resolution.settings.firmware is None
     explanation = describe(resolution)
     assert explanation["selection_status"]["code"] == Code.FAILED_PRECONDITION
-    assert not (xdg("DATA") / "symbian").exists()
+    assert not asset_directory("data").exists()
 
 
 def test_portable_bundle_moves_between_stores_and_aliases(tmp_path):
@@ -226,9 +226,7 @@ def test_native_timeout_is_reaped_and_evidence_retained(tmp_path):
     with pytest.raises(StatusError) as failure:
         import_firmware(resolution, source=archive, timeout=1.5)
     assert failure.value.code == Code.DEADLINE_EXCEEDED
-    retained = next(
-        (xdg("CACHE") / "symbian/firmware-imports").glob("import-*")
-    )
+    retained = next((asset_directory("cache") / "firmware-imports").glob("import-*"))
     with pytest.raises(ProcessLookupError):
         os.kill(int((retained / "instance/pid").read_text()), 0)
     assert (retained / "failure.json").is_file()

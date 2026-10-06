@@ -610,7 +610,6 @@ def list_devices() -> dict:
 def inspect_device(
     selector: str | None = None,
     probe_protocol: bool = True,
-    usb_map: bool = True,
     at_status: bool = False,
     mtp: bool = False,
     mtp_list: int = 0,

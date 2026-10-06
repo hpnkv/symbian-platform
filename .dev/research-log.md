@@ -6851,3 +6851,23 @@ The hosted server returned HTTP 429 for additional parallel requests; stopped
 fetching those pages rather than claiming their content was consulted.
 Eight generator regressions and the strict two-Doxygen documentation build
 pass. This closes three parameter warnings, not the broader 712-member gap.
+
+## 2026-10-06 — User asset ownership and ordinary emulator diagnostics
+
+SDK 0.1.7 publication completed in release run 37395980141: 26 GitHub
+assets and public PyPI's 16 wheels plus sdist. Clean public installs on macOS
+arm64 and Linux x86_64 built, inspected, packaged, signed and ran hello_time,
+gui_app and qt_app; GUI input and normal exits passed, and Qt also passed both
+CPU backends. Physical-device behavior remains untested. Unauthenticated
+GitHub discovery returned 403 on macOS; direct download and archive install
+worked and are documented.
+
+User-scoped SDK state now shares ~/.symbian by default, with explicit
+SYMBIAN_HOME or XDG overrides. Obsolete SDK storage paths are neither searched
+nor migrated. Ordinary EKA2L1 frontends without the capability protocol produce
+a useful incompatible diagnostic; damaged SDK-managed bundles remain errors.
+Installed SDK-owned emulator bundles take precedence over stale sdk.json
+frontend paths, while explicit preferences continue to win. Targeted policy,
+SDK, architecture and initialization regression: 45 passed, 18 optional skips;
+earlier emulator/path/configuration subsets also passed. The source CMake
+workspace still required an installed SDK and is being replaced separately.

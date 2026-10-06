@@ -13,7 +13,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
-from symbian.emulator.configuration import Resolution, atomic_json, xdg
+from symbian.emulator.configuration import Resolution, atomic_json
+from symbian.paths import asset_directory
 from symbian.status import Code, StatusError
 
 UPSTREAM = "2594edf4d6bf55d7bd3f0b46250fe2318d4dc2e8"
@@ -237,7 +238,7 @@ def probe_archive(resolution: Resolution, source: Path) -> dict:
         )
     if not source.is_file():
         raise StatusError(Code.NOT_FOUND, str(source))
-    cache = xdg("CACHE") / "symbian/firmware-imports"
+    cache = asset_directory("cache") / "firmware-imports"
     cache.mkdir(parents=True, exist_ok=True)
     retained = Path(tempfile.mkdtemp(prefix="probe-", dir=cache))
     response = native_request(
@@ -285,7 +286,7 @@ def import_firmware(
     companion = companion.resolve() if companion else None
     if not source.exists():
         raise StatusError(Code.NOT_FOUND, str(source))
-    cache = xdg("CACHE") / "symbian/firmware-imports"
+    cache = asset_directory("cache") / "firmware-imports"
     cache.mkdir(parents=True, exist_ok=True)
     retained = Path(tempfile.mkdtemp(prefix="import-", dir=cache))
     instance = retained / "instance"
@@ -462,12 +463,6 @@ def selected(resolution: Resolution) -> tuple[Path, Manifest]:
             "No firmware selected; import with 'symbian firmware import SOURCE"
             " --name NAME --use global', or pass --firmware sha256:ID"
         )
-        if resolution.legacy_instance:
-            message += (
-                f". Deprecated SDK golden path is {resolution.legacy_instance};"
-                " migrate using 'symbian firmware import --instance PATH"
-                " --name NAME --use global'"
-            )
         raise StatusError(Code.FAILED_PRECONDITION, message)
     if resolution.settings.store is None:
         raise StatusError(

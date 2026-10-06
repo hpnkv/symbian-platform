@@ -8,18 +8,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
+from symbian.paths import asset_directory
 from symbian.status import Code, StatusError
-
-
-def xdg(kind: str) -> Path:
-    """Returns the absolute XDG directory, with XDG defaults."""
-    defaults = {"CONFIG": ".config", "DATA": ".local/share", "CACHE": ".cache"}
-    value = os.environ.get(f"XDG_{kind}_HOME")
-    if value and not Path(value).is_absolute():
-        raise StatusError(
-            Code.INVALID_ARGUMENT, f"XDG_{kind}_HOME must be absolute"
-        )
-    return Path(value) if value else Path.home() / defaults[kind]
 
 
 class Settings(BaseModel):
@@ -43,7 +33,6 @@ class Resolution(BaseModel):
     origins: dict[str, str]
     layers: list[dict]
     sdk: Path | None = None
-    legacy_instance: Path | None = None
 
 
 def atomic_json(path: Path, value: dict) -> None:
@@ -109,7 +98,7 @@ def config_path(
 ) -> Path:
     """Finds a scope without writing SDK/project artifacts implicitly."""
     if scope == "global":
-        return xdg("CONFIG") / "symbian/emulator.json"
+        return asset_directory("config") / "emulator.json"
     if scope == "project":
         if project is None:
             raise StatusError(
@@ -136,7 +125,7 @@ def resolve(
     """Merges global, SDK, project and command keys, retaining their origins."""
     prefix = sdk_prefix(project, sdk)
     values = {
-        "store": xdg("DATA") / "symbian/firmware",
+        "store": asset_directory("data") / "firmware",
         "backend": "dynarmic",
         "language": 1,
         "profile": "auto",
@@ -147,7 +136,6 @@ def resolve(
     installed_tools = active()
     values.update(installed_tools)
     origins.update({key: str(active_path()) for key in installed_tools})
-    legacy = None
     # Host-tool defaults are declarations, not implicit firmware selections.
     if prefix is not None and (prefix / "sdk.json").is_file():
         from symbian.project.sdk import AppSdk
@@ -164,12 +152,9 @@ def resolve(
             ("emulator", declaration.emulator),
             ("importer", declaration.firmware_importer),
         ):
-            if key not in installed_tools or (
-                tool is not None and tool.is_file()
-            ):
+            if key not in installed_tools:
                 values[key] = tool
                 origins[key] = str(prefix / "sdk.json")
-        legacy = declaration.golden
     elif root is not None and not installed_tools:
         import platform
 
@@ -216,15 +201,11 @@ def resolve(
         settings = Settings.model_validate(values)
     except ValidationError as error:
         raise StatusError(Code.INVALID_ARGUMENT, str(error)) from error
-    # An explicit null disables even the deprecated fallback.
-    if "firmware" in origins:
-        legacy = None
     return Resolution(
         settings=settings,
         origins=origins,
         layers=layers,
         sdk=prefix,
-        legacy_instance=legacy,
     )
 
 

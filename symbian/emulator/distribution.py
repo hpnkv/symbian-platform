@@ -14,7 +14,8 @@ from typing import Literal
 import httpx
 from pydantic import BaseModel, ConfigDict, ValidationError
 
-from symbian.emulator.configuration import atomic_json, xdg
+from symbian.emulator.configuration import atomic_json
+from symbian.paths import asset_directory
 from symbian.status import Code, StatusError
 
 REPOSITORY = "hpnkv/symbian-platform"
@@ -62,12 +63,12 @@ def host() -> tuple[str, str]:
 
 def root() -> Path:
     """Keeps executable installations separate from preserved firmware."""
-    return xdg("DATA") / "symbian/emulators"
+    return asset_directory("data") / "emulators"
 
 
 def active_path() -> Path:
     """Returns the atomic per-user emulator selector."""
-    return xdg("CONFIG") / "symbian/active-emulator.json"
+    return asset_directory("config") / "active-emulator.json"
 
 
 def compatible(protocol: str, capabilities: list[str]) -> None:
@@ -164,18 +165,61 @@ def check(prefix: Path) -> Distribution:
     return declaration
 
 
+def _bundle_prefix(frontend: Path) -> Path | None:
+    """Distinguishes distribution metadata from SDK/project preferences."""
+    installation_root = root()
+    for prefix in frontend.resolve().parents:
+        metadata = prefix / "emulator.json"
+        if not metadata.is_file():
+            continue
+        if prefix.parent == installation_root:
+            return prefix
+        try:
+            declaration = json.loads(metadata.read_text())
+        except (OSError, ValueError):
+            continue
+        if declaration.get("schema") == "symbian.emulator-distribution/v1":
+            return prefix
+    return None
+
+
 def check_packaged(frontend: Path) -> None:
     """Rechecks bundled frontends before launch, including explicit choices."""
-    executable = frontend.resolve()
-    for prefix in executable.parents:
-        if (prefix / "emulator.json").is_file():
-            declaration = check(prefix)
-            if (prefix / declaration.frontend).resolve() != executable:
-                raise StatusError(
-                    Code.FAILED_PRECONDITION,
-                    "Selected executable is not the bundle frontend",
-                )
-            return
+    prefix = _bundle_prefix(frontend)
+    if prefix is not None:
+        declaration = check(prefix)
+        if (prefix / declaration.frontend).resolve() != frontend.resolve():
+            raise StatusError(
+                Code.FAILED_PRECONDITION,
+                "Selected executable is not the bundle frontend",
+            )
+
+
+def diagnose(frontend: Path) -> dict:
+    """Reports SDK integration without requiring it from ordinary EKA2L1."""
+    if not frontend.is_file() or not os.access(frontend, os.X_OK):
+        raise StatusError(
+            Code.NOT_FOUND, f"Emulator is not executable: {frontend}"
+        )
+    managed = _bundle_prefix(frontend) is not None
+    if managed:
+        check_packaged(frontend)
+    try:
+        return {"sdk_compatible": True, "managed": managed, **query(frontend)}
+    except StatusError:
+        if managed:
+            raise
+        return {
+            "sdk_compatible": False,
+            "managed": False,
+            "diagnostic": (
+                "This emulator does not advertise compatible SDK integration."
+            ),
+            "recommendation": (
+                "Run symbian emulator install for automated SDK launches. "
+                "An ordinary EKA2L1 build may still be used independently."
+            ),
+        }
 
 
 def active() -> dict[str, Path]:
@@ -400,10 +444,12 @@ def install(
 
 def installed() -> dict:
     """Lists retained versions without executing every installation."""
-    selected = active_path().read_text() if active_path().is_file() else ""
+    selection = active_path()
+    selected = selection.read_text() if selection.is_file() else ""
     versions = []
-    if root().is_dir():
-        for prefix in sorted(root().iterdir()):
+    base = root()
+    if base.is_dir():
+        for prefix in sorted(base.iterdir()):
             if prefix.name.startswith("."):
                 continue
             declaration = read(prefix)

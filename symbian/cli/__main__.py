@@ -752,11 +752,6 @@ def _parser() -> argparse.ArgumentParser:
         help="Show host USB evidence without querying the CDC ACM port",
     )
     info.add_argument(
-        "--usb-map",
-        action="store_true",
-        help="Compatibility alias; the USB map is always included",
-    )
-    info.add_argument(
         "--at-status",
         action="store_true",
         help="Query battery and signal codes from the AT modem port",
@@ -1233,7 +1228,7 @@ def _execute(args: argparse.Namespace) -> dict:
             return installed()
         if args.emu_command == "doctor":
             from symbian.emulator.configuration import resolve
-            from symbian.emulator.distribution import query
+            from symbian.emulator.distribution import diagnose
             from symbian.status import Code, StatusError
 
             resolution = resolve(
@@ -1247,7 +1242,7 @@ def _execute(args: argparse.Namespace) -> dict:
                     Code.NOT_FOUND,
                     "Install an emulator with symbian emulator install",
                 )
-            return {"emulator": str(frontend), **query(frontend)}
+            return {"emulator": str(frontend), **diagnose(frontend)}
         if args.emu_command == "run":
             from symbian.emulator.launch import main as launch
             from symbian.status import Code, StatusError
@@ -1461,7 +1456,6 @@ def _execute(args: argparse.Namespace) -> dict:
         return inspect_device(
             args.device,
             probe_protocol=not args.no_protocol,
-            usb_map=args.usb_map,
             at_status=args.at_status,
             mtp=args.mtp,
             mtp_list=args.mtp_list,

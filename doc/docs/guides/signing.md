@@ -7,8 +7,8 @@ to copy an existing PEM certificate and matching unencrypted RSA private key.
 Names contain letters, digits, underscores or hyphens and start with a letter
 or digit. Existing identities are never replaced.
 
-The default store is `$XDG_DATA_HOME/symbian/signing`, or
-`~/.local/share/symbian/signing`. Directories are private to the host user and
+The default store is `~/.symbian/signing`; see
+[user asset storage](../reference/user-assets.md) for environment overrides. Directories are private to the host user and
 keys have mode `0600`. Keep identities and private keys outside source control.
 OpenSSL is required for identity creation and certificate checks. The GUI's
 view options can select another identity folder.

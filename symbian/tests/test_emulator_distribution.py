@@ -140,10 +140,68 @@ def test_cli_alias_doctor_and_contract_failure(tmp_path, capsys):
     assert main(["emulator", "doctor"]) == 0
     response = json.loads(capsys.readouterr().out)
     assert response["result"]["control_protocol"] == emulator.PROTOCOL
+    assert response["result"]["sdk_compatible"]
     assert main(["emu", "list"]) == 0
     capsys.readouterr()
     with pytest.raises(StatusError, match="missing capabilities"):
         emulator.compatible(emulator.PROTOCOL, [])
+
+
+def test_doctor_reports_an_ordinary_emulator_without_sdk_flags(
+    tmp_path, capsys
+):
+    frontend = tmp_path / "ordinary-eka2l1"
+    frontend.write_text("#!/bin/sh\necho 'Unknown option' >&2\nexit 255\n")
+    frontend.chmod(0o755)
+    assert main(["emulator", "doctor", "--emulator", str(frontend)]) == 0
+    response = json.loads(capsys.readouterr().out)["result"]
+    assert response["sdk_compatible"] is False
+    assert response["managed"] is False
+    assert "symbian emulator install" in response["recommendation"]
+
+
+def test_doctor_does_not_downgrade_a_broken_sdk_bundle(tmp_path):
+    installation = emulator.install(archive=archive(tmp_path))
+    frontend = Path(installation["prefix"]) / "bin/frontend"
+    frontend.write_text("#!/bin/sh\nexit 255\n")
+    with pytest.raises(StatusError, match="compatibility check failed"):
+        emulator.diagnose(frontend)
+
+
+def test_sdk_metadata_cannot_mask_selected_emulator(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    from symbian.project.sdk import AppSdk
+
+    installation = emulator.install(archive=archive(tmp_path))
+    sdk = tmp_path / "sdk"
+    sdk.mkdir()
+    (sdk / "sdk.json").write_text("{}")
+    old = sdk / "old-frontend"
+    old.write_text("old executable")
+    monkeypatch.setattr(
+        AppSdk,
+        "model_validate_json",
+        lambda _: SimpleNamespace(emulator=old, firmware_importer=old),
+    )
+    assert resolve(sdk=sdk).settings.emulator == (
+        Path(installation["prefix"]) / "bin/frontend"
+    )
+
+
+def test_emulator_preferences_are_not_distribution_metadata(tmp_path):
+    installation = emulator.install(archive=archive(tmp_path))
+    frontend = tmp_path / "custom/bin/frontend"
+    frontend.parent.mkdir(parents=True)
+    frontend.write_bytes(
+        (Path(installation["prefix"]) / "bin/frontend").read_bytes()
+    )
+    frontend.chmod(0o755)
+    (frontend.parent.parent / "emulator.json").write_text(
+        '{"backend":"dyncom"}'
+    )
+    result = emulator.diagnose(frontend)
+    assert result["sdk_compatible"] and result["managed"] is False
 
 
 def test_discovery_uses_highest_compatible_independent_release(monkeypatch):

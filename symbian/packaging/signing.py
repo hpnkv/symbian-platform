@@ -134,12 +134,12 @@ class IdentityStore:
     """Private named identities stored outside application source trees."""
 
     def __init__(self, directory: Path | None = None):
-        from symbian.emulator.configuration import xdg
+        from symbian.paths import asset_directory
 
         self.directory = (
             directory.expanduser().absolute()
             if directory is not None
-            else xdg("DATA") / "symbian/signing"
+            else asset_directory("data") / "signing"
         )
 
     def _private_directory(self, path: Path) -> None:

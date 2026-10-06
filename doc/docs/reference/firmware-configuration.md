@@ -8,20 +8,20 @@ Settings merge **per key**, in this order:
 
 | Layer | File | Intended use |
 | --- | --- | --- |
-| Global | `$XDG_CONFIG_HOME/symbian/emulator.json` | User's default device and host paths |
+| Global | `~/.symbian/config/emulator.json` | User's default device and host paths |
 | SDK | `SDK/emulator.json` | Optional defaults for a particular SDK profile |
 | Project | `PROJECT/emulator.json` | Optional portable application selection |
 | Command | `--firmware`, `--store`, `--emulator`, `--importer`, `--backend`, `--language`, `--profile` | Temporary overrides |
 
-XDG defaults on both hosts are `~/.config`, `~/.local/share`, and `~/.cache`.
-An explicitly set XDG variable must be absolute. Firmware defaults to
-`$XDG_DATA_HOME/symbian/firmware`, because imported private data must survive
-cache eviction. Import staging/logs use `$XDG_CACHE_HOME/symbian/firmware-imports`.
+Per-user assets use [one SDK storage policy](user-assets.md). Firmware defaults
+to `~/.symbian/firmware`; import staging and logs use
+`~/.symbian/cache/firmware-imports`. Explicit environment roots must be absolute.
 No default device is guessed from directories or installed device order.
 
 SDK selection follows explicit `--sdk`, the project's ignored `sdk-location.json`,
-then the active SDK. SDK manifests supply host-tool defaults, below preference
-files. Workspace tool defaults remain available for the research build.
+then the active SDK. A selected SDK-installed emulator takes precedence over emulator paths in
+SDK manifests and workspace defaults. Explicit preference files and command
+options can select a custom frontend. Workspace tool defaults remain available for the research build.
 
 In JSON, relative paths resolve **against the defining file's directory**.
 Command paths resolve against the current directory. `emu configure` rebases

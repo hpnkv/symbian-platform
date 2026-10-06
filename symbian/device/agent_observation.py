@@ -10,6 +10,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from symbian.device.connection import ConnectedDevice
+from symbian.paths import asset_directory
 from symbian.status import Code, StatusError
 
 
@@ -27,7 +28,7 @@ class AgentObservation(BaseModel):
 
 def default_path() -> Path:
     """Return the user-local observation file, outside project sources."""
-    return Path.home() / ".local/share/symbian/agent-observations.json"
+    return asset_directory("data") / "agent-observations.json"
 
 
 def _read(path: Path) -> dict[str, AgentObservation]:

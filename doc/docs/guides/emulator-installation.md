@@ -15,6 +15,15 @@ symbian emulator doctor
 symbian emulator list
 ```
 
+`symbian emulator doctor` reports whether the selected emulator supports SDK
+integration. For an ordinary EKA2L1 build it reports that integration is
+unavailable and suggests installing the SDK bundle. A broken SDK-managed
+installation remains an error. To inspect a custom executable explicitly:
+
+```sh
+symbian emulator doctor --emulator /path/to/EKA2L1
+```
+
 The installer chooses your macOS or Linux architecture and checks the actual
 executable's control protocol and features before selecting it. Emulator
 versions have their own release cadence. An SDK upgrade keeps a compatible
@@ -27,6 +36,28 @@ For an offline installation, download the matching archive from the
 symbian emulator install --archive '/path/to/symbian-emulator-bundle.tar.gz'
 ```
 
+If automatic discovery reports a GitHub API rate limit, download the published
+bundle directly. This route also works without a GitHub account:
+
+=== "macOS"
+
+    ```sh
+    emulator_asset="symbian-emulator-0.1.0-macos-$(uname -m).tar.gz"
+    ```
+
+=== "Linux"
+
+    ```sh
+    emulator_asset="symbian-emulator-0.1.0-linux-$(uname -m).tar.gz"
+    ```
+
+```sh
+curl -fL "https://github.com/hpnkv/symbian-platform/releases/download/emulator-v0.1.0/$emulator_asset" \
+  -o "$emulator_asset"
+symbian emulator install --archive "$emulator_asset"
+symbian emulator doctor
+```
+
 Add `--sha256 HEX_DIGEST` to verify a digest obtained separately. Explicit
 versions let you upgrade or return to a retained installation:
 
@@ -35,9 +66,9 @@ symbian emulator install --version 0.1.0
 symbian emulator select 0.1.0
 ```
 
-Installation uses the per-user XDG data directory, normally
-`~/.local/share/symbian/emulators`. Selection uses the XDG configuration
-directory. Old versions remain available for rollback. Installation does not
+Installation uses `~/.symbian/emulators`; selection is saved under
+`~/.symbian/config`. See [user asset storage](../reference/user-assets.md)
+for environment overrides. Old versions remain available for rollback. Installation does not
 replace firmware or emulator sessions. Explicit project, SDK or command tool
 paths take precedence; `symbian emu resolve` shows the effective selection.
 
