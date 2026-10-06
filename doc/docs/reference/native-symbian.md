@@ -63,6 +63,7 @@ equivalence as open work; do not infer a runtime guarantee from a header.
 | `coecntrl.h`, `coemain.h` | `Symbian::Cone` | CONE controls and environment. |
 | `zlib.h`, `zconf.h` | `Symbian::PortableZlib` | zlib 1.3.1 static archive and matching headers under `include/portable/zlib`. |
 | `png.h`, `pngconf.h`, `pnglibconf.h` | `Symbian::PortablePng` | libpng 1.6.53 static archive and matching headers under `include/portable/png`; depends on portable zlib. |
+| `jpeglib.h`, `jconfig.h`, `jmorecfg.h`, `jerror.h` | `Symbian::PortableJpeg` | IJG libjpeg 8c static archive and matching headers under `include/portable/jpeg`. |
 
 Qt targets also include `Symbian::QtCore`, `QtGui`, `QtSvg`, `QtScript`,
 `QtXmlPatterns`, `QtDeclarative`, `QtMultimedia`, `QtOpenVG` and `QtTest`.
@@ -111,6 +112,16 @@ PNG codec is imported. `examples/png_app_classic` encodes and decodes one RGBA
 pixel entirely in memory. It exited normally on the preserved RM-807/Dynarmic
 fixture. Full codec coverage, other firmware and physical-device behavior
 remain unverified.
+
+`Symbian::PortableJpeg` provides the original IJG libjpeg 8c source bundled
+with the pinned Qt 4.8.1 release as an independent static library. It ships
+matching `jpeglib.h`, `jconfig.h`, `jmorecfg.h` and `jerror.h` under
+`include/portable/jpeg`, and links Open C and the guest runtime. Include
+`<stddef.h>` and `<stdio.h>` before `<jpeglib.h>`, as the original header
+expects `size_t` and `FILE` from its caller. `examples/jpeg_app_classic`
+encodes and decodes a pixel in memory without a firmware JPEG DLL import.
+That round trip exited normally on the preserved RM-807/Dynarmic fixture.
+Broader codec behavior, other firmware and physical devices remain unverified.
 
 AppArc, Eikon and CONE retain separate targets, original frozen imports and
 their own public headers. The nine representative framework headers compile

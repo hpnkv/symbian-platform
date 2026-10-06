@@ -58,4 +58,18 @@ function(symbian_sdk_header_canaries)
     symbian_header_canary(symbian_sdk_portable_png_cpp_header_canary
       HEADERS ${png_headers} LIBRARIES Symbian::PortablePng)
   endif()
+  if(TARGET Symbian::PortableJpeg)
+    set(jpeg_headers
+      "${SYMBIAN_SDK_PREFIX}/include/portable/jpeg/jpeglib.h"
+      "${SYMBIAN_SDK_PREFIX}/include/portable/jpeg/jconfig.h"
+      "${SYMBIAN_SDK_PREFIX}/include/portable/jpeg/jmorecfg.h"
+      "${SYMBIAN_SDK_PREFIX}/include/portable/jpeg/jerror.h")
+    # Original IJG jpeglib.h requires size_t and FILE before inclusion.
+    symbian_header_canary(symbian_sdk_portable_jpeg_c_header_canary C
+      PREINCLUDES stddef.h stdio.h
+      HEADERS ${jpeg_headers} LIBRARIES Symbian::PortableJpeg)
+    symbian_header_canary(symbian_sdk_portable_jpeg_cpp_header_canary
+      PREINCLUDES cstddef cstdio
+      HEADERS ${jpeg_headers} LIBRARIES Symbian::PortableJpeg)
+  endif()
 endfunction()

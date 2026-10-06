@@ -7588,3 +7588,38 @@ reproduced with the pre-change smoke script during the zlib slice. The new
 bundle log is ignored at `.symbian/sdk-surface/png-fresh-smoke.log`; no GL
 source was changed here. Linux bundle acceptance and firmware equivalence for
 other releases remain open. Do not publish 0.2.0 on this evidence.
+
+### 2026-10-06: optional IJG libjpeg 8c from the pinned Qt source
+
+The pinned Qt 4.8.1 checkout includes the Independent JPEG Group's original
+libjpeg 8c distribution. Its `src/3rdparty/libjpeg.pri` gives a complete
+46-source C library list; the README contains IJG redistribution conditions.
+The new `research/portable/jpeg.json` pins each source and public header,
+the qmake manifest and license. It classifies the library as an optional
+third-party dependency, separate from the platform's image conversion API.
+The four matching public headers retain their original spelling under
+`include/portable/jpeg`; the source checkout stays ignored. The CMake target
+`Symbian::PortableJpeg` provides the source-built archive, Open C and runtime
+dependencies independently of portable zlib. Original `jpeglib.h` requires
+`size_t` and `FILE` before inclusion; the independent C/C++ header canaries
+record those standard prerequisites through a reusable `PREINCLUDES` option.
+
+An initial isolated ARMv6 build compiled all 46 original sources. The
+source-tree ARMv6 guest profile built `jpeg_app_classic` and the root Debug
+profile converted `jpeg_app_classic_e32`. The fresh ignored
+`.symbian/sdk-surface/jpeg-fresh-export` built both ARM archives and completed
+both installed-header canary profiles and payload validation. A macOS arm64
+bundle from that export passed all 28 relocated native-example cases, including
+the JPEG example's ARMv5T and ARMv6 link/E32 conversions. Eight focused
+portable negative/payload controls passed. The example encodes and decodes a
+single RGB pixel in memory; from the fresh bundle it exited with guest type
+and reason zero on the preserved `nokia808` RM-807 Belle/Dynarmic fixture.
+This is named-firmware emulator execution, not a physical-device result or
+comprehensive codec behavior.
+
+Strict MkDocs, Black/Ruff, C++ style and diff whitespace checks passed. The
+Python-free broad bundle smoke still fails compiling the existing GL example
+at the original `e32cmn.h`/libc++ placement new/delete conflict; its ignored
+log is `.symbian/sdk-surface/jpeg-fresh-smoke.log`. No GL source was changed.
+Linux bundle acceptance, portable SDL/FreeType, remaining public-manifest
+coverage and 0.2.0 release readiness remain open.

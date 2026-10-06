@@ -71,6 +71,8 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
   symbian_workspace_archive(SymbianPortableZlib symbian_portable_zlib)
   add_subdirectory(cpp/symbian/portable/png EXCLUDE_FROM_ALL)
   symbian_workspace_archive(SymbianPortablePng symbian_portable_png)
+  add_subdirectory(cpp/symbian/portable/jpeg EXCLUDE_FROM_ALL)
+  symbian_workspace_archive(SymbianPortableJpeg symbian_portable_jpeg)
   # Component CMake files own the actual guest library sources and include
   # paths. Loading them here makes SDK internals navigable in the same ARM
   # profile as applications, without per-file IDE registration.

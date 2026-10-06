@@ -3587,3 +3587,18 @@ strict docs and style checks passed. The broad bundle smoke still fails at the
 pre-existing GL/libc++ placement new/delete conflict. Linux acceptance,
 remaining portable dependencies and broad public-manifest ownership remain
 open; 0.2.0 is unpublished, and no physical hardware was operated.
+
+2026-10-06 optional libjpeg slice: `Symbian::PortableJpeg` now packages the
+pinned Qt 4.8.1/IJG libjpeg 8c 46-source build as ARMv5T/ARMv6 archives with
+matching public headers and the original README license. Its CMake target
+propagates Open C/runtime without a zlib dependency. The fresh full export
+passed both installed-header canary profiles, with the original `size_t`/`FILE`
+header prerequisites recorded. A macOS arm64 bundle passed all 28 relocated
+native-example cases, including JPEG E32 conversion on both ARM profiles.
+The one-pixel memory round trip exited normally on the named RM-807
+Belle/Dynarmic emulator fixture; broader codec, firmware and physical-device
+compatibility remain unknown. Eight focused portable controls and strict docs
+and style checks passed. The broad bundle smoke remains blocked by the
+pre-existing GL/libc++ placement-operator conflict. SDL, FreeType, much of
+the native manifest, Linux acceptance and 0.2.0 readiness remain open; no
+physical hardware was operated.

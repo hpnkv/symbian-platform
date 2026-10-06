@@ -97,3 +97,52 @@ if(EXISTS "${SYMBIAN_SDK_PREFIX}/share/symbian/portable/zlib.json")
   cmake_language(DEFER DIRECTORY "${CMAKE_SOURCE_DIR}"
     CALL _symbian_validate_portable_zlib "${CMAKE_SOURCE_DIR}")
 endif()
+
+if(EXISTS "${SYMBIAN_SDK_PREFIX}/share/symbian/portable/jpeg.json")
+  add_library(SymbianPortableJpeg STATIC IMPORTED)
+  set_target_properties(SymbianPortableJpeg PROPERTIES
+    IMPORTED_LOCATION
+      "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_portable_jpeg.a"
+    SYMBIAN_PORTABLE_JPEG TRUE)
+  target_include_directories(SymbianPortableJpeg SYSTEM INTERFACE
+    "${SYMBIAN_SDK_PREFIX}/include/portable/jpeg")
+  target_link_libraries(SymbianPortableJpeg INTERFACE
+    Symbian::OpenC Symbian::Runtime)
+  add_library(Symbian::PortableJpeg ALIAS SymbianPortableJpeg)
+
+  function(_symbian_validate_portable_jpeg directory)
+    get_target_property(jpeg_archive SymbianPortableJpeg IMPORTED_LOCATION)
+    get_filename_component(jpeg_archdir "${jpeg_archive}" DIRECTORY)
+    get_filename_component(jpeg_libdir "${jpeg_archdir}" DIRECTORY)
+    get_filename_component(jpeg_prefix "${jpeg_libdir}" DIRECTORY)
+    get_property(targets DIRECTORY "${directory}" PROPERTY BUILDSYSTEM_TARGETS)
+    foreach(target IN LISTS targets)
+      set_property(GLOBAL PROPERTY SYMBIAN_GRAPHICS_WALK "")
+      set_property(GLOBAL PROPERTY SYMBIAN_GRAPHICS_CONDITIONAL "")
+      _symbian_graphics_walk(${target} ROOT)
+      get_property(nodes GLOBAL PROPERTY SYMBIAN_GRAPHICS_WALK)
+      foreach(node IN LISTS nodes)
+        get_target_property(jpeg_node ${node} SYMBIAN_PORTABLE_JPEG)
+        if(jpeg_node)
+          foreach(required IN ITEMS "${jpeg_archive}"
+              "${jpeg_prefix}/include/portable/jpeg/jpeglib.h"
+              "${jpeg_prefix}/include/portable/jpeg/jconfig.h"
+              "${jpeg_prefix}/include/portable/jpeg/jmorecfg.h"
+              "${jpeg_prefix}/include/portable/jpeg/jerror.h"
+              "${jpeg_prefix}/licenses/portable/libjpeg-README.txt")
+            if(NOT EXISTS "${required}" AND NOT SYMBIAN_WORKSPACE_INPUTS)
+              message(FATAL_ERROR
+                "${target}: Symbian::PortableJpeg is unavailable: missing SDK payload ${required}. Reinstall the complete SDK.")
+            endif()
+          endforeach()
+        endif()
+      endforeach()
+    endforeach()
+    get_property(children DIRECTORY "${directory}" PROPERTY SUBDIRECTORIES)
+    foreach(child IN LISTS children)
+      _symbian_validate_portable_jpeg("${child}")
+    endforeach()
+  endfunction()
+  cmake_language(DEFER DIRECTORY "${CMAKE_SOURCE_DIR}"
+    CALL _symbian_validate_portable_jpeg "${CMAKE_SOURCE_DIR}")
+endif()

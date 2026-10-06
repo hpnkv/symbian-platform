@@ -238,6 +238,31 @@ def test_portable_png_example_propagates_zlib(tmp_path, architecture):
 
 
 @pytest.mark.parametrize("architecture", ["armv5t", "armv6"])
+def test_portable_jpeg_example_uses_source_built_archive(
+    tmp_path, architecture
+):
+    """Builds an IJG memory codec consumer without a firmware codec import."""
+    sdk = AppSdk.load(Path(SDK))
+    source = tmp_path / "portable jpeg classic"
+    shutil.copytree(ROOT / "examples/jpeg_app_classic", source)
+    (source / "sdk-location.json").write_text(
+        json.dumps({"sdk": str(sdk.prefix)})
+    )
+    report = build(
+        source,
+        tmp_path / "output",
+        str(sdk.compiler),
+        str(sdk.linker),
+        architecture=architecture,
+    )
+    imports = {item["dll"] for item in report["e32"]["imports"]}
+    assert {"libc.dll", "euser.dll"} <= imports
+    assert "jpeg.dll" not in imports
+    assert report["e32"]["architecture"] == architecture
+    assert not report["runtime_verified"]
+
+
+@pytest.mark.parametrize("architecture", ["armv5t", "armv6"])
 def test_apparc_example_links_original_application_service(
     tmp_path, architecture
 ):

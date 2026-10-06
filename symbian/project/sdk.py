@@ -492,10 +492,15 @@ def stage_headers(workspace: Path, output: Path, compiler: Path) -> None:
     from symbian.project.native_surface import stage_native_headers
 
     stage_native_headers(workspace, output)
-    from symbian.project.portable import stage_png_headers, stage_zlib_headers
+    from symbian.project.portable import (
+        stage_jpeg_headers,
+        stage_png_headers,
+        stage_zlib_headers,
+    )
 
     stage_zlib_headers(workspace, output)
     stage_png_headers(workspace, output)
+    stage_jpeg_headers(workspace, output)
     startup = output / "share/symbian/runtime"
     startup.mkdir(parents=True)
     for source_name, target_name in (
@@ -888,16 +893,20 @@ def prepare(
         )
         _build_abseil(workspace, output, compiler, linker)
         from symbian.project.portable import (
+            build_jpeg,
             build_png,
             build_zlib,
+            validate_jpeg_payload,
             validate_png_payload,
             validate_zlib_payload,
         )
 
         build_zlib(workspace, output, compiler)
         build_png(workspace, output, compiler)
+        build_jpeg(workspace, output, compiler)
         validate_zlib_payload(output)
         validate_png_payload(output)
+        validate_jpeg_payload(output)
         cmake_tool = shutil.which("cmake")
         ninja_tool = shutil.which("ninja")
         if cmake_tool is None or ninja_tool is None:
