@@ -6839,3 +6839,15 @@ input, guest/host exit and baseline integrity. Local/remote log paths:
 /tmp/symbian-qt-resource-fix-macos.log and
 /tmp/symbian-qt-resource-fix-linux.log. Exact CLion ARMv6 preset and its
 fresh /tmp configuration both succeed; the selected SDK supplies Qt targets.
+
+### 2026-10-06 — Hosted parameter gaps during release verification
+
+Consulted the live akawolf Developer Library pages for RTimer,
+TChunkCreateInfo and RWindowGroup. Their selected parameter cells are blank,
+although the deadline contract and sibling chunk/focus overloads establish
+meaning. Added brief aUTCTime, aInitialSize and aIsFocusable descriptions to
+the reviewed supplements, retaining their final generated-source paragraphs.
+The hosted server returned HTTP 429 for additional parallel requests; stopped
+fetching those pages rather than claiming their content was consulted.
+Eight generator regressions and the strict two-Doxygen documentation build
+pass. This closes three parameter warnings, not the broader 712-member gap.

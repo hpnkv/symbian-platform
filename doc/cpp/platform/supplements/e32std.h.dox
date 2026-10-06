@@ -3386,6 +3386,8 @@ Requests an event at a given UTC time.
 
 If the machine is off at that time, it is automatically turned on.
 
+\param aUTCTime The absolute UTC time at which the request should complete.
+
 \param aStatus On completion, contains the status of the request: KErrNone, the timer completed normally at the requested time; KErrCancel, the timer was cancelled; KErrAbort, the timer was aborted because the system time changed; KErrUnderflow, the requested completion time is in the past; KErrOverFlow, the requested completion time is too far in the future;
 
 \panic KERN-EXEC 15, if this function is called while a request for a timer event is still outstanding.
@@ -3752,6 +3754,8 @@ A local chunk is private to the process creating it and is not intended for acce
 Sets the chunk to be created to have a committed region that always starts at the bottom of the reserved region.
 
 RChunk::CreateLocal()
+
+\param aInitialSize The initial number of bytes committed at the bottom of the chunk.
 
 \param aMaxSize The maximum size to which the reserved region of this chunk can grow.
 

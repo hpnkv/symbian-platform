@@ -2808,6 +2808,8 @@ This function always causes a flush of the window server buffer.
 
 RWindow::Construct()
 
+\param aIsFocusable ETrue allows keyboard focus; EFalse prevents it until focus receipt is enabled.
+
 \param aClientHandle The client's handle for the window. See RWindow::Construct() for a description of the client handle.
 
 \param aScreenDevice A screen device is used to specify on which screen the window should be. The screen device must exist for as long as the window is in use. Different screen devices for two different window groups in an application allow the windows to have different screen size modes and WSERV will automatically switch from one to the other when there is a screen size mode change.
