@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from scripts.update_native_inventory import exports, resolve_case
+from scripts.update_qt_mobility_inventory import public_aliases
 
 
 def test_export_boundary_and_sdk_packaging(tmp_path):
@@ -59,3 +60,16 @@ def test_inventory_covers_more_than_requested_facilities():
         h.get("destination") or h.get("blocked") for h in inventory["headers"]
     )
     assert any(f.get("api_metadata") for f in inventory["facilities"])
+
+
+def test_qt_mobility_aliases_exclude_private_classes(tmp_path):
+    header = tmp_path / "src/contacts/qcontact.h"
+    header.parent.mkdir(parents=True)
+    header.write_text(
+        "class Q_CONTACTS_EXPORT QContact : public QObject {};\n"
+        "class QContactPrivate;\n"
+        "class QContactPrivate\n{\n};\n"
+    )
+    assert public_aliases(tmp_path, "contacts", ["qcontact.h"]) == [
+        {"include": "QtContacts/QContact", "header": "qcontact.h"}
+    ]

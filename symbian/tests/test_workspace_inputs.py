@@ -1,6 +1,16 @@
 """Source input publication preserves incremental CMake dependency tracking."""
 
-from symbian.project.workspace import _publish
+from symbian.project.workspace import _progress, _publish
+
+
+def test_preparation_progress_is_visible_and_persistent(tmp_path, capsys):
+    (tmp_path / ".symbian").mkdir()
+    _progress(tmp_path, "building Qt Mobility imports")
+    assert "building Qt Mobility imports" in capsys.readouterr().out
+    assert (
+        "building Qt Mobility imports"
+        in (tmp_path / ".symbian/workspace-inputs.log").read_text()
+    )
 
 
 def test_publish_preserves_unchanged_files_and_live_source_links(tmp_path):

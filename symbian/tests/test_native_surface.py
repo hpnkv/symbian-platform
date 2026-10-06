@@ -9,6 +9,7 @@ import pytest
 
 from symbian.project.native_surface import validate_native_payload
 from symbian.project.qt import validate_qt_payload
+from symbian.project.qtmobility import validate_qt_mobility
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -239,3 +240,122 @@ def test_qt_inventory_rejects_missing_payload(tmp_path, damage):
         forbidden.write_text("internal")
     with pytest.raises(ValueError, match="Qt .*|Qt import interface"):
         validate_qt_payload(tmp_path)
+
+
+def test_qt_mobility_inventory_checks_class_aliases(tmp_path):
+    """A listed public class alias must survive installed SDK packaging."""
+    header = tmp_path / "include/qtmobility/QtContacts/qcontact.h"
+    header.parent.mkdir(parents=True)
+    header.write_bytes(b"public contact header")
+    global_header = tmp_path / "include/qtmobility/qmobilityglobal.h"
+    global_header.write_bytes(b"public global header")
+    definition = tmp_path / "share/symbian/qtmobility/defs/QtContactsu.def"
+    definition.parent.mkdir(parents=True)
+    definition.write_bytes(b"EXPORTS\n")
+    metadata = definition.parent.parent / "inventory.json"
+    metadata.write_text(
+        json.dumps(
+            {
+                "global_header": {
+                    "include": "qmobilityglobal.h",
+                    "sha256": hashlib.sha256(
+                        global_header.read_bytes()
+                    ).hexdigest(),
+                },
+                "modules": [
+                    {
+                        "target": "Symbian::QtMobilityContacts",
+                        "dll": "qtcontacts.dll",
+                        "definition": "src/s60installs/eabi/QtContactsu.def",
+                        "definition_sha256": hashlib.sha256(
+                            definition.read_bytes()
+                        ).hexdigest(),
+                        "headers": [
+                            {
+                                "include": "QtContacts/qcontact.h",
+                                "sha256": hashlib.sha256(
+                                    header.read_bytes()
+                                ).hexdigest(),
+                            }
+                        ],
+                        "aliases": [
+                            {
+                                "include": "QtContacts/QContact",
+                                "header": "qcontact.h",
+                            }
+                        ],
+                    }
+                ],
+            }
+        )
+    )
+    with pytest.raises(ValueError, match="Qt Mobility alias"):
+        validate_qt_mobility(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "damage, expected",
+    [
+        ("alias", "missing SDK payload"),
+        ("proxy", "missing SDK payload"),
+        ("abi", "incompatible flags"),
+        ("source_abi", "incompatible flags"),
+        ("architecture", "conflicts with"),
+        ("kernel", "require EKA2"),
+    ],
+)
+def test_qt_mobility_selected_graph_rejects_invalid_inputs(
+    configure, damage, expected
+):
+    """Selection checks a transitive consumer at CMake generation time."""
+    run, sdk = configure
+    required = [
+        "include/qtmobility/qmobilityglobal.h",
+        "include/qtmobility/QtContacts/qcontact.h",
+        "include/qtmobility/QtContacts/QContact",
+        "share/symbian/qtmobility/defs/QtContactsu.def",
+        "proxies/qtcontacts/qtcontacts.dso",
+    ]
+    for relative in required:
+        path = sdk / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("configuration fixture")
+    metadata = sdk / "share/symbian/qtmobility/inventory.json"
+    metadata.write_text(
+        json.dumps(
+            {
+                "modules": [
+                    {
+                        "target": "Symbian::QtMobilityContacts",
+                        "dll": "qtcontacts.dll",
+                        "definition": "src/s60installs/eabi/QtContactsu.def",
+                        "headers": [{"include": "QtContacts/qcontact.h"}],
+                        "aliases": [{"include": "QtContacts/QContact"}],
+                        "dependencies": [],
+                    }
+                ]
+            }
+        )
+    )
+    if damage == "alias":
+        (sdk / required[2]).unlink()
+    elif damage == "proxy":
+        (sdk / required[4]).unlink()
+    body = (
+        f'include("{ROOT}/symbian/toolchain/cmake/SymbianQtMobility.cmake")\n'
+        "add_library(wrapper INTERFACE)\n"
+        "target_link_libraries(wrapper INTERFACE Symbian::QtMobilityContacts)\n"
+        "target_link_libraries(app PRIVATE wrapper)"
+    )
+    extra = {
+        "abi": "target_compile_options(wrapper INTERFACE -mfloat-abi=hard)",
+        "source_abi": (
+            "set_source_files_properties(app.cc PROPERTIES "
+            "COMPILE_OPTIONS -mfloat-abi=hard)"
+        ),
+        "architecture": "target_compile_options(wrapper INTERFACE -march=armv5t)",
+        "kernel": "set_property(TARGET app PROPERTY SYMBIAN_IMAGE_KERNEL eka1)",
+    }.get(damage, "")
+    result = run(body, extra)
+    assert result.returncode != 0
+    assert expected in result.stderr

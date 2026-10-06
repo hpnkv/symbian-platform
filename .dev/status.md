@@ -3423,3 +3423,27 @@ revised `linking_app` exits normally on the preserved RM-807/Dynarmic fixture,
 with the in-project DLL staged by the SDK; no physical-device result follows.
 The classic games, Qt module and project-DLL focused suite passes 13 tests
 after rebuilding the stale local Python native binding.
+
+2026-10-06 Qt Mobility extension slice: ten `Symbian::QtMobility*` targets now
+stage 182 original Qt Mobility 1.0.3 public headers, 208 public class aliases,
+ten complete frozen EABI import interfaces and LGPL notices. The inventory
+records original qmake manifests, source hashes, dependencies, availability
+unknowns and two original-header preinclude exceptions. Independent ARMv6
+header compilation passed for all 182, and a relocated Contacts/Location
+example built and converted to E32 on ARMv5T and ARMv6. Twenty-five native
+surface configuration/payload controls passed. The root guest CMake project
+exposes and built `qt_mobility_app_classic_e32`. Its first regeneration after
+new inputs took 187 seconds; the cached configure took 7.07 seconds. Neither
+Qt Mobility plugin/service execution nor Belle FP2 version equivalence has
+been established. Full native manifest coverage, Open C/Open C++, portable
+dependencies, complete bundle/Linux gates and release 0.2.0 remain open. No
+physical device was operated.
+
+The CLion `clion-guest-probes-armv6` profile now configures with all classic
+example ARM targets visible after an index-only E32-publication correction.
+Its cached configure took 6.94 seconds; `audio_app_classic` and
+`qt_mobility_app_classic` linked as ARM ELF targets. A full shared-input refresh
+reports live CMake progress and writes `.symbian/workspace-inputs.log`; a
+workspace progress unit control passes. Source host Debug and installed SDK
+builds retain the E32 publication path. IDE indexing/ELF linkage does not prove
+firmware execution.

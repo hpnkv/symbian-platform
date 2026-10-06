@@ -7246,3 +7246,54 @@ its project DLL. Its rebuilt E32 imports the DLL and the copied RM-807
 frontend exit zero. The preserved ROM/Z fixture digests stayed unchanged.
 After the binding rebuild, the full focused classic-games, Qt-module and
 project-DLL test set passed: 13 Pytests on the local macOS arm64 SDK fixture.
+
+### 2026-10-06: Qt Mobility 1.0.3 public extension and IDE refresh
+
+The original Qt Mobility `PUBLIC_HEADERS` in ten qmake module manifests produce
+182 reviewed public header paths. The preserved `bin/syncheaders` rule produces
+208 useful class aliases from those headers after excluding three names ending
+`Private`; forwarding aliases do not expose private source files. Ten original
+Symbian EABI DEFs supply the frozen import interfaces. The tracked inventory
+pins header and DEF digests, target/dependency mapping, original LGPL 2.1 and
+exception notices, and unknown Belle FP2 version/runtime equivalence.
+
+An independent ARMv6 canary compiled all 182 headers against each owning
+`Symbian::QtMobility*` target and `Symbian::Runtime`. That pass exposed a missing
+QtGui module include path in the existing Qt target, a missing Qt Mobility
+Versit-to-Contacts public dependency, and two original headers that omit direct
+public prerequisites: `qcontactringtone.h` needs `QUrl` and
+`qmessagedatacomparator.h` needs `qmobilityglobal.h`. Their exact canary
+preincludes are recorded in the inventory; the original headers are unmodified.
+The complete ten-module staging and frozen-proxy comparison passed. The
+`qt_mobility_app_classic` Contacts/Location consumer compiled, linked and
+converted to E32 for ARMv5T and ARMv6 against the relocated local SDK fixture.
+This is compiler/converter acceptance only, not named-firmware execution of Qt
+Mobility services or Nokia 808 compatibility. The Qt Mobility selected-graph
+configuration controls passed, including missing aliases/proxies, EKA1,
+transitive ABI flags, per-source ABI flags and mismatched architecture.
+
+A root guest CMake regeneration after these new files took 187 seconds while
+refreshing shared workspace inputs and then built
+`qt_mobility_app_classic_e32`. The refresh holds a workspace lock that can delay
+a simultaneous CLion reload. With inputs unchanged, the same root CMake
+configure took 7.07 seconds. Open question: whether a complete Belle FP2 SDK
+manifest or verified firmware payload establishes the exact Qt Mobility module
+versions and plugin/service availability; the source release alone does not.
+
+The CLion ARMv6 guest-probe reload exposed a separate source-profile mistake:
+newly indexed capability examples called E32 publication while that profile
+had no host `symbian-native` tool. The guest index now retains executable and
+DLL compile/link targets and their dependency checks without creating E32
+publication commands when no converter is selected. The source host Debug graph
+still creates and builds E32 outputs. The exact `clion-guest-probes-armv6`
+configure passed in 6.94 seconds with cached inputs, and ARM `audio_app_classic`
+and `qt_mobility_app_classic` targets built. This validates IDE source builds,
+not E32 output from that index-only profile.
+
+Source input preparation now writes timestamped progress to ignored
+`.symbian/workspace-inputs.log` and echoes it live through CMake. A refresh
+reported header staging, Khronos/core/Qt/Mobility phases and base-platform
+import counts at 20-facility intervals through 120/130, then completion.
+Concurrent CLion reloads reported that they were waiting for the shared lock;
+the next configuration reported cached inputs current. The progress log is
+build state, not a tracked source artifact.

@@ -17,6 +17,7 @@ endif()
 include(SymbianPlatform)
 include(SymbianGraphics)
 include(SymbianNativeSurface)
+include(SymbianQtMobility)
 set(SYMBIAN_CA_BUNDLE "" CACHE STRING
     "Project PEM CA bundle; empty means no packaged trust roots")
 if(SYMBIAN_CA_BUNDLE)
@@ -357,7 +358,8 @@ if(EXISTS "${SYMBIAN_SDK_PREFIX}/include/qt4/QtCore/qglobal.h")
       "${SYMBIAN_SDK_PREFIX}/proxies/${dll}/${dll}.dso")
     target_include_directories(SymbianQt${module} SYSTEM INTERFACE
       "${SYMBIAN_SDK_PREFIX}/include/qt4"
-      "${SYMBIAN_SDK_PREFIX}/include/qt4/QtCore")
+      "${SYMBIAN_SDK_PREFIX}/include/qt4/QtCore"
+      "${SYMBIAN_SDK_PREFIX}/include/qt4/Qt${module}")
     target_compile_definitions(SymbianQt${module} INTERFACE
       QT_KEYPAD_NAVIGATION QT_SOFTKEYS_ENABLED)
     target_compile_options(SymbianQt${module} INTERFACE "SHELL:-fPIC"

@@ -4,11 +4,20 @@ import argparse
 import fcntl
 import shutil
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 from symbian.process import run
 from symbian.project.sdk import stage_headers, stage_imports
 from symbian.toolchain.host_tools import llvm_tool
+
+
+def _progress(root: Path, message: str) -> None:
+    """Reports workspace preparation in CMake and an ignored persistent log."""
+    line = f"[{datetime.now(timezone.utc).isoformat()}] {message}"
+    with (root / ".symbian/workspace-inputs.log").open("a") as log:
+        log.write(line + "\n")
+    print(f"-- Workspace inputs: {message}", flush=True)
 
 
 def _publish(staged: Path, output: Path) -> None:
@@ -59,8 +68,10 @@ def prepare(root: Path) -> Path:
     root = root.resolve()
     directory = root / ".symbian"
     directory.mkdir(parents=True, exist_ok=True)
+    _progress(root, "waiting for shared preparation lock")
     with (directory / "workspace-inputs.lock").open("w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
+        _progress(root, "preparation lock acquired")
         return _prepare(root)
 
 
@@ -75,6 +86,7 @@ def _prepare(root: Path) -> Path:
     dependencies = [root / "symbian/project/sdk.py", Path(__file__)]
     dependencies.append(root / "symbian/project/graphics.py")
     dependencies.append(root / "symbian/project/qt.py")
+    dependencies.append(root / "symbian/project/qtmobility.py")
     dependencies.append(root / "symbian/project/native_surface.py")
     dependencies += list((root / "research/native-sdk").glob("*.json"))
     dependencies += list((root / "symbian/toolchain/cmake").glob("*"))
@@ -108,7 +120,9 @@ def _prepare(root: Path) -> Path:
             if path.is_file()
         )
     ):
+        _progress(root, "cached inputs are current")
         return output
+    _progress(root, "refreshing headers and frozen import interfaces")
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=output.parent) as directory:
         staged = Path(directory) / "inputs"
@@ -117,7 +131,14 @@ def _prepare(root: Path) -> Path:
         for name, tool in tools.items():
             (staged / "bin" / name).symlink_to(tool)
         stage_headers(root, staged, compiler)
-        stage_imports(root, staged, compiler, linker)
+        _progress(root, "public headers staged")
+        stage_imports(
+            root,
+            staged,
+            compiler,
+            linker,
+            progress=lambda message: _progress(root, message),
+        )
         (staged / "cmake").mkdir()
         for directory in (
             "symbian/toolchain/cmake",
@@ -172,6 +193,7 @@ def _prepare(root: Path) -> Path:
         runtime_header.symlink_to(root / "cpp/symbian/runtime/abi.h")
         _publish(staged, output)
         stamp.touch()
+    _progress(root, "source workspace inputs ready")
     return output
 
 

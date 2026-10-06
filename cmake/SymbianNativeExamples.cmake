@@ -1,2 +1,3 @@
 set(SYMBIAN_NATIVE_EXAMPLES
-  audio_app_classic bitmap_app_classic image_app_classic vibra_app_classic linking_app qt_modules_app_classic)
+  audio_app_classic bitmap_app_classic image_app_classic vibra_app_classic
+  linking_app qt_modules_app_classic qt_mobility_app_classic)

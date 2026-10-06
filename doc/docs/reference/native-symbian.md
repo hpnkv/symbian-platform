@@ -33,7 +33,8 @@ include directories, target ABI flags and required libraries. The
 machine-readable `share/symbian/native/inventory.json` maps each reviewed
 header and DLL to a target, classification, source revision and current block
 reason. `share/symbian/qt/modules.json` does the same for Qt 4.8.1 public
-modules. The inventory still records unresolved exports and Belle FP2 version
+modules, and `share/symbian/qtmobility/inventory.json` covers Qt Mobility 1.0.3.
+The inventory still records unresolved exports and Belle FP2 version
 equivalence as open work; do not infer a runtime guarantee from a header.
 
 | Include | CMake target | Notes |
@@ -48,13 +49,23 @@ equivalence as open work; do not infer a runtime guarantee from a header.
 | `QtXml/QDomDocument` | `Symbian::QtXml` | Original Qt XML. |
 | `QtWebKit/QWebSettings` | `Symbian::QtWebKit` | Original Qt WebKit 4.9.0; brings QtOpenGL, Network, XmlPatterns and Script. |
 | `QtOpenGL/QGLFormat` | `Symbian::QtOpenGL` | GLES 2 and EGL public imports. |
+| `QtContacts/QContact`, `QtContacts/qcontact.h` | `Symbian::QtMobilityContacts` | Original Contacts class alias and flat header. |
+| `QtLocation/QGeoCoordinate` | `Symbian::QtMobilityLocation` | Position and mapping declarations. |
+| `QtMultimediaKit/QMediaPlayer` | `Symbian::QtMobilityMultimediaKit` | Mobility media API; distinct from QtMultimedia. |
+| `QtVersit/QVersitContactExporter` | `Symbian::QtMobilityVersit` | Includes Mobility Contacts transitively. |
 
 Qt targets also include `Symbian::QtCore`, `QtGui`, `QtSvg`, `QtScript`,
 `QtXmlPatterns`, `QtDeclarative`, `QtMultimedia`, `QtOpenVG` and `QtTest`.
 The original Qt release manifest makes several modules and image/SQL plugins
 conditional; this SDK supplies their public import interfaces, not plugin
 implementations. The bundled licenses are LGPL 2.1, its Qt exception and the
-FDL notice. Public Qt Mobility 1.0.3 source and DEFs are inventoried for a
-separate extension slice; this does not establish the version on every Belle
-firmware. See [the capability map](../capabilities/index.md) for modern wrappers
+FDL notice. Qt Mobility adds `Bearer`, `Contacts`, `Location`, `Messaging`,
+`MultimediaKit`, `PublishSubscribe`, `Sensors`, `ServiceFramework`,
+`SystemInfo` and `Versit` under `Symbian::QtMobility*`. It stages 182 original
+public headers, their class aliases and ten frozen EABI import interfaces.
+`QtContacts/qcontactringtone.h` needs `<QUrl>` included first, and
+`QtMessaging/qmessagedatacomparator.h` needs `<qmobilityglobal.h>` first; the
+source-backed inventory records these original-header exceptions. Historical
+source inclusion does not establish the version on every Belle firmware or
+plugin/service availability. See [the capability map](../capabilities/index.md) for modern wrappers
 that remain independent of these original APIs.

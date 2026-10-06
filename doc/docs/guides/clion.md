@@ -39,11 +39,19 @@ including platform headers, complete OS and guest Qt imports and patched
 Abseil sources. Runtime, Abseil, Mbed TLS and device API archives are built
 from source. Root profiles ignore the active SDK and project SDK selectors;
 standalone application projects use their selected installed SDK.
+The first reload after an input change can regenerate many frozen import
+interfaces. CMake shows the preparation phase and progress count; the same
+timestamped messages remain in ignored `.symbian/workspace-inputs.log`.
+Concurrent IDE profiles wait for one shared preparation lock. An unchanged
+reload reuses the prepared inputs.
 
 The host `debug` profile builds host tools. Its `gui_app` target builds the
 source ARM graph in `build/debug/guest-armv6`, and `gui_app_e32` converts the
 result with the source-built host tool. Use a guest profile to edit and index
-ARM sources. Host and guest compiler caches remain separate.
+ARM sources. The guest index profile exposes each example's ARM CMake target
+without requiring a host `symbian-native` converter during IDE reload; E32
+publication remains in the host `debug` graph or a standalone installed-SDK
+project. Host and guest compiler caches remain separate.
 
 ```sh
 cmake --preset debug

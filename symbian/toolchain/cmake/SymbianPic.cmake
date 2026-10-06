@@ -273,6 +273,11 @@ function(symbian_add_dynamic_library target)
 endfunction()
 
 function(_symbian_publish_library target)
+  # The root guest-probe profile is an IDE source index. It exposes real
+  # compile/link targets before a host converter has been built.
+  if(SYMBIAN_INDEX_GUEST_PROBES AND NOT SYMBIAN_NATIVE_CONVERTER)
+    return()
+  endif()
   _symbian_e32_converter(converter converter_dependency)
   if(TARGET "${converter_dependency}")
     add_dependencies(${target} "${converter_dependency}")
@@ -406,6 +411,11 @@ function(symbian_publish_executable target)
   if(EXE_PROJECT_DLLS AND NOT EXE_PROJECT_DLLS MATCHES "^(BUNDLE|RUNTIME)$")
     message(FATAL_ERROR
       "${target}: PROJECT_DLLS must be BUNDLE or RUNTIME")
+  endif()
+  if(SYMBIAN_INDEX_GUEST_PROBES AND NOT SYMBIAN_NATIVE_CONVERTER)
+    set_property(TARGET ${target} PROPERTY SYMBIAN_PROJECT_DLLS
+      "${EXE_PROJECT_DLLS}")
+    return()
   endif()
   _symbian_e32_converter(converter converter_dependency)
   set_target_properties(${target} PROPERTIES SYMBIAN_UID3 "${EXE_UID3}"

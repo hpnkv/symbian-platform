@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
+from typing import Callable
 
 from symbian.native import require_native
 from symbian.sdk import build_import_proxy
@@ -126,11 +127,18 @@ def stage_native_headers(workspace: Path, output: Path) -> None:
 
 
 def stage_native_imports(
-    workspace: Path, output: Path, compiler: Path, linker: Path
+    workspace: Path,
+    output: Path,
+    compiler: Path,
+    linker: Path,
+    progress: Callable[[str], None] | None = None,
 ) -> None:
     """Builds full frozen interfaces without copying firmware DLLs."""
     data = inventory(workspace)
-    for facility in data["facilities"]:
+    facilities = [f for f in data["facilities"] if not f.get("blocked")]
+    for index, facility in enumerate(facilities, start=1):
+        if progress and (index == 1 or index % 20 == 0):
+            progress(f"base-platform imports {index}/{len(facilities)}")
         if facility.get("blocked"):
             continue
         definition = facility["definition"]

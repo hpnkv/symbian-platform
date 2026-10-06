@@ -130,3 +130,25 @@ def test_qt_standard_module_example_links_original_imports(
         "qtopengl.dll",
     } <= imports
     assert report["e32"]["architecture"] == architecture
+
+
+@pytest.mark.parametrize("architecture", ["armv5t", "armv6"])
+def test_qt_mobility_example_links_frozen_modules(tmp_path, architecture):
+    """Builds a public Contacts/Location consumer through the relocated SDK."""
+    sdk = AppSdk.load(Path(SDK))
+    source = tmp_path / "qt mobility"
+    shutil.copytree(ROOT / "examples/qt_mobility_app_classic", source)
+    (source / "sdk-location.json").write_text(
+        json.dumps({"sdk": str(sdk.prefix)})
+    )
+    report = build(
+        source,
+        tmp_path / "output",
+        str(sdk.compiler),
+        str(sdk.linker),
+        architecture=architecture,
+    )
+    imports = {item["dll"] for item in report["e32"]["imports"]}
+    assert {"qtcontacts.dll", "qtlocation.dll", "qtcore.dll"} <= imports
+    assert report["e32"]["architecture"] == architecture
+    assert not report["runtime_verified"]

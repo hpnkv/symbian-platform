@@ -10,7 +10,7 @@ import tarfile
 import tempfile
 from importlib.resources import files
 from pathlib import Path
-from typing import Literal
+from typing import Callable, Literal
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
@@ -565,12 +565,20 @@ def stage_headers(workspace: Path, output: Path, compiler: Path) -> None:
 
 
 def stage_imports(
-    workspace: Path, output: Path, compiler: Path, linker: Path
+    workspace: Path,
+    output: Path,
+    compiler: Path,
+    linker: Path,
+    progress: Callable[[str], None] | None = None,
 ) -> None:
     """Builds complete OS and Qt import interfaces once for SDK consumers."""
     from symbian.project.graphics import stage_graphics_imports
 
+    if progress:
+        progress("building Khronos frozen imports")
     stage_graphics_imports(workspace, output, compiler, linker)
+    if progress:
+        progress("building core OS frozen imports")
     source = workspace / "research/upstream"
     # Every original library target owns its complete frozen ordinal ABI.
     for dll, definition in (
@@ -643,9 +651,18 @@ def stage_imports(
         str(compiler),
         str(linker),
     )
+    if progress:
+        progress("Qt 4 public modules staged; building Qt Mobility imports")
+    from symbian.project.qtmobility import prepare_qt_mobility
+
+    prepare_qt_mobility(workspace, output, str(compiler), str(linker))
+    if progress:
+        progress("Qt Mobility staged; building base-platform imports")
     from symbian.project.native_surface import stage_native_imports
 
-    stage_native_imports(workspace, output, compiler, linker)
+    stage_native_imports(workspace, output, compiler, linker, progress=progress)
+    if progress:
+        progress("all frozen imports staged and validated")
 
 
 def prepare(

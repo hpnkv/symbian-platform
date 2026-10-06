@@ -1,0 +1,1957 @@
+{
+  "schema": "symbian.qt-mobility/v1",
+  "repository": "SymbianSource/oss.FCL.sf.mw.qtmobility",
+  "revision": "a462a7d9493bb0bfb809c09d5c331498b47a2cd6",
+  "version": "1.0.3",
+  "licenses": [
+    "LICENSE.LGPL",
+    "LGPL_EXCEPTION.txt"
+  ],
+  "packaging_manifest": "src/s60installs/s60installs.pro",
+  "firmware_compatibility": "Unknown; historical inclusion does not establish Belle FP2 version equivalence",
+  "global_header": {
+    "source": "src/global/qmobilityglobal.h",
+    "include": "qmobilityglobal.h",
+    "sha256": "cb641a1f4dc375cacf71663bdeac259127e8a88cd42906265d793dc47f773415"
+  },
+  "modules": [
+    {
+      "target": "Symbian::QtMobilityBearer",
+      "dll": "qtbearer.dll",
+      "definition": "src/s60installs/eabi/QtBeareru.def",
+      "definition_sha256": "c344d0c552c578db9b86bbfee664ffb72bec8460ed51bf50fab26b3a8f31a409",
+      "public_header_manifests": [
+        "src/bearer/bearer.pro"
+      ],
+      "headers": [
+        {
+          "source": "src/bearer/qnetworkconfigmanager.h",
+          "include": "QtBearer/qnetworkconfigmanager.h",
+          "sha256": "dc19f32b35c7f058e4832d3e26932994eea2b45a45626a5ff4274d1a4e877684"
+        },
+        {
+          "source": "src/bearer/qnetworkconfiguration.h",
+          "include": "QtBearer/qnetworkconfiguration.h",
+          "sha256": "5e69ee5ae62144316fcdc10695c76508bd97cbb2a5959b0908d2fc7821d60ae8"
+        },
+        {
+          "source": "src/bearer/qnetworksession.h",
+          "include": "QtBearer/qnetworksession.h",
+          "sha256": "2966a204eec2bda02c328c0d91bbb332ebbbcc497bae8d2c2409bfc331cd332d"
+        }
+      ],
+      "aliases": [
+        {
+          "include": "QtBearer/QNetworkConfiguration",
+          "header": "qnetworkconfiguration.h"
+        },
+        {
+          "include": "QtBearer/QNetworkConfigurationManager",
+          "header": "qnetworkconfigmanager.h"
+        },
+        {
+          "include": "QtBearer/QNetworkSession",
+          "header": "qnetworksession.h"
+        }
+      ],
+      "dependencies": [
+        "Symbian::QtGui",
+        "Symbian::QtNetwork"
+      ],
+      "classification": "public_standard_extension",
+      "availability": "unknown_firmware"
+    },
+    {
+      "target": "Symbian::QtMobilityContacts",
+      "dll": "qtcontacts.dll",
+      "definition": "src/s60installs/eabi/QtContactsu.def",
+      "definition_sha256": "85b683d5bd3a19aa977664464492a9963e64b4b6d74585e9fcb3905fa5f8d13f",
+      "public_header_manifests": [
+        "src/contacts/contacts.pro",
+        "src/contacts/details/details.pri",
+        "src/contacts/filters/filters.pri",
+        "src/contacts/requests/requests.pri"
+      ],
+      "headers": [
+        {
+          "source": "src/contacts/details/qcontactaddress.h",
+          "include": "QtContacts/qcontactaddress.h",
+          "sha256": "22c91faa121b87bc5cb74884242ca8c8e9aca2001c5b7369a3f71050af922e62"
+        },
+        {
+          "source": "src/contacts/details/qcontactanniversary.h",
+          "include": "QtContacts/qcontactanniversary.h",
+          "sha256": "c3ec2c12ec98d945ad338cbf5664a25d07064d521390ce1407eff788907e88d1"
+        },
+        {
+          "source": "src/contacts/details/qcontactavatar.h",
+          "include": "QtContacts/qcontactavatar.h",
+          "sha256": "fc49eb9dc8246783c2942e82bac8399dcea56cd7c1643614a5e474bb18580501"
+        },
+        {
+          "source": "src/contacts/details/qcontactbirthday.h",
+          "include": "QtContacts/qcontactbirthday.h",
+          "sha256": "4a3a5566a190da77b533f55fb919e9a8dc4e29cb4751a0f55fef838359dfdeeb"
+        },
+        {
+          "source": "src/contacts/details/qcontactdetails.h",
+          "include": "QtContacts/qcontactdetails.h",
+          "sha256": "c6a5318f51d9aae17aeae6828cba2a64cf71dd48c967b3f0a160a0e9521d7901"
+        },
+        {
+          "source": "src/contacts/details/qcontactdisplaylabel.h",
+          "include": "QtContacts/qcontactdisplaylabel.h",
+          "sha256": "7dfdf82c0dee43311c31695aa3816d2e8dacb1b30fddb2956a4d6a20eba81381"
+        },
+        {
+          "source": "src/contacts/details/qcontactemailaddress.h",
+          "include": "QtContacts/qcontactemailaddress.h",
+          "sha256": "5a3eb15a6a54f239fc203eaf81734f30bc0c9f20fbc84c3a2bdf47b2592f6817"
+        },
+        {
+          "source": "src/contacts/details/qcontactfamily.h",
+          "include": "QtContacts/qcontactfamily.h",
+          "sha256": "8d5748e02f23d7a858d4aa7075aeff85dbd219f9443bd05df2b8a0a127a4a036"
+        },
+        {
+          "source": "src/contacts/details/qcontactgender.h",
+          "include": "QtContacts/qcontactgender.h",
+          "sha256": "63fac9b4c93b78a0a21b1cef83c096642a5df1c7a2bf3a68395ba28bcf5611be"
+        },
+        {
+          "source": "src/contacts/details/qcontactgeolocation.h",
+          "include": "QtContacts/qcontactgeolocation.h",
+          "sha256": "e29849f40d7c213cd73b4751d56c46b9cb040df1510e0ab48a361b6b12cef60c"
+        },
+        {
+          "source": "src/contacts/details/qcontactglobalpresence.h",
+          "include": "QtContacts/qcontactglobalpresence.h",
+          "sha256": "3e0080e91123cadfa68a52535339d2d26fec127a10a007740626533c59651fd8"
+        },
+        {
+          "source": "src/contacts/details/qcontactguid.h",
+          "include": "QtContacts/qcontactguid.h",
+          "sha256": "d088f529e039271e542ddb3358b8a21c468a4fb10ff692029370f44438b0d80a"
+        },
+        {
+          "source": "src/contacts/details/qcontactname.h",
+          "include": "QtContacts/qcontactname.h",
+          "sha256": "1295af2075859a78404e38be461fa5be4fdf36f920e0ca10a38867ec6ee3af9d"
+        },
+        {
+          "source": "src/contacts/details/qcontactnickname.h",
+          "include": "QtContacts/qcontactnickname.h",
+          "sha256": "b744c191e7371e904c2588f71e7e3eac7a8fae436315e205e6eff31af183216d"
+        },
+        {
+          "source": "src/contacts/details/qcontactnote.h",
+          "include": "QtContacts/qcontactnote.h",
+          "sha256": "36da48245ff7a0c3e7e8f5a58005294de5a094e31e562ce7caeb06416bd707e3"
+        },
+        {
+          "source": "src/contacts/details/qcontactonlineaccount.h",
+          "include": "QtContacts/qcontactonlineaccount.h",
+          "sha256": "5ec58c9f4921ac9319fa195d93ac0e0a0405cb3deb76298832060ba8635b43ae"
+        },
+        {
+          "source": "src/contacts/details/qcontactorganization.h",
+          "include": "QtContacts/qcontactorganization.h",
+          "sha256": "331d2cca0855424ff71623b51e4cf2a18433e4a0246d03d1c32684872d44f30b"
+        },
+        {
+          "source": "src/contacts/details/qcontactphonenumber.h",
+          "include": "QtContacts/qcontactphonenumber.h",
+          "sha256": "d11e0f5879957c1766d5b204dd9d231f366cf2d8a514c7186c1fc6aa8f31579d"
+        },
+        {
+          "source": "src/contacts/details/qcontactpresence.h",
+          "include": "QtContacts/qcontactpresence.h",
+          "sha256": "aa2d97d7f4594ca2829a98c2d2ebd46f171f2ce51e8c1afb1bdf5f6e1503aaba"
+        },
+        {
+          "source": "src/contacts/details/qcontactringtone.h",
+          "include": "QtContacts/qcontactringtone.h",
+          "sha256": "74b11fe82baa867a78d5dddc9fd1fce0f96faa26b8b99ced69dd7919990feca1",
+          "preinclude": [
+            "QUrl"
+          ]
+        },
+        {
+          "source": "src/contacts/details/qcontactsynctarget.h",
+          "include": "QtContacts/qcontactsynctarget.h",
+          "sha256": "f54718e553e998de667d04f8a22f3c40b867375f4e6faa7c99d0fedbc79efc93"
+        },
+        {
+          "source": "src/contacts/details/qcontacttag.h",
+          "include": "QtContacts/qcontacttag.h",
+          "sha256": "5193e3b7e4266fb42d6217433c05f680146f94413403d32d8fce51405ad8168f"
+        },
+        {
+          "source": "src/contacts/details/qcontactthumbnail.h",
+          "include": "QtContacts/qcontactthumbnail.h",
+          "sha256": "51b5d22b01f88b747b988d9c17529a9f29a57bac8344344b89cd2462e77916ef"
+        },
+        {
+          "source": "src/contacts/details/qcontacttimestamp.h",
+          "include": "QtContacts/qcontacttimestamp.h",
+          "sha256": "a24ec800720d783623d1edb1d2a5638cfb58c4ff1d1ca176f5f5f2d63ebb0175"
+        },
+        {
+          "source": "src/contacts/details/qcontacttype.h",
+          "include": "QtContacts/qcontacttype.h",
+          "sha256": "e93635a73b51458d806a112618216e424557a5fb6f65a06869fe67d5ad4d19da"
+        },
+        {
+          "source": "src/contacts/details/qcontacturl.h",
+          "include": "QtContacts/qcontacturl.h",
+          "sha256": "5a469dd66e53f0814cbab8d7beb604676da2f5c4a326c2025c1625f0aee5572c"
+        },
+        {
+          "source": "src/contacts/filters/qcontactactionfilter.h",
+          "include": "QtContacts/qcontactactionfilter.h",
+          "sha256": "f237c70e30b4cde36756e269dbc795d20c8f21fac66c9e0c9bfc3291576a9097"
+        },
+        {
+          "source": "src/contacts/filters/qcontactchangelogfilter.h",
+          "include": "QtContacts/qcontactchangelogfilter.h",
+          "sha256": "516eea67d8071b88c7b6e007546699272d1fc189c499f85b6f61416cfa5b055e"
+        },
+        {
+          "source": "src/contacts/filters/qcontactdetailfilter.h",
+          "include": "QtContacts/qcontactdetailfilter.h",
+          "sha256": "23a85d8bf4b8e3931ff283583c0db72c87580fa55d2d15d8dec8797cb153efdd"
+        },
+        {
+          "source": "src/contacts/filters/qcontactdetailrangefilter.h",
+          "include": "QtContacts/qcontactdetailrangefilter.h",
+          "sha256": "ababe11840abaae243a82603f8658ff7a715cd441f946a530e3274d7469faad1"
+        },
+        {
+          "source": "src/contacts/filters/qcontactfilters.h",
+          "include": "QtContacts/qcontactfilters.h",
+          "sha256": "e6077c46ad6e24a145d99654320882113245bdbf0f3a0b52bbdda1f8ab6c1767"
+        },
+        {
+          "source": "src/contacts/filters/qcontactintersectionfilter.h",
+          "include": "QtContacts/qcontactintersectionfilter.h",
+          "sha256": "d2ccf34cba626af23b7f495614bc7c0d74509ce60017acc7a4f5286a12e30c86"
+        },
+        {
+          "source": "src/contacts/filters/qcontactinvalidfilter.h",
+          "include": "QtContacts/qcontactinvalidfilter.h",
+          "sha256": "d82eb2aef95c9910bfb7538f141799f157b5cd73a236a7b45fcdf8ae876cb82b"
+        },
+        {
+          "source": "src/contacts/filters/qcontactlocalidfilter.h",
+          "include": "QtContacts/qcontactlocalidfilter.h",
+          "sha256": "95d7aa0feb4fe5b635c95dc2408b2f2eedde841dbae216fa08c3a0c4c9cefbbe"
+        },
+        {
+          "source": "src/contacts/filters/qcontactrelationshipfilter.h",
+          "include": "QtContacts/qcontactrelationshipfilter.h",
+          "sha256": "7b193b7d4c50690de3013e91ecf258459e718e3f9115f21ec7004395f6eaacbd"
+        },
+        {
+          "source": "src/contacts/filters/qcontactunionfilter.h",
+          "include": "QtContacts/qcontactunionfilter.h",
+          "sha256": "6c6dbbac03cf9c369485e70484b91f6b5cea444a197a7beb95e9a982a7f3af22"
+        },
+        {
+          "source": "src/contacts/qcontact.h",
+          "include": "QtContacts/qcontact.h",
+          "sha256": "8a1c673b8c6aeacfb6b1e59602011ceb91d84f392b9113a610d63ae8075d1206"
+        },
+        {
+          "source": "src/contacts/qcontactabstractrequest.h",
+          "include": "QtContacts/qcontactabstractrequest.h",
+          "sha256": "b941fc343e7d78c38dc6f4645cc0d3b4e6da7efc643a6ee4381e90c1be7e0b1d"
+        },
+        {
+          "source": "src/contacts/qcontactaction.h",
+          "include": "QtContacts/qcontactaction.h",
+          "sha256": "bf460e047b7027db1108a1512989ed609dff9edb496dd6427f6f4c933d4c2cd8"
+        },
+        {
+          "source": "src/contacts/qcontactactiondescriptor.h",
+          "include": "QtContacts/qcontactactiondescriptor.h",
+          "sha256": "96a338ee446bbac096a6a2bc099f9a9accdee8e9c997427047091d5fc1ca98c4"
+        },
+        {
+          "source": "src/contacts/qcontactactionfactory.h",
+          "include": "QtContacts/qcontactactionfactory.h",
+          "sha256": "7ed8eb8269bff4ac1a05943db48fc5356c1b3aec2e227cb34b3cded051432c32"
+        },
+        {
+          "source": "src/contacts/qcontactchangeset.h",
+          "include": "QtContacts/qcontactchangeset.h",
+          "sha256": "b6c561f8f9b503b2242826c51f20725e8c2e5898fc62e6ade721bd6b96b00314"
+        },
+        {
+          "source": "src/contacts/qcontactdetail.h",
+          "include": "QtContacts/qcontactdetail.h",
+          "sha256": "116eb35adc05681d5b0d97e910198a52ff886a1a8e28e3a5e9301817dc59e7bf"
+        },
+        {
+          "source": "src/contacts/qcontactdetaildefinition.h",
+          "include": "QtContacts/qcontactdetaildefinition.h",
+          "sha256": "6446a401d6735cd6f0a022e33eadfcb5191c53e0aebdbd6373d312149a465503"
+        },
+        {
+          "source": "src/contacts/qcontactdetailfielddefinition.h",
+          "include": "QtContacts/qcontactdetailfielddefinition.h",
+          "sha256": "d0677d0adae726925ce5ddb92281758be4da4afe6e017851b68b485ffdb9b8f2"
+        },
+        {
+          "source": "src/contacts/qcontactfetchhint.h",
+          "include": "QtContacts/qcontactfetchhint.h",
+          "sha256": "b02b1ea980bbf3b10f3c01a3f6e8759752bf9ce99f103a36dbbe9ff5a25d0ad4"
+        },
+        {
+          "source": "src/contacts/qcontactfilter.h",
+          "include": "QtContacts/qcontactfilter.h",
+          "sha256": "ece41f1fa24d2b952f2bb0b3d0c86369503eaf073c4cde8ae24218be09c7930f"
+        },
+        {
+          "source": "src/contacts/qcontactid.h",
+          "include": "QtContacts/qcontactid.h",
+          "sha256": "8b5be5c9c3dc8bf938a4bb76d0bec0f1dbe5204e04d1b6a58573509399af0d48"
+        },
+        {
+          "source": "src/contacts/qcontactmanager.h",
+          "include": "QtContacts/qcontactmanager.h",
+          "sha256": "3aa3b4430d0013a6f590577bd2bdddbf72b3e80e0ad0e4b9ed75b906ccfdbb33"
+        },
+        {
+          "source": "src/contacts/qcontactmanagerengine.h",
+          "include": "QtContacts/qcontactmanagerengine.h",
+          "sha256": "e83f2b2159e9bdc6bc69201c1f6969623b9dbf205d02e2ff5302648a239678a1"
+        },
+        {
+          "source": "src/contacts/qcontactmanagerenginefactory.h",
+          "include": "QtContacts/qcontactmanagerenginefactory.h",
+          "sha256": "0dc89ee2147cd8c6584fa08146260a60e488352641bc9034b9737552f931b3ab"
+        },
+        {
+          "source": "src/contacts/qcontactrelationship.h",
+          "include": "QtContacts/qcontactrelationship.h",
+          "sha256": "4ca34359423b5e15a73f79f2642f9a105a33ca26471dcffebbcf2447f8ae587c"
+        },
+        {
+          "source": "src/contacts/qcontactsortorder.h",
+          "include": "QtContacts/qcontactsortorder.h",
+          "sha256": "18a6d813473df84430079f57db8e0d6637d8ca5ffa42e54a3522a3a771e1da8d"
+        },
+        {
+          "source": "src/contacts/qtcontacts.h",
+          "include": "QtContacts/qtcontacts.h",
+          "sha256": "5653173bc486f832d49cde99c2fd276592dda5a4ce2cd79b4ae0b402b3b88220"
+        },
+        {
+          "source": "src/contacts/qtcontactsglobal.h",
+          "include": "QtContacts/qtcontactsglobal.h",
+          "sha256": "d68052b72858a1805f14863753f9c20e230e83009223c45186457267982591d5"
+        },
+        {
+          "source": "src/contacts/requests/qcontactdetaildefinitionfetchrequest.h",
+          "include": "QtContacts/qcontactdetaildefinitionfetchrequest.h",
+          "sha256": "d19101f8983b6b8cb81badbdd7322a26fba016cdf1531fcd2730affdf55ab4fe"
+        },
+        {
+          "source": "src/contacts/requests/qcontactdetaildefinitionremoverequest.h",
+          "include": "QtContacts/qcontactdetaildefinitionremoverequest.h",
+          "sha256": "e49e12a1672d5896a7e2a49cb1e51410a00e09411615618cc9ebd34128217686"
+        },
+        {
+          "source": "src/contacts/requests/qcontactdetaildefinitionsaverequest.h",
+          "include": "QtContacts/qcontactdetaildefinitionsaverequest.h",
+          "sha256": "c2aefadc29028bfe3c2dc511c56846372dd5e84cf242c86b8c8130fdd31e9d60"
+        },
+        {
+          "source": "src/contacts/requests/qcontactfetchrequest.h",
+          "include": "QtContacts/qcontactfetchrequest.h",
+          "sha256": "cadfbe9c032f646da59e62364a9fe400f0844d1f53b39d30747031f06b55b9d0"
+        },
+        {
+          "source": "src/contacts/requests/qcontactlocalidfetchrequest.h",
+          "include": "QtContacts/qcontactlocalidfetchrequest.h",
+          "sha256": "ebb50b9f79eb9694f658795fc17f90d0de337a1b36dc2e5cc4941c806131601a"
+        },
+        {
+          "source": "src/contacts/requests/qcontactrelationshipfetchrequest.h",
+          "include": "QtContacts/qcontactrelationshipfetchrequest.h",
+          "sha256": "d6320726be230366a864b7d6ebc6bfe77000504f73f10b084516b53405e465c6"
+        },
+        {
+          "source": "src/contacts/requests/qcontactrelationshipremoverequest.h",
+          "include": "QtContacts/qcontactrelationshipremoverequest.h",
+          "sha256": "6172afcfaf7f61484b1879ff8459a34e82816c5e864336a926a7167e23664657"
+        },
+        {
+          "source": "src/contacts/requests/qcontactrelationshipsaverequest.h",
+          "include": "QtContacts/qcontactrelationshipsaverequest.h",
+          "sha256": "58762a5ca2341ef4e62bce56d7ea5360e520d54df72276991a1d1578e8ab3b15"
+        },
+        {
+          "source": "src/contacts/requests/qcontactremoverequest.h",
+          "include": "QtContacts/qcontactremoverequest.h",
+          "sha256": "a545f6773dd933c96085ea99b1e683fb3bd08e2759a45f11d61ff9c357f8dec7"
+        },
+        {
+          "source": "src/contacts/requests/qcontactrequests.h",
+          "include": "QtContacts/qcontactrequests.h",
+          "sha256": "3e753fad0d11b39d18e73f5e99cac8cb45069e6985543ea7e2c3275fcfc69dbb"
+        },
+        {
+          "source": "src/contacts/requests/qcontactsaverequest.h",
+          "include": "QtContacts/qcontactsaverequest.h",
+          "sha256": "42eda3842feae6b69057703e44f7cfe94686f414ed13db246e9fa2e4a0da5d9e"
+        }
+      ],
+      "aliases": [
+        {
+          "include": "QtContacts/QContact",
+          "header": "qcontact.h"
+        },
+        {
+          "include": "QtContacts/QContactAbstractRequest",
+          "header": "qcontactabstractrequest.h"
+        },
+        {
+          "include": "QtContacts/QContactAction",
+          "header": "qcontactaction.h"
+        },
+        {
+          "include": "QtContacts/QContactActionDescriptor",
+          "header": "qcontactactiondescriptor.h"
+        },
+        {
+          "include": "QtContacts/QContactActionFactory",
+          "header": "qcontactactionfactory.h"
+        },
+        {
+          "include": "QtContacts/QContactActionFilter",
+          "header": "qcontactactionfilter.h"
+        },
+        {
+          "include": "QtContacts/QContactAddress",
+          "header": "qcontactaddress.h"
+        },
+        {
+          "include": "QtContacts/QContactAnniversary",
+          "header": "qcontactanniversary.h"
+        },
+        {
+          "include": "QtContacts/QContactAvatar",
+          "header": "qcontactavatar.h"
+        },
+        {
+          "include": "QtContacts/QContactBirthday",
+          "header": "qcontactbirthday.h"
+        },
+        {
+          "include": "QtContacts/QContactChangeLogFilter",
+          "header": "qcontactchangelogfilter.h"
+        },
+        {
+          "include": "QtContacts/QContactChangeSet",
+          "header": "qcontactchangeset.h"
+        },
+        {
+          "include": "QtContacts/QContactDetail",
+          "header": "qcontactdetail.h"
+        },
+        {
+          "include": "QtContacts/QContactDetailDefinition",
+          "header": "qcontactdetaildefinition.h"
+        },
+        {
+          "include": "QtContacts/QContactDetailDefinitionFetchRequest",
+          "header": "qcontactdetaildefinitionfetchrequest.h"
+        },
+        {
+          "include": "QtContacts/QContactDetailDefinitionRemoveRequest",
+          "header": "qcontactdetaildefinitionremoverequest.h"
+        },
+        {
+          "include": "QtContacts/QContactDetailDefinitionSaveRequest",
+          "header": "qcontactdetaildefinitionsaverequest.h"
+        },
+        {
+          "include": "QtContacts/QContactDetailFieldDefinition",
+          "header": "qcontactdetailfielddefinition.h"
+        },
+        {
+          "include": "QtContacts/QContactDetailFilter",
+          "header": "qcontactdetailfilter.h"
+        },
+        {
+          "include": "QtContacts/QContactDetailRangeFilter",
+          "header": "qcontactdetailrangefilter.h"
+        },
+        {
+          "include": "QtContacts/QContactDisplayLabel",
+          "header": "qcontactdisplaylabel.h"
+        },
+        {
+          "include": "QtContacts/QContactEmailAddress",
+          "header": "qcontactemailaddress.h"
+        },
+        {
+          "include": "QtContacts/QContactFamily",
+          "header": "qcontactfamily.h"
+        },
+        {
+          "include": "QtContacts/QContactFetchHint",
+          "header": "qcontactfetchhint.h"
+        },
+        {
+          "include": "QtContacts/QContactFetchRequest",
+          "header": "qcontactfetchrequest.h"
+        },
+        {
+          "include": "QtContacts/QContactFilter",
+          "header": "qcontactfilter.h"
+        },
+        {
+          "include": "QtContacts/QContactGender",
+          "header": "qcontactgender.h"
+        },
+        {
+          "include": "QtContacts/QContactGeoLocation",
+          "header": "qcontactgeolocation.h"
+        },
+        {
+          "include": "QtContacts/QContactGlobalPresence",
+          "header": "qcontactglobalpresence.h"
+        },
+        {
+          "include": "QtContacts/QContactGuid",
+          "header": "qcontactguid.h"
+        },
+        {
+          "include": "QtContacts/QContactId",
+          "header": "qcontactid.h"
+        },
+        {
+          "include": "QtContacts/QContactIntersectionFilter",
+          "header": "qcontactintersectionfilter.h"
+        },
+        {
+          "include": "QtContacts/QContactInvalidFilter",
+          "header": "qcontactinvalidfilter.h"
+        },
+        {
+          "include": "QtContacts/QContactLocalIdFetchRequest",
+          "header": "qcontactlocalidfetchrequest.h"
+        },
+        {
+          "include": "QtContacts/QContactLocalIdFilter",
+          "header": "qcontactlocalidfilter.h"
+        },
+        {
+          "include": "QtContacts/QContactManager",
+          "header": "qcontactmanager.h"
+        },
+        {
+          "include": "QtContacts/QContactManagerEngine",
+          "header": "qcontactmanagerengine.h"
+        },
+        {
+          "include": "QtContacts/QContactManagerEngineFactory",
+          "header": "qcontactmanagerenginefactory.h"
+        },
+        {
+          "include": "QtContacts/QContactName",
+          "header": "qcontactname.h"
+        },
+        {
+          "include": "QtContacts/QContactNickname",
+          "header": "qcontactnickname.h"
+        },
+        {
+          "include": "QtContacts/QContactNote",
+          "header": "qcontactnote.h"
+        },
+        {
+          "include": "QtContacts/QContactOnlineAccount",
+          "header": "qcontactonlineaccount.h"
+        },
+        {
+          "include": "QtContacts/QContactOrganization",
+          "header": "qcontactorganization.h"
+        },
+        {
+          "include": "QtContacts/QContactPhoneNumber",
+          "header": "qcontactphonenumber.h"
+        },
+        {
+          "include": "QtContacts/QContactPresence",
+          "header": "qcontactpresence.h"
+        },
+        {
+          "include": "QtContacts/QContactRelationship",
+          "header": "qcontactrelationship.h"
+        },
+        {
+          "include": "QtContacts/QContactRelationshipFetchRequest",
+          "header": "qcontactrelationshipfetchrequest.h"
+        },
+        {
+          "include": "QtContacts/QContactRelationshipFilter",
+          "header": "qcontactrelationshipfilter.h"
+        },
+        {
+          "include": "QtContacts/QContactRelationshipRemoveRequest",
+          "header": "qcontactrelationshipremoverequest.h"
+        },
+        {
+          "include": "QtContacts/QContactRelationshipSaveRequest",
+          "header": "qcontactrelationshipsaverequest.h"
+        },
+        {
+          "include": "QtContacts/QContactRemoveRequest",
+          "header": "qcontactremoverequest.h"
+        },
+        {
+          "include": "QtContacts/QContactRingtone",
+          "header": "qcontactringtone.h"
+        },
+        {
+          "include": "QtContacts/QContactSaveRequest",
+          "header": "qcontactsaverequest.h"
+        },
+        {
+          "include": "QtContacts/QContactSortOrder",
+          "header": "qcontactsortorder.h"
+        },
+        {
+          "include": "QtContacts/QContactSyncTarget",
+          "header": "qcontactsynctarget.h"
+        },
+        {
+          "include": "QtContacts/QContactTag",
+          "header": "qcontacttag.h"
+        },
+        {
+          "include": "QtContacts/QContactThumbnail",
+          "header": "qcontactthumbnail.h"
+        },
+        {
+          "include": "QtContacts/QContactTimestamp",
+          "header": "qcontacttimestamp.h"
+        },
+        {
+          "include": "QtContacts/QContactType",
+          "header": "qcontacttype.h"
+        },
+        {
+          "include": "QtContacts/QContactUnionFilter",
+          "header": "qcontactunionfilter.h"
+        },
+        {
+          "include": "QtContacts/QContactUrl",
+          "header": "qcontacturl.h"
+        }
+      ],
+      "dependencies": [
+        "Symbian::QtGui"
+      ],
+      "classification": "public_standard_extension",
+      "availability": "unknown_firmware"
+    },
+    {
+      "target": "Symbian::QtMobilityLocation",
+      "dll": "qtlocation.dll",
+      "definition": "src/s60installs/eabi/QtLocationu.def",
+      "definition_sha256": "6c1ed1698eced72292219bbf798678f1b20e17e9d47dfbce3399386be7f83ce8",
+      "public_header_manifests": [
+        "src/location/location.pro"
+      ],
+      "headers": [
+        {
+          "source": "src/location/qgeoareamonitor.h",
+          "include": "QtLocation/qgeoareamonitor.h",
+          "sha256": "86fdf5a856cd00a3eefb58e7b978795e93e84353ccea6a6476484be9854faa24"
+        },
+        {
+          "source": "src/location/qgeocoordinate.h",
+          "include": "QtLocation/qgeocoordinate.h",
+          "sha256": "ae2e486a770c36cd2e81a3ea1cdfe292b418e7a2fce13230285a35be905e6f3b"
+        },
+        {
+          "source": "src/location/qgeopositioninfo.h",
+          "include": "QtLocation/qgeopositioninfo.h",
+          "sha256": "aa073da142d03a11690ca3884ed55e0a87aae47c4c106d848121b6ea0ff880f5"
+        },
+        {
+          "source": "src/location/qgeopositioninfosource.h",
+          "include": "QtLocation/qgeopositioninfosource.h",
+          "sha256": "702ee5d9429c08628add64fb1d9a0c7dc018de82bae64501c1fd5fd9cd18cf48"
+        },
+        {
+          "source": "src/location/qgeosatelliteinfo.h",
+          "include": "QtLocation/qgeosatelliteinfo.h",
+          "sha256": "fa75020bef633b1276599339f6303b09ca5f4a1522e316b79d7201568353e990"
+        },
+        {
+          "source": "src/location/qgeosatelliteinfosource.h",
+          "include": "QtLocation/qgeosatelliteinfosource.h",
+          "sha256": "597565a2c3a11e91aa803284bf8ec1c0ebf473622972264a5d1497b3ee5d89d0"
+        },
+        {
+          "source": "src/location/qnmeapositioninfosource.h",
+          "include": "QtLocation/qnmeapositioninfosource.h",
+          "sha256": "e772b45893a38d4672df51673a42a3bdbd37c436955a02457aba7b9176fda52d"
+        }
+      ],
+      "aliases": [
+        {
+          "include": "QtLocation/QGeoAreaMonitor",
+          "header": "qgeoareamonitor.h"
+        },
+        {
+          "include": "QtLocation/QGeoCoordinate",
+          "header": "qgeocoordinate.h"
+        },
+        {
+          "include": "QtLocation/QGeoPositionInfo",
+          "header": "qgeopositioninfo.h"
+        },
+        {
+          "include": "QtLocation/QGeoPositionInfoSource",
+          "header": "qgeopositioninfosource.h"
+        },
+        {
+          "include": "QtLocation/QGeoSatelliteInfo",
+          "header": "qgeosatelliteinfo.h"
+        },
+        {
+          "include": "QtLocation/QGeoSatelliteInfoSource",
+          "header": "qgeosatelliteinfosource.h"
+        },
+        {
+          "include": "QtLocation/QNmeaPositionInfoSource",
+          "header": "qnmeapositioninfosource.h"
+        }
+      ],
+      "dependencies": [
+        "Symbian::QtCore"
+      ],
+      "classification": "public_standard_extension",
+      "availability": "unknown_firmware"
+    },
+    {
+      "target": "Symbian::QtMobilityMessaging",
+      "dll": "qtmessaging.dll",
+      "definition": "src/s60installs/eabi/QtMessagingu.def",
+      "definition_sha256": "8a997fa19d7316643c49161e400029b4922656e37b386a79c51fa01ba9d02380",
+      "public_header_manifests": [
+        "src/messaging/messaging.pro"
+      ],
+      "headers": [
+        {
+          "source": "src/messaging/qmessage.h",
+          "include": "QtMessaging/qmessage.h",
+          "sha256": "69c4fd24363288e3366e0fe74d507160872232a77d67396ca952ba086a496c39"
+        },
+        {
+          "source": "src/messaging/qmessageaccount.h",
+          "include": "QtMessaging/qmessageaccount.h",
+          "sha256": "cf574bf49557387c19763b4a3c616e6866f3192f38a710d977b9c2c264acb1c6"
+        },
+        {
+          "source": "src/messaging/qmessageaccountfilter.h",
+          "include": "QtMessaging/qmessageaccountfilter.h",
+          "sha256": "e92c46f9fbd3c61badc91277a8ff7c71b12014904fa22ef631877e21b6809aa9"
+        },
+        {
+          "source": "src/messaging/qmessageaccountid.h",
+          "include": "QtMessaging/qmessageaccountid.h",
+          "sha256": "87c6a304defd1dd08f5d24eaa1a58c6813338e8ff4bd8ebbdc595fab846d88ac"
+        },
+        {
+          "source": "src/messaging/qmessageaccountsortorder.h",
+          "include": "QtMessaging/qmessageaccountsortorder.h",
+          "sha256": "78c1a990cc0353212da347b99bbef7555d443a58906ec26daffaf6eaa02a6d28"
+        },
+        {
+          "source": "src/messaging/qmessageaddress.h",
+          "include": "QtMessaging/qmessageaddress.h",
+          "sha256": "9ae3c24eba1ba93427c901ebd65029e1b0194c25223f82a1617dd30e1cdbb6df"
+        },
+        {
+          "source": "src/messaging/qmessagecontentcontainer.h",
+          "include": "QtMessaging/qmessagecontentcontainer.h",
+          "sha256": "8f9bd635c00e5b0826570503c27597d0589c1f5707c7918c088efcc0803ad5d7"
+        },
+        {
+          "source": "src/messaging/qmessagecontentcontainerid.h",
+          "include": "QtMessaging/qmessagecontentcontainerid.h",
+          "sha256": "2ffe2648bb335f4f554f3ee85c39049ebd13b71e574a2bcdb865bc7f7e089076"
+        },
+        {
+          "source": "src/messaging/qmessagedatacomparator.h",
+          "include": "QtMessaging/qmessagedatacomparator.h",
+          "sha256": "fe94f0fdf96f2c3b0a91741db00a2c797f3dc68a75c39dc2a1fb333b13607bb2",
+          "preinclude": [
+            "qmobilityglobal.h"
+          ]
+        },
+        {
+          "source": "src/messaging/qmessagefilter.h",
+          "include": "QtMessaging/qmessagefilter.h",
+          "sha256": "a2578bcd77fc4ab5e5d6eaf6f79ec52c7c80f076295ce93337c93ecc5886a69b"
+        },
+        {
+          "source": "src/messaging/qmessagefolder.h",
+          "include": "QtMessaging/qmessagefolder.h",
+          "sha256": "57876bbc14aa5ed01bf72a8e1a555ea1993b7461ce137113e8183ed0f05cd19b"
+        },
+        {
+          "source": "src/messaging/qmessagefolderfilter.h",
+          "include": "QtMessaging/qmessagefolderfilter.h",
+          "sha256": "a99da0a81368e5754aa414fd89e58a4b65d1893c16f76aaf32f1059c65d75c05"
+        },
+        {
+          "source": "src/messaging/qmessagefolderid.h",
+          "include": "QtMessaging/qmessagefolderid.h",
+          "sha256": "232a1d2b57554893166ab63172cc18320e31fd40c40af1f083a748f114cf4867"
+        },
+        {
+          "source": "src/messaging/qmessagefoldersortorder.h",
+          "include": "QtMessaging/qmessagefoldersortorder.h",
+          "sha256": "71922082f6d2078e6505bfbb88df5bc8e1928d62a3a6fef6d98184ea84bab036"
+        },
+        {
+          "source": "src/messaging/qmessageglobal.h",
+          "include": "QtMessaging/qmessageglobal.h",
+          "sha256": "27f38da190a9dec58d507d3b032a8439ed347e50e8380809e62350c543897235"
+        },
+        {
+          "source": "src/messaging/qmessageid.h",
+          "include": "QtMessaging/qmessageid.h",
+          "sha256": "39b5f6786b2afe22b322164cacd668430e0645b6ec7c950c6a758c71c587bca3"
+        },
+        {
+          "source": "src/messaging/qmessagemanager.h",
+          "include": "QtMessaging/qmessagemanager.h",
+          "sha256": "2b47c1efcb6803249956ea3b024b64a3f1bff8f72885aab47b9a695b616455ba"
+        },
+        {
+          "source": "src/messaging/qmessageservice.h",
+          "include": "QtMessaging/qmessageservice.h",
+          "sha256": "0540d970e6192cb841328648ee067a175eac3a1d0a33a9001801d738c49f0d13"
+        },
+        {
+          "source": "src/messaging/qmessagesortorder.h",
+          "include": "QtMessaging/qmessagesortorder.h",
+          "sha256": "bc77232a7e93a8c411b59152cef6a3b492d1fb2f8d3d42035c0192df145a106b"
+        }
+      ],
+      "aliases": [
+        {
+          "include": "QtMessaging/QMessage",
+          "header": "qmessage.h"
+        },
+        {
+          "include": "QtMessaging/QMessageAccount",
+          "header": "qmessageaccount.h"
+        },
+        {
+          "include": "QtMessaging/QMessageAccountFilter",
+          "header": "qmessageaccountfilter.h"
+        },
+        {
+          "include": "QtMessaging/QMessageAccountId",
+          "header": "qmessageaccountid.h"
+        },
+        {
+          "include": "QtMessaging/QMessageAccountSortOrder",
+          "header": "qmessageaccountsortorder.h"
+        },
+        {
+          "include": "QtMessaging/QMessageAddress",
+          "header": "qmessageaddress.h"
+        },
+        {
+          "include": "QtMessaging/QMessageContentContainer",
+          "header": "qmessagecontentcontainer.h"
+        },
+        {
+          "include": "QtMessaging/QMessageContentContainerId",
+          "header": "qmessagecontentcontainerid.h"
+        },
+        {
+          "include": "QtMessaging/QMessageFilter",
+          "header": "qmessagefilter.h"
+        },
+        {
+          "include": "QtMessaging/QMessageFolder",
+          "header": "qmessagefolder.h"
+        },
+        {
+          "include": "QtMessaging/QMessageFolderFilter",
+          "header": "qmessagefolderfilter.h"
+        },
+        {
+          "include": "QtMessaging/QMessageFolderId",
+          "header": "qmessagefolderid.h"
+        },
+        {
+          "include": "QtMessaging/QMessageFolderSortOrder",
+          "header": "qmessagefoldersortorder.h"
+        },
+        {
+          "include": "QtMessaging/QMessageId",
+          "header": "qmessageid.h"
+        },
+        {
+          "include": "QtMessaging/QMessageManager",
+          "header": "qmessagemanager.h"
+        },
+        {
+          "include": "QtMessaging/QMessageService",
+          "header": "qmessageservice.h"
+        },
+        {
+          "include": "QtMessaging/QMessageSortOrder",
+          "header": "qmessagesortorder.h"
+        }
+      ],
+      "dependencies": [
+        "Symbian::QtGui"
+      ],
+      "classification": "public_standard_extension",
+      "availability": "unknown_firmware"
+    },
+    {
+      "target": "Symbian::QtMobilityMultimediaKit",
+      "dll": "qtmultimediakit.dll",
+      "definition": "src/s60installs/eabi/QtMultimediaKitu.def",
+      "definition_sha256": "76f12c44b6db48c1c07970b5cb16fbd83cb6a7f062754cf6987c23026b2d8455",
+      "public_header_manifests": [
+        "src/multimedia/audio/audio.pri",
+        "src/multimedia/effects/effects.pri",
+        "src/multimedia/multimedia.pro",
+        "src/multimedia/video/video.pri"
+      ],
+      "headers": [
+        {
+          "source": "src/multimedia/audio/qaudio.h",
+          "include": "QtMultimediaKit/qaudio.h",
+          "sha256": "70933f2b521d2ba0cb638b46754c827684b8d52106f8ba6dc835829f9eed6cfc"
+        },
+        {
+          "source": "src/multimedia/audio/qaudiodeviceinfo.h",
+          "include": "QtMultimediaKit/qaudiodeviceinfo.h",
+          "sha256": "7ad029011cfd33568e80fd6bd390cc0b19677be6b65adcc7471809ecac0379be"
+        },
+        {
+          "source": "src/multimedia/audio/qaudioformat.h",
+          "include": "QtMultimediaKit/qaudioformat.h",
+          "sha256": "fa1ca4137fee51ec11cd68f9e42f9f13ca6cda30d701852f0a2aabbca981ba7d"
+        },
+        {
+          "source": "src/multimedia/audio/qaudioinput.h",
+          "include": "QtMultimediaKit/qaudioinput.h",
+          "sha256": "7b4dfd183e433f65dfcb0225875d41d449c0e7f74c1e72db58e684f8a3720200"
+        },
+        {
+          "source": "src/multimedia/audio/qaudiooutput.h",
+          "include": "QtMultimediaKit/qaudiooutput.h",
+          "sha256": "66e59f86e7fc811b7102d76133ad3af8eadfd36b437f58766bce77b3a66b90c5"
+        },
+        {
+          "source": "src/multimedia/audio/qaudiosystem.h",
+          "include": "QtMultimediaKit/qaudiosystem.h",
+          "sha256": "3ea0f312dde7b553d6d6df516579ea221a447aa2ac592cf3b16c67c9825816c2"
+        },
+        {
+          "source": "src/multimedia/audio/qaudiosystemplugin.h",
+          "include": "QtMultimediaKit/qaudiosystemplugin.h",
+          "sha256": "26facff72b42b390491fbccfa819a4d4f393dc039b7a9fc40fc931954d69c61a"
+        },
+        {
+          "source": "src/multimedia/effects/qsoundeffect.h",
+          "include": "QtMultimediaKit/qsoundeffect.h",
+          "sha256": "4d77d4688e9cbfb133010e8a36653fbe76d1205b593f4024ad8b80e1b2152702"
+        },
+        {
+          "source": "src/multimedia/qaudiocapturesource.h",
+          "include": "QtMultimediaKit/qaudiocapturesource.h",
+          "sha256": "a8104bedfae804af477e8900d5c4097f177937b8fd7c599c2bea39a836924f8e"
+        },
+        {
+          "source": "src/multimedia/qaudioencodercontrol.h",
+          "include": "QtMultimediaKit/qaudioencodercontrol.h",
+          "sha256": "310cd78515563a33aa4eafd5a369e90bd9717f007f351ae6651a8bb255546621"
+        },
+        {
+          "source": "src/multimedia/qaudioendpointselector.h",
+          "include": "QtMultimediaKit/qaudioendpointselector.h",
+          "sha256": "d50384b85a93980edf2850492137619ef650a27c884fdfdb4c419ce59b7d05df"
+        },
+        {
+          "source": "src/multimedia/qgraphicsvideoitem.h",
+          "include": "QtMultimediaKit/qgraphicsvideoitem.h",
+          "sha256": "250b7a2d691ba5654328ca1e98a0b865e7544db381bb2f9d9e5f3cd35dad1c5b"
+        },
+        {
+          "source": "src/multimedia/qimageencodercontrol.h",
+          "include": "QtMultimediaKit/qimageencodercontrol.h",
+          "sha256": "f5792d5787bd7c77b29bdce82a1e79bd7a5f3f8aa9f324882d26e0f487b717f1"
+        },
+        {
+          "source": "src/multimedia/qlocalmediaplaylistprovider.h",
+          "include": "QtMultimediaKit/qlocalmediaplaylistprovider.h",
+          "sha256": "c6d150511a5eb1e87e390fc2184440cd64ec2b25fc172d98c88d4a1822b6c930"
+        },
+        {
+          "source": "src/multimedia/qmediabindableinterface.h",
+          "include": "QtMultimediaKit/qmediabindableinterface.h",
+          "sha256": "150489f27b44ccfc73b758213b6617550c58993a322d49388efe746a60ee42ab"
+        },
+        {
+          "source": "src/multimedia/qmediacontainercontrol.h",
+          "include": "QtMultimediaKit/qmediacontainercontrol.h",
+          "sha256": "76fbe62924466f7b34705303943049e96b3b28c7c6d8e27973deeada9dbaa096"
+        },
+        {
+          "source": "src/multimedia/qmediacontent.h",
+          "include": "QtMultimediaKit/qmediacontent.h",
+          "sha256": "a872309bf498c2628960d0237ffb5b948b534f65ac1ac43ee69c600ec1556acf"
+        },
+        {
+          "source": "src/multimedia/qmediacontrol.h",
+          "include": "QtMultimediaKit/qmediacontrol.h",
+          "sha256": "ec6c475552573d778db390434a2f26584d8e10c5a115a78629ef0378e91f8171"
+        },
+        {
+          "source": "src/multimedia/qmediaencodersettings.h",
+          "include": "QtMultimediaKit/qmediaencodersettings.h",
+          "sha256": "6343f6502477fea520b3f1e5bb9d54abb252b524319b6d6aaaa79812eb5a9112"
+        },
+        {
+          "source": "src/multimedia/qmediaimageviewer.h",
+          "include": "QtMultimediaKit/qmediaimageviewer.h",
+          "sha256": "a61c654dff774e3d065977d5c26c8026ac71563bf44295f92dde4956f8ca8cde"
+        },
+        {
+          "source": "src/multimedia/qmediaobject.h",
+          "include": "QtMultimediaKit/qmediaobject.h",
+          "sha256": "a73d33fa61a3a0f707ea9db4895a8d2f78620de5ef165f743ce2ba888bc0f8a6"
+        },
+        {
+          "source": "src/multimedia/qmediaplayer.h",
+          "include": "QtMultimediaKit/qmediaplayer.h",
+          "sha256": "c2d8b7de4f270347e84e6055a6b34fc925a056eeddeef805f6db9d7061b890bb"
+        },
+        {
+          "source": "src/multimedia/qmediaplayercontrol.h",
+          "include": "QtMultimediaKit/qmediaplayercontrol.h",
+          "sha256": "0e3fec97081527e153dc45ecf0b17dfeffa956d35c6fa7afcdf3c51c88ff803d"
+        },
+        {
+          "source": "src/multimedia/qmediaplaylist.h",
+          "include": "QtMultimediaKit/qmediaplaylist.h",
+          "sha256": "7cdd8e378804919e26454cc451bc834043f35b17ce5e022ace63178335d9ce4a"
+        },
+        {
+          "source": "src/multimedia/qmediaplaylistcontrol.h",
+          "include": "QtMultimediaKit/qmediaplaylistcontrol.h",
+          "sha256": "813f54fbb10d623ffe35e4b6924daa6d0e6f376012c11e5d1d8fe36c4ec746e9"
+        },
+        {
+          "source": "src/multimedia/qmediaplaylistioplugin.h",
+          "include": "QtMultimediaKit/qmediaplaylistioplugin.h",
+          "sha256": "613ea6148d7dd4e87c19ce06074425f48abebaa1db289aa47adf70a6cc6789ed"
+        },
+        {
+          "source": "src/multimedia/qmediaplaylistnavigator.h",
+          "include": "QtMultimediaKit/qmediaplaylistnavigator.h",
+          "sha256": "5a65f8d59bcd8ab7593c33b738c6dea3bc03fdcf980f1dfefbe881bd1024c8fa"
+        },
+        {
+          "source": "src/multimedia/qmediaplaylistprovider.h",
+          "include": "QtMultimediaKit/qmediaplaylistprovider.h",
+          "sha256": "5600367f434e6f292b8615783e50abfcbdea3b71c8c22d3e0a7c9aa84a240184"
+        },
+        {
+          "source": "src/multimedia/qmediaplaylistsourcecontrol.h",
+          "include": "QtMultimediaKit/qmediaplaylistsourcecontrol.h",
+          "sha256": "699f5eb626ea0787bffcc3bff6c28bcf69d304888bffc0ec065d28eef4629eda"
+        },
+        {
+          "source": "src/multimedia/qmediarecorder.h",
+          "include": "QtMultimediaKit/qmediarecorder.h",
+          "sha256": "63e61a112c2d82170a85b288c880514c5e8d24123643e044adf5a8bc8b79051e"
+        },
+        {
+          "source": "src/multimedia/qmediarecordercontrol.h",
+          "include": "QtMultimediaKit/qmediarecordercontrol.h",
+          "sha256": "ce750a742cfaea7bb187e38c11948301309a9acd843a5438c259097541c6db17"
+        },
+        {
+          "source": "src/multimedia/qmediaresource.h",
+          "include": "QtMultimediaKit/qmediaresource.h",
+          "sha256": "ac7cdc6ffd96ef0a409b912c66daa62f35209a4d5b923ed1fc2e40533920b0ef"
+        },
+        {
+          "source": "src/multimedia/qmediaservice.h",
+          "include": "QtMultimediaKit/qmediaservice.h",
+          "sha256": "722be1d003532845c294fc0e51bf3b4905ade8bc5b01365a88f6384995590f9c"
+        },
+        {
+          "source": "src/multimedia/qmediaserviceprovider.h",
+          "include": "QtMultimediaKit/qmediaserviceprovider.h",
+          "sha256": "65043bf80dce52df5b59a349da0ee9de0156ca1a6bfe0821278cd28a8443f668"
+        },
+        {
+          "source": "src/multimedia/qmediaserviceproviderplugin.h",
+          "include": "QtMultimediaKit/qmediaserviceproviderplugin.h",
+          "sha256": "d9a5a45a5ebb137b0373ea620ac917f986aefe75f0ecbc23ccd7c014b0bf1bf5"
+        },
+        {
+          "source": "src/multimedia/qmediastreamscontrol.h",
+          "include": "QtMultimediaKit/qmediastreamscontrol.h",
+          "sha256": "ba57122be38461e53d5d957afd3937d5ce17414ad9c0800cdf4fa6c677fb9be6"
+        },
+        {
+          "source": "src/multimedia/qmediatimerange.h",
+          "include": "QtMultimediaKit/qmediatimerange.h",
+          "sha256": "f16242f02700e4186332612db9093d09d1e58d703186f85e5f258c33f171fd19"
+        },
+        {
+          "source": "src/multimedia/qmetadatareadercontrol.h",
+          "include": "QtMultimediaKit/qmetadatareadercontrol.h",
+          "sha256": "2faed730ec94729d922121f0628109189820eb9433ed2a86dba047153b0e11b9"
+        },
+        {
+          "source": "src/multimedia/qmetadatawritercontrol.h",
+          "include": "QtMultimediaKit/qmetadatawritercontrol.h",
+          "sha256": "21149880b39e0ab92a17daa5a71a00d2fccc6a9de92b02607d36e72b6f3befca"
+        },
+        {
+          "source": "src/multimedia/qradiotuner.h",
+          "include": "QtMultimediaKit/qradiotuner.h",
+          "sha256": "fd4bb2e0bc7ce0c142ccb36ede5721a858896d5d5e3045ec514dd18f0b8a9df9"
+        },
+        {
+          "source": "src/multimedia/qradiotunercontrol.h",
+          "include": "QtMultimediaKit/qradiotunercontrol.h",
+          "sha256": "29357238d5a6a6a64e47a41632fc47c82b062eb7668e906baece5ded2954de00"
+        },
+        {
+          "source": "src/multimedia/qtmedianamespace.h",
+          "include": "QtMultimediaKit/qtmedianamespace.h",
+          "sha256": "a53f9d91fb02ecc8d1e1d1e217ea7afa8d7be62ce239fb63a79770de476f515a"
+        },
+        {
+          "source": "src/multimedia/qvideodevicecontrol.h",
+          "include": "QtMultimediaKit/qvideodevicecontrol.h",
+          "sha256": "29039393759ca0aa743da9f4f9a80b81b60bcee0d3aaa600f92ee3e2e4b70f15"
+        },
+        {
+          "source": "src/multimedia/qvideoencodercontrol.h",
+          "include": "QtMultimediaKit/qvideoencodercontrol.h",
+          "sha256": "2f23dae9fe29d8c988409243cebb5f80dff54a4700536747ce5f11ee155ab2bb"
+        },
+        {
+          "source": "src/multimedia/qvideorenderercontrol.h",
+          "include": "QtMultimediaKit/qvideorenderercontrol.h",
+          "sha256": "2b39abebde0002b9785c6091df0f5b4fdef35b71756d2694166c732153c34250"
+        },
+        {
+          "source": "src/multimedia/qvideowidget.h",
+          "include": "QtMultimediaKit/qvideowidget.h",
+          "sha256": "698293a28e99e670ede9fd19a7c4f64346e5ca8a99ea4573dc13ed504187a214"
+        },
+        {
+          "source": "src/multimedia/qvideowidgetcontrol.h",
+          "include": "QtMultimediaKit/qvideowidgetcontrol.h",
+          "sha256": "24c27adf4aa0cc3f8b798ea010000646ccd5da5a30ac3155045f948bcf25d95c"
+        },
+        {
+          "source": "src/multimedia/qvideowindowcontrol.h",
+          "include": "QtMultimediaKit/qvideowindowcontrol.h",
+          "sha256": "8dd57b5d8bb73a36a57e1141a13cc721621e441f11ff5d31c95bc5cc19ce9f41"
+        },
+        {
+          "source": "src/multimedia/video/qabstractvideobuffer.h",
+          "include": "QtMultimediaKit/qabstractvideobuffer.h",
+          "sha256": "324178b6f12af90d9a86e25c0550b19c6c5d519a82157beb33a505c6679af407"
+        },
+        {
+          "source": "src/multimedia/video/qabstractvideobuffer_p.h",
+          "include": "QtMultimediaKit/qabstractvideobuffer_p.h",
+          "sha256": "ab95f3dcfa136c8b9d395e63340cbaa8b0d36be587789453612e78fc5bff3f11"
+        },
+        {
+          "source": "src/multimedia/video/qabstractvideosurface.h",
+          "include": "QtMultimediaKit/qabstractvideosurface.h",
+          "sha256": "cf6c4de47bf0ee916e2a307e95b637f9683b607b543d59212600d083da4528e0"
+        },
+        {
+          "source": "src/multimedia/video/qabstractvideosurface_p.h",
+          "include": "QtMultimediaKit/qabstractvideosurface_p.h",
+          "sha256": "e8ff496e92a22ddc77c5067afbe28d257c9ef2f8980b88546f9b8f4b671145cd"
+        },
+        {
+          "source": "src/multimedia/video/qimagevideobuffer_p.h",
+          "include": "QtMultimediaKit/qimagevideobuffer_p.h",
+          "sha256": "6e1289387f6add81f2a70454896d7f437ed355dd5192c172538beb99638d4805"
+        },
+        {
+          "source": "src/multimedia/video/qmemoryvideobuffer_p.h",
+          "include": "QtMultimediaKit/qmemoryvideobuffer_p.h",
+          "sha256": "2e3a3c32f74db91b97d571874077aec126a1b7d383ba53ef18d87f4751fe6fa6"
+        },
+        {
+          "source": "src/multimedia/video/qvideoframe.h",
+          "include": "QtMultimediaKit/qvideoframe.h",
+          "sha256": "9740e0468f9d2b9cca775bc837534a58baa1747c14aab4995c17d0a7726dc1f8"
+        },
+        {
+          "source": "src/multimedia/video/qvideosurfaceformat.h",
+          "include": "QtMultimediaKit/qvideosurfaceformat.h",
+          "sha256": "5d52fe5bd1cb8eec57b440412cffbd27cfdd9b1c8f3cef0a865da2c7b7c59f49"
+        }
+      ],
+      "aliases": [
+        {
+          "include": "QtMultimediaKit/QAbstractAudioDeviceInfo",
+          "header": "qaudiosystem.h"
+        },
+        {
+          "include": "QtMultimediaKit/QAbstractAudioInput",
+          "header": "qaudiosystem.h"
+        },
+        {
+          "include": "QtMultimediaKit/QAbstractAudioOutput",
+          "header": "qaudiosystem.h"
+        },
+        {
+          "include": "QtMultimediaKit/QAbstractVideoBuffer",
+          "header": "qabstractvideobuffer.h"
+        },
+        {
+          "include": "QtMultimediaKit/QAbstractVideoSurface",
+          "header": "qabstractvideosurface.h"
+        },
+        {
+          "include": "QtMultimediaKit/QAudioCaptureSource",
+          "header": "qaudiocapturesource.h"
+        },
+        {
+          "include": "QtMultimediaKit/QAudioDeviceInfo",
+          "header": "qaudiodeviceinfo.h"
+        },
+        {
+          "include": "QtMultimediaKit/QAudioEncoderControl",
+          "header": "qaudioencodercontrol.h"
+        },
+        {
+          "include": "QtMultimediaKit/QAudioEncoderSettings",
+          "header": "qmediaencodersettings.h"
+        },
+        {
+          "include": "QtMultimediaKit/QAudioEndpointSelector",
+          "header": "qaudioendpointselector.h"
+        },
+        {
+          "include": "QtMultimediaKit/QAudioFormat",
+          "header": "qaudioformat.h"
+        },
+        {
+          "include": "QtMultimediaKit/QAudioInput",
+          "header": "qaudioinput.h"
+        },
+        {
+          "include": "QtMultimediaKit/QAudioOutput",
+          "header": "qaudiooutput.h"
+        },
+        {
+          "include": "QtMultimediaKit/QAudioSystemPlugin",
+          "header": "qaudiosystemplugin.h"
+        },
+        {
+          "include": "QtMultimediaKit/QGraphicsVideoItem",
+          "header": "qgraphicsvideoitem.h"
+        },
+        {
+          "include": "QtMultimediaKit/QImageEncoderControl",
+          "header": "qimageencodercontrol.h"
+        },
+        {
+          "include": "QtMultimediaKit/QImageEncoderSettings",
+          "header": "qmediaencodersettings.h"
+        },
+        {
+          "include": "QtMultimediaKit/QImageVideoBuffer",
+          "header": "qimagevideobuffer_p.h"
+        },
+        {
+          "include": "QtMultimediaKit/QLocalMediaPlaylistProvider",
+          "header": "qlocalmediaplaylistprovider.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaBindableInterface",
+          "header": "qmediabindableinterface.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaContainerControl",
+          "header": "qmediacontainercontrol.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaContent",
+          "header": "qmediacontent.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaControl",
+          "header": "qmediacontrol.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaImageViewer",
+          "header": "qmediaimageviewer.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaObject",
+          "header": "qmediaobject.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaPlayer",
+          "header": "qmediaplayer.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaPlayerControl",
+          "header": "qmediaplayercontrol.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaPlaylist",
+          "header": "qmediaplaylist.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaPlaylistControl",
+          "header": "qmediaplaylistcontrol.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaPlaylistIOPlugin",
+          "header": "qmediaplaylistioplugin.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaPlaylistNavigator",
+          "header": "qmediaplaylistnavigator.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaPlaylistProvider",
+          "header": "qmediaplaylistprovider.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaPlaylistReader",
+          "header": "qmediaplaylistioplugin.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaPlaylistSourceControl",
+          "header": "qmediaplaylistsourcecontrol.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaPlaylistWriter",
+          "header": "qmediaplaylistioplugin.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaRecorder",
+          "header": "qmediarecorder.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaRecorderControl",
+          "header": "qmediarecordercontrol.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaResource",
+          "header": "qmediaresource.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaService",
+          "header": "qmediaservice.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaServiceProvider",
+          "header": "qmediaserviceprovider.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaServiceProviderHint",
+          "header": "qmediaserviceprovider.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaServiceProviderPlugin",
+          "header": "qmediaserviceproviderplugin.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaStreamsControl",
+          "header": "qmediastreamscontrol.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaTimeInterval",
+          "header": "qmediatimerange.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMediaTimeRange",
+          "header": "qmediatimerange.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMemoryVideoBuffer",
+          "header": "qmemoryvideobuffer_p.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMetaDataReaderControl",
+          "header": "qmetadatareadercontrol.h"
+        },
+        {
+          "include": "QtMultimediaKit/QMetaDataWriterControl",
+          "header": "qmetadatawritercontrol.h"
+        },
+        {
+          "include": "QtMultimediaKit/QRadioTuner",
+          "header": "qradiotuner.h"
+        },
+        {
+          "include": "QtMultimediaKit/QRadioTunerControl",
+          "header": "qradiotunercontrol.h"
+        },
+        {
+          "include": "QtMultimediaKit/QSoundEffect",
+          "header": "qsoundeffect.h"
+        },
+        {
+          "include": "QtMultimediaKit/QVideoDeviceControl",
+          "header": "qvideodevicecontrol.h"
+        },
+        {
+          "include": "QtMultimediaKit/QVideoEncoderControl",
+          "header": "qvideoencodercontrol.h"
+        },
+        {
+          "include": "QtMultimediaKit/QVideoEncoderSettings",
+          "header": "qmediaencodersettings.h"
+        },
+        {
+          "include": "QtMultimediaKit/QVideoFrame",
+          "header": "qvideoframe.h"
+        },
+        {
+          "include": "QtMultimediaKit/QVideoRendererControl",
+          "header": "qvideorenderercontrol.h"
+        },
+        {
+          "include": "QtMultimediaKit/QVideoSurfaceFormat",
+          "header": "qvideosurfaceformat.h"
+        },
+        {
+          "include": "QtMultimediaKit/QVideoWidget",
+          "header": "qvideowidget.h"
+        },
+        {
+          "include": "QtMultimediaKit/QVideoWidgetControl",
+          "header": "qvideowidgetcontrol.h"
+        },
+        {
+          "include": "QtMultimediaKit/QVideoWindowControl",
+          "header": "qvideowindowcontrol.h"
+        }
+      ],
+      "dependencies": [
+        "Symbian::QtGui",
+        "Symbian::QtNetwork"
+      ],
+      "classification": "public_standard_extension",
+      "availability": "unknown_firmware"
+    },
+    {
+      "target": "Symbian::QtMobilityPublishSubscribe",
+      "dll": "qtpublishsubscribe.dll",
+      "definition": "src/s60installs/eabi/QtPublishSubscribeu.def",
+      "definition_sha256": "4c98004dff912b942b08b0dcef9ad07bbc3bc3aeef4d2dcb33a6c55381bf78f9",
+      "public_header_manifests": [
+        "src/publishsubscribe/publishsubscribe.pro"
+      ],
+      "headers": [
+        {
+          "source": "src/publishsubscribe/qvaluespace.h",
+          "include": "QtPublishSubscribe/qvaluespace.h",
+          "sha256": "9f4a782f6fd2cc6072fc2dcf731f9900f78f3c36166e8ddb24f9b9adc7085768"
+        },
+        {
+          "source": "src/publishsubscribe/qvaluespacepublisher.h",
+          "include": "QtPublishSubscribe/qvaluespacepublisher.h",
+          "sha256": "a205175913d52140c524168badff41a8de924750c7a16ee57f43cbc324fd19da"
+        },
+        {
+          "source": "src/publishsubscribe/qvaluespacesubscriber.h",
+          "include": "QtPublishSubscribe/qvaluespacesubscriber.h",
+          "sha256": "3fad8f004081eb3c763ca963ef21d04e39e2f19286ceba2881072454b15d499e"
+        }
+      ],
+      "aliases": [
+        {
+          "include": "QtPublishSubscribe/QValueSpacePublisher",
+          "header": "qvaluespacepublisher.h"
+        },
+        {
+          "include": "QtPublishSubscribe/QValueSpaceSubscriber",
+          "header": "qvaluespacesubscriber.h"
+        }
+      ],
+      "dependencies": [
+        "Symbian::QtCore"
+      ],
+      "classification": "public_standard_extension",
+      "availability": "unknown_firmware"
+    },
+    {
+      "target": "Symbian::QtMobilitySensors",
+      "dll": "qtsensors.dll",
+      "definition": "src/s60installs/eabi/QtSensorsu.def",
+      "definition_sha256": "d28cf771235b0a21971a39560f3084f60000c0588b6d72479de0152b82ab38e8",
+      "public_header_manifests": [
+        "src/sensors/sensors.pro"
+      ],
+      "headers": [
+        {
+          "source": "src/sensors/qaccelerometer.h",
+          "include": "QtSensors/qaccelerometer.h",
+          "sha256": "265a8fa29d748324ace10e9909fb8b4f60f9508282de5e00ff9fa347bb688956"
+        },
+        {
+          "source": "src/sensors/qambientlightsensor.h",
+          "include": "QtSensors/qambientlightsensor.h",
+          "sha256": "3bc6de9d3d520d9a4baade7099d018e1065d6296eed27eb7871ab9a243fb20c6"
+        },
+        {
+          "source": "src/sensors/qcompass.h",
+          "include": "QtSensors/qcompass.h",
+          "sha256": "50eaafa7cef8564fe311ebe445cca4baf737c5ca374ea54f7b746d88bf5038f8"
+        },
+        {
+          "source": "src/sensors/qmagnetometer.h",
+          "include": "QtSensors/qmagnetometer.h",
+          "sha256": "87cdf5153ffd924b27a24eaa4c2d1b66fcc10e46347be5f5d78402a3d053bf7c"
+        },
+        {
+          "source": "src/sensors/qorientationsensor.h",
+          "include": "QtSensors/qorientationsensor.h",
+          "sha256": "56eba87b224fe70bffe945614d1a9ccdbad898bc37b4f829dc931520943253bb"
+        },
+        {
+          "source": "src/sensors/qproximitysensor.h",
+          "include": "QtSensors/qproximitysensor.h",
+          "sha256": "961d758a5f9bea002d8275590753b5bca188249b76e5a5b6c10f0dbaddfd86ed"
+        },
+        {
+          "source": "src/sensors/qrotationsensor.h",
+          "include": "QtSensors/qrotationsensor.h",
+          "sha256": "5f679aabbe0065eb995ef1eb62f537c2aa3ab35a13b0ec9ba4ace0c7db31b836"
+        },
+        {
+          "source": "src/sensors/qsensor.h",
+          "include": "QtSensors/qsensor.h",
+          "sha256": "11bf4d7ec91e3c090cc106d0413fc85ed088e89f52a16667c0613af24e128914"
+        },
+        {
+          "source": "src/sensors/qsensorbackend.h",
+          "include": "QtSensors/qsensorbackend.h",
+          "sha256": "f2f917d67cb65237a9dfbbe54e0f52a21b36f71a1db5ea052cf0aff107012375"
+        },
+        {
+          "source": "src/sensors/qsensormanager.h",
+          "include": "QtSensors/qsensormanager.h",
+          "sha256": "7c5151df47af2278421a7b11f90d9dd44c6f73948b1790bb0cd41bc19138f8b1"
+        },
+        {
+          "source": "src/sensors/qsensorplugin.h",
+          "include": "QtSensors/qsensorplugin.h",
+          "sha256": "716833999994d251d13c4380bcfb5374136c0404f682b9d30e407597dae0dc44"
+        },
+        {
+          "source": "src/sensors/qtapsensor.h",
+          "include": "QtSensors/qtapsensor.h",
+          "sha256": "eb517b6bca84811e6917f423c17c2a6ef40ca9016f85068d31634a179c90290d"
+        }
+      ],
+      "aliases": [
+        {
+          "include": "QtSensors/QAccelerometer",
+          "header": "qaccelerometer.h"
+        },
+        {
+          "include": "QtSensors/QAccelerometerFilter",
+          "header": "qaccelerometer.h"
+        },
+        {
+          "include": "QtSensors/QAccelerometerReading",
+          "header": "qaccelerometer.h"
+        },
+        {
+          "include": "QtSensors/QAmbientLightFilter",
+          "header": "qambientlightsensor.h"
+        },
+        {
+          "include": "QtSensors/QAmbientLightReading",
+          "header": "qambientlightsensor.h"
+        },
+        {
+          "include": "QtSensors/QAmbientLightSensor",
+          "header": "qambientlightsensor.h"
+        },
+        {
+          "include": "QtSensors/QCompass",
+          "header": "qcompass.h"
+        },
+        {
+          "include": "QtSensors/QCompassFilter",
+          "header": "qcompass.h"
+        },
+        {
+          "include": "QtSensors/QCompassReading",
+          "header": "qcompass.h"
+        },
+        {
+          "include": "QtSensors/QMagnetometer",
+          "header": "qmagnetometer.h"
+        },
+        {
+          "include": "QtSensors/QMagnetometerFilter",
+          "header": "qmagnetometer.h"
+        },
+        {
+          "include": "QtSensors/QMagnetometerReading",
+          "header": "qmagnetometer.h"
+        },
+        {
+          "include": "QtSensors/QOrientationFilter",
+          "header": "qorientationsensor.h"
+        },
+        {
+          "include": "QtSensors/QOrientationReading",
+          "header": "qorientationsensor.h"
+        },
+        {
+          "include": "QtSensors/QOrientationSensor",
+          "header": "qorientationsensor.h"
+        },
+        {
+          "include": "QtSensors/QProximityFilter",
+          "header": "qproximitysensor.h"
+        },
+        {
+          "include": "QtSensors/QProximityReading",
+          "header": "qproximitysensor.h"
+        },
+        {
+          "include": "QtSensors/QProximitySensor",
+          "header": "qproximitysensor.h"
+        },
+        {
+          "include": "QtSensors/QRotationFilter",
+          "header": "qrotationsensor.h"
+        },
+        {
+          "include": "QtSensors/QRotationReading",
+          "header": "qrotationsensor.h"
+        },
+        {
+          "include": "QtSensors/QRotationSensor",
+          "header": "qrotationsensor.h"
+        },
+        {
+          "include": "QtSensors/QSensor",
+          "header": "qsensor.h"
+        },
+        {
+          "include": "QtSensors/QSensorBackend",
+          "header": "qsensorbackend.h"
+        },
+        {
+          "include": "QtSensors/QSensorBackendFactory",
+          "header": "qsensormanager.h"
+        },
+        {
+          "include": "QtSensors/QSensorFilter",
+          "header": "qsensor.h"
+        },
+        {
+          "include": "QtSensors/QSensorManager",
+          "header": "qsensormanager.h"
+        },
+        {
+          "include": "QtSensors/QSensorPluginInterface",
+          "header": "qsensorplugin.h"
+        },
+        {
+          "include": "QtSensors/QSensorReading",
+          "header": "qsensor.h"
+        },
+        {
+          "include": "QtSensors/QTapFilter",
+          "header": "qtapsensor.h"
+        },
+        {
+          "include": "QtSensors/QTapReading",
+          "header": "qtapsensor.h"
+        },
+        {
+          "include": "QtSensors/QTapSensor",
+          "header": "qtapsensor.h"
+        },
+        {
+          "include": "QtSensors/qtimestamp",
+          "header": "qsensor.h"
+        }
+      ],
+      "dependencies": [
+        "Symbian::QtGui"
+      ],
+      "classification": "public_standard_extension",
+      "availability": "unknown_firmware"
+    },
+    {
+      "target": "Symbian::QtMobilityServiceFramework",
+      "dll": "qtserviceframework.dll",
+      "definition": "src/s60installs/eabi/QtServiceFrameworku.def",
+      "definition_sha256": "f84ebc564475e4e0ab111857f88997dc42305aefee7db8a8fe829ac629075548",
+      "public_header_manifests": [
+        "src/serviceframework/serviceframework.pro"
+      ],
+      "headers": [
+        {
+          "source": "src/serviceframework/qabstractsecuritysession.h",
+          "include": "QtServiceFramework/qabstractsecuritysession.h",
+          "sha256": "47f955cec7b742b00a0ab293e518adb4579543aa4a1b14458c676ba9b8b31e90"
+        },
+        {
+          "source": "src/serviceframework/qservice.h",
+          "include": "QtServiceFramework/qservice.h",
+          "sha256": "6172f64c8db5bba153c41042506dafb4f0d2bcb09d8ccc21aa4d98834b465c1b"
+        },
+        {
+          "source": "src/serviceframework/qservicecontext.h",
+          "include": "QtServiceFramework/qservicecontext.h",
+          "sha256": "d40d31e9c790bbd4f801bc194648f639abe4cedc4159fa7f09c7c2afabd6bdc6"
+        },
+        {
+          "source": "src/serviceframework/qservicefilter.h",
+          "include": "QtServiceFramework/qservicefilter.h",
+          "sha256": "b481aab0a5de84ca8b1be67632c2539fb08e15c989aaeed6a93293bfabeb3f58"
+        },
+        {
+          "source": "src/serviceframework/qserviceinterfacedescriptor.h",
+          "include": "QtServiceFramework/qserviceinterfacedescriptor.h",
+          "sha256": "0fc63bbefe307f016af08a7646c7e1e7c48606bb1682e9a6d817e9a7049e2f5a"
+        },
+        {
+          "source": "src/serviceframework/qservicemanager.h",
+          "include": "QtServiceFramework/qservicemanager.h",
+          "sha256": "8110d668cabf86b4f2d4f66272ce1de5fc9fcfbc8de7ac6e9c3b5fa5d7a288e2"
+        },
+        {
+          "source": "src/serviceframework/qserviceplugininterface.h",
+          "include": "QtServiceFramework/qserviceplugininterface.h",
+          "sha256": "24ba43132f881137f03a36d6c8460c3ef45bc9c76619d3c226f0aac0e8c0dd4f"
+        }
+      ],
+      "aliases": [
+        {
+          "include": "QtServiceFramework/QAbstractSecuritySession",
+          "header": "qabstractsecuritysession.h"
+        },
+        {
+          "include": "QtServiceFramework/QServiceContext",
+          "header": "qservicecontext.h"
+        },
+        {
+          "include": "QtServiceFramework/QServiceFilter",
+          "header": "qservicefilter.h"
+        },
+        {
+          "include": "QtServiceFramework/QServiceInterfaceDescriptor",
+          "header": "qserviceinterfacedescriptor.h"
+        },
+        {
+          "include": "QtServiceFramework/QServiceManager",
+          "header": "qservicemanager.h"
+        },
+        {
+          "include": "QtServiceFramework/QServicePluginInterface",
+          "header": "qserviceplugininterface.h"
+        }
+      ],
+      "dependencies": [
+        "Symbian::QtSql"
+      ],
+      "classification": "public_standard_extension",
+      "availability": "unknown_firmware"
+    },
+    {
+      "target": "Symbian::QtMobilitySystemInfo",
+      "dll": "qtsysteminfo.dll",
+      "definition": "src/s60installs/eabi/QtSystemInfou.def",
+      "definition_sha256": "1114f5b2e824bd7bac830adca99014c74fbf1588939697898bc3e781181e6bab",
+      "public_header_manifests": [
+        "src/systeminfo/systeminfo.pro"
+      ],
+      "headers": [
+        {
+          "source": "src/systeminfo/qsysteminfo.h",
+          "include": "QtSystemInfo/qsysteminfo.h",
+          "sha256": "f20652ab293da98faf98c9275eed8e2a0058d895f70b0ac159b8e3cfaa57ac22"
+        }
+      ],
+      "aliases": [
+        {
+          "include": "QtSystemInfo/QSystemDeviceInfo",
+          "header": "qsysteminfo.h"
+        },
+        {
+          "include": "QtSystemInfo/QSystemDisplayInfo",
+          "header": "qsysteminfo.h"
+        },
+        {
+          "include": "QtSystemInfo/QSystemInfo",
+          "header": "qsysteminfo.h"
+        },
+        {
+          "include": "QtSystemInfo/QSystemNetworkInfo",
+          "header": "qsysteminfo.h"
+        },
+        {
+          "include": "QtSystemInfo/QSystemScreenSaver",
+          "header": "qsysteminfo.h"
+        },
+        {
+          "include": "QtSystemInfo/QSystemStorageInfo",
+          "header": "qsysteminfo.h"
+        }
+      ],
+      "dependencies": [
+        "Symbian::QtGui",
+        "Symbian::QtNetwork"
+      ],
+      "classification": "public_standard_extension",
+      "availability": "unknown_firmware"
+    },
+    {
+      "target": "Symbian::QtMobilityVersit",
+      "dll": "qtversit.dll",
+      "definition": "src/s60installs/eabi/QtVersitu.def",
+      "definition_sha256": "9690c07ed67f5c4df50fcc18a73bc74255c504fc3d59bbfd487d36458cfb2a3f",
+      "public_header_manifests": [
+        "src/versit/versit.pro"
+      ],
+      "headers": [
+        {
+          "source": "src/versit/qversitcontactexporter.h",
+          "include": "QtVersit/qversitcontactexporter.h",
+          "sha256": "017eae0356e9b59b01070cf6df1f93c9a09ca9abedf0807f997c893e689abdbb"
+        },
+        {
+          "source": "src/versit/qversitcontacthandler.h",
+          "include": "QtVersit/qversitcontacthandler.h",
+          "sha256": "e1a5013db074d50c6178ff8bdc3259794a8f2c47bca16c6607ee50ffd0f8f6df"
+        },
+        {
+          "source": "src/versit/qversitcontactimporter.h",
+          "include": "QtVersit/qversitcontactimporter.h",
+          "sha256": "72204fca016f16d89913c4abbb870e3808bb2631c868ac0f23bdd8f8ab921448"
+        },
+        {
+          "source": "src/versit/qversitdocument.h",
+          "include": "QtVersit/qversitdocument.h",
+          "sha256": "b6f32bd595e4f4faf46bc4af13e05da0bc113d1c405765d7c8a0aa7727aac0f2"
+        },
+        {
+          "source": "src/versit/qversitproperty.h",
+          "include": "QtVersit/qversitproperty.h",
+          "sha256": "bc02a6b35906dc29da945475b08ac4cd7be648a040d8d56c6897e59122e4f993"
+        },
+        {
+          "source": "src/versit/qversitreader.h",
+          "include": "QtVersit/qversitreader.h",
+          "sha256": "83bb148b81afb947bb649c993f3d2d97964824b435e4be5759d8192b7190f54f"
+        },
+        {
+          "source": "src/versit/qversitresourcehandler.h",
+          "include": "QtVersit/qversitresourcehandler.h",
+          "sha256": "8016a7e8b3c57184c438ce937e977112c016a8cbe3627324c14fc811c9d7f7b7"
+        },
+        {
+          "source": "src/versit/qversitwriter.h",
+          "include": "QtVersit/qversitwriter.h",
+          "sha256": "4fc64a7f4f409898ba17ce8916c8c463e42dbad8fcc593d3fb0e1fafb322b371"
+        }
+      ],
+      "aliases": [
+        {
+          "include": "QtVersit/QVersitContactExporter",
+          "header": "qversitcontactexporter.h"
+        },
+        {
+          "include": "QtVersit/QVersitContactExporterDetailHandler",
+          "header": "qversitcontactexporter.h"
+        },
+        {
+          "include": "QtVersit/QVersitContactExporterDetailHandlerV2",
+          "header": "qversitcontactexporter.h"
+        },
+        {
+          "include": "QtVersit/QVersitContactHandler",
+          "header": "qversitcontacthandler.h"
+        },
+        {
+          "include": "QtVersit/QVersitContactHandlerFactory",
+          "header": "qversitcontacthandler.h"
+        },
+        {
+          "include": "QtVersit/QVersitContactImporter",
+          "header": "qversitcontactimporter.h"
+        },
+        {
+          "include": "QtVersit/QVersitContactImporterPropertyHandler",
+          "header": "qversitcontactimporter.h"
+        },
+        {
+          "include": "QtVersit/QVersitContactImporterPropertyHandlerV2",
+          "header": "qversitcontactimporter.h"
+        },
+        {
+          "include": "QtVersit/QVersitDefaultResourceHandler",
+          "header": "qversitresourcehandler.h"
+        },
+        {
+          "include": "QtVersit/QVersitDocument",
+          "header": "qversitdocument.h"
+        },
+        {
+          "include": "QtVersit/QVersitProperty",
+          "header": "qversitproperty.h"
+        },
+        {
+          "include": "QtVersit/QVersitReader",
+          "header": "qversitreader.h"
+        },
+        {
+          "include": "QtVersit/QVersitResourceHandler",
+          "header": "qversitresourcehandler.h"
+        },
+        {
+          "include": "QtVersit/QVersitWriter",
+          "header": "qversitwriter.h"
+        }
+      ],
+      "dependencies": [
+        "Symbian::QtGui",
+        "Symbian::QtMobilityContacts"
+      ],
+      "classification": "public_standard_extension",
+      "availability": "unknown_firmware"
+    }
+  ]
+}

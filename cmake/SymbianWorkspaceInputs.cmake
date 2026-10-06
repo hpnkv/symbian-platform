@@ -20,9 +20,10 @@ execute_process(COMMAND "${CMAKE_COMMAND}" -E env
   --root "${SYMBIAN_SOURCE_WORKSPACE}"
   WORKING_DIRECTORY "${SYMBIAN_SOURCE_WORKSPACE}"
   RESULT_VARIABLE prepare_result OUTPUT_VARIABLE prepare_output
-  ERROR_VARIABLE prepare_error)
+  ERROR_VARIABLE prepare_error
+  ECHO_OUTPUT_VARIABLE ECHO_ERROR_VARIABLE)
 if(NOT prepare_result EQUAL 0)
-  message(FATAL_ERROR "Cannot prepare source workspace inputs. Prepare the source dependencies as described in the Build from source guide.\n${prepare_output}${prepare_error}")
+  message(FATAL_ERROR "Cannot prepare source workspace inputs. See ${SYMBIAN_SOURCE_WORKSPACE}/.symbian/workspace-inputs.log and the Build from source guide.\n${prepare_error}")
 endif()
 file(GLOB workspace_modules CONFIGURE_DEPENDS
   "${SYMBIAN_SOURCE_WORKSPACE}/symbian/project/templates/*.cmake"
