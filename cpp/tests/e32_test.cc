@@ -283,8 +283,12 @@ TEST(E32Test, RejectsDuplicateSlotsAndUnsupportedImportContracts) {
   Put32(code, 16, 0);
   EXPECT_FALSE(internal::DecodeImports(section, code, 1).ok());
   Put32(code, 16, 0x10007);
-  EXPECT_EQ(internal::DecodeImports(section, code, 1).status().code(),
-            absl::StatusCode::kUnimplemented);
+  const auto offset_import = internal::DecodeImports(section, code, 1);
+  ASSERT_TRUE(offset_import.ok()) << offset_import.status();
+  EXPECT_EQ(offset_import->front().slots.front().ordinal, 7);
+  EXPECT_EQ(offset_import->front().slots.front().addend, 1);
+  Put32(code, 16, 0x10000);
+  EXPECT_FALSE(internal::DecodeImports(section, code, 1).ok());
 }
 
 TEST(E32Test, ImportCallMustReachItsOwnPcRelativeVeneerSlot) {

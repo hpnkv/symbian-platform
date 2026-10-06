@@ -317,7 +317,8 @@ absl::Status CheckResource(std::string_view bytes, uint32_t uid2,
 
 absl::StatusOr<std::string> BuildFiles(
     std::string_view executable, const PackageOptions& options,
-    const std::vector<ApplicationFile>& assets) {
+    const std::vector<ApplicationFile>& assets,
+    const std::vector<ApplicationFile>& libraries = {}) {
   if (const auto status = CheckOptions(options); !status.ok()) {
     return status;
   }
@@ -419,6 +420,51 @@ absl::StatusOr<std::string> BuildFiles(
   for (const auto& asset : assets) {
     files.push_back({asset.target, asset.bytes});
   }
+  if (assets.size() + libraries.size() > 40) {
+    return absl::ResourceExhaustedError(
+        "SIS supports at most 40 additional files");
+  }
+  std::string previous_library;
+  for (const auto& library : libraries) {
+    constexpr std::string_view prefix = "!:\\sys\\bin\\";
+    const std::string_view target = library.target;
+    std::string library_key(library.target);
+    for (char& c : library_key) {
+      if (c >= 'A' && c <= 'Z') {
+        c = static_cast<char>(c + ('a' - 'A'));
+      }
+    }
+    if (!target.starts_with(prefix) || !target.ends_with(".dll") ||
+        target.size() <= prefix.size() + 4 || target.size() > 128 ||
+        (!previous_library.empty() && library_key <= previous_library)) {
+      return absl::InvalidArgumentError(
+          "DLL install targets must be unique, sorted !:\\sys\\bin\\ names");
+    }
+    const auto filename =
+        target.substr(prefix.size(), target.size() - prefix.size() - 4);
+    for (char c : filename) {
+      if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+            (c >= '0' && c <= '9') || c == '_' || c == '-')) {
+        return absl::InvalidArgumentError(
+            "DLL filename requires ASCII letters, digits, hyphens or underscores");
+      }
+    }
+    const auto dll = e32::InspectImage(library.bytes);
+    if (!dll.ok()) {
+      return dll.status();
+    }
+    if (!dll->dll || dll->kernel != image->kernel ||
+        dll->architecture != image->architecture) {
+      return absl::InvalidArgumentError(
+          "Packaged DLL must match the application's architecture and kernel");
+    }
+    if ((dll->capabilities & image->capabilities) != image->capabilities) {
+      return absl::InvalidArgumentError(
+          "Packaged DLL capabilities do not cover the application");
+    }
+    files.push_back({library.target, library.bytes});
+    previous_library = library_key;
+  }
   size_t total = 0;
   for (const auto& file : files) {
     total += file.bytes.size();
@@ -444,9 +490,16 @@ absl::StatusOr<std::string> BuildFiles(
     if (!digest.ok()) {
       return digest.status();
     }
-    const std::string capabilities = index == 0 && image->capabilities != 0
-                                         ? Field(41, Word(image->capabilities))
-                                         : std::string();
+    uint32_t capability_bits = index == 0 ? image->capabilities : 0;
+    if (index > assets.size()) {
+      const auto dll = e32::InspectImage(files[index].bytes);
+      if (!dll.ok()) {
+        return dll.status();
+      }
+      capability_bits = dll->capabilities;
+    }
+    const std::string capabilities =
+        capability_bits != 0 ? Field(41, Word(capability_bits)) : std::string();
     const std::string file = String(files[index].target) + String("") +
                              capabilities +
                              Field(25, Word(1) + Field(37, *digest)) + Word(1) +
@@ -494,8 +547,9 @@ absl::StatusOr<std::string> BuildRegisteredPackage(
 
 absl::StatusOr<std::string> BuildApplicationPackage(
     std::string_view executable, const std::vector<ApplicationFile>& assets,
-    const PackageOptions& options) {
-  return BuildFiles(executable, options, assets);
+    const PackageOptions& options,
+    const std::vector<ApplicationFile>& libraries) {
+  return BuildFiles(executable, options, assets, libraries);
 }
 
 absl::StatusOr<std::string> BuildSvgMif(std::string_view svg) {
@@ -810,8 +864,7 @@ absl::StatusOr<PackageInfo> InspectPackage(std::string_view bytes) {
   if (!descriptions.ok()) {
     return descriptions.status();
   }
-  if (descriptions->size() != 1 &&
-      (descriptions->size() < 3 || descriptions->size() > 41)) {
+  if (descriptions->empty() || descriptions->size() > 41) {
     return absl::UnimplementedError("Unsupported SIS file count");
   }
   constexpr std::string_view prefix = "!:\\sys\\bin\\";
@@ -901,14 +954,26 @@ absl::StatusOr<PackageInfo> InspectPackage(std::string_view bytes) {
     }
   }
   std::vector<ApplicationFile> assets;
+  std::vector<ApplicationFile> libraries;
+  bool libraries_started = false;
   for (size_t index = 1; index < payloads.size(); ++index) {
-    assets.push_back(
-        {result.files[index].target, std::string(payloads[index])});
+    if (result.files[index].target.starts_with(prefix)) {
+      libraries_started = true;
+      libraries.push_back(
+          {result.files[index].target, std::string(payloads[index])});
+    } else {
+      if (libraries_started) {
+        return absl::InvalidArgumentError(
+            "Application resources must precede bundled DLLs");
+      }
+      assets.push_back(
+          {result.files[index].target, std::string(payloads[index])});
+    }
   }
   const auto canonical =
-      payloads.size() == 1
-          ? BuildPackage(payloads[0], result.options)
-          : BuildApplicationPackage(payloads[0], assets, result.options);
+      payloads.size() == 1 ? BuildPackage(payloads[0], result.options)
+                           : BuildApplicationPackage(payloads[0], assets,
+                                                     result.options, libraries);
   if (!canonical.ok()) {
     return canonical.status();
   }
@@ -920,7 +985,7 @@ absl::StatusOr<PackageInfo> InspectPackage(std::string_view bytes) {
   result.executable_uid = Read32(payloads[0], 8);
   result.executable_size = result.files[0].size;
   result.executable_sha1 = result.files[0].sha1;
-  result.application_registered = payloads.size() >= 3;
+  result.application_registered = !assets.empty();
   return result;
 }
 

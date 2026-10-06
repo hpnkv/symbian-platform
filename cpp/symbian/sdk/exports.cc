@@ -126,8 +126,7 @@ absl::StatusOr<std::vector<Export>> ParseExports(std::string_view text) {
     // strict while retaining the original holes without rewriting the DEF.
     const bool unnamed_tombstone = words.size() == 4 && words[3] == "ABSENT";
     if (words.size() < 4 || words[1] != "@" ||
-        (words[3] != "NONAME" && !unnamed_tombstone) ||
-        !SymbolName(words[0])) {
+        (words[3] != "NONAME" && !unnamed_tombstone) || !SymbolName(words[0])) {
       return absl::UnimplementedError("Unsupported DEF export declaration");
     }
     const auto ordinal = Number(words[2]);
@@ -148,6 +147,13 @@ absl::StatusOr<std::vector<Export>> ParseExports(std::string_view text) {
       } else {
         return absl::UnimplementedError("Unsupported DEF export qualifier");
       }
+    }
+    // Older frozen DEFs omit DATA on Itanium ABI type-info and vtable
+    // objects. Their mangling establishes object identity independently of
+    // firmware, and they must never become callable PLT symbols.
+    if (item.symbol.starts_with("_ZTV") || item.symbol.starts_with("_ZTI") ||
+        item.symbol.starts_with("_ZTS")) {
+      item.data = true;
     }
     // Original Khronos DEFs reuse placeholder names for absent ordinal slots.
     // Tombstones have no linkable symbol; only their ordinals must be unique.

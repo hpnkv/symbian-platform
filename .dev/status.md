@@ -3394,3 +3394,13 @@ optional skips), 20 style regressions, both ARM probe indexes, fresh dual-ISA
 SDK export, relocated canaries and all five real starter checks pass. Strict
 docs and formatting pass. See research-log.md and ignored
 .symbian/style-migration/ for experiments and limits.
+
+2026-10-06: Native import ABI/SIS expansion passes E32/SDK/SIS CTest suites and
+22 real-example/configuration/payload Pytests on macOS arm64. Read-only vtable
+function imports resolve by their frozen ordinals without PLT stubs; imported
+objects retain validated E32 addends. The static/DLL/executable example exits
+normally on RM-807/Dynarmic with its project DLL staged. Games examples convert
+on both ARM targets; broader native-leave runtime validation remains in progress.
+Generated Avkon resources, remaining manifest ownership, extended Qt/Mobility,
+portable dependencies and cross-host/bundle acceptance are open. SDK 0.2.0 has
+not been prepared or published; physical hardware has not been operated.

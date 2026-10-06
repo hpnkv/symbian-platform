@@ -223,6 +223,29 @@ absl::StatusOr<ResolvedImports> ResolveImports(
     expected.emplace(17, data_relocs.address);  // DT_REL
     expected.emplace(18, data_relocs.size);     // DT_RELSZ
     expected.emplace(19, 8);                    // DT_RELENT
+    bool imported_text_relocation = false;
+    for (size_t i = 0; i < data_relocs.size; i += 8) {
+      const uint32_t info = Read32(elf, data_relocs.offset + i + 4);
+      const uint32_t symbol = info >> 8;
+      const uint32_t location = Read32(elf, data_relocs.offset + i);
+      if ((info & 255) == 2 && symbol > 0 && symbol < symbols.size / 16 &&
+          std::any_of(
+              sections.begin(), sections.end(),
+              [&](const Section& section) {
+                return section.name == ".rodata" && section.type == 1 &&
+                       (section.flags & 7) == 2 &&
+                       location >= section.address &&
+                       Within(section.size, location - section.address, 4);
+              })) {
+        imported_text_relocation = true;
+      }
+    }
+    if (imported_text_relocation) {
+      // E32 resolves validated words through ordinal imports. Never copy
+      // a proxy object's ordinal bytes or run an ELF dynamic linker.
+      expected.emplace(30, 4);  // DT_FLAGS = DF_TEXTREL
+      expected.emplace(22, 0);  // DT_TEXTREL
+    }
   }
   for (const Section& array : sections) {
     uint32_t address_tag = 0;
@@ -353,23 +376,58 @@ absl::StatusOr<ResolvedImports> ResolveImports(
     for (size_t i = 0; i < data_relocs.size; i += 8) {
       const uint32_t location = Read32(elf, data_relocs.offset + i);
       const uint32_t info = Read32(elf, data_relocs.offset + i + 4);
-      if ((info & 0xff) != 21) {  // R_ARM_GLOB_DAT
+      const uint32_t type = info & 0xff;
+      if (type != 21 && type != 2) {  // GLOB_DAT or a read-only object pointer.
         continue;
       }
       const uint32_t symbol = info >> 8;
-      if (symbol == 0 || symbol >= symbols.size / 16 || object_got == nullptr ||
-          object_got->type != 1 || object_got->flags != 3 || location % 4 ||
-          location < object_got->address ||
-          object_got->address < code.address ||
-          !Within(object_got->size, location - object_got->address, 4) ||
-          !Within(code.size, location - code.address, 4) ||
-          Read32(elf, object_got->offset + location - object_got->address) !=
-              0 ||
-          !locations.insert(location).second ||
-          !symbol_indices.insert(symbol).second) {
-        return absl::DataLossError("Invalid imported object GOT slot");
+      if (symbol == 0 || symbol >= symbols.size / 16) {
+        return absl::DataLossError("Invalid imported object symbol");
       }
       const size_t p = symbols.offset + symbol * 16;
+      const bool function = static_cast<uint8_t>(elf[p + 12]) == 0x12;
+      if (type == 2 && function) {
+        const auto owner = std::find_if(
+            sections.begin(), sections.end(), [&](const Section& section) {
+              return section.name == ".rodata" && section.type == 1 &&
+                     (section.flags & 7) == 2 && location >= section.address &&
+                     Within(section.size, location - section.address, 4);
+            });
+        if (owner == sections.end()) {
+          continue;  // Writable pointers use their validated PLT below.
+        }
+        if (Read32(elf, p + 4) != 0 || Read32(elf, p + 8) != 0 ||
+            elf[p + 13] != 0 || Read16(elf, p + 14) != 0 || location % 4 ||
+            !Within(code.size, location - code.address, 4) ||
+            Read32(elf, owner->offset + location - owner->address) != 0 ||
+            !locations.insert(location).second) {
+          return absl::DataLossError(
+              "Invalid read-only imported function pointer");
+        }
+        const auto version =
+            version_libraries.find(Read16(elf, versions.offset + symbol * 2));
+        if (version == version_libraries.end()) {
+          return absl::DataLossError(
+              "Imported function has unknown DLL version");
+        }
+        const auto name = SymbolName(elf, sections, symbols, symbol);
+        if (!name.ok()) {
+          return name.status();
+        }
+        const auto& library = libraries.at(version->second);
+        const auto item = std::find_if(
+            library.exports.begin(), library.exports.end(),
+            [&](const sdk::Export& e) { return e.symbol == *name; });
+        if (item == library.exports.end() || item->data) {
+          return absl::FailedPreconditionError("Missing imported function");
+        }
+        result.functions.try_emplace(*name, location - code.address);
+        result.code_function_pointers.emplace(location, *name);
+        symbol_indices.insert(symbol);
+        blocks[library.target_dll].push_back(
+            {location - code.address, item->ordinal});
+        continue;
+      }
       if (Read32(elf, p + 4) != 0 ||
           static_cast<uint8_t>(elf[p + 12]) != 0x11 || elf[p + 13] != 0 ||
           Read16(elf, p + 14) != 0) {
@@ -389,14 +447,47 @@ absl::StatusOr<ResolvedImports> ResolveImports(
       const auto item =
           std::find_if(library.exports.begin(), library.exports.end(),
                        [&](const sdk::Export& e) { return e.symbol == *name; });
-      if (item == library.exports.end() || !item->data ||
-          !result.objects.emplace(*name, location - code.address).second) {
+      if (item == library.exports.end() || !item->data) {
         return absl::FailedPreconditionError(
             "Missing/ambiguous imported object");
       }
-      result.object_slots.insert(location - code.address);
+      if (location % 4 || !Within(code.size, location - code.address, 4) ||
+          !locations.insert(location).second) {
+        return absl::DataLossError("Invalid imported object code slot");
+      }
+      uint32_t addend = 0;
+      if (type == 21) {
+        if (object_got == nullptr || object_got->type != 1 ||
+            object_got->flags != 3 || location < object_got->address ||
+            !Within(object_got->size, location - object_got->address, 4) ||
+            Read32(elf, object_got->offset + location - object_got->address) !=
+                0 ||
+            result.objects.contains(*name)) {
+          return absl::DataLossError("Invalid imported object GOT slot");
+        }
+        result.object_slots.insert(location - code.address);
+      } else {
+        const auto owner = std::find_if(
+            sections.begin(), sections.end(), [&](const Section& section) {
+              return section.name == ".rodata" && section.type == 1 &&
+                     (section.flags & 7) == 2 && location >= section.address &&
+                     Within(section.size, location - section.address, 4);
+            });
+        if (owner == sections.end()) {
+          return absl::UnimplementedError(
+              "Absolute imported objects require read-only pointer storage");
+        }
+        addend = Read32(elf, owner->offset + location - owner->address);
+        if (addend > 65535) {
+          return absl::UnimplementedError(
+              "Imported object addend exceeds E32's 16-bit field");
+        }
+        result.code_object_pointers.emplace(location, addend);
+      }
+      result.objects.try_emplace(*name, location - code.address);
+      symbol_indices.insert(symbol);
       blocks[library.target_dll].push_back(
-          {location - code.address, item->ordinal});
+          {location - code.address, item->ordinal, addend});
     }
   }
   // A complete import library can name a function also provided by a static
@@ -424,9 +515,14 @@ absl::StatusOr<ResolvedImports> ResolveImports(
         (function &&
          ((sections[index].flags & 6) != 6 || address < code.address ||
           !Within(code.size, address - code.address, size)))) {
-      return absl::UnimplementedError(
+      const auto name = SymbolName(elf, sections, symbols, symbol);
+      if (!name.ok()) {
+        return name.status();
+      }
+      return absl::UnimplementedError(absl::StrCat(
           "Unreferenced dynamic symbol is not a defined local function or weak "
-          "object");
+          "object: ",
+          *name));
     }
   }
   if (blocks.size() != needed_count) {
@@ -440,6 +536,12 @@ absl::StatusOr<ResolvedImports> ResolveImports(
       const uint32_t symbol = info >> 8;
       if ((info & 0xff) == 21) {
         continue;  // Validated imported object above.
+      }
+      if (result.code_object_pointers.contains(location)) {
+        continue;  // Validated read-only imported object pointer above.
+      }
+      if (result.code_function_pointers.contains(location)) {
+        continue;  // Validated eager read-only function pointer above.
       }
       if ((info & 0xff) != 2 || symbol == 0 ||
           !symbol_indices.contains(symbol) || location % 4) {
@@ -588,12 +690,13 @@ absl::StatusOr<std::vector<ImportBlock>> DecodeImports(std::string_view section,
           (!block.slots.empty() && offset <= block.slots.back().code_offset)) {
         return absl::DataLossError("Invalid E32 import code offset");
       }
-      const uint32_t ordinal = Read32(code, offset);
-      if (ordinal == 0 || ordinal > 65535) {
+      const uint32_t word = Read32(code, offset);
+      const uint32_t ordinal = word & 65535;
+      if (ordinal == 0) {
         return absl::UnimplementedError(
-            "Requires function ordinals/zero addends");
+            "Requires a nonzero E32 import ordinal");
       }
-      block.slots.push_back({offset, ordinal});
+      block.slots.push_back({offset, ordinal, word >> 16});
     }
     blocks.push_back(std::move(block));
   }

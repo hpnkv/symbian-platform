@@ -13,6 +13,7 @@ namespace symbian::e32 {
 struct ImportSlot {
   uint32_t code_offset = 0;
   uint32_t ordinal = 0;
+  uint32_t addend = 0;
 };
 
 struct ImportBlock {

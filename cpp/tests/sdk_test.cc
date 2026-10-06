@@ -28,6 +28,20 @@ TEST(SdkTest, ReadsFrozenFunctionDataAndAbsentExportsWithoutRenumbering) {
   EXPECT_TRUE(ParseExports("EXPORTS\r\n\tName @ 65535 NONAME\r\n").ok());
 }
 
+TEST(SdkTest, RecognizesUnannotatedFrozenItaniumObjects) {
+  const auto table = ParseExports(
+      "EXPORTS\n_ZTIi @ 111 NONAME\n"
+      "_ZTVN10__cxxabiv117__class_type_infoE @ 123 NONAME\n"
+      "_ZTS15XLeaveException @ 124 NONAME\n"
+      "_ZN4User4ExitEi @ 641 NONAME\n");
+  ASSERT_TRUE(table.ok()) << table.status();
+  ASSERT_EQ(table->size(), 4);
+  EXPECT_TRUE((*table)[0].data);
+  EXPECT_TRUE((*table)[1].data);
+  EXPECT_TRUE((*table)[2].data);
+  EXPECT_FALSE((*table)[3].data);
+}
+
 TEST(SdkTest, RejectsDuplicateMalformedAndUnsupportedDefinitions) {
   for (const std::string& text :
        {"EXPORTS\nA @ 1 NONAME\nB @ 1 NONAME",
@@ -56,8 +70,8 @@ TEST(SdkTest, AvkonTombstonesNeedNoNonameQualifier) {
   ASSERT_TRUE(proxy.ok()) << proxy.status();
   ASSERT_EQ(proxy->exports.size(), 2);
   EXPECT_EQ(proxy->exports[1].ordinal, 4000);
-  EXPECT_FALSE(GenerateProxy(definition, {"Removed"}, "avkon.dso", "avkon.dll")
-                   .ok());
+  EXPECT_FALSE(
+      GenerateProxy(definition, {"Removed"}, "avkon.dso", "avkon.dll").ok());
   EXPECT_FALSE(ParseExports("EXPORTS\nLive @ 1 DATA 4\n").ok());
 }
 

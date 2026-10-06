@@ -117,17 +117,23 @@ py::bytes BuildApplicationSis(
     const py::bytes& data,
     const std::vector<std::pair<std::string, py::bytes>>& files, uint32_t uid,
     const std::string& name, const std::string& vendor,
-    const std::string& executable_name, const std::array<int32_t, 3>& version) {
+    const std::string& executable_name, const std::array<int32_t, 3>& version,
+    const std::vector<std::pair<std::string, py::bytes>>& library_files) {
   const std::string bytes = data;
   std::vector<symbian::sis::ApplicationFile> assets;
   assets.reserve(files.size());
   for (const auto& [target, contents] : files) {
     assets.push_back({target, std::string(contents)});
   }
+  std::vector<symbian::sis::ApplicationFile> libraries;
+  for (const auto& [target, contents] : library_files) {
+    libraries.push_back({target, std::string(contents)});
+  }
   const symbian::sis::PackageOptions options{uid, name, vendor, executable_name,
                                              version};
   return py::bytes(symbian::python::ValueWithoutGil([&] {
-    return symbian::sis::BuildApplicationPackage(bytes, assets, options);
+    return symbian::sis::BuildApplicationPackage(bytes, assets, options,
+                                                 libraries);
   }));
 }
 
@@ -216,7 +222,8 @@ PYBIND11_MODULE(_native, module) {
   using symbian::e32::ImportSlot;
   py::class_<ImportSlot>(module, "E32ImportSlot")
       .def_readonly("code_offset", &ImportSlot::code_offset)
-      .def_readonly("ordinal", &ImportSlot::ordinal);
+      .def_readonly("ordinal", &ImportSlot::ordinal)
+      .def_readonly("addend", &ImportSlot::addend);
   py::class_<ImportBlock>(module, "E32ImportBlock")
       .def_readonly("dll", &ImportBlock::dll)
       .def_readonly("slots", &ImportBlock::slots);
@@ -295,11 +302,13 @@ PYBIND11_MODULE(_native, module) {
              py::arg("name"), py::arg("vendor"), py::arg("executable_name"),
              py::arg("version") = std::array<int32_t, 3>{1, 0, 0},
              "Build a registered unsigned SISX, releasing the GIL.");
-  module.def("build_application_sis", &BuildApplicationSis, py::arg("data"),
-             py::arg("files"), py::arg("uid"), py::arg("name"),
-             py::arg("vendor"), py::arg("executable_name"),
-             py::arg("version") = std::array<int32_t, 3>{1, 0, 0},
-             "Build a localized application SISX, releasing the GIL.");
+  module.def(
+      "build_application_sis", &BuildApplicationSis, py::arg("data"),
+      py::arg("files"), py::arg("uid"), py::arg("name"), py::arg("vendor"),
+      py::arg("executable_name"),
+      py::arg("version") = std::array<int32_t, 3>{1, 0, 0},
+      py::arg("libraries") = std::vector<std::pair<std::string, py::bytes>>{},
+      "Build a localized application SISX, releasing the GIL.");
   module.def("build_svg_mif", &BuildSvgMif, py::arg("data"),
              "Compile a bounded SVG icon into MIF, releasing the GIL.");
   module.def("inspect_sis", &InspectSis, py::arg("data"),

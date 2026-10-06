@@ -128,7 +128,7 @@ absl::StatusOr<uint32_t> ExceptionDescriptorOffset(
       const size_t source = code.offset + address - code.address;
       if (Read32(elf, source) != exidx->address ||
           Read32(elf, source + 4) != exidx->address + exidx->size ||
-          Read32(elf, source + 8) != code.address ||
+          (Read32(elf, source + 8) & ~uint32_t{1}) != code.address ||
           Read32(elf, source + 12) != code.address + code.size) {
         return absl::DataLossError("Exception descriptor bounds mismatch");
       }
@@ -208,7 +208,8 @@ absl::Status CheckRelocations(std::string_view elf,
       // GOT_PREL references remain PC-relative; only their GOT words need
       // loader fixups. MOVW/MOVT and other dynamic contracts stay unsupported.
       if (type != 2 && type != 1 && type != 3 && type != 10 && type != 28 &&
-          type != 29 && type != 30 && type != 38 && type != 42 && type != 96) {
+          type != 29 && type != 30 && type != 38 && type != 41 && type != 42 &&
+          type != 96) {
         return absl::UnimplementedError("Unsupported ARM relocation type");
       }
       if (type == 38 && target.name != ".init_array" &&
@@ -245,10 +246,28 @@ absl::Status CheckRelocations(std::string_view elf,
         }
         const auto object = imports->objects.find(*name);
         if (object != imports->objects.end()) {
-          if (symbol_type != 1 || type != 96 || target_in_data ||
-              location % 4) {
+          const auto pointer = imports->code_object_pointers.find(location);
+          if (type == 2 && pointer != imports->code_object_pointers.end()) {
+            if (symbol_type != 1 || target_in_data || target.type == 8 ||
+                location % 4 ||
+                Read32(elf, target.offset + location - target.address) !=
+                    pointer->second) {
+              return absl::DataLossError(
+                  "Invalid retained imported-object pointer");
+            }
+            continue;
+          }
+          if (symbol_type != 1 || (type != 96 && type != 41) ||
+              target_in_data || location % 4) {
             return absl::UnimplementedError(
                 "Imported object requires a code GOT_PREL reference");
+          }
+          if (type == 41 && (target.name != ".ARM.extab" ||
+                             location + Read32(elf, target.offset + location -
+                                                        target.address) !=
+                                 code.address + object->second)) {
+            return absl::DataLossError(
+                "EHABI TARGET2 references the wrong imported GOT slot");
           }
           continue;  // The loader resolves the validated GOT slot by ordinal.
         }
@@ -257,6 +276,17 @@ absl::Status CheckRelocations(std::string_view elf,
           return absl::UnimplementedError("Unresolved external reference");
         }
         if (type == 2) {
+          const auto code_pointer =
+              imports->code_function_pointers.find(location);
+          if (code_pointer != imports->code_function_pointers.end()) {
+            if (symbol_type != 2 || code_pointer->second != *name ||
+                target.name != ".rodata" || target_in_data ||
+                Read32(elf, target.offset + location - target.address) != 0) {
+              return absl::DataLossError(
+                  "Invalid retained imported-function code pointer");
+            }
+            continue;
+          }
           const auto data_pointer =
               imports->data_function_pointers.find(location);
           if (data_pointer != imports->data_function_pointers.end()) {
@@ -313,11 +343,11 @@ absl::Status CheckRelocations(std::string_view elf,
       if (symbol_type == 2 && symbol_in_data) {
         return absl::DataLossError("Function symbol in non-executable data");
       }
-      if (type == 96 && target_in_data) {
+      if ((type == 96 || type == 41) && target_in_data) {
         return absl::UnimplementedError("GOT_PREL source must be in code");
       }
       if (symbol_in_data != target_in_data && type != 2 && type != 38 &&
-          type != 96) {
+          type != 96 && type != 41) {
         return absl::UnimplementedError(
             "PC-relative reference crosses independently relocated code/data "
             "mappings");
@@ -326,12 +356,25 @@ absl::Status CheckRelocations(std::string_view elf,
         return absl::UnimplementedError(
             "Retained relocations targeting the local GOT unsupported");
       }
-      if (type == 96) {  // R_ARM_GOT_PREL: GOT(S) + A - P, already linked.
+      if (type == 96 || type == 41) {  // GOT(S) + A - P, already linked.
         if (local_got_index == 0 || location % 4) {
           return absl::DataLossError(
               "Missing local GOT or unaligned reference");
         }
         const uint32_t value = Read32(elf, sym + 4);
+        if (type == 41) {
+          // Clang EHABI uses TARGET2 with LLD's GOT-relative semantics.
+          // Other TARGET2 modes and uses remain unsupported.
+          const Section& got = sections[local_got_index];
+          const uint32_t slot =
+              location + Read32(elf, target.offset + location - target.address);
+          if (target.name != ".ARM.extab" || slot % 4 || slot < got.address ||
+              !Within(got.size, slot - got.address, 4) ||
+              Read32(elf, got.offset + slot - got.address) != value) {
+            return absl::UnimplementedError(
+                "TARGET2 requires an EHABI local GOT reference");
+          }
+        }
         const Section& owner = sections[index];
         const uint32_t target_address = symbol_type == 2 ? address : value;
         bool lifecycle_boundary = false;
@@ -874,7 +917,8 @@ absl::StatusOr<std::string> ConvertExecutable(
     }
     for (const auto& block : imports.blocks) {
       for (const auto& slot : block.slots) {
-        Put32(bytes, header_size + slot.code_offset, slot.ordinal);
+        Put32(bytes, header_size + slot.code_offset,
+              slot.ordinal | (slot.addend << 16));
       }
     }
     Put32(bytes, 84, static_cast<uint32_t>(imports.blocks.size()));
@@ -1049,7 +1093,7 @@ absl::StatusOr<std::string> ConvertEka1Executable(
       if (slot.code_offset != location) {
         return absl::DataLossError("EKA1 imports require a contiguous IAT");
       }
-      Put32(code, location, slot.ordinal);
+      Put32(code, location, slot.ordinal | (slot.addend << 16));
       location += 4;
     }
     code.append(4, '\0');
@@ -1156,8 +1200,9 @@ absl::StatusOr<ImageInfo> InspectImage(std::string_view bytes) {
     const size_t p = header_size + offset;
     const uint32_t exidx_base = Read32(bytes, p);
     const uint32_t exidx_limit = Read32(bytes, p + 4);
-    if (Read32(bytes, p + 8) != base || Read32(bytes, p + 12) != base + size ||
-        exidx_base < base || exidx_base % 4 || exidx_limit <= exidx_base ||
+    if ((Read32(bytes, p + 8) & ~uint32_t{1}) != base ||
+        Read32(bytes, p + 12) != base + size || exidx_base < base ||
+        exidx_base % 4 || exidx_limit <= exidx_base ||
         (exidx_limit - exidx_base) % 8 || exidx_limit > base + size) {
       return absl::DataLossError("Invalid E32 exception descriptor bounds");
     }

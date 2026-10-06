@@ -73,7 +73,11 @@ def inspect_image(path: Path) -> dict:
         {
             "dll": block.dll,
             "slots": [
-                {"code_offset": slot.code_offset, "ordinal": slot.ordinal}
+                {
+                    "code_offset": slot.code_offset,
+                    "ordinal": slot.ordinal,
+                    **({"addend": slot.addend} if slot.addend else {}),
+                }
                 for slot in block.slots
             ],
         }

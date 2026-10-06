@@ -60,7 +60,8 @@ absl::StatusOr<std::string> BuildRegisteredPackage(
 // Targets use the install-drive placeholder and a fixed application subtree.
 absl::StatusOr<std::string> BuildApplicationPackage(
     std::string_view executable, const std::vector<ApplicationFile>& assets,
-    const PackageOptions& options);
+    const PackageOptions& options,
+    const std::vector<ApplicationFile>& libraries = {});
 
 // Wraps a bounded project SVG in a deterministic, gzip-backed MIF icon.
 absl::StatusOr<std::string> BuildSvgMif(std::string_view svg);

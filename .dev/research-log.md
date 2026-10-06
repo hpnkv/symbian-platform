@@ -7165,3 +7165,38 @@ linking a removed name. The 8 native SDK GTests pass; original Avkon parsing
 and the owned C++ style checker pass. No original DEF was rewritten and no
 firmware implementation was copied. Continued import staging and public-header
 acceptance remain in progress.
+
+### 2026-10-06: frozen native object and pointer imports; project-DLL SIS support
+
+Authentic frozen DEFs omit DATA for Itanium `_ZTI`, `_ZTV` and `_ZTS` objects.
+The native parser now recognizes those guaranteed object manglings while
+preserving original names, ordinals and holes. Full EUSER imports were rebuilt
+with that correction; an old candidate proxy had mislabeled CActive RTTI as a
+function. Original header presence alone did not establish the ELF ABI.
+
+The E32 converter now validates eager read-only imported-object and function
+pointer words, including vtable function references with no PLT entry. Object
+addends use the original 16-bit E32 import-word encoding, verified against
+`e32image/imgdump.cpp`, `rombuild/r_build.cpp` and the independent EKA2L1
+loader. Narrow TEXTREL acceptance requires validated ordinal pointer slots;
+unknown relocations remain rejected. EHABI TARGET2 references validate their
+GOT-relative target. The exception descriptor accepts the original base bit
+selecting EHABI v2 PREL31 tables; base and bounds remain checked.
+
+Native SIS construction accepts a separate validated application-DLL payload
+list. Kernel/architecture/capability checks and distinct resource restrictions
+remain enforced. No firmware DLL implementations were bundled.
+
+Validation on macOS arm64: E32, SDK and SIS native suites pass (3 CTest suites).
+The real relocated games/static-DLL examples, malformed read-only vtable
+relocations and inventory configuration/payload controls pass 22 Pytests.
+The in-project static/DLL/executable example also exits normally on preserved
+RM-807 `rm807-113.010.1508` / Dynarmic, with its DLL automatically staged. This
+is named-firmware emulator evidence, not physical-device compatibility.
+Logs and disposable runtime results are under ignored `.symbian/sdk-surface/`.
+
+The expanded original-header canaries still expose unresolved generated Avkon
+resources and Open C/GLib include-contract issues. Native leave startup and
+personality work is being validated separately; no general exception-support
+claim or release follows from this checkpoint. Qt modules, portable libraries,
+remaining manifest coverage, Linux and complete-bundle acceptance remain open.
