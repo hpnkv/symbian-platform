@@ -48,4 +48,14 @@ function(symbian_sdk_header_canaries)
     symbian_header_canary(symbian_sdk_portable_zlib_cpp_header_canary
       HEADERS ${zlib_headers} LIBRARIES Symbian::PortableZlib)
   endif()
+  if(TARGET Symbian::PortablePng)
+    set(png_headers
+      "${SYMBIAN_SDK_PREFIX}/include/portable/png/png.h"
+      "${SYMBIAN_SDK_PREFIX}/include/portable/png/pngconf.h"
+      "${SYMBIAN_SDK_PREFIX}/include/portable/png/pnglibconf.h")
+    symbian_header_canary(symbian_sdk_portable_png_c_header_canary C
+      HEADERS ${png_headers} LIBRARIES Symbian::PortablePng)
+    symbian_header_canary(symbian_sdk_portable_png_cpp_header_canary
+      HEADERS ${png_headers} LIBRARIES Symbian::PortablePng)
+  endif()
 endfunction()

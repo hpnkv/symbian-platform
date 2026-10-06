@@ -30,6 +30,7 @@ required Abseil status/runtime profile and, where needed, an OS import proxy.
 | `Symbian::GLES2` | `GLES2/gl2.h`, `GLES2/gl2ext.h` | GLES 2.0 shaders and programmable rendering | Original `libglesv2.dll` imports; firmware supplies the implementation. |
 | `Symbian::EGL` | `EGL/egl.h`, `EGL/eglext.h` | EGL 1.4 contexts and native surfaces | Original `libegl.dll` imports; a window surface retains its native `RWindow` until destroyed. |
 | `Symbian::PortableZlib` | `zlib.h`, `zconf.h` | Compression and decompression | Optional zlib 1.3.1 static archive built for both ARM profiles; Open C and guest runtime follow transitively. |
+| `Symbian::PortablePng` | `png.h`, `pngconf.h`, `pnglibconf.h` | PNG encode and decode | Optional libpng 1.6.53 static archive; portable zlib, Open C and runtime follow transitively. |
 
 Graphics targets supply original platform headers and complete frozen ordinal
 imports when linked. They support EKA2 ARMv5T and ARMv6 with soft-float AAPCS.

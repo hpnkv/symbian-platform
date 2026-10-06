@@ -251,7 +251,10 @@ def bundle(args: argparse.Namespace) -> None:
     ):
         shutil.copytree(args.guest / name, output / name, symlinks=False)
     from symbian.project.native_surface import validate_native_payload
-    from symbian.project.portable import validate_zlib_payload
+    from symbian.project.portable import (
+        validate_png_payload,
+        validate_zlib_payload,
+    )
     from symbian.project.qt import validate_qt_payload
     from symbian.project.qtmobility import validate_qt_mobility
 
@@ -259,6 +262,7 @@ def bundle(args: argparse.Namespace) -> None:
     validate_qt_payload(output)
     validate_qt_mobility(output)
     validate_zlib_payload(output)
+    validate_png_payload(output)
     # An installed development SDK can also contain Python/host wrappers;
     # target payloads must never retain those external-host dependencies.
     shutil.rmtree(output / "lib/host", ignore_errors=True)

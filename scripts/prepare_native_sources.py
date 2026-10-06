@@ -29,6 +29,10 @@ EXTRA = {
         "3efd2b6c5ad920873846770a70f9769721e494c8",
     ),
     "zlib": ("madler/zlib", "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf"),
+    "libpng": (
+        "pnggroup/libpng",
+        "4e3f57d50f552841550a36eabbb3fbcecacb7750",
+    ),
 }
 
 

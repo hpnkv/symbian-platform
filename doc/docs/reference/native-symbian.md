@@ -36,6 +36,8 @@ reason. `share/symbian/qt/modules.json` does the same for Qt 4.8.1 public
 modules, and `share/symbian/qtmobility/inventory.json` covers Qt Mobility 1.0.3.
 `share/symbian/portable/zlib.json` separately records source-built zlib; it is
 an optional third-party dependency, not a firmware API.
+`share/symbian/portable/png.json` likewise records source-built libpng and
+its dependency on portable zlib.
 The inventory still records unresolved exports and Belle FP2 version
 equivalence as open work; do not infer a runtime guarantee from a header.
 
@@ -60,6 +62,7 @@ equivalence as open work; do not infer a runtime guarantee from a header.
 | `eikapp.h`, `eikappui.h` | `Symbian::Eikon` | Eikon application framework. |
 | `coecntrl.h`, `coemain.h` | `Symbian::Cone` | CONE controls and environment. |
 | `zlib.h`, `zconf.h` | `Symbian::PortableZlib` | zlib 1.3.1 static archive and matching headers under `include/portable/zlib`. |
+| `png.h`, `pngconf.h`, `pnglibconf.h` | `Symbian::PortablePng` | libpng 1.6.53 static archive and matching headers under `include/portable/png`; depends on portable zlib. |
 
 Qt targets also include `Symbian::QtCore`, `QtGui`, `QtSvg`, `QtScript`,
 `QtXmlPatterns`, `QtDeclarative`, `QtMultimedia`, `QtOpenVG` and `QtTest`.
@@ -99,6 +102,15 @@ compress/decompress/CRC round trip; it exited normally on the preserved
 RM-807/Dynarmic fixture. Other firmware and physical-device execution remain
 unknown. The installed manifest pins every zlib source digest and the license
 notice, and bundle validation requires both architecture archives.
+
+`Symbian::PortablePng` provides upstream libpng 1.6.53 as a separate static
+dependency. It propagates `Symbian::PortableZlib`, which supplies the matching
+zlib headers, library and Open C/runtime closure. The SDK ships its own
+prebuilt upstream `pnglibconf.h` alongside `png.h` and `pngconf.h`; no firmware
+PNG codec is imported. `examples/png_app_classic` encodes and decodes one RGBA
+pixel entirely in memory. It exited normally on the preserved RM-807/Dynarmic
+fixture. Full codec coverage, other firmware and physical-device behavior
+remain unverified.
 
 AppArc, Eikon and CONE retain separate targets, original frozen imports and
 their own public headers. The nine representative framework headers compile

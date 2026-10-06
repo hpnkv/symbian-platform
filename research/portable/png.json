@@ -1,0 +1,45 @@
+{
+  "schema": "symbian.portable-source/v1",
+  "name": "libpng",
+  "version": "1.6.53",
+  "class": "optional third-party dependency",
+  "target": "Symbian::PortablePng",
+  "source": "libpng",
+  "upstream_revision": "4e3f57d50f552841550a36eabbb3fbcecacb7750",
+  "license": "libpng license in LICENSE and png.h",
+  "availability": "Built into the application; depends on PortableZlib, Open C and guest runtime. Firmware runtime compatibility unknown.",
+  "headers": {
+    "png.h": "include/portable/png/png.h",
+    "pngconf.h": "include/portable/png/pngconf.h",
+    "scripts/pnglibconf.h.prebuilt": "include/portable/png/pnglibconf.h"
+  },
+  "archive": "lib/{architecture}/libsymbian_portable_png.a",
+  "dependencies": [
+    "Symbian::PortableZlib"
+  ],
+  "files": {
+    "png.c": "906ce4758a5ec0ef73742c8dc8dc0aa95afea7e210322636ca8b0cf1e230e6b0",
+    "pngerror.c": "ffe1b826e1067b3998d49694e78590ed1a8386b6b05403c90357d8b00935c0c4",
+    "pngget.c": "7fe9aa76f804c564570c36975b7b92c063254820de582447820d2c0d5940f242",
+    "pngmem.c": "9a28d9e571887c72cdbae73d1865c6fba497b6e02adf3a5515edf93fd972df60",
+    "pngpread.c": "230e4e01a9748922a33a936d1c4a2f599d61fc6425b49270197949fd3f38443e",
+    "pngread.c": "b80389b1b6f580bb828dd3992cb28c48fa13a1c8ab7625a4b53a240e49a98433",
+    "pngrio.c": "3c710643f274fd2b4aa2bc154c9dc53a512edae773dda1434f205fb005f2e93e",
+    "pngrtran.c": "185fceeb5b00b8ef55f571cbc7ea5a04a87a146d9a8eabcb9ad9b91b43d80fad",
+    "pngrutil.c": "2042d92c70b587a4ad2cf98f0e74279b12ceb11a88fd1f6622306928c9af68fd",
+    "pngset.c": "9bd59a79669db37b2ecc481439481eb5f49bf77bee0de4b1aba649915609b3d0",
+    "pngtrans.c": "6398722afbad3f54beed1e6fefa4f4a96fa0b6e45dd24120c688f67b740a7eb2",
+    "pngwio.c": "a25def3351807ed3f2e12a02a7801d4208f0033516185f4ad524d804d2f00ce3",
+    "pngwrite.c": "2fef768041d8e4676e500a63fde87e2eceec6bc892bba53ec0b96981669daa98",
+    "pngwtran.c": "6355098f20b9058ab607cebd01f3130c61ac858dceb339c3a7d83407c1067b94",
+    "pngwutil.c": "3167c7e997f8a7db6c6ab4b816298aea0ad3189bea960ece984881cffba92a5f",
+    "png.h": "2689685b19935b98100a4fddc6917b69efe064707aaf44c9b06902c237b54e6c",
+    "pngconf.h": "ae420b1e62447b5faa8ceb7c242534dcb636d4ed1055e465ce48a4f58485f5ff",
+    "pngpriv.h": "f69a9d7474d432e7398f1b9341957a35337e049b8cf269984e953facdd09a53e",
+    "pngdebug.h": "923e849bded3f15a74fa943ed87b423d88ba5699feeed214872fea09997c44fc",
+    "pnginfo.h": "95fd19c965b86c6f279e426b9ee42c62e83af41a372b51fe8feb52a3427cb44d",
+    "pngstruct.h": "3f3ee0f323c4ff02a82db945aafe31b738b31f81c8a4d765df6ed75ae8e205eb",
+    "scripts/pnglibconf.h.prebuilt": "8512fdb052511d821d3c3bfcbe857dcc3e149fab08dae94cf41ca06f26ab8646",
+    "LICENSE": "16d9daaafbf63a31a5bdc91d4600972548fef5aaa1244202393288dbd079c49a"
+  }
+}

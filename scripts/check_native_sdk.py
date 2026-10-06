@@ -62,6 +62,9 @@ ZLIB_CMAKE = """
 symbian_add_executable(zlib_check zlib_check.cc)
 target_link_libraries(zlib_check PRIVATE Symbian::PortableZlib)
 symbian_publish_executable(zlib_check UID3 0xe0000834)
+symbian_add_executable(png_check png_check.cc)
+target_link_libraries(png_check PRIVATE Symbian::PortablePng)
+symbian_publish_executable(png_check UID3 0xe0000835)
 """
 
 EKA1_CMAKE = """cmake_minimum_required(VERSION 3.28)
@@ -127,6 +130,10 @@ def check(sdk: Path) -> None:
             moved / "examples/zlib_app_classic/main.cc",
             example / "zlib_check.cc",
         )
+        shutil.copyfile(
+            moved / "examples/png_app_classic/main.cc",
+            example / "png_check.cc",
+        )
         with (example / "CMakeLists.txt").open("a") as cmake:
             cmake.write(STARTUP_CMAKE + QT_CMAKE + GL_CMAKE + ZLIB_CMAKE)
         eka1 = root / "eka1 application"
@@ -185,6 +192,7 @@ def check(sdk: Path) -> None:
                 "qt_check",
                 "gl_app",
                 "zlib_check",
+                "png_check",
             ):
                 image = (build / "e32" / f"{name}.exe").read_bytes()
                 if image[16:20] != b"EPOC":
@@ -229,7 +237,7 @@ def check(sdk: Path) -> None:
             if result.returncode < 0 or result.returncode in (126, 127):
                 raise RuntimeError(f"Bundled helper cannot run: {tool}")
     print(
-        "Relocated native SDK: ARMv5T and ARMv6 GUI, Qt, GL, zlib and "
+        "Relocated native SDK: ARMv5T and ARMv6 GUI, Qt, GL, zlib, PNG and "
         "shared-startup "
         "E32 builds, plus ARMv5T EKA1 imports, passed"
     )

@@ -107,3 +107,106 @@ def validate_zlib_payload(prefix: Path) -> None:
         archive = prefix / record["archive"].format(architecture=architecture)
         if not archive.is_file() or archive.stat().st_size == 0:
             raise ValueError(f"Portable zlib archive missing: {archive}")
+
+
+def png_manifest(workspace: Path) -> dict:
+    """Verifies every reviewed libpng source and its prebuilt configuration."""
+    record = json.loads((workspace / "research/portable/png.json").read_text())
+    source = workspace / "research/upstream" / record["source"]
+    for name, expected in record["files"].items():
+        path = source / name
+        if (
+            not path.is_file()
+            or hashlib.sha256(path.read_bytes()).hexdigest() != expected
+        ):
+            raise ValueError(
+                f"Pinned portable libpng input missing or changed: {path}"
+            )
+    return record
+
+
+def stage_png_headers(workspace: Path, output: Path) -> None:
+    """Stages the exact libpng headers and license matching its archive."""
+    record = png_manifest(workspace)
+    source = workspace / "research/upstream" / record["source"]
+    for name, destination in record["headers"].items():
+        path = output / destination
+        path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source / name, path)
+    license_path = output / "licenses/portable/libpng-LICENSE.txt"
+    license_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source / "LICENSE", license_path)
+    manifest_path = output / "share/symbian/portable/png.json"
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text(json.dumps(record, indent=2) + "\n")
+
+
+def build_png(workspace: Path, output: Path, compiler: Path) -> None:
+    """Builds both ARM libpng archives against the exported portable zlib."""
+    record = png_manifest(workspace)
+    source = workspace / "research/upstream" / record["source"]
+    for architecture in ("armv5t", "armv6"):
+        with tempfile.TemporaryDirectory(
+            prefix=f"portable-png-{architecture}-"
+        ) as directory:
+            build = Path(directory) / "build"
+            run(
+                [
+                    "cmake",
+                    "-S",
+                    str(workspace / "cpp/symbian/portable/png"),
+                    "-B",
+                    str(build),
+                    "-G",
+                    "Ninja",
+                    "-DCMAKE_TOOLCHAIN_FILE="
+                    f"{output / 'cmake/symbian-arm.cmake'}",
+                    f"-DSYMBIAN_SDK_PREFIX={output}",
+                    f"-DSYMBIAN_TARGET_ARCH={architecture}",
+                    f"-DCMAKE_C_COMPILER={compiler.parent / 'clang'}",
+                    f"-DCMAKE_CXX_COMPILER={compiler}",
+                    f"-DSYMBIAN_PNG_SOURCE={source}",
+                ],
+                cwd=workspace,
+                timeout=120,
+            )
+            run(
+                ["cmake", "--build", str(build), "-j", "6"],
+                cwd=workspace,
+                timeout=120,
+            )
+            destination = output / record["archive"].format(
+                architecture=architecture
+            )
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(build / "libsymbian_portable_png.a", destination)
+
+
+def validate_png_payload(prefix: Path) -> None:
+    """Rejects missing or mismatched installed libpng payloads."""
+    record = json.loads(
+        (prefix / "share/symbian/portable/png.json").read_text()
+    )
+    for name, destination in record["headers"].items():
+        path = prefix / destination
+        if (
+            not path.is_file()
+            or hashlib.sha256(path.read_bytes()).hexdigest()
+            != record["files"][name]
+        ):
+            raise ValueError(
+                f"Portable libpng header missing or changed: {path}"
+            )
+    notice = prefix / "licenses/portable/libpng-LICENSE.txt"
+    if (
+        not notice.is_file()
+        or hashlib.sha256(notice.read_bytes()).hexdigest()
+        != record["files"]["LICENSE"]
+    ):
+        raise ValueError(
+            f"Portable libpng license missing or changed: {notice}"
+        )
+    for architecture in ("armv5t", "armv6"):
+        archive = prefix / record["archive"].format(architecture=architecture)
+        if not archive.is_file() or archive.stat().st_size == 0:
+            raise ValueError(f"Portable libpng archive missing: {archive}")

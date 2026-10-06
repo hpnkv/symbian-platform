@@ -3574,3 +3574,16 @@ libc++/`e32cmn.h` placement new/delete declarations; its pre-change script
 reproduced the same error on the new bundle. Preserve ongoing GLES/EGL work.
 Linux bundle acceptance, other portable dependencies and the 0.2.0 release
 remain open.
+
+2026-10-06 optional libpng slice: `Symbian::PortablePng` now stages pinned
+upstream libpng 1.6.53 public headers/license and source-built ARMv5T/ARMv6
+archives, with transitive portable zlib. The fresh full SDK export passed both
+installed-header canary profiles and payload checks; a macOS arm64 bundle
+assembled and four relocated PNG/zlib example builds converted to E32 on both
+architectures. Root ARM guest and Debug graphs built `png_app_classic`, including
+its E32 output. Its in-memory RGBA encode/decode exited normally on the named
+RM-807 Belle/Dynarmic emulator fixture. Six focused negative/payload tests,
+strict docs and style checks passed. The broad bundle smoke still fails at the
+pre-existing GL/libc++ placement new/delete conflict. Linux acceptance,
+remaining portable dependencies and broad public-manifest ownership remain
+open; 0.2.0 is unpublished, and no physical hardware was operated.

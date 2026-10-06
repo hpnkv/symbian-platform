@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from symbian.project.native_surface import validate_native_payload
-from symbian.project.portable import validate_zlib_payload
+from symbian.project.portable import validate_png_payload, validate_zlib_payload
 from symbian.project.qt import validate_qt_payload
 from symbian.project.qtmobility import validate_qt_mobility
 
@@ -358,6 +358,51 @@ def test_portable_zlib_bundle_rejects_missing_payload(tmp_path):
     )
     with pytest.raises(ValueError, match="Portable zlib header missing"):
         validate_zlib_payload(tmp_path)
+
+
+def test_portable_png_rejects_missing_archive_at_configuration(configure):
+    run, sdk = configure
+    for name in ("zlib", "png"):
+        manifest = sdk / f"share/symbian/portable/{name}.json"
+        manifest.parent.mkdir(parents=True, exist_ok=True)
+        manifest.write_text("{}")
+    for relative in (
+        "include/portable/zlib/zlib.h",
+        "include/portable/zlib/zconf.h",
+        "licenses/portable/zlib-README.txt",
+        "lib/armv6/libsymbian_portable_zlib.a",
+        "include/portable/png/png.h",
+        "include/portable/png/pngconf.h",
+        "include/portable/png/pnglibconf.h",
+        "licenses/portable/libpng-LICENSE.txt",
+    ):
+        path = sdk / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("configuration fixture")
+    result = run(
+        "add_library(Symbian::Runtime INTERFACE IMPORTED GLOBAL)\n"
+        "add_library(Symbian::OpenC INTERFACE IMPORTED GLOBAL)\n"
+        f'include("{ROOT}/symbian/toolchain/cmake/SymbianPortable.cmake")\n'
+        "target_link_libraries(app PRIVATE Symbian::PortablePng)"
+    )
+    assert result.returncode != 0
+    assert "PortablePng is unavailable: missing SDK payload" in result.stderr
+
+
+def test_portable_png_bundle_rejects_missing_header(tmp_path):
+    manifest = tmp_path / "share/symbian/portable/png.json"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text(
+        json.dumps(
+            {
+                "headers": {"png.h": "include/portable/png/png.h"},
+                "files": {"png.h": "0" * 64, "LICENSE": "0" * 64},
+                "archive": "lib/{architecture}/libsymbian_portable_png.a",
+            }
+        )
+    )
+    with pytest.raises(ValueError, match="Portable libpng header missing"):
+        validate_png_payload(tmp_path)
 
 
 @pytest.mark.parametrize("damage", ["header", "definition", "proxy", "private"])

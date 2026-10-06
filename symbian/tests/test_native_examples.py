@@ -209,6 +209,35 @@ def test_portable_zlib_example_uses_source_built_archive(
 
 
 @pytest.mark.parametrize("architecture", ["armv5t", "armv6"])
+def test_portable_png_example_propagates_zlib(tmp_path, architecture):
+    """Builds PNG write/read through libpng and transitive portable zlib."""
+    sdk = AppSdk.load(Path(SDK))
+    source = tmp_path / "portable png classic"
+    shutil.copytree(ROOT / "examples/png_app_classic", source)
+    (source / "sdk-location.json").write_text(
+        json.dumps({"sdk": str(sdk.prefix)})
+    )
+    report = build(
+        source,
+        tmp_path / "output",
+        str(sdk.compiler),
+        str(sdk.linker),
+        architecture=architecture,
+    )
+    imports = {item["dll"] for item in report["e32"]["imports"]}
+    assert {"libc.dll", "euser.dll"} <= imports
+    assert "libz.dll" not in imports
+    assert report["e32"]["architecture"] == architecture
+    assert not report["runtime_verified"]
+    if architecture == "armv6":
+        built = package(source, Path(report["artifact"]), tmp_path / "package")
+        files = inspect_package(Path(built["artifact"]))["files"]
+        assert [item["target"] for item in files] == [
+            "!:\\sys\\bin\\png_app_classic.exe"
+        ]
+
+
+@pytest.mark.parametrize("architecture", ["armv5t", "armv6"])
 def test_apparc_example_links_original_application_service(
     tmp_path, architecture
 ):

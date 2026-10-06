@@ -13,6 +13,19 @@ if(EXISTS "${SYMBIAN_SDK_PREFIX}/share/symbian/portable/zlib.json")
     Symbian::Runtime Symbian::OpenC)
   add_library(Symbian::PortableZlib ALIAS SymbianPortableZlib)
 
+  if(EXISTS "${SYMBIAN_SDK_PREFIX}/share/symbian/portable/png.json")
+    add_library(SymbianPortablePng STATIC IMPORTED)
+    set_target_properties(SymbianPortablePng PROPERTIES
+      IMPORTED_LOCATION
+        "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_portable_png.a"
+      SYMBIAN_PORTABLE_PNG TRUE)
+    target_include_directories(SymbianPortablePng SYSTEM INTERFACE
+      "${SYMBIAN_SDK_PREFIX}/include/portable/png")
+    target_link_libraries(SymbianPortablePng INTERFACE
+      Symbian::PortableZlib)
+    add_library(Symbian::PortablePng ALIAS SymbianPortablePng)
+  endif()
+
   function(_symbian_validate_portable_zlib directory)
     # This deferred function can run after SymbianApp was included from inside
     # another function, whose local path variables have gone out of scope.
@@ -32,12 +45,17 @@ if(EXISTS "${SYMBIAN_SDK_PREFIX}/share/symbian/portable/zlib.json")
       _symbian_graphics_walk(${target} ROOT)
       get_property(nodes GLOBAL PROPERTY SYMBIAN_GRAPHICS_WALK)
       set(portable FALSE)
+      set(png FALSE)
       set(device FALSE)
       foreach(node IN LISTS nodes)
         get_target_property(portable_node ${node} SYMBIAN_PORTABLE_ZLIB)
+        get_target_property(png_node ${node} SYMBIAN_PORTABLE_PNG)
         get_target_property(native_node ${node} SYMBIAN_NATIVE_API)
         if(portable_node)
           set(portable TRUE)
+        endif()
+        if(png_node)
+          set(png TRUE)
         endif()
         if(native_node STREQUAL "Native_libz")
           set(device TRUE)
@@ -54,6 +72,19 @@ if(EXISTS "${SYMBIAN_SDK_PREFIX}/share/symbian/portable/zlib.json")
           if(NOT EXISTS "${required}" AND NOT SYMBIAN_WORKSPACE_INPUTS)
             message(FATAL_ERROR
               "${target}: Symbian::PortableZlib is unavailable: missing SDK payload ${required}. Reinstall the complete SDK.")
+          endif()
+        endforeach()
+      endif()
+      if(png)
+        get_target_property(png_archive SymbianPortablePng IMPORTED_LOCATION)
+        foreach(required IN ITEMS "${png_archive}"
+            "${zlib_prefix}/include/portable/png/png.h"
+            "${zlib_prefix}/include/portable/png/pngconf.h"
+            "${zlib_prefix}/include/portable/png/pnglibconf.h"
+            "${zlib_prefix}/licenses/portable/libpng-LICENSE.txt")
+          if(NOT EXISTS "${required}" AND NOT SYMBIAN_WORKSPACE_INPUTS)
+            message(FATAL_ERROR
+              "${target}: Symbian::PortablePng is unavailable: missing SDK payload ${required}. Reinstall the complete SDK.")
           endif()
         endforeach()
       endif()

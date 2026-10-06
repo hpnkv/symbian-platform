@@ -7551,3 +7551,40 @@ did not cause it. The prior bundle lacked the current Qt example and could
 not serve as a comparable control. Preserve the concurrent GLES/EGL work and
 keep full bundle acceptance open until that GL error is resolved. Linux host
 bundle validation and physical-device execution are also unverified.
+
+### 2026-10-06: optional source-built libpng 1.6.53
+
+The Qt-bundled libpng 1.5.4 source has Qt-specific `pngconf.h` changes and
+requires `qconfig.h`, so it cannot serve as a standalone portable library
+unchanged. The separately pinned upstream libpng 1.6.53 commit
+`4e3f57d50f552841550a36eabbb3fbcecacb7750` supplies 15 C sources,
+original public `png.h`/`pngconf.h`, prebuilt `pnglibconf.h` and the original
+license. `research/portable/png.json` records exact source and payload hashes,
+version, classification, dependency and target. Its checkout remains ignored.
+`Symbian::PortablePng` builds ARMv5T and ARMv6 archives from that source and
+propagates `Symbian::PortableZlib`, Open C and the guest runtime. The installed
+SDK and bundle validators reject missing or changed public headers, license
+and either archive. This is an optional third-party dependency, not a claim
+that libpng ships in Nokia firmware.
+
+The fresh `prepare-app-sdk` export at ignored
+`.symbian/sdk-surface/png-fresh-export` completed both installed-header canary
+profiles and portable payload validation. Root `guest-probes-armv6` configured
+after a 194.4-second shared-input refresh, then built `png_app_classic`; the
+root Debug graph built `png_app_classic_e32`. A macOS arm64 bundle assembled
+from the fresh export and previously validated host tools. Against its
+relocated `sdk.json`, the PNG and zlib classic examples passed four ARMv5T/
+ARMv6 compile, link and E32 conversion cases. Six focused negative/payload
+controls passed; strict MkDocs, Black/Ruff, owned C++ style and diff whitespace
+checks passed. The PNG example writes and reads one RGBA pixel in memory; on
+the preserved `nokia808` RM-807 Belle firmware fixture with Dynarmic, its
+process exited with guest type and reason zero. This shows a bounded named-
+firmware emulator result, not physical-device compatibility or all libpng APIs.
+
+The complete-bundle `check_native_sdk.py` smoke still fails while compiling
+the existing GL example: libc++ placement `operator new/delete` declarations
+conflict with original `e32cmn.h`/`e32cmn.inl`. The same failure was already
+reproduced with the pre-change smoke script during the zlib slice. The new
+bundle log is ignored at `.symbian/sdk-surface/png-fresh-smoke.log`; no GL
+source was changed here. Linux bundle acceptance and firmware equivalence for
+other releases remain open. Do not publish 0.2.0 on this evidence.
