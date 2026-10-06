@@ -18,18 +18,20 @@ from symbian.emulator.background import (
     background_environment,
     executable_for_session,
 )
+from symbian.emulator.launch import session
 from symbian.packaging.registration import compile_registration
 from symbian.tests.test_guest_gui import _ready
 
 GOLDEN = os.environ.get("SYMBIAN_QT_GOLDEN_ROOT")
 BUILD = os.environ.get("SYMBIAN_QT_BUILD")
 EMULATOR = os.environ.get("SYMBIAN_EKA2L1_EXECUTABLE")
-pytestmark = pytest.mark.skipif(
+direct = pytest.mark.skipif(
     not all((GOLDEN, BUILD, EMULATOR)),
     reason="Set Qt build, preserved RM-807 firmware and emulator executable",
 )
 
 
+@direct
 @pytest.mark.parametrize("backend", ("dyncom", "dynarmic"))
 def test_original_qt_button_and_shutdown(tmp_path, backend):
     """Checks delivered pixels, clicked→quit, destructors and host teardown."""
@@ -98,49 +100,68 @@ def test_original_qt_button_and_shutdown(tmp_path, backend):
                 stderr=subprocess.STDOUT,
             )
             try:
-                deadline = time.monotonic() + 60
-                attempt = 0
-                while True:
-                    assert process.poll() is None
-                    name = f"qt-button-{attempt}"
-                    frame = _ready(lambda name=name: control.capture(name))
-                    attempt += 1
-                    assert frame["source"] == "eka2l1-screen-texture"
-                    with Image.open(frame["path"]) as captured:
-                        image = captured.convert("RGB").resize((360, 640))
-                        # Text needs contrast against the Plastique button;
-                        # a black frame during startup must not pass.
-                        histogram = (
-                            image.convert("L")
-                            .crop((90, 290, 270, 350))
-                            .histogram()
-                        )
-                        dark = sum(histogram[:100])
-                        light = sum(histogram[150:])
-                    if 150 < dark < 3000 and light > 6000:
-                        shutil.copyfile(frame["path"], tmp_path / "button.png")
-                        break
-                    assert time.monotonic() < deadline
-                    time.sleep(0.1)
-                time.sleep(0.5)
-                assert control.status()["process_exits"] == []
-                _ready(lambda: control.pointer(180, 320, "press"))
-                time.sleep(0.2)
-                _ready(lambda: control.pointer(180, 320, "release"))
-                assert process.wait(timeout=30) == 0
-                final = json.loads(
-                    endpoint.with_name(
-                        endpoint.name + ".status.json"
-                    ).read_text()
-                )
-                exits = final["result"]["process_exits"]
-                assert any(
-                    item["uid"] == 0xE0000821
-                    and item["reason"] == 0
-                    and item["type"] == 0
-                    for item in exits
-                ), exits
+                _button_and_shutdown(process, control, tmp_path)
             finally:
                 if process.poll() is None:
                     process.kill()
                     process.wait(timeout=10)
+
+
+def _button_and_shutdown(process, control, tmp_path):
+    """Requires readable guest text, delivered input and normal guest exit."""
+    deadline = time.monotonic() + 60
+    attempt = 0
+    while True:
+        assert process.poll() is None
+        name = f"qt-button-{attempt}"
+        frame = _ready(lambda name=name: control.capture(name))
+        attempt += 1
+        assert frame["source"] == "eka2l1-screen-texture"
+        with Image.open(frame["path"]) as captured:
+            image = captured.convert("RGB").resize((360, 640))
+            # Text needs contrast against the Plastique button;
+            # a black frame during startup must not pass.
+            histogram = image.convert("L").crop((90, 290, 270, 350)).histogram()
+            dark = sum(histogram[:100])
+            light = sum(histogram[150:])
+        if 150 < dark < 3000 and light > 6000:
+            shutil.copyfile(frame["path"], tmp_path / "button.png")
+            break
+        assert time.monotonic() < deadline
+        time.sleep(0.1)
+    time.sleep(0.5)
+    assert control.status()["process_exits"] == []
+    _ready(lambda: control.pointer(180, 320, "press"))
+    time.sleep(0.2)
+    _ready(lambda: control.pointer(180, 320, "release"))
+    assert process.wait(timeout=30) == 0
+    final = json.loads(
+        control.endpoint.with_name(
+            control.endpoint.name + ".status.json"
+        ).read_text()
+    )
+    exits = final["result"]["process_exits"]
+    assert any(
+        item["uid"] == 0xE0000821 and item["reason"] == 0 and item["type"] == 0
+        for item in exits
+    ), exits
+
+
+@pytest.mark.skipif(
+    not os.environ.get("SYMBIAN_QT_LAUNCH_PROJECT"),
+    reason="Set SYMBIAN_QT_LAUNCH_PROJECT with a selected SDK and firmware",
+)
+@pytest.mark.parametrize("backend", ("dyncom", "dynarmic"))
+def test_sdk_qt_launch_stages_resources_and_exits(tmp_path, backend):
+    """Exercises the SDK supervisor rather than staging resources by hand."""
+    project = Path(os.environ["SYMBIAN_QT_LAUNCH_PROJECT"]).resolve()
+    with session(project, project=project, backend=backend) as active:
+        manifest = json.loads((active.directory / "launch.json").read_text())
+        assert any(
+            asset.endswith("qt_app_reg.rsc")
+            for asset in manifest["application"]["assets"]
+        )
+        _button_and_shutdown(active.process, Control(active.endpoint), tmp_path)
+    final = json.loads((active.directory / "launch.json").read_text())
+    assert final["frontend_exit"] == 0
+    assert final["inputs_unchanged"]

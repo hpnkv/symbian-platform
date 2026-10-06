@@ -6820,3 +6820,22 @@ Fresh original-header XML contains 5,395 indexed public/protected members,
 with 712 still missing semantic descriptions. The audit excludes private
 members and friends and does not claim complete parameter/class coverage.
 No new generated descriptions were published in this release correction.
+
+### 2026-10-06 — Published downloads and Qt automatic-launch resources
+
+v0.1.6 release run 37394306675 succeeded after full rehearsal 37391715757.
+Clean PyPI wheel and public native/emulator downloads build/package/sign
+all three guides on both owner hosts. hello_time and gui_app run normally.
+Qt app-run fails with supervisor -11; its launch assets are empty, unlike
+the previous direct test which compiles and stages registration resources.
+Remove the standalone-only resource condition inside the SDK session.
+The bundled Qt source now renders, accepts the button tap and shuts down
+normally through the actual SDK supervisor, with both Dyncom/Dynarmic on
+macOS arm64 and Linux x86_64. Fresh native SDK inputs remain from public
+0.1.6; the candidate launcher is source code, so this is patch acceptance,
+not proof of a yet-unpublished wheel. The new opt-in supervisor regression
+uses SYMBIAN_QT_LAUNCH_PROJECT and checks staged resources as well as pixels,
+input, guest/host exit and baseline integrity. Local/remote log paths:
+/tmp/symbian-qt-resource-fix-macos.log and
+/tmp/symbian-qt-resource-fix-linux.log. Exact CLion ARMv6 preset and its
+fresh /tmp configuration both succeed; the selected SDK supplies Qt targets.

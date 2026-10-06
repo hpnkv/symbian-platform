@@ -161,12 +161,14 @@ def test_standalone_supervisor_does_not_require_application_exit(
     assert launch.main(["--standalone", "--root", str(tmp_path)]) == 0
 
 
-@pytest.mark.parametrize("implicit", [False, True])
+@pytest.mark.parametrize(
+    "standalone,implicit", [(True, False), (True, True), (False, False)]
+)
 @pytest.mark.parametrize("registered", [False, True])
-def test_standalone_stages_context_application_without_running(
-    monkeypatch, tmp_path, implicit, registered
+def test_launch_stages_application_resources(
+    monkeypatch, tmp_path, standalone, implicit, registered
 ):
-    """Build and stage an explicit or working-directory app for manual run."""
+    """Automatic and menu launches receive the same registration resources."""
     import time
     from types import SimpleNamespace
 
@@ -221,16 +223,19 @@ def test_standalone_stages_context_application_without_running(
     )
     monkeypatch.setattr(launch.Session, "wait_ready", lambda *_, **kwargs: None)
     with launch.session(
-        tmp_path, project=None if implicit else project, standalone=True
+        tmp_path, project=None if implicit else project, standalone=standalone
     ) as active:
         child_path = active.directory / "child.json"
         deadline = time.monotonic() + 5
         while not child_path.exists() and time.monotonic() < deadline:
             time.sleep(0.01)
         command = json.loads(child_path.read_text())
-        assert "--run" not in command["argv"]
         assert builds == [project]
-        assert command["argv"] == ["--device", "test"]
+        assert command["argv"] == [
+            "--device",
+            "test",
+            *([] if standalone else ["--run", "C:\\sys\\bin\\demo.exe"]),
+        ]
         target = Path(command["root"]) / "data/c/sys/bin/demo.exe"
         assert target.read_bytes() == b"compiled E32"
         resource = (
@@ -244,7 +249,7 @@ def test_standalone_stages_context_application_without_running(
         assert active.image["uid3"] == 3758098449
     saved = json.loads((active.directory / "launch.json").read_text())
     assert saved["application"]["project"] == str(project)
-    assert saved["application"]["auto_run"] is False
+    assert saved["application"]["auto_run"] is not standalone
     assert saved["e32_sha256"] == digest(project / ".symbian/build/demo.exe")
     assert saved["elf_sha256"] == digest(project / ".symbian/build/demo.elf")
     assert saved["inputs_unchanged"]

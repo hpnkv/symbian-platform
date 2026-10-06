@@ -3246,3 +3246,23 @@ Nothing from 0.1.5 was published. Preparing 0.1.6; its complete manual workflow
 will run before final tagging. Original documentation audit: 712 of 5,395
 indexed public/protected members lack descriptions; broader class/parameter
 coverage and mutable-reference/nullability migration remain outstanding.
+
+### SDK 0.1.6 publication and installed-guide acceptance — 2026-10-06
+
+Release 37394306675 succeeded: v0.1.6 publishes 26 GitHub assets and PyPI
+publishes 16 wheels (CPython 3.11–3.14, both macOS/Linux architectures) plus
+sdist. The complete rehearsal 37391715757 and host, emulator and documentation
+workflows succeeded. Emulator 0.1.0 remains independently released.
+
+Clean public wheel/native/emulator installations on macOS arm64 and Linux
+x86_64 build, inspect, package and sign hello_time, gui_app and the bundled
+qt_app. hello_time/gui_app rendering, input, clear and normal exit pass.
+Qt automatic launch exposed omitted registration resources in app run;
+menu staging and direct Qt tests had supplied them. Both launch modes now
+stage the same resources. Actual SDK supervisor Qt tests pass both CPU
+backends on both hosts (four cases), checking readable rendered text,
+button input, guest reason zero, frontend exit zero and unchanged fixture.
+Launcher regressions: 15 passed, 6 optional skips. Published 0.1.6 Qt app-run
+still needs the patch; preparing a follow-up release. Physical-device runs
+remain untested. The exact local CLion ARMv6 preset configures and builds,
+and configuring the same preset in a fresh /tmp build tree succeeds.

@@ -329,11 +329,7 @@ def session(
         target = drive / "sys/bin" / f"{name}.exe"
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(build / f"{name}.exe", target)
-        if (
-            standalone
-            and project_manifest
-            and "application" in project_manifest
-        ):
+        if project_manifest and "application" in project_manifest:
             from symbian.packaging.ca_bundle import selected_bundle
             from symbian.packaging.registration import compile_registration
 

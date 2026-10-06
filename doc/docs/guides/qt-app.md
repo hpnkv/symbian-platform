@@ -53,16 +53,20 @@ copy instead.
 
 ## Run the button
 
-Select your imported firmware and stage the registered application:
+Select your imported firmware and launch the application:
 
 ```sh
-symbian emu run --project "$qt_project" --firmware my-phone --backend dynarmic
+symbian app run --project "$qt_project" --firmware my-phone --backend dynarmic
 ```
 
-Open **Symbian Qt** in the emulator's application list. The button reads
-“Hello from Symbian Qt / Tap to close”; a tap exits the guest application.
-Close the emulator window when finished. `--backend dyncom` selects the
-other CPU backend.
+The SDK stages the executable and its application resources, then opens the
+full-screen button. It reads “Hello from Symbian Qt / Tap to close”; a tap
+exits the guest application and closes the emulator. `--backend dyncom`
+selects the other CPU backend.
+
+To browse the firmware's application list instead, use
+`symbian emu run --project "$qt_project" --firmware my-phone`, open
+**Symbian Qt**, and close the emulator window when finished.
 
 The application constructs its widgets after QApplication and connects the
 button's signal to the application slot:
