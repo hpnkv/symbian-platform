@@ -8005,3 +8005,28 @@ strict documentation build passed. The public manifest inventory still has
 classic UI, graphics, imaging, security, device services and other public
 families remain; SDL and cross-host bundle acceptance are also open. Do not
 publish 0.2.0 as complete native coverage yet.
+
+### 2026-10-06: original Versit, vCard and vCalendar imports
+
+The pinned `organizer/pimappsupport/vcardandvcal/group/BLD.INF` public exports
+include 16 previously unowned original headers. The three MMPs identify
+`versit.dll`, `vcard.dll` and `vcal.dll` independently, and their selected
+`VERSITv2U.DEF`, `VCARDU.DEF` and `VCALv2U.DEF` tables provide complete frozen
+interfaces with original ordinals. VCard and VCal depend on Versit; the
+Versit MMP lists EUSER, file server, streams, BAFL, ConArc and character
+conversion. The target dependency closure supplies available public API
+requirements, while the original implementation dependency list remains in
+the inventory. A public `vstaticutils.h` member declaration redundantly
+qualifies its own class; a recorded edit removes only that qualification for
+Clang, preserving the ABI.
+
+The relocated SDK staged and validated the new headers and import proxies.
+A disposable consumer included all three public entry headers, linked
+`CParserVCard::NewL` and `CParserVCal::NewL` through only VCard and VCal
+selection, then converted to E32 on ARMv6. No parser call was run. The
+preserved RM-807 Belle Z-drive copies contain all three named DLL files, but
+their export ordinals and behavior were not checked against this DEF selection.
+Independent installed-header canaries passed on ARMv5T and ARMv6 (1,635
+objects per architecture). The inventory now has 1,166 public export records
+without reviewed delivery/target ownership. Original header/license provenance
+remains tied to the pinned source snapshot; Belle FP2 compatibility is unknown.

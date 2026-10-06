@@ -3771,3 +3771,15 @@ ordinal equivalence and API behavior are unverified. Fifty-four focused tests
 and strict docs passed. Public export records without reviewed ownership:
 1,182. Broad remaining families, SDL, fresh automatic source export,
 macOS/Linux bundle acceptance and 0.2.0 publication remain open.
+
+2026-10-06 Versit/vCard/vCalendar slice: Three pinned MMP/DEF pairs now ship
+complete frozen `versit.dll`, `vcard.dll` and `vcal.dll` import targets and
+16 previously unowned original public headers. The relocated installed SDK
+passed payload validation, 1,635 independent public-header canary objects on
+each ARMv5T and ARMv6, and an ARMv6 linked/E32-converted vCard/vCalendar
+consumer. Its calls were not executed. The selected RM-807 Belle Z-drive
+copies contain all three DLL filenames, but frozen ordinal equivalence and
+runtime behavior are unverified. Fifty-four focused inventory/surface tests
+passed. Public export records without reviewed ownership: 1,166. Remaining
+manifest groups, SDL, fresh automatic source export, cross-host bundles and
+0.2.0 publication are open.

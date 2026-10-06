@@ -248,6 +248,14 @@ selects a different DEF under `SYMBIAN_CALENDAR_ENHANCEDSEARCHANDSORT`;
 complete Belle FP2 ABI equivalence and other firmware availability remain
 unknown.
 
+`Symbian::Versit`, `Symbian::VCard` and `Symbian::VCal` supply the original
+`<versit.h>`, `<vcard.h>` and `<vcal.h>` API families and their separate frozen
+DLL imports. VCard and VCal select Versit and its stream, BAFL and character
+conversion prerequisites transitively. A relocated installed-SDK consumer
+including all three headers linked `CParserVCard::NewL` and
+`CParserVCal::NewL` through VCard and VCal and converted to E32. It was not
+executed; parsing behavior and other firmware remain unverified.
+
 `Symbian::Messaging` supplies the original `<msvapi.h>`, `<msvstd.h>` and
 `<mtclbase.h>` headers with frozen `msgs.dll` imports. The direct
 `examples/messaging_app_classic` consumer opens and closes a `CMsvSession`

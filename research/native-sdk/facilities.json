@@ -3027,6 +3027,87 @@
         "inetprotutil",
         "bafl"
       ]
+    },
+    {
+      "target": "Versit",
+      "dll": "versit.dll",
+      "headers": [
+        "versit.h",
+        "versit.inl",
+        "vprop.h",
+        "vprop.inl",
+        "vtoken.h",
+        "vuid.h",
+        "vstaticutils.h",
+        "vutil.h",
+        "versittls.h",
+        "vobserv.h"
+      ],
+      "dependencies": [
+        "Bafl",
+        "StreamsNative",
+        "CharConv"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "organizer/pimappsupport/vcardandvcal/eabi/VERSITv2U.DEF",
+      "mmp": "organizer/pimappsupport/vcardandvcal/group/VERSIT.MMP",
+      "implementation_dependencies": [
+        "euser",
+        "efsrv",
+        "estor",
+        "bafl",
+        "conarc",
+        "charconv"
+      ]
+    },
+    {
+      "target": "VCard",
+      "dll": "vcard.dll",
+      "headers": [
+        "vcard.h",
+        "vcard.inl"
+      ],
+      "dependencies": [
+        "Versit",
+        "Bafl",
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "organizer/pimappsupport/vcardandvcal/eabi/VCARDU.DEF",
+      "mmp": "organizer/pimappsupport/vcardandvcal/group/VCard.MMP",
+      "implementation_dependencies": [
+        "versit",
+        "euser",
+        "estor",
+        "bafl"
+      ]
+    },
+    {
+      "target": "VCal",
+      "dll": "vcal.dll",
+      "headers": [
+        "vcal.h",
+        "vcal.inl",
+        "vrecur.h",
+        "vrecur.inl"
+      ],
+      "dependencies": [
+        "Versit",
+        "Bafl",
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "organizer/pimappsupport/vcardandvcal/eabi/VCALv2U.DEF",
+      "mmp": "organizer/pimappsupport/vcardandvcal/group/VCal.MMP",
+      "implementation_dependencies": [
+        "versit",
+        "bafl",
+        "euser",
+        "estor"
+      ]
     }
   ]
 }

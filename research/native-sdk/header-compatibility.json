@@ -215,5 +215,12 @@
       "after": "#define __TFILTERINFORMATION_H__\n#include <e32base.h>",
       "reason": "The original public HTTP filter information header uses Symbian descriptors, basic types and UIDs without including the original E32 declaration prerequisite."
     }
+  ],
+  "vstaticutils.h": [
+    {
+      "before": "static const TDesC &VersitUtils::EscapeChar(TBool aIsShiftJis);",
+      "after": "static const TDesC &EscapeChar(TBool aIsShiftJis);",
+      "reason": "The original public Versit utility header redundantly qualifies a member declaration inside its own class; removing the qualification preserves the symbol and ABI for Clang consumers."
+    }
   ]
 }
