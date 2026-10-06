@@ -1,8 +1,10 @@
 #include "probe.h"
 
+#include <absl/base/nullability.h>
+
 int main() {
   volatile unsigned int input = 16U;
-  const Callback* volatile callbacks = SymbianCallbacks;
+  const Callback* absl_nonnull volatile callbacks = SymbianCallbacks;
   const Transformer transformer;
   const TaggedWord expected{.tag = {}, .value = Expected(16U)};
 #if defined(SYMBIAN_CXX20_USE_LIBCXX)

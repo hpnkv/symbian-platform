@@ -8,6 +8,8 @@
 #include <span>
 #include <string>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "python/status_interop.h"
@@ -135,22 +137,22 @@ std::size_t AgentControlPayloadLength(const py::bytes& input) {
 
 }  // namespace
 
-void BindAgent(py::module_& module) {
+void BindAgent(py::module_* absl_nonnull module) {
   BindWebSocket(module);
-  module.def("pack_agent_read_request", &PackAgentReadRequest,
-             py::arg("request_id"), py::arg("kind"),
-             py::arg("deadline_millis") = 0,
-             "Pack a bounded hello/status frame with native MessagePack.");
-  module.def("pack_agent_logs_request", &PackAgentLogsRequest,
-             py::arg("request_id"), py::arg("after"), py::arg("limit") = 8,
-             "Pack a bounded, read-only agent log cursor request.");
-  module.def("pack_agent_workspace_request", &PackAgentWorkspaceRequest,
-             py::arg("request_id"), py::arg("after") = 0, py::arg("limit") = 8,
-             "Pack a bounded, read-only agent workspace listing request.");
-  module.def(
+  module->def("pack_agent_read_request", &PackAgentReadRequest,
+              py::arg("request_id"), py::arg("kind"),
+              py::arg("deadline_millis") = 0,
+              "Pack a bounded hello/status frame with native MessagePack.");
+  module->def("pack_agent_logs_request", &PackAgentLogsRequest,
+              py::arg("request_id"), py::arg("after"), py::arg("limit") = 8,
+              "Pack a bounded, read-only agent log cursor request.");
+  module->def("pack_agent_workspace_request", &PackAgentWorkspaceRequest,
+              py::arg("request_id"), py::arg("after") = 0, py::arg("limit") = 8,
+              "Pack a bounded, read-only agent workspace listing request.");
+  module->def(
       "parse_agent_result_frame", &ParseAgentResultFrame, py::arg("frame"),
       "Parse one complete bounded result frame with native MessagePack.");
-  module.def(
+  module->def(
       "agent_control_payload_length", &AgentControlPayloadLength,
       py::arg("prefix"),
       "Validate the four-byte control prefix before payload allocation.");

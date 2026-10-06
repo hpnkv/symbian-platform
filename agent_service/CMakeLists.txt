@@ -21,8 +21,8 @@ foreach(required_target Symbian::Connectivity Symbian::WebSocket Symbian::Agent 
   endif()
 endforeach()
 
-# The RM-807 entropy adapter has emulator evidence only; a phone-specific
-# build remains an explicitly unverified physical profile.
+# Physical agent operation remains an unverified profile. Entropy is supplied
+# by the SDK through the OS secure RNG contract.
 set(SYMBIAN_AGENT_PRIVATE_KEY_FILE "" CACHE FILEPATH
   "32-byte private agent key; required for a phone profile")
 if(NOT SYMBIAN_AGENT_PRIVATE_KEY_FILE AND
@@ -66,10 +66,9 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/agent_key.h"
 symbian_add_import_executable(agent_service
   STARTUP startup.S
   LINKER_SCRIPT image.ld
-  SOURCES startup.cc agent_service.cc sdk_entropy_rm807.cc sdk_entropy_rm807.S)
+  SOURCES startup.cc agent_service.cc)
 target_include_directories(agent_service PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
-target_compile_definitions(agent_service PRIVATE SYMBIAN_RM807_ENTROPY_PROBE=1
-  MBEDTLS_STATIC SYMBIAN_MBEDTLS_GUEST=1
+target_compile_definitions(agent_service PRIVATE MBEDTLS_STATIC SYMBIAN_MBEDTLS_GUEST=1
   MBEDTLS_USER_CONFIG_FILE="symbian_mbedtls/config.h")
 target_link_libraries(agent_service PRIVATE Symbian::Connectivity Symbian::WebSocket Symbian::Agent
   Symbian::Crypto Symbian::Stackless Symbian::System Symbian::Display

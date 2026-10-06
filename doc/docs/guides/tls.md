@@ -17,10 +17,10 @@ to select `h2`; HTTP/1.1 also permits a server that omits ALPN.
 
 All operations and destruction belong to one SDK worker, outside an active
 scheduler callback. Absolute deadlines cover the native BIO's socket I/O.
-The application supplies a trusted target-specific hardware entropy adapter.
-The default guest entropy service fails closed; the named RM-807 research
-adapter is available only in the matching patched emulator profile; it is not
-a portable phone implementation.
+The SDK supplies entropy through the OS secure RNG on supported EABI ROMs,
+using one provider on ARMv5T and ARMv6. Applications need no entropy adapter
+there. Older systems without that API and unsupported native wrappers fail
+closed; see [entropy contracts](../reference/tls-sdk.md) before targeting them.
 UTC comes from the runtime and certificate-date checking remains enabled.
 
 ## Package and load a CA bundle

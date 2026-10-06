@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <array>
 
+#include <absl/base/nullability.h>
+
 namespace symbian::http {
 Connection::Connection(std::unique_ptr<net::ByteStream> transport, Role role,
                        Protocol protocol, Limits limits)
@@ -105,7 +107,7 @@ absl::Status Connection::Pump(absl::Time deadline) {
   return absl::OkStatus();
 }
 
-absl::Status Connection::PrepareOutput(Headers* headers,
+absl::Status Connection::PrepareOutput(Headers* absl_nonnull headers,
                                        std::optional<std::size_t> length,
                                        bool no_body) {
   auto status = ValidateHeaders(*headers, limits_);

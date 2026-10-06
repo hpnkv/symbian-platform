@@ -1,6 +1,9 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
+#include <absl/base/nullability.h>
+
 #include "legacy_euser.h"
+
 #ifndef SYMBIAN_EKA1_RESULT
 #define SYMBIAN_EKA1_RESULT 7610
 #endif
@@ -9,8 +12,8 @@
 #endif
 int main() {
   int before_bytes = 0;
-  const int before_cells = LegacyAllocSize(before_bytes);
-  auto* data = static_cast<unsigned char*>(LegacyAlloc(64));
+  const int before_cells = LegacyAllocSize(&before_bytes);
+  auto* absl_nullable data = static_cast<unsigned char*>(LegacyAlloc(64));
   if (data == nullptr) {
     return -4;
   }
@@ -20,7 +23,7 @@ int main() {
     source[i] = static_cast<unsigned char>(i ^ 0x5a);
   }
   const bool valid_length = LegacyAllocLen(data) >= 64;
-  void* end = LegacyCopy(data, source, 64);
+  void* absl_nonnull end = LegacyCopy(data, source, 64);
   if (!valid_length || end != data + 64) {
     result = 40;
   }
@@ -33,13 +36,13 @@ int main() {
     }
   }
   int live_bytes = 0;
-  if (LegacyAllocSize(live_bytes) != before_cells + 1 ||
+  if (LegacyAllocSize(&live_bytes) != before_cells + 1 ||
       live_bytes < before_bytes + 64) {
     result = 42;
   }
   LegacyFree(data);
   int after_bytes = 0;
-  if (LegacyAllocSize(after_bytes) != before_cells ||
+  if (LegacyAllocSize(&after_bytes) != before_cells ||
       after_bytes != before_bytes) {
     result = 43;
   }

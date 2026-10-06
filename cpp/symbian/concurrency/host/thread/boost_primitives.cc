@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <memory>
 
+#include <absl/base/nullability.h>
 #include <boost/fiber/condition_variable.hpp>
 #include <boost/fiber/mutex.hpp>
 #include <boost/fiber/operations.hpp>
@@ -35,7 +36,7 @@ Mutex::~Mutex() {
   std::destroy_at(GetImpl());
 }
 
-Mutex::Impl* Mutex::GetImpl() {
+Mutex::Impl* absl_nonnull Mutex::GetImpl() {
   return std::launder(reinterpret_cast<Impl*>(impl_));
 }
 
@@ -62,15 +63,16 @@ CondVar::~CondVar() {
   std::destroy_at(GetImpl());
 }
 
-CondVar::Impl* CondVar::GetImpl() {
+CondVar::Impl* absl_nonnull CondVar::GetImpl() {
   return std::launder(reinterpret_cast<Impl*>(impl_));
 }
 
-void CondVar::Wait(Mutex* mu) noexcept {
+void CondVar::Wait(Mutex* absl_nonnull mu) noexcept {
   GetImpl()->condition.wait(mu->GetImpl()->mutex);
 }
 
-bool CondVar::WaitWithDeadline(Mutex* mu, absl::Time deadline) noexcept {
+bool CondVar::WaitWithDeadline(Mutex* absl_nonnull mu,
+                               absl::Time deadline) noexcept {
   if (deadline == absl::InfiniteFuture()) {
     Wait(mu);
     return false;
@@ -78,7 +80,8 @@ bool CondVar::WaitWithDeadline(Mutex* mu, absl::Time deadline) noexcept {
   return WaitWithTimeout(mu, deadline - absl::Now());
 }
 
-bool CondVar::WaitWithTimeout(Mutex* mu, absl::Duration remaining) noexcept {
+bool CondVar::WaitWithTimeout(Mutex* absl_nonnull mu,
+                              absl::Duration remaining) noexcept {
   if (remaining == absl::InfiniteDuration()) {
     Wait(mu);
     return false;
@@ -86,7 +89,7 @@ bool CondVar::WaitWithTimeout(Mutex* mu, absl::Duration remaining) noexcept {
   if (remaining <= absl::ZeroDuration()) {
     return true;
   }
-  Impl* impl = GetImpl();
+  Impl* absl_nonnull impl = GetImpl();
   const std::uint32_t observed =
       impl->generation.load(std::memory_order_acquire);
   while (remaining > absl::ZeroDuration()) {

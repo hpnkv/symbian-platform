@@ -9,6 +9,8 @@
 #include <string_view>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "symbian/agent/guest_control.h"
@@ -20,7 +22,7 @@ namespace {
 
 using symbian::api::connectivity::TlsServer;
 
-int ReadExactly(TlsServer* server, std::span<std::uint8_t> bytes) {
+int ReadExactly(TlsServer* absl_nonnull server, std::span<std::uint8_t> bytes) {
   std::size_t offset = 0;
   while (offset < bytes.size()) {
     auto count =
@@ -33,11 +35,12 @@ int ReadExactly(TlsServer* server, std::span<std::uint8_t> bytes) {
   return 0;
 }
 
-int WriteExactly(TlsServer* server, std::span<const std::uint8_t> bytes) {
+int WriteExactly(TlsServer* absl_nonnull server,
+                 std::span<const std::uint8_t> bytes) {
   return server->Write(bytes, absl::Now() + absl::Seconds(5)).ok() ? 0 : -282;
 }
 
-int ServeStatus(TlsServer* server, bool oversized) {
+int ServeStatus(TlsServer* absl_nonnull server, bool oversized) {
   std::array<std::uint8_t, 4> prefix{};
   if (ReadExactly(server, prefix) != 0) {
     return -283;

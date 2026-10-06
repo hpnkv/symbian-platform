@@ -5,6 +5,7 @@
 
 #include <utility>
 
+#include <absl/base/nullability.h>
 #include <limits.h>
 
 #include "native_tcp_client.h"
@@ -21,7 +22,7 @@ absl::StatusOr<TcpListener> TcpListener::ListenIpv4(
                           (static_cast<unsigned>(address[1]) << 16) |
                           (static_cast<unsigned>(address[2]) << 8) |
                           static_cast<unsigned>(address[3]);
-  NativeTcpListener* native = nullptr;
+  NativeTcpListener* absl_nullable native = nullptr;
   const int result = SymbianDeviceTcpListen(packed, port, false, &native);
   if (result != 0) {
     return symbian::StatusFromNativeError(result, "Listen on TCP socket");
@@ -48,7 +49,7 @@ absl::StatusOr<TcpClient> TcpListener::Accept(absl::Time deadline) {
   if (native_ == nullptr) {
     return absl::FailedPreconditionError("TCP listener is closed");
   }
-  NativeTcpClient* client = nullptr;
+  NativeTcpClient* absl_nullable client = nullptr;
   const int result = SymbianDeviceTcpAccept(native_, &client,
                                             deadline == absl::InfiniteFuture()
                                                 ? INT64_MAX

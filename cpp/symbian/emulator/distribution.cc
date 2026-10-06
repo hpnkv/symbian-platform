@@ -4,9 +4,12 @@
 #include <cstdio>
 #include <cstring>
 
+#include <absl/base/nullability.h>
+
 namespace symbian::emulator {
 
-bool PrintDistributionIfRequested(int argc, char** argv) {
+bool PrintDistributionIfRequested(int argc,
+                                  char* absl_nullable* absl_nonnull argv) {
   if (argc != 2 || std::strcmp(argv[1], "--symbian-sdk-capabilities") != 0) {
     return false;
   }

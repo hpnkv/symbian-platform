@@ -1,13 +1,14 @@
 #include <atomic>
 #include <thread>
 
+#include <absl/base/nullability.h>
 #include <pthread.h>
 
 namespace {
 
 std::atomic<int> reclaimed{0};
 
-void Reclaim(void* pointer) {
+void Reclaim(void* absl_nullable pointer) {
   if (pointer != nullptr) {
     reclaimed.fetch_add(1, std::memory_order_relaxed);
   }

@@ -4,6 +4,8 @@
 
 #include <memory>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/statusor.h"
 
 namespace eka2l1::desktop {
@@ -23,7 +25,8 @@ class ControlServer {
   // Empty socket_path disables control. Enabled sockets require an existing
   // private directory, and only expose emulator capture, pointer and status.
   static absl::StatusOr<std::unique_ptr<ControlServer>> Start(
-      eka2l1::desktop::emulator* state, const char* socket_path);
+      eka2l1::desktop::emulator* absl_nullable state,
+      const char* absl_nullable socket_path);
 
   // Called on the Qt loop before stopping EKA2L1's workers/kernel. Detaches
   // callbacks and saves the final status beside the socket, without overwrites.

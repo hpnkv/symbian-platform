@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Exercises real installer/registry operations on the maintained GUI package.
 // Supplies no ROM, system DLLs or Window Server. No CPU instructions execute.
+
 #include <cstring>
 #include <fstream>
 #include <iterator>
 #include <tuple>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <common/buffer.h>
 #include <loader/e32img.h>
 #include <loader/mif.h>
@@ -30,8 +32,8 @@ std::string ReadFile(const fs::path& path) {
 class GuiPackageProbeTest : public symbian::testing::ProcessEnvironment {
  protected:
   void Populate(const fs::path& artifact) override {
-    const char* package = std::getenv("SYMBIAN_SIS_TEST_PACKAGE");
-    const char* hash = std::getenv("SYMBIAN_E32_TEST_HASH");
+    const char* absl_nullable package = std::getenv("SYMBIAN_SIS_TEST_PACKAGE");
+    const char* absl_nullable hash = std::getenv("SYMBIAN_E32_TEST_HASH");
     ASSERT_NE(package, nullptr);
     ASSERT_NE(hash, nullptr);
     std::error_code error;
@@ -66,7 +68,7 @@ class GuiPackageProbeTest : public symbian::testing::ProcessEnvironment {
   void CheckInstalled() {
     ASSERT_TRUE(io_->exist(u"C:\\sys\\bin\\gui_app.exe"));
     EXPECT_EQ(ReadFile(directory_ / "sys/bin/gui_app.exe"), original_image_);
-    auto* package = packages_->package(0xe0000812, 0);
+    auto* absl_nonnull package = packages_->package(0xe0000812, 0);
     ASSERT_NE(package, nullptr);
     EXPECT_EQ(package->package_name, u"Symbian GUI Counter");
     EXPECT_EQ(package->vendor_name, u"Symbian research");
@@ -193,7 +195,7 @@ class GuiPackageProbeTest : public symbian::testing::ProcessEnvironment {
   }
 
   void Uninstall() {
-    auto* package = packages_->package(0xe0000812, 0);
+    auto* absl_nonnull package = packages_->package(0xe0000812, 0);
     ASSERT_NE(package, nullptr);
     ASSERT_TRUE(packages_->uninstall_package(*package));
     EXPECT_FALSE(io_->exist(u"C:\\sys\\bin\\gui_app.exe"));
@@ -241,7 +243,7 @@ TEST_P(GuiPackageProbeTest, MissingSystemLibrariesLeaveUnresolvedImportSlots) {
   const auto image = eka2l1::loader::parse_e32img(&buffer, true);
   ASSERT_TRUE(image.has_value());
   ASSERT_GE(image->import_section.imports.size(), 2);
-  auto* process =
+  auto* absl_nonnull process =
       kernel_->spawn_new_process(u"C:\\sys\\bin\\gui_app.exe", u"", 0xe0000811);
   // Upstream ignores failed import fixups. Check the unresolved mapping;
   // creating this process does not mean it can execute its system calls.
@@ -256,7 +258,7 @@ TEST_P(GuiPackageProbeTest, MissingSystemLibrariesLeaveUnresolvedImportSlots) {
                   sizeof(original));
       ASSERT_GE(original, 1);
       ASSERT_LE(original, 65535);
-      const auto* mapped =
+      const auto* absl_nonnull mapped =
           static_cast<const uint32_t*>(process->get_ptr_on_addr_space(
               process->get_entry_point_address() + offset));
       ASSERT_NE(mapped, nullptr);

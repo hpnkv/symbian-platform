@@ -14,3 +14,6 @@ target_compile_features(symbian_api_websocket PUBLIC cxx_std_20)
 target_compile_options(symbian_api_websocket PRIVATE -fno-pic -fno-exceptions)
 target_include_directories(symbian_api_websocket PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../include")
 target_link_libraries(symbian_api_websocket PUBLIC symbian_api_connectivity symbian_websocket)
+
+target_include_directories(symbian_api_connectivity PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/../include")

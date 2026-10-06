@@ -16,6 +16,7 @@
 #include <exception>
 #include <string>
 
+#include <absl/base/nullability.h>
 #include <nlohmann/json.hpp>
 #include <pybind11/operators.h>
 #include <pybind11_abseil/status_casters.h>
@@ -39,7 +40,7 @@ nlohmann::json JsonFromPython(const py::handle& value) {
         py::module_::import("json").attr("dumps")(value).cast<std::string>();
     return nlohmann::json::parse(encoded);
   } catch (py::error_already_set& error) {
-    ThrowStatus(StatusFromPythonException(error));
+    ThrowStatus(StatusFromPythonException(&error));
   } catch (const std::exception& error) {
     ThrowStatus(absl::InvalidArgumentError(error.what()));
   }
@@ -58,28 +59,29 @@ absl::Status MakeNativeStatus(int code, const std::string& message,
   return MakeStatus(CanonicalStatusCode(code), message, converted);
 }
 
-void SetStatusCode(NativeStatus& status, int code) {
-  status.value() = MakeStatus(CanonicalStatusCode(code),
-                              std::string(status.value().message()),
-                              StatusDetails(status.value()));
+void SetStatusCode(NativeStatus* absl_nonnull status, int code) {
+  status->value() = MakeStatus(CanonicalStatusCode(code),
+                               std::string(status->value().message()),
+                               StatusDetails(status->value()));
 }
 
-void SetStatusMessage(NativeStatus& status, const std::string& message) {
-  status.value() =
-      MakeStatus(status.value().code(), message, StatusDetails(status.value()));
+void SetStatusMessage(NativeStatus* absl_nonnull status,
+                      const std::string& message) {
+  status->value() = MakeStatus(status->value().code(), message,
+                               StatusDetails(status->value()));
 }
 
-void SetStatusDetails(NativeStatus& status,
+void SetStatusDetails(NativeStatus* absl_nonnull status,
                       const PyLike<PyJsonArray>& details) {
-  status.value() =
-      MakeNativeStatus(static_cast<int>(status.value().code()),
-                       std::string(status.value().message()), details);
+  status->value() =
+      MakeNativeStatus(static_cast<int>(status->value().code()),
+                       std::string(status->value().message()), details);
 }
 
 }  // namespace
 
-void BindStatus(py::module_& module) {
-  py::class_<NativeStatus>(module, "Status", py::dynamic_attr())
+void BindStatus(py::module_* absl_nonnull module) {
+  py::class_<NativeStatus>(*module, "Status", py::dynamic_attr())
       .def(py::init(
                [](int code, std::string message, const py::object& details) {
                  return NativeStatus(MakeNativeStatus(code, message, details));
@@ -146,43 +148,43 @@ void BindStatus(py::module_& module) {
           },
           "Returns a debug representation of the status.");
 
-  module.def("_status_roundtrip", [](const py::object& value) {
+  module->def("_status_roundtrip", [](const py::object& value) {
     return StatusToPython(StatusFromPython(value));
   });
-  module.def("_status_or_value",
-             [](const py::object& value, const std::string& output) {
-               const absl::Status status = StatusFromPython(value);
-               return ValueWithoutGil([&]() -> absl::StatusOr<std::string> {
-                 if (!status.ok()) {
-                   return status;
-                 }
-                 return output;
-               });
-             });
-  module.def("_status_from_callback", [](const py::function& callback) {
+  module->def("_status_or_value",
+              [](const py::object& value, const std::string& output) {
+                const absl::Status status = StatusFromPython(value);
+                return ValueWithoutGil([&]() -> absl::StatusOr<std::string> {
+                  if (!status.ok()) {
+                    return status;
+                  }
+                  return output;
+                });
+              });
+  module->def("_status_from_callback", [](const py::function& callback) {
     try {
       return StatusToPython(StatusFromPython(callback()));
     } catch (py::error_already_set& error) {
-      return StatusToPython(StatusFromPythonException(error));
+      return StatusToPython(StatusFromPythonException(&error));
     }
   });
-  module.def("_absl_status_roundtrip", [](absl::Status status) {
+  module->def("_absl_status_roundtrip", [](absl::Status status) {
     return py::google::DoNotThrowStatus(std::move(status));
   });
-  module.def("status_code_from_http", [](int code) {
+  module->def("status_code_from_http", [](int code) {
     return static_cast<int>(StatusCodeFromHttp(code));
   });
-  module.def("status_code_to_http", [](int code) {
+  module->def("status_code_to_http", [](int code) {
     return StatusCodeToHttp(CanonicalStatusCode(code));
   });
-  module.def("status_code_from_websocket", [](int code) {
+  module->def("status_code_from_websocket", [](int code) {
     if (code < 0 || code > UINT16_MAX) {
       return static_cast<int>(absl::StatusCode::kUnknown);
     }
     return static_cast<int>(
         StatusCodeFromWebSocket(static_cast<std::uint16_t>(code)));
   });
-  module.def("status_code_to_websocket", [](int code) {
+  module->def("status_code_to_websocket", [](int code) {
     return StatusCodeToWebSocket(CanonicalStatusCode(code));
   });
 }

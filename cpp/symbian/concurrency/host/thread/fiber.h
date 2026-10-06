@@ -14,6 +14,8 @@
 #include <type_traits>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 
@@ -51,7 +53,7 @@ class Fiber {
   absl::Status Join();
 
   // Null outside an SDK-owned fiber. This differs from A11's root placeholder.
-  static Fiber* Current() noexcept;
+  static Fiber* absl_nullable Current() noexcept;
 
  private:
   struct Impl;

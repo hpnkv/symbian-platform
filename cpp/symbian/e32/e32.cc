@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <absl/strings/str_cat.h>
 
@@ -79,7 +80,7 @@ struct Fixups {
 absl::StatusOr<uint32_t> ExceptionDescriptorOffset(
     std::string_view elf, const std::vector<Section>& sections,
     const Segment& code) {
-  const Section* exidx = nullptr;
+  const Section* absl_nullable exidx = nullptr;
   for (const Section& section : sections) {
     if (section.type == 0x70000001 || section.name == ".ARM.exidx") {
       if (exidx != nullptr || section.name != ".ARM.exidx" ||
@@ -167,8 +168,9 @@ absl::StatusOr<std::string_view> SectionName(
 absl::Status CheckRelocations(std::string_view elf,
                               const std::vector<Section>& sections,
                               const Segment& code, const DataLayout& data,
-                              const ResolvedImports* imports,
-                              size_t local_got_index, Fixups* pointers) {
+                              const ResolvedImports* absl_nullable imports,
+                              size_t local_got_index,
+                              Fixups* absl_nonnull pointers) {
   bool retained = false;
   std::set<uint32_t> got_symbols;
   std::set<uint32_t> checked_import_pointers;
@@ -491,7 +493,7 @@ absl::Status CheckRelocations(std::string_view elf,
       return absl::DataLossError("Retained GOT symbol lacks a local GOT word");
     }
   }
-  for (auto* offsets : {&pointers->code, &pointers->data}) {
+  for (auto* absl_nonnull offsets : {&pointers->code, &pointers->data}) {
     if (offsets->size() > 65535) {
       return absl::ResourceExhaustedError("Too many E32 absolute pointers");
     }
@@ -504,12 +506,12 @@ absl::Status CheckRelocations(std::string_view elf,
   return absl::OkStatus();
 }
 
-absl::StatusOr<Segment> ExtractCode(std::string_view elf,
-                                    const analysis::Elf32Header& header,
-                                    const std::vector<std::string>* proxies,
-                                    ResolvedImports* imports,
-                                    std::vector<Section>* output_sections,
-                                    Fixups* pointers, DataLayout* data) {
+absl::StatusOr<Segment> ExtractCode(
+    std::string_view elf, const analysis::Elf32Header& header,
+    const std::vector<std::string>* absl_nullable proxies,
+    ResolvedImports* absl_nonnull imports,
+    std::vector<Section>* absl_nonnull output_sections,
+    Fixups* absl_nonnull pointers, DataLayout* absl_nullable data) {
   if (header.type != 2 || header.machine != 40 || header.flags >> 24 != 5 ||
       (header.flags & 0x400)) {
     return absl::UnimplementedError("Requires ARM EABI5 soft-float ET_EXEC");
@@ -746,8 +748,8 @@ absl::Status CheckEntry(std::string_view code, uint32_t entry) {
 
 absl::StatusOr<std::string> ConvertExecutable(
     std::string_view elf, uint32_t uid3, uint32_t capabilities,
-    const std::vector<std::string>* proxies,
-    const std::string_view* definition = nullptr) {
+    const std::vector<std::string>* absl_nullable proxies,
+    const std::string_view* absl_nullable definition = nullptr) {
   if (elf.size() > 64 * 1024 * 1024) {
     return absl::ResourceExhaustedError("ELF exceeds 64 MiB");
   }

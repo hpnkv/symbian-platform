@@ -1,0 +1,42 @@
+# Optional installed-SDK validation project: compile each exported owned header
+# as an independent consumer, using only its capability target's public ABI.
+include("${CMAKE_CURRENT_LIST_DIR}/SymbianHeaderCanary.cmake")
+function(symbian_sdk_header_canaries)
+  if(NOT TARGET Symbian::Runtime)
+    include(SymbianApp)
+  endif()
+  find_package(MbedTLS CONFIG REQUIRED)
+  file(GLOB port_headers CONFIGURE_DEPENDS
+    "${SYMBIAN_SDK_PREFIX}/include/symbian_mbedtls/*.h"
+    "${SYMBIAN_SDK_PREFIX}/include/symbian_tls/*.h")
+  symbian_header_canary(symbian_sdk_tls_c_header_canary C
+    HEADERS ${port_headers} LIBRARIES MbedTLS::mbedtls)
+  symbian_header_canary(symbian_sdk_tls_cpp_header_canary
+    HEADERS ${port_headers} LIBRARIES MbedTLS::mbedtls)
+  symbian_header_canary(symbian_sdk_runtime_header_canary
+    HEADERS "${SYMBIAN_SDK_PREFIX}/include/symbian/runtime.h"
+    LIBRARIES Symbian::Runtime)
+  foreach(component IN ITEMS System Connectivity Storage Power Display Camera)
+    string(TOLOWER "${component}" directory)
+    file(GLOB_RECURSE headers CONFIGURE_DEPENDS
+      "${SYMBIAN_SDK_PREFIX}/include/symbian/api/${directory}/*.h")
+    symbian_header_canary(symbian_sdk_${directory}_header_canary
+      HEADERS ${headers} LIBRARIES Symbian::${component})
+  endforeach()
+  foreach(component IN ITEMS Http WebSocket Agent)
+    string(TOLOWER "${component}" directory)
+    file(GLOB headers CONFIGURE_DEPENDS
+      "${SYMBIAN_SDK_PREFIX}/include/symbian/${directory}/*.h")
+    symbian_header_canary(symbian_sdk_${directory}_header_canary
+      HEADERS ${headers} LIBRARIES Symbian::${component})
+  endforeach()
+  symbian_directory_header_canary(symbian_sdk_net_header_canary
+    Symbian::Http "${SYMBIAN_SDK_PREFIX}/include/symbian/net")
+  symbian_directory_header_canary(symbian_sdk_concurrency_header_canary
+    Symbian::Stackless "${SYMBIAN_SDK_PREFIX}/include/symbian/concurrency")
+  symbian_directory_header_canary(symbian_sdk_thread_header_canary
+    Symbian::Fibers "${SYMBIAN_SDK_PREFIX}/include/thread")
+  symbian_header_canary(symbian_sdk_native_status_header_canary
+    HEADERS "${SYMBIAN_SDK_PREFIX}/include/symbian/native_status.h"
+    LIBRARIES Symbian::Stackless)
+endfunction()

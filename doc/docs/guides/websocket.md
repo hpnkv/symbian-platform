@@ -16,8 +16,8 @@ target_link_libraries(my_app PRIVATE Symbian::WebSocket Symbian::Crypto)
 
 This complete function connects to a compatible listener at
 `localhost:39106/echo`, sends `hello`, verifies the five-byte reply and performs
-the close handshake. The Mbed TLS entropy interface uses the application's
-trusted target-specific entropy adapter, just as TLS does. There is no fixed or
+the close handshake. The Mbed TLS entropy interface uses the SDK's verified
+OS secure RNG provider, just as TLS does. There is no fixed or
 weak-random masking fallback. Its state remains alive for the entire connection.
 
 ```cpp

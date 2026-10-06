@@ -2,15 +2,16 @@
 #include <cstdint>
 #include <cstdlib>
 
+#include <absl/base/nullability.h>
 #include <math.h>
 
 namespace {
 
-std::uint64_t NanPayload(const char* tag) {
+std::uint64_t NanPayload(const char* absl_nullable tag) {
   if (tag == nullptr || *tag == '\0') {
     return 0;
   }
-  char* end = nullptr;
+  char* absl_nullable end = nullptr;
   const unsigned long long value = std::strtoull(tag, &end, 0);
   return end != tag && *end == '\0' ? value : 0;
 }
@@ -26,13 +27,13 @@ extern "C" long double ldexpl(long double value, int exponent) {
   return ldexp(static_cast<double>(value), exponent);
 }
 
-extern "C" double nan(const char* tag) {
+extern "C" double nan(const char* absl_nonnull tag) {
   constexpr std::uint64_t kQuietNan = 0x7ff8000000000000ULL;
   constexpr std::uint64_t kPayloadMask = 0x0007ffffffffffffULL;
   return std::bit_cast<double>(kQuietNan | (NanPayload(tag) & kPayloadMask));
 }
 
-extern "C" float nanf(const char* tag) {
+extern "C" float nanf(const char* absl_nonnull tag) {
   constexpr std::uint32_t kQuietNan = 0x7fc00000U;
   constexpr std::uint32_t kPayloadMask = 0x003fffffU;
   return std::bit_cast<float>(

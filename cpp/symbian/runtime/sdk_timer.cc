@@ -1,3 +1,4 @@
+#include <absl/base/nullability.h>
 #include <e32std.h>
 
 #include "abi.h"
@@ -8,16 +9,17 @@ struct SymbianRuntimeTimerState {
   bool pending = false;
 };
 
-extern "C" int SymbianRuntimeTimerCreate(SymbianRuntimeTimerState** state) {
+extern "C" int SymbianRuntimeTimerCreate(
+    SymbianRuntimeTimerState* absl_nullable* absl_nullable state) {
   if (state == nullptr) {
     return KErrArgument;
   }
   *state = nullptr;
-  void* memory = User::Alloc(sizeof(SymbianRuntimeTimerState));
+  void* absl_nullable memory = User::Alloc(sizeof(SymbianRuntimeTimerState));
   if (memory == nullptr) {
     return KErrNoMemory;
   }
-  auto* timer_state = new (memory) SymbianRuntimeTimerState;
+  auto* absl_nonnull timer_state = new (memory) SymbianRuntimeTimerState;
   const TInt result = timer_state->timer.CreateLocal();
   if (result != KErrNone) {
     timer_state->~SymbianRuntimeTimerState();
@@ -28,8 +30,8 @@ extern "C" int SymbianRuntimeTimerCreate(SymbianRuntimeTimerState** state) {
   return KErrNone;
 }
 
-extern "C" int SymbianRuntimeTimerStart(SymbianRuntimeTimerState* state,
-                                        int microseconds) {
+extern "C" int SymbianRuntimeTimerStart(
+    SymbianRuntimeTimerState* absl_nullable state, int microseconds) {
   if (state == nullptr || microseconds < 0) {
     return KErrArgument;
   }
@@ -42,14 +44,15 @@ extern "C" int SymbianRuntimeTimerStart(SymbianRuntimeTimerState* state,
   return KErrNone;
 }
 
-extern "C" void SymbianRuntimeTimerCancel(SymbianRuntimeTimerState* state) {
+extern "C" void SymbianRuntimeTimerCancel(
+    SymbianRuntimeTimerState* absl_nullable state) {
   if (state != nullptr && state->pending && state->status == KRequestPending) {
     state->timer.Cancel();
   }
 }
 
 extern "C" int SymbianRuntimeTimerResult(
-    const SymbianRuntimeTimerState* state) {
+    const SymbianRuntimeTimerState* absl_nullable state) {
   if (state == nullptr || !state->pending) {
     return KErrNotReady;
   }
@@ -57,11 +60,12 @@ extern "C" int SymbianRuntimeTimerResult(
 }
 
 extern "C" bool SymbianRuntimeTimerIsReady(
-    const SymbianRuntimeTimerState* state) {
+    const SymbianRuntimeTimerState* absl_nullable state) {
   return state != nullptr && state->pending && state->status != KRequestPending;
 }
 
-extern "C" void SymbianRuntimeTimerClose(SymbianRuntimeTimerState* state) {
+extern "C" void SymbianRuntimeTimerClose(
+    SymbianRuntimeTimerState* absl_nullable state) {
   if (state == nullptr) {
     return;
   }
@@ -82,16 +86,17 @@ struct SymbianRuntimeWakeState {
   RThread thread;
 };
 
-extern "C" int SymbianRuntimeWakeCreate(SymbianRuntimeWakeState** state) {
+extern "C" int SymbianRuntimeWakeCreate(
+    SymbianRuntimeWakeState* absl_nullable* absl_nullable state) {
   if (state == nullptr) {
     return KErrArgument;
   }
   *state = nullptr;
-  void* memory = User::Alloc(sizeof(SymbianRuntimeWakeState));
+  void* absl_nullable memory = User::Alloc(sizeof(SymbianRuntimeWakeState));
   if (memory == nullptr) {
     return KErrNoMemory;
   }
-  auto* wake = new (memory) SymbianRuntimeWakeState;
+  auto* absl_nonnull wake = new (memory) SymbianRuntimeWakeState;
   const TInt result = wake->thread.Open(RThread().Id());
   if (result != KErrNone) {
     wake->~SymbianRuntimeWakeState();
@@ -102,13 +107,15 @@ extern "C" int SymbianRuntimeWakeCreate(SymbianRuntimeWakeState** state) {
   return KErrNone;
 }
 
-extern "C" void SymbianRuntimeWakeSignal(SymbianRuntimeWakeState* state) {
+extern "C" void SymbianRuntimeWakeSignal(
+    SymbianRuntimeWakeState* absl_nullable state) {
   if (state != nullptr) {
     state->thread.RequestSignal();
   }
 }
 
-extern "C" void SymbianRuntimeWakeClose(SymbianRuntimeWakeState* state) {
+extern "C" void SymbianRuntimeWakeClose(
+    SymbianRuntimeWakeState* absl_nullable state) {
   if (state == nullptr) {
     return;
   }

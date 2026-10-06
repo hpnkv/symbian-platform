@@ -6,11 +6,13 @@
 
 #include <cstdint>
 
+#include <absl/base/nullability.h>
 #include <limits.h>
 
 extern "C" int SymbianDeviceBroadcastProbe(
-    unsigned port, const unsigned char* request, int request_length,
-    const unsigned char* expected_reply, int expected_length, unsigned* address,
+    unsigned port, const unsigned char* absl_nullable request,
+    int request_length, const unsigned char* absl_nullable expected_reply,
+    int expected_length, unsigned* absl_nullable address,
     std::int64_t deadline = INT64_MAX);
 
 #endif  // SYMBIAN_API_CONNECTIVITY_NATIVE_BROADCAST_PROBE_H_

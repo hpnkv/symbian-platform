@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Executes actual ARM thread-register reads on both macOS CPU backends.
+
 #include <array>
 #include <cstdint>
 #include <memory>
 
+#include <absl/base/nullability.h>
 #include <cpu/arm_factory.h>
 #include <gtest/gtest.h>
 
@@ -25,7 +27,7 @@ class CpuRegisterProbeTest
     ASSERT_NE(monitor_, nullptr);
     cpu_ = eka2l1::arm::create_core(monitor_.get(), GetParam());
     ASSERT_NE(cpu_, nullptr);
-    const auto read = [](uint32_t address, uint32_t* value) {
+    const auto read = [](uint32_t address, uint32_t* absl_nonnull value) {
       if (address < kCodeBase || (address - kCodeBase) % 4 != 0 ||
           address - kCodeBase >= 0x1000) {
         return false;

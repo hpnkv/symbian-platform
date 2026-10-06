@@ -1,6 +1,7 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
 
+#include <absl/base/nullability.h>
 #include <e32base.h>
 
 #include "native_tcp_client.h"
@@ -8,7 +9,7 @@
 namespace symbian::api::connectivity {
 
 struct NativeActiveTcpListener final : CActive {
-  NativeActiveTcpListener(void* callback_context,
+  NativeActiveTcpListener(void* absl_nullable callback_context,
                           NativeAcceptCallback on_accept)
       : CActive(CActive::EPriorityStandard),
         context(callback_context),
@@ -33,7 +34,7 @@ struct NativeActiveTcpListener final : CActive {
   }
 
   void RunL() override {
-    NativeTcpClient* accepted = pending;
+    NativeTcpClient* absl_nullable accepted = pending;
     pending = nullptr;
     const int result = iStatus.Int();
     if (result != KErrNone) {
@@ -51,27 +52,27 @@ struct NativeActiveTcpListener final : CActive {
     return error;
   }
 
-  NativeTcpListener* listener = nullptr;
-  NativeTcpClient* pending = nullptr;
-  void* context = nullptr;
-  NativeAcceptCallback callback = nullptr;
+  NativeTcpListener* absl_nullable listener = nullptr;
+  NativeTcpClient* absl_nullable pending = nullptr;
+  void* absl_nullable context = nullptr;
+  NativeAcceptCallback callback;
 };
 
-extern "C" int SymbianDeviceActiveTcpListen(unsigned address, unsigned port,
-                                            bool share_with_workers,
-                                            void* context,
-                                            NativeAcceptCallback callback,
-                                            NativeActiveTcpListener** output) {
+extern "C" int SymbianDeviceActiveTcpListen(
+    unsigned address, unsigned port, bool share_with_workers,
+    void* absl_nullable context, NativeAcceptCallback callback,
+    NativeActiveTcpListener* absl_nullable* absl_nullable output) {
   if (output == nullptr || context == nullptr || callback == nullptr ||
       CActiveScheduler::Current() == nullptr) {
     return KErrNotReady;
   }
   *output = nullptr;
-  void* memory = User::Alloc(sizeof(NativeActiveTcpListener));
+  void* absl_nullable memory = User::Alloc(sizeof(NativeActiveTcpListener));
   if (memory == nullptr) {
     return KErrNoMemory;
   }
-  auto* active = new (memory) NativeActiveTcpListener(context, callback);
+  auto* absl_nonnull active =
+      new (memory) NativeActiveTcpListener(context, callback);
   const int result = SymbianDeviceTcpListen(address, port, share_with_workers,
                                             &active->listener);
   if (result != KErrNone) {
@@ -91,11 +92,12 @@ extern "C" int SymbianDeviceActiveTcpListen(unsigned address, unsigned port,
 }
 
 extern "C" int SymbianDeviceActiveTcpAcceptNext(
-    NativeActiveTcpListener* listener) {
+    NativeActiveTcpListener* absl_nullable listener) {
   return listener == nullptr ? KErrArgument : listener->Arm();
 }
 
-extern "C" void SymbianDeviceActiveTcpClose(NativeActiveTcpListener* listener) {
+extern "C" void SymbianDeviceActiveTcpClose(
+    NativeActiveTcpListener* absl_nullable listener) {
   if (listener != nullptr) {
     listener->~NativeActiveTcpListener();
     User::Free(listener);

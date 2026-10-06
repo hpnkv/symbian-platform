@@ -2,6 +2,7 @@
 #define SYMBIAN_GL_APP_RENDERER_H_
 
 #include <EGL/egl.h>
+#include <absl/base/nullability.h>
 #include <w32std.h>
 
 #include "cube.h"
@@ -16,7 +17,7 @@ class Renderer {
   ~Renderer();
   Renderer(const Renderer&) = delete;
   Renderer& operator=(const Renderer&) = delete;
-  TInt Open(RWindow& window);
+  TInt Open(RWindow* absl_nonnull window);
 
   void Resize(TSize size) { size_ = size; }
 

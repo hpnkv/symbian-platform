@@ -6,11 +6,12 @@
 #include <algorithm>
 #include <cstdlib>
 
+#include <absl/base/nullability.h>
 #include <pthread.h>
 
 #include "thread/selectables.h"
 
-extern "C" void SymbianFiberSwap(std::uintptr_t* saved_sp,
+extern "C" void SymbianFiberSwap(std::uintptr_t* absl_nonnull saved_sp,
                                  std::uintptr_t next_sp);
 
 namespace thread {
@@ -38,7 +39,7 @@ std::chrono::steady_clock::time_point DeadlineAfter(absl::Duration duration) {
 }
 }  // namespace
 
-Scheduler::Scheduler(SchedulerPolicy* policy)
+Scheduler::Scheduler(SchedulerPolicy* absl_nullable policy)
     : owner_(std::this_thread::get_id()), policy_(policy) {
   pthread_once(&scheduler_key_once, CreateSchedulerKey);
 }
@@ -53,12 +54,12 @@ Scheduler::~Scheduler() {
   }
 }
 
-Scheduler* Scheduler::Current() noexcept {
+Scheduler* absl_nullable Scheduler::Current() noexcept {
   pthread_once(&scheduler_key_once, CreateSchedulerKey);
   return static_cast<Scheduler*>(pthread_getspecific(scheduler_key));
 }
 
-void Scheduler::Add(Fiber* fiber) {
+void Scheduler::Add(Fiber* absl_nonnull fiber) {
   {
     std::lock_guard lock(mu_);
     fibers_.push_back(fiber);
@@ -70,7 +71,7 @@ void Scheduler::Add(Fiber* fiber) {
   }
 }
 
-void Scheduler::Remove(Fiber* fiber) {
+void Scheduler::Remove(Fiber* absl_nullable fiber) {
   if (std::this_thread::get_id() != owner_) {
     std::abort();
   }
@@ -86,13 +87,13 @@ void Scheduler::Remove(Fiber* fiber) {
   fibers_.erase(it);
 }
 
-void Scheduler::Wake(Fiber* fiber) {
+void Scheduler::Wake(Fiber* absl_nonnull fiber) {
   if (WakeWithoutNotify(fiber)) {
     NotifyReady();
   }
 }
 
-bool Scheduler::WakeWithoutNotify(Fiber* fiber) {
+bool Scheduler::WakeWithoutNotify(Fiber* absl_nullable fiber) {
   bool notify = false;
   {
     std::lock_guard lock(mu_);
@@ -116,7 +117,7 @@ void Scheduler::NotifyReady() noexcept {
   }
 }
 
-void Scheduler::PreparePark(Fiber* fiber,
+void Scheduler::PreparePark(Fiber* absl_nonnull fiber,
                             std::chrono::steady_clock::time_point deadline) {
   std::lock_guard lock(mu_);
   if (current_ != fiber || fiber->waiting_) {
@@ -126,13 +127,13 @@ void Scheduler::PreparePark(Fiber* fiber,
   fiber->deadline_ = deadline;
 }
 
-void Scheduler::CancelPark(Fiber* fiber) {
+void Scheduler::CancelPark(Fiber* absl_nonnull fiber) {
   std::lock_guard lock(mu_);
   fiber->waiting_ = false;
   fiber->deadline_ = std::chrono::steady_clock::time_point::max();
 }
 
-void Scheduler::Suspend(Fiber* fiber) {
+void Scheduler::Suspend(Fiber* absl_nonnull fiber) {
   if (current_ != fiber) {
     std::abort();
   }
@@ -145,7 +146,7 @@ bool Scheduler::HasReady() const {
     return true;
   }
   const auto now = std::chrono::steady_clock::now();
-  for (Fiber* fiber : fibers_) {
+  for (Fiber* absl_nonnull fiber : fibers_) {
     if (fiber->waiting_ && fiber->deadline_ <= now) {
       return true;
     }
@@ -156,7 +157,7 @@ bool Scheduler::HasReady() const {
 std::chrono::steady_clock::time_point Scheduler::NextDeadline() const {
   std::lock_guard lock(mu_);
   auto next = std::chrono::steady_clock::time_point::max();
-  for (Fiber* fiber : fibers_) {
+  for (Fiber* absl_nonnull fiber : fibers_) {
     if (fiber->waiting_) {
       next = std::min(next, fiber->deadline_);
     }
@@ -177,14 +178,14 @@ absl::Status Scheduler::RunReady(std::size_t max_turns) {
   }
   // Reuse the ready snapshot across a turn. Policy selection still happens
   // outside mu, but a yielding fiber does not allocate a new vector each time.
-  std::vector<Fiber*> snapshot;
+  std::vector<Fiber* absl_nonnull> snapshot;
   for (std::size_t turn = 0; turn < max_turns; ++turn) {
-    Fiber* next = nullptr;
+    Fiber* absl_nullable next = nullptr;
     snapshot.clear();
     {
       std::lock_guard lock(mu_);
       const auto now = std::chrono::steady_clock::now();
-      for (Fiber* fiber : fibers_) {
+      for (Fiber* absl_nullable fiber : fibers_) {
         if (fiber->waiting_ && fiber->deadline_ <= now) {
           fiber->waiting_ = false;
           fiber->deadline_ = std::chrono::steady_clock::time_point::max();
@@ -227,11 +228,11 @@ absl::Status Scheduler::RunReady(std::size_t max_turns) {
 }
 
 void FiberEntry() {
-  Scheduler* scheduler = Scheduler::Current();
+  Scheduler* absl_nullable scheduler = Scheduler::Current();
   if (scheduler == nullptr || scheduler->current_ == nullptr) {
     std::abort();
   }
-  Fiber* fiber = scheduler->current_;
+  Fiber* absl_nonnull fiber = scheduler->current_;
   std::move(fiber->work_)();
   {
     std::lock_guard lock(scheduler->mu_);
@@ -241,11 +242,12 @@ void FiberEntry() {
   std::abort();
 }
 
-Fiber::Fiber(Scheduler& scheduler, Work work, std::size_t stack_bytes)
-    : scheduler_(scheduler),
+Fiber::Fiber(Scheduler* absl_nonnull scheduler, Work work,
+             std::size_t stack_bytes)
+    : scheduler_(*scheduler),
       work_(std::move(work)),
       cancellation_(std::make_unique<PermanentEvent>()) {
-  if (std::this_thread::get_id() != scheduler.owner_ || stack_bytes < 4096 ||
+  if (std::this_thread::get_id() != scheduler->owner_ || stack_bytes < 4096 ||
       stack_bytes > 1024 * 1024 || stack_bytes % sizeof(std::uintptr_t) != 0 ||
       !work_) {
     std::abort();
@@ -254,7 +256,7 @@ Fiber::Fiber(Scheduler& scheduler, Work work, std::size_t stack_bytes)
   stack_ = std::make_unique<std::uintptr_t[]>(words);
   std::uintptr_t top = reinterpret_cast<std::uintptr_t>(stack_.get() + words);
   top &= ~std::uintptr_t{7};
-  auto* frame = reinterpret_cast<std::uintptr_t*>(top) - 9;
+  auto* absl_nonnull frame = reinterpret_cast<std::uintptr_t*>(top) - 9;
   for (int index = 0; index < 8; ++index) {
     frame[index] = 0;
   }
@@ -267,8 +269,8 @@ Fiber::~Fiber() {
   scheduler_.Remove(this);
 }
 
-Fiber* Fiber::Current() noexcept {
-  Scheduler* scheduler = Scheduler::Current();
+Fiber* absl_nullable Fiber::Current() noexcept {
+  Scheduler* absl_nullable scheduler = Scheduler::Current();
   return scheduler == nullptr ? nullptr : scheduler->current_;
 }
 
@@ -287,17 +289,17 @@ Case Fiber::OnCancel() const {
 }
 
 bool Cancelled() {
-  Fiber* current = Fiber::Current();
+  Fiber* absl_nullable current = Fiber::Current();
   return current != nullptr && current->Cancelled();
 }
 
 Case OnCancel() {
-  Fiber* current = Fiber::Current();
+  Fiber* absl_nullable current = Fiber::Current();
   return current == nullptr ? NonSelectableCase() : current->OnCancel();
 }
 
 void Fiber::Yield() {
-  Fiber* fiber = Current();
+  Fiber* absl_nullable fiber = Current();
   if (fiber == nullptr) {
     std::this_thread::yield();
     return;
@@ -309,7 +311,7 @@ void Fiber::Yield() {
 }
 
 void Fiber::SleepFor(absl::Duration duration) {
-  Fiber* fiber = Current();
+  Fiber* absl_nullable fiber = Current();
   if (fiber == nullptr) {
     std::abort();
   }

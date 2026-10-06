@@ -3,11 +3,13 @@
 
 #include "native_display.h"
 
+#include <absl/base/nullability.h>
 #include <hal.h>
 
 namespace symbian::api::display {
 
-extern "C" void SymbianDeviceReadPrimaryDisplay(NativeDisplayReading* reading) {
+extern "C" void SymbianDeviceReadPrimaryDisplay(
+    NativeDisplayReading* absl_nullable reading) {
   if (reading == nullptr) {
     return;
   }

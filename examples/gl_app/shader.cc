@@ -1,5 +1,6 @@
 #include "shader.h"
 
+#include <absl/base/nullability.h>
 #include <e32debug.h>
 
 namespace gl_app {
@@ -19,12 +20,14 @@ void ShaderDiagnostic(GLuint object, bool program) {
   RDebug::Print(_L("gl_app shader: %S"), &message);
 }
 
-GLuint CompileShader(GLenum type, const char* source) {
+GLuint CompileShader(GLenum type, std::string_view source) {
   GLuint shader = glCreateShader(type);
   if (!shader) {
     return 0;
   }
-  glShaderSource(shader, 1, &source, nullptr);
+  const char* absl_nonnull data = source.empty() ? "" : source.data();
+  const GLint length = static_cast<GLint>(source.size());
+  glShaderSource(shader, 1, &data, &length);
   glCompileShader(shader);
   GLint compiled = 0;
   glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
@@ -38,7 +41,8 @@ GLuint CompileShader(GLenum type, const char* source) {
 
 }  // namespace
 
-GLuint CreateProgram(const char* vertex_source, const char* fragment_source) {
+GLuint CreateProgram(std::string_view vertex_source,
+                     std::string_view fragment_source) {
   GLuint vertex = CompileShader(GL_VERTEX_SHADER, vertex_source);
   GLuint fragment = CompileShader(GL_FRAGMENT_SHADER, fragment_source);
   GLuint program = 0;

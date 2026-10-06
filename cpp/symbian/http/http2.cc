@@ -1,11 +1,13 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
+
 #include "symbian/http/http2.h"
 
 #include <algorithm>
 #include <cstring>
 #include <deque>
 
+#include <absl/base/nullability.h>
 #include <nghttp2/nghttp2.h>
 
 namespace symbian::http {
@@ -15,9 +17,9 @@ absl::Status Error(int code) {
                   : absl::OkStatus();
 }
 
-std::vector<nghttp2_nv> Fields(Headers& headers) {
+std::vector<nghttp2_nv> Fields(Headers* absl_nonnull headers) {
   std::vector<nghttp2_nv> fields;
-  for (auto& [name, value] : headers) {
+  for (auto& [name, value] : (*headers)) {
     fields.push_back({reinterpret_cast<std::uint8_t*>(name.data()),
                       reinterpret_cast<std::uint8_t*>(value.data()),
                       name.size(), value.size(), NGHTTP2_NV_FLAG_NONE});
@@ -29,7 +31,7 @@ std::vector<nghttp2_nv> Fields(Headers& headers) {
 struct Http2::State {
   Role role;
   Limits limits;
-  nghttp2_session* session = nullptr;
+  nghttp2_session* absl_nullable session = nullptr;
   std::int32_t stream = 0;
   RequestHead request;
   ResponseHead response;
@@ -51,9 +53,12 @@ struct Http2::State {
     return NGHTTP2_ERR_CALLBACK_FAILURE;
   }
 
-  static ssize_t ReadData(nghttp2_session*, std::int32_t, std::uint8_t* output,
-                          std::size_t capacity, std::uint32_t* flags,
-                          nghttp2_data_source* source, void*) {
+  static ssize_t ReadData(nghttp2_session* absl_nonnull, std::int32_t,
+                          std::uint8_t* absl_nonnull output,
+                          std::size_t capacity,
+                          std::uint32_t* absl_nonnull flags,
+                          nghttp2_data_source* absl_nonnull source,
+                          void* absl_nonnull) {
     auto& s = *static_cast<State*>(source->ptr);
     const auto count = std::min(capacity, s.tx.size() - s.offset);
     if (count == 0 && !s.finished) {
@@ -78,7 +83,9 @@ struct Http2::State {
     return result;
   }
 
-  static int Begin(nghttp2_session*, const nghttp2_frame* frame, void* user) {
+  static int Begin(nghttp2_session* absl_nonnull,
+                   const nghttp2_frame* absl_nonnull frame,
+                   void* absl_nonnull user) {
     auto& s = *static_cast<State*>(user);
     if (s.role == Role::kServer && s.stream == 0) {
       s.stream = frame->hd.stream_id;
@@ -91,10 +98,11 @@ struct Http2::State {
     return 0;
   }
 
-  static int Header(nghttp2_session*, const nghttp2_frame*,
-                    const std::uint8_t* name, std::size_t nl,
-                    const std::uint8_t* value, std::size_t vl, std::uint8_t,
-                    void* user) {
+  static int Header(nghttp2_session* absl_nonnull,
+                    const nghttp2_frame* absl_nonnull,
+                    const std::uint8_t* absl_nonnull name, std::size_t nl,
+                    const std::uint8_t* absl_nonnull value, std::size_t vl,
+                    std::uint8_t, void* absl_nonnull user) {
     auto& s = *static_cast<State*>(user);
     s.header_bytes += nl + vl;
     if (s.block.size() >= s.limits.maximum_headers ||
@@ -107,7 +115,9 @@ struct Http2::State {
     return 0;
   }
 
-  static int Frame(nghttp2_session*, const nghttp2_frame* frame, void* user) {
+  static int Frame(nghttp2_session* absl_nonnull,
+                   const nghttp2_frame* absl_nonnull frame,
+                   void* absl_nonnull user) {
     auto& s = *static_cast<State*>(user);
     if (frame->hd.type == NGHTTP2_SETTINGS) {
       s.settings = true;
@@ -181,14 +191,15 @@ struct Http2::State {
     return 0;
   }
 
-  static int InvalidFrame(nghttp2_session*, const nghttp2_frame*, int code,
-                          void* user) {
+  static int InvalidFrame(nghttp2_session* absl_nonnull,
+                          const nghttp2_frame* absl_nonnull, int code,
+                          void* absl_nonnull user) {
     auto& s = *static_cast<State*>(user);
     return s.Fail(absl::DataLossError(nghttp2_strerror(code)));
   }
 
-  static int StreamClosed(nghttp2_session*, std::int32_t id, std::uint32_t code,
-                          void* user) {
+  static int StreamClosed(nghttp2_session* absl_nonnull, std::int32_t id,
+                          std::uint32_t code, void* absl_nonnull user) {
     auto& s = *static_cast<State*>(user);
     if (id == s.stream && (code != NGHTTP2_NO_ERROR || !s.end)) {
       return s.Fail(absl::DataLossError(
@@ -197,8 +208,9 @@ struct Http2::State {
     return 0;
   }
 
-  static int Data(nghttp2_session*, std::uint8_t, std::int32_t id,
-                  const std::uint8_t* bytes, std::size_t size, void* user) {
+  static int Data(nghttp2_session* absl_nonnull, std::uint8_t, std::int32_t id,
+                  const std::uint8_t* absl_nonnull bytes, std::size_t size,
+                  void* absl_nonnull user) {
     auto& s = *static_cast<State*>(user);
     if (!s.head_received || id != s.stream ||
         size > s.limits.maximum_buffered_bytes - s.queued_bytes ||
@@ -228,7 +240,7 @@ absl::StatusOr<std::unique_ptr<Http2>> Http2::Create(Role role, Limits limits) {
   auto s = std::make_unique<State>();
   s->role = role;
   s->limits = limits;
-  nghttp2_session_callbacks* cb = nullptr;
+  nghttp2_session_callbacks* absl_nullable cb = nullptr;
   int code = nghttp2_session_callbacks_new(&cb);
   if (code) {
     return Error(code);
@@ -241,7 +253,7 @@ absl::StatusOr<std::unique_ptr<Http2>> Http2::Create(Role role, Limits limits) {
       cb, State::InvalidFrame);
   nghttp2_session_callbacks_set_on_stream_close_callback(cb,
                                                          State::StreamClosed);
-  nghttp2_option* options = nullptr;
+  nghttp2_option* absl_nullable options = nullptr;
   code = nghttp2_option_new(&options);
   if (code) {
     nghttp2_session_callbacks_del(cb);
@@ -304,7 +316,7 @@ absl::StatusOr<std::string> Http2::TakeOutput() {
     return s.error;
   }
   std::string result;
-  const std::uint8_t* bytes;
+  const std::uint8_t* absl_nonnull bytes;
   while (true) {
     auto count = nghttp2_session_mem_send(s.session, &bytes);
     if (count < 0) {
@@ -350,7 +362,7 @@ absl::Status Http2::SendRequest(RequestHead head) {
     headers.emplace_back(":protocol", head.protocol);
   }
   headers.insert(headers.end(), head.headers.begin(), head.headers.end());
-  auto fields = Fields(headers);
+  auto fields = Fields(&headers);
   auto provider = s.Provider();
   int id = nghttp2_submit_request(s.session, nullptr, fields.data(),
                                   fields.size(), &provider, nullptr);
@@ -382,7 +394,7 @@ absl::Status Http2::SendHeaders(ResponseHead head) {
   NormalizeHeaders(&head.headers);
   Headers headers{{":status", std::to_string(head.status)}};
   headers.insert(headers.end(), head.headers.begin(), head.headers.end());
-  auto fields = Fields(headers);
+  auto fields = Fields(&headers);
   auto provider = s.Provider();
   int code = nghttp2_submit_response(s.session, s.stream, fields.data(),
                                      fields.size(), &provider);

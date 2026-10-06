@@ -18,6 +18,7 @@
 
 #include <Python.h>
 #include <absl/base/no_destructor.h>
+#include <absl/base/nullability.h>
 #include <absl/synchronization/mutex.h>
 #include <pybind11/pybind11.h>
 
@@ -42,7 +43,7 @@ inline bool InterpreterIsGoingAway() {
 // References left at interpreter teardown intentionally remain unreleased.
 class DeferredPythonRefs {
  public:
-  static void Retire(PyObject* object) {
+  static void Retire(PyObject* absl_nullable object) {
     if (object == nullptr) {
       return;
     }
@@ -60,13 +61,13 @@ class DeferredPythonRefs {
     if (Size().load(std::memory_order_relaxed) == 0) {
       return;
     }
-    std::vector<PyObject*> objects;
+    std::vector<PyObject* absl_nonnull> objects;
     {
       absl::MutexLock lock(Mutex());
       objects.swap(Pending());
       Size().store(0, std::memory_order_relaxed);
     }
-    for (PyObject* object : objects) {
+    for (PyObject* absl_nonnull object : objects) {
       Py_DECREF(object);
     }
   }
@@ -86,8 +87,8 @@ class DeferredPythonRefs {
     return *mutex;
   }
 
-  static std::vector<PyObject*>& Pending() {
-    static absl::NoDestructor<std::vector<PyObject*>> objects;
+  static std::vector<PyObject* absl_nonnull>& Pending() {
+    static absl::NoDestructor<std::vector<PyObject* absl_nonnull>> objects;
     return *objects;
   }
 };
@@ -123,8 +124,8 @@ class PythonFutureReferences {
   }
 
  private:
-  PyObject* loop_;
-  PyObject* future_;
+  PyObject* absl_nonnull loop_;
+  PyObject* absl_nonnull future_;
   unsigned long loop_thread_;
 };
 
@@ -205,7 +206,7 @@ pybind11::object FutureToPython(symbian::concurrency::Future<T> future,
 }
 
 void InstallPythonSchedulerParkGuard();
-void BindConcurrencyInterop(pybind11::module_& module);
+void BindConcurrencyInterop(pybind11::module_* absl_nonnull module);
 
 }  // namespace symbian::python
 

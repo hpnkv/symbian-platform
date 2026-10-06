@@ -78,6 +78,6 @@ set_target_properties(symbian_host_primitives PROPERTIES
     "absl::statusor;absl::time;absl::log;absl::log_internal_check_op;absl::random_random")
 add_dependencies(symbian_host_primitives symbian_host_primitives_bundle)
 target_link_libraries(symbian_concurrency INTERFACE
-  symbian_host_primitives)
+  symbian_host_primitives absl::nullability)
 target_compile_definitions(symbian_concurrency INTERFACE
   SYMBIAN_CONCURRENCY_HOST_BOOST=1)

@@ -9,6 +9,8 @@
 #include <span>
 #include <string_view>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"
@@ -27,8 +29,8 @@ enum class TlsVersion { kTls12, kTls13 };
  * negotiates one selected ALPN protocol. Create/Accept configure an inbound
  * server that requires a verified client certificate. Both paths share the
  * same Mbed TLS state, entropy, native socket BIO and deadline handling.
- * The caller supplies PEM roots/identities and an accepted hardware entropy
- * adapter; the SDK supplies no default roots or identity.
+ * The caller supplies PEM roots/identities. The SDK supplies OS secure entropy
+ * where supported and fails closed otherwise; no default roots or identity.
  *
  * Read returns zero only for authenticated close_notify; a bare transport EOF
  * is a truncation error. Read/Write cancel and drain native socket requests on
@@ -94,9 +96,9 @@ class TlsStream : public net::ByteStream {
   static absl::StatusOr<TlsStream> Initialize(bool server, TlsVersion version);
   absl::Status Handshake(absl::Time deadline);
 
-  explicit TlsStream(Impl* impl) : impl_(impl) {}
+  explicit TlsStream(Impl* absl_nonnull impl) : impl_(impl) {}
 
-  Impl* impl_ = nullptr;
+  Impl* absl_nullable impl_ = nullptr;
 };
 
 }  // namespace symbian::api::connectivity

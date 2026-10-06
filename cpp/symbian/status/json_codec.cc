@@ -22,6 +22,7 @@
 #include <string_view>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <absl/status/status_macros.h>
 #include <absl/status/statusor.h>
@@ -355,10 +356,10 @@ bool IsValidUtf8(std::string_view text) {
   return utf8::IsValid(text);
 }
 
-const Json* FindUnencodableString(const Json& value) {
-  std::vector<const Json*> pending{&value};
+const Json* absl_nullable FindUnencodableString(const Json& value) {
+  std::vector<const Json* absl_nullable> pending{&value};
   while (!pending.empty()) {
-    const Json* one = pending.back();
+    const Json* absl_nullable one = pending.back();
     pending.pop_back();
     if (one->is_string()) {
       if (!IsValidUtf8(one->get_ref<const std::string&>())) {

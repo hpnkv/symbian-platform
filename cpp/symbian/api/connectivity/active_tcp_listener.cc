@@ -5,13 +5,15 @@
 
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "native_tcp_client.h"
 #include "symbian/native_status.h"
 
 namespace symbian::api::connectivity {
 
-ActiveTcpListener::ActiveTcpListener(TcpAcceptObserver& observer)
-    : observer_(observer) {}
+ActiveTcpListener::ActiveTcpListener(TcpAcceptObserver* absl_nonnull observer)
+    : observer_(*observer) {}
 
 ActiveTcpListener::~ActiveTcpListener() {
   Stop();
@@ -68,9 +70,10 @@ bool ActiveTcpListener::is_listening() const {
   return native_ != nullptr;
 }
 
-void ActiveTcpListener::OnNativeAccept(void* context, NativeTcpClient* accepted,
+void ActiveTcpListener::OnNativeAccept(void* absl_nonnull context,
+                                       NativeTcpClient* absl_nonnull accepted,
                                        int result) {
-  auto* self = static_cast<ActiveTcpListener*>(context);
+  auto* absl_nonnull self = static_cast<ActiveTcpListener*>(context);
   if (result != 0) {
     self->observer_.OnAccept(
         symbian::StatusFromNativeError(result, "Active TCP accept"));

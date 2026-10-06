@@ -6,6 +6,7 @@
 
 #include <atomic>
 
+#include <absl/base/nullability.h>
 #include <e32base.h>
 #include <e32property.h>
 #include <w32std.h>
@@ -13,7 +14,7 @@
 namespace symbian::api::display {
 namespace {
 
-TInt NameResidentWindowGroup(RWindowGroup& group,
+TInt NameResidentWindowGroup(RWindowGroup* absl_nonnull group,
                              const NativeResidentPanelOptions& options) {
   // AppArc uses NUL-separated ready status, UID, and caption fields.
   TUint16 name_data[96] = {};
@@ -26,7 +27,7 @@ TInt NameResidentWindowGroup(RWindowGroup& group,
     name_data[length++] = digit < 10 ? '0' + digit : 'a' + digit - 10;
   }
   name_data[length++] = 0;
-  for (const char* ch = options.caption; *ch != '\0'; ++ch) {
+  for (const char* absl_nonnull ch = options.caption; *ch != '\0'; ++ch) {
     if (length >= 95) {
       return KErrArgument;
     }
@@ -34,7 +35,7 @@ TInt NameResidentWindowGroup(RWindowGroup& group,
   }
   name_data[length++] = 0;
   TPtrC16 name(name_data, length);
-  return group.SetName(name);
+  return group->SetName(name);
 }
 
 class RaisePanelProperty {
@@ -59,7 +60,9 @@ class RaisePanelProperty {
     return property_.Set(0);
   }
 
-  void Subscribe(TRequestStatus& status) { property_.Subscribe(status); }
+  void Subscribe(TRequestStatus* absl_nonnull status) {
+    property_.Subscribe(*status);
+  }
 
   void Cancel() { property_.Cancel(); }
 
@@ -77,7 +80,7 @@ class RaisePanelProperty {
   bool defined_ = false;
 };
 
-const unsigned char* Glyph(char letter) {
+const unsigned char* absl_nullable Glyph(char letter) {
   static const unsigned char a[7] = {14, 17, 17, 31, 17, 17, 17};
   static const unsigned char b[7] = {30, 17, 17, 30, 17, 17, 30};
   static const unsigned char c[7] = {15, 16, 16, 16, 16, 16, 15};
@@ -138,9 +141,10 @@ const unsigned char* Glyph(char letter) {
   }
 }
 
-void DrawLabel(CWindowGc& gc, const char* label, TInt x, TInt y, TInt scale) {
+void DrawLabel(CWindowGc* absl_nonnull gc, const char* absl_nonnull label,
+               TInt x, TInt y, TInt scale) {
   for (TInt index = 0; label[index] != '\0'; ++index) {
-    const unsigned char* glyph = Glyph(label[index]);
+    const unsigned char* absl_nullable glyph = Glyph(label[index]);
     if (glyph == nullptr) {
       continue;
     }
@@ -151,34 +155,35 @@ void DrawLabel(CWindowGc& gc, const char* label, TInt x, TInt y, TInt scale) {
         }
         const TInt left = x + (index * 6 + column) * scale;
         const TInt top = y + row * scale;
-        gc.DrawRect(TRect(left, top, left + scale, top + scale));
+        gc->DrawRect(TRect(left, top, left + scale, top + scale));
       }
     }
   }
 }
 
-const char* Heading(const NativeResidentPanelOptions& options) {
-  const char* dynamic = options.heading_provider == nullptr
-                            ? nullptr
-                            : options.heading_provider();
+const char* absl_nonnull Heading(const NativeResidentPanelOptions& options) {
+  const char* absl_nullable dynamic = options.heading_provider == nullptr
+                                          ? nullptr
+                                          : options.heading_provider();
   return dynamic == nullptr ? options.heading : dynamic;
 }
 
-void Draw(CWindowGc& gc, const TSize& size,
-          const NativeResidentPanelOptions& options, const char* heading) {
-  gc.SetPenStyle(CGraphicsContext::ENullPen);
-  gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
-  gc.SetBrushColor(TRgb(0x00192332));
-  gc.DrawRect(TRect(0, 0, size.iWidth, size.iHeight));
-  gc.SetBrushColor(TRgb(0x00318f71));
-  gc.DrawRect(TRect(24, 70, size.iWidth - 24, 170));
-  gc.SetBrushColor(TRgb(0x00523c9f));
-  gc.DrawRect(
+void Draw(CWindowGc* absl_nonnull gc, const TSize& size,
+          const NativeResidentPanelOptions& options,
+          const char* absl_nonnull heading) {
+  gc->SetPenStyle(CGraphicsContext::ENullPen);
+  gc->SetBrushStyle(CGraphicsContext::ESolidBrush);
+  gc->SetBrushColor(TRgb(0x00192332));
+  gc->DrawRect(TRect(0, 0, size.iWidth, size.iHeight));
+  gc->SetBrushColor(TRgb(0x00318f71));
+  gc->DrawRect(TRect(24, 70, size.iWidth - 24, 170));
+  gc->SetBrushColor(TRgb(0x00523c9f));
+  gc->DrawRect(
       TRect(24, size.iHeight - 260, size.iWidth - 24, size.iHeight - 180));
-  gc.SetBrushColor(TRgb(0x00ad4654));
-  gc.DrawRect(
+  gc->SetBrushColor(TRgb(0x00ad4654));
+  gc->DrawRect(
       TRect(24, size.iHeight - 160, size.iWidth - 24, size.iHeight - 80));
-  gc.SetBrushColor(TRgb(0x00ffffff));
+  gc->SetBrushColor(TRgb(0x00ffffff));
   DrawLabel(gc, heading, 30, 30, 4);
   DrawLabel(gc, options.state, 40, 103, 3);
   DrawLabel(gc, options.back_label, 54, size.iHeight - 239, 4);
@@ -186,7 +191,7 @@ void Draw(CWindowGc& gc, const TSize& size,
 }
 
 TInt RunWindow(const NativeResidentPanelOptions& options,
-               std::atomic<bool>& stop_requested) {
+               std::atomic<bool>* absl_nonnull stop_requested) {
   RWsSession session;
   TInt result = session.Connect();
   if (result != KErrNone) {
@@ -208,7 +213,7 @@ TInt RunWindow(const NativeResidentPanelOptions& options,
           result = group.Construct(1, ETrue);
           if (result == KErrNone) {
             // A bare RWindowGroup is invisible to AppArc task lookup.
-            result = NameResidentWindowGroup(group, options);
+            result = NameResidentWindowGroup(&group, options);
             if (result != KErrNone) {
               group.Close();
             }
@@ -235,12 +240,12 @@ TInt RunWindow(const NativeResidentPanelOptions& options,
                   TRequestStatus raise;
                   session.EventReady(&events);
                   session.RedrawReady(&redraws);
-                  raise_panel.Subscribe(raise);
+                  raise_panel.Subscribe(&raise);
                   wake_timer.After(wake, 5000000);
                   window.Invalidate();
                   session.Flush();
-                  const char* shown_heading = options.heading;
-                  while (!stop_requested.load()) {
+                  const char* absl_nonnull shown_heading = options.heading;
+                  while (!stop_requested->load()) {
                     User::WaitForAnyRequest();
                     if (events != KRequestPending) {
                       if (events.Int() != KErrNone) {
@@ -257,7 +262,7 @@ TInt RunWindow(const NativeResidentPanelOptions& options,
                         if (point.iX >= 24 && point.iX < size.iWidth - 24 &&
                             point.iY >= size.iHeight - 160 &&
                             point.iY < size.iHeight - 80) {
-                          stop_requested.store(true);
+                          stop_requested->store(true);
                         } else if (point.iX >= 24 &&
                                    point.iX < size.iWidth - 24 &&
                                    point.iY >= size.iHeight - 260 &&
@@ -265,7 +270,7 @@ TInt RunWindow(const NativeResidentPanelOptions& options,
                           group.SetOrdinalPosition(-1);
                         }
                       }
-                      if (!stop_requested.load()) {
+                      if (!stop_requested->load()) {
                         session.EventReady(&events);
                       }
                     }
@@ -280,15 +285,15 @@ TInt RunWindow(const NativeResidentPanelOptions& options,
                         window.BeginRedraw(redraw.Rect());
                         gc.Activate(window);
                         shown_heading = Heading(options);
-                        Draw(gc, size, options, shown_heading);
+                        Draw(&gc, size, options, shown_heading);
                         gc.Deactivate();
                         window.EndRedraw();
                       }
-                      if (!stop_requested.load()) {
+                      if (!stop_requested->load()) {
                         session.RedrawReady(&redraws);
                       }
                     }
-                    if (wake != KRequestPending && !stop_requested.load()) {
+                    if (wake != KRequestPending && !stop_requested->load()) {
                       if (Heading(options) != shown_heading) {
                         window.Invalidate();
                       }
@@ -300,7 +305,7 @@ TInt RunWindow(const NativeResidentPanelOptions& options,
                         break;
                       }
                       group.SetOrdinalPosition(0);
-                      raise_panel.Subscribe(raise);
+                      raise_panel.Subscribe(&raise);
                     }
                     session.Flush();
                   }
@@ -338,13 +343,14 @@ TInt RunWindow(const NativeResidentPanelOptions& options,
 }  // namespace
 
 extern "C" int SymbianDeviceRunResidentPanel(
-    const NativeResidentPanelOptions* options, void* stop_requested) {
-  CTrapCleanup* cleanup = CTrapCleanup::New();
+    const NativeResidentPanelOptions* absl_nonnull options,
+    void* absl_nonnull stop_requested) {
+  CTrapCleanup* absl_nullable cleanup = CTrapCleanup::New();
   if (cleanup == nullptr) {
     return KErrNoMemory;
   }
   const TInt result =
-      RunWindow(*options, *static_cast<std::atomic<bool>*>(stop_requested));
+      RunWindow(*options, &*static_cast<std::atomic<bool>*>(stop_requested));
   delete cleanup;
   return result;
 }

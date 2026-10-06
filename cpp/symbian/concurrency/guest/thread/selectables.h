@@ -8,6 +8,8 @@
 
 #include <atomic>
 
+#include <absl/base/nullability.h>
+
 #include "thread/cases.h"
 
 namespace thread {
@@ -24,13 +26,15 @@ class PermanentEvent final : public internal::Selectable {
 
   Case OnEvent() const { return {const_cast<PermanentEvent*>(this)}; }
 
-  bool Handle(internal::CaseInSelectClause* case_state, bool enqueue) override;
-  void Unregister(internal::CaseInSelectClause* case_state) override;
+  bool Handle(internal::CaseInSelectClause* absl_nonnull case_state,
+              bool enqueue) override;
+  void Unregister(
+      internal::CaseInSelectClause* absl_nonnull case_state) override;
 
  private:
   mutable Mutex mu_;
   std::atomic<bool> notified_{false};
-  internal::CaseInSelectClause* cases_to_be_selected_ = nullptr;
+  internal::CaseInSelectClause* absl_nullable cases_to_be_selected_ = nullptr;
 };
 
 Case NonSelectableCase();

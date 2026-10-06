@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 
+#include <absl/base/nullability.h>
 #include <unistd.h>
 
 #include "config/config.h"
@@ -54,8 +55,9 @@ TEST(FirmwareRpkgTest,
 }
 
 TEST(FirmwareArchiveTest, RejectsTraversalAndHostPaths) {
-  for (const auto* path : {"../escape", "data/../escape", "/absolute",
-                           "C:/host", "data\\escape"}) {
+  for (const auto* absl_nonnull path :
+       {"../escape", "data/../escape", "/absolute", "C:/host",
+        "data\\escape"}) {
     EXPECT_EQ(ValidateArchive({{path, 0, false}}).code(),
               absl::StatusCode::kInvalidArgument)
         << path;

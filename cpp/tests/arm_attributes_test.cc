@@ -4,6 +4,7 @@
 #include <utility>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <gtest/gtest.h>
 
 #include "e32_fixture.h"

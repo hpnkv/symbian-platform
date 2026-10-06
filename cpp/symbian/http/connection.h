@@ -2,7 +2,10 @@
 // Licensed under the Apache License, Version 2.0.
 #ifndef SYMBIAN_HTTP_CONNECTION_H_
 #define SYMBIAN_HTTP_CONNECTION_H_
+
 #include <memory>
+
+#include <absl/base/nullability.h>
 
 #include "symbian/http/http1.h"
 #include "symbian/http/http2.h"
@@ -63,7 +66,7 @@ class Connection {
   absl::Status Send(std::string_view bytes, absl::Time deadline);
   absl::Status ReadHead(absl::Time deadline);
   absl::Status Fail(absl::Status status);
-  absl::Status PrepareOutput(Headers* headers,
+  absl::Status PrepareOutput(Headers* absl_nonnull headers,
                              std::optional<std::size_t> length, bool no_body);
   std::unique_ptr<net::ByteStream> transport_;
   Role role_;

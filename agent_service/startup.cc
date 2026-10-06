@@ -1,3 +1,4 @@
+#include <absl/base/nullability.h>
 #include <e32std.h>
 #include <u32std.h>
 
@@ -8,7 +9,8 @@ extern "C" int RuntimeMain();
 extern "C" int RuntimeCheckFinalizers();
 #endif
 
-extern "C" void RuntimeRunThread(TInt reason, SStdEpocThreadCreateInfo* info) {
+extern "C" void RuntimeRunThread(TInt reason,
+                                 SStdEpocThreadCreateInfo* absl_nullable info) {
   if ((reason != 0 && reason != 1) || info == nullptr) {
     User::Invariant();
     return;

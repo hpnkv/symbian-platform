@@ -13,6 +13,8 @@
 #include <thread>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "agent_key.h"
@@ -57,7 +59,7 @@ enum class LinkPhase : std::uint8_t {
 
 std::atomic<LinkPhase> link_phase{LinkPhase::kSearching};
 
-const char* AgentHeading() {
+const char* absl_nullable AgentHeading() {
   switch (link_phase.load()) {
     case LinkPhase::kSearching:
       return "SEARCH";
@@ -83,14 +85,14 @@ absl::Duration Remaining(absl::Time deadline) {
   return std::max(absl::Milliseconds(1), std::move(deadline) - now);
 }
 
-bool ReadExactly(WebSocketStream& client, std::span<std::uint8_t> output,
-                 absl::Time deadline) {
+bool ReadExactly(WebSocketStream* absl_nonnull client,
+                 std::span<std::uint8_t> output, absl::Time deadline) {
   while (!output.empty()) {
     const auto remaining = Remaining(deadline);
     if (remaining == absl::ZeroDuration()) {
       return false;
     }
-    auto received = client.Receive(output, deadline);
+    auto received = client->Receive(output, deadline);
     if (!received.ok() || *received == 0) {
       return false;
     }
@@ -99,10 +101,11 @@ bool ReadExactly(WebSocketStream& client, std::span<std::uint8_t> output,
   return true;
 }
 
-bool WriteExactly(WebSocketStream& client, std::span<const std::uint8_t> input,
-                  absl::Time deadline) {
+bool WriteExactly(WebSocketStream* absl_nonnull client,
+                  std::span<const std::uint8_t> input, absl::Time deadline) {
   const auto remaining = Remaining(std::move(deadline));
-  return remaining != absl::ZeroDuration() && client.Send(input, deadline).ok();
+  return remaining != absl::ZeroDuration() &&
+         client->Send(input, deadline).ok();
 }
 
 std::array<std::uint8_t, 32> AgentKey() {
@@ -130,17 +133,18 @@ absl::StatusOr<std::array<std::uint8_t, 4>> DiscoverHost() {
     return absl::UnavailableError("Agent discovery entropy unavailable");
   }
   const auto key = AgentKey();
-  const mbedtls_md_info_t* md = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
+  const mbedtls_md_info_t* absl_nullable md =
+      mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
   if (md == nullptr) {
     return absl::InternalError("Agent discovery HMAC unavailable");
   }
   auto message = [&](std::string_view label,
-                     std::array<std::uint8_t, 32>& mac) {
+                     std::array<std::uint8_t, 32>* absl_nonnull mac) {
     std::array<std::uint8_t, 64> input{};
     std::copy(label.begin(), label.end(), input.begin());
     std::copy(nonce.begin(), nonce.end(), input.begin() + label.size());
     return mbedtls_md_hmac(md, key.data(), key.size(), input.data(),
-                           label.size() + nonce.size(), mac.data()) == 0;
+                           label.size() + nonce.size(), mac->data()) == 0;
   };
   std::array<std::uint8_t, 45> request{};
   std::array<std::uint8_t, 45> response{};
@@ -160,7 +164,7 @@ absl::StatusOr<std::array<std::uint8_t, 4>> DiscoverHost() {
       kDiscoveryPort, request, response, absl::Now() + absl::Seconds(3));
 }
 
-bool Authenticate(WebSocketStream& client) {
+bool Authenticate(WebSocketStream* absl_nonnull client) {
   constexpr std::string_view kClientLabel = "symbian-agent-client-v1";
   constexpr std::string_view kServerLabel = "symbian-agent-server-v1";
   std::array<std::uint8_t, 32> nonce{};
@@ -186,19 +190,20 @@ bool Authenticate(WebSocketStream& client) {
   if (!ReadExactly(client, reply, deadline)) {
     return false;
   }
-  const mbedtls_md_info_t* md = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
+  const mbedtls_md_info_t* absl_nullable md =
+      mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
   if (md == nullptr) {
     return false;
   }
   const auto key = AgentKey();
   auto digest = [&](std::string_view label,
-                    std::array<std::uint8_t, 32>& result) {
+                    std::array<std::uint8_t, 32>* absl_nonnull result) {
     std::array<std::uint8_t, 96> message{};
     std::copy(label.begin(), label.end(), message.begin());
     std::copy(nonce.begin(), nonce.end(), message.begin() + label.size());
     std::copy_n(reply.begin(), 32, message.begin() + label.size() + 32);
     return mbedtls_md_hmac(md, key.data(), key.size(), message.data(),
-                           label.size() + 64, result.data()) == 0;
+                           label.size() + 64, result->data()) == 0;
   };
   std::array<std::uint8_t, 32> expected{};
   if (!digest(kClientLabel, expected)) {
@@ -237,7 +242,7 @@ symbian::agent::GuestStatusSnapshot ReadStatusSnapshot() {
   return snapshot;
 }
 
-void Serve(TcpClient raw, symbian::agent::AgentLogRing& log) {
+void Serve(TcpClient raw, symbian::agent::AgentLogRing* absl_nonnull log) {
   symbian::websocket::Options options;
   options.mask_provider = []() -> absl::StatusOr<std::array<std::uint8_t, 4>> {
     std::array<std::uint8_t, 4> mask{};
@@ -262,23 +267,23 @@ void Serve(TcpClient raw, symbian::agent::AgentLogRing& log) {
     return;
   }
   auto client = std::move(*opened);
-  if (!Authenticate(client)) {
+  if (!Authenticate(&client)) {
     return;
   }
-  log.Append(symbian::agent::AgentLogCode::kAuthenticated);
+  log->Append(symbian::agent::AgentLogCode::kAuthenticated);
 
   struct CloseLog {
     symbian::agent::AgentLogRing& log;
 
     ~CloseLog() { log.Append(symbian::agent::AgentLogCode::kSessionClosed); }
-  } close_log{log};
+  } close_log{*log};
 
   bool negotiated = false;
   for (std::size_t request_index = 0;
        request_index < kMaximumRequestsPerConnection; ++request_index) {
     const absl::Time deadline = absl::Now() + kControlDeadline;
     std::array<std::uint8_t, 4> prefix{};
-    if (!ReadExactly(client, prefix, deadline)) {
+    if (!ReadExactly(&client, prefix, deadline)) {
       return;
     }
     const std::uint32_t length = (static_cast<std::uint32_t>(prefix[0]) << 24) |
@@ -286,22 +291,22 @@ void Serve(TcpClient raw, symbian::agent::AgentLogRing& log) {
                                  (static_cast<std::uint32_t>(prefix[2]) << 8) |
                                  static_cast<std::uint32_t>(prefix[3]);
     if (length == 0 || length > kMaximumFrame) {
-      log.Append(symbian::agent::AgentLogCode::kRejectedFrame);
+      log->Append(symbian::agent::AgentLogCode::kRejectedFrame);
       return;
     }
     std::array<std::uint8_t, kMaximumFrame> payload{};
-    if (!ReadExactly(client, std::span(payload).first(length), deadline)) {
+    if (!ReadExactly(&client, std::span(payload).first(length), deadline)) {
       return;
     }
     auto request = symbian::agent::ParseGuestControl(std::string_view(
         reinterpret_cast<const char*>(payload.data()), length));
     if (!request.ok()) {
-      log.Append(symbian::agent::AgentLogCode::kRejectedFrame);
+      log->Append(symbian::agent::AgentLogCode::kRejectedFrame);
       return;
     }
     if ((!negotiated && request->kind != 1) ||
         (negotiated && request->kind == 1)) {
-      log.Append(symbian::agent::AgentLogCode::kRejectedFrame);
+      log->Append(symbian::agent::AgentLogCode::kRejectedFrame);
       return;
     }
     absl::StatusOr<std::string> response =
@@ -310,7 +315,7 @@ void Serve(TcpClient raw, symbian::agent::AgentLogRing& log) {
       response = symbian::agent::PackGuestHelloResult(
           *request, true, kMaximumRequestsPerConnection, true);
     } else if (request->kind == 6) {
-      auto page = log.ReadAfter(request->page_after, request->page_limit);
+      auto page = log->ReadAfter(request->page_after, request->page_limit);
       if (!page.ok()) {
         return;
       }
@@ -342,14 +347,14 @@ void Serve(TcpClient raw, symbian::agent::AgentLogRing& log) {
                        response_prefix.size());
     framed.append(*response);
     if (!WriteExactly(
-            client,
+            &client,
             std::span(reinterpret_cast<const std::uint8_t*>(framed.data()),
                       framed.size()),
             deadline)) {
       return;
     }
     if (request->kind == 2) {
-      log.Append(symbian::agent::AgentLogCode::kStatusRead);
+      log->Append(symbian::agent::AgentLogCode::kStatusRead);
     } else if (request->kind == 1) {
       negotiated = true;
     }
@@ -360,7 +365,7 @@ void Serve(TcpClient raw, symbian::agent::AgentLogRing& log) {
 class AgentService final
     : public symbian::api::connectivity::TcpAcceptObserver {
  public:
-  AgentService() : listener_(*this) {}
+  AgentService() : listener_(this) {}
 
   absl::Status Start() {
     if (SYMBIAN_AGENT_PRIVATE_PROFILE) {
@@ -374,7 +379,7 @@ class AgentService final
                     *host, kHostPort, absl::Now() + absl::Seconds(3));
                 if (client.ok() && !stop->load()) {
                   link_phase.store(LinkPhase::kAuthenticating);
-                  Serve(std::move(*client), *log);
+                  Serve(std::move(*client), log);
                 } else if (!stop->load()) {
                   link_phase.store(LinkPhase::kDialError);
                 }
@@ -408,7 +413,7 @@ class AgentService final
       // The bounded queue closes a rejected client through its captured owner.
       worker_.PostFiber(
           [client = std::move(*result), log = log_]() mutable {
-            Serve(std::move(client), *log);
+            Serve(std::move(client), log);
           },
           kWorkerStackBytes);
     }
@@ -466,7 +471,7 @@ absl::Status RunAgentService() {
       [&] {
         ui_thread = std::thread([&] {
           panel_status =
-              symbian::api::display::RunResidentPanel(kPanel, stop_requested);
+              symbian::api::display::RunResidentPanel(kPanel, &stop_requested);
           if (!panel_status.ok()) {
             stop_requested.store(true);
           }

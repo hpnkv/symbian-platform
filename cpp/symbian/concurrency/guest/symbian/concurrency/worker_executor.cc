@@ -15,6 +15,8 @@
 #include <utility>
 #include <vector>
 
+#include <absl/base/nullability.h>
+
 #include "symbian/concurrency/event_executor.h"
 #include "thread/fiber.h"
 
@@ -23,8 +25,9 @@ extern "C" void SymbianRuntimeThreadCacheLeave();
 
 namespace symbian::concurrency {
 
-absl::StatusOr<WorkerExecutor*> internal::WorkerFor(EventExecutor& executor) {
-  return executor.workers();
+absl::StatusOr<WorkerExecutor* absl_nonnull> internal::WorkerFor(
+    EventExecutor* absl_nonnull executor) {
+  return executor->workers();
 }
 
 struct WorkerExecutor::State : std::enable_shared_from_this<State> {
@@ -65,9 +68,12 @@ struct WorkerExecutor::State : std::enable_shared_from_this<State> {
   }
 
   struct Policy final : thread::SchedulerPolicy {
-    explicit Policy(State& owner) : owner(owner) {}
+    explicit Policy(State* absl_nonnull owner) : owner(*owner) {}
 
-    std::size_t PickNext(std::span<thread::Fiber* const>) override { return 0; }
+    std::size_t PickNext(
+        std::span<thread::Fiber* absl_nonnull const>) override {
+      return 0;
+    }
 
     void NotifyReady() noexcept override { owner.Wake(); }
 
@@ -81,7 +87,7 @@ struct WorkerExecutor::State : std::enable_shared_from_this<State> {
       ~CacheScope() { SymbianRuntimeThreadCacheLeave(); }
     } cache_scope;
 
-    Policy policy(*this);
+    Policy policy(this);
     thread::Scheduler scheduler(&policy);
     std::vector<std::unique_ptr<thread::Fiber>> fibers;
     while (true) {
@@ -101,7 +107,7 @@ struct WorkerExecutor::State : std::enable_shared_from_this<State> {
         if (job.done) {
           auto done = std::move(job.done);
           fibers.push_back(std::make_unique<thread::Fiber>(
-              scheduler,
+              &scheduler,
               [work = std::move(job.work), done]() mutable {
                 std::move(work)();
                 done->SetValue(Unit{});

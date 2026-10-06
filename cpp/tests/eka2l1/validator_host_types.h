@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <absl/base/nullability.h>
+
 #include "checksum.h"
 #include "checksum_host_types.h"
 
@@ -56,10 +58,11 @@ struct TCheckedUid {
 };
 
 struct Mem {
-  static void Crc32(TUint32& value, const TAny* data, TInt length) {
-    unsigned long crc = value;
+  static void Crc32(TUint32* absl_nonnull value, const TAny* absl_nonnull data,
+                    TInt length) {
+    unsigned long crc = *value;
     ::Crc32(crc, data, static_cast<size_t>(length));
-    value = static_cast<TUint32>(crc);
+    *value = static_cast<TUint32>(crc);
   }
 };
 

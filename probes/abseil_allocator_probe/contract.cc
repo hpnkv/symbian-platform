@@ -1,5 +1,7 @@
 #include <thread>
 
+#include <absl/base/nullability.h>
+
 #include "absl/base/internal/low_level_alloc.h"
 #include "symbian/runtime.h"
 
@@ -10,8 +12,8 @@ int main() {
   std::thread([] {}).join();
   const int cells_before_page = SymbianRuntimeAllocationCells();
   const int page_size = SymbianRuntimePageSize();
-  SymbianRuntimePageOwner* owner = nullptr;
-  void* pages = nullptr;
+  SymbianRuntimePageOwner* absl_nullable owner = nullptr;
+  void* absl_nullable pages = nullptr;
   if (page_size <= 0 ||
       SymbianRuntimePageCreate(static_cast<unsigned>(page_size), &owner,
                                &pages) != 0 ||
@@ -23,8 +25,10 @@ int main() {
   if (SymbianRuntimeAllocationCells() != cells_before_page) {
     return -288;
   }
-  auto* small = static_cast<unsigned char*>(LowLevelAlloc::Alloc(73));
-  auto* large = static_cast<unsigned char*>(LowLevelAlloc::Alloc(130000));
+  auto* absl_nullable small =
+      static_cast<unsigned char*>(LowLevelAlloc::Alloc(73));
+  auto* absl_nullable large =
+      static_cast<unsigned char*>(LowLevelAlloc::Alloc(130000));
   if (small == nullptr || large == nullptr) {
     return -281;
   }
@@ -39,8 +43,8 @@ int main() {
   LowLevelAlloc::Free(large);
   LowLevelAlloc::Free(small);
 
-  auto* arena = LowLevelAlloc::NewArena(0);
-  auto* block =
+  auto* absl_nullable arena = LowLevelAlloc::NewArena(0);
+  auto* absl_nullable block =
       static_cast<unsigned char*>(LowLevelAlloc::AllocWithArena(4096, arena));
   if (arena == nullptr || block == nullptr) {
     return -283;

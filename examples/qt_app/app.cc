@@ -1,6 +1,7 @@
 #include <QtCore/QByteArray>
 #include <QtGui/QApplication>
 #include <QtGui/QPushButton>
+#include <absl/base/nullability.h>
 
 static_assert(QT_VERSION == 0x040801);
 static_assert(sizeof(void*) == 4 && sizeof(qreal) == 4);
@@ -10,7 +11,7 @@ int main() {
   char name[] = "qt_app";
   char style[] = "-style";
   char style_name[] = "plastique";
-  char* argv[] = {name, style, style_name, nullptr};
+  char* absl_nullable argv[] = {name, style, style_name, nullptr};
   QApplication::setAttribute(Qt::AA_S60DontConstructApplicationPanes);
   QApplication::setGraphicsSystem(QString::fromUtf8("raster"));
   QApplication application(argc, argv);

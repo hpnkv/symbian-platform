@@ -33,12 +33,14 @@ reminder text or the timer's error; it does not block the event loop.
 ```cpp
 #include <string>
 
+#include <absl/base/nullability.h>
+
 #include "symbian/concurrency/timer_pump.h"
 
 symbian::concurrency::Future<std::string> ReminderAfter(
-    symbian::concurrency::TimerPump& timers) {
+    symbian::concurrency::TimerPump* absl_nonnull timers) {
   namespace tasks = symbian::concurrency;
-  return tasks::Then(timers.ScheduleAfter(absl::Seconds(30)),
+  return tasks::Then(timers->ScheduleAfter(absl::Seconds(30)),
                      [](const absl::StatusOr<tasks::Unit>& result)
                          -> absl::StatusOr<std::string> {
                        if (!result.ok()) {
@@ -105,11 +107,13 @@ an existing executor:
 #include <cstddef>
 #include <string>
 
+#include <absl/base/nullability.h>
+
 #include "symbian/concurrency/worker_executor.h"
 
 symbian::concurrency::Future<std::size_t> CountDownloadedLines(
     const symbian::concurrency::Future<std::string>& downloaded,
-    symbian::concurrency::WorkerExecutor& worker) {
+    symbian::concurrency::WorkerExecutor* absl_nonnull worker) {
   return symbian::concurrency::ThenOn(
       downloaded, worker,
       [](const absl::StatusOr<std::string>& text)

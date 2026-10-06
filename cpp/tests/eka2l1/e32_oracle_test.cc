@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <common/buffer.h>
 #include <gtest/gtest.h>
 #include <loader/e32img.h>
@@ -18,7 +19,7 @@ namespace {
 class E32OracleTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    const char* path = std::getenv("SYMBIAN_E32_TEST_IMAGE");
+    const char* absl_nullable path = std::getenv("SYMBIAN_E32_TEST_IMAGE");
     ASSERT_NE(path, nullptr) << "SYMBIAN_E32_TEST_IMAGE must name a real build";
     std::ifstream stream(path, std::ios::binary);
     ASSERT_TRUE(stream.is_open()) << path;

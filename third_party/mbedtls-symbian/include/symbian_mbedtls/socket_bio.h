@@ -2,6 +2,7 @@
 #ifndef SYMBIAN_MBEDTLS_SOCKET_BIO_H_
 #define SYMBIAN_MBEDTLS_SOCKET_BIO_H_
 
+#include <absl/base/nullability.h>
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -15,11 +16,15 @@ typedef struct symbian_mbedtls_socket_bio {
   int cancelled;
 } symbian_mbedtls_socket_bio;
 
-int symbian_mbedtls_socket_bio_attach(symbian_mbedtls_socket_bio* bio, int fd);
-void symbian_mbedtls_socket_bio_cancel(symbian_mbedtls_socket_bio* bio);
-int symbian_mbedtls_socket_bio_send(void* context, const unsigned char* data,
+int symbian_mbedtls_socket_bio_attach(
+    symbian_mbedtls_socket_bio* absl_nullable bio, int fd);
+void symbian_mbedtls_socket_bio_cancel(
+    symbian_mbedtls_socket_bio* absl_nullable bio);
+int symbian_mbedtls_socket_bio_send(void* absl_nullable context,
+                                    const unsigned char* absl_nullable data,
                                     size_t size);
-int symbian_mbedtls_socket_bio_recv(void* context, unsigned char* data,
+int symbian_mbedtls_socket_bio_recv(void* absl_nullable context,
+                                    unsigned char* absl_nullable data,
                                     size_t size);
 
 #ifdef __cplusplus

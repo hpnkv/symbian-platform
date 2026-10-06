@@ -1,3 +1,4 @@
+#include <absl/base/nullability.h>
 #include <e32base.h>
 #include <u32std.h>
 
@@ -12,9 +13,10 @@ static_assert(sizeof(TRequestStatus) == 8);
 static_assert(sizeof(SThreadCreateInfo) == 48);
 static_assert(sizeof(SStdEpocThreadCreateInfo) == 64);
 
-extern int main(int argc, char** argv);
+extern int main(int argc, char* absl_nullable* absl_nonnull argv);
 
-extern "C" void SymbianRunThread(TInt reason, SStdEpocThreadCreateInfo* info) {
+extern "C" void SymbianRunThread(TInt reason,
+                                 SStdEpocThreadCreateInfo* absl_nullable info) {
   if ((reason != 0 && reason != 1) || info == nullptr) {
     User::Invariant();
     return;
@@ -28,12 +30,12 @@ extern "C" void SymbianRunThread(TInt reason, SStdEpocThreadCreateInfo* info) {
     } else {
       User::InitProcess();
       SymbianRuntimeRunInitializers();
-      CTrapCleanup* cleanup = CTrapCleanup::New();
+      CTrapCleanup* absl_nullable cleanup = CTrapCleanup::New();
       if (cleanup == nullptr) {
         result = KErrNoMemory;
       } else {
         char name[] = "symbian-app";
-        char* argv[] = {name, nullptr};
+        char* absl_nullable argv[] = {name, nullptr};
         result = main(1, argv);
       }
       SymbianRuntimeRunFinalizers();

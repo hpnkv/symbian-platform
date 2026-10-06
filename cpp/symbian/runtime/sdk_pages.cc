@@ -1,3 +1,4 @@
+#include <absl/base/nullability.h>
 #include <e32hal.h>
 #include <e32std.h>
 
@@ -5,8 +6,8 @@
 
 struct SymbianRuntimePageOwner {
   RChunk chunk;
-  RHeap* heap = nullptr;
-  SymbianRuntimePageOwner* next = nullptr;
+  RHeap* absl_nullable heap = nullptr;
+  SymbianRuntimePageOwner* absl_nullable next = nullptr;
 };
 
 extern "C" int SymbianRuntimePageSize() {
@@ -18,9 +19,10 @@ extern "C" int SymbianRuntimePageSize() {
   return page_size;
 }
 
-extern "C" int SymbianRuntimePageCreate(unsigned int bytes,
-                                        SymbianRuntimePageOwner** owner,
-                                        void** pages) {
+extern "C" int SymbianRuntimePageCreate(
+    unsigned int bytes,
+    SymbianRuntimePageOwner* absl_nullable* absl_nullable owner,
+    void* absl_nullable* absl_nullable pages) {
   if (owner == nullptr || pages == nullptr) {
     return KErrArgument;
   }
@@ -34,16 +36,16 @@ extern "C" int SymbianRuntimePageCreate(unsigned int bytes,
       (bytes & static_cast<unsigned>(page_size - 1)) != 0) {
     return KErrArgument;
   }
-  RHeap* heap = &User::Heap();
+  RHeap* absl_nonnull heap = &User::Heap();
   if (heap->Open() != KErrNone) {
     return KErrGeneral;
   }
-  void* storage = heap->Alloc(sizeof(SymbianRuntimePageOwner));
+  void* absl_nullable storage = heap->Alloc(sizeof(SymbianRuntimePageOwner));
   if (storage == nullptr) {
     heap->Close();
     return KErrNoMemory;
   }
-  auto* created = new (storage) SymbianRuntimePageOwner;
+  auto* absl_nonnull created = new (storage) SymbianRuntimePageOwner;
   created->heap = heap;
   const TInt result = created->chunk.CreateLocal(
       static_cast<TInt>(bytes), static_cast<TInt>(bytes), EOwnerProcess);
@@ -53,7 +55,7 @@ extern "C" int SymbianRuntimePageCreate(unsigned int bytes,
     heap->Close();
     return result;
   }
-  TUint8* base = created->chunk.Base();
+  TUint8* absl_nullable base = created->chunk.Base();
   if (base == nullptr ||
       (reinterpret_cast<TUintPtr>(base) & (page_size - 1)) != 0 ||
       created->chunk.Size() < static_cast<TInt>(bytes)) {
@@ -68,25 +70,27 @@ extern "C" int SymbianRuntimePageCreate(unsigned int bytes,
   return KErrNone;
 }
 
-extern "C" void SymbianRuntimePageClose(SymbianRuntimePageOwner* owner) {
+extern "C" void SymbianRuntimePageClose(
+    SymbianRuntimePageOwner* absl_nullable owner) {
   if (owner == nullptr) {
     return;
   }
-  RHeap* heap = owner->heap;
+  RHeap* absl_nonnull heap = owner->heap;
   owner->chunk.Close();
   owner->~SymbianRuntimePageOwner();
   heap->Free(owner);
   heap->Close();
 }
 
-extern "C" void SymbianRuntimePageSetNext(SymbianRuntimePageOwner* owner,
-                                          SymbianRuntimePageOwner* next) {
+extern "C" void SymbianRuntimePageSetNext(
+    SymbianRuntimePageOwner* absl_nullable owner,
+    SymbianRuntimePageOwner* absl_nullable next) {
   if (owner != nullptr) {
     owner->next = next;
   }
 }
 
-extern "C" SymbianRuntimePageOwner* SymbianRuntimePageNext(
-    SymbianRuntimePageOwner* owner) {
+extern "C" SymbianRuntimePageOwner* absl_nonnull SymbianRuntimePageNext(
+    SymbianRuntimePageOwner* absl_nullable owner) {
   return owner == nullptr ? nullptr : owner->next;
 }

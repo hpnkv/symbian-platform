@@ -3,18 +3,19 @@
 #include <string>
 #include <unordered_set>
 
+#include <absl/base/nullability.h>
 #include <math.h>
 
 #include "abi.h"
 
 extern "C" int SymbianRuntimeHashTableProbe() {
-  float (*volatile scale)(float, int) = &ldexpf;
+  float (*absl_nonnull volatile scale)(float, int) = &ldexpf;
   if (scale(0.75f, 3) != 6.0f || scale(8.0f, -2) != 2.0f) {
     return -232;
   }
-  long double (*volatile wide_scale)(long double, int) = &ldexpl;
-  double (*volatile make_nan)(const char*) = &nan;
-  float (*volatile make_nanf)(const char*) = &nanf;
+  long double (*absl_nonnull volatile wide_scale)(long double, int) = &ldexpl;
+  double (*absl_nonnull volatile make_nan)(const char* absl_nonnull) = &nan;
+  float (*absl_nonnull volatile make_nanf)(const char* absl_nonnull) = &nanf;
   if (wide_scale(0.75L, 3) != 6.0L ||
       std::bit_cast<std::uint64_t>(make_nan("0x123")) !=
           0x7ff8000000000123ULL ||

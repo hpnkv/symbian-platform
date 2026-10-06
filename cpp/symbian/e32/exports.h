@@ -8,6 +8,7 @@
 #include <string_view>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <absl/status/statusor.h>
 
 #include "symbian/e32/e32.h"
@@ -27,7 +28,7 @@ absl::StatusOr<std::string> EncodeCodeRelocations(
     const std::set<uint32_t>& data_targets = {});
 absl::StatusOr<std::vector<uint32_t>> DecodeCodeRelocations(
     std::string_view bytes, uint32_t code_size,
-    std::set<uint32_t>* data_targets = nullptr);
+    std::set<uint32_t>* absl_nullable data_targets = nullptr);
 
 }  // namespace symbian::e32::internal
 

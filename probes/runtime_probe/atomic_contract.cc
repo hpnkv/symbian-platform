@@ -1,12 +1,16 @@
 #include <atomic>
 
+#include <absl/base/nullability.h>
+
 extern "C" unsigned char SymbianSyncLockTestAndSet1(
-    volatile void* pointer,
+    volatile void* absl_nonnull pointer,
     unsigned char value) asm("__sync_lock_test_and_set_1");
 extern "C" unsigned int SymbianSyncFetchAndAnd4(
-    volatile void* pointer, unsigned int value) asm("__sync_fetch_and_and_4");
+    volatile void* absl_nonnull pointer,
+    unsigned int value) asm("__sync_fetch_and_and_4");
 extern "C" unsigned int SymbianSyncFetchAndOr4(
-    volatile void* pointer, unsigned int value) asm("__sync_fetch_and_or_4");
+    volatile void* absl_nonnull pointer,
+    unsigned int value) asm("__sync_fetch_and_or_4");
 
 extern "C" int SymbianRuntimeAtomicProbe() {
   std::atomic<int> value{2};

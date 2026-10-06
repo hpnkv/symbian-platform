@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+#include <absl/base/nullability.h>
+
 // Fixed-width host declarations required by the extracted historical method.
 // The original method text is generated unchanged from the pinned checkout.
 using PLUINT32 = uint32_t;
@@ -38,9 +40,9 @@ constexpr int ESegmentRO = 1;
 
 class ElfExecutable {
  public:
-  Elf32_Ehdr* iElfHeader = nullptr;
-  Elf32_Phdr* iCodeSegmentHdr = nullptr;
-  PLUINT32 GetSymbolOrdinal(Elf32_Sym* symbol);
+  Elf32_Ehdr* absl_nullable iElfHeader = nullptr;
+  Elf32_Phdr* absl_nullable iCodeSegmentHdr = nullptr;
+  PLUINT32 GetSymbolOrdinal(Elf32_Sym* absl_nonnull symbol);
 };
 
 #endif  // SYMBIAN_TESTS_SDK_ORACLE_ORDINAL_TYPES_H_

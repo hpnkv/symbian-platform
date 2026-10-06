@@ -1,6 +1,7 @@
 #include <array>
 #include <string>
 
+#include <absl/base/nullability.h>
 #include <absl/log/initialize.h>
 #include <absl/status/status.h>
 #include <absl/status/statusor.h>
@@ -177,12 +178,12 @@ symbian::sdk::ProxyInfo InspectProxy(const py::bytes& data) {
 
 PYBIND11_MODULE(_native, module) {
   absl::InitializeLog();
-  symbian::python::BindAgent(module);
+  symbian::python::BindAgent(&module);
   symbian::python::InstallPythonSchedulerParkGuard();
-  symbian::python::BindConcurrencyInterop(module);
-  symbian::python::BindDevice(module);
+  symbian::python::BindConcurrencyInterop(&module);
+  symbian::python::BindDevice(&module);
   py::google::ImportStatusModule();
-  symbian::python::BindStatus(module);
+  symbian::python::BindStatus(&module);
   using symbian::analysis::Elf32Header;
   module.doc() = "Stateless native Symbian analysis utilities.";
   py::class_<symbian::analysis::ArmAttributes>(module, "ArmAttributes")

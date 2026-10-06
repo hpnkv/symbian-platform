@@ -4,11 +4,13 @@
 #include <cstring>
 #include <ctime>
 
+#include <absl/base/nullability.h>
 #include <unistd.h>
 
 namespace {
 
-int Format(char* output, size_t capacity, const char* format, ...) {
+int Format(char* absl_nonnull output, size_t capacity,
+           const char* absl_nonnull format, ...) {
   va_list arguments;
   va_start(arguments, format);
   const int result = vsnprintf(output, capacity, format, arguments);
@@ -42,7 +44,7 @@ int SymbianRuntimeVarargsProbe() {
       return -185;
     }
   }
-  char* end = nullptr;
+  char* absl_nullable end = nullptr;
   if (strtol("  -125rest", &end, 10) != -125 || strcmp(end, "rest") != 0 ||
       strtol("0x2a", &end, 0) != 42 || *end != '\0') {
     return -186;

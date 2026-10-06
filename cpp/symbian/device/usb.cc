@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <absl/log/log.h>
 #include <absl/status/status.h>
 #include <libusb.h>
@@ -32,7 +33,7 @@ std::string UsbError(int code) {
 
 struct Context {
   // Owned libusb context, released on every early return.
-  libusb_context* value = nullptr;
+  libusb_context* absl_nullable value = nullptr;
 
   ~Context() {
     if (value != nullptr) {
@@ -43,7 +44,7 @@ struct Context {
 
 struct DeviceList {
   // Referenced device array returned by libusb.
-  libusb_device** value = nullptr;
+  libusb_device* absl_nullable* absl_nullable value = nullptr;
 
   ~DeviceList() {
     if (value != nullptr) {
@@ -54,7 +55,7 @@ struct DeviceList {
 
 struct Handle {
   // Open device handle for one serial-matched candidate.
-  libusb_device_handle* value = nullptr;
+  libusb_device_handle* absl_nullable value = nullptr;
 
   ~Handle() {
     if (value != nullptr) {
@@ -65,7 +66,7 @@ struct Handle {
 
 struct Config {
   // Active configuration descriptor owned by this scope.
-  libusb_config_descriptor* value = nullptr;
+  libusb_config_descriptor* absl_nullable value = nullptr;
 
   ~Config() {
     if (value != nullptr) {
@@ -76,7 +77,7 @@ struct Config {
 
 struct Claim {
   // Claimed device handle and interface number.
-  libusb_device_handle* handle = nullptr;
+  libusb_device_handle* absl_nullable handle = nullptr;
   int number = -1;
   // Nonzero alternate setting to restore before release.
   int alt = 0;
@@ -91,7 +92,8 @@ struct Claim {
   }
 };
 
-std::string Anchor(uint16_t vendor, const unsigned char* serial, int length) {
+std::string Anchor(uint16_t vendor, const unsigned char* absl_nonnull serial,
+                   int length) {
   char vendor_text[5];
   std::snprintf(vendor_text, sizeof(vendor_text), "%04x", vendor);
   std::string input = std::string(vendor_text) + ":serial:" +
@@ -108,7 +110,8 @@ std::string Anchor(uint16_t vendor, const unsigned char* serial, int length) {
   return hex;
 }
 
-std::vector<UsbCdcUnion> CdcUnions(const unsigned char* bytes, int length) {
+std::vector<UsbCdcUnion> CdcUnions(const unsigned char* absl_nullable bytes,
+                                   int length) {
   std::vector<UsbCdcUnion> result;
   if (bytes == nullptr || length < 0) {
     return result;
@@ -132,7 +135,7 @@ std::vector<UsbCdcUnion> CdcUnions(const unsigned char* bytes, int length) {
 }
 
 std::vector<UsbInterfaceAssociation> InterfaceAssociations(
-    const unsigned char* bytes, int length) {
+    const unsigned char* absl_nullable bytes, int length) {
   std::vector<UsbInterfaceAssociation> result;
   if (bytes == nullptr || length < 0) {
     return result;
@@ -169,8 +172,8 @@ UsbProbe Map(const libusb_config_descriptor& config) {
       interface.protocol_code = alt.bInterfaceProtocol;
       for (int k = 0; k < alt.bNumEndpoints; ++k) {
         const auto& endpoint = alt.endpoint[k];
-        static const char* types[] = {"control", "isochronous", "bulk",
-                                      "interrupt"};
+        static const char* absl_nonnull types[] = {"control", "isochronous",
+                                                   "bulk", "interrupt"};
         interface.endpoints.push_back(
             {endpoint.bEndpointAddress,
              (endpoint.bEndpointAddress & 0x80) ? "in" : "out",
@@ -231,12 +234,12 @@ Endpoints FindEndpoints(const libusb_config_descriptor& config, int cls,
   return matches == 1 ? result : Endpoints{};
 }
 
-void Append16(std::vector<unsigned char>& out, uint16_t value) {
-  out.push_back(static_cast<unsigned char>(value));
-  out.push_back(static_cast<unsigned char>(value >> 8));
+void Append16(std::vector<unsigned char>* absl_nonnull out, uint16_t value) {
+  out->push_back(static_cast<unsigned char>(value));
+  out->push_back(static_cast<unsigned char>(value >> 8));
 }
 
-void Append32(std::vector<unsigned char>& out, uint32_t value) {
+void Append32(std::vector<unsigned char>* absl_nonnull out, uint32_t value) {
   Append16(out, static_cast<uint16_t>(value));
   Append16(out, static_cast<uint16_t>(value >> 16));
 }
@@ -251,7 +254,7 @@ uint32_t Read32(const std::vector<unsigned char>& b, size_t pos) {
 }
 
 absl::StatusOr<std::vector<unsigned char>> ReadContainer(
-    libusb_device_handle* handle, uint8_t endpoint,
+    libusb_device_handle* absl_nonnull handle, uint8_t endpoint,
     uint32_t maximum = kMaxContainer) {
   std::vector<unsigned char> bytes(512);
   int length = 0;
@@ -293,7 +296,8 @@ struct Reply {
   std::vector<uint32_t> params;
 };
 
-absl::Status WriteBulk(libusb_device_handle* handle, uint8_t endpoint,
+absl::Status WriteBulk(libusb_device_handle* absl_nonnull handle,
+                       uint8_t endpoint,
                        const std::vector<unsigned char>& bytes) {
   for (size_t offset = 0; offset < bytes.size();) {
     int length =
@@ -313,17 +317,17 @@ absl::Status WriteBulk(libusb_device_handle* handle, uint8_t endpoint,
 std::vector<unsigned char> PtpCommand(uint16_t opcode, uint32_t transaction_id,
                                       const std::vector<uint32_t>& params) {
   std::vector<unsigned char> request;
-  Append32(request, static_cast<uint32_t>(12 + params.size() * 4));
-  Append16(request, 1);
-  Append16(request, opcode);
-  Append32(request, transaction_id);
+  Append32(&request, static_cast<uint32_t>(12 + params.size() * 4));
+  Append16(&request, 1);
+  Append16(&request, opcode);
+  Append32(&request, transaction_id);
   for (uint32_t value : params) {
-    Append32(request, value);
+    Append32(&request, value);
   }
   return request;
 }
 
-absl::StatusOr<Reply> PtpResponse(libusb_device_handle* handle,
+absl::StatusOr<Reply> PtpResponse(libusb_device_handle* absl_nonnull handle,
                                   const Endpoints& endpoints, uint16_t opcode,
                                   uint32_t transaction_id,
                                   uint32_t max_data = kMaxContainer) {
@@ -360,7 +364,7 @@ absl::StatusOr<Reply> PtpResponse(libusb_device_handle* handle,
   return result;
 }
 
-absl::StatusOr<Reply> Ptp(libusb_device_handle* handle,
+absl::StatusOr<Reply> Ptp(libusb_device_handle* absl_nonnull handle,
                           const Endpoints& endpoints, uint16_t opcode,
                           uint32_t transaction_id,
                           const std::vector<uint32_t>& params = {},
@@ -373,7 +377,7 @@ absl::StatusOr<Reply> Ptp(libusb_device_handle* handle,
   return PtpResponse(handle, endpoints, opcode, transaction_id, max_data);
 }
 
-absl::StatusOr<Reply> PtpSend(libusb_device_handle* handle,
+absl::StatusOr<Reply> PtpSend(libusb_device_handle* absl_nonnull handle,
                               const Endpoints& endpoints, uint16_t opcode,
                               uint32_t transaction_id,
                               const std::vector<uint32_t>& params,
@@ -385,10 +389,10 @@ absl::StatusOr<Reply> PtpSend(libusb_device_handle* handle,
   }
   std::vector<unsigned char> data;
   data.reserve(12 + payload.size());
-  Append32(data, static_cast<uint32_t>(12 + payload.size()));
-  Append16(data, 2);
-  Append16(data, opcode);
-  Append32(data, transaction_id);
+  Append32(&data, static_cast<uint32_t>(12 + payload.size()));
+  Append16(&data, 2);
+  Append16(&data, opcode);
+  Append32(&data, transaction_id);
   data.insert(data.end(), payload.begin(), payload.end());
   written = WriteBulk(handle, endpoints.out, data);
   if (!written.ok()) {
@@ -397,7 +401,7 @@ absl::StatusOr<Reply> PtpSend(libusb_device_handle* handle,
   return PtpResponse(handle, endpoints, opcode, transaction_id);
 }
 
-void AppendUtf8(std::string* text, uint32_t codepoint) {
+void AppendUtf8(std::string* absl_nonnull text, uint32_t codepoint) {
   if (codepoint < 0x80) {
     text->push_back(static_cast<char>(codepoint));
   } else if (codepoint < 0x800) {
@@ -625,7 +629,7 @@ absl::StatusOr<MtpStorageInfo> StorageInfo(
   return result;
 }
 
-UsbProbe Mtp(libusb_device_handle* handle,
+UsbProbe Mtp(libusb_device_handle* absl_nonnull handle,
              const libusb_config_descriptor& config, uint32_t limit) {
   UsbProbe result;
   Endpoints endpoints = FindEndpoints(config, 6, 1, 1);
@@ -772,7 +776,8 @@ UsbProbe Mtp(libusb_device_handle* handle,
   return result;
 }
 
-absl::Status RequireSuccess(const Reply& reply, const char* operation) {
+absl::Status RequireSuccess(const Reply& reply,
+                            const char* absl_nonnull operation) {
   if (reply.response == 0x2001) {
     return absl::OkStatus();
   }
@@ -782,7 +787,7 @@ absl::Status RequireSuccess(const Reply& reply, const char* operation) {
       std::string(operation) + " rejected by MTP device (" + code + ")");
 }
 
-const char* PtpOperationName(uint16_t opcode) {
+const char* absl_nonnull PtpOperationName(uint16_t opcode) {
   switch (opcode) {
     case 0x1001:
       return "GetDeviceInfo";
@@ -803,7 +808,7 @@ const char* PtpOperationName(uint16_t opcode) {
   }
 }
 
-absl::StatusOr<Reply> CheckedPtp(libusb_device_handle* handle,
+absl::StatusOr<Reply> CheckedPtp(libusb_device_handle* absl_nonnull handle,
                                  const Endpoints& endpoints, uint16_t opcode,
                                  uint32_t transaction_id,
                                  const std::vector<uint32_t>& params = {},
@@ -823,10 +828,9 @@ absl::StatusOr<Reply> CheckedPtp(libusb_device_handle* handle,
   return reply;
 }
 
-absl::StatusOr<MtpObjectInfo> ReadObjectInfo(libusb_device_handle* handle,
-                                             const Endpoints& endpoints,
-                                             uint32_t transaction_id,
-                                             uint32_t object_handle) {
+absl::StatusOr<MtpObjectInfo> ReadObjectInfo(
+    libusb_device_handle* absl_nonnull handle, const Endpoints& endpoints,
+    uint32_t transaction_id, uint32_t object_handle) {
   auto reply = Ptp(handle, endpoints, 0x1008, transaction_id, {object_handle});
   if (!reply.ok()) {
     return reply.status();
@@ -863,7 +867,7 @@ absl::StatusOr<MtpObjectInfo> ReadObjectInfo(libusb_device_handle* handle,
 }
 
 absl::StatusOr<std::vector<uint32_t>> ObjectHandles(
-    libusb_device_handle* handle, const Endpoints& endpoints,
+    libusb_device_handle* absl_nonnull handle, const Endpoints& endpoints,
     uint32_t transaction_id, uint32_t storage, uint32_t parent) {
   auto reply = CheckedPtp(handle, endpoints, 0x1007, transaction_id,
                           {storage, 0, parent});
@@ -874,31 +878,31 @@ absl::StatusOr<std::vector<uint32_t>> ObjectHandles(
   return cursor.Array(4);
 }
 
-void AppendPtpString(std::vector<unsigned char>* data,
+void AppendPtpString(std::vector<unsigned char>* absl_nonnull data,
                      const std::string& value) {
   data->push_back(static_cast<unsigned char>(value.size() + 1));
   for (char character : value) {
-    Append16(*data, static_cast<unsigned char>(character));
+    Append16(data, static_cast<unsigned char>(character));
   }
-  Append16(*data, 0);
+  Append16(data, 0);
 }
 
 std::vector<unsigned char> SisObjectInfo(uint32_t storage, uint32_t parent,
                                          uint32_t size,
                                          const std::string& filename) {
   std::vector<unsigned char> data;
-  Append32(data, storage);
-  Append16(data, 0x3000);  // Undefined object format; SIS has no MTP format.
-  Append16(data, 0);       // No protection flag.
-  Append32(data, size);
-  Append16(data, 0);  // No thumbnail format.
+  Append32(&data, storage);
+  Append16(&data, 0x3000);  // Undefined object format; SIS has no MTP format.
+  Append16(&data, 0);       // No protection flag.
+  Append32(&data, size);
+  Append16(&data, 0);  // No thumbnail format.
   for (int index = 0; index < 6; ++index) {
-    Append32(data, 0);
+    Append32(&data, 0);
   }
-  Append32(data, parent);
-  Append16(data, 0);  // Not an association.
-  Append32(data, 0);
-  Append32(data, 0);
+  Append32(&data, parent);
+  Append16(&data, 0);  // Not an association.
+  Append32(&data, 0);
+  Append32(&data, 0);
   AppendPtpString(&data, filename);
   data.insert(data.end(), 3,
               0);  // Empty capture date, modified date, keywords.
@@ -917,7 +921,8 @@ std::string Sha256Hex(const std::vector<unsigned char>& bytes) {
 }
 
 absl::StatusOr<MtpStageResult> StageOnHandle(
-    libusb_device_handle* handle, const libusb_config_descriptor& config,
+    libusb_device_handle* absl_nonnull handle,
+    const libusb_config_descriptor& config,
     const std::vector<unsigned char>& package, const std::string& filename,
     const std::string& expected_sha256) {
   Endpoints endpoints = FindEndpoints(config, 6, 1, 1);
@@ -955,9 +960,9 @@ absl::StatusOr<MtpStageResult> StageOnHandle(
 
   // This scope closes the session on every path, including failed transfers.
   struct Session {
-    libusb_device_handle* handle;
+    libusb_device_handle* absl_nonnull handle;
     Endpoints endpoints;
-    uint32_t* next_id;
+    uint32_t* absl_nonnull next_id;
 
     ~Session() {
       Ptp(handle, endpoints, 0x1003, (*next_id)++).status().IgnoreError();
@@ -1104,7 +1109,7 @@ absl::StatusOr<MtpStageResult> StageOnHandle(
                         unreadable_children};
 }
 
-UsbProbe Obex(libusb_device_handle* handle,
+UsbProbe Obex(libusb_device_handle* absl_nonnull handle,
               const libusb_config_descriptor& config) {
   UsbProbe result;
   // Interface 9 is selected by the observed PC Suite Services CDC union 8->9.
@@ -1364,7 +1369,7 @@ absl::StatusOr<MtpStageResult> StageMtpSis(uint16_t vendor, uint16_t product,
     return absl::UnavailableError("libusb list: " +
                                   UsbError(static_cast<int>(count)));
   }
-  libusb_device* selected = nullptr;
+  libusb_device* absl_nullable selected = nullptr;
   for (ssize_t index = 0; index < count; ++index) {
     libusb_device_descriptor descriptor{};
     if (libusb_get_device_descriptor(list.value[index], &descriptor) != 0 ||
@@ -1408,7 +1413,7 @@ absl::StatusOr<MtpStageResult> StageMtpSis(uint16_t vendor, uint16_t product,
 
 namespace symbian::device {
 namespace {
-const char* CompletionStatus(libusb_transfer_status status) {
+const char* absl_nonnull CompletionStatus(libusb_transfer_status status) {
   switch (status) {
     case LIBUSB_TRANSFER_COMPLETED:
       return "completed";
@@ -1428,7 +1433,8 @@ const char* CompletionStatus(libusb_transfer_status status) {
   return "unknown";
 }
 
-absl::Status TransferStatus(int result_code, const char* operation) {
+absl::Status TransferStatus(int result_code,
+                            const char* absl_nonnull operation) {
   if (result_code == 0) {
     return absl::OkStatus();
   }
@@ -1456,10 +1462,10 @@ absl::Status CheckLength(int length) {
 struct UsbSession::Impl {
   struct Pending {
     // Owning session and transfer identifier used by the libusb callback.
-    Impl* owner = nullptr;
+    Impl* absl_nullable owner = nullptr;
     uint64_t id = 0;
     // Libusb transfer and backing buffer; both live until callback completion.
-    libusb_transfer* transfer = nullptr;
+    libusb_transfer* absl_nullable transfer = nullptr;
     std::vector<unsigned char> bytes;
     // Transfer layout controls payload extraction from the backing buffer.
     bool inbound = false;
@@ -1475,9 +1481,9 @@ struct UsbSession::Impl {
   };
 
   // Owned libusb context, opened device, and descriptor snapshot.
-  libusb_context* context = nullptr;
-  libusb_device_handle* handle = nullptr;
-  libusb_config_descriptor* config = nullptr;
+  libusb_context* absl_nullable context = nullptr;
+  libusb_device_handle* absl_nullable handle = nullptr;
+  libusb_config_descriptor* absl_nullable config = nullptr;
   // Pump and state locks keep libusb event processing and callback state safe.
   mutable std::mutex pump_mutex;
   mutable std::mutex state_mutex;
@@ -1496,9 +1502,9 @@ struct UsbSession::Impl {
   // Monotonic transfer identifier within this session.
   uint64_t next_id = 1;
 
-  static void Callback(libusb_transfer* transfer) {
-    auto* raw = static_cast<Pending*>(transfer->user_data);
-    Impl* owner = raw->owner;
+  static void Callback(libusb_transfer* absl_nonnull transfer) {
+    auto* absl_nonnull raw = static_cast<Pending*>(transfer->user_data);
+    Impl* absl_nonnull owner = raw->owner;
     std::lock_guard<std::mutex> lock(owner->state_mutex);
     auto it = owner->pending.find(raw->id);
     if (it == owner->pending.end()) {
@@ -1591,7 +1597,7 @@ absl::StatusOr<std::shared_ptr<UsbSession>> UsbSession::Open(
         descriptor.iSerialNumber == 0) {
       continue;
     }
-    libusb_device_handle* candidate = nullptr;
+    libusb_device_handle* absl_nullable candidate = nullptr;
     if (libusb_open(list.value[i], &candidate) != 0) {
       continue;
     }
@@ -2138,7 +2144,8 @@ absl::StatusOr<std::vector<UsbPollFd>> UsbSession::PollFileDescriptors() const {
   if (impl_->closed || impl_->closing) {
     return absl::FailedPreconditionError("USB session closed");
   }
-  const libusb_pollfd** list = libusb_get_pollfds(impl_->context);
+  const libusb_pollfd* absl_nullable* absl_nullable list =
+      libusb_get_pollfds(impl_->context);
   if (list == nullptr) {
     return absl::UnimplementedError("libusb poll descriptors unavailable");
   }

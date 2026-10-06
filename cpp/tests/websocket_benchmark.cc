@@ -1,20 +1,22 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
 // Host codec round-trip benchmark; excludes socket I/O and guest execution.
+
 #include <array>
 #include <chrono>
 #include <iostream>
 #include <string>
 
+#include <absl/base/nullability.h>
 #include <openssl/rand.h>
 
 #include "symbian/websocket/websocket.h"
 
 namespace {
-absl::Status Relay(symbian::websocket::WebSocket& from,
-                   symbian::websocket::WebSocket& to) {
-  auto output = from.TakeOutput();
-  return output.ok() ? to.Feed(*output) : output.status();
+absl::Status Relay(symbian::websocket::WebSocket* absl_nonnull from,
+                   symbian::websocket::WebSocket* absl_nonnull to) {
+  auto output = from->TakeOutput();
+  return output.ok() ? to->Feed(*output) : output.status();
 }
 }  // namespace
 
@@ -35,7 +37,8 @@ int main() {
     return 1;
   }
   for (int i = 0; i < 4; ++i) {
-    if (!Relay(**client, **server).ok() || !Relay(**server, **client).ok()) {
+    if (!Relay(&**client, &**server).ok() ||
+        !Relay(&**server, &**client).ok()) {
       return 1;
     }
   }
@@ -43,14 +46,14 @@ int main() {
   const std::string payload(4096, 'x');
   const auto start = std::chrono::steady_clock::now();
   for (int i = 0; i < kIterations; ++i) {
-    if (!(*client)->Send(payload).ok() || !Relay(**client, **server).ok()) {
+    if (!(*client)->Send(payload).ok() || !Relay(&**client, &**server).ok()) {
       return 1;
     }
     auto message = (*server)->Receive();
     if (!message.ok() || !message->has_value() || **message != payload) {
       return 1;
     }
-    if (!(*server)->Send(**message).ok() || !Relay(**server, **client).ok()) {
+    if (!(*server)->Send(**message).ok() || !Relay(&**server, &**client).ok()) {
       return 1;
     }
     message = (*client)->Receive();

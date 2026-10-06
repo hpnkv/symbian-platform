@@ -1,5 +1,6 @@
 #include "window_server.h"
 
+#include <absl/base/nullability.h>
 #include <w32std.h>
 
 #include "async_bridge.h"
@@ -16,12 +17,12 @@ TRect NativeRect(const Rect& rectangle) {
                rectangle.y + rectangle.height);
 }
 
-void Fill(CWindowGc& gc, const Rect& rectangle, TUint color) {
-  gc.SetBrushColor(TRgb(color));
-  gc.DrawRect(NativeRect(rectangle));
+void Fill(CWindowGc* absl_nonnull gc, const Rect& rectangle, TUint color) {
+  gc->SetBrushColor(TRgb(color));
+  gc->DrawRect(NativeRect(rectangle));
 }
 
-void DrawDigit(CWindowGc& gc, int digit, int x, int y, int scale) {
+void DrawDigit(CWindowGc* absl_nonnull gc, int digit, int x, int y, int scale) {
   // Seven-segment digits avoid a dependency on font selection/resources.
   const Rect bars[7] = {
       {.x = x + scale, .y = y, .width = 3 * scale, .height = scale},
@@ -46,10 +47,11 @@ void DrawDigit(CWindowGc& gc, int digit, int x, int y, int scale) {
   }
 }
 
-__attribute__((noinline)) void DrawGui(CWindowGc& gc, const Layout& layout,
-                                       const Model& model, bool pulse) {
-  gc.SetPenStyle(CGraphicsContext::ENullPen);
-  gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
+__attribute__((noinline)) void DrawGui(CWindowGc* absl_nonnull gc,
+                                       const Layout& layout, const Model& model,
+                                       bool pulse) {
+  gc->SetPenStyle(CGraphicsContext::ENullPen);
+  gc->SetBrushStyle(CGraphicsContext::ESolidBrush);
   Fill(gc, {.x = 0, .y = 0, .width = layout.width, .height = layout.height},
        0x001b1c25);
   Fill(gc, layout.increment, 0x004e9f76);
@@ -103,19 +105,19 @@ __attribute__((noinline)) void DrawGui(CWindowGc& gc, const Layout& layout,
   }
 }
 
-TInt RunWindow(RWsSession& session, const CWsScreenDevice& screen,
-               CWindowGc& gc) {
+TInt RunWindow(RWsSession* absl_nonnull session, const CWsScreenDevice& screen,
+               CWindowGc* absl_nonnull gc) {
   const TSize size = screen.SizeInPixels();
   if (size.iWidth < 120 || size.iHeight < 160 || size.iWidth > 8192 ||
       size.iHeight > 8192) {
     return KErrNotSupported;
   }
-  RWindowGroup group(session);
+  RWindowGroup group(*session);
   TInt result = group.Construct(1, ETrue);
   if (result != KErrNone) {
     return result;
   }
-  RWindow window(session);
+  RWindow window(*session);
   result = window.Construct(group, 2);
   if (result != KErrNone) {
     group.Close();
@@ -123,7 +125,7 @@ TInt RunWindow(RWsSession& session, const CWsScreenDevice& screen,
   }
   const Layout layout = gui_app::MakeLayout(size.iWidth, size.iHeight);
   Model model;
-  GuiAsync* async = GuiAsyncCreate();
+  GuiAsync* absl_nullable async = GuiAsyncCreate();
   if (async == nullptr) {
     window.Close();
     group.Close();
@@ -143,10 +145,10 @@ TInt RunWindow(RWsSession& session, const CWsScreenDevice& screen,
   window.Activate();
   TRequestStatus events;
   TRequestStatus redraws;
-  session.EventReady(&events);
-  session.RedrawReady(&redraws);
+  session->EventReady(&events);
+  session->RedrawReady(&redraws);
   window.Invalidate();
-  session.Flush();
+  session->Flush();
   while (model.running()) {
     const int due = GuiAsyncDispatch(async);
     if (due < 0) {
@@ -166,7 +168,7 @@ TInt RunWindow(RWsSession& session, const CWsScreenDevice& screen,
         break;
       }
       TWsEvent event;
-      session.GetEvent(event);
+      session->GetEvent(event);
       if (event.Handle() == 2 && event.Type() == EEventPointer &&
           event.Pointer()->iType == TPointerEvent::EButton1Down) {
         const TPoint position = event.Pointer()->iPosition;
@@ -183,7 +185,7 @@ TInt RunWindow(RWsSession& session, const CWsScreenDevice& screen,
         }
       }
       if (model.running()) {
-        session.EventReady(&events);
+        session->EventReady(&events);
       }
     }
     if (redraws != KRequestPending) {
@@ -192,22 +194,22 @@ TInt RunWindow(RWsSession& session, const CWsScreenDevice& screen,
         break;
       }
       TWsRedrawEvent redraw;
-      session.GetRedraw(redraw);
+      session->GetRedraw(redraw);
       if (redraw.Handle() == 2) {
         window.BeginRedraw(redraw.Rect());
-        gc.Activate(window);
+        gc->Activate(window);
         DrawGui(gc, layout, model, pulse);
-        gc.Deactivate();
+        gc->Deactivate();
         window.EndRedraw();
       }
       if (model.running()) {
-        session.RedrawReady(&redraws);
+        session->RedrawReady(&redraws);
       }
     }
-    session.Flush();
+    session->Flush();
   }
-  session.EventReadyCancel();
-  session.RedrawReadyCancel();
+  session->EventReadyCancel();
+  session->RedrawReadyCancel();
   // Cancellation completes requests before their stack statuses disappear.
   if (events == KRequestPending) {
     User::WaitForRequest(events);
@@ -218,7 +220,7 @@ TInt RunWindow(RWsSession& session, const CWsScreenDevice& screen,
   GuiAsyncDestroy(async);
   window.Close();
   group.Close();
-  session.Flush();
+  session->Flush();
   return result;
 }
 
@@ -227,7 +229,7 @@ TInt RunWindow(RWsSession& session, const CWsScreenDevice& screen,
 int GuiWindowServerMain() {
   // Cleanup stacks are thread-local. The process startup installed one on
   // its own thread; this event thread needs its own before using EUSER/WS32.
-  CTrapCleanup* cleanup = CTrapCleanup::New();
+  CTrapCleanup* absl_nullable cleanup = CTrapCleanup::New();
   if (cleanup == nullptr) {
     return KErrNoMemory;
   }
@@ -244,7 +246,7 @@ int GuiWindowServerMain() {
       CWindowGc gc(&screen);
       result = gc.Construct();
       if (result == KErrNone) {
-        result = RunWindow(session, screen, gc);
+        result = RunWindow(&session, screen, &gc);
       }
     }
   }

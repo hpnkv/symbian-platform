@@ -1,8 +1,10 @@
 #include "probe.h"
 
+#include <absl/base/nullability.h>
+
 int main() {
   volatile unsigned int input = 16U;
-  const Callback* volatile callbacks = SymbianCallbacks;
+  const Callback* absl_nonnull volatile callbacks = SymbianCallbacks;
   const Transformer transformer;
   const unsigned int thumb_result = callbacks[0](input);
   const unsigned int arm_result = callbacks[1](input);

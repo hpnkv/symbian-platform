@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Native format publisher for SDK consumers that do not install Python.
+
 #include <charconv>
 #include <cstdint>
 #include <filesystem>
@@ -10,6 +11,7 @@
 #include <string_view>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <absl/status/status_macros.h>
 #include <absl/status/statusor.h>
@@ -80,7 +82,8 @@ absl::Status Write(const fs::path& path, std::string_view data,
   return stream ? absl::OkStatus() : absl::DataLossError("Output write failed");
 }
 
-absl::StatusOr<std::string> Single(const Options& options, const char* key) {
+absl::StatusOr<std::string> Single(const Options& options,
+                                   const char* absl_nonnull key) {
   const auto found = options.find(key);
   if (found == options.end() || found->second.size() != 1) {
     return absl::InvalidArgumentError(std::string("Expected one ") + key);
@@ -104,7 +107,7 @@ absl::StatusOr<uint32_t> Number(std::string_view value) {
   return result;
 }
 
-absl::Status Run(int argc, char** argv) {
+absl::Status Run(int argc, char* absl_nullable* absl_nonnull argv) {
   if (argc < 2) {
     return absl::InvalidArgumentError("Expected a command; use --help");
   }
@@ -222,7 +225,7 @@ absl::Status Run(int argc, char** argv) {
 }
 }  // namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char* absl_nullable* absl_nonnull argv) {
   if (argc == 2 && std::string_view(argv[1]) == "--help") {
     std::cout
         << "symbian-native convert-exe|convert-dll --input ELF --uid3 UID "

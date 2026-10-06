@@ -44,7 +44,14 @@ def _syntax_check(report, source, standard="c++20"):
         else:
             command.append(argument)
     command.extend(
-        ["-fsyntax-only", "-I", str(PROJECT), str(source), "-pedantic-errors"]
+        [
+            "-fsyntax-only",
+            "-I",
+            str(PROJECT),
+            str(source),
+            "-pedantic-errors",
+            "-Wno-nullability-extension",
+        ]
     )
     return subprocess.run(
         command,

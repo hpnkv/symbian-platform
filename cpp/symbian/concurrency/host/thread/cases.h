@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <type_traits>
 
+#include <absl/base/nullability.h>
 #include <absl/container/inlined_vector.h>
 #include <absl/log/check.h>
 #include <absl/log/log.h>
@@ -109,7 +110,7 @@ struct [[nodiscard]] Case {
     arguments.push_back(static_cast<void*>(arg));
   }
 
-  [[nodiscard]] void* absl_nonnull GetArgPtr(int index) const {
+  [[nodiscard]] void* absl_nullable GetArgPtr(int index) const {
     if (index < 0 || static_cast<size_t>(index) >= arguments.size()) {
       LOG(FATAL) << "Case::GetArgOrDie: index out of bounds: " << index
                  << ", arguments.size() = " << arguments.size();
@@ -119,7 +120,7 @@ struct [[nodiscard]] Case {
   }
 
   template <typename T>
-  [[nodiscard]] T* absl_nonnull GetArgPtr(int index) const {
+  [[nodiscard]] T* absl_nullable GetArgPtr(int index) const {
     return static_cast<T*>(GetArgPtr(index));
   }
 
@@ -140,7 +141,7 @@ struct CaseInSelectClause {
       nullptr;  // Initialized by Select(), nullptr -> not on list.
   CaseInSelectClause* absl_nullable next = nullptr;
 
-  [[nodiscard]] const Case* absl_nonnull GetCase() const { return case_ptr; }
+  [[nodiscard]] const Case* absl_nullable GetCase() const { return case_ptr; }
 
   // Attempt to cause the owning Selector to choose this case.
   bool TryPick() ABSL_EXCLUSIVE_LOCKS_REQUIRED(selector->mu) {

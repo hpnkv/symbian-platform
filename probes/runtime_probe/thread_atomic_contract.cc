@@ -1,8 +1,11 @@
 #include <atomic>
 
+#include <absl/base/nullability.h>
+
 extern "C" void SymbianRuntimeThreadYield();
-extern "C" int SymbianRuntimeRunThread(void* state, int (*worker)(void*),
-                                       int (*parent)(void*));
+extern "C" int SymbianRuntimeRunThread(
+    void* absl_nullable state, int (*absl_nonnull worker)(void* absl_nonnull),
+    int (*absl_nonnull parent)(void* absl_nonnull));
 
 namespace {
 
@@ -11,7 +14,7 @@ struct Shared {
   std::atomic<int> counter{0};
 };
 
-int Increment(void* context) {
+int Increment(void* absl_nonnull context) {
   auto& state = *static_cast<Shared*>(context);
   state.ready.fetch_add(1, std::memory_order_acq_rel);
   for (int attempt = 0; attempt < 3000; ++attempt) {

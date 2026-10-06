@@ -18,6 +18,7 @@
 // accepts string_view to avoid a payload copy.
 #ifndef SYMBIAN_WEBSOCKET_FRAMING_H_
 #define SYMBIAN_WEBSOCKET_FRAMING_H_
+
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -26,6 +27,8 @@
 #include <string>
 #include <string_view>
 #include <vector>
+
+#include <absl/base/nullability.h>
 
 #include "absl/status/status.h"
 #include "symbian/websocket/websocket.h"
@@ -38,12 +41,12 @@ constexpr std::uint8_t kClose = 0x8;
 constexpr std::uint8_t kPing = 0x9;
 constexpr std::uint8_t kPong = 0xa;
 
-void AppendBigEndian16(std::string* output, std::uint16_t value) {
+void AppendBigEndian16(std::string* absl_nonnull output, std::uint16_t value) {
   output->push_back(static_cast<char>((value >> 8U) & 0xffU));
   output->push_back(static_cast<char>(value & 0xffU));
 }
 
-void AppendBigEndian64(std::string* output, std::uint64_t value) {
+void AppendBigEndian64(std::string* absl_nonnull output, std::uint64_t value) {
   for (int shift = 56; shift >= 0; shift -= 8) {
     output->push_back(static_cast<char>((value >> shift) & 0xffU));
   }
@@ -64,7 +67,8 @@ void AppendBigEndian64(std::string* output, std::uint64_t value) {
  * so a fragmented message's continuations do not continue the previous frame's
  * mask.
  */
-void MaskInPlace(char* data, size_t length, const char (&mask)[4]) {
+void MaskInPlace(char* absl_nonnull data, size_t length,
+                 const char (&mask)[4]) {
   std::uint32_t word = 0;
   std::memcpy(&word, mask, sizeof(word));
   size_t index = 0;
@@ -106,7 +110,7 @@ class Framing {
     std::optional<std::string> close;
   };
 
-  absl::Status ParseFrames(ParsedActions* actions) {
+  absl::Status ParseFrames(ParsedActions* absl_nonnull actions) {
     size_t consumed = 0;
     while (input_.size() - consumed >= 2) {
       const auto first = static_cast<unsigned char>(input_[consumed]);

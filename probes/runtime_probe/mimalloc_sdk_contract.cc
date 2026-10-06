@@ -1,14 +1,16 @@
+#include <absl/base/nullability.h>
 #include <mimalloc.h>
 
 extern "C" int SymbianRuntimeMimallocSdkProbe() {
-  auto* bytes = static_cast<unsigned char*>(mi_malloc(64));
+  auto* absl_nullable bytes = static_cast<unsigned char*>(mi_malloc(64));
   if (bytes == nullptr || mi_usable_size(bytes) < 64) {
     mi_free(bytes);
     return -183;
   }
   bytes[0] = 0x32;
   bytes[63] = 0x5a;
-  auto* grown = static_cast<unsigned char*>(mi_realloc(bytes, 128));
+  auto* absl_nullable grown =
+      static_cast<unsigned char*>(mi_realloc(bytes, 128));
   if (grown == nullptr) {
     mi_free(bytes);
     return -184;

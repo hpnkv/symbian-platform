@@ -67,7 +67,7 @@ application to copy stack bytes into a heap allocation and release it:
 
 int main() {
   const unsigned char source[4] = {1, 2, 3, 4};
-  auto* dest = static_cast<unsigned char*>(LegacyAlloc(4));
+  auto* absl_nullable dest = static_cast<unsigned char*>(LegacyAlloc(4));
   if (dest == nullptr) {
     return -4;
   }

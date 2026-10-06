@@ -4,10 +4,13 @@
 #include <thread>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "abi.h"
 
-extern "C" int SymbianRuntimeRunThread(void* state, int (*worker)(void*),
-                                       int (*parent)(void*));
+extern "C" int SymbianRuntimeRunThread(
+    void* absl_nullable state, int (*absl_nonnull worker)(void* absl_nullable),
+    int (*absl_nonnull parent)(void* absl_nullable));
 extern "C" void SymbianRuntimeThreadYield();
 #ifdef SYMBIAN_RUNTIME_MIMALLOC
 extern "C" unsigned int SymbianRuntimeMimallocChunkCount();
@@ -15,28 +18,29 @@ extern "C" unsigned int SymbianRuntimeMimallocChunkBytes();
 extern "C" unsigned int SymbianRuntimeMimallocReservedBytes();
 extern "C" unsigned int SymbianRuntimeMimallocAddressBudget();
 extern "C" unsigned int SymbianMimallocCacheEntries();
-extern "C" int SymbianRuntimeRunManagedThread(void* state, int (*worker)(void*),
-                                              int (*parent)(void*));
+extern "C" int SymbianRuntimeRunManagedThread(
+    void* absl_nullable state, int (*absl_nonnull worker)(void* absl_nullable),
+    int (*absl_nonnull parent)(void* absl_nullable));
 #endif
 
 namespace {
 struct CrossHeapState {
-  void* heap = nullptr;
-  std::string* text = nullptr;
-  SymbianRuntimePageOwner* page_owner = nullptr;
-  void* pages = nullptr;
+  void* absl_nullable heap = nullptr;
+  std::string* absl_nullable text = nullptr;
+  SymbianRuntimePageOwner* absl_nullable page_owner = nullptr;
+  void* absl_nullable pages = nullptr;
   int page_size = 0;
   int page_result = -1;
 };
 
 struct LiveProducerState {
   std::atomic<int> phase{0};
-  std::string* text = nullptr;
-  void* producer_heap = nullptr;
-  void* consumer_heap = nullptr;
+  std::string* absl_nullable text = nullptr;
+  void* absl_nullable producer_heap = nullptr;
+  void* absl_nullable consumer_heap = nullptr;
 };
 
-int Nothing(void*) {
+int Nothing(void* absl_nullable) {
   return 0;
 }
 
@@ -46,8 +50,8 @@ struct ManagedCacheState {
   int hits = 0;
 };
 
-int AllocateAndFree(void*) {
-  auto* value = new std::string(96, 't');
+int AllocateAndFree(void* absl_nullable) {
+  auto* absl_nonnull value = new std::string(96, 't');
   if (value->size() != 96 || (*value)[95] != 't') {
     delete value;
     return -175;
@@ -56,7 +60,7 @@ int AllocateAndFree(void*) {
   return 0;
 }
 
-int ManagedAllocateAndFree(void* opaque) {
+int ManagedAllocateAndFree(void* absl_nonnull opaque) {
   auto& state = *static_cast<ManagedCacheState*>(opaque);
   if (SymbianMimallocCacheEntries() == state.expected_entries + 1) {
     ++state.hits;
@@ -65,7 +69,7 @@ int ManagedAllocateAndFree(void* opaque) {
 }
 #endif
 
-int ProduceOnPrivateHeap(void* opaque) {
+int ProduceOnPrivateHeap(void* absl_nonnull opaque) {
   auto& state = *static_cast<CrossHeapState*>(opaque);
   state.heap = SymbianRuntimeHeapIdentity();
   state.text = new std::string(257, 'w');
@@ -78,7 +82,7 @@ int ProduceOnPrivateHeap(void* opaque) {
   return 0;
 }
 
-int DisposeOnPrivateHeap(void* opaque) {
+int DisposeOnPrivateHeap(void* absl_nonnull opaque) {
   auto& state = *static_cast<CrossHeapState*>(opaque);
   state.heap = SymbianRuntimeHeapIdentity();
   delete state.text;
@@ -86,7 +90,7 @@ int DisposeOnPrivateHeap(void* opaque) {
   return 0;
 }
 
-int HoldProducerAlive(void* opaque) {
+int HoldProducerAlive(void* absl_nonnull opaque) {
   auto& state = *static_cast<LiveProducerState*>(opaque);
   state.producer_heap = SymbianRuntimeHeapIdentity();
   state.text = new std::string(257, 'l');
@@ -100,7 +104,7 @@ int HoldProducerAlive(void* opaque) {
   return -161;
 }
 
-int FreeWhileProducerAlive(void* opaque) {
+int FreeWhileProducerAlive(void* absl_nonnull opaque) {
   auto& state = *static_cast<LiveProducerState*>(opaque);
   state.consumer_heap = SymbianRuntimeHeapIdentity();
   for (int i = 0; i < 1000; ++i) {
@@ -124,7 +128,7 @@ int FreeWhileProducerAlive(void* opaque) {
 
 extern "C" int SymbianRuntimeStdThreadProbe() {
 #ifdef SYMBIAN_RUNTIME_MIMALLOC
-  void* const warm = SymbianRuntimeAllocate(1);
+  void* absl_nullable const warm = SymbianRuntimeAllocate(1);
   if (warm == nullptr) {
     return -176;
   }
@@ -169,7 +173,7 @@ extern "C" int SymbianRuntimeStdThreadProbe() {
     return -152;
   }
   weak.reset();
-  void* const event_heap = SymbianRuntimeHeapIdentity();
+  void* absl_nullable const event_heap = SymbianRuntimeHeapIdentity();
   CrossHeapState cross_heap;
   const int page_size = SymbianRuntimePageSize();
   if (page_size <= 0) {
@@ -249,8 +253,8 @@ extern "C" int SymbianRuntimeStdThreadProbe() {
   }
   const unsigned int resting_bytes = SymbianRuntimeMimallocChunkBytes();
   for (int repeat = 0; repeat < 2; ++repeat) {
-    void* allocations[512] = {};
-    for (void*& allocation : allocations) {
+    void* absl_nullable allocations[512] = {};
+    for (void* absl_nullable& allocation : allocations) {
       allocation = SymbianRuntimeAllocate(1024);
       if (allocation == nullptr) {
         return -165;
@@ -260,7 +264,7 @@ extern "C" int SymbianRuntimeStdThreadProbe() {
     if (SymbianRuntimeMimallocChunkBytes() > resting_bytes + 2 * 1024 * 1024) {
       return -166;
     }
-    for (void* allocation : allocations) {
+    for (void* absl_nullable allocation : allocations) {
       if (static_cast<unsigned char*>(allocation)[1023] != 0x5a) {
         return -167;
       }

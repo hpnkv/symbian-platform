@@ -21,10 +21,10 @@ required Abseil status/runtime profile and, where needed, an OS import proxy.
 | `Symbian::Storage` | `symbian/api/storage/storage.h` | Open, read, write or copy files | Move-only handles; use and destroy on the opening thread. |
 | `Symbian::Camera` | `symbian/api/camera/camera.h` | Discover camera slots | `StatusOr`; discovery does not reserve a camera. |
 | `Symbian::Connectivity` | `symbian/api/connectivity/tcp_client.h`, `tcp_listener.h`, `active_tcp_listener.h` | Connect, listen, accept and exchange bounded IPv4 TCP data | Synchronous worker owners plus a single-request active-object listener; deadline cancellation for blocking accept, send and receive. |
-| `Symbian::Crypto` | `mbedtls/md.h`, `mbedtls/entropy.h` | Use opt-in Mbed TLS cryptographic primitives without a TLS socket | Links only `libmbedcrypto`; applications own key storage and entropy policy. |
+| `Symbian::Crypto` | `mbedtls/md.h`, `mbedtls/entropy.h` | Use opt-in Mbed TLS cryptographic primitives without a TLS socket | Links only `libmbedcrypto`; SDK supplies OS secure entropy where supported; applications own key storage. |
 | `Symbian::Http` | `symbian/api/connectivity/http.h` | Streaming HTTP/1.1 and HTTP/2 client/server | Worker-owned exchange, bounded body streams and absolute deadlines. |
 | `Symbian::WebSocket` | `symbian/api/connectivity/websocket.h` | RFC 8441 WebSocket connections | Shared HTTP/2 transport with bounded messages and stream backpressure. |
-| `Symbian::Tls` | `symbian/api/connectivity/tls_stream.h` | TLS 1.2/1.3 client/server streams | Caller supplies trust roots, peer identity and working guest entropy. Synchronous worker only. |
+| `Symbian::Tls` | `symbian/api/connectivity/tls_stream.h` | TLS 1.2/1.3 client/server streams | Caller supplies trust roots and peer identity; SDK supplies supported OS secure entropy. Synchronous worker only. |
 | `Symbian::Agent` | `symbian/agent/guest_control.h`, `guest_log.h` | Parse bounded read-only control messages and retain a 32-record service log | Authenticate the peer before parsing; this codec does not own a service or grant permissions. |
 | `Symbian::GLES1` | `GLES/gl.h`, `GLES/glext.h` | GLES 1.1 Common fixed-function rendering | Original `libglesv1_cm.dll` imports; firmware supplies the implementation. |
 | `Symbian::GLES2` | `GLES2/gl2.h`, `GLES2/gl2ext.h` | GLES 2.0 shaders and programmable rendering | Original `libglesv2.dll` imports; firmware supplies the implementation. |
@@ -123,8 +123,8 @@ certificate.
 absolute deadline and drain an expired native socket request. The owner
 handles one stream at a time and resets it with `CloseSession()`. It belongs
 on a worker thread; a service must arrange cancellation, pairing and key
-custody around it. The default entropy source fails closed, so the owner
-cannot silently turn a compiled archive into a live server.
+custody around it. The SDK supplies the supported OS secure RNG; absent or
+unsupported native entropy contracts fail closed.
 For a framed control request, pass one absolute request deadline into every
 `Read()` and `Write()` call. Creating a new deadline per call lets a peer extend
 the exchange by sending one byte before each expiry.
@@ -182,3 +182,27 @@ For a direct EUSER, Window Server, File Server, HAL or ECam call, open the
 [original Symbian header guide](native-symbian.md) and its separate
 [Doxygen index](../cpp/platform/index.html). Check that the selected firmware exports each required symbol and provides
 the corresponding service.
+
+## Owned C++ contracts and header checks
+
+Mutable lvalue parameters use `T* absl_nonnull`; optional pointers use
+`absl_nullable`. Original OS and upstream signatures retain their contracts.
+Owned buffer helpers prefer writable `std::span`, and text helpers use
+`std::string_view` with adaptations at native API boundaries. The SDK exports
+Abseil annotation headers through each owning target's public dependencies.
+
+The normal host and guest builds include `symbian_header_canaries`, grouped
+by owning library and ABI. Every owned header compiles in a separate translation
+unit with exceptions disabled; Python boundary headers explicitly enable them.
+Owned C port headers also compile in C mode. SDK export runs installed-header
+checks for ARMv5T and ARMv6. A consuming SDK validation project can enable them:
+
+```cmake
+include(SymbianSdkHeaderCanaries)
+symbian_sdk_header_canaries()
+```
+
+Run `python scripts/check_cpp_style.py` for sources, examples, templates and
+C++ documentation snippets. Run `python scripts/simplify_cpp_dereferences.py
+--check` to check redundant dereference parentheses without changing required
+forms such as `(*buffer)[index]`.

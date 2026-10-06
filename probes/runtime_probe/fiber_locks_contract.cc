@@ -5,6 +5,8 @@
 #include <string>
 #include <thread>
 
+#include <absl/base/nullability.h>
+
 #include "abi.h"
 #include "symbian/concurrency/future.h"
 #include "thread/boost_primitives.h"
@@ -14,7 +16,8 @@
 namespace {
 class LifoPolicy final : public thread::SchedulerPolicy {
  public:
-  std::size_t PickNext(std::span<thread::Fiber* const> ready) override {
+  std::size_t PickNext(
+      std::span<thread::Fiber* absl_nonnull const> ready) override {
     return ready.size() - 1;
   }
 
@@ -40,7 +43,7 @@ extern "C" int SymbianRuntimeFiberLocksProbe() {
       return -310;
     }
     auto owned = std::make_unique<std::string>(96, 'a');
-    thread::Fiber first(scheduler, [&, owned = std::move(owned)] {
+    thread::Fiber first(&scheduler, [&, owned = std::move(owned)] {
       thread::MutexLock lock(&mutex);
       phase = 1;
       thread::Fiber::Yield();
@@ -49,7 +52,7 @@ extern "C" int SymbianRuntimeFiberLocksProbe() {
       }
       phase = 2;
     });
-    thread::Fiber second(scheduler, [&] {
+    thread::Fiber second(&scheduler, [&] {
       thread::MutexLock lock(&mutex);
       if (phase != 2) {
         result = -312;
@@ -58,7 +61,7 @@ extern "C" int SymbianRuntimeFiberLocksProbe() {
       condition.Signal();
       promise.SetValue(42);
     });
-    thread::Fiber third(scheduler, [&] {
+    thread::Fiber third(&scheduler, [&] {
       thread::MutexLock lock(&mutex);
       while (!ready) {
         condition.Wait(&mutex);
@@ -67,7 +70,7 @@ extern "C" int SymbianRuntimeFiberLocksProbe() {
         result = -313;
       }
     });
-    thread::Fiber fourth(scheduler, [&] {
+    thread::Fiber fourth(&scheduler, [&] {
       auto value = future.Await();
       if (!value.ok() || *value != 42) {
         result = -314;
@@ -79,7 +82,7 @@ extern "C" int SymbianRuntimeFiberLocksProbe() {
       return result == 0 ? -315 : result;
     }
 
-    thread::Fiber timeout(scheduler, [&] {
+    thread::Fiber timeout(&scheduler, [&] {
       thread::MutexLock lock(&mutex);
       if (!condition.WaitWithTimeout(&mutex, absl::Milliseconds(2))) {
         result = -316;
@@ -98,12 +101,12 @@ extern "C" int SymbianRuntimeFiberLocksProbe() {
 
     thread::Channel<int> channel(1);
     int received = 0;
-    thread::Fiber reader(scheduler, [&] {
+    thread::Fiber reader(&scheduler, [&] {
       if (!channel.reader()->Read(&received)) {
         result = -324;
       }
     });
-    thread::Fiber writer(scheduler, [&] { channel.writer()->Write(37); });
+    thread::Fiber writer(&scheduler, [&] { channel.writer()->Write(37); });
     if (!scheduler.RunReady(4).ok() || !reader.Finished() ||
         !writer.Finished() || received != 37 || result != 0) {
       return result == 0 ? -326 : result;
@@ -113,8 +116,8 @@ extern "C" int SymbianRuntimeFiberLocksProbe() {
     LifoPolicy policy;
     thread::Scheduler scheduler(&policy);
     int order = 0;
-    thread::Fiber first(scheduler, [&] { order = order * 10 + 1; });
-    thread::Fiber second(scheduler, [&] { order = order * 10 + 2; });
+    thread::Fiber first(&scheduler, [&] { order = order * 10 + 1; });
+    thread::Fiber second(&scheduler, [&] { order = order * 10 + 2; });
     if (!scheduler.RunReady(2).ok() || order != 21 ||
         policy.notifications.load() < 2) {
       return -321;
@@ -123,7 +126,7 @@ extern "C" int SymbianRuntimeFiberLocksProbe() {
     thread::Mutex mutex;
     thread::CondVar condition;
     bool notified = false;
-    thread::Fiber waiter(scheduler, [&] {
+    thread::Fiber waiter(&scheduler, [&] {
       thread::MutexLock lock(&mutex);
       while (!notified) {
         condition.Wait(&mutex);

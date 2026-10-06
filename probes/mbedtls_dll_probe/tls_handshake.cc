@@ -7,6 +7,8 @@
 #include <cstring>
 #include <span>
 
+#include <absl/base/nullability.h>
+
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/net_sockets.h"
@@ -20,14 +22,16 @@ namespace {
 
 using symbian::api::connectivity::TcpClient;
 
-int Send(void* context, const unsigned char* bytes, size_t length) {
-  auto* client = static_cast<TcpClient*>(context);
+int Send(void* absl_nonnull context, const unsigned char* absl_nonnull bytes,
+         size_t length) {
+  auto* absl_nonnull client = static_cast<TcpClient*>(context);
   const auto result = client->Send(std::span(bytes, length));
   return result.ok() ? static_cast<int>(length) : MBEDTLS_ERR_NET_SEND_FAILED;
 }
 
-int Receive(void* context, unsigned char* bytes, size_t capacity) {
-  auto* client = static_cast<TcpClient*>(context);
+int Receive(void* absl_nonnull context, unsigned char* absl_nonnull bytes,
+            size_t capacity) {
+  auto* absl_nonnull client = static_cast<TcpClient*>(context);
   const auto result = client->Receive(std::span(bytes, capacity));
   return result.ok() ? static_cast<int>(*result) : MBEDTLS_ERR_NET_RECV_FAILED;
 }
@@ -89,7 +93,7 @@ MbedNativeTlsHandshakeProbe(int port, int version, int mode) {
   mbedtls_ssl_conf_max_tls_version(&state.config, protocol);
   mbedtls_ssl_conf_authmode(&state.config, MBEDTLS_SSL_VERIFY_REQUIRED);
   if (mode != 2) {
-    const char* certificate =
+    const char* absl_nonnull certificate =
         mode == 3 ? kExpiredCertificate : kTestCertificate;
     const std::size_t certificate_length =
         mode == 3 ? sizeof(kExpiredCertificate) : sizeof(kTestCertificate);
@@ -103,7 +107,7 @@ MbedNativeTlsHandshakeProbe(int port, int version, int mode) {
   if (mbedtls_ssl_setup(&state.ssl, &state.config) != 0) {
     return -185;
   }
-  const char* hostname = mode == 1 ? "wrong-name" : "sdk-test";
+  const char* absl_nonnull hostname = mode == 1 ? "wrong-name" : "sdk-test";
   if (mbedtls_ssl_set_hostname(&state.ssl, hostname) != 0) {
     return -186;
   }

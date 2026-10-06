@@ -1,14 +1,16 @@
 // Host entry point for a CLion CMake Application run configuration.
+
 #include <cerrno>
 #include <cstring>
 #include <iostream>
 #include <iterator>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <unistd.h>
 
-int main(int argc, char* argv[]) {
-  const char* fixed[] = {
+int main(int argc, char* absl_nullable argv[]) {
+  const char* absl_nonnull fixed[] = {
       SYMBIAN_LAUNCH_PYTHON,
       "-m",
       "symbian.emulator.launch",
@@ -20,9 +22,9 @@ int main(int argc, char* argv[]) {
       "--workspace",
 #endif
   };
-  std::vector<char*> arguments;
+  std::vector<char* absl_nullable> arguments;
   arguments.reserve(std::size(fixed) + static_cast<size_t>(argc));
-  for (const char* argument : fixed) {
+  for (const char* absl_nonnull argument : fixed) {
     arguments.push_back(const_cast<char*>(argument));
   }
   for (int i = 1; i < argc; ++i) {

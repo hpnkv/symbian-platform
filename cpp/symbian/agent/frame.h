@@ -11,6 +11,8 @@
 #include <span>
 #include <string>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/statusor.h"
 
 namespace symbian::agent {
@@ -59,8 +61,9 @@ class FrameDecoder {
    * @return Number of bytes consumed, or InvalidArgument for a bad prefix.
    *         After an error, call Reset before accepting further input.
    */
-  absl::StatusOr<std::size_t> Consume(std::span<const std::uint8_t> bytes,
-                                      std::optional<Frame>* completed);
+  absl::StatusOr<std::size_t> Consume(
+      std::span<const std::uint8_t> bytes,
+      std::optional<Frame>* absl_nullable completed);
 
  private:
   std::size_t maximum_frame_bytes_;

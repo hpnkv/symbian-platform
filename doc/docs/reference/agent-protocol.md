@@ -34,7 +34,7 @@ The framing parser, endian helpers, masking loop and frame writer come from
 A11's `Http2WebSocketChannel`. The parser keeps A11's buffer adoption path.
 The transport adapter replaces A11's unavailable libuv HTTP body stream with
 nghttp2 memory callbacks and SDK TCP calls. Guest masking keys use the existing
-entropy adapter; host keys use OpenSSL. The default message limit is 4100 bytes
+SDK secure entropy provider; host keys use OpenSSL. The default message limit is 4100 bytes
 (4 KiB control plus its prefix); each direction has a 64 KiB queue bound, and
 receive queues hold at most 16 messages. Headers are capped at 2048 bytes and
 16 fields. nghttp2 also bounds settings, acknowledgements and continuation
@@ -78,8 +78,10 @@ The guest checks the MAC, then returns
 `HMAC-SHA256(key, "symbian-agent-server-v1" || server_nonce || client_nonce)`.
 The host checks the final proof before it sends hello. A failed or incomplete
 exchange closes the connection. A five-second deadline bounds the exchange.
-The guest requires secure entropy for fresh nonces. The RM-807 adapter needs
-the matching patched emulator; a physical target needs its own secure source.
+The guest requires secure entropy for fresh nonces. The SDK supplies the shared
+OS provider described in [TLS entropy contracts](tls-sdk.md). Unsupported OS
+contracts fail closed. The RM-807 emulator still requires its matching secure
+RNG implementation; physical-device validation remains a separate gate.
 
 The checked-in `agent_service/test-agent.key` is public and **emulator-only**.
 The build refuses to expose that key on Wi-Fi. A private build cannot use it.

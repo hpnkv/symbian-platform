@@ -7,6 +7,8 @@
 #include <array>
 #include <cstdint>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"
 #include "symbian/api/connectivity/tcp_client.h"
@@ -47,9 +49,10 @@ class TcpListener {
       absl::Time deadline = absl::InfiniteFuture());
 
  private:
-  explicit TcpListener(NativeTcpListener* native) : native_(native) {}
+  explicit TcpListener(NativeTcpListener* absl_nonnull native)
+      : native_(native) {}
 
-  NativeTcpListener* native_ = nullptr;
+  NativeTcpListener* absl_nullable native_ = nullptr;
 };
 
 }  // namespace symbian::api::connectivity

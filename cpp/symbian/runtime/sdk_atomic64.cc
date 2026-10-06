@@ -1,3 +1,4 @@
+#include <absl/base/nullability.h>
 #include <e32atomics.h>
 #include <e32std.h>
 
@@ -51,11 +52,11 @@ struct Guard {
   ~Guard() { state.lock.Signal(); }
 };
 
-TUint64 Read(const volatile void* pointer) {
+TUint64 Read(const volatile void* absl_nonnull pointer) {
   return *static_cast<const volatile TUint64*>(pointer);
 }
 
-void Write(volatile void* pointer, TUint64 value) {
+void Write(volatile void* absl_nonnull pointer, TUint64 value) {
   *static_cast<volatile TUint64*>(pointer) = value;
 }
 
@@ -70,28 +71,29 @@ extern "C" void SymbianRuntimeAtomicUnlock() {
   state.lock.Signal();
 }
 
-extern "C" TUint64 SymbianRuntimeAtomic64Load(const volatile void* pointer) {
+extern "C" TUint64 SymbianRuntimeAtomic64Load(
+    const volatile void* absl_nonnull pointer) {
   Guard guard;
   return Read(pointer);
 }
 
-extern "C" void SymbianRuntimeAtomic64Store(volatile void* pointer,
+extern "C" void SymbianRuntimeAtomic64Store(volatile void* absl_nonnull pointer,
                                             TUint64 value) {
   Guard guard;
   Write(pointer, value);
 }
 
-extern "C" TUint64 SymbianRuntimeAtomic64Exchange(volatile void* pointer,
-                                                  TUint64 value) {
+extern "C" TUint64 SymbianRuntimeAtomic64Exchange(
+    volatile void* absl_nonnull pointer, TUint64 value) {
   Guard guard;
   const TUint64 old = Read(pointer);
   Write(pointer, value);
   return old;
 }
 
-extern "C" TBool SymbianRuntimeAtomic64CompareExchange(volatile void* pointer,
-                                                       TUint64* expected,
-                                                       TUint64 desired) {
+extern "C" TBool SymbianRuntimeAtomic64CompareExchange(
+    volatile void* absl_nonnull pointer, TUint64* absl_nonnull expected,
+    TUint64 desired) {
   Guard guard;
   const TUint64 old = Read(pointer);
   if (old != *expected) {
@@ -102,8 +104,8 @@ extern "C" TBool SymbianRuntimeAtomic64CompareExchange(volatile void* pointer,
   return ETrue;
 }
 
-extern "C" TUint64 SymbianRuntimeAtomic64FetchAdd(volatile void* pointer,
-                                                  TUint64 value) {
+extern "C" TUint64 SymbianRuntimeAtomic64FetchAdd(
+    volatile void* absl_nonnull pointer, TUint64 value) {
   Guard guard;
   const TUint64 old = Read(pointer);
   Write(pointer, old + value);

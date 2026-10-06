@@ -1,8 +1,10 @@
 // Copyright 2026 Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
+
 #include <cstddef>
 #include <cstdint>
 
+#include <absl/base/nullability.h>
 #include <e32std.h>
 
 #include "abi.h"
@@ -27,7 +29,7 @@ unsigned int g_chunk_count = 0;
 unsigned int g_reserved_bytes = 0;
 unsigned int g_committed_bytes = 0;
 
-ChunkSlot* ReserveSlot() {
+ChunkSlot* absl_nullable ReserveSlot() {
   for (auto& slot : g_chunks) {
     unsigned int expected = 0;
     if (__atomic_compare_exchange_n(&slot.state, &expected, 1, false,
@@ -38,7 +40,7 @@ ChunkSlot* ReserveSlot() {
   return nullptr;
 }
 
-ChunkSlot* FindRange(void* address, size_t bytes) {
+ChunkSlot* absl_nullable FindRange(void* absl_nonnull address, size_t bytes) {
   const uintptr_t start = reinterpret_cast<uintptr_t>(address);
   if (bytes > UINT32_MAX || start > UINT32_MAX - bytes) {
     return nullptr;
@@ -74,8 +76,9 @@ extern "C" int SymbianRuntimeMimallocPageSize() {
   return SymbianRuntimePageSize();
 }
 
-extern "C" void* SymbianRuntimeMimallocReserve(size_t bytes, size_t alignment,
-                                               bool commit) {
+extern "C" void* absl_nullable SymbianRuntimeMimallocReserve(size_t bytes,
+                                                             size_t alignment,
+                                                             bool commit) {
   const int page_size = SymbianRuntimePageSize();
   if (page_size <= 0 || !PageMultiple(bytes, page_size)) {
     return nullptr;
@@ -88,7 +91,7 @@ extern "C" void* SymbianRuntimeMimallocReserve(size_t bytes, size_t alignment,
       bytes > static_cast<size_t>(KMaxTInt) - alignment) {
     return nullptr;
   }
-  ChunkSlot* slot = ReserveSlot();
+  ChunkSlot* absl_nullable slot = ReserveSlot();
   if (slot == nullptr) {
     return nullptr;
   }
@@ -140,12 +143,13 @@ extern "C" void* SymbianRuntimeMimallocReserve(size_t bytes, size_t alignment,
   return reinterpret_cast<void*>(aligned);
 }
 
-extern "C" int SymbianRuntimeMimallocCommit(void* address, size_t bytes) {
+extern "C" int SymbianRuntimeMimallocCommit(void* absl_nonnull address,
+                                            size_t bytes) {
   const int page_size = SymbianRuntimePageSize();
   if (page_size <= 0 || !PageMultiple(bytes, page_size)) {
     return KErrArgument;
   }
-  ChunkSlot* slot = FindRange(address, bytes);
+  ChunkSlot* absl_nullable slot = FindRange(address, bytes);
   if (slot == nullptr) {
     return KErrArgument;
   }
@@ -180,12 +184,13 @@ extern "C" int SymbianRuntimeMimallocCommit(void* address, size_t bytes) {
   return result;
 }
 
-extern "C" int SymbianRuntimeMimallocDecommit(void* address, size_t bytes) {
+extern "C" int SymbianRuntimeMimallocDecommit(void* absl_nonnull address,
+                                              size_t bytes) {
   const int page_size = SymbianRuntimePageSize();
   if (page_size <= 0 || !PageMultiple(bytes, page_size)) {
     return KErrArgument;
   }
-  ChunkSlot* slot = FindRange(address, bytes);
+  ChunkSlot* absl_nullable slot = FindRange(address, bytes);
   if (slot == nullptr) {
     return KErrArgument;
   }
@@ -204,8 +209,8 @@ extern "C" int SymbianRuntimeMimallocDecommit(void* address, size_t bytes) {
   return result;
 }
 
-extern "C" int SymbianRuntimeMimallocRelease(void* address) {
-  ChunkSlot* slot = nullptr;
+extern "C" int SymbianRuntimeMimallocRelease(void* absl_nonnull address) {
+  ChunkSlot* absl_nullable slot = nullptr;
   for (auto& candidate : g_chunks) {
     if (__atomic_load_n(&candidate.state, __ATOMIC_ACQUIRE) == 2 &&
         candidate.address == reinterpret_cast<uintptr_t>(address)) {

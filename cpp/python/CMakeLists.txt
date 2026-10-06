@@ -92,3 +92,11 @@ install(FILES "${SYMBIAN_LIBUSB_INCLUDE_DIR}/libusb.h"
 
 install(FILES "${PROJECT_SOURCE_DIR}/cpp/symbian/sdk/probes/header_probe.cc"
         DESTINATION symbian/sdk/resources)
+
+include("${CMAKE_CURRENT_LIST_DIR}/../../cmake/SymbianHeaderCanary.cmake")
+file(GLOB python_boundary_headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+symbian_header_canary(symbian_python_header_canary EXCEPTIONS
+  HEADERS ${python_boundary_headers}
+  LIBRARIES symbian::status symbian::concurrency symbian::device
+    symbian::agent_frame symbian_websocket pybind11::module
+    pybind11_abseil::status_casters)

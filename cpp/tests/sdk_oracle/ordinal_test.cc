@@ -3,6 +3,7 @@
 #include <iterator>
 #include <string>
 
+#include <absl/base/nullability.h>
 #include <gtest/gtest.h>
 
 #include "ordinal_types.h"
@@ -12,7 +13,7 @@
 namespace {
 
 TEST(SdkOrdinalOracleTest, NokiaMethodReadsUserExitOrdinalFromClangLldProxy) {
-  const char* path = std::getenv("SYMBIAN_SDK_PROXY_TEST_IMAGE");
+  const char* absl_nullable path = std::getenv("SYMBIAN_SDK_PROXY_TEST_IMAGE");
   ASSERT_NE(path, nullptr);
   std::ifstream file(path, std::ios::binary);
   ASSERT_TRUE(file.is_open());

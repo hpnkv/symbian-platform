@@ -2,27 +2,27 @@
 #include <cstdlib>
 #include <cstring>
 #include <limits>
-#include <time.h>
 
+#include <absl/base/nullability.h>
 #include <gtest/gtest.h>
+#include <time.h>
 
 #include "mbedtls/gcm.h"
 #include "mbedtls/platform_util.h"
 #include "symbian_mbedtls/platform.h"
 #include "vectors.h"
 
-
 namespace {
 bool fail_allocation = false;
 int allocation_calls = 0;
 }  // namespace
 
-extern "C" void* SymbianRuntimeAllocate(size_t size) {
+extern "C" void* absl_nullable SymbianRuntimeAllocate(size_t size) {
   ++allocation_calls;
   return fail_allocation ? nullptr : std::malloc(size);
 }
 
-extern "C" void SymbianRuntimeFree(void* pointer) {
+extern "C" void SymbianRuntimeFree(void* absl_nullable pointer) {
   std::free(pointer);
 }
 
@@ -76,7 +76,7 @@ TEST(Platform, UtcRejectsImplausibleClockValues) {
 }
 
 TEST(Platform, CallocZerosAndRejectsOverflow) {
-  void* bytes = symbian_mbedtls_calloc(8, 4);
+  void* absl_nullable bytes = symbian_mbedtls_calloc(8, 4);
   ASSERT_NE(bytes, nullptr);
   for (int i = 0; i < 32; ++i) {
     EXPECT_EQ(static_cast<unsigned char*>(bytes)[i], 0);
@@ -93,7 +93,7 @@ TEST(Platform, CallocReportsExhaustionAndAllowsZeroSize) {
   fail_allocation = true;
   EXPECT_EQ(symbian_mbedtls_calloc(1, 32), nullptr);
   fail_allocation = false;
-  void* bytes = symbian_mbedtls_calloc(0, 32);
+  void* absl_nullable bytes = symbian_mbedtls_calloc(0, 32);
   EXPECT_NE(bytes, nullptr);
   symbian_mbedtls_free(bytes);
   symbian_mbedtls_free(nullptr);

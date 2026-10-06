@@ -11,6 +11,8 @@
 #include <mutex>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "symbian/concurrency/event_mailbox.h"
@@ -103,7 +105,7 @@ class EventExecutor {
   // Lazily create one shared worker for explicit compute placement. The
   // event thread calls this during setup; ordinary DispatchReady turns never
   // create an OS thread or offload callbacks implicitly.
-  absl::StatusOr<WorkerExecutor*> workers() {
+  absl::StatusOr<WorkerExecutor* absl_nonnull> workers() {
     std::lock_guard lock(dispatch_mu_);
     if (!opened_ || closed_) {
       return absl::FailedPreconditionError("Event executor is closed");
@@ -178,7 +180,10 @@ class EventExecutor {
  private:
   class WakePolicy final : public thread::SchedulerPolicy {
    public:
-    std::size_t PickNext(std::span<thread::Fiber* const>) override { return 0; }
+    std::size_t PickNext(
+        std::span<thread::Fiber* absl_nonnull const>) override {
+      return 0;
+    }
 
     void NotifyReady() noexcept override {
       std::function<void()> callback;

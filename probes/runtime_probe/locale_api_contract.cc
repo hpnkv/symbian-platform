@@ -2,6 +2,7 @@
 #include <cstring>
 
 #include <__locale_dir/locale_base_api.h>
+#include <absl/base/nullability.h>
 
 int SymbianRuntimeLocaleApiProbe() {
   namespace locale = std::__symbian::__locale;
@@ -20,7 +21,7 @@ int SymbianRuntimeLocaleApiProbe() {
       errno != EINVAL) {
     return -198;
   }
-  const char* classic = locale::__setlocale(LC_NUMERIC, "C");
+  const char* absl_nullable classic = locale::__setlocale(LC_NUMERIC, "C");
   if (classic == nullptr || std::strcmp(classic, "C") != 0) {
     return -199;
   }

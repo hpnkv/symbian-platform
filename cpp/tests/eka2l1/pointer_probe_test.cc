@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
@@ -9,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <common/buffer.h>
 #include <kernel/process.h>
 #include <loader/e32img.h>
@@ -53,14 +55,14 @@ class PointerProbeTest : public symbian::testing::ProcessEnvironment {
     ASSERT_EQ(pointers_.size(), 8);
   }
 
-  void BeforeExecute(eka2l1::kernel::process* process) override {
+  void BeforeExecute(eka2l1::kernel::process* absl_nonnull process) override {
     const uint32_t base = process->get_entry_point_address();
     ASSERT_NE(base, linked_base_);
     functions_.clear();
     seen_.clear();
     size_t labels = 0, arm = 0, thumb = 0;
     for (const auto& pointer : pointers_) {
-      const auto* mapped = static_cast<const uint32_t*>(
+      const auto* absl_nonnull mapped = static_cast<const uint32_t*>(
           process->get_ptr_on_addr_space(base + pointer.offset));
       ASSERT_NE(mapped, nullptr);
       EXPECT_EQ(*mapped, pointer.target + (base - linked_base_));
@@ -73,7 +75,7 @@ class PointerProbeTest : public symbian::testing::ProcessEnvironment {
       const uint32_t normalized = pointer.target & ~1U;
       ASSERT_GE(normalized, linked_base_);
       ASSERT_LT(normalized - linked_base_, code_size_);
-      const auto* target =
+      const auto* absl_nonnull target =
           static_cast<const char*>(process->get_ptr_on_addr_space(*mapped));
       ASSERT_NE(target, nullptr);
       if (pointer.target - linked_base_ + 7 <= code_size_ &&

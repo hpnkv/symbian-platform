@@ -1,3 +1,4 @@
+#include <absl/base/nullability.h>
 #include <mbedtls/entropy.h>
 #include <mbedtls/net_sockets.h>
 #include <mbedtls/sha256.h>
@@ -8,7 +9,8 @@
 #include "test_certificate.h"
 
 __attribute__((visibility("default"))) int MbedSha256(
-    const unsigned char* input, unsigned size, unsigned char* output) {
+    const unsigned char* absl_nonnull input, unsigned size,
+    unsigned char* absl_nonnull output) {
   return mbedtls_sha256(input, size, output, 0);
 }
 
@@ -102,12 +104,16 @@ __attribute__((visibility("default"))) int MbedSocketCancelProbe(void) {
 }
 
 __attribute__((visibility("default"))) int MbedEntropyFailureProbe(void) {
-  extern int mbedtls_hardware_poll(void*, unsigned char*, size_t, size_t*);
+  extern int mbedtls_hardware_poll(void* absl_nullable,
+                                   unsigned char* absl_nullable, size_t,
+                                   size_t* absl_nullable);
   unsigned char bytes[32] = {0};
   size_t count = 123;
   int result = mbedtls_hardware_poll(NULL, bytes, sizeof(bytes), &count);
 #ifdef SYMBIAN_RM807_ENTROPY_PROBE
-  if (result != 0 || count != sizeof(bytes)) return -143;
+  if (result != 0 || count != sizeof(bytes)) {
+    return -143;
+  }
   size_t invalid_count = 123;
   if (mbedtls_hardware_poll(NULL, bytes, 0, &invalid_count) !=
           MBEDTLS_ERR_ENTROPY_SOURCE_FAILED ||
@@ -117,7 +123,9 @@ __attribute__((visibility("default"))) int MbedEntropyFailureProbe(void) {
   unsigned char next[32] = {0};
   size_t next_count = 0;
   result = mbedtls_hardware_poll(NULL, next, sizeof(next), &next_count);
-  if (result != 0 || next_count != sizeof(next)) return -145;
+  if (result != 0 || next_count != sizeof(next)) {
+    return -145;
+  }
   int any_nonzero = 0;
   int any_difference = 0;
   for (size_t i = 0; i < sizeof(bytes); ++i) {
@@ -126,6 +134,19 @@ __attribute__((visibility("default"))) int MbedEntropyFailureProbe(void) {
   }
   return any_nonzero && any_difference ? 0 : -147;
 #else
-  return result == MBEDTLS_ERR_ENTROPY_SOURCE_FAILED && count == 0 ? 0 : -143;
+  // Capability-dependent default: older OS versions lack the secure RNG API.
+  // Both a full successful read and a closed failure with no output are valid.
+  if (result == 0 && count == sizeof(bytes)) {
+    return 0;
+  }
+  if (result != MBEDTLS_ERR_ENTROPY_SOURCE_FAILED || count != 0) {
+    return -143;
+  }
+  for (size_t i = 0; i < sizeof(bytes); ++i) {
+    if (bytes[i] != 0) {
+      return -148;
+    }
+  }
+  return 0;
 #endif
 }

@@ -10,6 +10,8 @@
 #include <new>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "native_storage.h"
 #include "symbian/native_status.h"
 
@@ -36,7 +38,7 @@ absl::StatusOr<ReadOnlyFile> ReadOnlyFile::Open(std::u16string_view path) {
   if (!valid.ok()) {
     return valid;
   }
-  NativeFile* native = nullptr;
+  NativeFile* absl_nullable native = nullptr;
   const int result = SymbianDeviceFileOpen(
       path.data(), static_cast<int>(path.size()), &native);
   if (result != 0) {
@@ -70,7 +72,7 @@ absl::StatusOr<WritableFile> WritableFile::Open(std::u16string_view path,
       mode != WriteMode::kReplaceExisting) {
     return absl::InvalidArgumentError("Unknown file write mode");
   }
-  NativeFile* native = nullptr;
+  NativeFile* absl_nullable native = nullptr;
   const int result =
       SymbianDeviceWritableFileOpen(path.data(), static_cast<int>(path.size()),
                                     static_cast<int>(mode), &native);
@@ -154,7 +156,7 @@ struct FileCopy::State {
   bool complete = false;
 };
 
-FileCopy::FileCopy(State* state) : state_(state) {}
+FileCopy::FileCopy(State* absl_nonnull state) : state_(state) {}
 
 absl::StatusOr<FileCopy> FileCopy::Open(std::u16string_view source,
                                         std::u16string_view destination,
@@ -169,7 +171,7 @@ absl::StatusOr<FileCopy> FileCopy::Open(std::u16string_view source,
   }
   // Reserve memory before a mode that can create or replace the destination
   // has any filesystem side effect.
-  void* memory = ::operator new(sizeof(State), std::nothrow);
+  void* absl_nullable memory = ::operator new(sizeof(State), std::nothrow);
   if (memory == nullptr) {
     return absl::ResourceExhaustedError("Allocate file copy buffer");
   }
@@ -178,7 +180,7 @@ absl::StatusOr<FileCopy> FileCopy::Open(std::u16string_view source,
     ::operator delete(memory);
     return opened_destination.status();
   }
-  State* state = new (memory)
+  State* absl_nonnull state = new (memory)
       State(std::move(*opened_source), std::move(*opened_destination), *size);
   return FileCopy(state);
 }
@@ -308,7 +310,7 @@ absl::StatusOr<DirectoryReader> DirectoryReader::Open(
   if (!valid.ok()) {
     return valid;
   }
-  NativeDirectory* native = nullptr;
+  NativeDirectory* absl_nullable native = nullptr;
   const int result = SymbianDeviceDirectoryOpen(
       path.data(), static_cast<int>(path.size()), &native);
   if (result != 0) {

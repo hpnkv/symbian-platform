@@ -1,9 +1,11 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
+
 #include "symbian/websocket/websocket.h"
 
 #include <string>
 
+#include <absl/base/nullability.h>
 #include <gtest/gtest.h>
 
 namespace symbian::websocket {
@@ -25,19 +27,19 @@ class WebSocketTest : public ::testing::Test {
     client = std::move(*c);
     server = std::move(*s);
     for (int i = 0; i < 4; ++i) {
-      Transfer(*client, *server);
-      Transfer(*server, *client);
+      Transfer(client.get(), server.get());
+      Transfer(server.get(), client.get());
     }
     ASSERT_TRUE(client->open());
     ASSERT_TRUE(server->open());
   }
 
-  void Transfer(WebSocket& from, WebSocket& to) {
-    auto output = from.TakeOutput();
+  void Transfer(WebSocket* absl_nonnull from, WebSocket* absl_nonnull to) {
+    auto output = from->TakeOutput();
     ASSERT_TRUE(output.ok()) << output.status();
     // TCP segmentation must be independent of HTTP/2 and WebSocket framing.
     for (char byte : *output) {
-      ASSERT_TRUE(to.Feed(std::string_view(&byte, 1)).ok());
+      ASSERT_TRUE(to->Feed(std::string_view(&byte, 1)).ok());
     }
   }
 
@@ -56,13 +58,13 @@ TEST_F(WebSocketTest, BinaryMessagesAndDrainedClose) {
   for (const auto& payload : {std::string(), std::string("hello\0world", 11),
                               std::string(4100, 'x')}) {
     ASSERT_TRUE(client->Send(payload).ok());
-    Transfer(*client, *server);
+    Transfer(client.get(), server.get());
     auto received = server->Receive();
     ASSERT_TRUE(received.ok());
     ASSERT_TRUE(received->has_value());
     EXPECT_EQ(**received, payload);
     ASSERT_TRUE(server->Send(payload).ok());
-    Transfer(*server, *client);
+    Transfer(server.get(), client.get());
     received = client->Receive();
     ASSERT_TRUE(received.ok());
     ASSERT_TRUE(received->has_value());
@@ -70,18 +72,18 @@ TEST_F(WebSocketTest, BinaryMessagesAndDrainedClose) {
   }
   ASSERT_TRUE(client->Send("final").ok());
   ASSERT_TRUE(client->Close().ok());
-  Transfer(*client, *server);
+  Transfer(client.get(), server.get());
   EXPECT_TRUE(server->closed());
   EXPECT_EQ(**server->Receive(), "final");
-  Transfer(*server, *client);
+  Transfer(server.get(), client.get());
   EXPECT_TRUE(client->closed());
   EXPECT_FALSE(client->Send("late").ok());
 }
 
 TEST_F(WebSocketTest, ServerInitiatedClose) {
   ASSERT_TRUE(server->Close().ok());
-  Transfer(*server, *client);
-  Transfer(*client, *server);
+  Transfer(server.get(), client.get());
+  Transfer(client.get(), server.get());
   EXPECT_TRUE(client->closed());
   EXPECT_TRUE(server->closed());
 }
@@ -113,7 +115,7 @@ TEST_F(WebSocketTest, FragmentedMessageAndPing) {
   ASSERT_TRUE(result->has_value());
   EXPECT_EQ(**result, "abcd");
   // Client answers with a masked pong, accepted by the server.
-  Transfer(*client, *server);
+  Transfer(client.get(), server.get());
   EXPECT_FALSE(server->Receive()->has_value());
 }
 
@@ -128,7 +130,7 @@ TEST_F(WebSocketTest, BoundedSendAndReceiveQueues) {
   for (int i = 0; i < 16; ++i) {
     ASSERT_TRUE(client->Send("x").ok());
   }
-  Transfer(*client, *server);
+  Transfer(client.get(), server.get());
   ASSERT_TRUE(client->Send("overflow").ok());
   EXPECT_EQ(server->Feed(*client->TakeOutput()).code(),
             absl::StatusCode::kResourceExhausted);
@@ -137,9 +139,9 @@ TEST_F(WebSocketTest, BoundedSendAndReceiveQueues) {
 TEST_F(WebSocketTest, RepeatedTrafficReplenishesFlowControl) {
   for (int i = 0; i < 100; ++i) {
     ASSERT_TRUE(client->Send(std::string(4100, 'z')).ok());
-    Transfer(*client, *server);
+    Transfer(client.get(), server.get());
     ASSERT_TRUE(server->Receive()->has_value());
-    Transfer(*server, *client);
+    Transfer(server.get(), client.get());
   }
 }
 

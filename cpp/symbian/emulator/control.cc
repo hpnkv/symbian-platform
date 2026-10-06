@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <cmath>
 #include <drivers/input/common.h>
 #include <drivers/itc.h>
@@ -71,7 +72,7 @@ struct ControlServer::Impl {
     std::string name;
   };
 
-  eka2l1::desktop::emulator* state;
+  eka2l1::desktop::emulator* absl_nonnull state;
   std::string directory;
   std::string report_path;
   QLocalServer server;
@@ -80,7 +81,7 @@ struct ControlServer::Impl {
   std::size_t exit_callback = 0;
   bool callback_registered = false;
 
-  Impl(eka2l1::desktop::emulator* emulator, std::string root,
+  Impl(eka2l1::desktop::emulator* absl_nonnull emulator, std::string root,
        std::string report)
       : state(emulator),
         directory(std::move(root)),
@@ -92,7 +93,7 @@ struct ControlServer::Impl {
     server.close();
     if (callback_registered) {
       // The owner must detach before the OS worker destroys the kernel.
-      auto* kernel = state->symsys->get_kernel_system();
+      auto* absl_nullable kernel = state->symsys->get_kernel_system();
       eka2l1::kernel_lock lock(kernel);
       kernel->unregister_process_exit_callback(exit_callback);
       callback_registered = false;
@@ -106,7 +107,7 @@ struct ControlServer::Impl {
     // application.exec() has returned, so queued replies no longer have an
     // event loop to flush them before the sockets are destroyed. Drain only
     // accepted output with a bounded wait; do not process new commands here.
-    for (auto* socket : server.findChildren<QLocalSocket*>(
+    for (auto* absl_nullable socket : server.findChildren<QLocalSocket*>(
              QString(), Qt::FindDirectChildrenOnly)) {
       if (socket->bytesToWrite() > 0) {
         socket->waitForBytesWritten(100);
@@ -151,12 +152,12 @@ struct ControlServer::Impl {
           "Emulator graphics or services unavailable");
     }
 
-    auto* kernel = state->symsys->get_kernel_system();
+    auto* absl_nullable kernel = state->symsys->get_kernel_system();
     std::unique_lock kernel_lock(*kernel, std::try_to_lock);
     if (!kernel_lock.owns_lock()) {
       return absl::UnavailableError("Emulator kernel busy");
     }
-    auto* screen = state->winserv->get_current_focus_screen();
+    auto* absl_nullable screen = state->winserv->get_current_focus_screen();
     if (!screen) {
       return absl::UnavailableError("No focused emulator screen");
     }
@@ -255,7 +256,7 @@ struct ControlServer::Impl {
 
   void ConnectClient() {
     while (server.hasPendingConnections()) {
-      auto* socket = server.nextPendingConnection();
+      auto* absl_nullable socket = server.nextPendingConnection();
       socket->setParent(&server);
       if (server
               .findChildren<QLocalSocket*>(QString(),
@@ -306,7 +307,8 @@ absl::Status ControlServer::Stop() {
 }
 
 absl::StatusOr<std::unique_ptr<ControlServer>> ControlServer::Start(
-    eka2l1::desktop::emulator* state, const char* socket_path) {
+    eka2l1::desktop::emulator* absl_nullable state,
+    const char* absl_nullable socket_path) {
   if (!socket_path || !socket_path[0]) {
     return std::unique_ptr<ControlServer>();
   }
@@ -323,7 +325,7 @@ absl::StatusOr<std::unique_ptr<ControlServer>> ControlServer::Start(
   if (!state || !state->symsys) {
     return absl::FailedPreconditionError("Emulator system unavailable");
   }
-  auto* kernel = state->symsys->get_kernel_system();
+  auto* absl_nullable kernel = state->symsys->get_kernel_system();
   if (!kernel) {
     return absl::FailedPreconditionError(
         "Emulator kernel unavailable; configure firmware first");
@@ -343,7 +345,7 @@ absl::StatusOr<std::unique_ptr<ControlServer>> ControlServer::Start(
   {
     eka2l1::kernel_lock lock(kernel);
     impl->exit_callback = kernel->register_process_exit_callback(
-        [pointer = impl.get()](eka2l1::kernel::process* process) {
+        [pointer = impl.get()](eka2l1::kernel::process* absl_nonnull process) {
           std::lock_guard guard(pointer->exits_mutex);
           if (pointer->exits.size() < 256) {
             pointer->exits.push_back(

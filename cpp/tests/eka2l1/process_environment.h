@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <config/app_settings.h>
 #include <config/config.h>
 #include <cpu/arm_factory.h>
@@ -33,7 +34,7 @@ namespace fs = std::filesystem;
 class ProcessEnvironment : public ::testing::TestWithParam<arm_emulator_type> {
  protected:
   void SetUp() override {
-    const char* input = std::getenv("SYMBIAN_E32_TEST_IMAGE");
+    const char* absl_nullable input = std::getenv("SYMBIAN_E32_TEST_IMAGE");
     ASSERT_NE(input, nullptr);
     std::error_code error;
     const fs::path artifact = fs::absolute(input, error);
@@ -77,7 +78,7 @@ class ProcessEnvironment : public ::testing::TestWithParam<arm_emulator_type> {
         cpu_.get(), nullptr);
     kernel_->install_memory(memory_.get());
     kernel_->set_epoc_version(epocver::epoc10);
-    kernel_->register_process_exit_callback([this](auto* process) {
+    kernel_->register_process_exit_callback([this](auto* absl_nonnull process) {
       ++exits_;
       exit_reason_ = process->get_exit_reason();
       exit_type_ = process->get_exit_type();
@@ -99,7 +100,7 @@ class ProcessEnvironment : public ::testing::TestWithParam<arm_emulator_type> {
 
   virtual uint32_t DriveAttributes() { return io_attrib_write_protected; }
 
-  virtual void BeforeExecute(eka2l1::kernel::process*) {}
+  virtual void BeforeExecute(eka2l1::kernel::process* absl_nonnull) {}
 
   virtual void ObserveStep(uint32_t) {}
 
@@ -128,10 +129,10 @@ class ProcessEnvironment : public ::testing::TestWithParam<arm_emulator_type> {
   void Execute(bool inject_wrong_input) {
     const size_t previous_exits = exits_;
     injections_ = 0;
-    auto* process =
+    auto* absl_nonnull process =
         kernel_->spawn_new_process(u"C:\\sys\\bin\\probe.exe", u"", 0xe0000808);
     ASSERT_NE(process, nullptr);
-    auto* thread = process->get_primary_thread();
+    auto* absl_nonnull thread = process->get_primary_thread();
     ASSERT_NE(thread, nullptr);
     // Keep diagnostic objects alive through exit assertions. Kernel wipeout
     // owns their final destruction, including early assertion failures.
@@ -156,7 +157,7 @@ class ProcessEnvironment : public ::testing::TestWithParam<arm_emulator_type> {
     initial_sp_ = initial_sp;
     auto original_write = cpu_->write_32bit;
     cpu_->write_32bit = [this, original_write](uint32_t address,
-                                               uint32_t* value) {
+                                               uint32_t* absl_nonnull value) {
       if (inject_wrong_input_ && *value == 16 && address < initial_sp_ &&
           initial_sp_ - address <= 256) {
         ++injections_;

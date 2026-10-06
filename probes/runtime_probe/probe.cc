@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include <absl/base/nullability.h>
+
 #include "abi.h"
 
 #ifdef SYMBIAN_RUNTIME_ALLOC_BENCH
@@ -14,9 +16,9 @@ extern "C" int RuntimeGotFunction(int value);
 extern "C" unsigned int RuntimeReverseBytes(unsigned int value);
 extern "C" int RuntimeInitialized;
 extern "C" int RuntimeBss[64];
-extern "C" int* RuntimeDataPointer;
-extern "C" int* RuntimeBssPointer;
-extern "C" int (*RuntimeFunctionPointer)(int);
+extern "C" int* absl_nonnull RuntimeDataPointer;
+extern "C" int* absl_nonnull RuntimeBssPointer;
+extern "C" int (*absl_nonnull RuntimeFunctionPointer)(int);
 #ifdef SYMBIAN_RUNTIME_FAST_LOCK
 extern "C" int SymbianRuntimeFastLockProbe();
 #endif
@@ -97,7 +99,8 @@ int SymbianRuntimeLocaleStreamProbe();
 int SymbianRuntimeLocaleApiProbe();
 #endif
 #ifdef SYMBIAN_RUNTIME_IMPORT_POINTER
-extern void* (*RuntimeImportedMemmove)(void*, const void*, size_t);
+extern void* absl_nonnull (*absl_nonnull RuntimeImportedMemmove)(
+    void* absl_nonnull, const void* absl_nonnull, size_t);
 #endif
 #ifdef SYMBIAN_RUNTIME_LONG_THUNK
 extern "C" unsigned int RuntimeArmThunkCall(unsigned int value);
@@ -277,7 +280,7 @@ int main() {
   // The image has a 1 MiB maximum heap. This representable request must fail
   // through the real SDK allocator, rather than the TInt range guard.
   volatile size_t size = 4 * 1024 * 1024;
-  void* pointer = ::operator new(size);
+  void* absl_nonnull pointer = ::operator new(size);
   ::operator delete(pointer);
   return -2;
 #else
@@ -367,11 +370,11 @@ int main() {
 #ifdef SYMBIAN_RUNTIME_GLOBAL_NOTHROW
   // Actually dereference an external object and call a Thumb function through
   // the GOT. The empty nothrow tag alone cannot detect a bad object address.
-  const volatile int* object = &RuntimeGotValue;
+  const volatile int* absl_nonnull object = &RuntimeGotValue;
   if (*object != 2026) {
     return -113;
   }
-  int (*volatile callback)(int) = &RuntimeGotFunction;
+  int (*absl_nonnull volatile callback)(int) = &RuntimeGotFunction;
   if (callback(*object) != 2834) {
     return -114;
   }
@@ -379,7 +382,7 @@ int main() {
 #else
   const std::nothrow_t nothrow{};
 #endif
-  void* zero = ::operator new(0, nothrow);
+  void* absl_nullable zero = ::operator new(0, nothrow);
   if (zero == nullptr) {
     return -104;
   }
@@ -389,7 +392,7 @@ int main() {
   ::operator delete(zero);
   ::operator delete(nullptr);
   const auto alignment = static_cast<std::align_val_t>(512);
-  void* aligned = ::operator new(257, alignment, nothrow);
+  void* absl_nullable aligned = ::operator new(257, alignment, nothrow);
   if (aligned == nullptr || reinterpret_cast<size_t>(aligned) % 512 != 0) {
     return -111;
   }
@@ -402,7 +405,7 @@ int main() {
     return -105;
   }
   volatile size_t exhausted = 4 * 1024 * 1024;
-  void* large = ::operator new(exhausted, nothrow);
+  void* absl_nullable large = ::operator new(exhausted, nothrow);
 #ifdef SYMBIAN_RUNTIME_MIMALLOC
   if (large == nullptr) {
     return -108;

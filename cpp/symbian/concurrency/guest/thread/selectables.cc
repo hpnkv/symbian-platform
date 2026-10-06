@@ -7,6 +7,8 @@
 
 #include <cstdlib>
 
+#include <absl/base/nullability.h>
+
 #include "absl/container/inlined_vector.h"
 
 namespace thread {
@@ -18,8 +20,8 @@ PermanentEvent::~PermanentEvent() {
   }
 }
 
-bool PermanentEvent::Handle(internal::CaseInSelectClause* case_state,
-                            bool enqueue) {
+bool PermanentEvent::Handle(
+    internal::CaseInSelectClause* absl_nonnull case_state, bool enqueue) {
   MutexLock lock(&mu_);
   if (notified_.load(std::memory_order_relaxed)) {
     MutexLock selector_lock(&case_state->selector->mu);
@@ -31,7 +33,8 @@ bool PermanentEvent::Handle(internal::CaseInSelectClause* case_state,
   return false;
 }
 
-void PermanentEvent::Unregister(internal::CaseInSelectClause* case_state) {
+void PermanentEvent::Unregister(
+    internal::CaseInSelectClause* absl_nonnull case_state) {
   MutexLock lock(&mu_);
   if (!notified_.load(std::memory_order_relaxed)) {
     internal::UnlinkFromList(&cases_to_be_selected_, case_state);
@@ -47,7 +50,7 @@ void PermanentEvent::Notify() {
     }
     notified_.store(true, std::memory_order_release);
     while (cases_to_be_selected_ != nullptr) {
-      auto* case_state = cases_to_be_selected_;
+      auto* absl_nonnull case_state = cases_to_be_selected_;
       MutexLock selector_lock(&case_state->selector->mu);
       if (case_state->TryPick()) {
         wake.push_back(case_state->selector);
@@ -69,19 +72,22 @@ bool PermanentEvent::HasBeenNotified() const {
 namespace {
 class NonSelectable final : public internal::Selectable {
  public:
-  bool Handle(internal::CaseInSelectClause*, bool) override { return false; }
+  bool Handle(internal::CaseInSelectClause* absl_nonnull, bool) override {
+    return false;
+  }
 
-  void Unregister(internal::CaseInSelectClause*) override {}
+  void Unregister(internal::CaseInSelectClause* absl_nonnull) override {}
 };
 
 class AlwaysSelectable final : public internal::Selectable {
  public:
-  bool Handle(internal::CaseInSelectClause* case_state, bool) override {
+  bool Handle(internal::CaseInSelectClause* absl_nonnull case_state,
+              bool) override {
     MutexLock lock(&case_state->selector->mu);
     return case_state->TryPick();
   }
 
-  void Unregister(internal::CaseInSelectClause*) override {}
+  void Unregister(internal::CaseInSelectClause* absl_nonnull) override {}
 };
 
 NonSelectable g_non_selectable;

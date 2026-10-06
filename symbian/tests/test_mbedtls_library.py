@@ -48,6 +48,13 @@ def artifacts(tmp_path_factory):
             "-G",
             "Ninja",
             f"-DSYMBIAN_SDK_PREFIX={sdk.prefix}",
+            f"-DCMAKE_CXX_COMPILER={sdk.compiler}",
+            "-DCMAKE_C_COMPILER="
+            f"{sdk.c_compiler or sdk.compiler.with_name('clang')}",
+            f"-DCMAKE_AR={sdk.ar or sdk.compiler.with_name('llvm-ar')}",
+            "-DCMAKE_RANLIB="
+            f"{sdk.ranlib or sdk.compiler.with_name('llvm-ranlib')}",
+            f"-DCMAKE_LINKER={sdk.linker}",
             "-DSYMBIAN_MBEDTLS_GUEST_PROBE=OFF",
         ],
         cwd=source,
@@ -71,6 +78,13 @@ def artifacts(tmp_path_factory):
             "Ninja",
             f"-DCMAKE_TOOLCHAIN_FILE={sdk.prefix}/cmake/symbian-arm.cmake",
             f"-DSYMBIAN_SDK_PREFIX={sdk.prefix}",
+            f"-DCMAKE_CXX_COMPILER={sdk.compiler}",
+            "-DCMAKE_C_COMPILER="
+            f"{sdk.c_compiler or sdk.compiler.with_name('clang')}",
+            f"-DCMAKE_AR={sdk.ar or sdk.compiler.with_name('llvm-ar')}",
+            "-DCMAKE_RANLIB="
+            f"{sdk.ranlib or sdk.compiler.with_name('llvm-ranlib')}",
+            f"-DCMAKE_LINKER={sdk.linker}",
             f"-DMBEDTLS_SOURCE={source}",
             f"-DMBEDTLS_ARCHIVE={archive}",
         ],
@@ -139,14 +153,16 @@ def guest_client(artifacts):
         )
         source = (
             "#include <e32std.h>\n"
+            "#include <absl/base/nullability.h>\n"
             "#include <stddef.h>\n"
             '_LIT(KShaName, "C:\\\\sys\\\\bin\\\\mbedcrypto_probe.dll");\n'
             "int main() {\n"
             "  RLibrary library;\n"
             "  TInt loaded = library.Load(KShaName, KNullDesC);\n"
             "  if (loaded != KErrNone) return -130 + loaded;\n"
-            "  using Sha = int (*)(const unsigned char*, size_t, "
-            "unsigned char*);\n"
+            "  using Sha = int (*absl_nullable)("
+            "const unsigned char* absl_nonnull, size_t, "
+            "unsigned char* absl_nonnull);\n"
             "  auto sha = reinterpret_cast<Sha>(\n"
             f"      library.Lookup({ordinals['MbedSha256']}));\n"
             "  if (sha == nullptr) { library.Close(); return -131; }\n"
@@ -227,7 +243,12 @@ def test_mbedtls_crypto_x509_executes_through_dynamic_dll(
 ):
     """Checks guest crypto, UTC, certificates, and callbacks via RLibrary."""
     root = Path(os.environ["SYMBIAN_RUNTIME_WORKSPACE"]).resolve()
-    golden = root / ".symbian/instances/delight-import-01"
+    golden = Path(
+        os.environ.get(
+            "SYMBIAN_TEST_FIRMWARE_INSTANCE",
+            str(root / ".symbian/instances/delight-import-01"),
+        )
+    )
     pinned = {
         golden / "data/roms/rm-807/SYM.ROM": ROM_808,
         golden / "data/drives/z/rm-807/sys/bin/euser.dll": EUSER_808,
@@ -248,7 +269,12 @@ def test_mbedtls_crypto_x509_executes_through_dynamic_dll(
         f"data-storage: data\ncpu: {backend}\ndevice: 0\nlanguage: 1\n"
         "enable-gdb-stub: false\nlog-svc: true\n"
     )
-    executable = root / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+    executable = Path(
+        os.environ.get(
+            "SYMBIAN_TEST_EMULATOR",
+            str(root / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"),
+        )
+    )
     with tempfile.TemporaryDirectory(
         prefix="mbedtls-dll-", dir="/tmp"
     ) as private:
@@ -292,7 +318,7 @@ def test_mbedtls_crypto_x509_executes_through_dynamic_dll(
 
 @pytest.fixture(scope="module")
 def rm807_entropy_dll(artifacts):
-    """Builds the opt-in ROM-specific entropy adapter, never the default SDK."""
+    """Builds a probe that requires the default SDK secure RNG to succeed."""
     source, sdk, _, output = artifacts
     example = Path(__file__).parents[2] / "probes/mbedtls_dll_probe"
     dll_build = output / "rm807 entropy DLL"
@@ -308,6 +334,13 @@ def rm807_entropy_dll(artifacts):
             "Ninja",
             f"-DCMAKE_TOOLCHAIN_FILE={sdk.prefix}/cmake/symbian-arm.cmake",
             f"-DSYMBIAN_SDK_PREFIX={sdk.prefix}",
+            f"-DCMAKE_CXX_COMPILER={sdk.compiler}",
+            "-DCMAKE_C_COMPILER="
+            f"{sdk.c_compiler or sdk.compiler.with_name('clang')}",
+            f"-DCMAKE_AR={sdk.ar or sdk.compiler.with_name('llvm-ar')}",
+            "-DCMAKE_RANLIB="
+            f"{sdk.ranlib or sdk.compiler.with_name('llvm-ranlib')}",
+            f"-DCMAKE_LINKER={sdk.linker}",
             f"-DMBEDTLS_SOURCE={source}",
             f"-DMBEDTLS_ARCHIVE={archive}",
             "-DSYMBIAN_RM807_ENTROPY_PROBE=ON",
@@ -326,9 +359,14 @@ def rm807_entropy_dll(artifacts):
 def test_rm807_secure_entropy_executes_in_emulator(
     rm807_entropy_dll, guest_client, tmp_path, backend
 ):
-    """Checks a ROM-specific SVC route with a patched disposable emulator."""
+    """Checks SDK entropy through native EUSER on a disposable emulator."""
     root = Path(os.environ["SYMBIAN_RUNTIME_WORKSPACE"]).resolve()
-    golden = root / ".symbian/instances/delight-import-01"
+    golden = Path(
+        os.environ.get(
+            "SYMBIAN_TEST_FIRMWARE_INSTANCE",
+            str(root / ".symbian/instances/delight-import-01"),
+        )
+    )
     pinned = {
         golden / "data/roms/rm-807/SYM.ROM": ROM_808,
         golden / "data/drives/z/rm-807/sys/bin/euser.dll": EUSER_808,
@@ -346,7 +384,12 @@ def test_rm807_secure_entropy_executes_in_emulator(
         f"data-storage: data\ncpu: {backend}\ndevice: 0\nlanguage: 1\n"
         "enable-gdb-stub: false\nlog-svc: true\n"
     )
-    executable = root / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+    executable = Path(
+        os.environ.get(
+            "SYMBIAN_TEST_EMULATOR",
+            str(root / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"),
+        )
+    )
     with tempfile.TemporaryDirectory(
         prefix="rm807-entropy-", dir="/tmp"
     ) as private:
@@ -410,6 +453,13 @@ def test_rm807_nonblocking_receive_and_cancel_in_emulator(artifacts, tmp_path):
             "Ninja",
             f"-DCMAKE_TOOLCHAIN_FILE={sdk.prefix}/cmake/symbian-arm.cmake",
             f"-DSYMBIAN_SDK_PREFIX={sdk.prefix}",
+            f"-DCMAKE_CXX_COMPILER={sdk.compiler}",
+            "-DCMAKE_C_COMPILER="
+            f"{sdk.c_compiler or sdk.compiler.with_name('clang')}",
+            f"-DCMAKE_AR={sdk.ar or sdk.compiler.with_name('llvm-ar')}",
+            "-DCMAKE_RANLIB="
+            f"{sdk.ranlib or sdk.compiler.with_name('llvm-ranlib')}",
+            f"-DCMAKE_LINKER={sdk.linker}",
             f"-DMBEDTLS_SOURCE={source}",
             f"-DMBEDTLS_ARCHIVE={archive}",
             "-DSYMBIAN_RM807_SOCKET_PROBE=ON",
@@ -431,12 +481,13 @@ def test_rm807_nonblocking_receive_and_cancel_in_emulator(artifacts, tmp_path):
     )
     (project / "probe.cc").write_text(
         "#include <e32std.h>\n"
+        "#include <absl/base/nullability.h>\n"
         '_LIT(KName, "C:\\\\sys\\\\bin\\\\mbedcrypto_probe.dll");\n'
         "int main() {\n"
         " RLibrary library;\n"
         " TInt loaded = library.Load(KName, KNullDesC);\n"
         " if (loaded != KErrNone) return -160 + loaded;\n"
-        " using Probe = int (*)(int);\n"
+        " using Probe = int (*absl_nullable)(int);\n"
         "  auto probe = reinterpret_cast<Probe>(\n"
         f"      library.Lookup({ordinals['MbedConnectedSocketProbe']}));\n"
         " TInt result = probe == nullptr ? -161 : probe(39093);\n"
@@ -464,7 +515,12 @@ def test_rm807_nonblocking_receive_and_cancel_in_emulator(artifacts, tmp_path):
         str(sdk.linker),
         architecture="armv6",
     )["artifact"]
-    golden = root / ".symbian/instances/delight-import-01"
+    golden = Path(
+        os.environ.get(
+            "SYMBIAN_TEST_FIRMWARE_INSTANCE",
+            str(root / ".symbian/instances/delight-import-01"),
+        )
+    )
     pinned = {
         golden / "data/roms/rm-807/SYM.ROM": ROM_808,
         golden / "data/drives/z/rm-807/sys/bin/euser.dll": EUSER_808,
@@ -501,7 +557,12 @@ def test_rm807_nonblocking_receive_and_cancel_in_emulator(artifacts, tmp_path):
 
         sender = threading.Thread(target=deliver)
         sender.start()
-        executable = root / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+        executable = Path(
+            os.environ.get(
+                "SYMBIAN_TEST_EMULATOR",
+                str(root / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"),
+            )
+        )
         with tempfile.TemporaryDirectory(
             prefix="rm807-socket-", dir="/tmp"
         ) as private:

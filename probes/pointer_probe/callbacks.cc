@@ -1,3 +1,5 @@
+#include <absl/base/nullability.h>
+
 #include "probe.h"
 
 extern "C" const Callback SymbianCallbacks[2] = {SymbianAbiProbe,
@@ -7,4 +9,4 @@ namespace {
 const char kText[] = "symbian";
 }
 
-extern "C" const char* const SymbianLabel = kText + 1;
+extern "C" const char* absl_nonnull const SymbianLabel = kText + 1;

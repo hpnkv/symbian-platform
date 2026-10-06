@@ -1,7 +1,9 @@
 // Copyright 2026 Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
+
 #include <cstdint>
 
+#include <absl/base/nullability.h>
 #include <e32std.h>
 #include <pthread.h>
 
@@ -16,7 +18,7 @@ struct Slot {
   unsigned int id_low;
   unsigned int id_high;
   pthread_key_t keys[2];
-  void* values[2];
+  void* absl_nullable values[2];
 };
 
 Slot g_slots[kSlotCount] = {};
@@ -35,8 +37,8 @@ ThreadIdentity CurrentThread() {
   return {low, high, (low ^ high) & (kSlotCount - 1)};
 }
 
-Slot* Find(ThreadIdentity thread) {
-  Slot* slot = &g_slots[thread.index];
+Slot* absl_nullable Find(ThreadIdentity thread) {
+  Slot* absl_nonnull slot = &g_slots[thread.index];
   if (__atomic_load_n(&slot->state, __ATOMIC_ACQUIRE) != 2 ||
       __atomic_load_n(&slot->id_low, __ATOMIC_RELAXED) != thread.low ||
       __atomic_load_n(&slot->id_high, __ATOMIC_RELAXED) != thread.high) {
@@ -45,11 +47,11 @@ Slot* Find(ThreadIdentity thread) {
   return slot;
 }
 
-Slot* FindOrClaim(ThreadIdentity thread) {
-  if (Slot* slot = Find(thread)) {
+Slot* absl_nullable FindOrClaim(ThreadIdentity thread) {
+  if (Slot* absl_nullable slot = Find(thread)) {
     return slot;
   }
-  Slot* slot = &g_slots[thread.index];
+  Slot* absl_nonnull slot = &g_slots[thread.index];
   unsigned int empty = 0;
   if (!__atomic_compare_exchange_n(&slot->state, &empty, 1, false,
                                    __ATOMIC_ACQ_REL, __ATOMIC_RELAXED)) {
@@ -69,7 +71,7 @@ Slot* FindOrClaim(ThreadIdentity thread) {
 
 extern "C" void SymbianMimallocCacheEnter(pthread_key_t default_key,
                                           pthread_key_t cached_key) {
-  Slot* slot = FindOrClaim(CurrentThread());
+  Slot* absl_nullable slot = FindOrClaim(CurrentThread());
   if (slot == nullptr) {
     return;
   }
@@ -83,8 +85,8 @@ extern "C" void SymbianMimallocCacheEnter(pthread_key_t default_key,
   }
 }
 
-extern "C" void* SymbianMimallocGetSpecific(pthread_key_t key) {
-  if (Slot* slot = Find(CurrentThread())) {
+extern "C" void* absl_nullable SymbianMimallocGetSpecific(pthread_key_t key) {
+  if (Slot* absl_nullable slot = Find(CurrentThread())) {
     if (slot->keys[0] == key) {
       return slot->values[0];
     }
@@ -96,12 +98,12 @@ extern "C" void* SymbianMimallocGetSpecific(pthread_key_t key) {
 }
 
 extern "C" int SymbianMimallocSetSpecific(pthread_key_t key,
-                                          const void* value) {
+                                          const void* absl_nullable value) {
   const int result = pthread_setspecific(key, value);
   if (result != 0) {
     return result;
   }
-  Slot* slot = Find(CurrentThread());
+  Slot* absl_nullable slot = Find(CurrentThread());
   if (slot != nullptr) {
     for (int i = 0; i < 2; ++i) {
       if (slot->keys[i] == key) {
@@ -115,7 +117,7 @@ extern "C" int SymbianMimallocSetSpecific(pthread_key_t key,
 
 extern "C" void SymbianMimallocForgetThread() {
   const ThreadIdentity thread = CurrentThread();
-  Slot* slot = Find(thread);
+  Slot* absl_nullable slot = Find(thread);
   if (slot == nullptr) {
     return;
   }

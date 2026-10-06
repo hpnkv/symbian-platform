@@ -17,6 +17,8 @@
 #include <utility>
 #include <vector>
 
+#include <absl/base/nullability.h>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/time/time.h"
@@ -36,7 +38,7 @@ void FiberEntry();
 class SchedulerPolicy {
  public:
   virtual ~SchedulerPolicy() = default;
-  virtual std::size_t PickNext(std::span<Fiber* const> ready) = 0;
+  virtual std::size_t PickNext(std::span<Fiber* absl_nonnull const> ready) = 0;
   virtual void NotifyReady() noexcept = 0;
 };
 
@@ -45,7 +47,7 @@ class SchedulerPolicy {
 // dispatching native completions and when its next fiber deadline expires.
 class Scheduler {
  public:
-  explicit Scheduler(SchedulerPolicy* policy = nullptr);
+  explicit Scheduler(SchedulerPolicy* absl_nullable policy = nullptr);
   Scheduler(const Scheduler&) = delete;
   Scheduler& operator=(const Scheduler&) = delete;
   ~Scheduler();
@@ -53,29 +55,29 @@ class Scheduler {
   absl::Status RunReady(std::size_t max_turns);
   bool HasReady() const;
   std::chrono::steady_clock::time_point NextDeadline() const;
-  static Scheduler* Current() noexcept;
+  static Scheduler* absl_nullable Current() noexcept;
 
  private:
   friend class Fiber;
   friend class Mutex;
   friend class CondVar;
   friend void FiberEntry();
-  void Add(Fiber* fiber);
-  void Remove(Fiber* fiber);
-  void Wake(Fiber* fiber);
-  bool WakeWithoutNotify(Fiber* fiber);
+  void Add(Fiber* absl_nonnull fiber);
+  void Remove(Fiber* absl_nullable fiber);
+  void Wake(Fiber* absl_nonnull fiber);
+  bool WakeWithoutNotify(Fiber* absl_nullable fiber);
   void NotifyReady() noexcept;
-  void PreparePark(Fiber* fiber,
+  void PreparePark(Fiber* absl_nonnull fiber,
                    std::chrono::steady_clock::time_point deadline);
-  void CancelPark(Fiber* fiber);
-  void Suspend(Fiber* fiber);
+  void CancelPark(Fiber* absl_nonnull fiber);
+  void Suspend(Fiber* absl_nonnull fiber);
 
   const std::thread::id owner_;
-  SchedulerPolicy* const policy_;
+  SchedulerPolicy* absl_nullable const policy_;
   mutable std::mutex mu_;
-  std::deque<Fiber*> ready_;
-  std::vector<Fiber*> fibers_;
-  Fiber* current_ = nullptr;
+  std::deque<Fiber* absl_nonnull> ready_;
+  std::vector<Fiber* absl_nonnull> fibers_;
+  Fiber* absl_nullable current_ = nullptr;
   std::uintptr_t root_sp_ = 0;
 };
 
@@ -84,13 +86,13 @@ class Fiber {
   using Work = absl::AnyInvocable<void() &&>;
   static constexpr std::size_t kDefaultStackBytes = 16 * 1024;
 
-  Fiber(Scheduler& scheduler, Work work,
+  Fiber(Scheduler* absl_nonnull scheduler, Work work,
         std::size_t stack_bytes = kDefaultStackBytes);
 
   template <typename F>
   requires(std::is_invocable_r_v<void, std::decay_t<F>> &&
            !std::is_same_v<std::decay_t<F>, Work>)
-      Fiber(Scheduler& scheduler, F&& work,
+      Fiber(Scheduler* absl_nonnull scheduler, F&& work,
             std::size_t stack_bytes = kDefaultStackBytes)
       : Fiber(scheduler, Work(std::forward<F>(work)), stack_bytes) {}
 
@@ -107,7 +109,7 @@ class Fiber {
   bool Cancelled() const noexcept;
   Case OnCancel() const;
 
-  static Fiber* Current() noexcept;
+  static Fiber* absl_nullable Current() noexcept;
   static void Yield();
   static void SleepFor(absl::Duration duration);
 

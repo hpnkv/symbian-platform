@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Read-only diagnostic using EKA2L1's original compressed E32 parser.
+
 #include <cstdint>
 #include <fstream>
 #include <iomanip>
@@ -9,12 +10,14 @@
 #include <utility>
 #include <vector>
 
+#include <absl/base/nullability.h>
+
 #include "common/buffer.h"
 #include "config/config.h"
 #include "loader/romimage.h"
 #include "mem/mem.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char* absl_nullable* absl_nonnull argv) {
   if (argc < 2) {
     std::cerr << "usage: symbian_rom_atomic_oracle EUSER.dll [...]\n";
     return 2;

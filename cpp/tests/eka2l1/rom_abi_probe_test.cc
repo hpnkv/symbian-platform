@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Trusted, opt-in ROM analysis using the unchanged upstream ROM parsers.
 // Firmware and outputs remain private; this performs no guest execution.
+
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
@@ -11,6 +12,7 @@
 #include <system_error>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <common/buffer.h>
 #include <loader/rom.h>
 #include <loader/romimage.h>
@@ -22,8 +24,8 @@ namespace {
 class RomAbiProbeTest : public symbian::testing::ProcessEnvironment {
  protected:
   void SetUp() override {
-    const char* rom = std::getenv("SYMBIAN_ROM_ABI_ROOT");
-    const char* output = std::getenv("SYMBIAN_ROM_ABI_OUTPUT");
+    const char* absl_nullable rom = std::getenv("SYMBIAN_ROM_ABI_ROOT");
+    const char* absl_nullable output = std::getenv("SYMBIAN_ROM_ABI_OUTPUT");
     if (!rom || !output) {
       GTEST_SKIP() << "Supply a preserved imported root and a fresh output";
     }

@@ -6,6 +6,8 @@
 #define SYMBIAN_CONCURRENCY_NATIVE_TIMER_H_
 
 #if __has_include(<symbian/runtime.h>)
+
+#include <absl/base/nullability.h>
 #include <symbian/runtime.h>
 #else
 #include "abi.h"
@@ -49,7 +51,7 @@ class NativeTimer {
   }
 
  private:
-  SymbianRuntimeTimerState* state_ = nullptr;
+  SymbianRuntimeTimerState* absl_nullable state_ = nullptr;
 };
 
 }  // namespace symbian::concurrency

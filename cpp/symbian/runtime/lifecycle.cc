@@ -1,18 +1,21 @@
 // Bounded Itanium C++ ABI global lifetime for one guest module/process.
 // The module's E32 entry or EXE startup calls these after its heap exists.
+
 #include <cstddef>
 #include <cstdint>
+
+#include <absl/base/nullability.h>
 
 #include "abi.h"
 
 namespace {
 
-using Initializer = void (*)();
+using Initializer = void (*absl_nullable)();
 
 struct Destructor {
-  void (*function)(void*);
-  void* argument;
-  void* module;
+  void (*absl_nonnull function)(void* absl_nullable);
+  void* absl_nullable argument;
+  void* absl_nullable module;
 };
 
 constexpr size_t kMaximumDestructors = 256;
@@ -36,8 +39,9 @@ extern "C" __attribute__((
 // The address is an opaque per-module identity; it never needs mutation.
 extern "C" __attribute__((visibility("default"))) const char __dso_handle = 0;
 
-extern "C" int __cxa_atexit(void (*function)(void*), void* argument,
-                            void* module) {
+extern "C" int __cxa_atexit(void (*absl_nonnull function)(void* absl_nullable),
+                            void* absl_nullable argument,
+                            void* absl_nullable module) {
   if (function == nullptr) {
     SymbianRuntimeExit(SymbianRuntimeExitReason::kRuntimeContractFailure);
   }
@@ -50,7 +54,7 @@ extern "C" int __cxa_atexit(void (*function)(void*), void* argument,
   return 0;
 }
 
-extern "C" void __cxa_finalize(void* module) {
+extern "C" void __cxa_finalize(void* absl_nullable module) {
   // Clear before invoking: recursive finalization must not call twice.
   for (size_t i = SymbianRuntimeDestructorCount; i > 0; --i) {
     Destructor& record = SymbianRuntimeDestructors[i - 1];
@@ -65,8 +69,8 @@ extern "C" void __cxa_finalize(void* module) {
 }
 
 extern "C" void SymbianRuntimeRunInitializers() {
-  for (Initializer* entry = __init_array_start; entry != __init_array_end;
-       ++entry) {
+  for (Initializer* absl_nullable entry = __init_array_start;
+       entry != __init_array_end; ++entry) {
     if (*entry == nullptr) {
       SymbianRuntimeExit(SymbianRuntimeExitReason::kRuntimeContractFailure);
     }
@@ -76,7 +80,8 @@ extern "C" void SymbianRuntimeRunInitializers() {
 
 extern "C" void SymbianRuntimeRunFinalizers() {
   __cxa_finalize(nullptr);
-  for (Initializer* entry = __fini_array_end; entry != __fini_array_start;) {
+  for (Initializer* absl_nullable entry = __fini_array_end;
+       entry != __fini_array_start;) {
     --entry;
     if (*entry == nullptr) {
       SymbianRuntimeExit(SymbianRuntimeExitReason::kRuntimeContractFailure);

@@ -13,6 +13,8 @@
 #include <string_view>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "thread/boost_primitives.h"
 
 namespace symbian::concurrency {
@@ -23,7 +25,8 @@ struct InlinePumpState {
 };
 
 template <typename Once>
-void DriveInline(thread::Mutex* mu, InlinePumpState* state,
+void DriveInline(thread::Mutex* absl_nonnull mu,
+                 InlinePumpState* absl_nullable state,
                  [[maybe_unused]] std::string_view name, Once&& once,
                  size_t max_depth = 4) {
   {

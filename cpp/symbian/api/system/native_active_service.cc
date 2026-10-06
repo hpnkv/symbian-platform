@@ -3,13 +3,16 @@
 
 #include "native_active_service.h"
 
+#include <absl/base/nullability.h>
 #include <e32base.h>
 #include <e32property.h>
 
 namespace {
 class StopWatcher final : public CActive {
  public:
-  StopWatcher(TUid category, TUint key, void (*on_stop)(void*), void* context)
+  StopWatcher(TUid category, TUint key,
+              void (*absl_nonnull on_stop)(void* absl_nullable),
+              void* absl_nullable context)
       : CActive(EPriorityStandard),
         category_(category),
         key_(key),
@@ -80,19 +83,19 @@ class StopWatcher final : public CActive {
 
   TUid category_;
   TUint key_;
-  void (*on_stop_)(void*);
-  void* context_;
+  void (*absl_nonnull on_stop_)(void* absl_nullable);
+  void* absl_nullable context_;
   RProperty property_;
   bool defined_ = false;
   TInt completion_error_ = KErrNone;
 };
 }  // namespace
 
-extern "C" int SymbianDeviceRunActiveService(int category, unsigned key,
-                                             int (*start)(void*),
-                                             void (*on_stop)(void*),
-                                             void (*on_ready)(void*),
-                                             void* context) {
+extern "C" int SymbianDeviceRunActiveService(
+    int category, unsigned key, int (*absl_nonnull start)(void* absl_nullable),
+    void (*absl_nonnull on_stop)(void* absl_nullable),
+    void (*absl_nonnull on_ready)(void* absl_nullable),
+    void* absl_nullable context) {
   CActiveScheduler scheduler;
   CActiveScheduler::Install(&scheduler);
   int result = start(context);

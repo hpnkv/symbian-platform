@@ -3,6 +3,7 @@
 
 #include "native_tcp_client.h"
 
+#include <absl/base/nullability.h>
 #include <e32atomics.h>
 #include <es_sock.h>
 #include <in_sock.h>
@@ -17,20 +18,20 @@ struct NativeTcpSession {
 };
 
 struct NativeTcpClient {
-  NativeTcpSession* session = nullptr;
+  NativeTcpSession* absl_nullable session = nullptr;
   RSocket socket;
   bool socket_open = false;
 };
 
 struct NativeTcpListener {
-  NativeTcpSession* session = nullptr;
+  NativeTcpSession* absl_nullable session = nullptr;
   RSocket socket;
   bool socket_open = false;
 };
 
 namespace {
 
-void ReleaseSession(NativeTcpSession* session) {
+void ReleaseSession(NativeTcpSession* absl_nullable session) {
   if (session != nullptr &&
       __e32_atomic_add_ord32(&session->references, 0xffffffffU) == 1) {
     session->server.Close();
@@ -39,16 +40,16 @@ void ReleaseSession(NativeTcpSession* session) {
   }
 }
 
-void RetainSession(NativeTcpSession* session) {
+void RetainSession(NativeTcpSession* absl_nonnull session) {
   __e32_atomic_add_ord32(&session->references, 1);
 }
 
-int OpenSession(NativeTcpSession** output) {
-  void* memory = User::Alloc(sizeof(NativeTcpSession));
+int OpenSession(NativeTcpSession* absl_nullable* absl_nonnull output) {
+  void* absl_nullable memory = User::Alloc(sizeof(NativeTcpSession));
   if (memory == nullptr) {
     return KErrNoMemory;
   }
-  auto* session = new (memory) NativeTcpSession;
+  auto* absl_nonnull session = new (memory) NativeTcpSession;
   const TInt result = session->server.Connect();
   if (result != KErrNone) {
     session->~NativeTcpSession();
@@ -61,8 +62,9 @@ int OpenSession(NativeTcpSession** output) {
 
 }  // namespace
 
-extern "C" int SymbianDeviceResolveIpv4(const char* hostname, int length,
-                                        unsigned* address,
+extern "C" int SymbianDeviceResolveIpv4(const char* absl_nullable hostname,
+                                        int length,
+                                        unsigned* absl_nullable address,
                                         std::int64_t deadline) {
   if (!hostname || !address || length < 1 || length > 253) {
     return KErrArgument;
@@ -83,7 +85,7 @@ extern "C" int SymbianDeviceResolveIpv4(const char* hostname, int length,
     TNameEntry entry;
     TRequestStatus request;
     resolver.GetByName(name, entry, request);
-    result = WaitForResolverRequest(resolver, request, deadline);
+    result = WaitForResolverRequest(&resolver, &request, deadline);
     if (result == KErrNone) {
       *address = TInetAddr::Cast(entry().iAddr).Address();
     }
@@ -93,7 +95,7 @@ extern "C" int SymbianDeviceResolveIpv4(const char* hostname, int length,
   return result;
 }
 
-extern "C" int SymbianDeviceTcpSetNoDelay(NativeTcpClient* client,
+extern "C" int SymbianDeviceTcpSetNoDelay(NativeTcpClient* absl_nullable client,
                                           bool enabled) {
   if (client == nullptr || !client->socket_open) {
     return KErrBadHandle;
@@ -101,7 +103,7 @@ extern "C" int SymbianDeviceTcpSetNoDelay(NativeTcpClient* client,
   return client->socket.SetOpt(KSoTcpNoDelay, KSolInetTcp, enabled ? 1 : 0);
 }
 
-extern "C" void SymbianDeviceTcpClose(NativeTcpClient* client) {
+extern "C" void SymbianDeviceTcpClose(NativeTcpClient* absl_nullable client) {
   if (client == nullptr) {
     return;
   }
@@ -113,18 +115,19 @@ extern "C" void SymbianDeviceTcpClose(NativeTcpClient* client) {
   User::Free(client);
 }
 
-extern "C" int SymbianDeviceTcpConnect(unsigned address, unsigned port,
-                                       NativeTcpClient** output,
-                                       std::int64_t deadline) {
+extern "C" int SymbianDeviceTcpConnect(
+    unsigned address, unsigned port,
+    NativeTcpClient* absl_nullable* absl_nullable output,
+    std::int64_t deadline) {
   if (output == nullptr || port == 0 || port > 65535) {
     return KErrArgument;
   }
   *output = nullptr;
-  void* memory = User::Alloc(sizeof(NativeTcpClient));
+  void* absl_nullable memory = User::Alloc(sizeof(NativeTcpClient));
   if (memory == nullptr) {
     return KErrNoMemory;
   }
-  auto* client = new (memory) NativeTcpClient;
+  auto* absl_nonnull client = new (memory) NativeTcpClient;
   TInt result = OpenSession(&client->session);
   if (result != KErrNone) {
     SymbianDeviceTcpClose(client);
@@ -140,7 +143,7 @@ extern "C" int SymbianDeviceTcpConnect(unsigned address, unsigned port,
   TInetAddr peer(address, port);
   TRequestStatus request;
   client->socket.Connect(peer, request);
-  result = WaitForSocketRequest(client->socket, request, deadline,
+  result = WaitForSocketRequest(&(client->socket), &request, deadline,
                                 &RSocket::CancelConnect);
   if (result != KErrNone) {
     SymbianDeviceTcpClose(client);
@@ -150,7 +153,8 @@ extern "C" int SymbianDeviceTcpConnect(unsigned address, unsigned port,
   return KErrNone;
 }
 
-extern "C" void SymbianDeviceTcpListenerClose(NativeTcpListener* listener) {
+extern "C" void SymbianDeviceTcpListenerClose(
+    NativeTcpListener* absl_nullable listener) {
   if (listener == nullptr) {
     return;
   }
@@ -162,18 +166,18 @@ extern "C" void SymbianDeviceTcpListenerClose(NativeTcpListener* listener) {
   User::Free(listener);
 }
 
-extern "C" int SymbianDeviceTcpListen(unsigned address, unsigned port,
-                                      bool share_with_workers,
-                                      NativeTcpListener** output) {
+extern "C" int SymbianDeviceTcpListen(
+    unsigned address, unsigned port, bool share_with_workers,
+    NativeTcpListener* absl_nullable* absl_nullable output) {
   if (output == nullptr || port == 0 || port > 65535) {
     return KErrArgument;
   }
   *output = nullptr;
-  void* memory = User::Alloc(sizeof(NativeTcpListener));
+  void* absl_nullable memory = User::Alloc(sizeof(NativeTcpListener));
   if (memory == nullptr) {
     return KErrNoMemory;
   }
-  auto* listener = new (memory) NativeTcpListener;
+  auto* absl_nonnull listener = new (memory) NativeTcpListener;
   TInt result = OpenSession(&listener->session);
   if (result == KErrNone && share_with_workers) {
     result = listener->session->server.ShareAuto();
@@ -198,18 +202,19 @@ extern "C" int SymbianDeviceTcpListen(unsigned address, unsigned port,
   return KErrNone;
 }
 
-extern "C" int SymbianDeviceTcpBeginAccept(NativeTcpListener* listener,
-                                           TRequestStatus* status,
-                                           NativeTcpClient** output) {
+extern "C" int SymbianDeviceTcpBeginAccept(
+    NativeTcpListener* absl_nullable listener,
+    TRequestStatus* absl_nullable status,
+    NativeTcpClient* absl_nullable* absl_nullable output) {
   if (listener == nullptr || status == nullptr || output == nullptr) {
     return KErrArgument;
   }
   *output = nullptr;
-  void* memory = User::Alloc(sizeof(NativeTcpClient));
+  void* absl_nullable memory = User::Alloc(sizeof(NativeTcpClient));
   if (memory == nullptr) {
     return KErrNoMemory;
   }
-  auto* client = new (memory) NativeTcpClient;
+  auto* absl_nonnull client = new (memory) NativeTcpClient;
   client->session = listener->session;
   RetainSession(client->session);
   const TInt result = client->socket.Open(client->session->server);
@@ -223,24 +228,26 @@ extern "C" int SymbianDeviceTcpBeginAccept(NativeTcpListener* listener,
   return KErrNone;
 }
 
-extern "C" void SymbianDeviceTcpCancelAccept(NativeTcpListener* listener) {
+extern "C" void SymbianDeviceTcpCancelAccept(
+    NativeTcpListener* absl_nullable listener) {
   if (listener != nullptr) {
     listener->socket.CancelAccept();
   }
 }
 
-extern "C" int SymbianDeviceTcpAccept(NativeTcpListener* listener,
-                                      NativeTcpClient** output,
-                                      std::int64_t deadline) {
+extern "C" int SymbianDeviceTcpAccept(
+    NativeTcpListener* absl_nullable listener,
+    NativeTcpClient* absl_nullable* absl_nullable output,
+    std::int64_t deadline) {
   if (listener == nullptr || output == nullptr) {
     return KErrArgument;
   }
   *output = nullptr;
-  void* memory = User::Alloc(sizeof(NativeTcpClient));
+  void* absl_nullable memory = User::Alloc(sizeof(NativeTcpClient));
   if (memory == nullptr) {
     return KErrNoMemory;
   }
-  auto* client = new (memory) NativeTcpClient;
+  auto* absl_nonnull client = new (memory) NativeTcpClient;
   client->session = listener->session;
   RetainSession(client->session);
   TInt result = client->socket.Open(client->session->server);
@@ -248,7 +255,7 @@ extern "C" int SymbianDeviceTcpAccept(NativeTcpListener* listener,
     client->socket_open = true;
     TRequestStatus request;
     listener->socket.Accept(client->socket, request);
-    result = WaitForSocketRequest(listener->socket, request, deadline,
+    result = WaitForSocketRequest(&(listener->socket), &request, deadline,
                                   &RSocket::CancelAccept);
   }
   if (result != KErrNone) {
@@ -259,22 +266,24 @@ extern "C" int SymbianDeviceTcpAccept(NativeTcpListener* listener,
   return KErrNone;
 }
 
-extern "C" int SymbianDeviceTcpSend(NativeTcpClient* client,
-                                    const unsigned char* bytes, int length,
-                                    std::int64_t deadline) {
+extern "C" int SymbianDeviceTcpSend(NativeTcpClient* absl_nullable client,
+                                    const unsigned char* absl_nullable bytes,
+                                    int length, std::int64_t deadline) {
   if (client == nullptr || bytes == nullptr || length <= 0 || length > 32768) {
     return KErrArgument;
   }
   TPtrC8 data(bytes, length);
   TRequestStatus request;
   client->socket.Send(data, 0, request);
-  return WaitForSocketRequest(client->socket, request, deadline,
+  return WaitForSocketRequest(&(client->socket), &request, deadline,
                               &RSocket::CancelSend);
 }
 
-extern "C" int SymbianDeviceTcpReceive(NativeTcpClient* client,
-                                       unsigned char* bytes, int capacity,
-                                       int* received, std::int64_t deadline) {
+extern "C" int SymbianDeviceTcpReceive(NativeTcpClient* absl_nullable client,
+                                       unsigned char* absl_nullable bytes,
+                                       int capacity,
+                                       int* absl_nullable received,
+                                       std::int64_t deadline) {
   if (client == nullptr || bytes == nullptr || capacity <= 0 ||
       capacity > 32768 || received == nullptr) {
     return KErrArgument;
@@ -283,8 +292,8 @@ extern "C" int SymbianDeviceTcpReceive(NativeTcpClient* client,
   TPtr8 data(bytes, 0, capacity);
   TRequestStatus request;
   client->socket.RecvOneOrMore(data, 0, request);
-  const TInt result = WaitForSocketRequest(client->socket, request, deadline,
-                                           &RSocket::CancelRecv);
+  const TInt result = WaitForSocketRequest(&(client->socket), &request,
+                                           deadline, &RSocket::CancelRecv);
   if (result != KErrNone) {
     return result;
   }

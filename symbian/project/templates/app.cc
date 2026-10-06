@@ -1,8 +1,10 @@
 #include <algorithm>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <symbian/concurrency/event_executor.h>
 #include <symbian/native_status.h>
@@ -14,26 +16,26 @@ int FooterHeight(TSize size) {
   return size.iHeight >= 480 ? 64 : 32;
 }
 
-void Text(CWindowGc& gc, const char* text, int x, int y) {
+void Text(CWindowGc* absl_nonnull gc, std::string_view text, int x, int y) {
   // This starter uses ASCII text. Convert to UTF-16 at the drawing API;
   // replace this adapter with a real UTF-8 decoder for translated content.
   TUint16 units[96];
   int length = 0;
-  while (text[length] != '\0' && length < 96) {
+  while (length < 96 && static_cast<std::size_t>(length) < text.size()) {
     units[length] = static_cast<unsigned char>(text[length]);
     ++length;
   }
-  gc.DrawText(TPtrC16(units, length), TPoint(x, y));
+  gc->DrawText(TPtrC16(units, length), TPoint(x, y));
 }
 
-void Pair(std::string& text, int position, int value) {
-  text[static_cast<std::size_t>(position)] =
+void Pair(std::string* absl_nonnull text, int position, int value) {
+  (*text)[static_cast<std::size_t>(position)] =
       static_cast<char>('0' + value / 10);
-  text[static_cast<std::size_t>(position + 1)] =
+  (*text)[static_cast<std::size_t>(position + 1)] =
       static_cast<char>('0' + value % 10);
 }
 
-absl::Status LogTime(std::vector<std::string>& lines) {
+absl::Status LogTime(std::vector<std::string>* absl_nonnull lines) {
   TTime now;
   now.HomeTime();
   const TDateTime date = now.DateTime();
@@ -42,29 +44,29 @@ absl::Status LogTime(std::vector<std::string>& lines) {
     return absl::OutOfRangeError("Year does not fit the displayed date");
   }
   std::string text = "0000-00-00 00:00:00";
-  Pair(text, 0, year / 100);
-  Pair(text, 2, year % 100);
-  Pair(text, 5, date.Month() + 1);
-  Pair(text, 8, date.Day() + 1);
-  Pair(text, 11, date.Hour());
-  Pair(text, 14, date.Minute());
-  Pair(text, 17, date.Second());
-  if (lines.size() == 12) {
-    lines.erase(lines.begin());
+  Pair(&text, 0, year / 100);
+  Pair(&text, 2, year % 100);
+  Pair(&text, 5, date.Month() + 1);
+  Pair(&text, 8, date.Day() + 1);
+  Pair(&text, 11, date.Hour());
+  Pair(&text, 14, date.Minute());
+  Pair(&text, 17, date.Second());
+  if (lines->size() == 12) {
+    lines->erase(lines->begin());
   }
-  lines.push_back(std::move(text));
+  lines->push_back(std::move(text));
   return absl::OkStatus();
 }
 
-void Draw(CWindowGc& gc, CFont* font, TSize size,
+void Draw(CWindowGc* absl_nonnull gc, CFont* absl_nonnull font, TSize size,
           const std::vector<std::string>& lines, bool focused) {
-  gc.SetPenStyle(CGraphicsContext::ENullPen);
-  gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
-  gc.SetBrushColor(TRgb(0x001c2430));
-  gc.DrawRect(TRect(0, 0, size.iWidth, size.iHeight));
-  gc.UseFont(font);
-  gc.SetPenColor(TRgb(0x00ffffff));
-  gc.SetPenStyle(CGraphicsContext::ESolidPen);
+  gc->SetPenStyle(CGraphicsContext::ENullPen);
+  gc->SetBrushStyle(CGraphicsContext::ESolidBrush);
+  gc->SetBrushColor(TRgb(0x001c2430));
+  gc->DrawRect(TRect(0, 0, size.iWidth, size.iHeight));
+  gc->UseFont(font);
+  gc->SetPenColor(TRgb(0x00ffffff));
+  gc->SetPenStyle(CGraphicsContext::ESolidPen);
   const bool compact = size.iHeight < 480;
   const int footer = FooterHeight(size);
   const int first_line = compact ? 80 : 136;
@@ -81,40 +83,43 @@ void Draw(CWindowGc& gc, CFont* font, TSize size,
        16, compact ? 42 : 72);
   Text(gc, focused ? "Active" : "Paused", 16, compact ? 60 : 100);
   for (int i = start; i < count; ++i) {
-    Text(gc, lines[static_cast<std::size_t>(i)].c_str(), 16,
+    Text(gc, lines[static_cast<std::size_t>(i)], 16,
          first_line + (i - start) * line_height);
   }
-  gc.SetBrushColor(TRgb(0x00406080));
-  gc.DrawRect(TRect(0, size.iHeight - footer, size.iWidth, size.iHeight));
+  gc->SetBrushColor(TRgb(0x00406080));
+  gc->DrawRect(TRect(0, size.iHeight - footer, size.iWidth, size.iHeight));
   Text(gc, "Clear", 20, size.iHeight - (compact ? 10 : 24));
   Text(gc, "Exit", size.iWidth - 76, size.iHeight - (compact ? 10 : 24));
-  gc.DiscardFont();
+  gc->DiscardFont();
 }
 
-TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, CWindowGc& gc) {
-  const TSize size = screen.SizeInPixels();
+TInt RunWindow(RWsSession* absl_nonnull session,
+               CWsScreenDevice* absl_nonnull screen,
+               CWindowGc* absl_nonnull gc) {
+  const TSize size = screen->SizeInPixels();
   if (size.iWidth < 176 || size.iHeight < 208) {
     return KErrNotSupported;
   }
-  CFont* font = nullptr;
+  CFont* absl_nullable font = nullptr;
   // Ask the server for its nearest default font; no vendor typeface required.
   _LIT(KTypeface, "");
   const TFontSpec specification(KTypeface, size.iHeight >= 480 ? 180 : 120);
-  TInt result = screen.GetNearestFontToDesignHeightInTwips(font, specification);
+  TInt result =
+      screen->GetNearestFontToDesignHeightInTwips(font, specification);
   if (result != KErrNone) {
     return result;
   }
-  RWindowGroup group(session);
+  RWindowGroup group(*session);
   result = group.Construct(1, ETrue);
   if (result != KErrNone) {
-    screen.ReleaseFont(font);
+    screen->ReleaseFont(font);
     return result;
   }
-  RWindow window(session);
+  RWindow window(*session);
   result = window.Construct(group, 2);
   if (result != KErrNone) {
     group.Close();
-    screen.ReleaseFont(font);
+    screen->ReleaseFont(font);
     return result;
   }
   std::vector<std::string> lines;
@@ -127,7 +132,7 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, CWindowGc& gc) {
   if (!opened.ok()) {
     window.Close();
     group.Close();
-    screen.ReleaseFont(font);
+    screen->ReleaseFont(font);
     return symbian::NativeErrorFromStatus(opened);
   }
   auto cancel_tasks = [&] {
@@ -165,12 +170,12 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, CWindowGc& gc) {
   window.Activate();
   TRequestStatus events;
   TRequestStatus redraws;
-  session.EventReady(&events);
-  session.RedrawReady(&redraws);
+  session->EventReady(&events);
+  session->RedrawReady(&redraws);
   window.Invalidate();
-  session.Flush();
+  session->Flush();
   auto log_current_time = [&]() {
-    result = symbian::NativeErrorFromStatus(LogTime(lines));
+    result = symbian::NativeErrorFromStatus(LogTime(&lines));
     if (result != KErrNone) {
       running = false;
       return false;
@@ -206,7 +211,7 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, CWindowGc& gc) {
         break;
       }
       TWsEvent event;
-      session.GetEvent(event);
+      session->GetEvent(event);
       switch (event.Type()) {
         case EEventFocusLost:
           focused = false;
@@ -258,7 +263,7 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, CWindowGc& gc) {
           break;
       }
       if (running) {
-        session.EventReady(&events);
+        session->EventReady(&events);
       }
     }
     if (redraws != KRequestPending) {
@@ -267,22 +272,22 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, CWindowGc& gc) {
         break;
       }
       TWsRedrawEvent redraw;
-      session.GetRedraw(redraw);
+      session->GetRedraw(redraw);
       if (redraw.Handle() == 2) {
         window.BeginRedraw(redraw.Rect());
-        gc.Activate(window);
+        gc->Activate(window);
         Draw(gc, font, size, lines, focused);
-        gc.Deactivate();
+        gc->Deactivate();
         window.EndRedraw();
       }
       if (running) {
-        session.RedrawReady(&redraws);
+        session->RedrawReady(&redraws);
       }
     }
-    session.Flush();
+    session->Flush();
   }
-  session.EventReadyCancel();
-  session.RedrawReadyCancel();
+  session->EventReadyCancel();
+  session->RedrawReadyCancel();
   if (events == KRequestPending) {
     User::WaitForRequest(events);
   }
@@ -293,8 +298,8 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, CWindowGc& gc) {
   executor.Close();
   window.Close();
   group.Close();
-  session.Flush();
-  screen.ReleaseFont(font);
+  session->Flush();
+  screen->ReleaseFont(font);
   return result;
 }
 
@@ -313,7 +318,7 @@ int main() {
       CWindowGc gc(&screen);
       result = gc.Construct();
       if (result == KErrNone) {
-        result = RunWindow(session, screen, gc);
+        result = RunWindow(&session, &screen, &gc);
       }
     }
   }

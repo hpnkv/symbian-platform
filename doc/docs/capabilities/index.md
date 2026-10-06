@@ -16,8 +16,8 @@ and ARMv6. Link only the components your application uses.
 | EKA1 | Separate legacy executable startup and selected EUSER imports | [EKA1 profile](../guides/eka1.md) |
 
 The modern runtime and device libraries require the EKA2 application ABI.
-EKA1 has a smaller, separate profile. TLS requires a target-specific secure
-entropy source. Sensors and media have no exported modern API yet.
+EKA1 has a smaller, separate profile. TLS uses the SDK-provided OS secure RNG where available and fails closed
+where the native contract is unsupported. Sensors and media have no exported modern API yet.
 
 Use the [C++ reference](../cpp.md) for symbol details and the linked guides
 for each component's requirements and restrictions.

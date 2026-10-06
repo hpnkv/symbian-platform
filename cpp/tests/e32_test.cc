@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <gtest/gtest.h>
 

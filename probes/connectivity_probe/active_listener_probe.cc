@@ -4,6 +4,8 @@
 #include <array>
 #include <cstdint>
 
+#include <absl/base/nullability.h>
+
 #include "symbian/api/connectivity/active_tcp_listener.h"
 
 extern "C" void ProbeStartScheduler();
@@ -43,7 +45,8 @@ class Observer final : public symbian::api::connectivity::TcpAcceptObserver {
     }
   }
 
-  symbian::api::connectivity::ActiveTcpListener* listener = nullptr;
+  symbian::api::connectivity::ActiveTcpListener* absl_nullable listener =
+      nullptr;
   int accepted_count = 0;
   int outcome = 0;
 };
@@ -52,7 +55,7 @@ class Observer final : public symbian::api::connectivity::TcpAcceptObserver {
 
 extern "C" int RunActiveProbe() {
   Observer observer;
-  symbian::api::connectivity::ActiveTcpListener listener(observer);
+  symbian::api::connectivity::ActiveTcpListener listener(&observer);
   observer.listener = &listener;
   if (!listener.ListenIpv4({127, 0, 0, 1}, 39099).ok()) {
     return -230;

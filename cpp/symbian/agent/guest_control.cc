@@ -9,6 +9,8 @@
 #include <string>
 #include <string_view>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/status.h"
 
 namespace symbian::agent {
@@ -24,7 +26,7 @@ class Cursor {
 
   bool done() const { return position_ == input_.size(); }
 
-  bool Byte(std::uint8_t* value) {
+  bool Byte(std::uint8_t* absl_nonnull value) {
     if (position_ == input_.size()) {
       return false;
     }
@@ -32,7 +34,7 @@ class Cursor {
     return true;
   }
 
-  bool Number(std::size_t width, std::uint64_t* value) {
+  bool Number(std::size_t width, std::uint64_t* absl_nonnull value) {
     if (width > input_.size() - position_) {
       return false;
     }
@@ -43,7 +45,7 @@ class Cursor {
     return true;
   }
 
-  bool Bytes(std::size_t count, std::string_view* value) {
+  bool Bytes(std::size_t count, std::string_view* absl_nonnull value) {
     if (count > input_.size() - position_) {
       return false;
     }
@@ -52,7 +54,7 @@ class Cursor {
     return true;
   }
 
-  bool Unsigned(std::uint64_t* value) {
+  bool Unsigned(std::uint64_t* absl_nonnull value) {
     std::uint8_t marker = 0;
     if (!Byte(&marker)) {
       return false;
@@ -75,7 +77,7 @@ class Cursor {
     }
   }
 
-  bool String(std::string_view* value) {
+  bool String(std::string_view* absl_nonnull value) {
     std::uint8_t marker = 0;
     if (!Byte(&marker)) {
       return false;
@@ -101,7 +103,7 @@ class Cursor {
     return length <= kMaximumControlBytes && Bytes(length, value);
   }
 
-  bool Map(std::size_t* count) {
+  bool Map(std::size_t* absl_nonnull count) {
     std::uint8_t marker = 0;
     if (!Byte(&marker)) {
       return false;
@@ -214,7 +216,7 @@ class Cursor {
   std::size_t position_ = 0;
 };
 
-void WriteUInt(std::string* result, std::uint64_t value) {
+void WriteUInt(std::string* absl_nonnull result, std::uint64_t value) {
   if (value <= 0x7f) {
     result->push_back(static_cast<char>(value));
     return;
@@ -232,7 +234,7 @@ void WriteUInt(std::string* result, std::uint64_t value) {
   }
 }
 
-void WriteString(std::string* result, std::string_view value) {
+void WriteString(std::string* absl_nonnull result, std::string_view value) {
   if (value.size() <= 31) {
     result->push_back(static_cast<char>(0xa0 | value.size()));
   } else if (value.size() <= 255) {

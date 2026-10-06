@@ -215,7 +215,26 @@ target_include_directories(symbian_guest_runtime SYSTEM BEFORE PUBLIC
   "${SYMBIAN_OPENC_SOURCE}/include/posix4")
 
 target_include_directories(symbian_guest_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+# Pointer contracts also apply while bootstrapping, before Abseil archives exist.
+if(SYMBIAN_WORKSPACE_INPUTS)
+  set(symbian_nullability_include "${SYMBIAN_SDK_PREFIX}/abseil")
+elseif(EXISTS "${SYMBIAN_SDK_PREFIX}/include/abseil/absl/base/nullability.h")
+  set(symbian_nullability_include "${SYMBIAN_SDK_PREFIX}/include/abseil")
+else()
+  set(symbian_nullability_include
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../research/upstream/abseil-cpp")
+endif()
+if(NOT EXISTS "${symbian_nullability_include}/absl/base/nullability.h")
+  message(FATAL_ERROR "Guest pointer contracts require the prepared Abseil headers")
+endif()
+target_include_directories(symbian_guest_runtime SYSTEM PUBLIC
+  "${symbian_nullability_include}")
+
 if(SYMBIAN_WORKSPACE_INPUTS)
   target_include_directories(symbian_guest_runtime SYSTEM PUBLIC
     "${SYMBIAN_SDK_PREFIX}/include")
 endif()
+
+get_filename_component(canary_root "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
+include("${canary_root}/cmake/SymbianGuestHeaderCanaries.cmake")
+symbian_guest_runtime_header_canaries("${canary_root}")

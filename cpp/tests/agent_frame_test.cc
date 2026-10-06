@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <gtest/gtest.h>
 
 #include "symbian/agent/control.h"
@@ -84,7 +85,8 @@ TEST(AgentFrame, EncodesBoundaryAndRoundTripsBinary) {
   EXPECT_EQ(static_cast<unsigned char>((*frame)[1]), 1);
   FrameDecoder decoder;
   std::optional<Frame> completed;
-  const auto* data = reinterpret_cast<const std::uint8_t*>(frame->data());
+  const auto* absl_nonnull data =
+      reinterpret_cast<const std::uint8_t*>(frame->data());
   auto count = decoder.Consume(std::span(data, frame->size()), &completed);
   ASSERT_TRUE(count.ok()) << count.status();
   EXPECT_EQ(*count, frame->size());

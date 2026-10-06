@@ -1,3 +1,4 @@
+#include <absl/base/nullability.h>
 #include <e32base.h>
 #include <u32std.h>
 
@@ -8,7 +9,8 @@ static_assert(sizeof(SStdEpocThreadCreateInfo) == 64);
 
 extern "C" int GuiMain();
 
-extern "C" void GuiRunThread(TInt reason, SStdEpocThreadCreateInfo* info) {
+extern "C" void GuiRunThread(TInt reason,
+                             SStdEpocThreadCreateInfo* absl_nullable info) {
   // This executable supports its primary thread, without global constructors
   // or secondary-thread/exception entry. Keep these contracts explicit.
   if (reason != 0 || info == nullptr) {
@@ -18,7 +20,7 @@ extern "C" void GuiRunThread(TInt reason, SStdEpocThreadCreateInfo* info) {
   TInt result = UserHeap::SetupThreadHeap(EFalse, *info);
   if (result == KErrNone) {
     User::InitProcess();
-    CTrapCleanup* cleanup = CTrapCleanup::New();
+    CTrapCleanup* absl_nullable cleanup = CTrapCleanup::New();
     if (cleanup == nullptr) {
       result = KErrNoMemory;
     } else {

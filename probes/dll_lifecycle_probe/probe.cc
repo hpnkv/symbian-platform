@@ -1,10 +1,10 @@
+#include <absl/base/nullability.h>
+
 // The SDK DLL entry constructs this object when EUSER attaches the module.
 // The simple event value can be read through the frozen function export.
-extern "C" __attribute__((visibility("hidden"))) int SymbianLifecycleEvents =
-    0;
-extern "C"
-    __attribute__((visibility("hidden"))) volatile int* SymbianLifecycleSink =
-        nullptr;
+extern "C" __attribute__((visibility("hidden"))) int SymbianLifecycleEvents = 0;
+extern "C" __attribute__((visibility(
+    "hidden"))) volatile int* absl_nullable SymbianLifecycleSink = nullptr;
 
 class LifecycleObject {
  public:
@@ -25,6 +25,6 @@ extern "C" __attribute__((visibility("default"))) int SymbianLifecycleState() {
 }
 
 extern "C" __attribute__((visibility("default"))) void SymbianLifecycleSetSink(
-    volatile int* sink) {
+    volatile int* absl_nonnull sink) {
   SymbianLifecycleSink = sink;
 }

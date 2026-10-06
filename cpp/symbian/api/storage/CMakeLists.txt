@@ -5,3 +5,6 @@ target_include_directories(symbian_api_storage PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/../include"
   "${SYMBIAN_SDK_PREFIX}/include/platform")
 target_link_libraries(symbian_api_storage PUBLIC Symbian::AbseilStatusOr)
+
+target_include_directories(symbian_api_storage PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/../include")

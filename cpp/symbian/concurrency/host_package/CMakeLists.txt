@@ -13,6 +13,7 @@ endif()
 add_subdirectory("${workspace}/research/upstream/abseil-cpp"
   "${CMAKE_CURRENT_BINARY_DIR}/abseil")
 function(symbian_native_library target)
+  target_link_libraries(${target} PUBLIC absl::nullability)
   target_compile_features(${target} PUBLIC cxx_std_20)
   target_compile_options(${target} PRIVATE
     $<$<CXX_COMPILER_ID:AppleClang,Clang,GNU>:-fno-exceptions;-Wall;-Wextra;-Wconversion;-Wshadow>)

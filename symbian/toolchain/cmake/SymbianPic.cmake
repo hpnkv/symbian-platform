@@ -433,6 +433,14 @@ function(symbian_add_executable target)
   else()
     symbian_add_import_executable(${target} SOURCES ${ARGN})
   endif()
+  if(NOT TARGET symbian_guest_runtime AND NOT TARGET Symbian::Runtime AND
+     EXISTS "${SYMBIAN_SDK_PREFIX}/include/abseil/absl/base/nullability.h")
+    target_include_directories(${target} SYSTEM PRIVATE
+      "${SYMBIAN_SDK_PREFIX}/include/abseil"
+      "${SYMBIAN_SDK_PREFIX}/include/config"
+      "${SYMBIAN_SDK_PREFIX}/include/c++"
+      "${SYMBIAN_SDK_PREFIX}/include/compiler")
+  endif()
   # Clang gives main C linkage in hosted mode; prevent host libc builtins.
   target_compile_options(${target} PRIVATE -fhosted -fno-builtin -g -gdwarf-4
     "-fdebug-compilation-dir=/symbian-build/${target}"

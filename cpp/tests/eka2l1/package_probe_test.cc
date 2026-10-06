@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Installs and removes a trusted, prevalidated maintained SISX fixture using
 // EKA2L1's unchanged parser, package manager, registry and kernel. No ROM.
+
 #include <fstream>
 #include <iterator>
 
+#include <absl/base/nullability.h>
 #include <package/manager.h>
 
 #include "process_environment.h"
@@ -21,7 +23,7 @@ std::string ReadFile(const fs::path& path) {
 class PackageProbeTest : public symbian::testing::ProcessEnvironment {
  protected:
   void Populate(const fs::path& artifact) override {
-    const char* package = std::getenv("SYMBIAN_SIS_TEST_PACKAGE");
+    const char* absl_nullable package = std::getenv("SYMBIAN_SIS_TEST_PACKAGE");
     ASSERT_NE(package, nullptr);
     std::error_code error;
     const fs::path source = fs::absolute(package, error);
@@ -53,7 +55,7 @@ class PackageProbeTest : public symbian::testing::ProcessEnvironment {
               eka2l1::package::installation_result_success);
     ASSERT_TRUE(io_->exist(u"C:\\sys\\bin\\probe.exe"));
     EXPECT_EQ(ReadFile(directory_ / "sys/bin/probe.exe"), original_image_);
-    auto* package = packages_->package(0xe0000809, 0);
+    auto* absl_nonnull package = packages_->package(0xe0000809, 0);
     ASSERT_NE(package, nullptr);
     EXPECT_EQ(package->package_name, u"Symbian E32 Probe");
     EXPECT_EQ(package->vendor_name, u"Symbian research");
@@ -68,7 +70,8 @@ class PackageProbeTest : public symbian::testing::ProcessEnvironment {
         "\xf4\x64\x49\x0f\xdf\x04\xc8\x0d\xf2\xe7"
         "\x78\xf6\x53\x26\x18\x9e\x9e\x2b\x38\xd8",
         20);
-    if (const char* reference = std::getenv("SYMBIAN_E32_TEST_HASH")) {
+    if (const char* absl_nullable reference =
+            std::getenv("SYMBIAN_E32_TEST_HASH")) {
       expected_hash = ReadFile(reference);
       ASSERT_EQ(expected_hash.size(), 20);
     }
@@ -84,7 +87,7 @@ class PackageProbeTest : public symbian::testing::ProcessEnvironment {
   }
 
   void Uninstall() {
-    auto* package = packages_->package(0xe0000809, 0);
+    auto* absl_nonnull package = packages_->package(0xe0000809, 0);
     ASSERT_NE(package, nullptr);
     ASSERT_TRUE(packages_->uninstall_package(*package));
     EXPECT_FALSE(io_->exist(u"C:\\sys\\bin\\probe.exe"));

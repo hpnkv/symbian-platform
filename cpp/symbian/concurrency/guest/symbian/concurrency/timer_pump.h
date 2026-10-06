@@ -15,6 +15,8 @@
 #include <utility>
 #include <vector>
 
+#include <absl/base/nullability.h>
+
 #include "absl/time/time.h"
 #include "symbian/concurrency/future.h"
 #include "symbian/concurrency/native_timer.h"
@@ -54,7 +56,7 @@ inline absl::StatusOr<absl::Duration> RemainingAtRegistration(
 class TimerPump {
  public:
   static constexpr std::size_t kDefaultMaxPending = 64;
-  using WallClock = absl::Time (*)();
+  using WallClock = absl::Time (*absl_nonnull)();
 
   explicit TimerPump(std::size_t max_pending = kDefaultMaxPending,
                      WallClock wall_now = &absl::Now)
@@ -135,7 +137,7 @@ class TimerPump {
     // completion can occur. OnReady never runs until the entry is removed.
     entries_.push_back(entry);
     if (delay != absl::InfiniteDuration()) {
-      const int started = ArmNext(*entry);
+      const int started = ArmNext(entry.get());
       if (started != 0) {
         entries_.pop_back();
         entry->timer.Close();
@@ -188,7 +190,7 @@ class TimerPump {
           if (entry->cancel_requested.load(std::memory_order_acquire) != 0) {
             code = symbian::native_error::kCancel;
           } else {
-            const int rearmed = ArmNext(*entry);
+            const int rearmed = ArmNext(entry.get());
             if (rearmed == 0) {
               ++it;
               continue;
@@ -264,7 +266,7 @@ class TimerPump {
     }
 
     thread::Mutex mu_;
-    SymbianRuntimeWakeState* native_ = nullptr;
+    SymbianRuntimeWakeState* absl_nullable native_ = nullptr;
     bool pending_ = false;
   };
 
@@ -277,9 +279,10 @@ class TimerPump {
     std::chrono::steady_clock::time_point armed_at;
   };
 
-  static int ArmNext(Entry& entry) {
-    entry.armed_at = std::chrono::steady_clock::now();
-    return entry.timer.Start(internal::TimerSliceMicroseconds(entry.remaining));
+  static int ArmNext(Entry* absl_nonnull entry) {
+    entry->armed_at = std::chrono::steady_clock::now();
+    return entry->timer.Start(
+        internal::TimerSliceMicroseconds(entry->remaining));
   }
 
   std::shared_ptr<WakeTarget> wake_;

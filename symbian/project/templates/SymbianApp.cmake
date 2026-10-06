@@ -67,6 +67,7 @@ add_library(SymbianRuntime STATIC IMPORTED)
 set_target_properties(SymbianRuntime PROPERTIES
   IMPORTED_LOCATION "${runtime_archive}" SYMBIAN_RUNTIME_PROFILE default)
 target_include_directories(SymbianRuntime SYSTEM INTERFACE
+  "${SYMBIAN_SDK_PREFIX}/include/abseil"
   "${SYMBIAN_SDK_PREFIX}/include"
   "${SYMBIAN_SDK_PREFIX}/include/config"
   "${SYMBIAN_SDK_PREFIX}/include/c++"

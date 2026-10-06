@@ -1,11 +1,14 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
 #pragma once
+
 #include <array>
 #include <cstdint>
 
+#include <absl/base/nullability.h>
+
 struct ProbeCase {
-  const char* hostname;
+  const char* absl_nonnull hostname;
   std::array<std::uint8_t, 4> address;
   std::uint16_t port;
   int tls_version;  // 0, 12, 13.

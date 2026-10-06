@@ -8,6 +8,8 @@
 #include <span>
 #include <string>
 
+#include <absl/base/nullability.h>
+
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "mbedtls/ctr_drbg.h"
@@ -26,15 +28,17 @@ namespace {
 using symbian::api::connectivity::TcpClient;
 using symbian::api::connectivity::TcpListener;
 
-int Send(void* context, const unsigned char* bytes, size_t length) {
-  auto* client = static_cast<TcpClient*>(context);
+int Send(void* absl_nonnull context, const unsigned char* absl_nonnull bytes,
+         size_t length) {
+  auto* absl_nonnull client = static_cast<TcpClient*>(context);
   const auto result =
       client->Send(std::span(bytes, length), absl::Now() + absl::Minutes(1));
   return result.ok() ? static_cast<int>(length) : MBEDTLS_ERR_NET_SEND_FAILED;
 }
 
-int Receive(void* context, unsigned char* bytes, size_t capacity) {
-  auto* client = static_cast<TcpClient*>(context);
+int Receive(void* absl_nonnull context, unsigned char* absl_nonnull bytes,
+            size_t capacity) {
+  auto* absl_nonnull client = static_cast<TcpClient*>(context);
   const auto result = client->Receive(std::span(bytes, capacity),
                                       absl::Now() + absl::Minutes(1));
   return result.ok() ? static_cast<int>(*result) : MBEDTLS_ERR_NET_RECV_FAILED;
@@ -67,8 +71,8 @@ struct TlsState {
   mbedtls_pk_context private_key;
 };
 
-int ReadExactly(mbedtls_ssl_context* ssl, unsigned char* bytes,
-                std::size_t length) {
+int ReadExactly(mbedtls_ssl_context* absl_nonnull ssl,
+                unsigned char* absl_nonnull bytes, std::size_t length) {
   std::size_t received = 0;
   int retries = 0;
   while (received < length && retries < 16) {
@@ -88,8 +92,8 @@ int ReadExactly(mbedtls_ssl_context* ssl, unsigned char* bytes,
   return received == length ? 0 : -260;
 }
 
-int WriteExactly(mbedtls_ssl_context* ssl, const unsigned char* bytes,
-                 std::size_t length) {
+int WriteExactly(mbedtls_ssl_context* absl_nonnull ssl,
+                 const unsigned char* absl_nonnull bytes, std::size_t length) {
   std::size_t sent = 0;
   int retries = 0;
   while (sent < length && retries < 16) {
@@ -107,7 +111,8 @@ int WriteExactly(mbedtls_ssl_context* ssl, const unsigned char* bytes,
   return sent == length ? 0 : -261;
 }
 
-int ServeReadOnlyControl(mbedtls_ssl_context* ssl, bool expect_oversized) {
+int ServeReadOnlyControl(mbedtls_ssl_context* absl_nonnull ssl,
+                         bool expect_oversized) {
   std::array<unsigned char, 4> prefix{};
   if (ReadExactly(ssl, prefix.data(), prefix.size()) != 0) {
     return -262;

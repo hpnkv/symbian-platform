@@ -7,8 +7,8 @@ This SDK builds its TLS libraries from the complete, locally vendored
 which adapts the upstream [Mbed TLS](https://github.com/Mbed-TLS/mbedtls)
 project for Symbian. Link the library only in applications that need it. A
 TLS session uses a certificate to authenticate its peer and needs a trusted
-entropy source for cryptographic randomness. The default guest entropy
-callback fails closed until a target-specific source is supplied.
+entropy source for cryptographic randomness. The SDK supplies the OS secure
+RNG on supported EABI systems; unsupported systems fail closed.
 
 The default SDK export builds the vendored
 `third_party/mbedtls-symbian` port for ARMv5T and ARMv6. The repository
@@ -44,9 +44,26 @@ provides nonblocking OpenC socket BIO callbacks. For SDK HTTP and WebSockets,
 use `TlsStream` over `Symbian::Connectivity`'s native `RSocket` transport;
 OpenC outbound socket I/O is unavailable in the RM-807 emulator profile.
 
-The standard guest entropy callback fails closed. Supply a secure entropy
-source appropriate to the actual target. The RM-807 entropy adapter requires
-the matching patched emulator and is not a phone entropy implementation.
+The SDK provides one shared ARMv5T/ARMv6 entropy provider for EABI ROMs that
+export `Math::RandomL(TDes8&)` and `Math::Random(TDes8&)`. It resolves and
+validates both native ROM wrappers and their common non-leaving secure RNG
+veneer, preserving `KErrNotReady` instead of discarding it. The OS selects
+the executive number; applications do not need a device-specific adapter.
+Absent exports, RAM/unknown wrapper forms, partial output and native failures
+produce `MBEDTLS_ERR_ENTROPY_SOURCE_FAILED`, with zero produced bytes and
+cleared output. There is no time, jitter or `Math::Random()` fallback.
+
+Original C7/E6 and 808 ROM wrappers share this contract with different syscall
+numbers. The inspected 6120/E71 ROMs lack these exports; those systems need a
+separately verified secure source before cryptographic sessions can work.
+The current emulator matrix exercises five firmware fixtures on both ISAs
+and both CPU backends. RM-807 succeeds with fresh buffers. C7/E6 wrappers
+validate, but the tested emulator profile lacks their secure RNG syscall
+(`0x109`); they fail closed with cleared output. 6120/E71 also fail closed.
+The legacy OpenSSL compatibility adapter uses this same SDK provider and
+credits entropy only after a complete successful fill.
+The provider's firmware/emulator checks do not establish physical-device RNG
+quality or compatibility. Native leave/unwind support is not required.
 Certificate trust policy belongs to the application; no CA roots are loaded
 implicitly.
 

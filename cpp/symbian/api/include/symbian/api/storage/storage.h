@@ -12,6 +12,8 @@
 #include <string>
 #include <string_view>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/statusor.h"
 
 namespace symbian::api::storage {
@@ -41,9 +43,9 @@ class ReadOnlyFile {
                                      std::span<std::byte> destination) const;
 
  private:
-  explicit ReadOnlyFile(NativeFile* native) : native_(native) {}
+  explicit ReadOnlyFile(NativeFile* absl_nonnull native) : native_(native) {}
 
-  NativeFile* native_ = nullptr;
+  NativeFile* absl_nullable native_ = nullptr;
 };
 
 // Creation and replacement are explicit so opening a file cannot silently
@@ -75,9 +77,9 @@ class WritableFile {
   absl::Status Flush();
 
  private:
-  explicit WritableFile(NativeFile* native) : native_(native) {}
+  explicit WritableFile(NativeFile* absl_nonnull native) : native_(native) {}
 
-  NativeFile* native_ = nullptr;
+  NativeFile* absl_nullable native_ = nullptr;
 };
 
 // Progress after one bounded-memory transfer step.
@@ -119,8 +121,8 @@ class FileCopy {
 
  private:
   struct State;
-  explicit FileCopy(State* state);
-  State* state_ = nullptr;
+  explicit FileCopy(State* absl_nonnull state);
+  State* absl_nullable state_ = nullptr;
 };
 
 // Creates missing parents for an absolute UTF-16 directory path. The native
@@ -162,9 +164,10 @@ class DirectoryReader {
   absl::StatusOr<std::optional<DirectoryEntry>> Next();
 
  private:
-  explicit DirectoryReader(NativeDirectory* native) : native_(native) {}
+  explicit DirectoryReader(NativeDirectory* absl_nonnull native)
+      : native_(native) {}
 
-  NativeDirectory* native_ = nullptr;
+  NativeDirectory* absl_nullable native_ = nullptr;
   std::atomic<bool> cancel_requested_{false};
 };
 

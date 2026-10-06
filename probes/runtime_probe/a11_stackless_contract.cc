@@ -2,6 +2,8 @@
 #include <memory>
 #include <thread>
 
+#include <absl/base/nullability.h>
+
 #include "abi.h"
 #include "symbian/concurrency/future.h"
 #include "symbian/concurrency/inline_pump.h"

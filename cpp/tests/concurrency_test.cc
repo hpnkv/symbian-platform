@@ -5,6 +5,8 @@
 #include <thread>
 #include <vector>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/status.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -97,7 +99,7 @@ TEST(ConcurrencyTest, FutureTaskGroupAndMailboxSharePortableLayer) {
   EXPECT_TRUE(group.Finish().ResultIfReady()->ok());
 
   std::vector<int> calls;
-  symbian::concurrency::EventMailbox* mailbox_ptr = nullptr;
+  symbian::concurrency::EventMailbox* absl_nullable mailbox_ptr = nullptr;
   symbian::concurrency::EventMailbox mailbox([] {}, 2);
   mailbox_ptr = &mailbox;
   ASSERT_TRUE(mailbox

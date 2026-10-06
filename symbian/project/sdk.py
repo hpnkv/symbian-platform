@@ -157,6 +157,7 @@ def _build_runtime_variant(
                     str(tree),
                     "--target",
                     "symbian_guest_runtime",
+                    "symbian_header_canaries",
                 ],
                 cwd=tree,
                 timeout=120,
@@ -409,6 +410,12 @@ def _build_mbedtls(
         dirs_exist_ok=True,
     )
     _export_mbedtls_source(source, output)
+    shutil.copytree(
+        workspace / "cpp/symbian/entropy",
+        output / "source/mbedtls-symbian/sdk_entropy",
+        dirs_exist_ok=True,
+        ignore=shutil.ignore_patterns("CMakeLists.txt"),
+    )
     return source
 
 
@@ -833,6 +840,10 @@ def prepare(
         stage_imports(workspace, output, compiler, linker)
         cmake = output / "cmake"
         shutil.copytree(workspace / "symbian/toolchain/cmake", cmake)
+        shutil.copyfile(
+            workspace / "cmake/SymbianHeaderCanary.cmake",
+            cmake / "SymbianHeaderCanary.cmake",
+        )
         (cmake / "SymbianApp.cmake").write_bytes(
             files("symbian.project")
             .joinpath("templates", "SymbianApp.cmake")
@@ -1039,6 +1050,40 @@ def prepare(
                     build_tree / "libsymbian_api_tls.a",
                     output / "lib" / architecture / "libsymbian_api_tls.a",
                 )
+        for architecture in ("armv5t", "armv6"):
+            with tempfile.TemporaryDirectory(
+                prefix=f"symbian-headers-{architecture}-"
+            ) as temporary:
+                project = Path(temporary)
+                (project / "CMakeLists.txt").write_text(
+                    "cmake_minimum_required(VERSION 3.28)\n"
+                    "project(sdk_header_canaries LANGUAGES C CXX)\n"
+                    "include(SymbianSdkHeaderCanaries)\n"
+                    "symbian_sdk_header_canaries()\n"
+                )
+                build_tree = project / "build"
+                run(
+                    [
+                        cmake_tool,
+                        "-S",
+                        str(project),
+                        "-B",
+                        str(build_tree),
+                        "-G",
+                        "Ninja",
+                        f"-DSYMBIAN_SDK_PREFIX={output}",
+                        f"-DSYMBIAN_TARGET_ARCH={architecture}",
+                        "-DCMAKE_TOOLCHAIN_FILE="
+                        f"{output / 'cmake/symbian-arm.cmake'}",
+                        f"-DCMAKE_CXX_COMPILER={compiler}",
+                        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+                    ],
+                    cwd=workspace,
+                )
+                run(
+                    [cmake_tool, "--build", str(build_tree), "-j", "6"],
+                    cwd=workspace,
+                )
         licenses = output / "licenses"
         licenses.mkdir(exist_ok=True)
         shutil.copyfile(
@@ -1226,6 +1271,7 @@ def _install_resource_tools(
             "-std=c++20",
             "-fno-exceptions",
             f"-I{workspace / 'cpp'}",
+            f"-I{bin_path.parent / 'include/abseil'}",
             str(workspace / "cpp/symbian/resource/uidcrc_main.cc"),
             "-o",
             str(bin_path / "uidcrc"),

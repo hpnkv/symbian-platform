@@ -1,0 +1,19 @@
+name: C++ source contracts
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  source-contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'tree-sitter>=0.25.2,<0.26' 'tree-sitter-cpp>=0.23.4,<0.24' pytest
+      - run: python scripts/check_cpp_style.py
+      - run: python scripts/simplify_cpp_dereferences.py --check
+      - run: python -m pytest scripts/tests/test_cpp_style.py

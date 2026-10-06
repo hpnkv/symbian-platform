@@ -9,6 +9,8 @@
 #include <string>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "absl/time/clock.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy.h"
@@ -62,9 +64,9 @@ struct TlsStream::Impl {
     return absl::OkStatus();
   }
 
-  static int Send(void* context, const unsigned char* bytes,
-                  std::size_t length) {
-    auto* self = static_cast<Impl*>(context);
+  static int Send(void* absl_nonnull context,
+                  const unsigned char* absl_nonnull bytes, std::size_t length) {
+    auto* absl_nullable self = static_cast<Impl*>(context);
     self->io_status = self->CheckDeadline();
     if (!self->io_status.ok()) {
       return MBEDTLS_ERR_NET_SEND_FAILED;
@@ -79,9 +81,9 @@ struct TlsStream::Impl {
                                 : MBEDTLS_ERR_NET_SEND_FAILED;
   }
 
-  static int Receive(void* context, unsigned char* bytes,
-                     std::size_t capacity) {
-    auto* self = static_cast<Impl*>(context);
+  static int Receive(void* absl_nonnull context,
+                     unsigned char* absl_nonnull bytes, std::size_t capacity) {
+    auto* absl_nullable self = static_cast<Impl*>(context);
     self->io_status = self->CheckDeadline();
     if (!self->io_status.ok()) {
       return MBEDTLS_ERR_NET_RECV_FAILED;
@@ -100,7 +102,7 @@ struct TlsStream::Impl {
   }
 
   std::string alpn;
-  const char* protocols[2] = {nullptr, nullptr};
+  const char* absl_nullable protocols[2] = {nullptr, nullptr};
   mbedtls_ssl_context ssl;
   mbedtls_ssl_config config;
   mbedtls_ctr_drbg_context random;
@@ -130,7 +132,7 @@ absl::StatusOr<TlsStream> TlsStream::Create(std::string_view server_certificate,
     return initialized.status();
   }
   TlsStream result = std::move(*initialized);
-  auto* impl = result.impl_;
+  auto* absl_nonnull impl = result.impl_;
   int status = 0;
   const std::string certificate(server_certificate);
   const std::string key(server_private_key);
@@ -165,11 +167,11 @@ absl::StatusOr<TlsStream> TlsStream::Create(std::string_view server_certificate,
 
 absl::StatusOr<TlsStream> TlsStream::Initialize(bool server,
                                                 TlsVersion version) {
-  void* memory = std::malloc(sizeof(Impl));
+  void* absl_nullable memory = std::malloc(sizeof(Impl));
   if (memory == nullptr) {
     return absl::ResourceExhaustedError("TLS context allocation failed");
   }
-  auto* impl = new (memory) Impl;
+  auto* absl_nonnull impl = new (memory) Impl;
   TlsStream result(impl);
   if (psa_crypto_init() != PSA_SUCCESS) {
     return absl::UnavailableError("PSA crypto initialization failed");
@@ -209,7 +211,7 @@ absl::StatusOr<TlsStream> TlsStream::Connect(
     return configured.status();
   }
   TlsStream result = std::move(*configured);
-  auto* impl = result.impl_;
+  auto* absl_nonnull impl = result.impl_;
   std::string roots(ca_bundle);
   int code = mbedtls_x509_crt_parse(
       &impl->client_roots,
@@ -239,7 +241,8 @@ absl::StatusOr<TlsStream> TlsStream::Connect(
   if (!status.ok()) {
     return status;
   }
-  const char* selected = mbedtls_ssl_get_alpn_protocol(&impl->ssl);
+  const char* absl_nullable selected =
+      mbedtls_ssl_get_alpn_protocol(&impl->ssl);
   if ((selected && alpn != selected) || (!selected && alpn == "h2")) {
     return absl::FailedPreconditionError(
         "TLS peer did not negotiate required HTTP protocol");
@@ -270,7 +273,8 @@ std::string_view TlsStream::negotiated_protocol() const {
   if (!connected()) {
     return "";
   }
-  const char* protocol = mbedtls_ssl_get_alpn_protocol(&impl_->ssl);
+  const char* absl_nullable protocol =
+      mbedtls_ssl_get_alpn_protocol(&impl_->ssl);
   return protocol ? protocol : "";
 }
 

@@ -17,6 +17,7 @@
 #include <exception>
 #include <string>
 
+#include <absl/base/nullability.h>
 #include <nlohmann/json.hpp>
 #include <pybind11_abseil/compat/status_from_py_exc.h>
 #include <pybind11_abseil/status_casters.h>
@@ -54,7 +55,7 @@ absl::Status StatusFromPython(const py::handle& value) {
     }
     return value.cast<absl::Status>();
   } catch (py::error_already_set& error) {
-    return StatusFromPythonException(error);
+    return StatusFromPythonException(&error);
   } catch (const std::exception& error) {
     return absl::InvalidArgumentError(error.what());
   } catch (...) {
@@ -68,13 +69,14 @@ py::object StatusToPython(const absl::Status& status) {
   return py::cast(NativeStatus(status));
 }
 
-absl::Status StatusFromPythonException(py::error_already_set& error) {
+absl::Status StatusFromPythonException(
+    py::error_already_set* absl_nonnull error) {
   try {
-    py::object exception = error.value();
+    py::object exception = error->value();
     py::object cancelled_error =
         py::module_::import("asyncio").attr("CancelledError");
     if (py::isinstance(exception, cancelled_error)) {
-      error.restore();
+      error->restore();
       PyErr_Clear();
       return absl::CancelledError("Python awaitable was cancelled");
     }
@@ -84,12 +86,12 @@ absl::Status StatusFromPythonException(py::error_already_set& error) {
       absl::Status status = StatusFromPython(exception.attr("status"));
       // Consume the fetched exception without reporting it as unraisable: it
       // is an expected, recoverable status crossing the language boundary.
-      error.restore();
+      error->restore();
       PyErr_Clear();
       return status;
     }
     const auto message = py::str(exception).cast<std::string>();
-    error.restore();
+    error->restore();
     PyErr_Clear();
     return absl::UnknownError(message);
   } catch (const py::error_already_set&) {
@@ -97,7 +99,7 @@ absl::Status StatusFromPythonException(py::error_already_set& error) {
   } catch (...) {
     PyErr_Clear();
   }
-  error.restore();
+  error->restore();
   return pybind11_abseil::compat::StatusFromPyExcGivenErrOccurred();
 }
 

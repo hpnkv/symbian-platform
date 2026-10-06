@@ -1,12 +1,16 @@
 #include <bit>
 #include <cstdint>
 
+#include <absl/base/nullability.h>
+
 // Calls the original pinned compiler-rt ARM EABI entry points. This test
 // translation unit is an ABI probe, not an application-facing SDK interface.
 extern "C" std::uint32_t __aeabi_f2uiz(float value);
-extern "C" void __aeabi_memcpy8(void* destination, const void* source,
+extern "C" void __aeabi_memcpy8(void* absl_nonnull destination,
+                                const void* absl_nonnull source,
                                 std::uint32_t size);
-extern "C" void __aeabi_memmove8(void* destination, const void* source,
+extern "C" void __aeabi_memmove8(void* absl_nonnull destination,
+                                 const void* absl_nonnull source,
                                  std::uint32_t size);
 
 extern "C" int SymbianRuntimeCompilerRtProbe() {

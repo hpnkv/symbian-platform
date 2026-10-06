@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -6,6 +7,7 @@
 #include <system_error>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <common/buffer.h>
 #include <kernel/codeseg.h>
 #include <kernel/process.h>
@@ -20,7 +22,7 @@ class ImportProbeTest : public symbian::testing::ProcessEnvironment {
  protected:
   void Populate(const fs::path& artifact) override {
     ProcessEnvironment::Populate(artifact);
-    const char* dll = std::getenv("SYMBIAN_DLL_TEST_IMAGE");
+    const char* absl_nullable dll = std::getenv("SYMBIAN_DLL_TEST_IMAGE");
     ASSERT_NE(dll, nullptr);
     std::error_code error;
     fs::copy_file(dll, directory_ / "sys/bin/probe.dll", error);
@@ -71,8 +73,8 @@ class ImportProbeTest : public symbian::testing::ProcessEnvironment {
     }
   }
 
-  void BeforeExecute(eka2l1::kernel::process* process) override {
-    eka2l1::kernel::codeseg* dll = nullptr;
+  void BeforeExecute(eka2l1::kernel::process* absl_nonnull process) override {
+    eka2l1::kernel::codeseg* absl_nullable dll = nullptr;
     for (const auto& code : kernel_->get_codeseg_list()) {
       if (code->name() == "probe.dll") {
         ASSERT_EQ(dll, nullptr);
@@ -84,7 +86,7 @@ class ImportProbeTest : public symbian::testing::ProcessEnvironment {
     function_ = dll->lookup(process, 7);
     ASSERT_NE(function_, 0);
     EXPECT_NE(function_ & ~1U, 0x8080U);
-    const auto* patched =
+    const auto* absl_nonnull patched =
         static_cast<const uint32_t*>(process->get_ptr_on_addr_space(
             process->get_entry_point_address() + slot_offset_));
     ASSERT_NE(patched, nullptr);
@@ -92,14 +94,14 @@ class ImportProbeTest : public symbian::testing::ProcessEnvironment {
     // Checking lookup alone would not prove the export pointers were relocated.
     // Inspect the actual mapped table, including all absent ordinal slots.
     const uint32_t run_base = dll->get_code_run_addr(process);
-    const auto* table = static_cast<const uint32_t*>(
+    const auto* absl_nonnull table = static_cast<const uint32_t*>(
         process->get_ptr_on_addr_space(run_base + export_offset_));
     ASSERT_NE(table, nullptr);
     EXPECT_EQ(table[6], function_);
     for (size_t i = 0; i < 6; ++i) {
       EXPECT_EQ(table[i], run_base);
     }
-    const auto* prefix = static_cast<const uint32_t*>(
+    const auto* absl_nonnull prefix = static_cast<const uint32_t*>(
         process->get_ptr_on_addr_space(run_base + export_offset_ - 4));
     ASSERT_NE(prefix, nullptr);
     EXPECT_EQ(*prefix, 7);

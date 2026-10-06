@@ -17,6 +17,7 @@
 #include <atomic>
 
 #include <absl/base/no_destructor.h>
+#include <absl/base/nullability.h>
 
 #include "thread/boost_primitives.h"
 #include "thread/select.h"
@@ -62,7 +63,8 @@ void PermanentEvent::Notify() {
   // enqueued cases. We must be careful to synchronize against this in the
   // future in both the Handle(..., true) and Unregister cases.
   while (cases_to_be_selected_) {
-    internal::CaseInSelectClause* case_in_select_clause = cases_to_be_selected_;
+    internal::CaseInSelectClause* absl_nonnull case_in_select_clause =
+        cases_to_be_selected_;
     thread::MutexLock l2(&case_in_select_clause->selector->mu);
     case_in_select_clause->TryPick();
     // Continued storage of enqueued_list_ after TryPick() is guaranteed by
@@ -81,9 +83,11 @@ class NonSelectable final : public internal::Selectable {
   NonSelectable() = default;
   ~NonSelectable() override = default;
 
-  bool Handle(internal::CaseInSelectClause*, bool) override { return false; }
+  bool Handle(internal::CaseInSelectClause* absl_nonnull, bool) override {
+    return false;
+  }
 
-  void Unregister(internal::CaseInSelectClause*) override {}
+  void Unregister(internal::CaseInSelectClause* absl_nonnull) override {}
 };
 
 Case NonSelectableCase() {
@@ -97,7 +101,7 @@ class AlwaysSelectable final : public internal::Selectable {
   AlwaysSelectable() = default;
   ~AlwaysSelectable() override = default;
 
-  bool Handle(internal::CaseInSelectClause* c, bool) override {
+  bool Handle(internal::CaseInSelectClause* absl_nonnull c, bool) override {
     thread::MutexLock lock(&c->selector->mu);
     // This selectable is always ready, so ask the selector to pick it.
     // Note: the selector still does not *have to* pick it if there are
@@ -105,7 +109,7 @@ class AlwaysSelectable final : public internal::Selectable {
     return c->TryPick();
   }
 
-  void Unregister(internal::CaseInSelectClause*) override {}
+  void Unregister(internal::CaseInSelectClause* absl_nonnull) override {}
 };
 
 Case AlwaysSelectableCase() {

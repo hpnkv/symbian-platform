@@ -15,6 +15,7 @@
 #include <mutex>
 #include <utility>
 
+#include <absl/base/nullability.h>
 #include <boost/fiber/algo/algorithm.hpp>
 #include <boost/fiber/context.hpp>
 #include <boost/fiber/operations.hpp>
@@ -23,8 +24,8 @@
 namespace thread {
 namespace {
 
-std::atomic<const SchedulerParkGuard*>& ParkGuard() {
-  static std::atomic<const SchedulerParkGuard*> guard{nullptr};
+std::atomic<const SchedulerParkGuard* absl_nullable>& ParkGuard() {
+  static std::atomic<const SchedulerParkGuard* absl_nullable> guard{nullptr};
   return guard;
 }
 
@@ -46,8 +47,8 @@ class ParkWithoutHostLock {
   ParkWithoutHostLock& operator=(const ParkWithoutHostLock&) = delete;
 
  private:
-  const SchedulerParkGuard* guard_;
-  void* held_ = nullptr;
+  const SchedulerParkGuard* absl_nullable guard_;
+  void* absl_nullable held_ = nullptr;
 };
 
 class RoundRobinPolicy final : public SchedulerPolicy {
@@ -63,11 +64,12 @@ class SdkAlgorithm final : public boost::fibers::algo::algorithm {
   explicit SdkAlgorithm(std::shared_ptr<SchedulerPolicy> policy)
       : policy_(std::move(policy)) {}
 
-  void awakened(boost::fibers::context* context) noexcept override {
+  void awakened(
+      boost::fibers::context* absl_nonnull context) noexcept override {
     context->ready_link(ready_queue_);
   }
 
-  boost::fibers::context* pick_next() noexcept override {
+  boost::fibers::context* absl_nullable pick_next() noexcept override {
     if (ready_queue_.empty()) {
       return nullptr;
     }
@@ -77,7 +79,7 @@ class SdkAlgorithm final : public boost::fibers::algo::algorithm {
     }
     auto it = ready_queue_.begin();
     std::advance(it, static_cast<std::ptrdiff_t>(choice));
-    boost::fibers::context* selected = &*it;
+    boost::fibers::context* absl_nonnull selected = &*it;
     ready_queue_.erase(it);
     return selected;
   }
@@ -118,7 +120,7 @@ class SdkAlgorithm final : public boost::fibers::algo::algorithm {
 }  // namespace
 
 void SetSchedulerParkGuard(SchedulerParkGuard guard) {
-  const SchedulerParkGuard* installed = nullptr;
+  const SchedulerParkGuard* absl_nullable installed = nullptr;
   if (guard.release != nullptr && guard.acquire != nullptr) {
     // A concurrently active park may still hold the old pair. Match A11's
     // process-lifetime callbacks rather than racing deallocation.

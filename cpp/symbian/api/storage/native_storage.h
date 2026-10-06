@@ -6,6 +6,8 @@
 
 #include <cstdint>
 
+#include <absl/base/nullability.h>
+
 namespace symbian::api::storage {
 
 struct NativeFile;
@@ -19,26 +21,34 @@ struct NativeDirectoryEntry {
   std::uint64_t size_bytes = 0;
 };
 
-extern "C" int SymbianDeviceFileOpen(const char16_t* path, int length,
-                                     NativeFile** output);
-extern "C" int SymbianDeviceWritableFileOpen(const char16_t* path, int length,
-                                             int mode, NativeFile** output);
-extern "C" int SymbianDeviceFileWriteAt(NativeFile* file, int offset,
-                                        const unsigned char* source,
-                                        int length);
-extern "C" int SymbianDeviceFileFlush(NativeFile* file);
-extern "C" int SymbianDeviceCreateDirectories(const char16_t* path, int length);
-extern "C" int SymbianDeviceFileSize(NativeFile* file, int* size);
-extern "C" int SymbianDeviceFileReadAt(NativeFile* file, int offset,
-                                       unsigned char* output, int capacity,
-                                       int* bytes_read);
-extern "C" void SymbianDeviceFileClose(NativeFile* file);
-extern "C" int SymbianDeviceDirectoryOpen(const char16_t* path, int length,
-                                          NativeDirectory** output);
-extern "C" int SymbianDeviceDirectoryNext(NativeDirectory* directory,
-                                          NativeDirectoryEntry* output,
-                                          bool* end);
-extern "C" void SymbianDeviceDirectoryClose(NativeDirectory* directory);
+extern "C" int SymbianDeviceFileOpen(
+    const char16_t* absl_nullable path, int length,
+    NativeFile* absl_nullable* absl_nullable output);
+extern "C" int SymbianDeviceWritableFileOpen(
+    const char16_t* absl_nullable path, int length, int mode,
+    NativeFile* absl_nullable* absl_nullable output);
+extern "C" int SymbianDeviceFileWriteAt(
+    NativeFile* absl_nullable file, int offset,
+    const unsigned char* absl_nullable source, int length);
+extern "C" int SymbianDeviceFileFlush(NativeFile* absl_nullable file);
+extern "C" int SymbianDeviceCreateDirectories(
+    const char16_t* absl_nullable path, int length);
+extern "C" int SymbianDeviceFileSize(NativeFile* absl_nullable file,
+                                     int* absl_nullable size);
+extern "C" int SymbianDeviceFileReadAt(NativeFile* absl_nullable file,
+                                       int offset,
+                                       unsigned char* absl_nullable output,
+                                       int capacity,
+                                       int* absl_nullable bytes_read);
+extern "C" void SymbianDeviceFileClose(NativeFile* absl_nullable file);
+extern "C" int SymbianDeviceDirectoryOpen(
+    const char16_t* absl_nullable path, int length,
+    NativeDirectory* absl_nullable* absl_nullable output);
+extern "C" int SymbianDeviceDirectoryNext(
+    NativeDirectory* absl_nullable directory,
+    NativeDirectoryEntry* absl_nullable output, bool* absl_nullable end);
+extern "C" void SymbianDeviceDirectoryClose(
+    NativeDirectory* absl_nullable directory);
 
 }  // namespace symbian::api::storage
 

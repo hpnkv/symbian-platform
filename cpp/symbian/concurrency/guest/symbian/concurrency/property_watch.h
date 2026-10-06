@@ -9,6 +9,8 @@
 #include <memory>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "symbian/concurrency/future.h"
 #include "symbian/native_status.h"
 
@@ -122,7 +124,7 @@ class PropertyWatch {
   };
 
   std::function<void()> wake_;
-  SymbianRuntimePropertyState* native_ = nullptr;
+  SymbianRuntimePropertyState* absl_nullable native_ = nullptr;
   std::shared_ptr<Entry> current_;
   bool closed_ = false;
 };

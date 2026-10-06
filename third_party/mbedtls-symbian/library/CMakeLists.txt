@@ -16,8 +16,8 @@ foreach(component crypto x509 tls)
     symbian_add_static_library(${target} SOURCES ${src_${component}})
     # C translation units need C headers, rather than libc++'s C++ wrappers.
     target_include_directories(${target} SYSTEM BEFORE PRIVATE
-      "${SYMBIAN_SDK_PREFIX}/include/compiler"
-      "${SYMBIAN_SDK_PREFIX}/include/openc")
+      "$<$<COMPILE_LANGUAGE:C>:${SYMBIAN_SDK_PREFIX}/include/compiler>"
+      "$<$<COMPILE_LANGUAGE:C>:${SYMBIAN_SDK_PREFIX}/include/openc>")
   endif()
   # Debug keeps each reached module's functions together. This preserves
   # source variables and avoids LLD's overlapping Thumb tombstone ranges for
@@ -40,10 +40,24 @@ foreach(component crypto x509 tls)
   endif()
   install(TARGETS ${target} EXPORT MbedTLSTargets ARCHIVE DESTINATION lib)
 endforeach()
+if(SYMBIAN_MBEDTLS_HOST)
+  target_link_libraries(mbedcrypto PUBLIC absl::nullability)
+else()
+  # Keep the concrete name so TLS profile selection can replace Runtime with
+  # Streams consistently across all imported port targets.
+  target_link_libraries(mbedcrypto PUBLIC SymbianRuntime)
+endif()
 target_sources(mbedcrypto PRIVATE platform_zeroize.c)
 target_sources(mbedtls PRIVATE sdk_socket_bio.c)
 if(NOT SYMBIAN_MBEDTLS_HOST)
-  target_sources(mbedcrypto PRIVATE sdk_heap.c sdk_time.c sdk_entropy_fail.c)
+  # Installed source exports carry the same owned provider beside the port.
+  set(entropy_source "${PROJECT_SOURCE_DIR}/sdk_entropy")
+  if(NOT EXISTS "${entropy_source}/sdk_entropy.cc")
+    get_filename_component(entropy_source
+      "${PROJECT_SOURCE_DIR}/../../cpp/symbian/entropy" ABSOLUTE)
+  endif()
+  target_sources(mbedcrypto PRIVATE sdk_heap.c sdk_time.c
+    "${entropy_source}/sdk_entropy.cc")
 endif()
 target_link_libraries(mbedx509 PUBLIC mbedcrypto)
 target_link_libraries(mbedtls PUBLIC mbedx509)

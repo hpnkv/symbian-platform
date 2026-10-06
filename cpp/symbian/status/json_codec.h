@@ -29,6 +29,7 @@
 #include <string>
 #include <string_view>
 
+#include <absl/base/nullability.h>
 #include <absl/status/statusor.h>
 #include <nlohmann/json.hpp>
 
@@ -71,7 +72,8 @@ bool IsValidUtf8(std::string_view text);
  * A11's fiber stacks are fixed and small, so the depth of the document must not
  * decide how much stack the check needs.
  */
-const nlohmann::json* FindUnencodableString(const nlohmann::json& value);
+const nlohmann::json* absl_nullable FindUnencodableString(
+    const nlohmann::json& value);
 
 /**
  * @brief Serializes @p value, rejecting strings that are not valid UTF-8.

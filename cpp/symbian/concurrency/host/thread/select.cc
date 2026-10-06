@@ -19,6 +19,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <absl/base/nullability.h>
 #include <absl/log/check.h>
 
 #include "thread/boost_primitives.h"
@@ -59,7 +60,8 @@ int SelectUntil(absl::Time deadline, const CaseArray& cases) {
   int registered_case_states = 0;
   for (size_t case_state_idx = 0; case_state_idx < cases.size();
        ++case_state_idx) {
-    internal::CaseInSelectClause* case_state = &case_states[case_state_idx];
+    internal::CaseInSelectClause* absl_nonnull case_state =
+        &case_states[case_state_idx];
 
     case_state->case_ptr = &cases[static_cast<size_t>(case_state->index)];
     case_state->prev = nullptr;  // Not on any list so far.
@@ -103,7 +105,7 @@ int SelectUntil(absl::Time deadline, const CaseArray& cases) {
   // Unregister from all events with which we are registered. We know that
   // all registered case states were Handle()d with enqueue=true.
   for (int i = 0; i < registered_case_states; ++i) {
-    if (internal::CaseInSelectClause* case_state =
+    if (internal::CaseInSelectClause* absl_nonnull case_state =
             &case_states[static_cast<size_t>(i)];
         case_state->index != selected_case) {
       // sel.picked was unregistered by the notifier.

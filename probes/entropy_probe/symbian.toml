@@ -1,0 +1,12 @@
+[project]
+name = "entropy_probe"
+kind = "e32-import"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000835
+
+[package]
+uid = 0xe0000836
+name = "Symbian Secure Entropy Probe"
+vendor = "Symbian SDK"
+executable_name = "entropy_probe.exe"
+version = [1, 0, 0]

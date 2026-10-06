@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <openssl/bio.h>
 #include <openssl/evp.h>
@@ -576,7 +577,7 @@ absl::StatusOr<std::string> SignPackage(std::string_view unsigned_package,
         "X.509 certificate is too large or invalid");
   }
   std::string der(static_cast<size_t>(certificate_length), '\0');
-  auto* der_ptr = reinterpret_cast<unsigned char*>(der.data());
+  auto* absl_nonnull der_ptr = reinterpret_cast<unsigned char*>(der.data());
   if (i2d_X509(certificate.get(), &der_ptr) != certificate_length) {
     return absl::InternalError("X.509 DER serialization failed");
   }
@@ -719,9 +720,9 @@ absl::StatusOr<PackageInfo> InspectPackage(std::string_view bytes) {
         !signed_fields.Finish().ok() || !signature_root.Finish().ok()) {
       return absl::DataLossError("Malformed SIS signature chain");
     }
-    const auto* der =
+    const auto* absl_nonnull der =
         reinterpret_cast<const unsigned char*>(certificate_blob.payload.data());
-    const auto* der_end = der + certificate_blob.payload.size();
+    const auto* absl_nonnull der_end = der + certificate_blob.payload.size();
     std::unique_ptr<X509, decltype(&X509_free)> certificate(
         d2i_X509(nullptr, &der,
                  static_cast<long>(certificate_blob.payload.size())),

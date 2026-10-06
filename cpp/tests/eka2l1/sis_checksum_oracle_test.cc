@@ -1,10 +1,12 @@
 // Independent SIS oracle using Nokia's unchanged EPL-1.0 CRC implementation.
+
 #include <cstddef>
 #include <cstdlib>
 #include <fstream>
 #include <iterator>
 #include <string>
 
+#include <absl/base/nullability.h>
 #include <gtest/gtest.h>
 
 #include "checksum.h"
@@ -13,7 +15,7 @@
 namespace {
 
 TEST(SisChecksumOracleTest, HistoricalUidAndControllerAndDataCrcsAgree) {
-  const char* path = std::getenv("SYMBIAN_SIS_TEST_PACKAGE");
+  const char* absl_nullable path = std::getenv("SYMBIAN_SIS_TEST_PACKAGE");
   ASSERT_NE(path, nullptr);
   std::ifstream file(path, std::ios::binary);
   ASSERT_TRUE(file.is_open());

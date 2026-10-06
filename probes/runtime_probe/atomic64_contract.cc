@@ -1,18 +1,23 @@
 #include <atomic>
 #include <cstdint>
 
+#include <absl/base/nullability.h>
+
 extern "C" void SymbianRuntimeThreadYield();
-extern "C" int SymbianRuntimeRunThread(void* state, int (*worker)(void*),
-                                       int (*parent)(void*));
+extern "C" int SymbianRuntimeRunThread(
+    void* absl_nullable state, int (*absl_nonnull worker)(void* absl_nonnull),
+    int (*absl_nonnull parent)(void* absl_nonnull));
 extern "C" std::uint64_t SymbianProbeSyncAdd8(
-    volatile void* pointer, std::uint64_t value) asm("__sync_fetch_and_add_8");
+    volatile void* absl_nonnull pointer,
+    std::uint64_t value) asm("__sync_fetch_and_add_8");
 extern "C" std::uint64_t SymbianProbeSyncSub8(
-    volatile void* pointer, std::uint64_t value) asm("__sync_fetch_and_sub_8");
+    volatile void* absl_nonnull pointer,
+    std::uint64_t value) asm("__sync_fetch_and_sub_8");
 extern "C" std::uint64_t SymbianProbeSyncCas8(
-    volatile void* pointer, std::uint64_t expected,
+    volatile void* absl_nonnull pointer, std::uint64_t expected,
     std::uint64_t desired) asm("__sync_val_compare_and_swap_8");
 extern "C" std::uint64_t SymbianProbeSyncSwap8(
-    volatile void* pointer,
+    volatile void* absl_nonnull pointer,
     std::uint64_t desired) asm("__sync_lock_test_and_set_8");
 
 namespace {
@@ -22,7 +27,7 @@ struct Shared {
   std::atomic<std::uint64_t> value{0};
 };
 
-int Increment(void* context) {
+int Increment(void* absl_nonnull context) {
   auto& state = *static_cast<Shared*>(context);
   state.ready.fetch_add(1, std::memory_order_acq_rel);
   for (int attempt = 0; attempt < 3000; ++attempt) {

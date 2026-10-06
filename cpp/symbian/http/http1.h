@@ -35,6 +35,7 @@
 #include <string>
 #include <string_view>
 
+#include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <absl/status/statusor.h>
 
@@ -113,7 +114,8 @@ class ChunkedDecoder {
    * @param complete Set to true when the final chunk has been decoded.
    * @return An error on a malformed chunk header, otherwise OK.
    */
-  absl::Status Feed(std::string_view data, std::string* out, bool* complete);
+  absl::Status Feed(std::string_view data, std::string* absl_nonnull out,
+                    bool* absl_nullable complete);
 
   [[nodiscard]] bool complete() const { return state_ == State::kComplete; }
 
@@ -146,7 +148,7 @@ std::string EncodeLastChunk(const Headers& trailers = {});
 /**
  * Appends "name: value\r\n" for each header to @p out (names sent as given).
  */
-void AppendHeaderBlock(const Headers& headers, std::string* out);
+void AppendHeaderBlock(const Headers& headers, std::string* absl_nonnull out);
 /** Serializes an HTTP/1.1 request head (start line + headers + CRLF). */
 std::string SerializeRequest(std::string_view method, std::string_view target,
                              const Headers& headers);

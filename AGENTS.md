@@ -6,7 +6,16 @@ with evidence; ARM ELF generation does not prove Symbian loader compatibility.
 
 Use ~/dev/a11 as the implementation reference. Python lives in symbian/,
 native libraries in cpp/symbian/<component>/, and Python bindings in
-cpp/python/. Use Google C++ style and Google Python docstrings. C++ libraries
+cpp/python/. Use Google C++ style and Google Python docstrings. Mutable lvalue parameters
+use pointers (`T* absl_nonnull`), not references; use `absl_nullable` for optional
+pointers and `absl_nullability_unknown` only when a contract cannot be established.
+Preserve language-required operators and external override/signature contracts.
+Prefer writable `std::span` for mutable buffer views and `std::string_view` for
+text in owned helpers; adapt to pointers only at actual API boundaries.
+Run `python scripts/check_cpp_style.py` to check owned sources and snippets.
+Header canaries compile each header independently with its owner target's
+public dependencies, separately for host, guest and Python boundaries; keep
+`symbian_header_canaries` in the normal build and guest probe index. C++ libraries
 default to exceptions disabled and return absl::Status/StatusOr.
 Explicitly discarded absl::Status results use `.IgnoreError()`, never a
 `(void)` cast. Selected

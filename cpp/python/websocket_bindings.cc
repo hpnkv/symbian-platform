@@ -1,8 +1,10 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
+
 #include <array>
 #include <string>
 
+#include <absl/base/nullability.h>
 #include <openssl/rand.h>
 #include <pybind11/pybind11.h>
 
@@ -10,10 +12,10 @@
 #include "symbian/websocket/websocket.h"
 
 namespace symbian::python {
-void BindWebSocket(pybind11::module_& module) {
+void BindWebSocket(pybind11::module_* absl_nonnull module) {
   namespace py = pybind11;
   using websocket::WebSocket;
-  py::class_<WebSocket>(module, "WebSocketCodec")
+  py::class_<WebSocket>(*module, "WebSocketCodec")
       .def(py::init([](bool server, const std::string& path,
                        std::size_t maximum_message_bytes) {
              return ValueWithoutGil([&] {
@@ -38,29 +40,29 @@ void BindWebSocket(pybind11::module_& module) {
            py::arg("server") = false, py::arg("path") = "/symbian-agent",
            py::arg("maximum_message_bytes") = 4100)
       .def("feed",
-           [](WebSocket& codec, const py::bytes& input) {
+           [](WebSocket* absl_nonnull codec, const py::bytes& input) {
              const std::string bytes = input;
-             CallWithoutGil([&] { return codec.Feed(bytes); });
+             CallWithoutGil([&] { return codec->Feed(bytes); });
            })
       .def("take_output",
-           [](WebSocket& codec) {
+           [](WebSocket* absl_nonnull codec) {
              return py::bytes(
-                 ValueWithoutGil([&] { return codec.TakeOutput(); }));
+                 ValueWithoutGil([&] { return codec->TakeOutput(); }));
            })
       .def("send",
-           [](WebSocket& codec, const py::bytes& input) {
+           [](WebSocket* absl_nonnull codec, const py::bytes& input) {
              const std::string bytes = input;
-             CallWithoutGil([&] { return codec.Send(bytes); });
+             CallWithoutGil([&] { return codec->Send(bytes); });
            })
       .def("receive",
-           [](WebSocket& codec) -> py::object {
-             auto result = ValueWithoutGil([&] { return codec.Receive(); });
+           [](WebSocket* absl_nonnull codec) -> py::object {
+             auto result = ValueWithoutGil([&] { return codec->Receive(); });
              return result ? py::object(py::bytes(*result))
                            : py::object(py::none());
            })
       .def("close",
-           [](WebSocket& codec) {
-             CallWithoutGil([&] { return codec.Close(); });
+           [](WebSocket* absl_nonnull codec) {
+             CallWithoutGil([&] { return codec->Close(); });
            })
       .def("abort", &WebSocket::Abort, py::call_guard<py::gil_scoped_release>())
       .def_property_readonly("open", &WebSocket::open)

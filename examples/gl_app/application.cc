@@ -1,5 +1,6 @@
 #include "application.h"
 
+#include <absl/base/nullability.h>
 #include <e32keys.h>
 #include <hal.h>
 #include <w32std.h>
@@ -9,13 +10,15 @@
 namespace gl_app {
 namespace {
 
-TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, RWindow& window) {
+TInt RunWindow(RWsSession* absl_nonnull session,
+               CWsScreenDevice* absl_nonnull screen,
+               RWindow* absl_nonnull window) {
   Renderer renderer;
   TInt result = renderer.Open(window);
   if (result != KErrNone) {
     return result;
   }
-  renderer.Resize(screen.SizeInPixels());
+  renderer.Resize(screen->SizeInPixels());
   RTimer timer;
   TInt tick_period = 0;
   result = HAL::Get(HALData::ENanoTickPeriod, tick_period);
@@ -27,8 +30,8 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, RWindow& window) {
     return result;
   }
   TRequestStatus events, redraws, frame;
-  session.EventReady(&events);
-  session.RedrawReady(&redraws);
+  session->EventReady(&events);
+  session->RedrawReady(&redraws);
   timer.After(frame, 33000);
   bool running = true, dirty = true;
   float angle = 0.65f;
@@ -40,7 +43,7 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, RWindow& window) {
         break;
       }
       TWsEvent event;
-      session.GetEvent(event);
+      session->GetEvent(event);
       if (event.Handle() == 2 && event.Type() == EEventPointer) {
         if (renderer.HandlePointer(*event.Pointer())) {
           running = false;
@@ -50,17 +53,17 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, RWindow& window) {
                  event.Key()->iCode == EKeyEscape) {
         running = false;
       } else if (event.Type() == EEventScreenDeviceChanged) {
-        TSize size = screen.SizeInPixels();
+        TSize size = screen->SizeInPixels();
         if (size.iWidth < 160 || size.iHeight < 240) {
           result = KErrNotSupported;
           break;
         }
-        window.SetExtent(TPoint(0, 0), size);
+        window->SetExtent(TPoint(0, 0), size);
         renderer.Resize(size);
         dirty = true;
       }
       if (running) {
-        session.EventReady(&events);
+        session->EventReady(&events);
       }
     }
     if (redraws != KRequestPending) {
@@ -69,14 +72,14 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, RWindow& window) {
         break;
       }
       TWsRedrawEvent redraw;
-      session.GetRedraw(redraw);
+      session->GetRedraw(redraw);
       if (redraw.Handle() == 2) {
-        window.BeginRedraw(redraw.Rect());
-        window.EndRedraw();
+        window->BeginRedraw(redraw.Rect());
+        window->EndRedraw();
         dirty = true;
       }
       if (running) {
-        session.RedrawReady(&redraws);
+        session->RedrawReady(&redraws);
       }
     }
     if (frame != KRequestPending) {
@@ -103,7 +106,7 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, RWindow& window) {
       }
       dirty = false;
     }
-    session.Flush();
+    session->Flush();
     // One native request wait drives Window Server events and the frame timer.
     if (events == KRequestPending && redraws == KRequestPending &&
         frame == KRequestPending) {
@@ -111,8 +114,8 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, RWindow& window) {
     }
   }
   timer.Cancel();
-  session.EventReadyCancel();
-  session.RedrawReadyCancel();
+  session->EventReadyCancel();
+  session->RedrawReadyCancel();
   if (frame == KRequestPending) {
     User::WaitForRequest(frame);
   }
@@ -154,7 +157,7 @@ int RunApplication() {
             window.Activate();
             window.Invalidate();
             session.Flush();
-            result = RunWindow(session, screen, window);
+            result = RunWindow(&session, &screen, &window);
             window.Close();
           }
           group.Close();

@@ -1,5 +1,6 @@
 #include "renderer.h"
 
+#include <absl/base/nullability.h>
 #include <e32debug.h>
 
 namespace gl_app {
@@ -27,7 +28,7 @@ Renderer::~Renderer() {
   }
 }
 
-TInt Renderer::Open(RWindow& window) {
+TInt Renderer::Open(RWindow* absl_nonnull window) {
   display_ = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   EGLint major = 0, minor = 0;
   if (display_ == EGL_NO_DISPLAY || !eglInitialize(display_, &major, &minor)) {
@@ -56,7 +57,7 @@ TInt Renderer::Open(RWindow& window) {
   }
   // Symbian EGLNativeWindowType is a pointer to the actual RWindow object,
   // not its integer handle, and must remain alive through surface teardown.
-  surface_ = eglCreateWindowSurface(display_, config, &window, nullptr);
+  surface_ = eglCreateWindowSurface(display_, config, window, nullptr);
   const EGLint context_attributes[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
   context_ =
       eglCreateContext(display_, config, EGL_NO_CONTEXT, context_attributes);

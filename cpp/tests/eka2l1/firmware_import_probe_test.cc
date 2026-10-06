@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Imports explicitly supplied files into a new emulator-only root. No phone
 // transport, hardware recovery, or flashing facility is called.
+
 #include <cstdlib>
 #include <filesystem>
 #include <string>
 #include <system_error>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <config/config.h>
 #include <gtest/gtest.h>
 #include <system/devices.h>
@@ -15,8 +17,9 @@
 namespace {
 
 TEST(FirmwareImportProbeTest, ImportsProvidedVplIntoNewDisposableEmulatorRoot) {
-  const char* source = std::getenv("SYMBIAN_FIRMWARE_VPL");
-  const char* destination = std::getenv("SYMBIAN_EMULATOR_IMPORT_ROOT");
+  const char* absl_nullable source = std::getenv("SYMBIAN_FIRMWARE_VPL");
+  const char* absl_nullable destination =
+      std::getenv("SYMBIAN_EMULATOR_IMPORT_ROOT");
   if (!source || !destination) {
     GTEST_SKIP() << "Supply a preserved VPL and a new emulator output root";
   }
@@ -45,7 +48,7 @@ TEST(FirmwareImportProbeTest, ImportsProvidedVplIntoNewDisposableEmulatorRoot) {
       nullptr, [] { return false; });
   ASSERT_EQ(result, eka2l1::device_installation_none);
   ASSERT_EQ(devices.total(), 1);
-  const auto* device = devices.lastest();
+  const auto* absl_nonnull device = devices.lastest();
   ASSERT_NE(device, nullptr);
   EXPECT_TRUE(device->isolated_drives);
   devices.save_devices();

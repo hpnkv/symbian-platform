@@ -11,6 +11,8 @@
 
 #include <cstddef>
 
+#include <absl/base/nullability.h>
+
 #include "absl/base/thread_annotations.h"
 #include "absl/time/time.h"
 
@@ -41,12 +43,13 @@ class ABSL_LOCKABLE Mutex {
   struct Impl;
   static constexpr std::size_t kImplSize = 64;
   alignas(std::max_align_t) std::byte impl_[kImplSize];
-  Impl* GetImpl();
+  Impl* absl_nonnull GetImpl();
 };
 
 class ABSL_SCOPED_LOCKABLE MutexLock {
  public:
-  explicit MutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
+  explicit MutexLock(Mutex* absl_nonnull mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
+      : mu_(mu) {
     mu_->Lock();
   }
 
@@ -56,7 +59,7 @@ class ABSL_SCOPED_LOCKABLE MutexLock {
   ~MutexLock() ABSL_UNLOCK_FUNCTION() { mu_->Unlock(); }
 
  private:
-  Mutex* mu_;
+  Mutex* absl_nonnull mu_;
 };
 
 class CondVar {
@@ -66,12 +69,12 @@ class CondVar {
   CondVar(const CondVar&) = delete;
   CondVar& operator=(const CondVar&) = delete;
 
-  void Wait(Mutex* mu) noexcept;
+  void Wait(Mutex* absl_nonnull mu) noexcept;
   // Matches A11: true on timeout, false on a signal. Recheck predicates
   // after any wakeup. An accepted absolute deadline becomes steady elapsed
   // time, so later wall-clock adjustments do not change that wait.
-  bool WaitWithDeadline(Mutex* mu, absl::Time deadline) noexcept;
-  bool WaitWithTimeout(Mutex* mu, absl::Duration timeout) noexcept;
+  bool WaitWithDeadline(Mutex* absl_nonnull mu, absl::Time deadline) noexcept;
+  bool WaitWithTimeout(Mutex* absl_nonnull mu, absl::Duration timeout) noexcept;
   void Signal() noexcept;
   void SignalAll() noexcept;
 
@@ -79,7 +82,7 @@ class CondVar {
   struct Impl;
   static constexpr std::size_t kImplSize = 64;
   alignas(std::max_align_t) std::byte impl_[kImplSize];
-  Impl* GetImpl();
+  Impl* absl_nonnull GetImpl();
 };
 
 void SleepFor(absl::Duration duration);

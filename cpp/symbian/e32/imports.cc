@@ -7,6 +7,7 @@
 #include <string_view>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <absl/strings/ascii.h>
 #include <absl/strings/str_cat.h>
@@ -280,7 +281,7 @@ absl::StatusOr<ResolvedImports> ResolveImports(
   }
   std::map<std::string, std::vector<ImportSlot>> blocks;
   std::set<uint32_t> locations, symbol_indices;
-  const Section* plt = nullptr;
+  const Section* absl_nullable plt = nullptr;
   for (const Section& section : sections) {
     if (section.name == ".plt") {
       if (plt != nullptr || section.type != 1 || section.flags != 6 ||
@@ -343,7 +344,7 @@ absl::StatusOr<ResolvedImports> ResolveImports(
   // Never copy proxy ordinal bytes into application data (R_ARM_COPY).
   if (result.data_relocation_index != 0) {
     const Section& data_relocs = sections[result.data_relocation_index];
-    const Section* object_got = nullptr;
+    const Section* absl_nullable object_got = nullptr;
     for (const Section& section : sections) {
       if (section.name == ".got") {
         object_got = &section;

@@ -51,6 +51,13 @@ def guest_binaries(tmp_path_factory):
             "Ninja",
             f"-DCMAKE_TOOLCHAIN_FILE={sdk.prefix}/cmake/symbian-arm.cmake",
             f"-DSYMBIAN_SDK_PREFIX={sdk.prefix}",
+            f"-DCMAKE_CXX_COMPILER={sdk.compiler}",
+            "-DCMAKE_C_COMPILER="
+            f"{sdk.c_compiler or sdk.compiler.with_name('clang')}",
+            f"-DCMAKE_AR={sdk.ar or sdk.compiler.with_name('llvm-ar')}",
+            "-DCMAKE_RANLIB="
+            f"{sdk.ranlib or sdk.compiler.with_name('llvm-ranlib')}",
+            f"-DCMAKE_LINKER={sdk.linker}",
             "-DSYMBIAN_MBEDTLS_OPENSSL_COMPAT=OFF",
         ],
         check=True,
@@ -73,6 +80,13 @@ def guest_binaries(tmp_path_factory):
             "Ninja",
             f"-DCMAKE_TOOLCHAIN_FILE={sdk.prefix}/cmake/symbian-arm.cmake",
             f"-DSYMBIAN_SDK_PREFIX={sdk.prefix}",
+            f"-DCMAKE_CXX_COMPILER={sdk.compiler}",
+            "-DCMAKE_C_COMPILER="
+            f"{sdk.c_compiler or sdk.compiler.with_name('clang')}",
+            f"-DCMAKE_AR={sdk.ar or sdk.compiler.with_name('llvm-ar')}",
+            "-DCMAKE_RANLIB="
+            f"{sdk.ranlib or sdk.compiler.with_name('llvm-ranlib')}",
+            f"-DCMAKE_LINKER={sdk.linker}",
             f"-DMBEDTLS_SOURCE={ROOT}/third_party/mbedtls-symbian",
             f"-DMBEDTLS_ARCHIVE={archive}/libmbedcrypto.a",
             "-DSYMBIAN_RM807_TLS_HANDSHAKE_PROBE=ON",
@@ -131,12 +145,13 @@ def build_client(sdk, build, version, mode, *, ordinal, port=39095):
     )
     (project / "probe.cc").write_text(
         "#include <e32std.h>\n"
+        "#include <absl/base/nullability.h>\n"
         '_LIT(KDll, "C:\\\\sys\\\\bin\\\\mbedcrypto_probe.dll");\n'
         "int main() {\n"
         "  RLibrary library;\n"
         "  TInt loaded = library.Load(KDll, KNullDesC);\n"
         "  if (loaded != KErrNone) return -210 + loaded;\n"
-        "  using Probe = int (*)(int, int, int);\n"
+        "  using Probe = int (*absl_nullable)(int, int, int);\n"
         f"  auto probe = reinterpret_cast<Probe>(library.Lookup({ordinal}));\n"
         "  int result = probe == nullptr ? -211 : "
         f"probe({port}, {version}, {mode});\n"
@@ -171,7 +186,12 @@ def build_client(sdk, build, version, mode, *, ordinal, port=39095):
 @pytest.mark.parametrize("mode", [0, 1, 2, 3])
 def test_authenticated_guest_tls(guest_binaries, tmp_path, version, mode):
     """Checks both protocols, trusted data, name mismatch, and unknown CA."""
-    golden = ROOT / ".symbian/instances/delight-import-01"
+    golden = Path(
+        os.environ.get(
+            "SYMBIAN_TEST_FIRMWARE_INSTANCE",
+            str(ROOT / ".symbian/instances/delight-import-01"),
+        )
+    )
     pinned = {
         golden / "data/roms/rm-807/SYM.ROM": ROM_808,
         golden / "data/drives/z/rm-807/sys/bin/euser.dll": EUSER_808,
@@ -223,7 +243,12 @@ def test_authenticated_guest_tls(guest_binaries, tmp_path, version, mode):
 
         server = threading.Thread(target=serve)
         server.start()
-        executable = ROOT / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+        executable = Path(
+            os.environ.get(
+                "SYMBIAN_TEST_EMULATOR",
+                str(ROOT / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"),
+            )
+        )
         with tempfile.TemporaryDirectory(
             prefix="native-tls-", dir="/tmp"
         ) as private:
@@ -274,7 +299,12 @@ def test_guest_mutual_tls_listener(
     guest_binaries, tmp_path, version, mode, server_kind
 ):
     """Checks raw and SDK-owned guest TLS listeners against the same peer."""
-    golden = ROOT / ".symbian/instances/delight-import-01"
+    golden = Path(
+        os.environ.get(
+            "SYMBIAN_TEST_FIRMWARE_INSTANCE",
+            str(ROOT / ".symbian/instances/delight-import-01"),
+        )
+    )
     pinned = {
         golden / "data/roms/rm-807/SYM.ROM": ROM_808,
         golden / "data/drives/z/rm-807/sys/bin/euser.dll": EUSER_808,
@@ -306,7 +336,12 @@ def test_guest_mutual_tls_listener(
             CERTIFICATES / "server-cert.pem",
             CERTIFICATES / "server-key.pem",
         )
-    executable = ROOT / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+    executable = Path(
+        os.environ.get(
+            "SYMBIAN_TEST_EMULATOR",
+            str(ROOT / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"),
+        )
+    )
     with tempfile.TemporaryDirectory(
         prefix="native-mtls-", dir="/tmp"
     ) as private:

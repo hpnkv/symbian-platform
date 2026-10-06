@@ -1,3 +1,4 @@
+#include <absl/base/nullability.h>
 #include <e32hal.h>
 #include <e32std.h>
 
@@ -17,7 +18,7 @@ extern "C" int SymbianRuntimeChunkProbe() {
         KErrNone) {
       return -200;
     }
-    TUint8* base = chunk.Base();
+    TUint8* absl_nullable base = chunk.Base();
     if (base == nullptr || chunk.Size() < page_size ||
         chunk.MaxSize() < page_size * 2) {
       chunk.Close();
@@ -52,8 +53,8 @@ extern "C" int SymbianRuntimeChunkProbe() {
     chunk.Close();
   }
   const int baseline = SymbianRuntimeAllocationCells();
-  SymbianRuntimePageOwner* owner = nullptr;
-  void* pages = nullptr;
+  SymbianRuntimePageOwner* absl_nullable owner = nullptr;
+  void* absl_nullable pages = nullptr;
   if (SymbianRuntimePageCreate(0, &owner, &pages) != KErrArgument ||
       owner != nullptr || pages != nullptr ||
       SymbianRuntimePageCreate(page_size + 1, &owner, &pages) != KErrArgument) {
@@ -66,7 +67,7 @@ extern "C" int SymbianRuntimeChunkProbe() {
         (reinterpret_cast<TUintPtr>(pages) & (page_size - 1)) != 0) {
       return -208;
     }
-    auto* data = static_cast<TUint8*>(pages);
+    auto* absl_nonnull data = static_cast<TUint8*>(pages);
     data[0] = static_cast<TUint8>(iteration);
     data[bytes - 1] = static_cast<TUint8>(iteration + 1);
     if (data[0] != iteration || data[bytes - 1] != iteration + 1) {

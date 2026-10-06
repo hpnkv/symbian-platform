@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "symbian/api/connectivity/active_tcp_listener.h"
@@ -45,7 +47,8 @@ class Observer final : public symbian::api::connectivity::TcpAcceptObserver {
     }
   }
 
-  symbian::api::connectivity::ActiveTcpListener* listener = nullptr;
+  symbian::api::connectivity::ActiveTcpListener* absl_nullable listener =
+      nullptr;
   symbian::concurrency::WorkerExecutor worker{2};
 };
 
@@ -53,7 +56,7 @@ class Observer final : public symbian::api::connectivity::TcpAcceptObserver {
 
 extern "C" int RunActiveProbe() {
   Observer observer;
-  symbian::api::connectivity::ActiveTcpListener listener(observer);
+  symbian::api::connectivity::ActiveTcpListener listener(&observer);
   observer.listener = &listener;
   if (!listener.EnableWorkerSharing().ok() ||
       !listener.ListenIpv4({127, 0, 0, 1}, 39100).ok()) {

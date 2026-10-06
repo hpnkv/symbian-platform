@@ -19,6 +19,7 @@
 
 #include <utility>
 
+#include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <absl/status/statusor.h>
 #include <pybind11/pybind11.h>
@@ -57,8 +58,9 @@ using PyJsonArray = py::typing::List<py::object>;
 
 absl::Status StatusFromPython(const py::handle& value);
 py::object StatusToPython(const absl::Status& status);
-absl::Status StatusFromPythonException(py::error_already_set& error);
-void BindStatus(py::module_& module);
+absl::Status StatusFromPythonException(
+    py::error_already_set* absl_nonnull error);
+void BindStatus(py::module_* absl_nonnull module);
 
 py::object StatusException(const absl::Status& status);
 [[noreturn]] void ThrowStatus(const absl::Status& status);

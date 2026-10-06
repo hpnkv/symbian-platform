@@ -5,6 +5,7 @@
 #include <cstring>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <cpu/arm_factory.h>
 #include <gtest/gtest.h>
 
@@ -25,12 +26,14 @@ class StrexdTest : public ::testing::TestWithParam<arm_emulator_type> {
     std::memcpy(memory_.data() + kCode + 4, &kStrexd, sizeof(kStrexd));
     monitor_ = eka2l1::arm::create_exclusive_monitor(GetParam(), 1);
     ASSERT_NE(monitor_, nullptr);
-    monitor_->read_64bit = [this](eka2l1::arm::core*, uint32_t address,
-                                  uint64_t* value) {
+    monitor_->read_64bit = [this](eka2l1::arm::core* absl_nonnull,
+                                  uint32_t address,
+                                  uint64_t* absl_nonnull value) {
       return Read(address, value);
     };
-    monitor_->write_64bit = [this](eka2l1::arm::core*, uint32_t address,
-                                   uint64_t value, uint64_t expected) {
+    monitor_->write_64bit = [this](eka2l1::arm::core* absl_nonnull,
+                                   uint32_t address, uint64_t value,
+                                   uint64_t expected) {
       uint64_t current = 0;
       if (!Read(address, &current) || current != expected) {
         return 0;
@@ -39,31 +42,31 @@ class StrexdTest : public ::testing::TestWithParam<arm_emulator_type> {
     };
     cpu_ = eka2l1::arm::create_core(monitor_.get(), GetParam());
     ASSERT_NE(cpu_, nullptr);
-    cpu_->read_code = [this](uint32_t address, uint32_t* value) {
+    cpu_->read_code = [this](uint32_t address, uint32_t* absl_nonnull value) {
       return Read(address, value);
     };
-    cpu_->read_8bit = [this](uint32_t address, uint8_t* value) {
+    cpu_->read_8bit = [this](uint32_t address, uint8_t* absl_nonnull value) {
       return Read(address, value);
     };
-    cpu_->read_16bit = [this](uint32_t address, uint16_t* value) {
+    cpu_->read_16bit = [this](uint32_t address, uint16_t* absl_nonnull value) {
       return Read(address, value);
     };
-    cpu_->read_32bit = [this](uint32_t address, uint32_t* value) {
+    cpu_->read_32bit = [this](uint32_t address, uint32_t* absl_nonnull value) {
       return Read(address, value);
     };
-    cpu_->read_64bit = [this](uint32_t address, uint64_t* value) {
+    cpu_->read_64bit = [this](uint32_t address, uint64_t* absl_nonnull value) {
       return Read(address, value);
     };
-    cpu_->write_8bit = [this](uint32_t address, uint8_t* value) {
+    cpu_->write_8bit = [this](uint32_t address, uint8_t* absl_nonnull value) {
       return Write(address, value);
     };
-    cpu_->write_16bit = [this](uint32_t address, uint16_t* value) {
+    cpu_->write_16bit = [this](uint32_t address, uint16_t* absl_nonnull value) {
       return Write(address, value);
     };
-    cpu_->write_32bit = [this](uint32_t address, uint32_t* value) {
+    cpu_->write_32bit = [this](uint32_t address, uint32_t* absl_nonnull value) {
       return Write(address, value);
     };
-    cpu_->write_64bit = [this](uint32_t address, uint64_t* value) {
+    cpu_->write_64bit = [this](uint32_t address, uint64_t* absl_nonnull value) {
       return Write(address, value);
     };
     cpu_->exclusive_write_64bit = [this](uint32_t address, uint64_t value,
@@ -82,7 +85,7 @@ class StrexdTest : public ::testing::TestWithParam<arm_emulator_type> {
   }
 
   template <typename T>
-  bool Read(uint32_t address, T* value) {
+  bool Read(uint32_t address, T* absl_nonnull value) {
     if (address > memory_.size() || sizeof(T) > memory_.size() - address) {
       return false;
     }
@@ -91,7 +94,7 @@ class StrexdTest : public ::testing::TestWithParam<arm_emulator_type> {
   }
 
   template <typename T>
-  bool Write(uint32_t address, T* value) {
+  bool Write(uint32_t address, T* absl_nonnull value) {
     if (address < kData || address > memory_.size() ||
         sizeof(T) > memory_.size() - address) {
       return false;

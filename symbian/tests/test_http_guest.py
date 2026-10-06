@@ -133,12 +133,6 @@ def http_image(tmp_path_factory):
                 if os.environ.get("SYMBIAN_HTTP_EXPORTED_SDK")
                 else {"SYMBIAN_HTTP_WORKSPACE_SOURCE": str(ROOT)}
             ),
-            "SYMBIAN_HTTP_ENTROPY_SOURCE": str(
-                ROOT / "agent_service/sdk_entropy_rm807.cc"
-            ),
-            "SYMBIAN_HTTP_ENTROPY_ASSEMBLY": str(
-                ROOT / "agent_service/sdk_entropy_rm807.S"
-            ),
         },
     )
     (output / "inputs.json").write_text(

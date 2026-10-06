@@ -7,6 +7,8 @@
 #include <array>
 #include <cstdint>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "symbian/api/connectivity/tcp_client.h"
@@ -39,7 +41,7 @@ class TcpAcceptObserver {
  */
 class ActiveTcpListener final {
  public:
-  explicit ActiveTcpListener(TcpAcceptObserver& observer);
+  explicit ActiveTcpListener(TcpAcceptObserver* absl_nonnull observer);
   ActiveTcpListener(const ActiveTcpListener&) = delete;
   ActiveTcpListener& operator=(const ActiveTcpListener&) = delete;
   ~ActiveTcpListener();
@@ -67,11 +69,12 @@ class ActiveTcpListener final {
   bool is_listening() const;
 
  private:
-  static void OnNativeAccept(void* context, NativeTcpClient* accepted,
+  static void OnNativeAccept(void* absl_nonnull context,
+                             NativeTcpClient* absl_nonnull accepted,
                              int result);
 
   TcpAcceptObserver& observer_;
-  NativeActiveTcpListener* native_ = nullptr;
+  NativeActiveTcpListener* absl_nullable native_ = nullptr;
   bool started_ = false;
   bool share_with_workers_ = false;
 };

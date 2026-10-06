@@ -2,12 +2,15 @@
 // Licensed under the Apache License, Version 2.0.
 #ifndef SYMBIAN_HTTP_TYPES_H_
 #define SYMBIAN_HTTP_TYPES_H_
+
 #include <cstddef>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
+
+#include <absl/base/nullability.h>
 
 #include "absl/status/status.h"
 
@@ -36,7 +39,7 @@ struct Limits {
   std::size_t maximum_body_bytes = 32 * 1024 * 1024;
 };
 
-void NormalizeHeaders(Headers* headers);
+void NormalizeHeaders(Headers* absl_nonnull headers);
 std::optional<std::string> GetHeader(const Headers& headers,
                                      std::string_view name);
 absl::Status ValidateHeaders(const Headers& headers, const Limits& limits);

@@ -4,6 +4,8 @@
 #ifndef SYMBIAN_API_POWER_NATIVE_POWER_H_
 #define SYMBIAN_API_POWER_NATIVE_POWER_H_
 
+#include <absl/base/nullability.h>
+
 namespace symbian::api::power {
 
 // Each result is the native error for its paired value; zero means valid.
@@ -16,7 +18,8 @@ struct NativePowerReading {
   int battery = 0;
 };
 
-extern "C" void SymbianDeviceReadPower(NativePowerReading* reading);
+extern "C" void SymbianDeviceReadPower(
+    NativePowerReading* absl_nullable reading);
 
 }  // namespace symbian::api::power
 

@@ -3,6 +3,7 @@
 #include <new>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <symbian/concurrency/event_executor.h>
 #include <symbian/native_status.h>
 
@@ -14,15 +15,15 @@ struct GuiAsync {
   int due = 0;
 };
 
-GuiAsync* GuiAsyncCreate() {
+GuiAsync* absl_nullable GuiAsyncCreate() {
   return new (std::nothrow) GuiAsync;
 }
 
-int GuiAsyncOpen(GuiAsync* async) {
+int GuiAsyncOpen(GuiAsync* absl_nonnull async) {
   return symbian::NativeErrorFromStatus(async->executor.Open());
 }
 
-void GuiAsyncSchedule(GuiAsync* async) {
+void GuiAsyncSchedule(GuiAsync* absl_nonnull async) {
   const unsigned int generation = async->generation;
   auto task = async->executor.ScheduleAfter(absl::Milliseconds(300));
   task.OnReady([async, generation](const auto& result) {
@@ -43,7 +44,7 @@ void GuiAsyncSchedule(GuiAsync* async) {
   async->tasks.push_back(std::move(task));
 }
 
-void GuiAsyncCancel(GuiAsync* async) {
+void GuiAsyncCancel(GuiAsync* absl_nonnull async) {
   ++async->generation;
   async->due = 0;
   for (const auto& task : async->tasks) {
@@ -51,7 +52,7 @@ void GuiAsyncCancel(GuiAsync* async) {
   }
 }
 
-int GuiAsyncDispatch(GuiAsync* async) {
+int GuiAsyncDispatch(GuiAsync* absl_nullable async) {
   const absl::Status dispatched = async->executor.DispatchReady();
   if (!dispatched.ok()) {
     return symbian::NativeErrorFromStatus(dispatched);
@@ -71,11 +72,11 @@ int GuiAsyncDispatch(GuiAsync* async) {
   return due;
 }
 
-void GuiAsyncPark(GuiAsync* async) {
+void GuiAsyncPark(GuiAsync* absl_nonnull async) {
   async->executor.Park();
 }
 
-void GuiAsyncDestroy(GuiAsync* async) {
+void GuiAsyncDestroy(GuiAsync* absl_nullable async) {
   if (async == nullptr) {
     return;
   }

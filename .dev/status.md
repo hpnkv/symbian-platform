@@ -3364,3 +3364,33 @@ run and repaired executable-mode reruns (435 optional cases skipped), 51 focused
 SDK/project/IDE checks, four real library-target checks, all 12 native suites,
 formatting and strict docs. All known failures from the final run were resolved
 and their checks rerun successfully; details are in research-log.md.
+
+### 2026-10-06: pointer contracts, header canaries and SDK entropy
+
+Owned host/guest C++ parameters, templates, examples and documentation snippets
+now use nonnull pointers for mutable lvalues, with explicit nullable contracts
+for optional/fallible pointers. No explicit unknown nullability remains in the
+checked implementation. Writable buffer helpers use spans; example/starter
+text helpers use string_view. Automated source checking and syntax-aware
+parenthesis cleanup run in CI; required postfix parentheses remain intact.
+
+Independent header canaries cover host/guest libraries, runtime, concurrency,
+public/internal APIs, Python and emulator boundaries, and owned TLS C/C++ port
+headers. Owning targets export annotation dependencies, including standalone
+resource-tool builds. SDK export verifies installed headers on both ISAs;
+relocated headers compile from paths containing spaces.
+
+The SDK supplies one verified EABI OS entropy provider across ARMv5T/ARMv6,
+shared by modern TLS, WebSocket/agent consumers and legacy OpenSSL. Unsupported
+exports/wrappers, partial fills and native errors fail closed. The 20-case
+five-firmware/two-ISA/two-backend matrix passes: RM-807 succeeds; C7/E6 validate
+but their secure RNG syscall is absent in the tested emulator profile;
+6120/E71 lack secure RNG exports. Physical RNG and older-OS execution remain
+separate gates.
+
+Evidence: 31 live guest crypto/DLL/TLS checks, 13 root CTest suites,
+13 Mbed/OpenSSL GTests, 419 Python cases (439
+optional skips), 20 style regressions, both ARM probe indexes, fresh dual-ISA
+SDK export, relocated canaries and all five real starter checks pass. Strict
+docs and formatting pass. See research-log.md and ignored
+.symbian/style-migration/ for experiments and limits.

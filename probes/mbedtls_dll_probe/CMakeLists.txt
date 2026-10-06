@@ -32,15 +32,12 @@ file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/test_certificate.h"
 
 include(SymbianApp)
 option(SYMBIAN_RM807_ENTROPY_PROBE
-  "Use the research-only RM-807 executive RNG adapter" OFF)
+  "Require the SDK secure RNG provider to succeed" OFF)
 option(SYMBIAN_RM807_SOCKET_PROBE
   "Include the research-only connected receive/cancel probe" OFF)
 option(SYMBIAN_RM807_TLS_HANDSHAKE_PROBE
   "Include the research-only authenticated native TCP TLS probe" OFF)
 set(probe_sources bridge.c)
-if(SYMBIAN_RM807_ENTROPY_PROBE OR SYMBIAN_RM807_TLS_HANDSHAKE_PROBE)
-  list(APPEND probe_sources sdk_entropy_rm807.cc sdk_entropy_rm807.S)
-endif()
 if(SYMBIAN_RM807_SOCKET_PROBE)
   list(APPEND probe_sources socket_probe.c)
 endif()

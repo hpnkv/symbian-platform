@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Executive routing controls. Actual ROM execution is a separate live test.
+
 #include <string>
 
+#include <absl/base/nullability.h>
 #include <gtest/gtest.h>
 #include <kernel/svc.h>
 
 namespace {
 
-const char* HandlerName(const eka2l1::hle::func_map& table, unsigned number) {
+const char* absl_nonnull HandlerName(const eka2l1::hle::func_map& table,
+                                     unsigned number) {
   const auto found = table.find(number);
   return found == table.end() ? nullptr : found->second.name.c_str();
 }

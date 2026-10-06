@@ -5,6 +5,8 @@
 
 #include <string>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/status.h"
 #include "symbian/status/json_codec.h"
 
@@ -17,7 +19,8 @@ bool ValidKind(std::uint64_t kind) {
 }
 
 absl::StatusOr<std::uint64_t> UnsignedField(const nlohmann::json& object,
-                                            const char* name, bool required) {
+                                            const char* absl_nonnull name,
+                                            bool required) {
   const auto found = object.find(name);
   if (found == object.end()) {
     if (required) {
@@ -79,7 +82,8 @@ absl::StatusOr<ControlMessage> ParseControl(std::string_view encoded) {
     result.body = *body;
   }
   result.extensions = *parsed;
-  for (const char* key : {"v", "id", "kind", "deadline_ms", "body"}) {
+  for (const char* absl_nonnull key :
+       {"v", "id", "kind", "deadline_ms", "body"}) {
     result.extensions.erase(key);
   }
   return result;
@@ -92,7 +96,8 @@ absl::StatusOr<std::string> PackControl(const ControlMessage& message) {
     return absl::InvalidArgumentError("Invalid control envelope");
   }
   nlohmann::json encoded = message.extensions;
-  for (const char* key : {"v", "id", "kind", "deadline_ms", "body"}) {
+  for (const char* absl_nonnull key :
+       {"v", "id", "kind", "deadline_ms", "body"}) {
     if (encoded.contains(key)) {
       return absl::InvalidArgumentError("Extension shadows control field");
     }

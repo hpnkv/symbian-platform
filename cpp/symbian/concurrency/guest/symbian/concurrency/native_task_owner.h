@@ -8,6 +8,8 @@
 #include <memory>
 #include <optional>
 
+#include <absl/base/nullability.h>
+
 #include "absl/time/time.h"
 #include "symbian/concurrency/event_executor.h"
 #include "symbian/concurrency/task_group.h"
@@ -20,7 +22,8 @@ namespace symbian::concurrency {
 // thread. A worker may cancel the returned Task.
 class NativeTaskOwner {
  public:
-  explicit NativeTaskOwner(EventExecutor& executor) : executor_(executor) {}
+  explicit NativeTaskOwner(EventExecutor* absl_nonnull executor)
+      : executor_(*executor) {}
 
   NativeTaskOwner(const NativeTaskOwner&) = delete;
   NativeTaskOwner& operator=(const NativeTaskOwner&) = delete;

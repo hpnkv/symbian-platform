@@ -1,10 +1,12 @@
+#include <absl/base/nullability.h>
 #include <e32std.h>
 
 #include "abi.h"
 
 #ifdef SYMBIAN_RUNTIME_MIMALLOC
-extern "C" void* SymbianRuntimeMimallocAllocate(unsigned int size);
-extern "C" void SymbianRuntimeMimallocFree(void* pointer);
+extern "C" void* absl_nullable SymbianRuntimeMimallocAllocate(
+    unsigned int size);
+extern "C" void SymbianRuntimeMimallocFree(void* absl_nullable pointer);
 extern "C" void SymbianRuntimeMimallocCollect();
 extern "C" void SymbianRuntimeMimallocEnterThread();
 extern "C" void SymbianRuntimeMimallocLeaveThread();
@@ -13,7 +15,7 @@ extern "C" void SymbianRuntimeMimallocLeaveThread();
 #ifndef SYMBIAN_RUNTIME_MIMALLOC
 namespace {
 struct AllocationHeader {
-  RHeap* heap;
+  RHeap* absl_nonnull heap;
   TUint32 magic;
 };
 
@@ -29,20 +31,20 @@ static_assert(
     static_cast<TInt>(SymbianRuntimeExitReason::kRuntimeContractFailure) ==
     KErrArgument);
 
-extern "C" void* SymbianRuntimeAllocate(unsigned int size) {
+extern "C" void* absl_nullable SymbianRuntimeAllocate(unsigned int size) {
 #ifdef SYMBIAN_RUNTIME_MIMALLOC
   return SymbianRuntimeMimallocAllocate(size);
 #else
   if (size > static_cast<unsigned int>(KMaxTInt - sizeof(AllocationHeader))) {
     return nullptr;
   }
-  RHeap* heap = &User::Heap();
+  RHeap* absl_nonnull heap = &User::Heap();
   // A worker may finish before another thread destroys an object it made.
   // Open pins that exact heap until the matching cross-thread free.
   if (heap->Open() != KErrNone) {
     return nullptr;
   }
-  auto* header = static_cast<AllocationHeader*>(
+  auto* absl_nullable header = static_cast<AllocationHeader*>(
       heap->Alloc(static_cast<TInt>(size + sizeof(AllocationHeader))));
   if (header == nullptr) {
     heap->Close();
@@ -54,25 +56,25 @@ extern "C" void* SymbianRuntimeAllocate(unsigned int size) {
 #endif
 }
 
-extern "C" void SymbianRuntimeFree(void* pointer) {
+extern "C" void SymbianRuntimeFree(void* absl_nullable pointer) {
 #ifdef SYMBIAN_RUNTIME_MIMALLOC
   SymbianRuntimeMimallocFree(pointer);
 #else
   if (pointer == nullptr) {
     return;
   }
-  auto* header = static_cast<AllocationHeader*>(pointer) - 1;
+  auto* absl_nonnull header = static_cast<AllocationHeader*>(pointer) - 1;
   if (header->magic != kAllocationMagic || header->heap == nullptr) {
     SymbianRuntimeExit(SymbianRuntimeExitReason::kRuntimeContractFailure);
   }
-  RHeap* heap = header->heap;
+  RHeap* absl_nullable heap = header->heap;
   header->magic = 0;
   heap->Free(header);
   heap->Close();
 #endif
 }
 
-extern "C" void* SymbianRuntimeHeapIdentity() {
+extern "C" void* absl_nonnull SymbianRuntimeHeapIdentity() {
   return &User::Heap();
 }
 

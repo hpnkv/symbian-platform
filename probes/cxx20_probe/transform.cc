@@ -1,3 +1,5 @@
+#include <absl/base/nullability.h>
+
 #include "probe.h"
 
 #if defined(SYMBIAN_CXX20_USE_LIBCXX)
@@ -27,7 +29,7 @@ unsigned int Transformer::Apply(unsigned int value) const {
   return Transform<kParameters>(value);
 }
 
-__attribute__((noinline)) unsigned int Dispatch(const Transformer* transformer,
-                                                unsigned int value) {
+__attribute__((noinline)) unsigned int Dispatch(
+    const Transformer* absl_nonnull transformer, unsigned int value) {
   return transformer->Apply(value);
 }

@@ -7,6 +7,8 @@
 #include <atomic>
 #include <cstdint>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/status.h"
 
 namespace symbian::api::display {
@@ -27,17 +29,17 @@ struct ResidentPanelOptions {
   std::uint32_t app_uid = 0;
   std::int32_t property_category = 0;
   std::uint32_t foreground_key = 0;
-  const char* caption = "Resident service";
-  const char* heading = "SERVICE";
-  const char* state = "RUNNING";
-  const char* back_label = "BACK";
-  const char* stop_label = "STOP";
-  const char* (*heading_provider)() = nullptr;
+  const char* absl_nonnull caption = "Resident service";
+  const char* absl_nonnull heading = "SERVICE";
+  const char* absl_nonnull state = "RUNNING";
+  const char* absl_nonnull back_label = "BACK";
+  const char* absl_nonnull stop_label = "STOP";
+  const char* absl_nullable (*absl_nullable heading_provider)() = nullptr;
 };
 
 /** @brief Run a resident panel until STOP or an external stop request. */
 absl::Status RunResidentPanel(const ResidentPanelOptions& options,
-                              std::atomic<bool>& stop_requested);
+                              std::atomic<bool>* absl_nonnull stop_requested);
 
 /** @brief Raise the window group owned by an existing panel instance. */
 absl::Status RequestResidentPanelForeground(std::int32_t category,

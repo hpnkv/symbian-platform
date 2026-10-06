@@ -5,6 +5,7 @@
 
 #include <utility>
 
+#include <absl/base/nullability.h>
 #include <limits.h>
 
 #include "native_tcp_client.h"
@@ -32,7 +33,7 @@ absl::StatusOr<TcpClient> TcpClient::ConnectIpv4(
                           (static_cast<unsigned>(address[1]) << 16) |
                           (static_cast<unsigned>(address[2]) << 8) |
                           static_cast<unsigned>(address[3]);
-  NativeTcpClient* native = nullptr;
+  NativeTcpClient* absl_nullable native = nullptr;
   const int result =
       SymbianDeviceTcpConnect(packed, port, &native, NativeDeadline(deadline));
   if (result != 0) {

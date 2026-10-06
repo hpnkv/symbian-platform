@@ -23,6 +23,8 @@
 #include <new>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 namespace thread::internal {
 
 // One worker slot's queue of pending work: a bounded lock-free ring, with an
@@ -50,7 +52,7 @@ class WorkQueue {
     // Once anything is in the overflow list, everything goes there until it
     // drains, or an item pushed now would come out ahead of one pushed earlier.
     if (overflow_size_.load(std::memory_order_acquire) == 0 &&
-        TryPushRing(value)) {
+        TryPushRing(&value)) {
       return;
     }
     std::lock_guard<std::mutex> lock(overflow_mu_);
@@ -59,7 +61,7 @@ class WorkQueue {
   }
 
   // Removes the oldest item into `out`, or returns false if there is none.
-  bool Pop(T& out) {
+  bool Pop(T* absl_nonnull out) {
     if (TryPopRing(out)) {
       return true;
     }
@@ -70,7 +72,7 @@ class WorkQueue {
     if (overflow_.empty()) {
       return false;
     }
-    out = std::move(overflow_.front());
+    *out = std::move(overflow_.front());
     overflow_.pop_front();
     overflow_size_.fetch_sub(1, std::memory_order_release);
     return true;
@@ -79,8 +81,8 @@ class WorkQueue {
  private:
   // False only when the ring is full. `value` is left untouched in that case,
   // and is moved from only once a cell has been claimed for it.
-  bool TryPushRing(T& value) {
-    Cell* cell = nullptr;
+  bool TryPushRing(T* absl_nonnull value) {
+    Cell* absl_nullable cell = nullptr;
     size_t position = tail_.load(std::memory_order_relaxed);
     while (true) {
       cell = &cells_[position & (Capacity - 1)];
@@ -101,15 +103,15 @@ class WorkQueue {
         position = tail_.load(std::memory_order_relaxed);
       }
     }
-    cell->value = std::move(value);
+    cell->value = std::move(*value);
     // Publishing the sequence is what makes the item visible to a popper, so it
     // has to be the last thing that happens.
     cell->sequence.store(position + 1, std::memory_order_release);
     return true;
   }
 
-  bool TryPopRing(T& out) {
-    Cell* cell = nullptr;
+  bool TryPopRing(T* absl_nonnull out) {
+    Cell* absl_nullable cell = nullptr;
     size_t position = head_.load(std::memory_order_relaxed);
     while (true) {
       cell = &cells_[position & (Capacity - 1)];
@@ -128,7 +130,7 @@ class WorkQueue {
         position = head_.load(std::memory_order_relaxed);
       }
     }
-    out = std::move(cell->value);
+    *out = std::move(cell->value);
     // Hands the cell to the pusher one lap ahead.
     cell->sequence.store(position + Capacity, std::memory_order_release);
     return true;

@@ -10,6 +10,8 @@
 #include <memory>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/time/clock.h"
@@ -29,8 +31,8 @@ inline void PostAfter(absl::Duration delay,
 }
 
 struct SchedulerParkGuard {
-  absl::AnyInvocable<void*() const> release;
-  absl::AnyInvocable<void(void*) const> acquire;
+  absl::AnyInvocable<void* absl_nonnull() const> release;
+  absl::AnyInvocable<void(void* absl_nonnull) const> acquire;
 };
 
 // Installs the host-lock release/reacquire pair used around an idle scheduler

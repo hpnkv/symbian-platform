@@ -1,4 +1,6 @@
 #include <cstdint>
+
+#include <absl/base/nullability.h>
 #ifdef SYMBIAN_RUNTIME_ALLOC_BENCH_PTHREAD
 #include <pthread.h>
 #endif
@@ -6,22 +8,22 @@
 #include "abi.h"
 
 #ifdef SYMBIAN_RUNTIME_ALLOC_BENCH_ATOMIC64
-extern "C" std::uint64_t SymbianRuntimeAtomic64FetchAdd(volatile void*,
-                                                        std::uint64_t);
+extern "C" std::uint64_t SymbianRuntimeAtomic64FetchAdd(
+    volatile void* absl_nonnull, std::uint64_t);
 #endif
 
 namespace {
 int Burst(int rounds) {
-  void* pointers[128];
+  void* absl_nonnull pointers[128];
   for (int round = 0; round < rounds; ++round) {
-    for (void*& pointer : pointers) {
+    for (void* absl_nonnull& pointer : pointers) {
       pointer = SymbianRuntimeAllocate(64);
       if (pointer == nullptr) {
         return -169;
       }
       static_cast<unsigned char*>(pointer)[63] = 0x5a;
     }
-    for (void* pointer : pointers) {
+    for (void* absl_nullable pointer : pointers) {
       if (static_cast<unsigned char*>(pointer)[63] != 0x5a) {
         return -170;
       }

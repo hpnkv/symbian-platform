@@ -2,20 +2,22 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 
+#include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <gtest/gtest.h>
 
 namespace symbian::analysis {
 namespace {
 
-void Put16(std::string& bytes, size_t offset, uint16_t value) {
+void Put16(std::span<char> bytes, size_t offset, uint16_t value) {
   bytes[offset] = static_cast<char>(value & 0xff);
   bytes[offset + 1] = static_cast<char>(value >> 8);
 }
 
-void Put32(std::string& bytes, size_t offset, uint32_t value) {
+void Put32(std::span<char> bytes, size_t offset, uint32_t value) {
   for (size_t i = 0; i < 4; ++i) {
     bytes[offset + i] = static_cast<char>((value >> (i * 8)) & 0xff);
   }

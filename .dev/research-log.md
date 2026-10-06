@@ -7051,3 +7051,79 @@ library-target checks pass. Updated emulator mock builds to inspect the new
 selected-firmware CMake argument; all 18 checks pass with one optional skip.
 Black/Ruff, 17 changed C++ files and strict documentation pass. Source runtime
 and firmware remain local ignored inputs; no release version is changed.
+
+### 2026-10-06: pointer contracts, independent headers and shared OS entropy
+
+Migrated mutable lvalue parameters and callers with a libclang-assisted pass,
+then checked owned host/guest sources, templates, examples, Markdown C++ fences
+and embedded Python C++ fixtures with the persistent tree-sitter checker.
+Owned Mbed TLS/OpenSSL port glue is included despite its third_party location;
+original upstream/platform contracts remain external. No explicit unknown
+nullability remains in the checked implementation. Allocation, TLS-clearing,
+lookup and optional callback contracts are nullable; required state/descriptor
+parameters are nonnull. Byte-writing Put16/Put32 helpers use writable spans;
+example/starter text and shader helpers use string_view and adapt at OS/GL
+boundaries. The syntax-aware dereference simplifier preserves postfix binding
+in (*ptr)[index], (*ptr).member, (*callback)() and (*ptr)++.
+
+Header canaries follow A11's consumer pattern, with one translation unit per
+header and owning PUBLIC dependencies. Host, guest, runtime ABI, concurrency,
+API internals/public headers, emulator and Python boundaries are separate
+clusters. Python explicitly enables exceptions; native consumers disable them.
+Owned Mbed/OpenSSL headers also compile in C. Guest runtime bootstrap carries
+pinned annotation headers before Abseil archives exist. SDK export checks the
+installed headers on both ISAs, and the final relocated SDK passes its 56
+independent C/C++ translation units from a path containing spaces.
+
+Experiment: unconditional manual libc++ include paths in SymbianPic overrode
+the Streams runtime configuration and hid wstring_view. Restrict that bare-probe
+fallback to graphs without a Runtime target. Real starter builds then passed.
+The standalone uidcrc build also lacked the annotation include dependency;
+adding the exported Abseil include path repaired actual resource-tool install.
+Early acceptance failures also reflected an artificial partial bin directory
+and absent symbian-native publisher in a development-only export. Final checks
+use a complete tool installation and the rebuilt native publisher.
+
+Entropy research: original kernelhwsrv Math::Random(TDes8&) discards readiness
+errors while Math::RandomL preserves them. Both ROM exports reach one native
+non-leaving secure RNG executive veneer. The SDK resolves exports 2503/2504,
+validates their instruction shapes and common ARM veneer, checks all inspected
+bytes with User::IsRomAddress, and calls the TInt-returning veneer. This keeps
+KErrNotReady without an unverified leave/unwind boundary. The OS chooses its
+executive number; one EABI provider supports ARMv5T/ARMv6 rather than a table of
+per-device adapters. Unknown/RAM wrappers, missing exports, partial output or
+native errors fail closed with zero produced bytes and cleared output. Neither
+scalar Math::Random nor time/jitter is a secure fallback. Legacy OpenSSL
+RAND_poll uses the same provider and rejects partial/error fills before
+crediting entropy; a controlled GTest verifies those failure cases.
+
+Preserved C7/E6 wrappers use SVC 0x109, while Belle uses 0x10a. A five-fixture,
+two-ISA, two-backend matrix passes 20 cases: RM-807 generates fresh buffers;
+C7/E6 validate the correct native wrappers but the installed emulator's
+profile lacks syscall 0x109 and fails closed; 6120/E71 lack the secure RNG
+exports and fail closed. The narrow entropy probe omits allocator/worker
+startup imports, allowing it to reach entropy on older OS fixtures. The first
+broad-startup experiment instead failed before reaching entropy because of
+modern runtime import requirements. Diagnostic instrumentation stayed in
+ignored scratch archives; production sources/archives are uninstrumented.
+
+Validation: final host build and 13 root CTest suites pass; 13 standalone
+Mbed/OpenSSL GTests pass. Host/Python header groups and ARMv5T/ARMv6 probe indexes compile; all three
+emulator adapter headers pass independent no-exceptions syntax checks. A fresh dual-ISA SDK export and relocated installed-header
+canaries pass. All five real starter checks pass, including SDK/project copying
+and relocation plus live timer tasks on both ISAs/backends. Full Python checks
+pass 419 cases with 439 optional skips; the style tools' 20 regressions pass,
+with zero source-contract or redundant-parenthesis findings. Black/Ruff and
+strict documentation pass; inherited original-platform Doxygen warnings remain.
+Logs are in ignored .symbian/style-migration/.
+
+Open gates: physical-device secure RNG quality/compatibility, actual older-OS
+secure RNG execution and a separately verified secure source for OSs lacking
+these exports. Emulator/ROM evidence and ARM ELF production do not establish
+physical-device loader compatibility. No hardware operations were performed.
+
+Final port acceptance: 31 guest crypto/DLL/TLS checks pass (one unavailable
+OpenC socket test deselected), covering TLS 1.2/1.3 client/server and owned
+session controls. Standalone legacy OpenSSL/Mbed builds and their grouped
+header canaries pass on ARMv5T and ARMv6. The final live run uses the complete
+installed SDK and both explicit emulator/firmware fixture selectors.

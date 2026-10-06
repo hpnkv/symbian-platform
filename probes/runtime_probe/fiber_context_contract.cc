@@ -2,9 +2,11 @@
 #include <memory>
 #include <string>
 
+#include <absl/base/nullability.h>
+
 #include "abi.h"
 
-extern "C" void SymbianFiberSwap(std::uintptr_t* saved_sp,
+extern "C" void SymbianFiberSwap(std::uintptr_t* absl_nonnull saved_sp,
                                  std::uintptr_t next_sp);
 
 namespace {
@@ -15,10 +17,10 @@ struct FiberCase {
   int error = 0;
 };
 
-FiberCase* active_case = nullptr;
+FiberCase* absl_nullable active_case = nullptr;
 
 extern "C" [[noreturn]] void SymbianFiberEntry() {
-  FiberCase* const state = active_case;
+  FiberCase* absl_nonnull const state = active_case;
   {
     std::string text(96, 'f');
     auto owned = std::make_unique<int>(42);
@@ -47,7 +49,8 @@ extern "C" int SymbianRuntimeFiberContextProbe() {
     std::uintptr_t top =
         reinterpret_cast<std::uintptr_t>(stack.get() + kStackWords);
     top &= ~std::uintptr_t{7};
-    auto* frame = reinterpret_cast<std::uintptr_t*>(top) - kFrameWords;
+    auto* absl_nonnull frame =
+        reinterpret_cast<std::uintptr_t*>(top) - kFrameWords;
     for (std::size_t i = 0; i < kFrameWords - 1; ++i) {
       frame[i] = 0x44440000U + static_cast<unsigned int>(i);
     }

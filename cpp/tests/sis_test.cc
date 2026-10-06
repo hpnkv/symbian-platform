@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <string>
 
+#include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <gtest/gtest.h>
 

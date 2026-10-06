@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 
+#include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <absl/strings/str_cat.h>
 
@@ -41,7 +42,7 @@ absl::StatusOr<std::vector<ExportSlot>> ResolveExports(
       wanted.emplace(item.symbol, item.ordinal);
     }
   }
-  const Section* symbols = nullptr;
+  const Section* absl_nullable symbols = nullptr;
   for (const auto& section : sections) {
     if (section.type == 2) {
       if (symbols != nullptr) {
@@ -155,7 +156,7 @@ absl::StatusOr<std::string> EncodeCodeRelocations(
 
 absl::StatusOr<std::vector<uint32_t>> DecodeCodeRelocations(
     std::string_view bytes, uint32_t code_size,
-    std::set<uint32_t>* data_targets) {
+    std::set<uint32_t>* absl_nullable data_targets) {
   if (bytes.size() < 16 || bytes.size() > 1024 * 1024 ||
       Read32(bytes, 0) != bytes.size() - 8 || bytes.size() % 4 ||
       Read32(bytes, 4) == 0 || Read32(bytes, 4) > 131070) {

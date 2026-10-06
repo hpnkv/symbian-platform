@@ -6,6 +6,7 @@
 
 #include <cstdint>
 
+#include <absl/base/nullability.h>
 #include <limits.h>
 
 class TRequestStatus;
@@ -16,44 +17,53 @@ struct NativeTcpClient;
 struct NativeTcpListener;
 struct NativeActiveTcpListener;
 
-using NativeAcceptCallback = void (*)(void* context, NativeTcpClient* accepted,
-                                      int result);
+using NativeAcceptCallback =
+    void (*absl_nonnull)(void* absl_nullable context,
+                         NativeTcpClient* absl_nullable accepted, int result);
 
-extern "C" int SymbianDeviceResolveIpv4(const char* hostname, int length,
-                                        unsigned* address,
+extern "C" int SymbianDeviceResolveIpv4(const char* absl_nullable hostname,
+                                        int length,
+                                        unsigned* absl_nullable address,
                                         std::int64_t deadline);
-extern "C" int SymbianDeviceTcpConnect(unsigned address, unsigned port,
-                                       NativeTcpClient** output,
-                                       std::int64_t deadline = INT64_MAX);
-extern "C" int SymbianDeviceTcpSend(NativeTcpClient* client,
-                                    const unsigned char* bytes, int length,
+extern "C" int SymbianDeviceTcpConnect(
+    unsigned address, unsigned port,
+    NativeTcpClient* absl_nullable* absl_nullable output,
+    std::int64_t deadline = INT64_MAX);
+extern "C" int SymbianDeviceTcpSend(NativeTcpClient* absl_nullable client,
+                                    const unsigned char* absl_nullable bytes,
+                                    int length,
                                     std::int64_t deadline = INT64_MAX);
-extern "C" int SymbianDeviceTcpReceive(NativeTcpClient* client,
-                                       unsigned char* bytes, int capacity,
-                                       int* received,
+extern "C" int SymbianDeviceTcpReceive(NativeTcpClient* absl_nullable client,
+                                       unsigned char* absl_nullable bytes,
+                                       int capacity,
+                                       int* absl_nullable received,
                                        std::int64_t deadline = INT64_MAX);
-extern "C" int SymbianDeviceTcpSetNoDelay(NativeTcpClient* client,
+extern "C" int SymbianDeviceTcpSetNoDelay(NativeTcpClient* absl_nullable client,
                                           bool enabled);
-extern "C" void SymbianDeviceTcpClose(NativeTcpClient* client);
-extern "C" int SymbianDeviceTcpListen(unsigned address, unsigned port,
-                                      bool share_with_workers,
-                                      NativeTcpListener** output);
-extern "C" int SymbianDeviceTcpAccept(NativeTcpListener* listener,
-                                      NativeTcpClient** output,
-                                      std::int64_t deadline = INT64_MAX);
-extern "C" int SymbianDeviceTcpBeginAccept(NativeTcpListener* listener,
-                                           TRequestStatus* status,
-                                           NativeTcpClient** output);
-extern "C" void SymbianDeviceTcpCancelAccept(NativeTcpListener* listener);
-extern "C" void SymbianDeviceTcpListenerClose(NativeTcpListener* listener);
-extern "C" int SymbianDeviceActiveTcpListen(unsigned address, unsigned port,
-                                            bool share_with_workers,
-                                            void* context,
-                                            NativeAcceptCallback callback,
-                                            NativeActiveTcpListener** output);
+extern "C" void SymbianDeviceTcpClose(NativeTcpClient* absl_nullable client);
+extern "C" int SymbianDeviceTcpListen(
+    unsigned address, unsigned port, bool share_with_workers,
+    NativeTcpListener* absl_nullable* absl_nullable output);
+extern "C" int SymbianDeviceTcpAccept(
+    NativeTcpListener* absl_nullable listener,
+    NativeTcpClient* absl_nullable* absl_nullable output,
+    std::int64_t deadline = INT64_MAX);
+extern "C" int SymbianDeviceTcpBeginAccept(
+    NativeTcpListener* absl_nullable listener,
+    TRequestStatus* absl_nullable status,
+    NativeTcpClient* absl_nullable* absl_nullable output);
+extern "C" void SymbianDeviceTcpCancelAccept(
+    NativeTcpListener* absl_nullable listener);
+extern "C" void SymbianDeviceTcpListenerClose(
+    NativeTcpListener* absl_nullable listener);
+extern "C" int SymbianDeviceActiveTcpListen(
+    unsigned address, unsigned port, bool share_with_workers,
+    void* absl_nullable context, NativeAcceptCallback callback,
+    NativeActiveTcpListener* absl_nullable* absl_nullable output);
 extern "C" int SymbianDeviceActiveTcpAcceptNext(
-    NativeActiveTcpListener* listener);
-extern "C" void SymbianDeviceActiveTcpClose(NativeActiveTcpListener* listener);
+    NativeActiveTcpListener* absl_nullable listener);
+extern "C" void SymbianDeviceActiveTcpClose(
+    NativeActiveTcpListener* absl_nullable listener);
 
 }  // namespace symbian::api::connectivity
 

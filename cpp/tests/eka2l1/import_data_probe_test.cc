@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Runs a converted writable-data DLL through EKA2L1's actual import loader.
+
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -9,6 +10,7 @@
 #include <string>
 #include <system_error>
 
+#include <absl/base/nullability.h>
 #include <common/buffer.h>
 #include <kernel/codeseg.h>
 #include <kernel/process.h>
@@ -28,7 +30,7 @@ class ImportDataProbeTest : public symbian::testing::ProcessEnvironment {
 
   void Populate(const fs::path& artifact) override {
     ProcessEnvironment::Populate(artifact);
-    const char* source = std::getenv("SYMBIAN_DLL_TEST_IMAGE");
+    const char* absl_nullable source = std::getenv("SYMBIAN_DLL_TEST_IMAGE");
     ASSERT_NE(source, nullptr);
     std::error_code error;
     fs::copy_file(source, directory_ / "sys/bin/probe.dll", error);
@@ -47,8 +49,8 @@ class ImportDataProbeTest : public symbian::testing::ProcessEnvironment {
     ASSERT_GE(image->code_reloc_section.num_relocs, 9);
   }
 
-  void BeforeExecute(eka2l1::kernel::process* process) override {
-    eka2l1::kernel::codeseg* dll = nullptr;
+  void BeforeExecute(eka2l1::kernel::process* absl_nonnull process) override {
+    eka2l1::kernel::codeseg* absl_nullable dll = nullptr;
     for (const auto& code : kernel_->get_codeseg_list()) {
       if (code->name() == "probe.dll") {
         ASSERT_EQ(dll, nullptr);
@@ -61,13 +63,13 @@ class ImportDataProbeTest : public symbian::testing::ProcessEnvironment {
     const auto data_address = dll->get_data_run_addr(process);
     ASSERT_NE(data_address, 0);
     ASSERT_NE(data_address, 0x20000000U);
-    const auto* data = static_cast<const uint32_t*>(
+    const auto* absl_nonnull data = static_cast<const uint32_t*>(
         process->get_ptr_on_addr_space(data_address));
     ASSERT_NE(data, nullptr);
     EXPECT_EQ(data[0], 0x808U);
     EXPECT_EQ(data[1], 0U);
     const auto code_address = dll->get_code_run_addr(process);
-    const auto* got = static_cast<const uint32_t*>(
+    const auto* absl_nonnull got = static_cast<const uint32_t*>(
         process->get_ptr_on_addr_space(code_address + 64));
     ASSERT_NE(got, nullptr);
     EXPECT_EQ(got[0], data_address + 4);

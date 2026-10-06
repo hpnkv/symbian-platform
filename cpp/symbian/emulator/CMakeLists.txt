@@ -34,3 +34,12 @@ target_link_libraries(symbian_emulator_firmware PUBLIC
 add_executable(symbian_firmware_tool firmware_main.cc)
 target_compile_options(symbian_firmware_tool PRIVATE -fno-exceptions)
 target_link_libraries(symbian_firmware_tool PRIVATE symbian_emulator_firmware)
+
+include("${SYMBIAN_PLATFORM_ROOT}/cmake/SymbianHeaderCanary.cmake")
+symbian_header_canary(symbian_emulator_control_header_canary
+  HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/control.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/distribution.h"
+  LIBRARIES symbian_emulator_control)
+symbian_header_canary(symbian_emulator_firmware_header_canary
+  HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/firmware.h"
+  LIBRARIES symbian_emulator_firmware)

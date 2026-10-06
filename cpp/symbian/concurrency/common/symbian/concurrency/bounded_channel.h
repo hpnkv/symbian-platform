@@ -25,6 +25,8 @@
 #include <type_traits>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "thread/boost_primitives.h"
@@ -37,20 +39,24 @@ class BoundedChannel;
 template <typename T>
 class BoundedReader {
  public:
-  explicit BoundedReader(BoundedChannel<T>* channel) : channel_(channel) {}
+  explicit BoundedReader(BoundedChannel<T>* absl_nonnull channel)
+      : channel_(channel) {}
 
-  bool Read(T* out) { return channel_->Read(out); }
+  bool Read(T* absl_nonnull out) { return channel_->Read(out); }
 
-  absl::StatusOr<bool> TryRead(T* out) { return channel_->TryRead(out); }
+  absl::StatusOr<bool> TryRead(T* absl_nonnull out) {
+    return channel_->TryRead(out);
+  }
 
  private:
-  BoundedChannel<T>* channel_;
+  BoundedChannel<T>* absl_nonnull channel_;
 };
 
 template <typename T>
 class BoundedWriter {
  public:
-  explicit BoundedWriter(BoundedChannel<T>* channel) : channel_(channel) {}
+  explicit BoundedWriter(BoundedChannel<T>* absl_nonnull channel)
+      : channel_(channel) {}
 
   absl::Status Write(T&& item) { return channel_->Write(std::move(item)); }
 
@@ -70,7 +76,7 @@ class BoundedWriter {
   void Close() { channel_->Close(); }
 
  private:
-  BoundedChannel<T>* channel_;
+  BoundedChannel<T>* absl_nonnull channel_;
 };
 
 // A bounded multi-producer, multi-consumer FIFO. Capacity must be positive.
@@ -90,9 +96,9 @@ class BoundedChannel {
   BoundedChannel(const BoundedChannel&) = delete;
   BoundedChannel& operator=(const BoundedChannel&) = delete;
 
-  BoundedReader<T>* reader() { return &reader_; }
+  BoundedReader<T>* absl_nonnull reader() { return &reader_; }
 
-  BoundedWriter<T>* writer() { return &writer_; }
+  BoundedWriter<T>* absl_nonnull writer() { return &writer_; }
 
   absl::Status TryWrite(T&& item) { return TryWriteMoved(&item); }
 
@@ -133,7 +139,7 @@ class BoundedChannel {
 
   // True means one item was read; false means closed and drained. An open,
   // empty channel returns Unavailable so pollers can distinguish the states.
-  absl::StatusOr<bool> TryRead(T* out) {
+  absl::StatusOr<bool> TryRead(T* absl_nonnull out) {
     {
       thread::MutexLock lock(&mu_);
       if (queue_.empty()) {
@@ -149,7 +155,7 @@ class BoundedChannel {
     return true;
   }
 
-  bool Read(T* out) {
+  bool Read(T* absl_nonnull out) {
     {
       thread::MutexLock lock(&mu_);
       while (!closed_ && queue_.empty()) {
@@ -208,7 +214,7 @@ class BoundedChannel {
     return absl::OkStatus();
   }
 
-  absl::Status TryWriteMoved(T* item) {
+  absl::Status TryWriteMoved(T* absl_nonnull item) {
     {
       thread::MutexLock lock(&mu_);
       absl::Status ready = CheckWritable();
@@ -221,7 +227,7 @@ class BoundedChannel {
     return absl::OkStatus();
   }
 
-  absl::Status WriteMoved(T* item) {
+  absl::Status WriteMoved(T* absl_nonnull item) {
     {
       thread::MutexLock lock(&mu_);
       if (capacity_ == 0) {

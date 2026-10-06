@@ -5,6 +5,8 @@
 #include <type_traits>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "abi.h"
 #include "symbian/concurrency/event_executor.h"
 #include "symbian/concurrency/native_task_owner.h"
@@ -77,7 +79,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
         error = -333;
       }
     });
-    thread::Fiber waiter(executor.fibers(), [&] {
+    thread::Fiber waiter(&(executor.fibers()), [&] {
       if (std::this_thread::get_id() != event_thread) {
         error = -380;
       }
@@ -104,7 +106,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
 
     // A fiber's monotonic sleep must arm the same native request owner.
     bool slept = false;
-    thread::Fiber sleeper(executor.fibers(), [&] {
+    thread::Fiber sleeper(&(executor.fibers()), [&] {
       thread::Fiber::SleepFor(absl::Milliseconds(5));
       slept = true;
     });
@@ -167,7 +169,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
 
     auto deadline_pending = executor.NextProperty();
     bool timed_out = false;
-    thread::Fiber deadline_waiter(executor.fibers(), [&] {
+    thread::Fiber deadline_waiter(&(executor.fibers()), [&] {
       timed_out = deadline_pending.Await(absl::Now() + absl::Milliseconds(5))
                       .status()
                       .code() == absl::StatusCode::kDeadlineExceeded;
@@ -207,7 +209,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
       return -354;
     }
     {
-      symbian::concurrency::NativeTaskOwner owner(executor);
+      symbian::concurrency::NativeTaskOwner owner(&executor);
       auto done =
           owner.Start(absl::Milliseconds(5), absl::Now() + absl::Seconds(2));
       auto value = owner.property_result();
@@ -231,7 +233,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
       owner.Close();
     }
     {
-      symbian::concurrency::NativeTaskOwner owner(executor);
+      symbian::concurrency::NativeTaskOwner owner(&executor);
       auto done = owner.Start(absl::InfiniteDuration());
       owner.Close();
       owner.Close();
@@ -249,7 +251,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
       }
     }
     {
-      symbian::concurrency::NativeTaskOwner owner(executor);
+      symbian::concurrency::NativeTaskOwner owner(&executor);
       auto done = owner.Start(absl::InfiniteDuration(),
                               absl::Now() + absl::Milliseconds(5));
       for (int turn = 0; turn < 128 && !done.IsReady(); ++turn) {
@@ -266,7 +268,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
       }
     }
     {
-      symbian::concurrency::NativeTaskOwner owner(executor);
+      symbian::concurrency::NativeTaskOwner owner(&executor);
       auto done = owner.Start(-absl::Milliseconds(1));
       for (int turn = 0; turn < 128 && !done.IsReady(); ++turn) {
         if (!executor.DispatchReady().ok()) {
@@ -283,7 +285,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
     }
     symbian::concurrency::Task after_owner_destruction;
     {
-      symbian::concurrency::NativeTaskOwner owner(executor);
+      symbian::concurrency::NativeTaskOwner owner(&executor);
       after_owner_destruction = owner.Start(absl::InfiniteDuration());
     }
     if (after_owner_destruction.IsReady()) {
@@ -310,7 +312,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
         return -368;
       }
       int selected = -2;
-      thread::Fiber waiter(executor.fibers(), [&] {
+      thread::Fiber waiter(&(executor.fibers()), [&] {
         selected = thread::SelectUntil(absl::Now() + absl::Milliseconds(5),
                                        {event.OnEvent()});
       });
@@ -341,7 +343,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
     {
       thread::PermanentEvent event;
       int selected = -2;
-      thread::Fiber waiter(executor.fibers(), [&] {
+      thread::Fiber waiter(&(executor.fibers()), [&] {
         selected = thread::SelectUntil(absl::Now() + absl::Seconds(1),
                                        {event.OnEvent()});
       });
@@ -369,7 +371,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
       thread::PermanentEvent first_event;
       thread::PermanentEvent second_event;
       int selected = -2;
-      thread::Fiber waiter(executor.fibers(), [&] {
+      thread::Fiber waiter(&(executor.fibers()), [&] {
         selected = thread::SelectUntil(
             absl::Now() + absl::Seconds(1),
             {first_event.OnEvent(), second_event.OnEvent()});
@@ -430,7 +432,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
       int received = 0;
       bool read_ok = false;
       int read_selection = -2;
-      thread::Fiber receiver(executor.fibers(), [&] {
+      thread::Fiber receiver(&(executor.fibers()), [&] {
         read_selection = thread::SelectUntil(
             absl::Now() + absl::Seconds(2),
             {channel.reader()->OnRead(&received, &read_ok)});
@@ -470,7 +472,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
       bool first_ok = false;
       bool second_ok = false;
       int selected = -2;
-      thread::Fiber receiver(executor.fibers(), [&] {
+      thread::Fiber receiver(&(executor.fibers()), [&] {
         selected = thread::SelectUntil(
             absl::Now() + absl::Seconds(2),
             {first.reader()->OnRead(&first_value, &first_ok),
@@ -497,7 +499,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
       channel.writer()->Write(std::make_unique<int>(5));
       std::unique_ptr<int> pending = std::make_unique<int>(7);
       bool written = true;
-      thread::Fiber writer(executor.fibers(), [&] {
+      thread::Fiber writer(&(executor.fibers()), [&] {
         written = channel.writer()->WriteUnlessCancelled(std::move(pending));
       });
       if (!executor.DispatchReady().ok() || writer.Finished()) {
@@ -540,7 +542,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
       int selected = -2;
       int received = 0;
       bool read_ok = false;
-      thread::Fiber receiver(executor.fibers(), [&] {
+      thread::Fiber receiver(&(executor.fibers()), [&] {
         selected = thread::SelectUntil(
             absl::Now() + absl::Milliseconds(5),
             {channel.reader()->OnRead(&received, &read_ok)});
@@ -563,7 +565,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
     {
       symbian::concurrency::Promise<int> source;
       auto computed = source.future().ThenOnWorker(
-          executor,
+          &executor,
           [event_thread](
               const absl::StatusOr<int>& value) -> absl::StatusOr<int> {
             if (std::this_thread::get_id() == event_thread || !value.ok()) {
@@ -586,7 +588,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
       source.SetValue(41);
       auto drained = worker.Finish();
       int answer = -1;
-      thread::Fiber waiter(executor.fibers(), [&] {
+      thread::Fiber waiter(&(executor.fibers()), [&] {
         auto result = computed.Await(absl::Now() + absl::Seconds(2));
         if (result.ok()) {
           answer = *result;
@@ -612,7 +614,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
         return -385;
       }
       auto rejected = symbian::concurrency::ReadyFuture(1).ThenOnWorker(
-          executor,
+          &executor,
           [](const absl::StatusOr<int>& value) -> absl::StatusOr<int> {
             return *value;
           });
@@ -631,7 +633,7 @@ extern "C" int SymbianRuntimeEventExecutorProbe() {
       }
       release.Notify();
       auto drained = worker.Finish();
-      thread::Fiber waiter(executor.fibers(), [&] {
+      thread::Fiber waiter(&(executor.fibers()), [&] {
         if (!blocked.Await(absl::Now() + absl::Seconds(2)).ok() ||
             !drained.Await(absl::Now() + absl::Seconds(2)).ok()) {
           error = -387;

@@ -1,13 +1,15 @@
 #ifndef SYMBIAN_RUNTIME_ABI_H_
 #define SYMBIAN_RUNTIME_ABI_H_
 
+#include <absl/base/nullability.h>
+
 // Keep modern standard-library headers and frozen Symbian C++ headers in
 // separate translation units. In particular their placement-new declarations
 // have conflicting exception specifications and inline definitions.
-extern "C" void* SymbianRuntimeAllocate(unsigned int size);
-extern "C" void SymbianRuntimeFree(void* pointer);
+extern "C" void* absl_nullable SymbianRuntimeAllocate(unsigned int size);
+extern "C" void SymbianRuntimeFree(void* absl_nullable pointer);
 // Opaque identity for verifying distinct native thread heaps in guest tests.
-extern "C" void* SymbianRuntimeHeapIdentity();
+extern "C" void* absl_nonnull SymbianRuntimeHeapIdentity();
 // Process exit codes use the corresponding Symbian error values. Keep the
 // runtime's fatal cases named even in translation units without e32std.h.
 enum class SymbianRuntimeExitReason : int {
@@ -26,14 +28,17 @@ extern "C" void SymbianRuntimeThreadCacheLeave();
 // owner must outlive every access to the returned pages and be closed once.
 struct SymbianRuntimePageOwner;
 extern "C" int SymbianRuntimePageSize();
-extern "C" int SymbianRuntimePageCreate(unsigned int bytes,
-                                        SymbianRuntimePageOwner** owner,
-                                        void** pages);
-extern "C" void SymbianRuntimePageClose(SymbianRuntimePageOwner* owner);
-extern "C" void SymbianRuntimePageSetNext(SymbianRuntimePageOwner* owner,
-                                          SymbianRuntimePageOwner* next);
-extern "C" SymbianRuntimePageOwner* SymbianRuntimePageNext(
-    SymbianRuntimePageOwner* owner);
+extern "C" int SymbianRuntimePageCreate(
+    unsigned int bytes,
+    SymbianRuntimePageOwner* absl_nullable* absl_nullable owner,
+    void* absl_nullable* absl_nullable pages);
+extern "C" void SymbianRuntimePageClose(
+    SymbianRuntimePageOwner* absl_nullable owner);
+extern "C" void SymbianRuntimePageSetNext(
+    SymbianRuntimePageOwner* absl_nullable owner,
+    SymbianRuntimePageOwner* absl_nullable next);
+extern "C" SymbianRuntimePageOwner* absl_nullable SymbianRuntimePageNext(
+    SymbianRuntimePageOwner* absl_nullable owner);
 extern "C" void SymbianRuntimeRunInitializers();
 extern "C" void SymbianRuntimeRunFinalizers();
 extern "C" int SymbianRuntimeDllEntry(int reason);
@@ -47,35 +52,44 @@ extern "C" int SymbianRuntimeFastCounterFrequency();
 // Internal narrow bridge for thread-relative RTimer requests. The caller must
 // keep the state alive until cancellation has completed and been drained.
 struct SymbianRuntimeTimerState;
-extern "C" int SymbianRuntimeTimerCreate(SymbianRuntimeTimerState** state);
-extern "C" int SymbianRuntimeTimerStart(SymbianRuntimeTimerState* state,
-                                        int microseconds);
-extern "C" void SymbianRuntimeTimerCancel(SymbianRuntimeTimerState* state);
-extern "C" int SymbianRuntimeTimerResult(const SymbianRuntimeTimerState* state);
+extern "C" int SymbianRuntimeTimerCreate(
+    SymbianRuntimeTimerState* absl_nullable* absl_nullable state);
+extern "C" int SymbianRuntimeTimerStart(
+    SymbianRuntimeTimerState* absl_nullable state, int microseconds);
+extern "C" void SymbianRuntimeTimerCancel(
+    SymbianRuntimeTimerState* absl_nullable state);
+extern "C" int SymbianRuntimeTimerResult(
+    const SymbianRuntimeTimerState* absl_nullable state);
 extern "C" bool SymbianRuntimeTimerIsReady(
-    const SymbianRuntimeTimerState* state);
-extern "C" void SymbianRuntimeTimerClose(SymbianRuntimeTimerState* state);
+    const SymbianRuntimeTimerState* absl_nullable state);
+extern "C" void SymbianRuntimeTimerClose(
+    SymbianRuntimeTimerState* absl_nullable state);
 
 struct SymbianRuntimePropertyState;
 extern "C" int SymbianRuntimePropertyCreate(
-    int category, unsigned int key, SymbianRuntimePropertyState** state);
+    int category, unsigned int key,
+    SymbianRuntimePropertyState* absl_nullable* absl_nonnull state);
 extern "C" int SymbianRuntimePropertySubscribe(
-    SymbianRuntimePropertyState* state);
-extern "C" int SymbianRuntimePropertySet(SymbianRuntimePropertyState* state,
-                                         int value);
-extern "C" int SymbianRuntimePropertyResult(SymbianRuntimePropertyState* state,
-                                            int* value);
+    SymbianRuntimePropertyState* absl_nullable state);
+extern "C" int SymbianRuntimePropertySet(
+    SymbianRuntimePropertyState* absl_nullable state, int value);
+extern "C" int SymbianRuntimePropertyResult(
+    SymbianRuntimePropertyState* absl_nullable state, int* absl_nullable value);
 extern "C" bool SymbianRuntimePropertyIsReady(
-    const SymbianRuntimePropertyState* state);
+    const SymbianRuntimePropertyState* absl_nullable state);
 extern "C" void SymbianRuntimePropertyCancel(
-    SymbianRuntimePropertyState* state);
-extern "C" void SymbianRuntimePropertyClose(SymbianRuntimePropertyState* state);
+    SymbianRuntimePropertyState* absl_nullable state);
+extern "C" void SymbianRuntimePropertyClose(
+    SymbianRuntimePropertyState* absl_nullable state);
 extern "C" void SymbianRuntimeWaitForAnyRequest();
 
 // Cross-thread signal for the event thread's existing request semaphore.
 struct SymbianRuntimeWakeState;
-extern "C" int SymbianRuntimeWakeCreate(SymbianRuntimeWakeState** state);
-extern "C" void SymbianRuntimeWakeSignal(SymbianRuntimeWakeState* state);
-extern "C" void SymbianRuntimeWakeClose(SymbianRuntimeWakeState* state);
+extern "C" int SymbianRuntimeWakeCreate(
+    SymbianRuntimeWakeState* absl_nullable* absl_nullable state);
+extern "C" void SymbianRuntimeWakeSignal(
+    SymbianRuntimeWakeState* absl_nullable state);
+extern "C" void SymbianRuntimeWakeClose(
+    SymbianRuntimeWakeState* absl_nullable state);
 
 #endif  // SYMBIAN_RUNTIME_ABI_H_

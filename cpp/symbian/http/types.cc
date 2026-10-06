@@ -2,6 +2,8 @@
 // Licensed under the Apache License, Version 2.0.
 #include "symbian/http/types.h"
 
+#include <absl/base/nullability.h>
+
 namespace symbian::http {
 namespace {
 bool Token(std::string_view value) {
@@ -35,7 +37,7 @@ bool Equal(std::string_view a, std::string_view b) {
 }
 }  // namespace
 
-void NormalizeHeaders(Headers* headers) {
+void NormalizeHeaders(Headers* absl_nonnull headers) {
   for (auto& [name, value] : *headers) {
     for (char& c : name) {
       if (c >= 'A' && c <= 'Z') {

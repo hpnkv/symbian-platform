@@ -7,6 +7,7 @@
 #include <iterator>
 #include <string>
 
+#include <absl/base/nullability.h>
 #include <gtest/gtest.h>
 
 #include "validator_host_types.h"
@@ -26,7 +27,7 @@ static_assert(offsetof(E32ImageHeaderV, iExportDescSize) == 152);
 class ValidatorOracleTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    const char* path = std::getenv("SYMBIAN_E32_TEST_IMAGE");
+    const char* absl_nullable path = std::getenv("SYMBIAN_E32_TEST_IMAGE");
     ASSERT_NE(path, nullptr);
     std::ifstream stream(path, std::ios::binary);
     ASSERT_TRUE(stream.is_open()) << path;

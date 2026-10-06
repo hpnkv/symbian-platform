@@ -1,3 +1,4 @@
+#include <absl/base/nullability.h>
 #include <e32std.h>
 
 // Keep original Symbian thread and descriptor declarations out of the modern
@@ -13,12 +14,12 @@ extern "C" void SymbianRuntimeThreadCacheLeave();
 
 namespace {
 struct ManagedCallbacks {
-  void* state;
-  int (*worker)(void*);
-  int (*parent)(void*);
+  void* absl_nullable state;
+  int (*absl_nonnull worker)(void* absl_nullable);
+  int (*absl_nonnull parent)(void* absl_nullable);
 };
 
-int ManagedWorker(void* opaque) {
+int ManagedWorker(void* absl_nonnull opaque) {
   auto& callbacks = *static_cast<ManagedCallbacks*>(opaque);
   SymbianRuntimeThreadCacheEnter();
   const int result = callbacks.worker(callbacks.state);
@@ -26,15 +27,16 @@ int ManagedWorker(void* opaque) {
   return result;
 }
 
-int ManagedParent(void* opaque) {
+int ManagedParent(void* absl_nonnull opaque) {
   auto& callbacks = *static_cast<ManagedCallbacks*>(opaque);
   return callbacks.parent(callbacks.state);
 }
 }  // namespace
 #endif
 
-extern "C" int SymbianRuntimeRunThread(void* state, int (*worker)(void*),
-                                       int (*parent)(void*)) {
+extern "C" int SymbianRuntimeRunThread(
+    void* absl_nullable state, int (*absl_nonnull worker)(void* absl_nullable),
+    int (*absl_nonnull parent)(void* absl_nullable)) {
   _LIT(KThreadName, "SdkAtomicProbe");
   RThread thread;
   const TInt created =
@@ -67,8 +69,9 @@ extern "C" int SymbianRuntimeRunThread(void* state, int (*worker)(void*),
 }
 
 #ifdef SYMBIAN_RUNTIME_MIMALLOC
-extern "C" int SymbianRuntimeRunManagedThread(void* state, int (*worker)(void*),
-                                              int (*parent)(void*)) {
+extern "C" int SymbianRuntimeRunManagedThread(
+    void* absl_nullable state, int (*absl_nonnull worker)(void* absl_nullable),
+    int (*absl_nonnull parent)(void* absl_nullable)) {
   ManagedCallbacks callbacks{state, worker, parent};
   return SymbianRuntimeRunThread(&callbacks, ManagedWorker, ManagedParent);
 }

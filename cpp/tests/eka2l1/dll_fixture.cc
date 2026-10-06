@@ -1,10 +1,13 @@
 // Independent research fixture producer using Nokia's EPL header/checksums.
+
 #include <bit>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
 #include <iterator>
 #include <string>
+
+#include <absl/base/nullability.h>
 
 #include "validator_host_types.h"
 
@@ -16,7 +19,7 @@
 static_assert(std::endian::native == std::endian::little);
 static_assert(sizeof(E32ImageHeaderV) == 156);
 
-int main(int argc, char** argv) {
+int main(int argc, char* absl_nullable* absl_nonnull argv) {
   if (argc != 3) {
     return 1;
   }
@@ -57,7 +60,7 @@ int main(int argc, char** argv) {
   header.iUidChecksum = TCheckedUid(uids).check;
   header.iHeaderCrc = KImageCrcInitialiser;
   uint32_t crc = 0;
-  Mem::Crc32(crc, &header, sizeof(header));
+  Mem::Crc32(&crc, &header, sizeof(header));
   header.iHeaderCrc = crc;
   std::memcpy(bytes.data(), &header, sizeof(header));
   if (header.ValidateWholeImage(

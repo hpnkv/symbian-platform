@@ -3,6 +3,8 @@
 
 #include "symbian/api/system/active_service.h"
 
+#include <absl/base/nullability.h>
+
 #include "native_active_service.h"
 #include "symbian/native_status.h"
 
@@ -15,17 +17,17 @@ struct Callbacks {
   absl::Status start_status;
 };
 
-int Start(void* context) {
+int Start(void* absl_nonnull context) {
   auto& callbacks = *static_cast<Callbacks*>(context);
   callbacks.start_status = callbacks.start();
   return symbian::NativeErrorFromStatus(callbacks.start_status);
 }
 
-void OnStop(void* context) {
+void OnStop(void* absl_nonnull context) {
   static_cast<Callbacks*>(context)->on_stop();
 }
 
-void OnReady(void* context) {
+void OnReady(void* absl_nonnull context) {
   static_cast<Callbacks*>(context)->on_ready();
 }
 }  // namespace

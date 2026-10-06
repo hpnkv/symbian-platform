@@ -8,6 +8,8 @@
 #include <thread>
 #include <vector>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/status.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
@@ -50,7 +52,7 @@ TEST(ConcurrencyFiberTest, CooperativeCancelRunsCppCleanupAndPinsOwner) {
   std::atomic<int> destructed{0};
 
   struct Cleanup {
-    std::atomic<int>* count;
+    std::atomic<int>* absl_nonnull count;
 
     ~Cleanup() { count->fetch_add(1, std::memory_order_relaxed); }
   };
@@ -121,7 +123,9 @@ TEST(ConcurrencyFiberTest, SchedulerPolicyAndHostLockParkGuard) {
         return nullptr;
       },
       .acquire =
-          [&](void*) { acquires.fetch_add(1, std::memory_order_relaxed); },
+          [&](void* absl_nonnull) {
+            acquires.fetch_add(1, std::memory_order_relaxed);
+          },
   });
   std::thread worker([&] {
     EXPECT_TRUE(thread::SetCurrentSchedulerPolicy(policy).ok());

@@ -32,7 +32,7 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
   set(indexed_probe_directories
       abi_probe abseil_allocator_probe abseil_status_probe
       connectivity_probe http_probe cxx20_probe cxx20_module_probe dll_data_probe
-      dll_lifecycle_probe dll_probe e32_probe import_probe
+      dll_lifecycle_probe dll_probe e32_probe entropy_probe import_probe
       mbedtls_dll_probe pointer_probe runtime_probe)
   file(GLOB existing_probe_directories CONFIGURE_DEPENDS
        RELATIVE "${CMAKE_SOURCE_DIR}/probes"
@@ -76,6 +76,11 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
   set(SYMBIAN_MBEDTLS_OPENSSL_COMPAT OFF)
   add_subdirectory(third_party/mbedtls-symbian EXCLUDE_FROM_ALL)
   add_library(Symbian::Crypto ALIAS mbedcrypto)
+  add_library(symbian_index_entropy OBJECT EXCLUDE_FROM_ALL
+    probes/entropy_probe/probe.cc probes/entropy_probe/startup.cc)
+  target_link_libraries(symbian_index_entropy PRIVATE
+    symbian_guest_runtime MbedTLS::mbedcrypto)
+  add_dependencies(symbian_probe_index symbian_index_entropy)
   set_property(TARGET SymbianTls PROPERTY INTERFACE_LINK_LIBRARIES
     "Symbian::Connectivity;MbedTLS::mbedtls;MbedTLS::mbedx509;MbedTLS::mbedcrypto")
   add_subdirectory(cpp/symbian/tls EXCLUDE_FROM_ALL)
@@ -200,6 +205,8 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
       add_subdirectory("${application_dir}" EXCLUDE_FROM_ALL)
     endif()
   endforeach()
+  include(cmake/SymbianGuestHeaderCanaries.cmake)
+  symbian_guest_shared_header_canaries("${CMAKE_SOURCE_DIR}")
   symbian_index_remaining_native(symbian_index_remaining_guest
     Symbian::AbseilStatusOr cpp/symbian agent_service examples probes)
   return()
@@ -256,6 +263,7 @@ endif()
 FetchContent_MakeAvailable(abseil)
 
 function(symbian_native_library target)
+  target_link_libraries(${target} PUBLIC absl::nullability)
   target_compile_features(${target} PUBLIC cxx_std_20)
   target_compile_options(${target} PRIVATE
     $<$<CXX_COMPILER_ID:AppleClang,Clang,GNU>:-fno-exceptions;-Wall;-Wextra;-Wconversion;-Wshadow>
@@ -280,6 +288,7 @@ add_subdirectory(cpp/symbian/sis)
 add_subdirectory(cpp/symbian/sdk)
 add_subdirectory(cpp/symbian/device)
 add_subdirectory(cpp/symbian/tools)
+include(cmake/SymbianHostHeaderCanaries.cmake)
 if(SYMBIAN_INSTALL_HOST_SDK)
   include(cmake/SymbianHostSdk.cmake)
 endif()

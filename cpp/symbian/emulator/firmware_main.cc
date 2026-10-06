@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+
 #include <charconv>
 #include <iostream>
 #include <memory>
+
+#include <absl/base/nullability.h>
 
 #include "common/log.h"
 #include "spdlog/sinks/stdout_sinks.h"
 #include "symbian/emulator/firmware.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char* absl_nullable* absl_nonnull argv) {
   // Keep upstream diagnostics in the retained stderr log, not the JSON stream
   // or the firmware baseline. This reader is synchronous and owns no workers.
   eka2l1::log::filterings = std::make_unique<eka2l1::log_filterings>();

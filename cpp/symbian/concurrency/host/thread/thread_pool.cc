@@ -15,6 +15,8 @@
 #include <utility>
 #include <vector>
 
+#include <absl/base/nullability.h>
+
 #include "thread/executor.h"
 #include "thread/internal/work_queue.h"
 
@@ -92,7 +94,7 @@ class WorkerPool {
     while (true) {
       const uint64_t seen = wake_sequence_.load(std::memory_order_acquire);
       Work callback;
-      if (callbacks_.Pop(callback)) {
+      if (callbacks_.Pop(&callback)) {
         std::move(callback)();
         continue;
       }

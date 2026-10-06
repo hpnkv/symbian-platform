@@ -33,6 +33,7 @@ foreach(component crypto ssl)
   endif()
   target_include_directories(${target} PUBLIC
     "$<BUILD_INTERFACE:${openssl_include}>" "$<INSTALL_INTERFACE:include>"
+    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
     PRIVATE "${openssl_include}/openssl" "${openssl_source}/src/crypto"
       "${openssl_source}/inc/include/openssl" "${openssl_source}/src/ssl")
   target_compile_definitions(${target} PUBLIC SSL2_STATIC OPENSSL_NO_ASM
@@ -51,7 +52,18 @@ foreach(component crypto ssl)
   endif()
   install(TARGETS ${target} EXPORT OpenSSLCompatTargets ARCHIVE DESTINATION lib)
 endforeach()
+if(NOT SYMBIAN_MBEDTLS_HOST)
+  target_link_libraries(openssl_compat_crypto PUBLIC mbedcrypto)
+else()
+  target_link_libraries(openssl_compat_crypto PUBLIC absl::nullability)
+endif()
 target_link_libraries(openssl_compat_ssl PUBLIC openssl_compat_crypto)
+symbian_header_canary(symbian_openssl_c_header_canary C
+  HEADERS "${PROJECT_SOURCE_DIR}/include/symbian_tls/heap.h"
+  LIBRARIES openssl_compat_crypto)
+symbian_header_canary(symbian_openssl_cpp_header_canary
+  HEADERS "${PROJECT_SOURCE_DIR}/include/symbian_tls/heap.h"
+  LIBRARIES openssl_compat_crypto)
 install(DIRECTORY "${openssl_include}/openssl" DESTINATION include)
 install(EXPORT OpenSSLCompatTargets NAMESPACE OpenSSLCompat:: DESTINATION lib/cmake/OpenSSLCompat)
 configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/OpenSSLCompatConfig.cmake.in"

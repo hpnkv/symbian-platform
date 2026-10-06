@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <common/buffer.h>
 #include <gtest/gtest.h>
 #include <loader/e32img.h>
@@ -16,7 +17,7 @@
 namespace {
 
 TEST(Eka1OracleTest, IndependentlyChecksLegacyHeaderAndBounds) {
-  const char* path = std::getenv("SYMBIAN_EKA1_TEST_IMAGE");
+  const char* absl_nullable path = std::getenv("SYMBIAN_EKA1_TEST_IMAGE");
   if (path == nullptr) {
     GTEST_SKIP() << "Set SYMBIAN_EKA1_TEST_IMAGE";
   }
@@ -53,7 +54,8 @@ TEST(Eka1OracleTest, IndependentlyChecksLegacyHeaderAndBounds) {
 }
 
 TEST(Eka1OracleTest, IndependentlyChecksPeImportsAndIat) {
-  const char* path = std::getenv("SYMBIAN_EKA1_IMPORT_TEST_IMAGE");
+  const char* absl_nullable path =
+      std::getenv("SYMBIAN_EKA1_IMPORT_TEST_IMAGE");
   if (path == nullptr) {
     GTEST_SKIP() << "Set SYMBIAN_EKA1_IMPORT_TEST_IMAGE";
   }

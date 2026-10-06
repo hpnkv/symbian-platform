@@ -1,8 +1,10 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
+
 #include <cstring>
 #include <deque>
 
+#include <absl/base/nullability.h>
 #include <gtest/gtest.h>
 
 #include "symbian/http/connection.h"
@@ -58,10 +60,10 @@ std::unique_ptr<Connection> Client(std::string input,
   return std::move(*result);
 }
 
-absl::StatusOr<std::string> ReadAll(Connection& connection) {
+absl::StatusOr<std::string> ReadAll(Connection* absl_nonnull connection) {
   std::string body;
   while (true) {
-    auto chunk = connection.Read(kDeadline);
+    auto chunk = connection->Read(kDeadline);
     if (!chunk.ok()) {
       return chunk.status();
     }
@@ -81,7 +83,7 @@ TEST(Http1Test, PullFixedChunkedAndCloseDelimited) {
         "HTTP/1.0 200 OK\r\n\r\nhello world"}) {
     auto c = Client(wire);
     ASSERT_NE(c, nullptr);
-    auto body = ReadAll(*c);
+    auto body = ReadAll(c.get());
     ASSERT_TRUE(body.ok()) << body.status();
     EXPECT_EQ(*body, "hello world");
     EXPECT_EQ(c->response().status, 200);
@@ -93,7 +95,7 @@ TEST(Http1Test, TrailersAndInformationalResponse) {
       "HTTP/1.1 103 Early Hints\r\nLink: a\r\n\r\nHTTP/1.1 200 "
       "OK\r\nTransfer-Encoding: chunked\r\n\r\n1\r\nx\r\n0\r\nx-check: "
       "yes\r\n\r\n");
-  auto body = ReadAll(*c);
+  auto body = ReadAll(c.get());
   ASSERT_TRUE(body.ok()) << body.status();
   EXPECT_EQ(*body, "x");
   EXPECT_EQ(GetHeader(c->trailers(), "x-check"), "yes");
@@ -104,7 +106,7 @@ TEST(Http1Test, HeadAndBodylessStatuses) {
     auto c = Client("HTTP/1.1 " + std::to_string(status) +
                         " OK\r\nContent-Length: 42\r\n\r\n",
                     "HEAD");
-    auto body = ReadAll(*c);
+    auto body = ReadAll(c.get());
     ASSERT_TRUE(body.ok()) << body.status();
     EXPECT_TRUE(body->empty());
   }
@@ -123,7 +125,7 @@ TEST(Http1Test, TruncationAmbiguityAndInjectionFail) {
         "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n1\r\nx\r\n",
         "HTTP/1.1 200 OK\r\nContent-Length: 184467440737095516160\r\n\r\n"}) {
     auto c = Client(wire);
-    EXPECT_FALSE(ReadAll(*c).ok()) << wire;
+    EXPECT_FALSE(ReadAll(c.get()).ok()) << wire;
   }
   auto head = Request();
   head.headers = {{"x", "ok\r\nInjected: yes"}};
@@ -136,12 +138,12 @@ TEST(Http1Test, ServerPullRequestAndStreamResponse) {
       "POST /upload HTTP/1.1\r\nHost: example.test\r\nTransfer-Encoding: "
       "chunked\r\n\r\n3\r\nabc\r\n0\r\n\r\n",
       1);
-  auto* wire = transport.get();
+  auto* absl_nonnull wire = transport.get();
   auto server = Connection::Accept(std::move(transport));
   ASSERT_TRUE(server.ok()) << server.status();
   EXPECT_EQ((*server)->request().method, "POST");
   EXPECT_EQ((*server)->request().path, "/upload");
-  auto body = ReadAll(**server);
+  auto body = ReadAll(&**server);
   ASSERT_TRUE(body.ok()) << body.status();
   EXPECT_EQ(*body, "abc");
   ASSERT_TRUE(
@@ -152,7 +154,7 @@ TEST(Http1Test, ServerPullRequestAndStreamResponse) {
   ASSERT_TRUE((*server)->Write("second", kDeadline).ok());
   ASSERT_TRUE((*server)->Finish(kDeadline).ok());
   auto c = Client(wire->output);
-  EXPECT_EQ(*ReadAll(*c), "firstsecond");
+  EXPECT_EQ(*ReadAll(c.get()), "firstsecond");
   EXPECT_FALSE((*server)->Write("late", kDeadline).ok());
 }
 
@@ -164,23 +166,24 @@ TEST(Http1Test, BoundedMetadataAndBody) {
           "HTTP/1.1 200 OK\r\nContent-Length: 9\r\n\r\n123456789"),
       Request(), Protocol::kHttp11, limits);
   ASSERT_TRUE(c.ok());
-  EXPECT_FALSE(ReadAll(**c).ok());
+  EXPECT_FALSE(ReadAll(c->get()).ok());
   auto over = Client("HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n" +
                      std::string(17000, 'f'));
-  EXPECT_FALSE(ReadAll(*over).ok());
+  EXPECT_FALSE(ReadAll(over.get()).ok());
   auto fixed = Connection::Client(std::make_unique<MemoryStream>(""),
                                   Request("POST"), Protocol::kHttp11, {}, 4);
   ASSERT_TRUE(fixed.ok());
   EXPECT_FALSE((*fixed)->Finish(kDeadline).ok());
 }
 
-void Transfer(Http2& from, Http2& to, std::size_t fragment = 13) {
-  auto wire = from.TakeOutput();
+void Transfer(Http2* absl_nonnull from, Http2* absl_nonnull to,
+              std::size_t fragment = 13) {
+  auto wire = from->TakeOutput();
   ASSERT_TRUE(wire.ok()) << wire.status();
   std::string_view bytes(*wire);
   while (!bytes.empty()) {
     auto size = std::min(bytes.size(), fragment);
-    ASSERT_TRUE(to.Feed(bytes.substr(0, size)).ok());
+    ASSERT_TRUE(to->Feed(bytes.substr(0, size)).ok());
     bytes.remove_prefix(size);
   }
 }
@@ -190,21 +193,21 @@ TEST(Http2Test, SharedDuplexAndPullFlowControl) {
   auto server = Http2::Create(Role::kServer);
   ASSERT_TRUE(client.ok());
   ASSERT_TRUE(server.ok());
-  Transfer(**client, **server);
-  Transfer(**server, **client);
+  Transfer(&**client, &**server);
+  Transfer(&**server, &**client);
   ASSERT_TRUE((*client)->SendRequest(Request("POST")).ok());
-  Transfer(**client, **server);
+  Transfer(&**client, &**server);
   ASSERT_TRUE((*server)->headers_received());
   ASSERT_TRUE(
       (*server)
           ->SendHeaders({200, {{"content-type", "application/octet-stream"}}})
           .ok());
-  Transfer(**server, **client);
+  Transfer(&**server, &**client);
   ASSERT_TRUE((*client)->headers_received());
   std::size_t received = 0;
   // Deliberately stop reading until the stream window is consumed.
   ASSERT_TRUE((*server)->Write(std::string(65536, 'x')).ok());
-  Transfer(**server, **client);
+  Transfer(&**server, &**client);
   EXPECT_GT((*server)->buffered_amount(), 0);
   for (int i = 0; i < 80; ++i) {
     auto part = (*client)->Read();
@@ -212,15 +215,15 @@ TEST(Http2Test, SharedDuplexAndPullFlowControl) {
     if (part->has_value()) {
       received += (**part).size();
     }
-    Transfer(**client, **server);
-    Transfer(**server, **client);
+    Transfer(&**client, &**server);
+    Transfer(&**server, &**client);
   }
   EXPECT_EQ(received, 65536);
   EXPECT_EQ((*server)->buffered_amount(), 0);
   ASSERT_TRUE((*client)->Finish().ok());
-  Transfer(**client, **server);
+  Transfer(&**client, &**server);
   ASSERT_TRUE((*server)->Finish().ok());
-  Transfer(**server, **client);
+  Transfer(&**server, &**client);
   EXPECT_TRUE((*client)->ended());
   EXPECT_TRUE((*server)->ended());
 }
@@ -232,7 +235,7 @@ TEST(Http2Test, ConnectionClientReadsNativeServerOutput) {
   ASSERT_TRUE(client_codec.ok());
   ASSERT_TRUE((*client_codec)->SendRequest(Request()).ok());
   ASSERT_TRUE((*client_codec)->Finish().ok());
-  Transfer(**client_codec, **server);
+  Transfer(&**client_codec, &**server);
   ASSERT_TRUE((*server)->SendHeaders({200, {}}).ok());
   ASSERT_TRUE((*server)->Write("hello").ok());
   ASSERT_TRUE((*server)->Finish().ok());
@@ -242,7 +245,7 @@ TEST(Http2Test, ConnectionClientReadsNativeServerOutput) {
                               Protocol::kHttp2);
   ASSERT_TRUE(c.ok());
   ASSERT_TRUE((*c)->Finish(kDeadline).ok());
-  auto body = ReadAll(**c);
+  auto body = ReadAll(&**c);
   ASSERT_TRUE(body.ok()) << body.status();
   EXPECT_EQ(*body, "hello");
 }

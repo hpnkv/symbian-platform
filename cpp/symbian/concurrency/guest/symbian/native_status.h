@@ -11,6 +11,8 @@
 #include <cstdlib>
 #include <string>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/status.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/string_view.h"
@@ -91,7 +93,7 @@ inline int NativeErrorFromStatus(const absl::Status& status) {
   }
   if (auto payload = status.GetPayload(kNativeErrorPayload)) {
     const std::string text(payload->Flatten());
-    char* end = nullptr;
+    char* absl_nullable end = nullptr;
     errno = 0;
     const long value = std::strtol(text.c_str(), &end, 10);
     if (errno == 0 && end != text.c_str() && *end == '\0' && value >= INT_MIN &&

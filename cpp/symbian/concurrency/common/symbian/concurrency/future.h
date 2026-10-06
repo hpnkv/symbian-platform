@@ -19,6 +19,8 @@
 #include <utility>
 #include <vector>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"
@@ -223,7 +225,7 @@ class Future {
       callback(invalid);
       return;
     }
-    const absl::StatusOr<T>* ready = nullptr;
+    const absl::StatusOr<T>* absl_nullable ready = nullptr;
     {
       thread::MutexLock lock(&state->mu);
       if (!state->result) {
@@ -239,8 +241,9 @@ class Future {
   // Then() and OnReady() keep their inline A11 behavior.
 #if defined(__SYMBIAN32__)
   template <typename Fn>
-  auto ThenOnWorker(EventExecutor& executor, Fn transform) const -> Future<
-      typename std::invoke_result_t<Fn, const absl::StatusOr<T>&>::value_type>;
+  auto ThenOnWorker(EventExecutor* absl_nonnull executor, Fn transform) const
+      -> Future<typename std::invoke_result_t<
+          Fn, const absl::StatusOr<T>&>::value_type>;
 #endif
 
  private:

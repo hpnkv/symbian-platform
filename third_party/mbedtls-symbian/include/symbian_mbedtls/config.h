@@ -17,7 +17,7 @@
 
 #ifdef SYMBIAN_MBEDTLS_GUEST
 // These are required services, not successful no-op implementations. The final
-// app link fails until it provides a trusted entropy source and UTC conversion.
+// SDK supplies verified native entropy, bounded allocation and UTC conversion.
 #include "symbian_mbedtls/platform.h"
 #define MBEDTLS_PLATFORM_MEMORY
 #define MBEDTLS_PLATFORM_CALLOC_MACRO symbian_mbedtls_calloc

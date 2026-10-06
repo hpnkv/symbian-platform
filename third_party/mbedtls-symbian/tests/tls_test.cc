@@ -6,6 +6,7 @@
 #include <cstring>
 #include <deque>
 
+#include <absl/base/nullability.h>
 #include <gtest/gtest.h>
 
 #include "fixtures.h"
@@ -19,18 +20,20 @@
 
 namespace {
 struct Wire {
-  std::deque<unsigned char>* input;
-  std::deque<unsigned char>* output;
+  std::deque<unsigned char>* absl_nonnull input;
+  std::deque<unsigned char>* absl_nonnull output;
 };
 
-int Send(void* opaque, const unsigned char* bytes, size_t size) {
-  auto* wire = static_cast<Wire*>(opaque);
+int Send(void* absl_nonnull opaque, const unsigned char* absl_nonnull bytes,
+         size_t size) {
+  auto* absl_nonnull wire = static_cast<Wire*>(opaque);
   wire->output->insert(wire->output->end(), bytes, bytes + size);
   return static_cast<int>(size);
 }
 
-int Receive(void* opaque, unsigned char* bytes, size_t size) {
-  auto* wire = static_cast<Wire*>(opaque);
+int Receive(void* absl_nonnull opaque, unsigned char* absl_nonnull bytes,
+            size_t size) {
+  auto* absl_nonnull wire = static_cast<Wire*>(opaque);
   if (wire->input->empty())
     return MBEDTLS_ERR_SSL_WANT_READ;
   size = std::min(size, wire->input->size());
@@ -68,7 +71,7 @@ struct Endpoint {
   }
 
   int Configure(int role, mbedtls_ssl_protocol_version version,
-                const char* hostname = "sdk-test") {
+                const char* absl_nonnull hostname = "sdk-test") {
     int result = mbedtls_ctr_drbg_seed(&random, mbedtls_entropy_func, &entropy,
                                        nullptr, 0);
     if (result != 0)
@@ -82,7 +85,8 @@ struct Endpoint {
       mbedtls_debug_set_threshold(2);
       mbedtls_ssl_conf_dbg(
           &config,
-          [](void*, int, const char* file, int line, const char* message) {
+          [](void* absl_nullable, int, const char* absl_nonnull file, int line,
+             const char* absl_nonnull message) {
             std::fprintf(stderr, "%s:%d: %s", file, line, message);
           },
           nullptr);

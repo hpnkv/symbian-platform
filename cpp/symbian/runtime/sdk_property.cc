@@ -1,3 +1,4 @@
+#include <absl/base/nullability.h>
 #include <e32property.h>
 #include <e32std.h>
 
@@ -14,16 +15,17 @@ struct SymbianRuntimePropertyState {
 };
 
 extern "C" int SymbianRuntimePropertyCreate(
-    int category, unsigned int key, SymbianRuntimePropertyState** output) {
+    int category, unsigned int key,
+    SymbianRuntimePropertyState* absl_nullable* absl_nullable output) {
   if (output == nullptr) {
     return KErrArgument;
   }
   *output = nullptr;
-  void* memory = User::Alloc(sizeof(SymbianRuntimePropertyState));
+  void* absl_nullable memory = User::Alloc(sizeof(SymbianRuntimePropertyState));
   if (memory == nullptr) {
     return KErrNoMemory;
   }
-  auto* state = new (memory) SymbianRuntimePropertyState;
+  auto* absl_nonnull state = new (memory) SymbianRuntimePropertyState;
   state->category = TUid::Uid(category);
   state->key = key;
   const TInt defined =
@@ -45,7 +47,7 @@ extern "C" int SymbianRuntimePropertyCreate(
 }
 
 extern "C" int SymbianRuntimePropertySubscribe(
-    SymbianRuntimePropertyState* state) {
+    SymbianRuntimePropertyState* absl_nullable state) {
   if (state == nullptr) {
     return KErrArgument;
   }
@@ -57,8 +59,8 @@ extern "C" int SymbianRuntimePropertySubscribe(
   return KErrNone;
 }
 
-extern "C" int SymbianRuntimePropertySet(SymbianRuntimePropertyState* state,
-                                         int value) {
+extern "C" int SymbianRuntimePropertySet(
+    SymbianRuntimePropertyState* absl_nullable state, int value) {
   if (state == nullptr) {
     return KErrArgument;
   }
@@ -66,12 +68,13 @@ extern "C" int SymbianRuntimePropertySet(SymbianRuntimePropertyState* state,
 }
 
 extern "C" bool SymbianRuntimePropertyIsReady(
-    const SymbianRuntimePropertyState* state) {
+    const SymbianRuntimePropertyState* absl_nullable state) {
   return state != nullptr && state->pending && state->status != KRequestPending;
 }
 
-extern "C" int SymbianRuntimePropertyResult(SymbianRuntimePropertyState* state,
-                                            int* value) {
+extern "C" int SymbianRuntimePropertyResult(
+    SymbianRuntimePropertyState* absl_nullable state,
+    int* absl_nullable value) {
   if (state == nullptr || value == nullptr) {
     return KErrArgument;
   }
@@ -91,14 +94,14 @@ extern "C" int SymbianRuntimePropertyResult(SymbianRuntimePropertyState* state,
 }
 
 extern "C" void SymbianRuntimePropertyCancel(
-    SymbianRuntimePropertyState* state) {
+    SymbianRuntimePropertyState* absl_nullable state) {
   if (state != nullptr && state->pending && state->status == KRequestPending) {
     state->property.Cancel();
   }
 }
 
 extern "C" void SymbianRuntimePropertyClose(
-    SymbianRuntimePropertyState* state) {
+    SymbianRuntimePropertyState* absl_nullable state) {
   if (state == nullptr) {
     return;
   }

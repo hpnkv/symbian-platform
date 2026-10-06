@@ -4,6 +4,8 @@
 #ifndef SYMBIAN_API_DISPLAY_NATIVE_DISPLAY_H_
 #define SYMBIAN_API_DISPLAY_NATIVE_DISPLAY_H_
 
+#include <absl/base/nullability.h>
+
 namespace symbian::api::display {
 
 // Each result is the native error for its paired value; zero means valid.
@@ -18,7 +20,8 @@ struct NativeDisplayReading {
   int height_twips = 0;
 };
 
-extern "C" void SymbianDeviceReadPrimaryDisplay(NativeDisplayReading* reading);
+extern "C" void SymbianDeviceReadPrimaryDisplay(
+    NativeDisplayReading* absl_nullable reading);
 
 }  // namespace symbian::api::display
 

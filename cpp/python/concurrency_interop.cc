@@ -7,6 +7,7 @@
 
 #include <thread>
 
+#include <absl/base/nullability.h>
 #include <absl/time/time.h>
 
 #include "thread/boost_primitives.h"
@@ -25,7 +26,7 @@ void InstallPythonSchedulerParkGuard() {
         return PyEval_SaveThread();
       },
       .acquire =
-          [](void* held) {
+          [](void* absl_nullable held) {
             if (held != nullptr && !InterpreterIsGoingAway()) {
               PyEval_RestoreThread(static_cast<PyThreadState*>(held));
             }
@@ -33,10 +34,10 @@ void InstallPythonSchedulerParkGuard() {
   });
 }
 
-void BindConcurrencyInterop(py::module_& module) {
+void BindConcurrencyInterop(py::module_* absl_nonnull module) {
   py::module_::import("atexit").attr("register")(
       py::cpp_function([] { DeferredPythonRefs::Drain(); }));
-  module.def("_thread_post_after_future", [](int milliseconds) {
+  module->def("_thread_post_after_future", [](int milliseconds) {
     symbian::concurrency::Promise<int> promise;
     auto future = promise.future();
     py::object python_future =
@@ -47,15 +48,15 @@ void BindConcurrencyInterop(py::module_& module) {
                       });
     return python_future;
   });
-  module.def("_thread_park_probe", [](int milliseconds) {
+  module->def("_thread_park_probe", [](int milliseconds) {
     const bool gil_before = PyGILState_Check() != 0;
     thread::Fiber work(
         [milliseconds] { thread::SleepFor(absl::Milliseconds(milliseconds)); });
     const absl::Status joined = work.Join();
     return py::make_tuple(joined.ok(), gil_before, PyGILState_Check() != 0);
   });
-  module.def("_deferred_ref_roundtrip", [](py::object object) {
-    PyObject* held = object.ptr();
+  module->def("_deferred_ref_roundtrip", [](py::object object) {
+    PyObject* absl_nonnull held = object.ptr();
     Py_INCREF(held);
     std::thread worker([held] { DeferredPythonRefs::Retire(held); });
     worker.join();

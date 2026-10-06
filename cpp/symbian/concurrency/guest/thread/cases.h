@@ -11,6 +11,8 @@
 #include <memory>
 #include <type_traits>
 
+#include <absl/base/nullability.h>
+
 #include "absl/container/inlined_vector.h"
 #include "absl/time/time.h"
 #include "thread/boost_primitives.h"
@@ -53,12 +55,14 @@ class Selectable;
 }  // namespace internal
 
 struct [[nodiscard]] Case {
-  internal::Selectable* selectable;
-  absl::InlinedVector<void*, 2> arguments;
+  internal::Selectable* absl_nonnull selectable;
+  absl::InlinedVector<void* absl_nullable, 2> arguments;
 
-  Case(internal::Selectable* selectable) : selectable(selectable) {}
+  Case(internal::Selectable* absl_nonnull selectable)
+      : selectable(selectable) {}
 
-  Case(internal::Selectable* selectable, internal::IsPointer auto... args)
+  Case(internal::Selectable* absl_nonnull selectable,
+       internal::IsPointer auto... args)
       : selectable(selectable) {
     (arguments.push_back(const_cast<void*>(static_cast<const void*>(args))),
      ...);
@@ -71,16 +75,16 @@ struct [[nodiscard]] Case {
   Case(bool, Args...) = delete;
 
   template <typename T>
-  void AddArg(const T* arg) {
+  void AddArg(const T* absl_nonnull arg) {
     arguments.push_back(const_cast<void*>(static_cast<const void*>(arg)));
   }
 
   template <typename T>
-  void AddArg(T* arg) {
+  void AddArg(T* absl_nonnull arg) {
     arguments.push_back(static_cast<void*>(arg));
   }
 
-  void* GetArgPtr(int index) const {
+  void* absl_nullable GetArgPtr(int index) const {
     if (index < 0 || static_cast<std::size_t>(index) >= arguments.size()) {
       std::abort();
     }
@@ -88,7 +92,7 @@ struct [[nodiscard]] Case {
   }
 
   template <typename T>
-  T* GetArgPtr(int index) const {
+  T* absl_nullable GetArgPtr(int index) const {
     return static_cast<T*>(GetArgPtr(index));
   }
 
@@ -99,13 +103,13 @@ using CaseArray = absl::InlinedVector<Case, 4>;
 
 namespace internal {
 struct CaseInSelectClause {
-  const Case* case_ptr = nullptr;
+  const Case* absl_nullable case_ptr = nullptr;
   int index = -1;
   std::shared_ptr<Selector> selector;
-  CaseInSelectClause* prev = nullptr;
-  CaseInSelectClause* next = nullptr;
+  CaseInSelectClause* absl_nullable prev = nullptr;
+  CaseInSelectClause* absl_nullable next = nullptr;
 
-  const Case* GetCase() const { return case_ptr; }
+  const Case* absl_nullable GetCase() const { return case_ptr; }
 
   bool TryPick() { return selector->TryPick(index); }
 
@@ -118,8 +122,9 @@ using CaseStateArray = absl::InlinedVector<CaseInSelectClause, 4>;
 class Selectable {
  public:
   virtual ~Selectable() = default;
-  virtual bool Handle(CaseInSelectClause* case_state, bool enqueue) = 0;
-  virtual void Unregister(CaseInSelectClause* case_state) = 0;
+  virtual bool Handle(CaseInSelectClause* absl_nonnull case_state,
+                      bool enqueue) = 0;
+  virtual void Unregister(CaseInSelectClause* absl_nonnull case_state) = 0;
 };
 
 inline bool CaseInSelectClause::Handle(bool enqueue) {
@@ -130,7 +135,8 @@ inline void CaseInSelectClause::Unregister() {
   GetCase()->selectable->Unregister(this);
 }
 
-inline void PushBack(CaseInSelectClause** head, CaseInSelectClause* element) {
+inline void PushBack(CaseInSelectClause* absl_nullable* absl_nullable head,
+                     CaseInSelectClause* absl_nonnull element) {
   if (element->prev != nullptr) {
     std::abort();
   }
@@ -146,8 +152,9 @@ inline void PushBack(CaseInSelectClause** head, CaseInSelectClause* element) {
   element->next->prev = element;
 }
 
-inline void UnlinkFromList(CaseInSelectClause** head,
-                           CaseInSelectClause* element) {
+inline void UnlinkFromList(
+    CaseInSelectClause* absl_nullable* absl_nullable head,
+    CaseInSelectClause* absl_nonnull element) {
   if (element->prev == nullptr || *head == nullptr) {
     std::abort();
   }

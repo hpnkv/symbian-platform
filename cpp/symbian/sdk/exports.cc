@@ -10,6 +10,7 @@
 #include <string_view>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <absl/strings/str_cat.h>
 #include <absl/strings/str_split.h>
@@ -261,7 +262,7 @@ absl::StatusOr<ProxySources> GenerateProxy(
       }
     }
   } else {
-    std::map<std::string_view, const Export*> by_name;
+    std::map<std::string_view, const Export* absl_nonnull> by_name;
     for (const Export& item : *table) {
       const auto match = by_name.find(item.symbol);
       if (match == by_name.end() || !item.absent) {
@@ -351,7 +352,7 @@ absl::StatusOr<ProxyInfo> InspectProxy(std::string_view bytes) {
     }
     section.bytes = bytes.substr(section.offset, section.size);
     sections.push_back(section);
-    size_t* index = nullptr;
+    size_t* absl_nullable index = nullptr;
     if (section.type == 11) {
       index = &symbols_index;
     }

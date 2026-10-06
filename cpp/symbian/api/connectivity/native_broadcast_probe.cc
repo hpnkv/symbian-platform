@@ -3,6 +3,7 @@
 
 #include "native_broadcast_probe.h"
 
+#include <absl/base/nullability.h>
 #include <e32base.h>
 #include <es_sock.h>
 #include <in_sock.h>
@@ -11,8 +12,9 @@
 #include "native_deadline.h"
 
 extern "C" int SymbianDeviceBroadcastProbe(
-    unsigned port, const unsigned char* request, int request_length,
-    const unsigned char* expected_reply, int expected_length, unsigned* address,
+    unsigned port, const unsigned char* absl_nullable request,
+    int request_length, const unsigned char* absl_nullable expected_reply,
+    int expected_length, unsigned* absl_nullable address,
     std::int64_t deadline) {
   if (port == 0 || port > 65535 || request == nullptr || request_length <= 0 ||
       request_length > 64 || expected_reply == nullptr ||
@@ -33,7 +35,7 @@ extern "C" int SymbianDeviceBroadcastProbe(
     TRequestStatus send;
     socket.SendTo(query, destination, 0, send);
     result = symbian::api::connectivity::WaitForSocketRequest(
-        socket, send, deadline, &RSocket::CancelSend);
+        &socket, &send, deadline, &RSocket::CancelSend);
     if (result == KErrNone) {
       unsigned char reply_bytes[64] = {};
       TPtr8 reply(reply_bytes, 0, sizeof(reply_bytes));
@@ -41,7 +43,7 @@ extern "C" int SymbianDeviceBroadcastProbe(
       TRequestStatus receive;
       socket.RecvFrom(reply, source, 0, receive);
       result = symbian::api::connectivity::WaitForSocketRequest(
-          socket, receive, deadline, &RSocket::CancelRecv);
+          &socket, &receive, deadline, &RSocket::CancelRecv);
       if (result == KErrNone) {
         if (reply.Length() != expected_length ||
             memcmp(reply_bytes, expected_reply, expected_length) != 0) {

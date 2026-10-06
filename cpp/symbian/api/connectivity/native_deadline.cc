@@ -5,6 +5,7 @@
 
 #include <cstdint>
 
+#include <absl/base/nullability.h>
 #include <e32base.h>
 #include <es_sock.h>
 #include <limits.h>
@@ -14,23 +15,24 @@ namespace symbian::api::connectivity {
 
 namespace {
 template <class Owner>
-int WaitForRequest(Owner& socket, TRequestStatus& request,
-                   std::int64_t deadline, void (Owner::*cancel)()) {
+int WaitForRequest(Owner* absl_nonnull socket,
+                   TRequestStatus* absl_nonnull request, std::int64_t deadline,
+                   void (Owner::* absl_nonnull cancel)()) {
   if (deadline == INT64_MAX) {
-    User::WaitForRequest(request);
-    return request.Int();
+    User::WaitForRequest(*request);
+    return request->Int();
   }
   RTimer timer;
   const TInt opened = timer.CreateLocal();
   if (opened != KErrNone) {
-    (socket.*cancel)();
-    User::WaitForRequest(request);
+    (socket->*cancel)();
+    User::WaitForRequest(*request);
     return opened;
   }
   timespec now{};
   if (clock_gettime(CLOCK_REALTIME, &now) != 0) {
-    (socket.*cancel)();
-    User::WaitForRequest(request);
+    (socket->*cancel)();
+    User::WaitForRequest(*request);
     timer.Close();
     return KErrGeneral;
   }
@@ -39,10 +41,10 @@ int WaitForRequest(Owner& socket, TRequestStatus& request,
   std::int64_t remaining =
       deadline > now_microseconds ? deadline - now_microseconds : 0;
   constexpr TInt kMaximumNativeInterval = 30 * 60 * 1000000;
-  while (request.Int() == KRequestPending) {
+  while (request->Int() == KRequestPending) {
     if (remaining == 0) {
-      (socket.*cancel)();
-      User::WaitForRequest(request);
+      (socket->*cancel)();
+      User::WaitForRequest(*request);
       timer.Close();
       return KErrTimedOut;
     }
@@ -51,28 +53,31 @@ int WaitForRequest(Owner& socket, TRequestStatus& request,
                               : kMaximumNativeInterval;
     TRequestStatus alarm;
     timer.After(alarm, TTimeIntervalMicroSeconds32(interval));
-    User::WaitForRequest(request, alarm);
+    User::WaitForRequest(*request, alarm);
     timer.Cancel();
     if (alarm.Int() == KRequestPending) {
       User::WaitForRequest(alarm);
     }
-    if (request.Int() == KRequestPending) {
+    if (request->Int() == KRequestPending) {
       remaining -= interval;
     }
   }
-  const TInt result = request.Int();
+  const TInt result = request->Int();
   timer.Close();
   return result;
 }
 
 }  // namespace
 
-int WaitForSocketRequest(RSocket& socket, TRequestStatus& request,
-                         std::int64_t deadline, void (RSocket::*cancel)()) {
+int WaitForSocketRequest(RSocket* absl_nonnull socket,
+                         TRequestStatus* absl_nonnull request,
+                         std::int64_t deadline,
+                         void (RSocket::* absl_nonnull cancel)()) {
   return WaitForRequest(socket, request, deadline, cancel);
 }
 
-int WaitForResolverRequest(RHostResolver& resolver, TRequestStatus& request,
+int WaitForResolverRequest(RHostResolver* absl_nonnull resolver,
+                           TRequestStatus* absl_nonnull request,
                            std::int64_t deadline) {
   return WaitForRequest(resolver, request, deadline, &RHostResolver::Cancel);
 }

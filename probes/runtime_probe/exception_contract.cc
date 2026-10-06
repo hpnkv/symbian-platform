@@ -1,14 +1,16 @@
+#include <absl/base/nullability.h>
+
 // Guest exception profile acceptance probe. Its application-facing code uses
 // ordinary C++; the C entry is only the runtime probe's test boundary.
 namespace {
 
 struct Guard {
-  int* count;
+  int* absl_nonnull count;
 
   ~Guard() { ++*count; }
 };
 
-int ThrowThroughGuard(int value, int* count) {
+int ThrowThroughGuard(int value, int* absl_nonnull count) {
   Guard guard{count};
   throw value;
 }

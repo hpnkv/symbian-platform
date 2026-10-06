@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <absl/base/nullability.h>
 #include <absl/log/check.h>
 
 #include "thread/cases.h"
@@ -32,9 +33,9 @@ static void Notify(CaseInSelectClause* absl_nonnull* absl_nonnull head,
 // writes are possible.
 void ChannelWaiterState::CloseAndReleaseReaders() {
   // Wake up all waiting readers
-  CaseInSelectClause* reader = readers;
+  CaseInSelectClause* absl_nullable reader = readers;
   while (reader != nullptr) {
-    CaseInSelectClause* next_reader = reader->next;
+    CaseInSelectClause* absl_nullable next_reader = reader->next;
     if (reader->next == readers) {
       // We must be careful to only traverse the list once as there may be
       // waiters who are non-selectable due to being picked by another case, but
@@ -44,7 +45,7 @@ void ChannelWaiterState::CloseAndReleaseReaders() {
 
     thread::MutexLock l2(&reader->selector->mu);
     if (reader->selector->picked_case_index == Selector::kNonePicked) {
-      bool* ok = reader->GetCase()->GetArgPtr<bool>(1);
+      bool* absl_nonnull ok = reader->GetCase()->GetArgPtr<bool>(1);
       *ok = false;
 
       Notify(&readers, reader);
@@ -67,10 +68,10 @@ static bool LockReaderAndWriterSelectorsIffBothAreWaiting(
   }
 
   // Order the selector locks by address and grab both.
-  internal::Selector* s1 =
+  internal::Selector* absl_nonnull s1 =
       (reader->selector < writer->selector ? reader->selector
                                            : writer->selector);
-  internal::Selector* s2 =
+  internal::Selector* absl_nonnull s2 =
       (reader->selector < writer->selector ? writer->selector
                                            : reader->selector);
 
@@ -103,7 +104,8 @@ void ChannelWaiterState::UnlockAndReleaseWriter(
 bool ChannelWaiterState::GetMatchingReader(
     const CaseInSelectClause* absl_nonnull writer,
     CaseInSelectClause* absl_nonnull* absl_nonnull reader) const {
-  if (CaseInSelectClause* current_reader = readers; current_reader != nullptr) {
+  if (CaseInSelectClause* absl_nullable current_reader = readers;
+      current_reader != nullptr) {
     do {
       if (LockReaderAndWriterSelectorsIffBothAreWaiting(current_reader,
                                                         writer)) {
@@ -121,7 +123,8 @@ bool ChannelWaiterState::GetMatchingReader(
 bool ChannelWaiterState::GetMatchingWriter(
     const CaseInSelectClause* absl_nonnull reader,
     CaseInSelectClause* absl_nonnull* absl_nonnull writer) const {
-  if (CaseInSelectClause* current_writer = writers; current_writer != nullptr) {
+  if (CaseInSelectClause* absl_nullable current_writer = writers;
+      current_writer != nullptr) {
     do {
       if (LockReaderAndWriterSelectorsIffBothAreWaiting(reader,
                                                         current_writer)) {
@@ -138,7 +141,8 @@ bool ChannelWaiterState::GetMatchingWriter(
 
 bool ChannelWaiterState::GetWaitingWriter(
     CaseInSelectClause* absl_nonnull* absl_nonnull writer) const {
-  if (CaseInSelectClause* current_writer = writers; current_writer != nullptr) {
+  if (CaseInSelectClause* absl_nullable current_writer = writers;
+      current_writer != nullptr) {
     do {
       current_writer->selector->mu.Lock();
       if (current_writer->selector->picked_case_index ==

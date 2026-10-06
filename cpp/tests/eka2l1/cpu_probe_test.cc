@@ -14,6 +14,7 @@
 #include <tuple>
 #include <vector>
 
+#include <absl/base/nullability.h>
 #include <common/buffer.h>
 #include <cpu/arm_factory.h>
 #include <gtest/gtest.h>
@@ -33,7 +34,7 @@ class CpuProbeTest
     : public ::testing::TestWithParam<std::tuple<arm_emulator_type, uint32_t>> {
  protected:
   void SetUp() override {
-    const char* path = std::getenv("SYMBIAN_E32_TEST_IMAGE");
+    const char* absl_nullable path = std::getenv("SYMBIAN_E32_TEST_IMAGE");
     ASSERT_NE(path, nullptr);
     std::ifstream file(path, std::ios::binary);
     ASSERT_TRUE(file.is_open()) << path;
@@ -109,7 +110,7 @@ class CpuProbeTest
   }
 
   template <typename T>
-  bool Read(uint32_t address, T* value) {
+  bool Read(uint32_t address, T* absl_nonnull value) {
     if (!IsCode(address, sizeof(T)) && !IsStack(address, sizeof(T))) {
       return false;
     }
@@ -118,7 +119,7 @@ class CpuProbeTest
   }
 
   template <typename T>
-  bool Write(uint32_t address, T* value) {
+  bool Write(uint32_t address, T* absl_nonnull value) {
     if (!IsStack(address, sizeof(T))) {
       return false;
     }
@@ -127,28 +128,28 @@ class CpuProbeTest
   }
 
   void BindMemory() {
-    cpu_->read_code = [this](uint32_t address, uint32_t* value) {
+    cpu_->read_code = [this](uint32_t address, uint32_t* absl_nonnull value) {
       return IsCode(address, sizeof(*value)) && Read(address, value);
     };
-    cpu_->read_8bit = [this](uint32_t a, uint8_t* v) {
+    cpu_->read_8bit = [this](uint32_t a, uint8_t* absl_nonnull v) {
       return Read(a, v);
     };
-    cpu_->read_16bit = [this](uint32_t a, uint16_t* v) {
+    cpu_->read_16bit = [this](uint32_t a, uint16_t* absl_nonnull v) {
       return Read(a, v);
     };
-    cpu_->read_32bit = [this](uint32_t a, uint32_t* v) {
+    cpu_->read_32bit = [this](uint32_t a, uint32_t* absl_nonnull v) {
       return Read(a, v);
     };
-    cpu_->read_64bit = [this](uint32_t a, uint64_t* v) {
+    cpu_->read_64bit = [this](uint32_t a, uint64_t* absl_nonnull v) {
       return Read(a, v);
     };
-    cpu_->write_8bit = [this](uint32_t a, uint8_t* v) {
+    cpu_->write_8bit = [this](uint32_t a, uint8_t* absl_nonnull v) {
       return Write(a, v);
     };
-    cpu_->write_16bit = [this](uint32_t a, uint16_t* v) {
+    cpu_->write_16bit = [this](uint32_t a, uint16_t* absl_nonnull v) {
       return Write(a, v);
     };
-    cpu_->write_32bit = [this](uint32_t a, uint32_t* v) {
+    cpu_->write_32bit = [this](uint32_t a, uint32_t* absl_nonnull v) {
       if (inject_wrong_input_ && *v == 16 && IsStack(a, sizeof(*v))) {
         const uint32_t changed = 17;
         ++input_injections_;
@@ -157,7 +158,7 @@ class CpuProbeTest
       }
       return Write(a, v);
     };
-    cpu_->write_64bit = [this](uint32_t a, uint64_t* v) {
+    cpu_->write_64bit = [this](uint32_t a, uint64_t* absl_nonnull v) {
       return Write(a, v);
     };
   }

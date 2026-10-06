@@ -7,6 +7,8 @@
 #include <thread>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
 #include "native_camera.h"
@@ -47,22 +49,24 @@ extern "C" int SymbianDeviceCameraCount() {
 }  // namespace symbian::api::camera
 
 namespace symbian::api::storage {
-extern "C" int SymbianDeviceFileOpen(const char16_t*, int,
-                                     NativeFile** output) {
+extern "C" int SymbianDeviceFileOpen(
+    const char16_t* absl_nullable, int,
+    NativeFile* absl_nullable* absl_nullable output) {
   *output = reinterpret_cast<NativeFile*>(file_token);
   return 0;
 }
 
-extern "C" int SymbianDeviceWritableFileOpen(const char16_t*, int, int mode,
-                                             NativeFile** output) {
+extern "C" int SymbianDeviceWritableFileOpen(
+    const char16_t* absl_nullable, int, int mode,
+    NativeFile* absl_nullable* absl_nullable output) {
   writable_open_mode = mode;
   *output = reinterpret_cast<NativeFile*>(file_token);
   return 0;
 }
 
-extern "C" int SymbianDeviceFileWriteAt(NativeFile*, int offset,
-                                        const unsigned char* source,
-                                        int length) {
+extern "C" int SymbianDeviceFileWriteAt(
+    NativeFile* absl_nullable, int offset,
+    const unsigned char* absl_nullable source, int length) {
   write_offset = offset;
   written_length = length;
   if (simulated_file_size > 3) {
@@ -71,23 +75,26 @@ extern "C" int SymbianDeviceFileWriteAt(NativeFile*, int offset,
   return length == 3 && source[0] == 'A' && source[2] == 'C' ? 0 : -6;
 }
 
-extern "C" int SymbianDeviceFileFlush(NativeFile*) {
+extern "C" int SymbianDeviceFileFlush(NativeFile* absl_nullable) {
   ++flush_count;
   return 0;
 }
 
-extern "C" int SymbianDeviceCreateDirectories(const char16_t*, int) {
+extern "C" int SymbianDeviceCreateDirectories(const char16_t* absl_nullable,
+                                              int) {
   return 0;
 }
 
-extern "C" int SymbianDeviceFileSize(NativeFile*, int* size) {
+extern "C" int SymbianDeviceFileSize(NativeFile* absl_nullable,
+                                     int* absl_nullable size) {
   *size = simulated_file_size;
   return 0;
 }
 
-extern "C" int SymbianDeviceFileReadAt(NativeFile*, int offset,
-                                       unsigned char* output, int capacity,
-                                       int* bytes_read) {
+extern "C" int SymbianDeviceFileReadAt(NativeFile* absl_nullable, int offset,
+                                       unsigned char* absl_nullable output,
+                                       int capacity,
+                                       int* absl_nullable bytes_read) {
   if (simulated_file_size > 3) {
     if (offset < 0 || capacity <= 0 || offset >= simulated_file_size) {
       return -6;
@@ -106,21 +113,22 @@ extern "C" int SymbianDeviceFileReadAt(NativeFile*, int offset,
   return 0;
 }
 
-extern "C" void SymbianDeviceFileClose(NativeFile* file) {
+extern "C" void SymbianDeviceFileClose(NativeFile* absl_nullable file) {
   if (file != nullptr) {
     ++file_close_count;
   }
 }
 
-extern "C" int SymbianDeviceDirectoryOpen(const char16_t*, int,
-                                          NativeDirectory** output) {
+extern "C" int SymbianDeviceDirectoryOpen(
+    const char16_t* absl_nullable, int,
+    NativeDirectory* absl_nullable* absl_nullable output) {
   *output = reinterpret_cast<NativeDirectory*>(directory_token);
   return 0;
 }
 
-extern "C" int SymbianDeviceDirectoryNext(NativeDirectory*,
-                                          NativeDirectoryEntry* output,
-                                          bool* end) {
+extern "C" int SymbianDeviceDirectoryNext(
+    NativeDirectory* absl_nullable, NativeDirectoryEntry* absl_nullable output,
+    bool* absl_nullable end) {
   if (directory_next_count++ > 0) {
     *end = true;
     return 0;
@@ -133,7 +141,8 @@ extern "C" int SymbianDeviceDirectoryNext(NativeDirectory*,
   return 0;
 }
 
-extern "C" void SymbianDeviceDirectoryClose(NativeDirectory* directory) {
+extern "C" void SymbianDeviceDirectoryClose(
+    NativeDirectory* absl_nullable directory) {
   if (directory != nullptr) {
     ++directory_close_count;
   }
@@ -141,13 +150,15 @@ extern "C" void SymbianDeviceDirectoryClose(NativeDirectory* directory) {
 }  // namespace symbian::api::storage
 
 namespace symbian::api::power {
-extern "C" void SymbianDeviceReadPower(NativePowerReading* reading) {
+extern "C" void SymbianDeviceReadPower(
+    NativePowerReading* absl_nullable reading) {
   *reading = power_reading;
 }
 }  // namespace symbian::api::power
 
 namespace symbian::api::display {
-extern "C" void SymbianDeviceReadPrimaryDisplay(NativeDisplayReading* reading) {
+extern "C" void SymbianDeviceReadPrimaryDisplay(
+    NativeDisplayReading* absl_nullable reading) {
   *reading = display_reading;
 }
 }  // namespace symbian::api::display

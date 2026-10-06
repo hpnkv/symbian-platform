@@ -14,6 +14,8 @@
 #include <type_traits>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "absl/container/inlined_vector.h"
 #include "thread/boost_primitives.h"
 #include "thread/fiber.h"
@@ -30,16 +32,18 @@ class Reader {
   Reader(const Reader&) = delete;
   Reader& operator=(const Reader&) = delete;
 
-  bool Read(T* out) { return channel_->Read(out); }
+  bool Read(T* absl_nonnull out) { return channel_->Read(out); }
 
-  Case OnRead(T* out, bool* ok) { return channel_->OnRead(out, ok); }
+  Case OnRead(T* absl_nonnull out, bool* absl_nonnull ok) {
+    return channel_->OnRead(out, ok);
+  }
 
  private:
   friend class Channel<T>;
 
-  explicit Reader(Channel<T>* channel) : channel_(channel) {}
+  explicit Reader(Channel<T>* absl_nonnull channel) : channel_(channel) {}
 
-  Channel<T>* channel_;
+  Channel<T>* absl_nonnull channel_;
 };
 
 template <typename T>
@@ -71,9 +75,9 @@ class Writer {
  private:
   friend class Channel<T>;
 
-  explicit Writer(Channel<T>* channel) : channel_(channel) {}
+  explicit Writer(Channel<T>* absl_nonnull channel) : channel_(channel) {}
 
-  Channel<T>* channel_;
+  Channel<T>* absl_nonnull channel_;
 };
 
 // A11-compatible selectable buffered/rendezvous channel. Every transfer and
@@ -87,34 +91,38 @@ requires std::is_move_assignable_v<T> class Channel {
 
   class ReadSelectable final : public internal::Selectable {
    public:
-    explicit ReadSelectable(Channel* channel) : channel_(channel) {}
+    explicit ReadSelectable(Channel* absl_nonnull channel)
+        : channel_(channel) {}
 
-    bool Handle(internal::CaseInSelectClause* state, bool enqueue) override {
+    bool Handle(internal::CaseInSelectClause* absl_nonnull state,
+                bool enqueue) override {
       return channel_->HandleRead(state, enqueue);
     }
 
-    void Unregister(internal::CaseInSelectClause* state) override {
+    void Unregister(internal::CaseInSelectClause* absl_nonnull state) override {
       channel_->Unregister(&channel_->readers_, state);
     }
 
    private:
-    Channel* channel_;
+    Channel* absl_nonnull channel_;
   };
 
   class WriteSelectable final : public internal::Selectable {
    public:
-    explicit WriteSelectable(Channel* channel) : channel_(channel) {}
+    explicit WriteSelectable(Channel* absl_nonnull channel)
+        : channel_(channel) {}
 
-    bool Handle(internal::CaseInSelectClause* state, bool enqueue) override {
+    bool Handle(internal::CaseInSelectClause* absl_nonnull state,
+                bool enqueue) override {
       return channel_->HandleWrite(state, enqueue);
     }
 
-    void Unregister(internal::CaseInSelectClause* state) override {
+    void Unregister(internal::CaseInSelectClause* absl_nonnull state) override {
       channel_->Unregister(&channel_->writers_, state);
     }
 
    private:
-    Channel* channel_;
+    Channel* absl_nonnull channel_;
   };
 
  public:
@@ -135,9 +143,9 @@ requires std::is_move_assignable_v<T> class Channel {
     }
   }
 
-  Reader<T>* reader() { return &reader_; }
+  Reader<T>* absl_nonnull reader() { return &reader_; }
 
-  Writer<T>* writer() { return &writer_; }
+  Writer<T>* absl_nonnull writer() { return &writer_; }
 
   std::size_t length() const {
     MutexLock lock(&mu_);
@@ -148,7 +156,7 @@ requires std::is_move_assignable_v<T> class Channel {
   friend class Reader<T>;
   friend class Writer<T>;
 
-  bool Read(T* out) {
+  bool Read(T* absl_nonnull out) {
     bool ok = false;
     Select({OnRead(out, &ok)});
     return ok;
@@ -160,7 +168,9 @@ requires std::is_move_assignable_v<T> class Channel {
     Select({OnWrite(item)});
   }
 
-  Case OnRead(T* out, bool* ok) { return {&read_selectable_, out, ok}; }
+  Case OnRead(T* absl_nonnull out, bool* absl_nonnull ok) {
+    return {&read_selectable_, out, ok};
+  }
 
   Case OnWrite(T&& item) { return MakeWriteCase(&item, kMove); }
 
@@ -174,7 +184,7 @@ requires std::is_move_assignable_v<T> class Channel {
   using Selector = internal::Selector;
   using Wakes = absl::InlinedVector<std::shared_ptr<Selector>, 4>;
 
-  static T TransferItem(T* item, Transfer strategy) {
+  static T TransferItem(T* absl_nonnull item, Transfer strategy) {
     if (strategy == kMove) {
       return std::move(*item);
     }
@@ -184,21 +194,22 @@ requires std::is_move_assignable_v<T> class Channel {
     std::abort();
   }
 
-  static void Wake(Wakes* wakes) {
+  static void Wake(Wakes* absl_nonnull wakes) {
     for (const auto& selector : *wakes) {
       selector->cv.Signal();
     }
   }
 
-  static void UnlinkIfQueued(State** head, State* state) {
+  static void UnlinkIfQueued(State* absl_nullable* absl_nonnull head,
+                             State* absl_nonnull state) {
     if (state->prev != nullptr) {
       internal::UnlinkFromList(head, state);
     }
   }
 
-  static bool LockPair(State* first, State* second) {
-    Selector* left = first->selector.get();
-    Selector* right = second->selector.get();
+  static bool LockPair(State* absl_nonnull first, State* absl_nonnull second) {
+    Selector* absl_nonnull left = first->selector.get();
+    Selector* absl_nonnull right = second->selector.get();
     if (left == right) {
       return false;
     }
@@ -216,16 +227,18 @@ requires std::is_move_assignable_v<T> class Channel {
     return false;
   }
 
-  static void UnlockPair(State* first, State* second) {
+  static void UnlockPair(State* absl_nonnull first,
+                         State* absl_nonnull second) {
     first->selector->mu.Unlock();
     second->selector->mu.Unlock();
   }
 
-  static State* FindMatch(State* head, State* counterpart) {
+  static State* absl_nullable FindMatch(State* absl_nullable head,
+                                        State* absl_nonnull counterpart) {
     if (head == nullptr) {
       return nullptr;
     }
-    State* current = head;
+    State* absl_nullable current = head;
     do {
       if (LockPair(current, counterpart)) {
         return current;
@@ -237,16 +250,16 @@ requires std::is_move_assignable_v<T> class Channel {
 
   // Called with channel mu held. A queued writer can refill one freed buffer
   // slot, including after the reader's immediate-case transfer.
-  void AdmitWriter(Wakes* wakes) {
+  void AdmitWriter(Wakes* absl_nonnull wakes) {
     if (writers_ == nullptr || queue_.size() >= capacity_) {
       return;
     }
-    State* current = writers_;
+    State* absl_nullable current = writers_;
     do {
-      State* next = current->next;
+      State* absl_nullable next = current->next;
       MutexLock selector_lock(&current->selector->mu);
       if (current->selector->picked_case_index == Selector::kNonePicked) {
-        T* item = current->GetCase()->template GetArgPtr<T>(0);
+        T* absl_nonnull item = current->GetCase()->template GetArgPtr<T>(0);
         Transfer strategy =
             *current->GetCase()->template GetArgPtr<Transfer>(1);
         queue_.push_back(TransferItem(item, strategy));
@@ -259,13 +272,13 @@ requires std::is_move_assignable_v<T> class Channel {
     } while (current != writers_ && writers_ != nullptr);
   }
 
-  bool HandleRead(State* reader, bool enqueue) {
+  bool HandleRead(State* absl_nonnull reader, bool enqueue) {
     Wakes wakes;
     bool ready = false;
     {
       MutexLock lock(&mu_);
-      T* out = reader->GetCase()->template GetArgPtr<T>(0);
-      bool* ok = reader->GetCase()->template GetArgPtr<bool>(1);
+      T* absl_nonnull out = reader->GetCase()->template GetArgPtr<T>(0);
+      bool* absl_nonnull ok = reader->GetCase()->template GetArgPtr<bool>(1);
       if (!queue_.empty()) {
         bool consumed = false;
         {
@@ -281,8 +294,8 @@ requires std::is_move_assignable_v<T> class Channel {
           AdmitWriter(&wakes);
         }
         ready = true;
-      } else if (State* writer = FindMatch(writers_, reader)) {
-        T* item = writer->GetCase()->template GetArgPtr<T>(0);
+      } else if (State* absl_nullable writer = FindMatch(writers_, reader)) {
+        T* absl_nonnull item = writer->GetCase()->template GetArgPtr<T>(0);
         Transfer strategy = *writer->GetCase()->template GetArgPtr<Transfer>(1);
         *out = TransferItem(item, strategy);
         *ok = true;
@@ -309,7 +322,7 @@ requires std::is_move_assignable_v<T> class Channel {
     return ready;
   }
 
-  bool HandleWrite(State* writer, bool enqueue) {
+  bool HandleWrite(State* absl_nonnull writer, bool enqueue) {
     Wakes wakes;
     bool ready = false;
     {
@@ -317,12 +330,13 @@ requires std::is_move_assignable_v<T> class Channel {
       if (closed_) {
         std::abort();  // A11's OnWrite on a closed channel is fatal.
       }
-      State* reader = closed_ ? nullptr : FindMatch(readers_, writer);
+      State* absl_nullable reader =
+          closed_ ? nullptr : FindMatch(readers_, writer);
       if (reader != nullptr) {
-        T* item = writer->GetCase()->template GetArgPtr<T>(0);
+        T* absl_nonnull item = writer->GetCase()->template GetArgPtr<T>(0);
         Transfer strategy = *writer->GetCase()->template GetArgPtr<Transfer>(1);
-        T* out = reader->GetCase()->template GetArgPtr<T>(0);
-        bool* ok = reader->GetCase()->template GetArgPtr<bool>(1);
+        T* absl_nonnull out = reader->GetCase()->template GetArgPtr<T>(0);
+        bool* absl_nonnull ok = reader->GetCase()->template GetArgPtr<bool>(1);
         *out = TransferItem(item, strategy);
         *ok = true;
         reader->TryPick();
@@ -336,7 +350,7 @@ requires std::is_move_assignable_v<T> class Channel {
         if (writer->selector->picked_case_index != Selector::kNonePicked) {
           ready = true;
         } else if (queue_.size() < capacity_) {
-          T* item = writer->GetCase()->template GetArgPtr<T>(0);
+          T* absl_nonnull item = writer->GetCase()->template GetArgPtr<T>(0);
           Transfer strategy =
               *writer->GetCase()->template GetArgPtr<Transfer>(1);
           queue_.push_back(TransferItem(item, strategy));
@@ -351,12 +365,13 @@ requires std::is_move_assignable_v<T> class Channel {
     return ready;
   }
 
-  void Unregister(State** head, State* state) {
+  void Unregister(State* absl_nullable* absl_nonnull head,
+                  State* absl_nonnull state) {
     MutexLock lock(&mu_);
     UnlinkIfQueued(head, state);
   }
 
-  Case MakeWriteCase(T* item, Transfer strategy) {
+  Case MakeWriteCase(T* absl_nonnull item, Transfer strategy) {
     Case result(&write_selectable_);
     result.AddArg(item);
     result.AddArg(strategy == kCopy ? &kCopy : &kMove);
@@ -372,7 +387,7 @@ requires std::is_move_assignable_v<T> class Channel {
       }
       closed_ = true;
       while (readers_ != nullptr) {
-        State* state = readers_;
+        State* absl_nullable state = readers_;
         {
           MutexLock selector_lock(&state->selector->mu);
           if (state->TryPick()) {
@@ -390,8 +405,8 @@ requires std::is_move_assignable_v<T> class Channel {
   mutable Mutex mu_;
   std::deque<T> queue_;
   bool closed_ = false;
-  State* readers_ = nullptr;
-  State* writers_ = nullptr;
+  State* absl_nullable readers_ = nullptr;
+  State* absl_nullable writers_ = nullptr;
   Reader<T> reader_;
   ReadSelectable read_selectable_;
   Writer<T> writer_;

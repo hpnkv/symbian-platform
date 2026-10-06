@@ -5,6 +5,7 @@
 #include <set>
 #include <string_view>
 
+#include <absl/base/nullability.h>
 #include <absl/status/status.h>
 
 #include "symbian/analysis/bytes.h"
@@ -13,7 +14,8 @@ namespace symbian::analysis {
 namespace {
 using internal::Read32;
 
-absl::StatusOr<uint32_t> Uleb(std::string_view bytes, size_t* position) {
+absl::StatusOr<uint32_t> Uleb(std::string_view bytes,
+                              size_t* absl_nonnull position) {
   uint32_t value = 0;
   for (unsigned shift = 0; shift < 35; shift += 7) {
     if (*position == bytes.size()) {
@@ -32,7 +34,7 @@ absl::StatusOr<uint32_t> Uleb(std::string_view bytes, size_t* position) {
 }
 
 absl::StatusOr<std::string_view> String(std::string_view bytes,
-                                        size_t* position) {
+                                        size_t* absl_nonnull position) {
   const auto end = bytes.find('\0', *position);
   if (end == std::string_view::npos) {
     return absl::DataLossError("Unterminated ARM attribute string");

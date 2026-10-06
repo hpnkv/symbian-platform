@@ -33,13 +33,15 @@ cmake --install build/symbian-debug --prefix install/armv6
 ```
 
 `symbian-armv5t` is the alternate ISA preset. Native verification uses
-`host-debug`, requires GTest, and runs with `ctest --preset host-debug`.
+`host-debug`, requires GTest and Abseil, and runs with `ctest --preset host-debug`.
 
 Consumers use `find_package(MbedTLS 3.4.1 EXACT CONFIG REQUIRED)` and link
 `MbedTLS::mbedtls`, `MbedTLS::mbedx509` or `MbedTLS::mbedcrypto`. The consuming
 project selects its own SDK; installed targets propagate the matching configuration.
 
-TLS guest applications still need verified entropy, UTC/time conversion, required
-C services and transport callbacks. The current acceptance executes AES/SHA in
-the guest, and certificate-authenticated TLS 1.2/1.3 on the host. It does not
-establish a working guest TLS connection or physical-phone compatibility.
+The SDK supplies verified OS entropy, bounded heap and UTC adapters; applications
+supply trust policy and transport ownership. Unsupported secure RNG contracts
+fail closed. Acceptance executes AES/SHA through a guest DLL and authenticated
+TLS 1.2/1.3 client/server sessions in the emulator as well as on the host.
+Physical-phone compatibility remains unverified. Owned port headers compile
+independently in C and C++ through `symbian_header_canaries`.

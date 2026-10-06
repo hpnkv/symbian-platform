@@ -10,6 +10,8 @@
 #include <span>
 #include <string_view>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"
@@ -87,9 +89,9 @@ class TcpClient {
   friend class TcpListener;
   friend class ActiveTcpListener;
 
-  explicit TcpClient(NativeTcpClient* native) : native_(native) {}
+  explicit TcpClient(NativeTcpClient* absl_nonnull native) : native_(native) {}
 
-  NativeTcpClient* native_ = nullptr;
+  NativeTcpClient* absl_nullable native_ = nullptr;
 };
 
 }  // namespace symbian::api::connectivity

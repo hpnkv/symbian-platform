@@ -18,6 +18,8 @@
 #include <mutex>
 #include <thread>
 
+#include <absl/base/nullability.h>
+
 #include "absl/base/thread_annotations.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -38,7 +40,7 @@ class ABSL_LOCKABLE Mutex {
   Mutex& operator=(const Mutex&) = delete;
 
   void Lock() noexcept ABSL_EXCLUSIVE_LOCK_FUNCTION() {
-    Fiber* fiber = Fiber::Current();
+    Fiber* absl_nullable fiber = Fiber::Current();
     if (fiber == nullptr) {
       mu_.lock();
       return;
@@ -67,7 +69,7 @@ class ABSL_LOCKABLE Mutex {
   }
 
   void Unlock() noexcept ABSL_UNLOCK_FUNCTION() {
-    Fiber* fiber = nullptr;
+    Fiber* absl_nullable fiber = nullptr;
     {
       std::lock_guard guard(waiters_mu_);
       mu_.unlock();
@@ -89,12 +91,13 @@ class ABSL_LOCKABLE Mutex {
   friend class CondVar;
   std::mutex mu_;
   std::mutex waiters_mu_;
-  std::deque<Fiber*> waiters_;
+  std::deque<Fiber* absl_nonnull> waiters_;
 };
 
 class ABSL_SCOPED_LOCKABLE MutexLock {
  public:
-  explicit MutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
+  explicit MutexLock(Mutex* absl_nonnull mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
+      : mu_(mu) {
     mu_->Lock();
   }
 
@@ -104,7 +107,7 @@ class ABSL_SCOPED_LOCKABLE MutexLock {
   ~MutexLock() ABSL_UNLOCK_FUNCTION() { mu_->Unlock(); }
 
  private:
-  Mutex* mu_;
+  Mutex* absl_nonnull mu_;
 };
 
 class CondVar {
@@ -113,7 +116,7 @@ class CondVar {
   CondVar(const CondVar&) = delete;
   CondVar& operator=(const CondVar&) = delete;
 
-  void Wait(Mutex* mu) noexcept {
+  void Wait(Mutex* absl_nonnull mu) noexcept {
     if (Fiber::Current() != nullptr) {
       WaitWithTimeout(mu, absl::InfiniteDuration());
       return;
@@ -123,7 +126,7 @@ class CondVar {
     lock.release();
   }
 
-  bool WaitWithDeadline(Mutex* mu, absl::Time deadline) noexcept {
+  bool WaitWithDeadline(Mutex* absl_nonnull mu, absl::Time deadline) noexcept {
     if (deadline == absl::InfiniteFuture()) {
       Wait(mu);
       return false;
@@ -131,8 +134,9 @@ class CondVar {
     return WaitWithTimeout(mu, deadline - absl::Now());
   }
 
-  bool WaitWithTimeout(Mutex* mu, absl::Duration remaining) noexcept {
-    if (Fiber* fiber = Fiber::Current()) {
+  bool WaitWithTimeout(Mutex* absl_nonnull mu,
+                       absl::Duration remaining) noexcept {
+    if (Fiber* absl_nullable fiber = Fiber::Current()) {
       if (remaining <= absl::ZeroDuration()) {
         return true;
       }
@@ -209,12 +213,12 @@ class CondVar {
 
   void Signal() noexcept {
     generation_.fetch_add(1, std::memory_order_release);
-    Scheduler* scheduler = nullptr;
+    Scheduler* absl_nullable scheduler = nullptr;
     bool notify = false;
     {
       std::lock_guard guard(waiters_mu_);
       if (!waiters_.empty()) {
-        Waiter* waiter = waiters_.front();
+        Waiter* absl_nonnull waiter = waiters_.front();
         waiters_.pop_front();
         waiter->signalled = true;
         scheduler = &waiter->fiber->scheduler_;
@@ -229,20 +233,20 @@ class CondVar {
 
   void SignalAll() noexcept {
     generation_.fetch_add(1, std::memory_order_release);
-    std::deque<Scheduler*> schedulers;
+    std::deque<Scheduler* absl_nonnull> schedulers;
     {
       std::lock_guard guard(waiters_mu_);
       while (!waiters_.empty()) {
-        Waiter* waiter = waiters_.front();
+        Waiter* absl_nonnull waiter = waiters_.front();
         waiters_.pop_front();
         waiter->signalled = true;
-        Scheduler* scheduler = &waiter->fiber->scheduler_;
+        Scheduler* absl_nonnull scheduler = &waiter->fiber->scheduler_;
         if (scheduler->WakeWithoutNotify(waiter->fiber)) {
           schedulers.push_back(scheduler);
         }
       }
     }
-    for (Scheduler* scheduler : schedulers) {
+    for (Scheduler* absl_nonnull scheduler : schedulers) {
       scheduler->NotifyReady();
     }
     cv_.notify_all();
@@ -250,12 +254,12 @@ class CondVar {
 
  private:
   struct Waiter {
-    Fiber* fiber;
+    Fiber* absl_nonnull fiber;
     bool signalled;
   };
 
   std::mutex waiters_mu_;
-  std::deque<Waiter*> waiters_;
+  std::deque<Waiter* absl_nonnull> waiters_;
   std::atomic<std::uint32_t> generation_{0};
   std::condition_variable cv_;
 };

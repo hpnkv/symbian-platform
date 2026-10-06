@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include <absl/base/nullability.h>
+
 #include "symbian/analysis/bytes.h"
 
 namespace symbian::testing {

@@ -10,6 +10,8 @@
 #include <type_traits>
 #include <utility>
 
+#include <absl/base/nullability.h>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "symbian/concurrency/future.h"
@@ -73,7 +75,8 @@ class WorkerExecutor {
 };
 
 namespace internal {
-absl::StatusOr<WorkerExecutor*> WorkerFor(EventExecutor& executor);
+absl::StatusOr<WorkerExecutor* absl_nonnull> WorkerFor(
+    EventExecutor* absl_nonnull executor);
 }  // namespace internal
 
 // The transform is posted as a stackless callback. The completing thread
@@ -81,7 +84,8 @@ absl::StatusOr<WorkerExecutor*> WorkerFor(EventExecutor& executor);
 // Queue rejection completes the returned Future with an error. Then()
 // retains its A11 inline semantics.
 template <typename T, typename Fn>
-auto ThenOn(const Future<T>& future, WorkerExecutor& worker, Fn transform)
+auto ThenOn(const Future<T>& future, WorkerExecutor* absl_nonnull worker,
+            Fn transform)
     -> Future<typename std::invoke_result_t<
         Fn, const absl::StatusOr<T>&>::value_type> {
   using U =
@@ -89,7 +93,7 @@ auto ThenOn(const Future<T>& future, WorkerExecutor& worker, Fn transform)
   auto promise = std::make_shared<Promise<U>>();
   Future<U> continued = promise->future();
   promise->SetCancellationCallback([future] { future.Cancel(); });
-  auto handle = worker.handle();
+  auto handle = worker->handle();
   future.OnReady([promise = std::move(promise),
                   transform = std::move(transform), handle,
                   future](const absl::StatusOr<T>&) mutable {
@@ -112,7 +116,8 @@ auto ThenOn(const Future<T>& future, WorkerExecutor& worker, Fn transform)
 
 template <typename T>
 template <typename Fn>
-auto Future<T>::ThenOnWorker(EventExecutor& executor, Fn transform) const
+auto Future<T>::ThenOnWorker(EventExecutor* absl_nonnull executor,
+                             Fn transform) const
     -> Future<typename std::invoke_result_t<
         Fn, const absl::StatusOr<T>&>::value_type> {
   using U =
@@ -121,7 +126,7 @@ auto Future<T>::ThenOnWorker(EventExecutor& executor, Fn transform) const
   if (!worker.ok()) {
     return FailedFuture<U>(worker.status());
   }
-  return ThenOn(*this, **worker, std::move(transform));
+  return ThenOn(*this, *worker, std::move(transform));
 }
 
 }  // namespace symbian::concurrency

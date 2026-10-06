@@ -4,13 +4,14 @@
 #ifndef SYMBIAN_PYTHON_AGENT_BINDINGS_H_
 #define SYMBIAN_PYTHON_AGENT_BINDINGS_H_
 
+#include <absl/base/nullability.h>
 #include <pybind11/pybind11.h>
 
 namespace symbian::python {
 
-void BindWebSocket(pybind11::module_& module);
+void BindWebSocket(pybind11::module_* absl_nonnull module);
 
-void BindAgent(pybind11::module_& module);
+void BindAgent(pybind11::module_* absl_nonnull module);
 
 }  // namespace symbian::python
 

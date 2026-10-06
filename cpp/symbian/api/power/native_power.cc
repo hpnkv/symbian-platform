@@ -3,11 +3,13 @@
 
 #include "native_power.h"
 
+#include <absl/base/nullability.h>
 #include <hal.h>
 
 namespace symbian::api::power {
 
-extern "C" void SymbianDeviceReadPower(NativePowerReading* reading) {
+extern "C" void SymbianDeviceReadPower(
+    NativePowerReading* absl_nullable reading) {
   if (reading == nullptr) {
     return;
   }

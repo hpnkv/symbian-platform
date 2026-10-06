@@ -24,6 +24,8 @@
 #include <string_view>
 #include <vector>
 
+#include <absl/base/nullability.h>
+
 namespace symbian::http::internal {
 namespace {
 
@@ -37,7 +39,7 @@ std::string_view Trim(std::string_view v) {
   return v;
 }
 
-void Lower(std::string* v) {
+void Lower(std::string* absl_nonnull v) {
   for (char& c : *v) {
     if (c >= 'A' && c <= 'Z') {
       c += 32;
@@ -45,7 +47,7 @@ void Lower(std::string* v) {
   }
 }
 
-void Upper(std::string* v) {
+void Upper(std::string* absl_nonnull v) {
   for (char& c : *v) {
     if (c >= 'a' && c <= 'z') {
       c -= 32;
@@ -77,7 +79,7 @@ std::vector<std::string_view> Split(
 }
 
 template <class T>
-bool Number(std::string_view v, T* out, unsigned base) {
+bool Number(std::string_view v, T* absl_nonnull out, unsigned base) {
   if (v.empty()) {
     return false;
   }
@@ -98,12 +100,12 @@ bool Number(std::string_view v, T* out, unsigned base) {
 }
 
 template <class T>
-bool Decimal(std::string_view v, T* out) {
+bool Decimal(std::string_view v, T* absl_nonnull out) {
   return Number(v, out, 10);
 }
 
 template <class T>
-bool HexNumber(std::string_view v, T* out) {
+bool HexNumber(std::string_view v, T* absl_nonnull out) {
   return Number(v, out, 16);
 }
 
@@ -116,11 +118,11 @@ std::string Hex(std::size_t n) {
   return result;
 }
 
-void Append(std::string* out, std::string_view v) {
+void Append(std::string* absl_nonnull out, std::string_view v) {
   out->append(v);
 }
 
-void Append(std::string* out, int v) {
+void Append(std::string* absl_nonnull out, int v) {
   out->append(std::to_string(v));
 }
 
@@ -164,7 +166,7 @@ absl::StatusOr<std::vector<std::string_view>> SplitLines(
 }
 
 absl::Status ParseHeaderLines(const std::vector<std::string_view>& lines,
-                              size_t first, Headers* headers) {
+                              size_t first, Headers* absl_nonnull headers) {
   for (size_t index = first; index < lines.size(); ++index) {
     const std::string_view line = lines[index];
     const size_t colon = line.find(':');
@@ -343,8 +345,9 @@ absl::StatusOr<BodyPlan> PlanResponseBody(std::string_view request_method,
   return PlanBody(headers, /*allow_until_close=*/true);
 }
 
-absl::Status ChunkedDecoder::Feed(std::string_view data, std::string* out,
-                                  bool* complete) {
+absl::Status ChunkedDecoder::Feed(std::string_view data,
+                                  std::string* absl_nonnull out,
+                                  bool* absl_nullable complete) {
   size_t offset = 0;
   while (offset < data.size() && state_ != State::kComplete) {
     switch (state_) {
@@ -466,7 +469,7 @@ std::string EncodeLastChunk(const Headers& trailers) {
   return out;
 }
 
-void AppendHeaderBlock(const Headers& headers, std::string* out) {
+void AppendHeaderBlock(const Headers& headers, std::string* absl_nonnull out) {
   for (const auto& [name, value] : headers) {
     out->append(Cat(name, ": ", value, kCrlf));
   }

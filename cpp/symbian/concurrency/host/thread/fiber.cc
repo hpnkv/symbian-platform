@@ -11,6 +11,7 @@
 #include <exception>
 #include <thread>
 
+#include <absl/base/nullability.h>
 #include <boost/fiber/fiber.hpp>
 
 #include "thread/executor.h"
@@ -18,14 +19,14 @@
 
 namespace thread {
 namespace {
-thread_local Fiber* current_fiber = nullptr;
+thread_local Fiber* absl_nullable current_fiber = nullptr;
 }  // namespace
 
 struct Fiber::Impl {
-  explicit Impl(Fiber* owner, Work work)
+  explicit Impl(Fiber* absl_nonnull owner, Work work)
       : thread_id(std::this_thread::get_id()),
         fiber([owner, work = std::move(work), this]() mutable {
-          Fiber* previous = current_fiber;
+          Fiber* absl_nonnull previous = current_fiber;
           current_fiber = owner;
           std::move(work)();
           current_fiber = previous;
@@ -82,17 +83,17 @@ absl::Status Fiber::Join() {
   return absl::OkStatus();
 }
 
-Fiber* Fiber::Current() noexcept {
+Fiber* absl_nullable Fiber::Current() noexcept {
   return current_fiber;
 }
 
 bool Cancelled() {
-  Fiber* fiber = Fiber::Current();
+  Fiber* absl_nullable fiber = Fiber::Current();
   return fiber != nullptr && fiber->Cancelled();
 }
 
 Case OnCancel() {
-  Fiber* fiber = Fiber::Current();
+  Fiber* absl_nullable fiber = Fiber::Current();
   return fiber == nullptr ? NonSelectableCase() : fiber->OnCancel();
 }
 

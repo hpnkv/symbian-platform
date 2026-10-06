@@ -12,7 +12,11 @@ add_library(symbian_guest_fiber STATIC
   thread/select.cc
   thread/selectables.cc)
 target_link_libraries(symbian_guest_fiber PUBLIC Symbian::AbseilStatusOr)
-target_include_directories(symbian_guest_fiber PRIVATE
+target_include_directories(symbian_guest_fiber PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}"
   "${CMAKE_CURRENT_SOURCE_DIR}/../common")
 target_compile_options(symbian_guest_fiber PRIVATE -fno-pic)
+
+get_filename_component(canary_root "${CMAKE_CURRENT_LIST_DIR}/../../../.." ABSOLUTE)
+include("${canary_root}/cmake/SymbianGuestHeaderCanaries.cmake")
+symbian_guest_concurrency_header_canaries("${canary_root}")

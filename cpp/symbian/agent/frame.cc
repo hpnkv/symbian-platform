@@ -5,6 +5,8 @@
 
 #include <algorithm>
 
+#include <absl/base/nullability.h>
+
 #include "absl/status/status.h"
 
 namespace symbian::agent {
@@ -35,7 +37,8 @@ void FrameDecoder::Reset() {
 }
 
 absl::StatusOr<std::size_t> FrameDecoder::Consume(
-    std::span<const std::uint8_t> bytes, std::optional<Frame>* completed) {
+    std::span<const std::uint8_t> bytes,
+    std::optional<Frame>* absl_nullable completed) {
   if (completed == nullptr) {
     return absl::InvalidArgumentError("Frame output is null");
   }

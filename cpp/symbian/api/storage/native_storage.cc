@@ -3,6 +3,7 @@
 
 #include "native_storage.h"
 
+#include <absl/base/nullability.h>
 #include <e32std.h>
 #include <f32file.h>
 
@@ -20,7 +21,7 @@ struct NativeDirectory {
   bool directory_open = false;
 };
 
-extern "C" void SymbianDeviceFileClose(NativeFile* file) {
+extern "C" void SymbianDeviceFileClose(NativeFile* absl_nullable file) {
   if (file == nullptr) {
     return;
   }
@@ -32,25 +33,27 @@ extern "C" void SymbianDeviceFileClose(NativeFile* file) {
   User::Free(file);
 }
 
-extern "C" int SymbianDeviceFileOpen(const char16_t* path, int length,
-                                     NativeFile** output) {
+extern "C" int SymbianDeviceFileOpen(
+    const char16_t* absl_nullable path, int length,
+    NativeFile* absl_nullable* absl_nullable output) {
   if (output == nullptr || path == nullptr || length <= 0 ||
       length > KMaxFileName) {
     return KErrArgument;
   }
   *output = nullptr;
-  void* memory = User::Alloc(sizeof(NativeFile));
+  void* absl_nullable memory = User::Alloc(sizeof(NativeFile));
   if (memory == nullptr) {
     return KErrNoMemory;
   }
-  auto* file = new (memory) NativeFile;
+  auto* absl_nonnull file = new (memory) NativeFile;
   const TInt connected = file->session.Connect();
   if (connected != KErrNone) {
     file->~NativeFile();
     User::Free(file);
     return connected;
   }
-  const TPtrC16 native_path(reinterpret_cast<const TText*>(path), length);
+  const TPtrC16 native_path(reinterpret_cast<const TText* absl_nonnull>(path),
+                            length);
   const TInt opened = file->file.Open(file->session, native_path,
                                       EFileRead | EFileShareReadersOnly);
   if (opened != KErrNone) {
@@ -62,25 +65,27 @@ extern "C" int SymbianDeviceFileOpen(const char16_t* path, int length,
   return KErrNone;
 }
 
-extern "C" int SymbianDeviceWritableFileOpen(const char16_t* path, int length,
-                                             int mode, NativeFile** output) {
+extern "C" int SymbianDeviceWritableFileOpen(
+    const char16_t* absl_nullable path, int length, int mode,
+    NativeFile* absl_nullable* absl_nullable output) {
   if (output == nullptr || path == nullptr || length <= 0 ||
       length > KMaxFileName || mode < 0 || mode > 2) {
     return KErrArgument;
   }
   *output = nullptr;
-  void* memory = User::Alloc(sizeof(NativeFile));
+  void* absl_nullable memory = User::Alloc(sizeof(NativeFile));
   if (memory == nullptr) {
     return KErrNoMemory;
   }
-  auto* file = new (memory) NativeFile;
+  auto* absl_nonnull file = new (memory) NativeFile;
   const TInt connected = file->session.Connect();
   if (connected != KErrNone) {
     file->~NativeFile();
     User::Free(file);
     return connected;
   }
-  const TPtrC16 native_path(reinterpret_cast<const TText*>(path), length);
+  const TPtrC16 native_path(reinterpret_cast<const TText* absl_nonnull>(path),
+                            length);
   const TUint flags = EFileRead | EFileWrite | EFileShareExclusive;
   TInt opened = KErrArgument;
   switch (mode) {
@@ -103,9 +108,9 @@ extern "C" int SymbianDeviceWritableFileOpen(const char16_t* path, int length,
   return KErrNone;
 }
 
-extern "C" int SymbianDeviceFileWriteAt(NativeFile* file, int offset,
-                                        const unsigned char* source,
-                                        int length) {
+extern "C" int SymbianDeviceFileWriteAt(
+    NativeFile* absl_nullable file, int offset,
+    const unsigned char* absl_nullable source, int length) {
   if (file == nullptr || source == nullptr || offset < 0 || length < 0) {
     return KErrArgument;
   }
@@ -113,15 +118,15 @@ extern "C" int SymbianDeviceFileWriteAt(NativeFile* file, int offset,
   return file->file.Write(offset, bytes);
 }
 
-extern "C" int SymbianDeviceFileFlush(NativeFile* file) {
+extern "C" int SymbianDeviceFileFlush(NativeFile* absl_nullable file) {
   if (file == nullptr) {
     return KErrArgument;
   }
   return file->file.Flush();
 }
 
-extern "C" int SymbianDeviceCreateDirectories(const char16_t* path,
-                                              int length) {
+extern "C" int SymbianDeviceCreateDirectories(
+    const char16_t* absl_nullable path, int length) {
   if (path == nullptr || length <= 0 || length > KMaxFileName) {
     return KErrArgument;
   }
@@ -130,22 +135,26 @@ extern "C" int SymbianDeviceCreateDirectories(const char16_t* path,
   if (connected != KErrNone) {
     return connected;
   }
-  const TPtrC16 native_path(reinterpret_cast<const TText*>(path), length);
+  const TPtrC16 native_path(reinterpret_cast<const TText* absl_nonnull>(path),
+                            length);
   const TInt created = session.MkDirAll(native_path);
   session.Close();
   return created == KErrAlreadyExists ? KErrNone : created;
 }
 
-extern "C" int SymbianDeviceFileSize(NativeFile* file, int* size) {
+extern "C" int SymbianDeviceFileSize(NativeFile* absl_nullable file,
+                                     int* absl_nullable size) {
   if (file == nullptr || size == nullptr) {
     return KErrArgument;
   }
   return file->file.Size(*size);
 }
 
-extern "C" int SymbianDeviceFileReadAt(NativeFile* file, int offset,
-                                       unsigned char* output, int capacity,
-                                       int* bytes_read) {
+extern "C" int SymbianDeviceFileReadAt(NativeFile* absl_nullable file,
+                                       int offset,
+                                       unsigned char* absl_nullable output,
+                                       int capacity,
+                                       int* absl_nullable bytes_read) {
   if (file == nullptr || output == nullptr || bytes_read == nullptr ||
       offset < 0 || capacity < 0) {
     return KErrArgument;
@@ -159,7 +168,8 @@ extern "C" int SymbianDeviceFileReadAt(NativeFile* file, int offset,
   return result;
 }
 
-extern "C" void SymbianDeviceDirectoryClose(NativeDirectory* directory) {
+extern "C" void SymbianDeviceDirectoryClose(
+    NativeDirectory* absl_nullable directory) {
   if (directory == nullptr) {
     return;
   }
@@ -171,17 +181,18 @@ extern "C" void SymbianDeviceDirectoryClose(NativeDirectory* directory) {
   User::Free(directory);
 }
 
-extern "C" int SymbianDeviceDirectoryOpen(const char16_t* path, int length,
-                                          NativeDirectory** output) {
+extern "C" int SymbianDeviceDirectoryOpen(
+    const char16_t* absl_nullable path, int length,
+    NativeDirectory* absl_nullable* absl_nullable output) {
   if (output == nullptr || path == nullptr || length <= 0 || length > 253) {
     return KErrArgument;
   }
   *output = nullptr;
-  void* memory = User::Alloc(sizeof(NativeDirectory));
+  void* absl_nullable memory = User::Alloc(sizeof(NativeDirectory));
   if (memory == nullptr) {
     return KErrNoMemory;
   }
-  auto* directory = new (memory) NativeDirectory;
+  auto* absl_nonnull directory = new (memory) NativeDirectory;
   const TInt connected = directory->session.Connect();
   if (connected != KErrNone) {
     directory->~NativeDirectory();
@@ -210,9 +221,9 @@ extern "C" int SymbianDeviceDirectoryOpen(const char16_t* path, int length,
   return KErrNone;
 }
 
-extern "C" int SymbianDeviceDirectoryNext(NativeDirectory* directory,
-                                          NativeDirectoryEntry* output,
-                                          bool* end) {
+extern "C" int SymbianDeviceDirectoryNext(
+    NativeDirectory* absl_nullable directory,
+    NativeDirectoryEntry* absl_nullable output, bool* absl_nullable end) {
   if (directory == nullptr || output == nullptr || end == nullptr) {
     return KErrArgument;
   }
@@ -230,7 +241,7 @@ extern "C" int SymbianDeviceDirectoryNext(NativeDirectory* directory,
   if (length < 0 || length > 256) {
     return KErrCorrupt;
   }
-  const TText* name = entry.iName.Ptr();
+  const TText* absl_nonnull name = entry.iName.Ptr();
   for (TInt index = 0; index < length; ++index) {
     output->name[index] = name[index];
   }
