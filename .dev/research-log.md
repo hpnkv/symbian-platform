@@ -8158,3 +8158,15 @@ sync run matched every inventoried public header digest after normalization;
 the focused order test passed. The release publish job also lacked checkout,
 which would have hidden the dedicated notes file; checkout was added. The
 corrected tagged Linux bundle run is still required before publication.
+
+### 2026-10-07: source-workspace package path in third tagged attempt
+
+The third tagged run passed source packaging and the four-host matrix. Linux
+guest payload staging progressed past Qt, then its root source-workspace CMake
+control failed: `PYTHONPATH` selected the checkout's `symbian` package while
+the exact-commit wheel's `_native` extension lived in site-packages. The
+checkout package now extends its package search path so source Python modules
+can import that installed host extension during configuration. A subprocess
+test reproduces a source package plus separate installed extension without
+editable-install machinery. The scripts suite passes 71 tests with one skip;
+Black, Ruff and diff checks pass. Native bundle rerun remains required.

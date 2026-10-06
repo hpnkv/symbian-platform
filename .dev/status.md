@@ -3849,3 +3849,12 @@ public inventory and payload. A fresh local Qt sync matched all inventoried
 public header digests after normalization; nine focused release/Qt tests and
 owned C++ style passed. The publish job now checks out the release notes.
 The corrected Linux bundle audit and publication are still pending.
+
+The third tagged run passed the four-host matrix and built far enough to pass
+Qt payload staging, then failed its source-workspace CMake control because
+the source package shadowed the exact-commit wheel's `_native` extension.
+The checkout package now exposes the installed extension through its package
+path. A subprocess regression test passes without editable-install behavior;
+the scripts suite passes 71 tests with one skip, plus Black and Ruff.
+The corrected tagged source-workspace, bundle audit and publication remain
+pending. No release has been published.
