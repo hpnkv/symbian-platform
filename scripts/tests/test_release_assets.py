@@ -211,6 +211,15 @@ class ReleaseAssetsTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing"):
             _ASSETS.check(self.dist, self.assets, "0.1.0")
 
+    def test_current_release_has_dedicated_description(self):
+        root = Path(__file__).resolve().parents[2]
+        version = (root / "VERSION").read_text().strip()
+        notes = root / f"RELEASE_NOTES_{version}.md"
+        self.assertTrue(notes.is_file())
+        self.assertIn("Coverage remains incomplete", notes.read_text())
+        workflow = (root / ".github/workflows/release.yml").read_text()
+        self.assertIn('--notes-file "$release_notes"', workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -3825,3 +3825,11 @@ inventory/research log. `Gsm`/`Sms` remain blocked by partner-only ETel
 Multimode declarations. The 0.2.0 release may ship as an explicitly limited
 breadth release under the user's revised validation schedule; final bundle
 CI, publication and later runtime testing remain open.
+
+0.2.0 preparation: Version and native distribution references are updated;
+a dedicated description states 952 unresolved public export records and the
+absence of runtime/firmware/physical compatibility evidence for the new
+breadth interfaces. The release workflow will use this description after its
+host/native artifact audit. Focused release tests, YAML parsing and strict
+docs pass. Publication is pending the tagged workflow; no release assets have
+been uploaded yet.

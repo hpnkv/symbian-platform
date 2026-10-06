@@ -14,28 +14,28 @@ glibc 2.39 or later. The Python wheels support older Linux hosts with glibc
 
 | Host | Archive |
 | --- | --- |
-| macOS, Apple Silicon | `symbian-sdk-0.1.7-macos-arm64.tar.gz` |
-| macOS, Intel | `symbian-sdk-0.1.7-macos-x86_64.tar.gz` |
-| Linux, x86_64 | `symbian-sdk-0.1.7-linux-x86_64.tar.gz` |
-| Linux, arm64 | `symbian-sdk-0.1.7-linux-aarch64.tar.gz` |
+| macOS, Apple Silicon | `symbian-sdk-0.2.0-macos-arm64.tar.gz` |
+| macOS, Intel | `symbian-sdk-0.2.0-macos-x86_64.tar.gz` |
+| Linux, x86_64 | `symbian-sdk-0.2.0-linux-x86_64.tar.gz` |
+| Linux, arm64 | `symbian-sdk-0.2.0-linux-aarch64.tar.gz` |
 
 === "macOS"
 
     ```sh
-    sdk_asset="symbian-sdk-0.1.7-macos-$(uname -m).tar.gz"
+    sdk_asset="symbian-sdk-0.2.0-macos-$(uname -m).tar.gz"
     ```
 
 === "Linux"
 
     ```sh
-    sdk_asset="symbian-sdk-0.1.7-linux-$(uname -m).tar.gz"
+    sdk_asset="symbian-sdk-0.2.0-linux-$(uname -m).tar.gz"
     ```
 
 Download and install the selected archive in your activated Python environment:
 
 ```sh
 pip install --upgrade symbian-platform
-curl -fL "https://github.com/hpnkv/symbian-platform/releases/download/v0.1.7/$sdk_asset" \
+curl -fL "https://github.com/hpnkv/symbian-platform/releases/download/v0.2.0/$sdk_asset" \
   -o symbian-sdk.tar.gz
 symbian sdk install ~/dev/symbian-sdk --archive symbian-sdk.tar.gz
 symbian init ~/dev/hello_time --name hello_time --non-interactive

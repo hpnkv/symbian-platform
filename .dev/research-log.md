@@ -8117,3 +8117,15 @@ absent source file and 488 further unreviewed ownership cases. A 0.2.0
 breadth release must state these limits plainly; this pass is not a complete
 Nokia SDK equivalence claim. A fresh final source export and macOS/Linux
 bundle matrix remain to be checked by the release workflow.
+
+### 2026-10-06: 0.2.0 publication preparation
+
+The user's revised release instruction permits a breadth release before
+rigorous runtime testing. `VERSION` and native distribution references now
+name 0.2.0. A dedicated `RELEASE_NOTES_0.2.0.md` describes shipped targets,
+current source-backed counts and explicit omissions/compatibility limits.
+The release workflow reads that file instead of generating generic notes for
+this tag and retains its host/native archive audit before publication. A
+regression test checks the dedicated description path. Focused release-asset
+tests, YAML parsing and strict docs passed locally. Tag publication and the
+four-host native bundle matrix remain pending; no release was claimed yet.

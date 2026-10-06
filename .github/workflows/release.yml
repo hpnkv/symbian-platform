@@ -219,6 +219,13 @@ jobs:
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" dist/* release-assets/* --clobber
           else
-            gh release create "$GITHUB_REF_NAME" dist/* release-assets/* \
-              --generate-notes --verify-tag
+            release_notes="RELEASE_NOTES_${GITHUB_REF_NAME#v}.md"
+            if test -f "$release_notes"; then
+              gh release create "$GITHUB_REF_NAME" dist/* release-assets/* \
+                --title "Symbian SDK ${GITHUB_REF_NAME#v}" \
+                --notes-file "$release_notes" --verify-tag
+            else
+              gh release create "$GITHUB_REF_NAME" dist/* release-assets/* \
+                --generate-notes --verify-tag
+            fi
           fi
