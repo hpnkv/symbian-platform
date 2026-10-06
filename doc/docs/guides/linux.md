@@ -58,12 +58,19 @@ an ARM target independently of the host. Its compilation database contains
 A build does not execute the application; use the emulator or target device
 to check runtime behavior.
 
-## 3. Build and run the emulator
+## 3. Install and run the emulator
 
-Follow [Build the emulator](../reference/emulator-source-build.md) for the
-Linux x86_64 dependencies and commands. Its frontend is
-`build/eka2l1/bin/eka2l1_qt`. Linux aarch64 requires a separate compatible
-FFmpeg build; the x86_64 script cannot be reused unchanged.
+Install the compatible emulator bundle for your Linux architecture. It supplies
+Qt and its multimedia libraries:
+
+```sh
+symbian emulator install
+symbian emulator doctor
+```
+
+The emulator has its own release version. See [Install the emulator](emulator-installation.md)
+for selecting or rolling back a version. To build it yourself, follow
+[Build the emulator](../reference/emulator-source-build.md).
 
 Import local firmware using the [firmware guide](firmware.md). SDK launch and
 guest-debug wrappers accept the Linux executable and discover `gdb-multiarch`

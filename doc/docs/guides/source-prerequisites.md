@@ -45,6 +45,16 @@ inputs. Follow the tab for your host system below.
     Official LLVM Linux binaries may require older ICU shared libraries;
     check `ldd` on every tool and install any missing runtime libraries.
 
+    If you have [installed a native SDK archive](native-distributions.md),
+    you can use its bundled LLVM, CMake and Ninja for source builds and tests:
+
+    ```sh
+    export SYMBIAN_LLVM_BIN="$HOME/dev/symbian-sdk/bin"
+    export PATH="$SYMBIAN_LLVM_BIN:$HOME/.local/bin:$PATH"
+    clang++ --version
+    ld.lld --version
+    ```
+
     Start a new shell if the uv installer added its directory to your `PATH`.
     The [uv installer](https://docs.astral.sh/uv/getting-started/installation/)
     also supports a pinned-version URL.

@@ -3266,3 +3266,14 @@ Launcher regressions: 15 passed, 6 optional skips. Published 0.1.6 Qt app-run
 still needs the patch; preparing a follow-up release. Physical-device runs
 remain untested. The exact local CLion ARMv6 preset configures and builds,
 and configuring the same preset in a fresh /tmp build tree succeeds.
+
+2026-10-06: Launcher/resource patch regression completes on both owner hosts.
+Full macOS Python: 318 passed, 434 optional skips; native CTest: 14/14.
+Full Linux Python: 313 passed, 439 optional skips; native CTest: 13/13.
+Linux's first SSH run lacked /usr/lib/llvm-20/bin and ~/.local/bin on PATH;
+seven linker setup errors and three error-code assertions disappear with
+that toolchain path. Both Linux guest-index presets build using the public
+0.1.6 SDK selected in isolated XDG_CONFIG_HOME; the older global SDK lacks Qt.
+Root macOS qt_app and gui_app ARMv6 executables compile and link. Source guide
+now shows the installed native SDK bin directory as a complete toolchain;
+the Linux guide installs the bundled emulator by default. Strict docs pass.
