@@ -12,6 +12,7 @@
     "bafl_app_classic",
     "calendar_app_classic",
     "messaging_app_classic",
+    "uri_app_classic",
     "qt_modules_app_classic",
     "qt_mobility_app_classic"
   ]

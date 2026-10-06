@@ -129,3 +129,11 @@ unknown.
 under an active scheduler. It exited normally on the named RM-807/Dynarmic
 fixture. SMS, MMS, email protocols, message contents and other firmware
 remain separate unverified scope.
+
+`Symbian::Uri` supplies original URI/escape utilities and frozen
+`inetprotutil.dll` imports. `Symbian::HttpNative` and `Symbian::Mime` remain
+separate original targets; their representative public headers also compile
+independently. `examples/uri_app_classic` parses a fixed HTTPS URI and checks
+its host using `TUriParser8`. It exited normally on the named RM-807/Dynarmic
+fixture without making a network request. HTTP transport, browser integration
+and other firmware require separate validation.

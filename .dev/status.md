@@ -1,5 +1,13 @@
 # Status
 
+2026-10-06 URI/MIME/HTTP header slice: five independent original public
+headers compiled with their owning SDK targets. The direct
+`uri_app_classic` parser example built and packaged from a relocated SDK for
+both ARM profiles, and a named RM-807/Dynarmic emulator parsed its URI with
+a clean guest exit. The root Debug IDE graph exposed and built
+`uri_app_classic_e32`, and its opt-in guest regression passed. HTTP transport
+and browser runtime remain separate work.
+
 2026-10-06 original messaging session slice: three independent public-header
 canaries passed. `messaging_app_classic` linked only `Symbian::Messaging`,
 built from the relocated SDK for ARMv5T/ARMv6, converted to E32 and packaged

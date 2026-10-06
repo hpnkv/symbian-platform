@@ -1,5 +1,17 @@
 # Research log
 
+2026-10-06: The original URI, HTTP and MIME manifest-derived facilities
+already had frozen import interfaces. Five public headers compiled
+independently against `Symbian::Uri`, `Symbian::HttpNative` or `Symbian::Mime`.
+The new `uri_app_classic` parsed a fixed HTTPS URI with `TUriParser8` and
+compared its host; it makes no network request. Relocated ARMv5T/ARMv6
+builds imported `inetprotutil.dll`, converted to E32 and produced an ARMv6
+one-executable SIS. A disposable named RM-807/Dynarmic run exited with
+guest type/reason `0/0`. This demonstrates the parser and chosen ordinals,
+not HTTP transport, browser integration or physical-device compatibility.
+The root Debug CMake graph exposed and built `uri_app_classic_e32` after a
+cached input check; its opt-in guest case passed in 18.43 seconds.
+
 2026-10-06: The existing manifest-derived `Messaging` facility has original
 `msgs.dll` frozen exports and three public headers. All three compiled as
 independent ARMv6 consumers with only `Symbian::Messaging` and runtime. The

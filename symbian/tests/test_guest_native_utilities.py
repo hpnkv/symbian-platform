@@ -29,6 +29,7 @@ pytestmark = pytest.mark.skipif(
         ("bafl_app_classic", 0xE0000E0E),
         ("calendar_app_classic", 0xE0000E0F),
         ("messaging_app_classic", 0xE0000E10),
+        ("uri_app_classic", 0xE0000E11),
     ],
 )
 def test_public_native_utility_on_named_firmware(tmp_path, name, uid):

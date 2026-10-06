@@ -1,0 +1,13 @@
+[project]
+name = "uri_app_classic"
+kind = "e32-import"
+architecture = "armv6"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000e11
+
+[package]
+uid = 0xe0000f11
+name = "Symbian URI Classic"
+vendor = "Symbian SDK examples"
+executable_name = "uri_app_classic.exe"
+version = [1, 0, 0]

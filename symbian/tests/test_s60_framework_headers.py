@@ -36,6 +36,9 @@ def test_public_s60_framework_headers_compile_independently(tmp_path):
         "StreamsNative",
         "Calendar",
         "Messaging",
+        "Uri",
+        "HttpNative",
+        "Mime",
     ):
         facility = next(
             item for item in inventory["facilities"] if item["target"] == name
@@ -54,7 +57,7 @@ def test_public_s60_framework_headers_compile_independently(tmp_path):
                 ]
             )
             count += 1
-    assert count == 46
+    assert count == 51
     (tmp_path / "CMakeLists.txt").write_text("\n".join(cmake) + "\n")
     build = tmp_path / "build"
     configure = subprocess.run(
