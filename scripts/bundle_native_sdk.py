@@ -250,6 +250,11 @@ def bundle(args: argparse.Namespace) -> None:
         "licenses",
     ):
         shutil.copytree(args.guest / name, output / name, symlinks=False)
+    from symbian.project.native_surface import validate_native_payload
+    from symbian.project.qt import validate_qt_payload
+
+    validate_native_payload(output)
+    validate_qt_payload(output)
     # An installed development SDK can also contain Python/host wrappers;
     # target payloads must never retain those external-host dependencies.
     shutil.rmtree(output / "lib/host", ignore_errors=True)
@@ -343,7 +348,7 @@ def bundle(args: argparse.Namespace) -> None:
         json.dumps(presets, indent=2) + "\n"
     )
     (counter / "sdk-location.json").write_text('{"sdk": "../.."}\n')
-    qt = output / "examples/qt_app"
+    qt = output / "examples/qt_app_classic"
     qt.mkdir()
     for name in (
         "app.cc",
@@ -357,20 +362,35 @@ def bundle(args: argparse.Namespace) -> None:
         "debug.sh",
         "symbian-project.json",
     ):
-        shutil.copy(root / "examples/qt_app" / name, qt / name)
+        shutil.copy(root / "examples/qt_app_classic" / name, qt / name)
     shutil.copytree(
-        root / "examples/qt_app/.idea/runConfigurations",
+        root / "examples/qt_app_classic/.idea/runConfigurations",
         qt / ".idea/runConfigurations",
     )
-    if (root / "examples/qt_app/assets").is_dir():
-        shutil.copytree(root / "examples/qt_app/assets", qt / "assets")
+    if (root / "examples/qt_app_classic/assets").is_dir():
+        shutil.copytree(root / "examples/qt_app_classic/assets", qt / "assets")
     shutil.copy(root / ".clang-format", qt / ".clang-format")
     presets = json.loads(
-        (root / "examples/qt_app/CMakePresets.json").read_text()
+        (root / "examples/qt_app_classic/CMakePresets.json").read_text()
     )
     presets["configurePresets"][0]["toolchainFile"] = "${sourceDir}/sdk.cmake"
     (qt / "CMakePresets.json").write_text(json.dumps(presets, indent=2) + "\n")
     (qt / "sdk-location.json").write_text('{"sdk": "../.."}\n')
+    for example_name in (
+        "audio_app_classic",
+        "bitmap_app_classic",
+        "image_app_classic",
+        "vibra_app_classic",
+        "qt_modules_app_classic",
+        "linking_app",
+    ):
+        example = output / "examples" / example_name
+        shutil.copytree(
+            root / "examples" / example_name,
+            example,
+            ignore=shutil.ignore_patterns(".symbian", "sdk-location.json"),
+        )
+        (example / "sdk-location.json").write_text('{"sdk": "../.."}\n')
     gl = output / "examples/gl_app"
     gl.mkdir()
     for pattern in (

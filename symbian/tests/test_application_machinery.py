@@ -93,7 +93,8 @@ def test_dynamic_library_is_a_normal_linkable_target(
         "  ${CMAKE_CURRENT_SOURCE_DIR})\n"
         "symbian_add_executable(application main.cc)\n"
         "target_link_libraries(application PRIVATE Symbian::Runtime answer)\n"
-        "symbian_publish_executable(application UID3 0xe0000827)\n"
+        "symbian_publish_executable(application UID3 0xe0000827\n"
+        "  PROJECT_DLLS BUNDLE)\n"
     )
     tree = tmp_path / "build"
     configure(sdk, tmp_path, tree, architecture)
@@ -161,7 +162,7 @@ def test_qt_complete_library_includes_data_and_rejects_malformed_slots(
     )
     source = tmp_path / "application"
     shutil.copytree(
-        Path(__file__).parents[2] / "examples/qt_app",
+        Path(__file__).parents[2] / "examples/qt_app_classic",
         source,
         ignore=shutil.ignore_patterns(".symbian", "sdk-location.json"),
     )

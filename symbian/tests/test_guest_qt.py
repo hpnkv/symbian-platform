@@ -36,12 +36,12 @@ direct = pytest.mark.skipif(
 def test_original_qt_button_and_shutdown(tmp_path, backend):
     """Checks delivered pixels, clicked→quit, destructors and host teardown."""
     build = Path(BUILD).resolve()
-    project = Path(__file__).resolve().parents[2] / "examples/qt_app"
+    project = Path(__file__).resolve().parents[2] / "examples/qt_app_classic"
     report = json.loads((build / "report.json").read_text())
     assert report["reproducible"] is True
     for path, digest in report["inputs"].items():
         assert hashlib.sha256(Path(path).read_bytes()).hexdigest() == digest
-    executable = (build / "qt_app.exe").read_bytes()
+    executable = (build / "qt_app_classic.exe").read_bytes()
     assert hashlib.sha256(executable).hexdigest() == report["sha256"]
     proxies = [
         Path(path).read_bytes()
@@ -50,7 +50,7 @@ def test_original_qt_button_and_shutdown(tmp_path, backend):
     ]
     assert (
         convert_imported_executable(
-            (build / "qt_app.elf").read_bytes(), proxies, 0xE0000821
+            (build / "qt_app_classic.elf").read_bytes(), proxies, 0xE0000821
         )
         == executable
     )
@@ -58,13 +58,13 @@ def test_original_qt_button_and_shutdown(tmp_path, backend):
     instance = tmp_path / "instance"
     shutil.copytree(Path(GOLDEN), instance)
     drive = instance / "data/drives/rm-807/c"
-    target = drive / "sys/bin/qt_app.exe"
+    target = drive / "sys/bin/qt_app_classic.exe"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(executable)
     assets, _ = compile_registration(
         project,
         {"caption": "Symbian Qt", "short_caption": "Qt"},
-        "qt_app.exe",
+        "qt_app_classic.exe",
         0xE0000821,
     )
     for virtual, data in assets:
@@ -93,7 +93,7 @@ def test_original_qt_button_and_shutdown(tmp_path, backend):
                     "--device",
                     "RM-807",
                     "--run",
-                    r"C:\sys\bin\qt_app.exe",
+                    r"C:\sys\bin\qt_app_classic.exe",
                 ],
                 env=env,
                 stdout=log,
@@ -158,7 +158,7 @@ def test_sdk_qt_launch_stages_resources_and_exits(tmp_path, backend):
     with session(project, project=project, backend=backend) as active:
         manifest = json.loads((active.directory / "launch.json").read_text())
         assert any(
-            asset.endswith("qt_app_reg.rsc")
+            asset.endswith("qt_app_classic_reg.rsc")
             for asset in manifest["application"]["assets"]
         )
         _button_and_shutdown(active.process, Control(active.endpoint), tmp_path)

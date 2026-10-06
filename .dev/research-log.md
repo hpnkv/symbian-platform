@@ -7200,3 +7200,49 @@ resources and Open C/GLib include-contract issues. Native leave startup and
 personality work is being validated separately; no general exception-support
 claim or release follows from this checkpoint. Qt modules, portable libraries,
 remaining manifest coverage, Linux and complete-bundle acceptance remain open.
+
+### 2026-10-06: explicit DLL deployment, Qt modules and classic examples
+
+Linked project DLLs now require an explicit CMake application choice:
+`PROJECT_DLLS BUNDLE` stages the CMake-built DLL into the SIS, while
+`PROJECT_DLLS RUNTIME` retains its ordinal import without packaging that DLL.
+An omitted or invalid choice fails during CMake configuration. Five focused
+build/configuration tests passed against the local SDK fixture, including a
+runtime-only SIS with no DLL payload. The fixture initially lacked bundled
+CMake; an ignored host-CMake symlink restored the test environment. A broader
+application-machinery run had 15 passes and four fixture/source-concurrency
+failures (missing root workspace module, a missing runtime include in this
+partial fixture, and one source mutation during build); it is not a broad
+regression verdict.
+
+Original Qt 4.8.1 `syncqt` produced 1,754 candidate module header entries.
+Fourteen `_qpa.h` implementation headers and all generated `private/` trees
+were removed; 1,740 public entries remain for fourteen module targets.
+QtWebKit's original frozen DEF is in its WebKit Symbian EABI
+directory; its version file reports 4.9.0. The tracked module inventory maps
+headers, DEF hashes, target dependencies and packaging manifests. Fresh
+staging and ordinal/header validation passed. Seventeen native-surface
+controls passed. A relocated ARMv6 Qt modules example compiled, linked and
+converted to E32 with QtCore, QtNetwork, QtSql, QtXml, QtWebKit and QtOpenGL
+imports. It was not executed against firmware, so Qt plugins and services
+remain unknown. Qt Mobility 1.0.3 has original module DEFs and public-header
+manifests but still needs a separately validated SDK export.
+
+Per the developer-experience naming decision, capability examples now use
+`_classic` on their directory, CMake target and executable identities. The
+in-project static/DLL linking example retains its infrastructure-specific
+name. No physical hardware was operated. Release 0.2.0 remains pending.
+
+The `_classic` rename exposed an old Python extension in the local virtual
+environment: it had been built before the EHABI v2 exception-descriptor bit
+was accepted, so four game-example cases reported a descriptor bounds error
+despite the ELF's correct four words. Rebuilding `symbian_python` from the
+current native sources and replacing only the ignored venv extension removed
+that mismatch. The root Debug CMake configure lists all renamed example
+targets; `qt_modules_app_classic_e32` and the in-project DLL example build.
+The linking example now has a real transitive static-library dependency on
+its project DLL. Its rebuilt E32 imports the DLL and the copied RM-807
+`rm807-113.010.1508` / Dynarmic instance exits with guest reason zero and
+frontend exit zero. The preserved ROM/Z fixture digests stayed unchanged.
+After the binding rebuild, the full focused classic-games, Qt-module and
+project-DLL test set passed: 13 Pytests on the local macOS arm64 SDK fixture.

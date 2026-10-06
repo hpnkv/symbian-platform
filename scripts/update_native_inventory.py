@@ -13,6 +13,11 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict, deque
 from pathlib import Path
 
+from symbian.project.native_surface import (
+    apply_header_edits,
+    generate_stringtable,
+)
+
 
 def digest(path: Path) -> str:
     """Returns the preserved input's byte digest."""
@@ -162,6 +167,10 @@ def exports(root: Path, names: list[str]) -> tuple[list[dict], list[dict]]:
                     ".inl",
                     ".hrh",
                     ".rh",
+                    ".rsg",
+                    ".mbg",
+                    ".loc",
+                    ".rssi",
                 ):
                     continue
                 source = resolve_case(
@@ -216,6 +225,11 @@ def generate(workspace: Path) -> dict:
     profile = json.loads(
         (workspace / "research/native-sdk/sources.json").read_text()
     )
+    compatibility = json.loads(
+        (
+            workspace / "research/native-sdk/header-compatibility.json"
+        ).read_text()
+    )
     public, support = exports(root, list(profile["sources"]))
     candidates = defaultdict(list)
     for record in public + support:
@@ -227,6 +241,65 @@ def generate(workspace: Path) -> dict:
             continue
         if "sha256" in record:
             candidates[record["include"].casefold()].append(record)
+    # These overlapping exports differ only in relocated component ownership
+    # or select the actual strong-crypto variant used by the chosen DEF.
+    selections = {
+        "biditext.h": "textandloc-sdk/fontservices/textbase/inc/BidiText.h",
+        "padding.h": "security/crypto/weakcryptospi/inc/padding.h",
+        "khronos_types.h": (
+            "graphics/egl/eglinterface/include/1.4/khronos_types.h"
+        ),
+    }
+    for name, source in selections.items():
+        choices = [r for r in candidates[name] if r["source"] == source]
+        if choices:
+            candidates[name] = choices
+    for name, choices in list(candidates.items()):
+        spi = [
+            r
+            for r in choices
+            if r["source"].startswith("security/crypto/weakcryptospi/")
+        ]
+        if spi and len({r["sha256"] for r in spi}) == 1:
+            candidates[name] = spi
+    for choices in candidates.values():
+        for record in choices:
+            edits = compatibility.get(record["include"].casefold())
+            if edits:
+                record["source_sha256"] = record["sha256"]
+                record["compatibility_edits"] = edits
+                record["sha256"] = hashlib.sha256(
+                    apply_header_edits(
+                        (root / record["source"]).read_bytes(), edits
+                    )
+                ).hexdigest()
+    # MMP STRINGTABLE blocks export generated public headers. Reuse the
+    # original SDK generator rather than inventing a parallel implementation.
+    http = "netprotocols/applayerprotocols/httptransportfw"
+    table = f"{http}/strings/HttpStringConstants.st"
+    generator = "ossrv/lowlevellibsandfws/apputils/stringtools/stringtable.pl"
+    if (root / table).is_file() and (root / generator).is_file():
+        record = {
+            "include": "httpstringconstants.h",
+            "source": table,
+            "input_sha256": digest(root / table),
+            "sha256": hashlib.sha256(
+                generate_stringtable(root, table, generator)
+            ).hexdigest(),
+            "generator": {
+                "source": generator,
+                "sha256": digest(root / generator),
+            },
+            "manifest": f"{http}/group/http.mmp",
+            "declaration": (
+                "START STRINGTABLE HttpStringConstants.st; "
+                "EXPORTPATH /epoc32/include"
+            ),
+            "classification": "public_base_platform",
+            "conditions": [],
+        }
+        candidates[record["include"]].append(record)
+        public.append(record)
     facilities = json.loads(
         (workspace / "research/native-sdk/facilities.json").read_text()
     )["facilities"]
@@ -259,6 +332,8 @@ def generate(workspace: Path) -> dict:
                     r["include"]
                     for r in records
                     if Path(r["include"]).suffix.lower() == ".h"
+                    and Path(r["include"]).name
+                    not in ("gi18n.h", "gi18n-lib.h")
                 }
             ),
             "dependencies": [],
@@ -275,6 +350,25 @@ def generate(workspace: Path) -> dict:
             facility.pop("blocked")
             facility.update(choices[0])
         facilities.append(facility)
+    for facility in facilities:
+        if facility["dll"] in (
+            "libglib.dll",
+            "libgobject.dll",
+            "libgmodule.dll",
+            "libgthread.dll",
+        ):
+            facility["classification"] = "public_standard_extension"
+            facility["dependencies"] = ["OpenC"]
+            if facility["dll"] != "libglib.dll":
+                facility["dependencies"].append("Native_libglib")
+        if facility["dll"] in ("libstdcpp.dll", "libstdcppv5.dll") or any(
+            "stlport/" in h for h in facility["headers"]
+        ):
+            facility["classification"] = "public_standard_extension"
+            facility["blocked"] = (
+                "Historical STLport/Open C++ runtime ABI and startup are "
+                "not verified with Clang; modern libc++ is a separate API"
+            )
     delivered = {}
     queue = deque()
     for facility in facilities:
@@ -322,7 +416,7 @@ def generate(workspace: Path) -> dict:
                     missing.append(header + " (ambiguous export)")
                     continue
                 choice = same_repo[0]
-            queue.append((choice, facility["target"]))
+            queue.append(({**choice, "include": header}, facility["target"]))
         if missing:
             facility["blocked"] = (
                 "Public header export not established: " + ", ".join(missing)
@@ -347,15 +441,54 @@ def generate(workspace: Path) -> dict:
         )
         if installed["sha256"] != record["sha256"]:
             raise ValueError(f"Conflicting native header payload: {path}")
+        if installed["include"] != path:
+            aliases = installed.setdefault("aliases", [])
+            destination = "include/native/" + path
+            if destination not in aliases:
+                aliases.append(destination)
         installed["targets"].append(owner)
-        text = (root / record["source"]).read_text(errors="replace")
+        text = (
+            generate_stringtable(
+                root, record["source"], record["generator"]["source"]
+            ).decode()
+            if record.get("generator")
+            else apply_header_edits(
+                (root / record["source"]).read_bytes(),
+                record.get("compatibility_edits", []),
+            ).decode(errors="replace")
+        )
         for include in re.findall(
             r'^\s*#\s*include\s*[<"]([^>"\n]+)', text, re.M
         ):
             include = include.replace("\\", "/")
             choices = candidates[include.casefold()]
             if not choices:
-                continue
+                relative = str(Path(record["include"]).parent / include)
+                choices = candidates[relative.casefold()]
+                if choices:
+                    include = relative
+            if not choices:
+                source = resolve_case(
+                    (root / record["source"]).parent / include
+                )
+                # A public header can require an unexported implementation
+                # header. Preserve this exact textual dependency; it does not
+                # become an independently selectable public API.
+                if source.is_file() and source.is_relative_to(root):
+                    relative = str(Path(record["include"]).parent / include)
+                    choices = [
+                        {
+                            "include": relative,
+                            "source": str(source.relative_to(root)),
+                            "sha256": digest(source),
+                            "classification": "private_internal",
+                            "exposure": "required_textual_support",
+                            "included_by": record["source"],
+                        }
+                    ]
+                    include = relative
+                else:
+                    continue
             if len({r["sha256"] for r in choices}) > 1:
                 same_repo = [
                     r
@@ -363,10 +496,25 @@ def generate(workspace: Path) -> dict:
                     if r["source"].split("/")[0]
                     == record["source"].split("/")[0]
                 ]
+                if same_repo:
+                    scores = {
+                        r["source"]: len(
+                            Path(
+                                os.path.commonpath(
+                                    [record["source"], r["source"]]
+                                )
+                            ).parts
+                        )
+                        for r in same_repo
+                    }
+                    best = max(scores.values())
+                    same_repo = [
+                        r for r in same_repo if scores[r["source"]] == best
+                    ]
                 if len({r["sha256"] for r in same_repo}) != 1:
                     continue
                 choices = same_repo
-            queue.append((choices[0], owner))
+            queue.append(({**choices[0], "include": include}, owner))
     headers = []
     for record in public:
         item = delivered.pop(record["include"].casefold(), None)
@@ -387,6 +535,49 @@ def generate(workspace: Path) -> dict:
     for record in headers:
         if record.get("targets"):
             record["targets"] = sorted(set(record["targets"]))
+        if record.get("destination"):
+            text = (root / record["source"]).read_text(errors="replace")
+            umbrella = re.search(r"#error[^\n]*?<([^>]+)>", text)
+            if umbrella and umbrella[1] in ("glib.h", "glib-object.h"):
+                record["include_via"] = umbrella[1]
+                guard = re.search(r"^#ifndef\s+(\w+)", text, re.M)
+                if guard:
+                    record["include_guard"] = guard[1]
+    for facility in facilities:
+        facility["header_payloads"] = sorted(
+            {
+                p
+                for record in headers
+                if facility["target"] in record.get("targets", [])
+                for p in [record["destination"], *record.get("aliases", [])]
+            }
+        )
+        facility["ms_extensions"] = any(
+            facility["target"] in record.get("targets", [])
+            and Path(record["include"]).name.casefold()
+            in (
+                "cmdefconnvalues.h",
+                "lbtstartuptrigger.h",
+                "aiwvariant.h",
+                "eikedwin.h",
+            )
+            for record in headers
+        )
+    by_name = {f["target"]: f for f in facilities}
+    changed = True
+    while changed:
+        changed = False
+        for facility in facilities:
+            if facility.get("blocked"):
+                continue
+            for dependency in facility["dependencies"]:
+                if dependency in by_name and by_name[dependency].get("blocked"):
+                    facility["blocked"] = (
+                        f"Required public dependency Symbian::{dependency} "
+                        f"is blocked: {by_name[dependency]['blocked']}"
+                    )
+                    changed = True
+                    break
     return {
         "schema": "symbian.native-inventory/v1",
         "baseline": profile["baseline"],
@@ -401,6 +592,20 @@ def generate(workspace: Path) -> dict:
         "facilities": facilities,
         "headers": headers,
         "private_export_count": len(support),
+        "licenses": [
+            {
+                "source": str(path.relative_to(root)),
+                "sha256": digest(path),
+                "destination": "licenses/native/" + str(path.relative_to(root)),
+            }
+            for name in profile["sources"]
+            for path in sorted((root / name).rglob("*"))
+            if path.is_file()
+            and re.fullmatch(
+                r"(LICENSE|LICENCE|COPYING)(\.[A-Za-z0-9_-]+)?", path.name, re.I
+            )
+            and ".git" not in path.parts
+        ],
     }
 
 

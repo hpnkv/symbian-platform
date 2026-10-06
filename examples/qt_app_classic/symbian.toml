@@ -1,6 +1,6 @@
 [project]
 architecture = "armv6"
-name = "qt_app"
+name = "qt_app_classic"
 kind = "e32-import-experiment"
 cmake_preset = "symbian-pic"
 uid3 = 0xe0000821
@@ -9,7 +9,7 @@ uid3 = 0xe0000821
 uid = 0xe0000822
 name = "Symbian Qt"
 vendor = "Symbian platform"
-executable_name = "qt_app.exe"
+executable_name = "qt_app_classic.exe"
 version = [1, 0, 0]
 
 [application]

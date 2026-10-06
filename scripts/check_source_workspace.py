@@ -44,7 +44,7 @@ def main() -> None:
                 else [
                     "symbian_probe_index",
                     "gui_app",
-                    "qt_app",
+                    "qt_app_classic",
                     "agent_service",
                 ]
             )
@@ -72,7 +72,7 @@ def main() -> None:
             if profile != "debug":
                 for suffix in (
                     "examples/gui_app/app.cc",
-                    "examples/qt_app/app.cc",
+                    "examples/qt_app_classic/app.cc",
                 ):
                     row = next(
                         row for row in commands if row["file"].endswith(suffix)

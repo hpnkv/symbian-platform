@@ -74,6 +74,9 @@ def _prepare(root: Path) -> Path:
     output = root / ".symbian/workspace-inputs"
     dependencies = [root / "symbian/project/sdk.py", Path(__file__)]
     dependencies.append(root / "symbian/project/graphics.py")
+    dependencies.append(root / "symbian/project/qt.py")
+    dependencies.append(root / "symbian/project/native_surface.py")
+    dependencies += list((root / "research/native-sdk").glob("*.json"))
     dependencies += list((root / "symbian/toolchain/cmake").glob("*"))
     dependencies += list((root / "research/abseil").glob("*.patch"))
     dependencies += list((root / ".symbian/gui-sdk/include").glob("*"))

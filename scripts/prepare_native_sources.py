@@ -115,6 +115,15 @@ def main() -> None:
         )
     for name, (repository, revision) in EXTRA.items():
         checkout(root / "research/upstream" / name, repository, revision)
+    native_sources = json.loads(
+        (root / "research/native-sdk/sources.json").read_text()
+    )
+    for name, source in native_sources["sources"].items():
+        checkout(
+            root / "research/upstream" / name,
+            source["repository"],
+            source["revision"],
+        )
     nghttp2 = root / "third_party/nghttp2"
     if nghttp2.exists() and not (nghttp2 / ".git").exists():
         # A prepared release source snapshot is also valid. Verify the exact

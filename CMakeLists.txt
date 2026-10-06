@@ -180,6 +180,7 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
     "${CMAKE_SOURCE_DIR}/probes/runtime_probe/exception_contract.cc"
     "${CMAKE_SOURCE_DIR}/probes/runtime_probe/exception_metadata_contract.cc"
     PROPERTIES COMPILE_OPTIONS "-fexceptions;-frtti;-fno-pic")
+  include(cmake/SymbianNativeExamples.cmake)
   # Registered applications own their actual CMake targets. Discover root
   # projects, examples and probes rather than adding a rule per app.
   file(GLOB application_manifests CONFIGURE_DEPENDS
@@ -190,7 +191,9 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
     get_filename_component(application_dir "${application_manifest}" DIRECTORY)
     if(EXISTS "${application_dir}/CMakeLists.txt")
       file(READ "${application_manifest}" application_manifest_text)
-      if(NOT application_manifest_text MATCHES "\\[application\\]")
+      get_filename_component(application_name "${application_dir}" NAME)
+      if(NOT application_manifest_text MATCHES "\\[application\\]" AND
+          NOT application_name IN_LIST SYMBIAN_NATIVE_EXAMPLES)
         continue()
       endif()
       string(REGEX MATCHALL
@@ -342,7 +345,7 @@ if(SYMBIAN_BUILD_GUI_EXAMPLE)
     message(STATUS "GUI target unavailable: prepare the source platform headers")
   endif()
 endif()
-foreach(application IN ITEMS gl_app qt_app)
+foreach(application IN ITEMS gl_app qt_app_classic)
   if(SYMBIAN_BUILD_GUI_EXAMPLE)
     include(symbian/toolchain/cmake/SymbianSdk.cmake)
     symbian_add_guest_subdirectory(examples/${application})
@@ -357,5 +360,13 @@ foreach(application IN ITEMS gl_app qt_app)
     SYMBIAN_LAUNCH_ROOT="${CMAKE_SOURCE_DIR}"
     SYMBIAN_LAUNCH_PROJECT="${CMAKE_SOURCE_DIR}/examples/${application}")
 endforeach()
+include(cmake/SymbianNativeExamples.cmake)
+option(SYMBIAN_BUILD_NATIVE_EXAMPLES "Expose original native API and library examples" ON)
+if(SYMBIAN_BUILD_NATIVE_EXAMPLES)
+  include(symbian/toolchain/cmake/SymbianSdk.cmake)
+  foreach(application IN LISTS SYMBIAN_NATIVE_EXAMPLES)
+    symbian_add_guest_subdirectory(examples/${application})
+  endforeach()
+endif()
 symbian_index_remaining_native(symbian_index_remaining_host absl::statusor
   cpp)

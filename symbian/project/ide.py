@@ -42,7 +42,7 @@ def configure_workspace_ide(root: Path) -> None:
     )
     profiles_changed = False
     previous_workspace = ET.tostring(workspace)
-    for name, label in (("gl_app", "GL"), ("qt_app", "Qt")):
+    for name, label in (("gl_app", "GL"), ("qt_app_classic", "Qt")):
         profile_id = str(
             uuid.uuid5(
                 uuid.NAMESPACE_URL, f"symbian/workspace-debugger/v1/{name}"

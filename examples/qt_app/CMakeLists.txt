@@ -1,5 +1,0 @@
-cmake_minimum_required(VERSION 3.28)
-project(qt_app LANGUAGES CXX ASM)
-include(SymbianApp)
-symbian_add_executable(qt_app app.cc)
-target_link_libraries(qt_app PRIVATE Symbian::Runtime Symbian::QtGui)

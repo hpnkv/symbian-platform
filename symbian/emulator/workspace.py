@@ -16,7 +16,7 @@ def build_example(root: Path, name: str, output: Path, firmware: Path) -> None:
         output: Owned directory for the paired ELF and E32 outputs.
         firmware: Selected Z drive for graphics availability checks.
     """
-    if name not in ("gl_app", "qt_app"):
+    if name not in ("gl_app", "qt_app_classic"):
         raise StatusError(Code.INVALID_ARGUMENT, "Unknown workspace example")
     cmake = shutil.which("cmake")
     if not cmake:

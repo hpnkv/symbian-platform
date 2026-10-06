@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 3.28)
+project(native_leave_probe LANGUAGES CXX ASM)
+include(SymbianApp)
+symbian_add_executable(native_leave_probe probe.cc)
+symbian_enable_native_leaves(native_leave_probe SOURCES probe.cc)
+if(DEFINED SYMBIAN_LEAVE_EXPECTED)
+  target_compile_definitions(native_leave_probe PRIVATE
+    SYMBIAN_LEAVE_EXPECTED=${SYMBIAN_LEAVE_EXPECTED})
+endif()
+symbian_publish_executable(native_leave_probe UID3 0xe0000e08)

@@ -8,7 +8,7 @@ static_assert(sizeof(void*) == 4 && sizeof(qreal) == 4);
 
 int main() {
   int argc = 3;
-  char name[] = "qt_app";
+  char name[] = "qt_app_classic";
   char style[] = "-style";
   char style_name[] = "plastique";
   char* absl_nullable argv[] = {name, style, style_name, nullptr};

@@ -263,6 +263,7 @@ function(symbian_add_dynamic_library target)
     set_target_properties(${target} PROPERTIES SYMBIAN_AUTOMATIC_EXPORTS TRUE)
   endif()
   set_target_properties(${target} PROPERTIES SYMBIAN_UID3 "${DLL_UID3}"
+    SYMBIAN_DLL_IMAGE "${CMAKE_CURRENT_BINARY_DIR}/${target}.dll"
     SYMBIAN_EXPORT_DEFINITION "${definition}"
     SYMBIAN_EXTRA_PROXIES "${DLL_IMPORT_PROXIES};${SYMBIAN_IMPORT_PROXIES}")
   target_link_libraries(${target} PRIVATE ${DLL_IMPORT_PROXIES})
@@ -272,6 +273,12 @@ function(symbian_add_dynamic_library target)
 endfunction()
 
 function(_symbian_publish_library target)
+  _symbian_e32_converter(converter converter_dependency)
+  if(TARGET "${converter_dependency}")
+    add_dependencies(${target} "${converter_dependency}")
+  else()
+    set_property(TARGET ${target} APPEND PROPERTY LINK_DEPENDS "${converter_dependency}")
+  endif()
   _symbian_link_default_runtime(${target})
   _symbian_target_proxies(${target} "" proxies)
   get_target_property(extra ${target} SYMBIAN_EXTRA_PROXIES)
@@ -287,7 +294,7 @@ function(_symbian_publish_library target)
   get_target_property(automatic ${target} SYMBIAN_AUTOMATIC_EXPORTS)
   set(export_command)
   if(automatic)
-    set(export_command COMMAND "${SYMBIAN_SDK_PREFIX}/bin/symbian-native"
+    set(export_command COMMAND "${converter}"
       export-definition --input "$<TARGET_FILE:${target}>"
       --output "${definition}")
   else()
@@ -296,13 +303,14 @@ function(_symbian_publish_library target)
   set(proxy_dir "${CMAKE_CURRENT_BINARY_DIR}/${target}-import")
   set(elf "${CMAKE_CURRENT_BINARY_DIR}/${target}_elf.elf")
   set(image "${CMAKE_CURRENT_BINARY_DIR}/${target}.dll")
+  set_property(TARGET ${target} PROPERTY SYMBIAN_DLL_IMAGE "${image}")
   add_custom_command(TARGET ${target} POST_BUILD
     ${export_command}
     COMMAND "${CMAKE_COMMAND}" -E copy "$<TARGET_FILE:${target}>" "${elf}"
-    COMMAND "${SYMBIAN_SDK_PREFIX}/bin/symbian-native" convert-dll
+    COMMAND "${converter}" convert-dll
       --input "${elf}" --definition "${definition}"
       --uid3 "${uid3}" ${options} --output "${image}"
-    COMMAND "${SYMBIAN_SDK_PREFIX}/bin/symbian-native" proxy-sources
+    COMMAND "${converter}" proxy-sources
       --definition "${definition}" --target-dll "${target}.dll"
       --output "${proxy_dir}"
     COMMAND "${CMAKE_CXX_COMPILER}" --target=armv5t-none-eabi -march=armv5t
@@ -373,20 +381,35 @@ endfunction()
 
 # Convert the linked ELF to a runnable E32 image using the standalone host tool.
 # The ELF remains available for debugging. This step requires no Python runtime.
-function(symbian_publish_executable target)
-  cmake_parse_arguments(PARSE_ARGV 1 EXE "" "UID3;CAPABILITIES" "IMPORT_PROXIES")
-  if(EXE_UNPARSED_ARGUMENTS OR EXE_KEYWORDS_MISSING_VALUES OR NOT EXE_UID3)
-    message(FATAL_ERROR "symbian_publish_executable needs UID3")
-  endif()
+function(_symbian_e32_converter output dependency)
   set(converter "${SYMBIAN_SDK_PREFIX}/bin/symbian-native")
   set(converter_dependency "${converter}")
   if(SYMBIAN_WORKSPACE_BUILD AND TARGET symbian_native_tool)
     set(converter "$<TARGET_FILE:symbian_native_tool>")
     set(converter_dependency symbian_native_tool)
-  elseif(NOT EXISTS "${converter}")
-    message(FATAL_ERROR "E32 publishing needs the standalone symbian-native tool")
+  elseif(SYMBIAN_NATIVE_CONVERTER)
+    set(converter "${SYMBIAN_NATIVE_CONVERTER}")
+    set(converter_dependency "${converter}")
   endif()
+  if(NOT TARGET "${converter_dependency}" AND NOT EXISTS "${converter}")
+    message(FATAL_ERROR "E32 publishing needs the standalone symbian-native tool: ${converter}")
+  endif()
+  set(${output} "${converter}" PARENT_SCOPE)
+  set(${dependency} "${converter_dependency}" PARENT_SCOPE)
+endfunction()
+
+function(symbian_publish_executable target)
+  cmake_parse_arguments(PARSE_ARGV 1 EXE "" "UID3;CAPABILITIES;PROJECT_DLLS" "IMPORT_PROXIES")
+  if(EXE_UNPARSED_ARGUMENTS OR EXE_KEYWORDS_MISSING_VALUES OR NOT EXE_UID3)
+    message(FATAL_ERROR "symbian_publish_executable needs UID3")
+  endif()
+  if(EXE_PROJECT_DLLS AND NOT EXE_PROJECT_DLLS MATCHES "^(BUNDLE|RUNTIME)$")
+    message(FATAL_ERROR
+      "${target}: PROJECT_DLLS must be BUNDLE or RUNTIME")
+  endif()
+  _symbian_e32_converter(converter converter_dependency)
   set_target_properties(${target} PROPERTIES SYMBIAN_UID3 "${EXE_UID3}"
+    SYMBIAN_PROJECT_DLLS "${EXE_PROJECT_DLLS}"
     SYMBIAN_CONVERTER "${converter}"
     SYMBIAN_CONVERTER_DEPENDENCY "${converter_dependency}"
     SYMBIAN_CAPABILITIES "${EXE_CAPABILITIES}"
@@ -421,8 +444,79 @@ function(_symbian_publish_executable target)
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/e32"
     COMMAND "${converter}" convert-exe --input "$<TARGET_FILE:${target}>"
       --uid3 "${uid3}" ${options} --output "${image}"
-    DEPENDS ${target} "${converter_dependency}" ${proxies} VERBATIM)
+    COMMAND "${CMAKE_COMMAND}"
+      "-DGRAPH_FILE=${CMAKE_BINARY_DIR}/${target}.libraries.json"
+      "-DOUTPUT_DIRECTORY=${CMAKE_CURRENT_BINARY_DIR}/e32"
+      "-DTARGET_NAME=${target}"
+      -P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/SymbianApplicationPayload.cmake"
+    BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/e32/${target}.libraries.json"
+    DEPENDS ${target} "${converter_dependency}" ${proxies}
+      "${CMAKE_BINARY_DIR}/${target}.libraries.json"
+      "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/SymbianApplicationPayload.cmake"
+    VERBATIM)
   add_custom_target(${target}_e32 ALL DEPENDS "${image}")
+endfunction()
+
+# Only DLLs built by the application graph are deployable payloads. Imported
+# firmware DLL targets supply interfaces, never firmware implementations.
+function(_symbian_application_libraries target output)
+  get_property(seen GLOBAL PROPERTY SYMBIAN_APPLICATION_LIBRARY_WALK)
+  if(target IN_LIST seen)
+    set(${output} "" PARENT_SCOPE)
+    return()
+  endif()
+  set_property(GLOBAL APPEND PROPERTY SYMBIAN_APPLICATION_LIBRARY_WALK "${target}")
+  set(result)
+  get_target_property(image ${target} SYMBIAN_DLL_IMAGE)
+  if(image)
+    list(APPEND result "${image}")
+  endif()
+  foreach(property LINK_LIBRARIES INTERFACE_LINK_LIBRARIES)
+    get_target_property(items ${target} ${property})
+    foreach(item IN LISTS items)
+      if(item MATCHES "^\\$<LINK_ONLY:([^>]+)>$")
+        set(item "${CMAKE_MATCH_1}")
+      endif()
+      if(TARGET "${item}")
+        _symbian_application_libraries("${item}" nested)
+        list(APPEND result ${nested})
+      elseif(item MATCHES "\\$<")
+        set_property(GLOBAL APPEND PROPERTY SYMBIAN_APPLICATION_LIBRARY_CONDITIONAL "${item}")
+      endif()
+    endforeach()
+  endforeach()
+  list(REMOVE_DUPLICATES result)
+  set(${output} "${result}" PARENT_SCOPE)
+endfunction()
+
+function(_symbian_write_application_libraries target)
+  set_property(GLOBAL PROPERTY SYMBIAN_APPLICATION_LIBRARY_WALK "")
+  set_property(GLOBAL PROPERTY SYMBIAN_APPLICATION_LIBRARY_CONDITIONAL "")
+  _symbian_application_libraries(${target} images)
+  get_target_property(mode ${target} SYMBIAN_PROJECT_DLLS)
+  if(images AND NOT mode)
+    message(FATAL_ERROR
+      "${target}: linked project DLLs require an explicit packaging choice: "
+      "symbian_publish_executable(${target} ... PROJECT_DLLS BUNDLE|RUNTIME)")
+  endif()
+  get_property(conditional GLOBAL PROPERTY SYMBIAN_APPLICATION_LIBRARY_CONDITIONAL)
+  if(images AND conditional AND mode STREQUAL "BUNDLE")
+    message(FATAL_ERROR "${target}: application DLL packaging cannot resolve ${conditional}; select libraries with CMake if()")
+  endif()
+  if(mode STREQUAL "RUNTIME")
+    set(images)
+  endif()
+  set(content "{\"schema\":\"symbian.application-libraries/v1\",\"libraries\":[")
+  set(separator "")
+  foreach(image IN LISTS images)
+    string(REPLACE "\\" "\\\\" escaped "${image}")
+    string(REPLACE "\"" "\\\"" escaped "${escaped}")
+    string(APPEND content "${separator}\"${escaped}\"")
+    set(separator ",")
+  endforeach()
+  string(APPEND content "]}\n")
+  file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/${target}.libraries.json"
+    CONTENT "${content}")
 endfunction()
 
 # Standard application entry is main() or main(int, char**). Runtime selection
@@ -433,6 +527,9 @@ function(symbian_add_executable target)
   else()
     symbian_add_import_executable(${target} SOURCES ${ARGN})
   endif()
+  # Wait for sibling/subdirectory DLL publishers to finish declaring images.
+  cmake_language(EVAL CODE
+    "cmake_language(DEFER DIRECTORY \"${CMAKE_SOURCE_DIR}\" CALL _symbian_write_application_libraries ${target})")
   if(NOT TARGET symbian_guest_runtime AND NOT TARGET Symbian::Runtime AND
      EXISTS "${SYMBIAN_SDK_PREFIX}/include/abseil/absl/base/nullability.h")
     target_include_directories(${target} SYSTEM PRIVATE

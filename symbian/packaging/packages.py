@@ -6,6 +6,7 @@ import tomllib
 from pathlib import Path
 
 from symbian.native import require_native
+from symbian.project.libraries import package_libraries
 from symbian.packaging.ca_bundle import digest as ca_digest
 from symbian.packaging.ca_bundle import selected_bundle
 from symbian.packaging.registration import compile_registration
@@ -117,6 +118,7 @@ def package(
     )
 
     assets, asset_hashes = resources if resources is not None else (None, {})
+    libraries = package_libraries(artifact)
     ca_bundle = selected_bundle(project, artifact)
     if ca_bundle is not None:
         if assets is None:
@@ -132,9 +134,11 @@ def package(
         asset_hashes[str(ca_path.relative_to(project))] = ca_digest(ca_data)
 
     def build() -> bytes:
-        if resources is None:
+        if resources is None and not libraries:
             return native.build_sis(data, **options)
-        return native.build_application_sis(data, assets, **options)
+        return native.build_application_sis(
+            data, assets or [], **options, libraries=libraries
+        )
 
     if (signing_certificate is None) != (signing_key is None):
         raise StatusError(
@@ -163,6 +167,8 @@ def package(
         raise StatusError(Code.DATA_LOSS, "Repeated SIS generation differs")
     if manifest.read_bytes() != manifest_bytes or artifact.read_bytes() != data:
         raise StatusError(Code.ABORTED, "Package inputs changed")
+    if package_libraries(artifact) != libraries:
+        raise StatusError(Code.ABORTED, "Application DLL inputs changed")
     for relative_path, digest in asset_hashes.items():
         source = (project / relative_path).resolve()
         if not source.is_relative_to(project) or not source.is_file():

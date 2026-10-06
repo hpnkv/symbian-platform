@@ -99,9 +99,9 @@ def check(dist: Path, assets: Path, version: str) -> None:
             "./host/lib/cmake/SymbianHost/SymbianHostConfig.cmake",
             "./licenses/Symbian-Apache-2.0.txt",
             "./examples/hello_time/CMakeLists.txt",
-            "./examples/qt_app/app.cc",
-            "./examples/qt_app/CMakeLists.txt",
-            "./examples/qt_app/symbian.toml",
+            "./examples/qt_app_classic/app.cc",
+            "./examples/qt_app_classic/CMakeLists.txt",
+            "./examples/qt_app_classic/symbian.toml",
             "./examples/gl_app/app.cc",
             "./examples/gl_app/CMakeLists.txt",
             "./examples/gl_app/symbian.toml",
@@ -122,7 +122,7 @@ def check(dist: Path, assets: Path, version: str) -> None:
             "./examples/gl_app/shaders/exit_button.frag",
             *(
                 f"./examples/{app}/{file}"
-                for app in ("qt_app", "gl_app")
+                for app in ("qt_app_classic", "gl_app")
                 for file in (
                     "sdk.cmake",
                     "sdk-run",

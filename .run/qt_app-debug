@@ -1,3 +1,0 @@
-#!/bin/sh
-root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-exec "$root/.venv/bin/python" "$root/scripts/example_debug.py" qt_app "$@"

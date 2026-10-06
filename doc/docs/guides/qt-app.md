@@ -1,6 +1,6 @@
 # Build a Symbian Qt app
 
-`examples/qt_app` displays a full-screen Qt button. Tapping it closes the
+`examples/qt_app_classic` displays a full-screen Qt button. Tapping it closes the
 application through the Qt event loop and runs the normal application
 destructors. It uses guest Symbian Qt 4.8.1; the Qt 6 desktop libraries bundled
 with the emulator serve its host interface and cannot provide guest widgets.
@@ -28,17 +28,17 @@ libraries, compatibility settings and allocator hook. It also includes the
 example source. After installing the SDK at `~/dev/symbian-sdk`, build it:
 
 ```sh
-qt_project="$HOME/dev/symbian-sdk/examples/qt_app"
+qt_project="$HOME/dev/symbian-sdk/examples/qt_app_classic"
 symbian build --project "$qt_project" --output .symbian/qt-app
-symbian inspect --format e32 .symbian/qt-app/qt_app.exe
+symbian inspect --format e32 .symbian/qt-app/qt_app_classic.exe
 ```
 
 The application build is an ordinary CMake target:
 
 ```cmake
 include(SymbianApp)
-symbian_add_executable(qt_app app.cc)
-target_link_libraries(qt_app PRIVATE Symbian::Runtime Symbian::QtGui)
+symbian_add_executable(qt_app_classic app.cc)
+target_link_libraries(qt_app_classic PRIVATE Symbian::Runtime Symbian::QtGui)
 ```
 
 `Symbian::QtGui` brings in QtCore. The SDK generates the needed E32 imports
@@ -48,7 +48,7 @@ If `Symbian::QtGui` is unavailable, install a native SDK containing guest Qt
 support. Older SDK distributions do not provide this target.
 
 The native SDK supplies Clang, LLD, CMake and Ninja on both hosts. From a
-source checkout, set `qt_project="$PWD/examples/qt_app"` to use the repository
+source checkout, set `qt_project="$PWD/examples/qt_app_classic"` to use the repository
 copy instead.
 
 ## Run the button
@@ -94,8 +94,8 @@ The supplied `symbian.toml` declares the executable, menu caption and package:
 
 ```sh
 symbian package --project "$qt_project" \
-  --artifact .symbian/qt-app/qt_app.exe --output .symbian/qt-package
-symbian inspect --format sis .symbian/qt-package/qt_app.sis
+  --artifact .symbian/qt-app/qt_app_classic.exe --output .symbian/qt-package
+symbian inspect --format sis .symbian/qt-package/qt_app_classic.sis
 ```
 
 The package contains your executable and registration resources. It requires

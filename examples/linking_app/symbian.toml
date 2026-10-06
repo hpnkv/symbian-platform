@@ -1,0 +1,13 @@
+[project]
+name = "linking_app"
+kind = "e32-import"
+architecture = "armv6"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000e05
+
+[package]
+uid = 0xe0000f05
+name = "Symbian Linking Example"
+vendor = "Symbian SDK examples"
+executable_name = "linking_app.exe"
+version = [1, 0, 0]

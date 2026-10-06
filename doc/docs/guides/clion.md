@@ -50,7 +50,7 @@ cmake --preset debug
 cmake --build --preset debug --target gui_app_e32
 cmake --preset guest-probes-armv6
 cmake --build --preset guest-probes-armv6
-cmake --build build/guest-probes-armv6 --target gui_app qt_app
+cmake --build build/guest-probes-armv6 --target gui_app qt_app_classic
 ```
 
 Each profile writes its own `compile_commands.json`. These builds do not
@@ -58,7 +58,7 @@ establish emulator or physical-device compatibility.
 
 The root `.run/` directory also supplies **GL App Run/Debug** and
 **Qt App Run/Debug**. Run selects the host `debug` profile and the corresponding
-native `gl_app_run` or `qt_app_run` launcher. Both Run and Debug build the ARMv6
+native `gl_app_run` or `qt_app_classic_run` launcher. Both Run and Debug build the ARMv6
 example and libraries from source, then supervise a disposable emulator instance.
 They use each example's firmware settings and ignore installed SDK selectors.
 Debug discovers ARM GDB on PATH or through `SYMBIAN_GDB`; it uses ports 24701

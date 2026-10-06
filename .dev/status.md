@@ -3404,3 +3404,22 @@ on both ARM targets; broader native-leave runtime validation remains in progress
 Generated Avkon resources, remaining manifest ownership, extended Qt/Mobility,
 portable dependencies and cross-host/bundle acceptance are open. SDK 0.2.0 has
 not been prepared or published; physical hardware has not been operated.
+
+2026-10-06: Project DLL deployment has an explicit `PROJECT_DLLS BUNDLE` or
+`RUNTIME` choice; positive SIS/EXE and negative configuration controls pass.
+Qt 4.8.1 Core, Gui, Network, Sql, Xml, OpenGL, Svg, Script, XmlPatterns,
+Declarative, Multimedia, OpenVG, Test and WebKit public imports stage from
+original DEFs with a 1,740-public-header/ordinal inventory and payload
+validator. Generated Qt private and QPA headers are excluded.
+An ARMv6 Qt module example reaches E32 conversion. Capability examples now
+use `_classic` names. Firmware execution of new Qt modules, Qt Mobility,
+portable dependencies, Avkon resources, full header canaries, dual-host
+bundle acceptance and release 0.2.0 remain open. See research-log.md for
+fixture and evidence limits.
+
+The root Debug CMake project exposes all `_classic` capability targets and
+builds the Qt modules and transitive project-DLL examples through E32. The
+revised `linking_app` exits normally on the preserved RM-807/Dynarmic fixture,
+with the in-project DLL staged by the SDK; no physical-device result follows.
+The classic games, Qt module and project-DLL focused suite passes 13 tests
+after rebuilding the stale local Python native binding.

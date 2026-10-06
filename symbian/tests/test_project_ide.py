@@ -39,7 +39,7 @@ def test_init_ide_choice_controls_both_run_and_debug_helpers(tmp_path, ide):
         )
 
 
-@pytest.mark.parametrize("name,port", [("gl_app", 24701), ("qt_app", 24702)])
+@pytest.mark.parametrize("name,port", [("gl_app", 24701), ("qt_app_classic", 24702)])
 def test_examples_share_portable_run_and_debug_settings(name, port):
     project = Path(__file__).parents[2] / "examples" / name
     settings = json.loads((project / "symbian-project.json").read_text())
@@ -60,7 +60,7 @@ def test_examples_share_portable_run_and_debug_settings(name, port):
 
 
 @pytest.mark.parametrize(
-    "name,label,port", [("gl_app", "GL", 24701), ("qt_app", "Qt", 24702)]
+    "name,label,port", [("gl_app", "GL", 24701), ("qt_app_classic", "Qt", 24702)]
 )
 def test_sdk_root_has_distinct_example_run_and_debug_settings(
     name, label, port

@@ -181,6 +181,10 @@
     "netprotocols": {
       "repository": "SymbianSource/oss.FCL.sf.mw.netprotocols",
       "revision": "cc43765893d358f20903b5635a2a125134a2ede8"
+    },
+    "inputmethods": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.inputmethods",
+      "revision": "51e877bef2e0a93793490fba6e97b04aaa1ee368"
     }
   }
 }

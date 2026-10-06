@@ -245,6 +245,9 @@ def build_executable(
     for path in dependencies:
         inputs.setdefault(path, path.read_bytes())
     first_elf = target.artifact.read_bytes()
+    from symbian.project.libraries import built_libraries, stage_libraries
+
+    first_libraries = built_libraries(primary, name)
     metadata = inspect_elf(target.artifact)
     expected = arm_target(architecture)
     if metadata["arm_attributes"]["cpu_arch"] != expected.cpu_attribute:
@@ -287,6 +290,10 @@ def build_executable(
                 )
         second_elf = repeated.artifact.read_bytes()
         second_image = convert(second_elf)
+        if built_libraries(temporary, name) != first_libraries:
+            raise StatusError(
+                Code.DATA_LOSS, "Independent application DLL builds differ"
+            )
         if (first_elf, first_image) != (second_elf, second_image):
             raise StatusError(
                 Code.DATA_LOSS, "Independent CMake ELF/E32 builds differ"
@@ -298,6 +305,7 @@ def build_executable(
             staged = temporary / f"result.{suffix}"
             staged.write_bytes(data)
             staged.replace(output / f"{name}.{suffix}")
+    stage_libraries(output, name, first_libraries)
     database = output / "compile_commands.json"
     shutil.copyfile(primary / "compile_commands.json", database)
     image = output / f"{name}.{'dll' if dll else 'exe'}"

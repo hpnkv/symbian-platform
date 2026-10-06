@@ -25,6 +25,7 @@ symbian_add_dynamic_library(my_library SOURCES api.cc)
 target_include_directories(my_library PUBLIC include)
 target_compile_definitions(my_library PRIVATE MY_LIBRARY_BUILD=1)
 target_link_libraries(my_app PRIVATE my_library)
+symbian_publish_executable(my_app UID3 0xe0000123 PROJECT_DLLS BUNDLE)
 ```
 
 The project identity comes from `symbian.toml`; `UID3` can override it when a
@@ -32,6 +33,17 @@ project produces multiple DLLs. The helper retains `my_library_elf.elf` for
 debugging, publishes `my_library.dll`, and exposes its generated import library
 through the CMake target. The SDK discovers DLL dependencies from the linked
 target graph. Applications do not maintain export symbol selections or proxies.
+
+`PROJECT_DLLS BUNDLE` packages linked, in-project DLLs under `\\sys\\bin`
+alongside the executable. Use `PROJECT_DLLS RUNTIME` when those DLLs are
+supplied by the deployment environment; the application still imports them,
+but its SIS contains only the executable and other selected assets. The SDK
+requires this choice whenever the executable links a project-built DLL, even
+through a static library. Firmware DLL imports are never bundled. An invalid
+or omitted choice fails during CMake configuration, and the SDK checks staged
+DLL digests again during packaging. The
+[linking example](../../../examples/linking_app/CMakeLists.txt) exercises a
+project static library, dynamic library, and application together.
 
 Visible function definitions form the initial export interface. Mark internal
 helpers with hidden visibility. Automatic ordinals are deterministic for an

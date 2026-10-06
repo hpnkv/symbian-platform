@@ -1,0 +1,13 @@
+[project]
+name = "audio_app_classic"
+kind = "e32-import"
+architecture = "armv6"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000e03
+
+[package]
+uid = 0xe0000f03
+name = "Native audio_app_classic"
+vendor = "Symbian SDK examples"
+executable_name = "audio_app_classic.exe"
+version = [1, 0, 0]

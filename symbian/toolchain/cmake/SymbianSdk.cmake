@@ -71,11 +71,13 @@ function(symbian_add_guest_subdirectory directory)
         "-DSYMBIAN_INDEX_GUEST_PROBES=ON"
         "-DSYMBIAN_TARGET_ARCH=${SYMBIAN_TARGET_ARCH}"
         "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+        "-DSYMBIAN_NATIVE_CONVERTER=$<TARGET_FILE:symbian_native_tool>"
         "-DSYMBIAN_GRAPHICS_FIRMWARE_DIR=${SYMBIAN_GRAPHICS_FIRMWARE_DIR}"
         "-DCMAKE_CXX_COMPILER=${SYMBIAN_SDK_PREFIX}/bin/clang++"
         "-DCMAKE_C_COMPILER=${SYMBIAN_SDK_PREFIX}/bin/clang"
         "-DCMAKE_CXX_COMPILER_CLANG_SCAN_DEPS=${SYMBIAN_SDK_PREFIX}/bin/clang-scan-deps"
-      BUILD_COMMAND "" INSTALL_COMMAND "" EXCLUDE_FROM_ALL TRUE)
+      BUILD_COMMAND "" INSTALL_COMMAND "" EXCLUDE_FROM_ALL TRUE
+      DEPENDS symbian_native_tool)
     # Examples share one guest graph. Do not configure it or run two nested
     # Ninja instances simultaneously when the host builds several examples.
     set_property(GLOBAL APPEND PROPERTY JOB_POOLS symbian_guest_build=1)
@@ -86,18 +88,8 @@ function(symbian_add_guest_subdirectory directory)
     JOB_POOL symbian_guest_build VERBATIM)
   file(GLOB app_sources CONFIGURE_DEPENDS "${directory}/*.cc" "${directory}/*.h")
   add_custom_target(${name} DEPENDS ${name}_guest_build SOURCES ${app_sources})
-  set(image "${guest_binary}/${directory}/e32/${name}.exe")
-  file(GLOB proxies "${SYMBIAN_SDK_PREFIX}/proxies/*/*.dso")
-  set(import_options)
-  foreach(proxy IN LISTS proxies)
-    if(NOT proxy MATCHES "/euser-(native64|eka1)/")
-      list(APPEND import_options --import-proxy "${proxy}")
-    endif()
-  endforeach()
   add_custom_target(${name}_e32
-    COMMAND "${CMAKE_COMMAND}" -E make_directory "${guest_binary}/${directory}/e32"
-    COMMAND "$<TARGET_FILE:symbian_native_tool>" convert-exe
-      --input "${guest_binary}/${name}.elf"
-      --uid3 "${uid}" ${import_options} --output "${image}"
-    DEPENDS ${name} symbian_native_tool VERBATIM)
+    COMMAND "${CMAKE_COMMAND}" --build "${guest_binary}" --target ${name}_e32
+    DEPENDS ${name} symbian_native_tool
+    JOB_POOL symbian_guest_build VERBATIM)
 endfunction()

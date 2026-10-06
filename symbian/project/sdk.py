@@ -489,6 +489,9 @@ def stage_headers(workspace: Path, output: Path, compiler: Path) -> None:
         output / "include/platform",
         dirs_exist_ok=True,
     )
+    from symbian.project.native_surface import stage_native_headers
+
+    stage_native_headers(workspace, output)
     startup = output / "share/symbian/runtime"
     startup.mkdir(parents=True)
     for source_name, target_name in (
@@ -640,6 +643,9 @@ def stage_imports(
         str(compiler),
         str(linker),
     )
+    from symbian.project.native_surface import stage_native_imports
+
+    stage_native_imports(workspace, output, compiler, linker)
 
 
 def prepare(

@@ -1,0 +1,65 @@
+{
+  "biditext.h": [
+    {
+      "before": "enum CGraphicsContext::TTextAlign;",
+      "after": "// TTextAlign is already defined by the included gdi.h.",
+      "reason": "Clang rejects the redundant qualified enum forward declaration; gdi.h supplies the original enum definition."
+    }
+  ],
+  "cryptopanic.h": [
+    {
+      "before": "#define __CRYPTOPANIC_H__",
+      "after": "#define __CRYPTOPANIC_H__\n#include <e32std.h>",
+      "reason": "Original exported header omits the declaration prerequisite; include the original defining header for independent consumer compilation."
+    }
+  ],
+  "maudioeffectobserver.h": [
+    {
+      "before": "#define AUDIOEFFECTOBSERVER_H",
+      "after": "#define AUDIOEFFECTOBSERVER_H\n#include <AudioEffectBase.h>",
+      "reason": "Original exported header omits the declaration prerequisite; include the original defining header for independent consumer compilation."
+    }
+  ],
+  "aknlistboxlayoutdecorator.h": [
+    {
+      "before": "#define __AKNLISTBOXLAYOUTDECORATOR_H__",
+      "after": "#define __AKNLISTBOXLAYOUTDECORATOR_H__\n#include <e32base.h>",
+      "reason": "Original exported header omits the declaration prerequisite; include the original defining header for independent consumer compilation."
+    }
+  ],
+  "maknfilefilter.h": [
+    {
+      "before": "#define MAKNFILEFILTER_H",
+      "after": "#define MAKNFILEFILTER_H\n#include <e32std.h>",
+      "reason": "Original exported header omits the declaration prerequisite; include the original defining header for independent consumer compilation."
+    }
+  ],
+  "cdirectorylocalizer.h": [
+    {
+      "before": "#define C_CDIRECTORYLOCALIZER_H",
+      "after": "#define C_CDIRECTORYLOCALIZER_H\n#include <e32base.h>",
+      "reason": "Original exported header omits the declaration prerequisite; include the original defining header for independent consumer compilation."
+    }
+  ],
+  "eikedwob.h": [
+    {
+      "before": "#define __EIKEDWOB_H__",
+      "after": "#define __EIKEDWOB_H__\n#include <e32std.h>",
+      "reason": "Original exported header omits the declaration prerequisite; include the original defining header for independent consumer compilation."
+    }
+  ],
+  "favouriteslimits.h": [
+    {
+      "before": "#define FAVOURITES_LIMITS_H",
+      "after": "#define FAVOURITES_LIMITS_H\n#include <e32std.h>",
+      "reason": "Original exported header omits the declaration prerequisite; include the original defining header for independent consumer compilation."
+    }
+  ],
+  "akninternaliconutils.h": [
+    {
+      "before": "#define AKN_INTERNAL_ICON_UTILS_H",
+      "after": "#define AKN_INTERNAL_ICON_UTILS_H\n#include <e32std.h>",
+      "reason": "Original exported header omits the declaration prerequisite; include the original defining header for independent consumer compilation."
+    }
+  ]
+}

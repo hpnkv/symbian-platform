@@ -114,7 +114,7 @@ def check(sdk: Path) -> None:
         example = moved / "examples/hello_time"
         (example / "startup_check.cc").write_text(STARTUP_SOURCE)
         shutil.copyfile(
-            moved / "examples/qt_app/app.cc", example / "qt_check.cc"
+            moved / "examples/qt_app_classic/app.cc", example / "qt_check.cc"
         )
         shutil.copytree(moved / "examples/gl_app", example / "gl_source")
         with (example / "CMakeLists.txt").open("a") as cmake:

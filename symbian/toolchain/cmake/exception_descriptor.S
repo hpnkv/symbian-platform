@@ -5,6 +5,7 @@
 Symbian$$CPP$$Exception$$Descriptor:
   .word __exidx_start
   .word __exidx_end
-  .word __ro_base
+  // Original Symbian unwinder: bit zero selects EHABI v2 PREL31 tables.
+  .word __ro_base + 1
   .word __ro_end
 .size Symbian$$CPP$$Exception$$Descriptor, 16
