@@ -1,5 +1,31 @@
 # Research log
 
+2026-10-06: The organizer calendar `group/bld.inf` exports 23 public Interim
+API headers. Its `calinterimapi.mmp` selects
+`calinterimapiv3u.def` by default and `calinterimapiu.def` under
+`SYMBIAN_CALENDAR_ENHANCEDSEARCHANDSORT`; this slice pins the complete default
+DEF, retaining all original ordinals and holes, and records the alternate
+variant as an unresolved Belle ABI question. Independent ARMv6 canaries
+compiled all 23 headers. The original `calentry.h` had a redundant member
+qualification; a pinned declaration-preserving edit avoids target-wide
+`-fms-extensions`, which otherwise broke the SDK native-leave personality's
+Open C include path. The exported prototype
+`calfilechangenotification.h` omitted `e32base.h`; a second pinned include
+supplies the original declarations. A relocated installed SDK built,
+linked, converted and packaged `calendar_app_classic` for ARMv5T/ARMv6.
+The first disposable RM-807/Dynarmic run panicked `E32USER-CBase 44` because
+the original session starts a nested active-scheduler wait. Installing a
+`CActiveScheduler` before `CCalSession::NewL` fixed that contract; the app
+then listed calendar filenames and exited with guest type/reason `0/0`.
+This exercises two imported methods on one fixture, not the entire default
+DEF or its equivalence to Belle FP2's installed DLL. The opt-in native-utility
+regression passed three named-firmware examples in 59.92 seconds. A root
+Debug CMake configure waited 39.6 seconds behind CLion's concurrently
+refreshing source inputs; the root `calendar_app_classic_e32` target then
+built after a cached guest configure. The relocated ARMv5T/ARMv6 build and
+one-file SIS package checks passed, as did all 43 independent application and
+utility header canaries.
+
 2026-10-06: BAFL's original `bautils.h` and stream headers compile as eight
 independent ARMv6 canaries with only their owning `Symbian::Bafl` or
 `Symbian::StreamsNative` targets. The new `bafl_app_classic` links only BAFL,

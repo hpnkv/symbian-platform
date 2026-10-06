@@ -103,3 +103,16 @@ def test_native_example_manifest_covers_root_and_bundle_projects():
         assert (project / "CMakeLists.txt").is_file()
         assert (project / "symbian.toml").is_file()
         assert (project / "sdk.cmake").is_file()
+
+
+def test_calendar_default_frozen_variant_is_explicit():
+    root = Path(__file__).resolve().parents[2]
+    inventory = json.loads(
+        (root / "research/native-sdk/inventory.json").read_text()
+    )
+    calendar = next(
+        item for item in inventory["facilities"] if item["target"] == "Calendar"
+    )
+    assert calendar["definition"]["source"].endswith("/calinterimapiv3u.def")
+    assert calendar["mmp"].endswith("/calinterimapi.mmp")
+    assert len(calendar["headers"]) == 23

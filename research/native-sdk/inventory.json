@@ -4822,6 +4822,141 @@
       "ms_extensions": false
     },
     {
+      "target": "Calendar",
+      "dll": "calinterimapi.dll",
+      "headers": [
+        "calalarm.h",
+        "calcategory.h",
+        "calcategorymanager.h",
+        "calchangecallback.h",
+        "calcommon.h",
+        "calcontent.h",
+        "caldataexchange.h",
+        "caldataformat.h",
+        "calentry.h",
+        "calentryview.h",
+        "calinstance.h",
+        "calinstanceview.h",
+        "calinterimapipanic.h",
+        "caliterator.h",
+        "calnotification.h",
+        "calprogresscallback.h",
+        "calrrule.h",
+        "calsession.h",
+        "caltime.h",
+        "caluser.h",
+        "calcalendarinfo.h",
+        "calcalendariterator.h",
+        "calfilechangenotification.h"
+      ],
+      "dependencies": [
+        "Bafl",
+        "FileServer",
+        "StreamsNative",
+        "ECom"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "organizer/pimappservices/calendar/eabi/calinterimapiv3u.def",
+        "sha256": "ec6c3b3650c2e4321bd8f31adf29f81464cb2dc01ae4b81a671a01c8a0688791",
+        "destination": "share/symbian/native/defs/calinterimapi.dll.def"
+      },
+      "mmp": "organizer/pimappservices/calendar/group/calinterimapi.mmp",
+      "implementation_dependencies": [
+        "agnmodel",
+        "bafl",
+        "efsrv",
+        "estor",
+        "euser",
+        "ecom"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/badesca.h",
+        "include/native/bamdesca.h",
+        "include/native/calalarm.h",
+        "include/native/calcalendarinfo.h",
+        "include/native/calcalendariterator.h",
+        "include/native/calcategory.h",
+        "include/native/calcategorymanager.h",
+        "include/native/calchangecallback.h",
+        "include/native/calcommon.h",
+        "include/native/calcontent.h",
+        "include/native/caldataexchange.h",
+        "include/native/caldataformat.h",
+        "include/native/calentry.h",
+        "include/native/calentryview.h",
+        "include/native/calfilechangenotification.h",
+        "include/native/calinstance.h",
+        "include/native/calinstanceiterator.h",
+        "include/native/calinstanceview.h",
+        "include/native/calinterimapipanic.h",
+        "include/native/caliterator.h",
+        "include/native/calnotification.h",
+        "include/native/calprogresscallback.h",
+        "include/native/calrrule.h",
+        "include/native/calsession.h",
+        "include/native/caltime.h",
+        "include/native/caluser.h",
+        "include/native/d32locd.h",
+        "include/native/d32locd.inl",
+        "include/native/displaymode.h",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32btrace.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32debug.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32event.h",
+        "include/native/e32event_private.h",
+        "include/native/e32hal.h",
+        "include/native/e32keys.h",
+        "include/native/e32ktran.h",
+        "include/native/e32lang.h",
+        "include/native/e32ldr.h",
+        "include/native/e32ldr_private.h",
+        "include/native/e32lmsg.h",
+        "include/native/e32notif.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/e32svr.h",
+        "include/native/f32file.h",
+        "include/native/f32file.inl",
+        "include/native/f32file64.h",
+        "include/native/f32file64.inl",
+        "include/native/f32file_private.h",
+        "include/native/f32notification.h",
+        "include/native/gdi.h",
+        "include/native/gdi.inl",
+        "include/native/graphics/gdi/gdiconsts.h",
+        "include/native/graphics/gdi/gdiinline.inl",
+        "include/native/graphics/gdi/gdistructs.h",
+        "include/native/graphics/gdi/glyphsample.h",
+        "include/native/partitions.h",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl"
+      ],
+      "ms_extensions": false
+    },
+    {
       "target": "CenRepNotification",
       "dll": "cenrepnotifhandler.dll",
       "headers": [
@@ -25865,6 +26000,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Cone",
         "Eikon",
         "EikonControls",
@@ -25905,6 +26041,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Cone",
         "Eikon",
         "EikonControls",
@@ -26041,6 +26178,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Cone",
         "Eikon",
         "EikonControls",
@@ -26880,6 +27018,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -27015,6 +27154,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -27147,6 +27287,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -27293,6 +27434,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -27429,6 +27571,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -27565,6 +27708,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -27701,6 +27845,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -27841,6 +27986,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -27977,6 +28123,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -28113,6 +28260,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -28255,6 +28403,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -28333,6 +28482,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -28469,6 +28619,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -28670,6 +28821,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -28809,6 +28961,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -28941,6 +29094,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -29015,6 +29169,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -29089,6 +29244,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -29238,6 +29394,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -29309,6 +29466,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -29382,6 +29540,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -29455,6 +29614,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -29528,6 +29688,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -40967,6 +41128,7 @@
         "AppArc",
         "Avkon",
         "Bafl",
+        "Calendar",
         "Cone",
         "Eikon",
         "EikonControls",
@@ -41054,6 +41216,7 @@
         "AppArc",
         "Avkon",
         "Bafl",
+        "Calendar",
         "Cone",
         "Eikon",
         "EikonControls",
@@ -48556,6 +48719,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "Certificates",
         "CommsDat",
         "CommsDatabase",
@@ -48641,6 +48805,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "Certificates",
         "CommsDat",
         "CommsDatabase",
@@ -48848,6 +49013,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "Certificates",
         "CommsDat",
         "CommsDatabase",
@@ -48941,6 +49107,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "Certificates",
         "CommsDat",
         "CommsDatabase",
@@ -55914,7 +56081,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "4344bb8aeac7321cc05650bf7006e2fbc742d07442e82ba813908a874a2b83ca",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/calalarm.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calcategory.h",
@@ -55924,7 +56094,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "4d217b84891d83e511732614a7a168bfc47865f910cf48a2b99ec1caa7624775",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/calcategory.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calcategorymanager.h",
@@ -55934,7 +56107,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "83b1b4ab37d5a03e66363a42363825d278de6e85eb0b235d6bc1e2e74b9bf61a",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/calcategorymanager.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calchangecallback.h",
@@ -55944,7 +56120,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e56f6b252f5e0724fd0594e98da23ae2a6ed79d9e309477d5f2d0a9c04976973",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/calchangecallback.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calcommon.h",
@@ -55956,6 +56135,7 @@
       "sha256": "b35e90c444a8efe710eae5790e68bd295fb8e7dd0a02de18eafd2af7ff951adb",
       "destination": "include/native/calcommon.h",
       "targets": [
+        "Calendar",
         "Native_caleninterimutils2"
       ]
     },
@@ -55967,7 +56147,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "77da9f2ef45f25ba01d95d14b0664aed3ed8e11fc58b4e79438e2dd7d3777533",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/calcontent.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "caldataexchange.h",
@@ -55977,7 +56160,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f6922bd03d4cfc4fe61e32d6f9526b68719e1baa2d49a6b19c96377ed2bbf505",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/caldataexchange.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "caldataformat.h",
@@ -55987,7 +56173,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e59f2eafa433fb0e392f4a779a9186855c30237e636d8c15a03f93b25f632553",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/caldataformat.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calentry.h",
@@ -55996,8 +56185,19 @@
       "declaration": "../inc/calentry.h SYMBIAN_APP_LAYER_PUBLIC_EXPORT_PATH(calentry.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "ff39d71c6bf9a0e6f71ecb5eb7dbd71b62ba3638726a8cbc55adb8fa0ed4be1b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "00c5126d69ad6ea1e3183f7471aa05bb04fd8eb2be0ca195d3a05641ea074e3c",
+      "source_sha256": "ff39d71c6bf9a0e6f71ecb5eb7dbd71b62ba3638726a8cbc55adb8fa0ed4be1b",
+      "compatibility_edits": [
+        {
+          "before": "IMPORT_C void CCalEntry::ClearMRSpecificDataL();",
+          "after": "IMPORT_C void ClearMRSpecificDataL();",
+          "reason": "The original public header has an extra qualification inside CCalEntry; removing that redundant qualifier preserves the member ABI and allows Clang without target-wide Microsoft extensions."
+        }
+      ],
+      "destination": "include/native/calentry.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calentryview.h",
@@ -56007,7 +56207,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "bfd0fcfc988046ef9bb0b60c76c3d342e7b8ae391be364d9c62c6e7e9ca26b89",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/calentryview.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calinstance.h",
@@ -56017,7 +56220,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "8510c0bfa5a5f8ffc508ae309d218d5c938606c54109fce69f406700f4ab2ea3",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/calinstance.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calinstanceview.h",
@@ -56027,7 +56233,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5936fa9ca7d91c8df2feeec4842077b86ba18a81d65f47f5eb391e4be3c11041",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/calinstanceview.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calinterimapipanic.h",
@@ -56037,7 +56246,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "92e2098846308e525fcb05b9ee8ae42d4b15082741c417992bad1dfd531625da",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/calinterimapipanic.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "caliterator.h",
@@ -56047,7 +56259,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5038614e627adced0b7a4c1cc831388193c312fe45d75630d030f22af636fc98",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/caliterator.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calnotification.h",
@@ -56057,7 +56272,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0781aa30515de331405e3d890b38e6f516e90f5145b4869677e69aee0a94a352",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/calnotification.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calprogresscallback.h",
@@ -56067,7 +56285,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a6bf904dc643e11a54ce1def925b1e240c8d85913e8bbaf6d1bbb843db3e546f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/calprogresscallback.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calrrule.h",
@@ -56077,7 +56298,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "77eb81221b044dc43fd6ffe55a51d8b7aa481a6ef157d389dba6fb4de62f8c0a",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/calrrule.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calsession.h",
@@ -56087,7 +56311,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c16126c2f7193ffd76d3979b320c49ce0f772d838c075a012e07d9871e58afbb",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/calsession.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "caltime.h",
@@ -56099,6 +56326,7 @@
       "sha256": "7ffc0332159b810b28fb3f8daf8edb3551424ba428bf7b12ce2e528b5fb4d972",
       "destination": "include/native/caltime.h",
       "targets": [
+        "Calendar",
         "Native_caleninterimutils2"
       ]
     },
@@ -56110,7 +56338,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f4f7da1ae81e24ac29a40dc075a8bb9e53b733ee1eefb05f98aae943871aa04c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/caluser.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calcalendarinfo.h",
@@ -56120,7 +56351,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "51594c6cee01e1c640bef49a2ed30d95638dcecc08ed5ac182227b8043b8260e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/calcalendarinfo.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calcalendariterator.h",
@@ -56130,7 +56364,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a04f779f60487e660a6093330e942c9e725f846e6980c85e67bd3a4273762393",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/calcalendariterator.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calfilechangenotification.h",
@@ -56139,8 +56376,19 @@
       "declaration": "../inc/calfilechangenotification.h SYMBIAN_APP_LAYER_PUBLIC_EXPORT_PATH(calfilechangenotification.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "c40ee9ee44f211cc6be8780e5a66938ddb54204a3332818566df004a5c23f5b2",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "524c6cbaf12fc55a7f8059f4e8d51df676e8860cfae0c0ad72f16ee079b17516",
+      "source_sha256": "c40ee9ee44f211cc6be8780e5a66938ddb54204a3332818566df004a5c23f5b2",
+      "compatibility_edits": [
+        {
+          "before": "#define __CALFILECHANGENOTIFICATION_H__",
+          "after": "#define __CALFILECHANGENOTIFICATION_H__\n#include <e32base.h>",
+          "reason": "The original exported prototype header omits the definitions of CBase, RPointerArray, TDesC and IMPORT_C; e32base.h supplies those declarations."
+        }
+      ],
+      "destination": "include/native/calfilechangenotification.h",
+      "targets": [
+        "Calendar"
+      ]
     },
     {
       "include": "calendarconverter.h",
@@ -58377,6 +58625,19 @@
       ]
     },
     {
+      "include": "calinstanceiterator.h",
+      "source": "organizer/pimappservices/calendar/inc/calinstanceiterator.h",
+      "manifest": "organizer/pimappservices/calendar/group/bld.inf",
+      "declaration": "../inc/calinstanceiterator.h SYMBIAN_APP_LAYER_PLATFORM_EXPORT_PATH(calinstanceiterator.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "d4c680e33aca19102c8fb869ffed12005630bd856041f42630d07c5753f5bcc0",
+      "destination": "include/native/calinstanceiterator.h",
+      "targets": [
+        "Calendar"
+      ]
+    },
+    {
       "include": "bthci.h",
       "source": "bt/bluetoothmgmt/bluetoothclientlib/inc/bthci.h",
       "manifest": "bt/bluetoothmgmt/bluetoothclientlib/bld.inf",
@@ -58686,6 +58947,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -58841,6 +59103,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -58973,6 +59236,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -59196,6 +59460,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -59484,6 +59749,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Cone",
         "Eikon",
         "EikonControls",
@@ -59524,6 +59790,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Cone",
         "Eikon",
         "EikonControls",
@@ -59564,6 +59831,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Cone",
         "Eikon",
         "EikonControls",
@@ -59604,6 +59872,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Cone",
         "Eikon",
         "EikonControls",
@@ -59652,6 +59921,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -60017,6 +60287,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -60788,6 +61059,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -60862,6 +61134,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -60936,6 +61209,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -61010,6 +61284,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -61084,6 +61359,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -61158,6 +61434,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -61232,6 +61509,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -61401,6 +61679,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -61493,6 +61772,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -61629,6 +61909,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -61765,6 +62046,7 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "Calendar",
         "CenRepNotification",
         "CentralRepository",
         "Certificates",
@@ -62089,6 +62371,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",
@@ -62163,6 +62446,7 @@
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
+        "Calendar",
         "Certificates",
         "CommsDatabase",
         "Cone",

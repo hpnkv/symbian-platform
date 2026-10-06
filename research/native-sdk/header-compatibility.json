@@ -6,6 +6,20 @@
       "reason": "The original public SIP settings header names TUid but includes only e32def.h; include its original defining header for independent consumer compilation."
     }
   ],
+  "calfilechangenotification.h": [
+    {
+      "before": "#define __CALFILECHANGENOTIFICATION_H__",
+      "after": "#define __CALFILECHANGENOTIFICATION_H__\n#include <e32base.h>",
+      "reason": "The original exported prototype header omits the definitions of CBase, RPointerArray, TDesC and IMPORT_C; e32base.h supplies those declarations."
+    }
+  ],
+  "calentry.h": [
+    {
+      "before": "IMPORT_C void CCalEntry::ClearMRSpecificDataL();",
+      "after": "IMPORT_C void ClearMRSpecificDataL();",
+      "reason": "The original public header has an extra qualification inside CCalEntry; removing that redundant qualifier preserves the member ABI and allows Clang without target-wide Microsoft extensions."
+    }
+  ],
   "biditext.h": [
     {
       "before": "enum CGraphicsContext::TTextAlign;",

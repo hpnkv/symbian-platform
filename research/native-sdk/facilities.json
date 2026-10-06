@@ -995,6 +995,53 @@
       ]
     },
     {
+      "target": "Calendar",
+      "dll": "calinterimapi.dll",
+      "headers": [
+        "calalarm.h",
+        "calcategory.h",
+        "calcategorymanager.h",
+        "calchangecallback.h",
+        "calcommon.h",
+        "calcontent.h",
+        "caldataexchange.h",
+        "caldataformat.h",
+        "calentry.h",
+        "calentryview.h",
+        "calinstance.h",
+        "calinstanceview.h",
+        "calinterimapipanic.h",
+        "caliterator.h",
+        "calnotification.h",
+        "calprogresscallback.h",
+        "calrrule.h",
+        "calsession.h",
+        "caltime.h",
+        "caluser.h",
+        "calcalendarinfo.h",
+        "calcalendariterator.h",
+        "calfilechangenotification.h"
+      ],
+      "dependencies": [
+        "Bafl",
+        "FileServer",
+        "StreamsNative",
+        "ECom"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "organizer/pimappservices/calendar/eabi/calinterimapiv3u.def",
+      "mmp": "organizer/pimappservices/calendar/group/calinterimapi.mmp",
+      "implementation_dependencies": [
+        "agnmodel",
+        "bafl",
+        "efsrv",
+        "estor",
+        "euser",
+        "ecom"
+      ]
+    },
+    {
       "target": "CenRepNotification",
       "dll": "cenrepnotifhandler.dll",
       "headers": [

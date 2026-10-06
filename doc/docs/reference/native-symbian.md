@@ -113,3 +113,12 @@ through `BaflUtils::FileExists` and reads an in-memory stream while linking
 only BAFL. Both operations exited normally in the preserved RM-807/Dynarmic
 emulator. The example's file path is fixture-specific; other firmware remains
 unverified.
+
+`Symbian::Calendar` provides the original 23 public Interim API headers and
+the complete frozen `calinterimapi.dll` interface from the default MMP branch.
+`examples/calendar_app_classic` installs an active scheduler, opens a
+`CCalSession` and lists calendar filenames without changing them. That path
+exited normally in the preserved RM-807/Dynarmic emulator. The original MMP
+selects a different DEF under `SYMBIAN_CALENDAR_ENHANCEDSEARCHANDSORT`;
+complete Belle FP2 ABI equivalence and other firmware availability remain
+unknown.

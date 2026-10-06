@@ -1,5 +1,20 @@
 # Status
 
+2026-10-06 Calendar Interim API slice: 23 original public headers compile
+independently after two pinned header compatibility edits. `Symbian::Calendar`
+ships the complete original default-branch frozen `calinterimapi.dll` import
+interface and SDK-managed dependencies. The read-only
+`calendar_app_classic` built from a relocated installed SDK for ARMv5T and
+ARMv6, converted to E32 and packaged as an ARMv6 SIS. A disposable named
+RM-807/Dynarmic instance listed calendar filenames and exited normally after
+the example installed the active scheduler required by the original API.
+The opt-in three-example native-utility guest regression passed, and the root
+Debug project exposed and built `calendar_app_classic_e32` after the shared
+source-input refresh. The relocated ARMv5T/ARMv6 example build/package
+checks and 43-header framework/utility canary matrix passed.
+The alternate enhanced-search DEF, full Belle FP2 ABI, other firmware and
+physical-device behavior remain unverified.
+
 2026-10-06 BAFL/streams native slice: eight independent public-header
 canaries passed. `bafl_app_classic` links through `Symbian::Bafl` with
 transitive original FileServer and StreamsNative imports; ARMv5T/ARMv6 E32
