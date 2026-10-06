@@ -3288,3 +3288,22 @@ User assets now default to ~/.symbian; obsolete SDK paths are removed.
 Emulator diagnostics distinguish an ordinary incompatible frontend from a
 broken SDK-managed bundle and prefer SDK-owned installations by default.
 Source CMake isolation from installed SDK state is undergoing regression checks.
+
+### 2026-10-06: source CMake isolation and session handoff
+
+Root guest projects now use repository-owned prepared headers/imports and
+source-built dependencies and SDK libraries, independently of installed SDK
+selection. Host GUI source builds use a separate guest CMake graph and the
+source-built native converter. Source configure/reload/build checks pass for
+ARMv5T and ARMv6 on macOS arm64 and Linux x86_64, including gui_app, qt_app,
+agent_service and the probe index; host GUI/launcher/E32 checks pass on both.
+Full macOS Python: 332 passed, 434 optional skips. Native CTest: 13/13 configured
+suites; strict documentation build passes. Hosted CI of the new source check
+and a subsequent SDK release remain pending. The user requested the session
+end at this partial checkpoint; see unstarted-0610.md for unfinished work.
+
+The final workspace-input safety regression passes: generated input replacement
+never writes through an old symlink into source files. Pre-today scratch cleanup
+is complete in .symbian/ and build/, including nested diagnostic runs and proxy
+CMake caches, preserving active IDE trees and usable inputs. Another independent
+session has uncommitted changes; this checkpoint does not imply a clean worktree.

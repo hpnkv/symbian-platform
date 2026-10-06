@@ -6871,3 +6871,54 @@ frontend paths, while explicit preferences continue to win. Targeted policy,
 SDK, architecture and initialization regression: 45 passed, 18 optional skips;
 earlier emulator/path/configuration subsets also passed. The source CMake
 workspace still required an installed SDK and is being replaced separately.
+
+## 2026-10-06 — Repository-owned source CMake graphs and partial-state handoff
+
+Root guest profiles now prepare .symbian/workspace-inputs from repository
+inputs, sharing header/import staging with SDK exports. They ignore all installed
+SDK selectors. Runtime, patched Abseil, Mbed TLS, device APIs, HTTP/WebSocket,
+TLS and fibers use source targets. SDK-owned public headers stay linked to live
+sources; publishing generated inputs preserves unchanged file timestamps.
+Concurrent IDE profile preparation is serialized with a build-input lock.
+
+Mixing source guest Abseil/compiler identities into the host graph exposed
+missing Stackless and compiler-cache resets. The host GUI now builds the same
+root guest graph through a separate CMake sub-build, with its source-built host
+converter producing E32. Linux's GNU host compiler had an obsolete GUI gate;
+that restriction is removed because guest compiler selection is independent.
+One debug compiler-description file was corrupted while command-line and IDE
+configuration could overlap; preserved the malformed file under /tmp, then
+regenerated the debug cache with --fresh. Future verification uses separate
+output directories. Actual IDE navigation/debugger UI remains a separate gate.
+
+scripts/check_source_workspace.py configures twice and builds twice, supplying
+unusable installed-SDK settings. Both guest architectures build the probe index,
+gui_app, qt_app and agent_service. macOS completes the full check, including
+host GUI/launcher and native E32 conversion. Linux completes both guest profiles
+and the host follow-up with GNU host compilation. Linux raw LLVM 23 initially
+missed ICU 70; using the preserved toolchain ICU LD_LIBRARY_PATH resolves it.
+Logs: /tmp/symbian-workspace-regression-macos.log; Linux's corresponding guest
+log is on the Linux host, and /tmp/symbian-workspace-linux-host-final.log records
+the successful host follow-up. Second guest builds report no work.
+
+Current full macOS Python: 332 passed, 434 optional skips, one existing Starlette
+warning. Native debug CTest: 13/13 configured suites. Strict MkDocs, touched-file
+Ruff/Black and whitespace checks pass. Native SDK CI now runs the guest source
+workspace regression on cache misses; hosted execution of this new step is
+pending. VERSION remains 0.1.7: no new release was started, at the user's request
+to finalize partial work and end the session. Remaining work is recorded in
+.dev/unstarted-0610.md, including source Run/Debug integration, release checks,
+original symbol documentation, broader EKA1 and mutable-pointer/nullability work.
+
+Final workspace publication safety fix unlinks old destination symlinks before
+copying generated files or creating directories, so refreshes cannot modify
+live source files. Its two focused tests and touched-file Black/Ruff pass.
+
+Pre-2026-10-06 scratch entries were removed from .symbian/ and build/, including
+old diagnostic runs nested under clion-setup and old proxy CMake build caches.
+Final inspection finds no remaining pre-today scratch entries outside explicitly
+preserved usable SDK/import inputs, upstream research/documentation inputs, and
+the active debug/guest-probes-armv6 IDE trees. Today's outputs are preserved; the
+user-highlighted application-machinery-native-guest-bootstrap was also removed.
+An independent session is editing the same worktree; its changes are intentionally
+left uncommitted by this session. No release/version bump was attempted.
