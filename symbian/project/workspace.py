@@ -4,6 +4,7 @@ import argparse
 import fcntl
 import shutil
 import tempfile
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -18,6 +19,32 @@ def _progress(root: Path, message: str) -> None:
     with (root / ".symbian/workspace-inputs.log").open("a") as log:
         log.write(line + "\n")
     print(f"-- Workspace inputs: {message}", flush=True)
+
+
+def _acquire_with_progress(
+    lock, log_path: Path, poll_seconds: float = 1.0
+) -> None:
+    """Relays new log entries while waiting for another preparer's lock."""
+    offset = log_path.stat().st_size if log_path.exists() else 0
+    while True:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return
+        except BlockingIOError:
+            with log_path.open() as log:
+                log.seek(offset)
+                while line := log.readline():
+                    if line.endswith("\n"):
+                        if "waiting for shared preparation lock" not in line:
+                            print(
+                                "-- Workspace inputs (other CMake profile): "
+                                + line.rstrip(),
+                                flush=True,
+                            )
+                        offset = log.tell()
+                    else:
+                        break
+            time.sleep(poll_seconds)
 
 
 def _publish(staged: Path, output: Path) -> None:
@@ -70,7 +97,7 @@ def prepare(root: Path) -> Path:
     directory.mkdir(parents=True, exist_ok=True)
     _progress(root, "waiting for shared preparation lock")
     with (directory / "workspace-inputs.lock").open("w") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
+        _acquire_with_progress(lock, directory / "workspace-inputs.log")
         _progress(root, "preparation lock acquired")
         return _prepare(root)
 
@@ -89,6 +116,8 @@ def _prepare(root: Path) -> Path:
     dependencies.append(root / "symbian/project/qtmobility.py")
     dependencies.append(root / "symbian/project/native_surface.py")
     dependencies += list((root / "research/native-sdk").glob("*.json"))
+    dependencies += list((root / "research/portable").glob("*.json"))
+    dependencies.append(root / "symbian/project/portable.py")
     dependencies += list((root / "symbian/toolchain/cmake").glob("*"))
     dependencies += list((root / "research/abseil").glob("*.patch"))
     dependencies += list((root / ".symbian/gui-sdk/include").glob("*"))

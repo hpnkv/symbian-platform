@@ -7475,3 +7475,79 @@ After the IDE's source-input refresh completed, the root source Debug graph
 also exposed and built `apparc_app_classic_e32`; cached CMake configure took
 7.1 seconds. This is the same compiler/converter level of evidence as the
 relocated project build, not an AppArc server run.
+
+### 2026-10-06: optional source-built zlib and guest CMake helper reference
+
+Question: can a portable zlib be shipped independently of the original
+`libz.dll` import without exposing a header/archive mismatch? The pinned
+EKA2L1 checkout contains unmodified zlib 1.3.1, its full 15-source C library,
+public `zlib.h`/`zconf.h`, and the original license in `README`. The tracked
+standalone `madler/zlib` v1.3.1 commit has byte-identical reviewed inputs;
+it is now the pinned build source so clean SDK CI need not fetch an emulator
+checkout merely to compile a portable dependency. The tracked
+`research/portable/zlib.json` pins each source/header/license digest and
+classifies this as an optional third-party dependency. Export copies only the
+matching public headers, source-built ARMv5T/ARMv6 archives, provenance and
+license; the checkout remains ignored. The source CMake target and installed
+`Symbian::PortableZlib` target both propagate Open C and the guest runtime.
+Selecting it together with the device import `Symbian::Native_libz` is rejected
+at CMake configuration because the C symbols overlap.
+
+The upstream gzip C files use `read`, `write` and `close` without including
+`unistd.h`. Their build boundary now supplies that public prerequisite. The
+first cross-build also found Open C's legacy `stdarg_e.h` overriding Clang
+varargs; propagating the SDK's existing runtime include profile supplied its
+reviewed Clang-compatible replacement. Both ARM archives built with all 15
+objects. A relocated installed-SDK `zlib_app_classic` compiled the expected
+`include/portable/zlib/zlib.h`, linked and converted to E32 on both ARM
+profiles, with `libc.dll`/`euser.dll` imports and no `libz.dll` import. The
+two public zlib headers also compiled independently in C and C++ using only
+`Symbian::PortableZlib` in a relocated installed-SDK canary project. The
+ARMv6 example packaged into a one-executable SIS. Its compress/decompress/CRC
+round trip exited with guest reason zero on preserved RM-807
+`rm807-113.010.1508` / Dynarmic. That is named-firmware emulator evidence,
+not a physical-device result or a test of every zlib operation.
+
+Three negative/payload controls passed for missing archive, overlapping
+device/import selection and missing bundle header. The dual-ABI export helper
+and relocated payload validator passed. The root ARM IDE index built the live
+zlib library and example ELF; the root Debug graph built its E32. The root
+index configure waited behind another session's shared workspace lock, then
+used cached inputs and finished in 168.5 seconds total. Strict MkDocs,
+Black/Ruff and owned C++ style checks passed. A new guest CMake helper
+reference documents the application, static/DLL, publication, native-leave
+and deployment functions. Portable SDL, libpng, libjpeg and FreeType, remaining
+manifest ownership, complete Linux/macOS bundle acceptance and 0.2.0 release
+remain open.
+
+The concurrent CMake wait showed a remaining progress gap: the lock owner
+emitted import counts, while the waiting profile displayed only its initial
+wait line. Waiting profiles now relay newly appended owner log lines into their
+own CMake output without replaying earlier sessions or writing to the owner
+log. A focused flock-held control passed, including a stale-log negative
+control. The persistent log remains `.symbian/workspace-inputs.log`.
+
+The first full guest SDK export exposed a CMake scope bug absent from the
+top-level fixture: the installed header canary function included `SymbianApp`
+in function scope, and deferred portable-payload validation later lost local
+path variables, reporting a missing payload as `.`. The validator now derives
+the prefix from its imported archive target at validation time. A new
+function-scoped include control passes. The first export cleaned its partial
+output after the failure. A fresh full guest export then passed both ARM
+header-canary profiles and native/portable payload validation; the resulting
+zlib archives were 111,128 bytes (ARMv5T) and 110,152 bytes (ARMv6).
+
+A macOS arm64 native bundle assembled from that fresh guest output, a
+previously validated host payload and bundled resource tools. It retained
+both zlib archives, exact headers, license, manifest and example. The bundled
+SDK passed 24 relocated native-example tests on ARMv5T/ARMv6, including the
+zlib example; the zlib app again exited normally on RM-807/Dynarmic from the
+fresh bundle. The broad Python-free `scripts/check_native_sdk.py` smoke gate
+failed while compiling the existing GL example: libc++ placement
+`operator new/delete` declarations collided with original `e32cmn.h` and
+`e32cmn.inl`. Running the repository's pre-change smoke script against the
+same new bundle reproduced the same GL failure, so the added zlib smoke case
+did not cause it. The prior bundle lacked the current Qt example and could
+not serve as a comparable control. Preserve the concurrent GLES/EGL work and
+keep full bundle acceptance open until that GL error is resolved. Linux host
+bundle validation and physical-device execution are also unverified.

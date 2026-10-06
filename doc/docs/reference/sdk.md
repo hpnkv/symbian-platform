@@ -1,5 +1,8 @@
 # SDK export and native headers
 
+The [guest CMake helper reference](cmake-api.md) documents application and
+library targets, E32 publishing, native leaves and project DLL deployment.
+
 The SDK installs native headers, architecture-specific runtime and component
 archives, frozen-ordinal OS import proxies and CMake helpers. See
 [project configuration](project-configuration.md) for installation and selection,

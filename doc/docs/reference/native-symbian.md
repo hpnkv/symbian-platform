@@ -34,6 +34,8 @@ machine-readable `share/symbian/native/inventory.json` maps each reviewed
 header and DLL to a target, classification, source revision and current block
 reason. `share/symbian/qt/modules.json` does the same for Qt 4.8.1 public
 modules, and `share/symbian/qtmobility/inventory.json` covers Qt Mobility 1.0.3.
+`share/symbian/portable/zlib.json` separately records source-built zlib; it is
+an optional third-party dependency, not a firmware API.
 The inventory still records unresolved exports and Belle FP2 version
 equivalence as open work; do not infer a runtime guarantee from a header.
 
@@ -57,6 +59,7 @@ equivalence as open work; do not infer a runtime guarantee from a header.
 | `apgcli.h`, `apgtask.h` | `Symbian::AppArc` | Application list and task services. |
 | `eikapp.h`, `eikappui.h` | `Symbian::Eikon` | Eikon application framework. |
 | `coecntrl.h`, `coemain.h` | `Symbian::Cone` | CONE controls and environment. |
+| `zlib.h`, `zconf.h` | `Symbian::PortableZlib` | zlib 1.3.1 static archive and matching headers under `include/portable/zlib`. |
 
 Qt targets also include `Symbian::QtCore`, `QtGui`, `QtSvg`, `QtScript`,
 `QtXmlPatterns`, `QtDeclarative`, `QtMultimedia`, `QtOpenVG` and `QtTest`.
@@ -85,6 +88,17 @@ cannot be compiled from this source release because it contains an undefined
 It remains recorded as blocked rather than presented as a working event API.
 The `examples/openc_app_classic` project uses the original libc functions
 directly.
+
+`Symbian::PortableZlib` is a separate source-built zlib 1.3.1 target with
+matching `<zlib.h>` and `<zconf.h>` headers. It uses the guest runtime and
+Open C transitively. Link either this target or the original
+`Symbian::Native_libz` device import in one binary; selecting both fails
+configuration because their C symbols overlap. The portable archive has no
+firmware `libz.dll` dependency. `examples/zlib_app_classic` performs a
+compress/decompress/CRC round trip; it exited normally on the preserved
+RM-807/Dynarmic fixture. Other firmware and physical-device execution remain
+unknown. The installed manifest pins every zlib source digest and the license
+notice, and bundle validation requires both architecture archives.
 
 AppArc, Eikon and CONE retain separate targets, original frozen imports and
 their own public headers. The nine representative framework headers compile

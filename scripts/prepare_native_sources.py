@@ -28,6 +28,7 @@ EXTRA = {
         "SymbianSource/oss.FCL.sf.mw.appsupport",
         "3efd2b6c5ad920873846770a70f9769721e494c8",
     ),
+    "zlib": ("madler/zlib", "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf"),
 }
 
 

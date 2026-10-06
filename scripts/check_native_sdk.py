@@ -58,6 +58,12 @@ add_subdirectory(gl_source)
 symbian_publish_executable(gl_app UID3 0xe0000831)
 """
 
+ZLIB_CMAKE = """
+symbian_add_executable(zlib_check zlib_check.cc)
+target_link_libraries(zlib_check PRIVATE Symbian::PortableZlib)
+symbian_publish_executable(zlib_check UID3 0xe0000834)
+"""
+
 EKA1_CMAKE = """cmake_minimum_required(VERSION 3.28)
 project(eka1_check LANGUAGES CXX ASM)
 include(SymbianPic)
@@ -117,8 +123,12 @@ def check(sdk: Path) -> None:
             moved / "examples/qt_app_classic/app.cc", example / "qt_check.cc"
         )
         shutil.copytree(moved / "examples/gl_app", example / "gl_source")
+        shutil.copyfile(
+            moved / "examples/zlib_app_classic/main.cc",
+            example / "zlib_check.cc",
+        )
         with (example / "CMakeLists.txt").open("a") as cmake:
-            cmake.write(STARTUP_CMAKE + QT_CMAKE + GL_CMAKE)
+            cmake.write(STARTUP_CMAKE + QT_CMAKE + GL_CMAKE + ZLIB_CMAKE)
         eka1 = root / "eka1 application"
         eka1.mkdir()
         (eka1 / "CMakeLists.txt").write_text(EKA1_CMAKE)
@@ -169,7 +179,13 @@ def check(sdk: Path) -> None:
                 check=True,
                 timeout=180,
             )
-            for name in ("hello_time", "startup_check", "qt_check", "gl_app"):
+            for name in (
+                "hello_time",
+                "startup_check",
+                "qt_check",
+                "gl_app",
+                "zlib_check",
+            ):
                 image = (build / "e32" / f"{name}.exe").read_bytes()
                 if image[16:20] != b"EPOC":
                     raise RuntimeError(f"Missing E32 signature in {name}")
@@ -213,7 +229,8 @@ def check(sdk: Path) -> None:
             if result.returncode < 0 or result.returncode in (126, 127):
                 raise RuntimeError(f"Bundled helper cannot run: {tool}")
     print(
-        "Relocated native SDK: ARMv5T and ARMv6 GUI, Qt, GL and shared-startup "
+        "Relocated native SDK: ARMv5T and ARMv6 GUI, Qt, GL, zlib and "
+        "shared-startup "
         "E32 builds, plus ARMv5T EKA1 imports, passed"
     )
 

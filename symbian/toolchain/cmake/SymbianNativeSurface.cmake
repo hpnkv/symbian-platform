@@ -1,6 +1,9 @@
 # Inventory-backed original public native APIs. No firmware implementations.
 include_guard(GLOBAL)
 
+# Opt in only the named sources to original leave/TRAP exception semantics.
+# This adds the C++ ABI/personality boundary; other target sources retain the
+# SDK default of disabled exceptions. Call after declaring the CMake target.
 function(symbian_enable_native_leaves target)
   target_compile_definitions(${target} PRIVATE SYMBIAN_NATIVE_LEAVES=1)
   cmake_parse_arguments(PARSE_ARGV 1 LEAVES "" "" "SOURCES")

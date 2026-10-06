@@ -67,6 +67,8 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
     "${CMAKE_SOURCE_DIR}/cpp/symbian/concurrency/guest"
     "${CMAKE_SOURCE_DIR}/cpp/symbian/concurrency/common")
   include(symbian/project/templates/SymbianApp.cmake)
+  add_subdirectory(cpp/symbian/portable/zlib EXCLUDE_FROM_ALL)
+  symbian_workspace_archive(SymbianPortableZlib symbian_portable_zlib)
   # Component CMake files own the actual guest library sources and include
   # paths. Loading them here makes SDK internals navigable in the same ARM
   # profile as applications, without per-file IDE registration.

@@ -178,6 +178,37 @@ def test_open_c_example_links_original_libc(tmp_path, architecture):
 
 
 @pytest.mark.parametrize("architecture", ["armv5t", "armv6"])
+def test_portable_zlib_example_uses_source_built_archive(
+    tmp_path, architecture
+):
+    """Links version-matched zlib and converts without a libz DLL import."""
+    sdk = AppSdk.load(Path(SDK))
+    source = tmp_path / "portable zlib classic"
+    shutil.copytree(ROOT / "examples/zlib_app_classic", source)
+    (source / "sdk-location.json").write_text(
+        json.dumps({"sdk": str(sdk.prefix)})
+    )
+    report = build(
+        source,
+        tmp_path / "output",
+        str(sdk.compiler),
+        str(sdk.linker),
+        architecture=architecture,
+    )
+    imports = {item["dll"] for item in report["e32"]["imports"]}
+    assert {"libc.dll", "euser.dll"} <= imports
+    assert "libz.dll" not in imports
+    assert report["e32"]["architecture"] == architecture
+    assert not report["runtime_verified"]
+    if architecture == "armv6":
+        built = package(source, Path(report["artifact"]), tmp_path / "package")
+        files = inspect_package(Path(built["artifact"]))["files"]
+        assert [item["target"] for item in files] == [
+            "!:\\sys\\bin\\zlib_app_classic.exe"
+        ]
+
+
+@pytest.mark.parametrize("architecture", ["armv5t", "armv6"])
 def test_apparc_example_links_original_application_service(
     tmp_path, architecture
 ):

@@ -3544,3 +3544,33 @@ was shipped. Named-firmware execution, Avkon resource generation and the
 standard application lifecycle remain open.
 The root Debug graph built `apparc_app_classic_e32` after a cached 7.1-second
 configure; no firmware or physical-device result follows.
+
+2026-10-06 optional portable dependency: `Symbian::PortableZlib` now has
+source-built zlib 1.3.1 archives and matching public headers for ARMv5T and
+ARMv6, separate from the original `Symbian::Native_libz` firmware import.
+The pinned source/license manifest is delivered in installed SDKs and bundles;
+bundle validation rejects missing headers, license or architecture archives.
+Its CMake target propagates Open C and runtime dependencies and rejects
+combining the portable and device implementations. `zlib_app_classic` built,
+linked, converted to E32 and packaged through a relocated installed SDK on
+both architectures. A compress/decompress/CRC round trip exited normally on
+the preserved RM-807/Dynarmic emulator. Root ARM IDE and Debug graphs built
+the new example, three negative/payload controls passed, and strict docs,
+Black/Ruff and C++ style checks passed. The guest CMake helper reference
+documents application/library creation,
+publication, native leaves and DLL deployment. Other portable dependencies,
+most outstanding public-manifest ownership, complete host/bundle gates and
+release 0.2.0 remain open; no physical device was operated.
+Concurrent CMake profiles waiting for the shared input lock now relay the
+owner's live progress lines into their own CMake output; the focused lock and
+stale-log control passed. Detailed progress remains in the ignored
+`.symbian/workspace-inputs.log`.
+The fresh full guest export passed both ARM installed-header canary builds,
+including independent zlib C/C++ public headers. A macOS arm64 bundle from
+that export passed zlib payload validation, all 24 relocated native-example
+cases and a repeated RM-807/Dynarmic zlib process exit. The broad Python-free
+bundle smoke gate remains red at the existing GL example's conflicting
+libc++/`e32cmn.h` placement new/delete declarations; its pre-change script
+reproduced the same error on the new bundle. Preserve ongoing GLES/EGL work.
+Linux bundle acceptance, other portable dependencies and the 0.2.0 release
+remain open.

@@ -17,6 +17,7 @@ endif()
 include(SymbianPlatform)
 include(SymbianGraphics)
 include(SymbianNativeSurface)
+include(SymbianPortable)
 include(SymbianQtMobility)
 set(SYMBIAN_CA_BUNDLE "" CACHE STRING
     "Project PEM CA bundle; empty means no packaged trust roots")
@@ -316,8 +317,9 @@ if(EXISTS "${thread_proxy}" AND EXISTS "${cxxabi_proxy}")
   endif()
 endif()
 
-# Produces an ordinary ARM archive. Link it into an EXE or DLL to debug its
-# source; the final E32 image owns the runtime mapping and symbols.
+# Public static-library helper: SOURCES are required. Produces an ordinary
+# ARM archive with SDK runtime selection and debug symbols. Link the target
+# into an EXE or DLL; that final E32 image owns its storage and symbols.
 function(symbian_add_static_library target)
   cmake_parse_arguments(PARSE_ARGV 1 LIB "" "" "SOURCES")
   if(LIB_UNPARSED_ARGUMENTS OR LIB_KEYWORDS_MISSING_VALUES OR NOT LIB_SOURCES)

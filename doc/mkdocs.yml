@@ -158,6 +158,7 @@ nav:
       - SDK exports: reference/sdk.md
       - Project configuration: reference/project-configuration.md
       - Native library targets: reference/project-libraries.md
+      - Guest CMake helpers: reference/cmake-api.md
       - E32 build pipeline: reference/e32-build-pipeline.md
       - User asset storage: reference/user-assets.md
       - Firmware configuration: reference/firmware-configuration.md

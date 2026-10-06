@@ -3,6 +3,8 @@
 Use the installed CMake helpers to compile ARM libraries with the same target
 headers and ABI flags as an application. Start with [a standalone
 application](../guides/projects.md) before adding libraries.
+The [guest CMake helper reference](cmake-api.md) lists each helper's arguments,
+generated targets and configuration checks.
 
 ## Static library
 

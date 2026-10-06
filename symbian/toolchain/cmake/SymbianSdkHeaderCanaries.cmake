@@ -39,4 +39,13 @@ function(symbian_sdk_header_canaries)
   symbian_header_canary(symbian_sdk_native_status_header_canary
     HEADERS "${SYMBIAN_SDK_PREFIX}/include/symbian/native_status.h"
     LIBRARIES Symbian::Stackless)
+  if(TARGET Symbian::PortableZlib)
+    set(zlib_headers
+      "${SYMBIAN_SDK_PREFIX}/include/portable/zlib/zlib.h"
+      "${SYMBIAN_SDK_PREFIX}/include/portable/zlib/zconf.h")
+    symbian_header_canary(symbian_sdk_portable_zlib_c_header_canary C
+      HEADERS ${zlib_headers} LIBRARIES Symbian::PortableZlib)
+    symbian_header_canary(symbian_sdk_portable_zlib_cpp_header_canary
+      HEADERS ${zlib_headers} LIBRARIES Symbian::PortableZlib)
+  endif()
 endfunction()

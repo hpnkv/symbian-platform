@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from symbian.project.native_surface import validate_native_payload
+from symbian.project.portable import validate_zlib_payload
 from symbian.project.qt import validate_qt_payload
 from symbian.project.qtmobility import validate_qt_mobility
 
@@ -246,6 +247,117 @@ def test_native_bundle_rejects_missing_open_c_usage_manifest(tmp_path):
     )
     with pytest.raises(ValueError, match="Missing native SDK payload"):
         validate_native_payload(tmp_path)
+
+
+def test_portable_zlib_rejects_missing_archive_at_configuration(configure):
+    run, sdk = configure
+    manifest = sdk / "share/symbian/portable/zlib.json"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text("{}")
+    for relative in (
+        "include/portable/zlib/zlib.h",
+        "include/portable/zlib/zconf.h",
+        "licenses/portable/zlib-README.txt",
+    ):
+        path = sdk / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("present")
+    body = (
+        "add_library(Symbian::Runtime INTERFACE IMPORTED GLOBAL)\n"
+        "add_library(Symbian::OpenC INTERFACE IMPORTED GLOBAL)\n"
+        f'include("{ROOT}/symbian/toolchain/cmake/SymbianPortable.cmake")\n'
+        "target_link_libraries(app PRIVATE Symbian::PortableZlib)"
+    )
+    result = run(body)
+    assert result.returncode != 0
+    assert "PortableZlib is unavailable: missing SDK payload" in result.stderr
+
+
+def test_portable_zlib_validates_after_function_scoped_include(configure):
+    """Deferred validation must retain SDK paths after include() scope ends."""
+    run, sdk = configure
+    manifest = sdk / "share/symbian/portable/zlib.json"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text("{}")
+    for relative in (
+        "include/portable/zlib/zlib.h",
+        "include/portable/zlib/zconf.h",
+        "licenses/portable/zlib-README.txt",
+        "lib/armv6/libsymbian_portable_zlib.a",
+    ):
+        path = sdk / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("configuration fixture")
+    result = run(
+        "add_library(Symbian::Runtime INTERFACE IMPORTED GLOBAL)\n"
+        "add_library(Symbian::OpenC INTERFACE IMPORTED GLOBAL)\n"
+        "function(load_portable)\n"
+        f'  include("{ROOT}/symbian/toolchain/cmake/SymbianPortable.cmake")\n'
+        "endfunction()\n"
+        "load_portable()\n"
+        "target_link_libraries(app PRIVATE Symbian::PortableZlib)"
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_portable_zlib_rejects_device_import_combination(configure):
+    run, sdk = configure
+    native_manifest = sdk / "share/symbian/native/inventory.json"
+    data = json.loads(native_manifest.read_text())
+    data["facilities"].append(
+        {
+            "target": "Native_libz",
+            "dll": "libz.dll",
+            "headers": ["zlib.h"],
+            "dependencies": [],
+            "definition": {"destination": "share/symbian/native/defs/libz.def"},
+        }
+    )
+    native_manifest.write_text(json.dumps(data))
+    for relative in (
+        "proxies/libz/libz.dso",
+        "include/native/zlib.h",
+        "share/symbian/native/defs/libz.def",
+    ):
+        path = sdk / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("configuration fixture")
+    manifest = sdk / "share/symbian/portable/zlib.json"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text("{}")
+    body = (
+        "add_library(Symbian::Runtime INTERFACE IMPORTED GLOBAL)\n"
+        "add_library(Symbian::OpenC INTERFACE IMPORTED GLOBAL)\n"
+        f'include("{ROOT}/symbian/toolchain/cmake/SymbianPortable.cmake")\n'
+        "target_link_libraries(app PRIVATE Symbian::PortableZlib "
+        "Symbian::Native_libz)"
+    )
+    result = run(body)
+    assert result.returncode != 0
+    assert "both define zlib symbols" in result.stderr
+
+
+def test_portable_zlib_bundle_rejects_missing_payload(tmp_path):
+    manifest = tmp_path / "share/symbian/portable/zlib.json"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text(
+        json.dumps(
+            {
+                "headers": {
+                    "zlib.h": "include/portable/zlib/zlib.h",
+                    "zconf.h": "include/portable/zlib/zconf.h",
+                },
+                "files": {
+                    "zlib.h": "0" * 64,
+                    "zconf.h": "0" * 64,
+                    "README": "0" * 64,
+                },
+                "archive": "lib/{architecture}/libsymbian_portable_zlib.a",
+            }
+        )
+    )
+    with pytest.raises(ValueError, match="Portable zlib header missing"):
+        validate_zlib_payload(tmp_path)
 
 
 @pytest.mark.parametrize("damage", ["header", "definition", "proxy", "private"])

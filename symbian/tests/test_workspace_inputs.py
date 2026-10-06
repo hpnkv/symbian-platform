@@ -1,6 +1,14 @@
 """Source input publication preserves incremental CMake dependency tracking."""
 
-from symbian.project.workspace import _progress, _publish
+import fcntl
+import threading
+import time
+
+from symbian.project.workspace import (
+    _acquire_with_progress,
+    _progress,
+    _publish,
+)
 
 
 def test_preparation_progress_is_visible_and_persistent(tmp_path, capsys):
@@ -11,6 +19,31 @@ def test_preparation_progress_is_visible_and_persistent(tmp_path, capsys):
         "building Qt Mobility imports"
         in (tmp_path / ".symbian/workspace-inputs.log").read_text()
     )
+
+
+def test_waiting_cmake_profile_sees_active_preparation_log(tmp_path, capsys):
+    directory = tmp_path / ".symbian"
+    directory.mkdir()
+    log = directory / "workspace-inputs.log"
+    log.write_text("[earlier] stale entry\n")
+    lock_path = directory / "workspace-inputs.lock"
+    with lock_path.open("w") as holder, lock_path.open("w") as waiter:
+        fcntl.flock(holder, fcntl.LOCK_EX)
+
+        def finish_active_preparation():
+            time.sleep(0.03)
+            with log.open("a") as output:
+                output.write("[current] base-platform imports 40/131\n")
+            time.sleep(0.06)
+            fcntl.flock(holder, fcntl.LOCK_UN)
+
+        worker = threading.Thread(target=finish_active_preparation)
+        worker.start()
+        _acquire_with_progress(waiter, log, poll_seconds=0.01)
+        worker.join()
+        output = capsys.readouterr().out
+        assert "base-platform imports 40/131" in output
+        assert "stale entry" not in output
 
 
 def test_publish_preserves_unchanged_files_and_live_source_links(tmp_path):

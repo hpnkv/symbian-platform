@@ -403,6 +403,11 @@ function(_symbian_e32_converter output dependency)
   set(${dependency} "${converter_dependency}" PARENT_SCOPE)
 endfunction()
 
+# Public application publisher: convert the linked ELF to an E32 EXE.
+# UID3 is required. PROJECT_DLLS must be BUNDLE or RUNTIME when the linked
+# graph contains a CMake-built DLL; firmware imports are never payloads.
+# CAPABILITIES sets the E32 image mask. IMPORT_PROXIES is an advanced escape
+# hatch; ordinary Symbian:: targets propagate their frozen imports themselves.
 function(symbian_publish_executable target)
   cmake_parse_arguments(PARSE_ARGV 1 EXE "" "UID3;CAPABILITIES;PROJECT_DLLS" "IMPORT_PROXIES")
   if(EXE_UNPARSED_ARGUMENTS OR EXE_KEYWORDS_MISSING_VALUES OR NOT EXE_UID3)
