@@ -8144,3 +8144,17 @@ regenerated, and all 2,148 delivered header/DEF source paths were checked
 against 31 pinned Git indexes with zero mismatches. The staged payload and
 56 focused native tests pass locally. No release assets were published by the
 failed workflow; the tag must be updated to the fixed commit before rerunning.
+
+### 2026-10-06: Qt sync order in second tagged release attempt
+
+The second tagged workflow passed the source and four-host jobs but guest
+staging failed while checking `QtCore/QtCore`. Pinned Qt 4.8.1 `syncqt` sorts
+filenames within a directory but traverses source subdirectories in filesystem
+order, so its generated umbrella include order differs between macOS and Linux.
+Its generated `headers.pri` also contains host-specific build paths and is not
+a public header. Staging now sorts umbrella quote-includes before hashing and
+omits `headers.pri` from the public inventory and payload. A fresh local Qt
+sync run matched every inventoried public header digest after normalization;
+the focused order test passed. The release publish job also lacked checkout,
+which would have hidden the dedicated notes file; checkout was added. The
+corrected tagged Linux bundle run is still required before publication.

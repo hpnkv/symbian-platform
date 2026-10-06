@@ -38,6 +38,18 @@ MODULES = (
 )
 
 
+def _normalize_master_header(path: Path) -> None:
+    """Stabilizes syncqt's filesystem-order-dependent umbrella includes."""
+    lines = path.read_text().splitlines(keepends=True)
+    positions = [
+        index for index, line in enumerate(lines) if line.startswith('#include "')
+    ]
+    includes = sorted(lines[index] for index in positions)
+    for index, include in zip(positions, includes):
+        lines[index] = include
+    path.write_text("".join(lines))
+
+
 def prepare_qt(source: Path, sdk: Path, compiler: str, linker: str) -> None:
     """Stages Qt 4.8.1 once in an SDK, independently of consumer sources.
 
@@ -77,6 +89,8 @@ def prepare_qt(source: Path, sdk: Path, compiler: str, linker: str) -> None:
     )
     shutil.move(str(output / "include"), sdk / "include/qt4")
     for module in MODULES:
+        _normalize_master_header(sdk / "include/qt4" / module / module)
+        (sdk / "include/qt4" / module / "headers.pri").unlink()
         shutil.rmtree(
             sdk / "include/qt4" / module / "private", ignore_errors=True
         )

@@ -219,6 +219,8 @@ class ReleaseAssetsTest(unittest.TestCase):
         self.assertIn("Coverage remains incomplete", notes.read_text())
         workflow = (root / ".github/workflows/release.yml").read_text()
         self.assertIn('--notes-file "$release_notes"', workflow)
+        publish = workflow.split("\n  publish:\n", 1)[1]
+        self.assertIn("- uses: actions/checkout@v4", publish)
 
 
 if __name__ == "__main__":

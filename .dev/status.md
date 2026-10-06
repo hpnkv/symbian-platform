@@ -3840,3 +3840,12 @@ release exists. The inventory generator now stores exact pinned Git tree
 casing. All 2,148 delivered source paths match 31 pinned indexes, local
 payload validation and 56 focused tests pass. Rerun the tagged release after
 moving the unpublished tag to this fix.
+
+The second tagged workflow again passed the four-host and source jobs but
+stopped in Linux guest staging: Qt 4.8.1 `syncqt` generated an umbrella header
+in filesystem-dependent source-directory order. Umbrella headers are now
+normalized, and generated `headers.pri` build metadata is excluded from the
+public inventory and payload. A fresh local Qt sync matched all inventoried
+public header digests after normalization; nine focused release/Qt tests and
+owned C++ style passed. The publish job now checks out the release notes.
+The corrected Linux bundle audit and publication are still pending.
