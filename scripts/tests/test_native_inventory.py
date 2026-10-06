@@ -236,6 +236,40 @@ def test_sensor_and_speech_public_manifests_have_owned_payloads():
         assert all(set(header["targets"]) & set(targets) for header in headers)
 
 
+def test_messaging_and_bio_manifests_have_public_target_ownership():
+    root = Path(__file__).resolve().parents[2]
+    inventory = json.loads(
+        (root / "research/native-sdk/inventory.json").read_text()
+    )
+    manifests = (
+        "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
+        "messagingmw/messagingfw/msgsrvnstore/mtmbase/group/bld.inf",
+        "messagingmw/messagingfw/scheduledsendmtm/schedulesendmtm/group/bld.inf",
+        "messagingmw/messagingfw/sendas/client/group/bld.inf",
+        "messagingmw/messagingfw/biomsgfw/BDB/BLD.INF",
+        "messagingmw/messagingfw/biomsgfw/BIFU/BLD.INF",
+        "messagingmw/messagingfw/biomsgfw/BIUT/BLD.INF",
+        "messagingmw/messagingfw/biomsgfw/BIOC/BLD.INF",
+    )
+    for manifest in manifests:
+        public = [
+            header
+            for header in inventory["headers"]
+            if header.get("manifest") == manifest
+            and header.get("classification") == "public_base_platform"
+            and header.get("sha256")
+        ]
+        assert public
+        assert all(header.get("destination") for header in public)
+        assert all(header.get("targets") for header in public)
+    _, private = exports(root / "research/upstream", ["messagingmw"])
+    panic = next(
+        item for item in private if item["include"] == "schsend_panic.h"
+    )
+    assert panic["classification"] == "private_internal"
+    assert panic["exclusion_reason"] == "Header declares @internalAll"
+
+
 def test_qt_mobility_aliases_exclude_private_classes(tmp_path):
     header = tmp_path / "src/contacts/qcontact.h"
     header.parent.mkdir(parents=True)

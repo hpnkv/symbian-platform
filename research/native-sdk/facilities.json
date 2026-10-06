@@ -1533,9 +1533,30 @@
       "target": "Messaging",
       "dll": "msgs.dll",
       "headers": [
+        "cmsvattachment.h",
+        "cmsvmimeheaders.h",
+        "cmsvplainbodytext.h",
+        "cmsvrecipientlist.h",
+        "cmsvtechnologytypedefaultmtmsettings.h",
+        "mmsvattachmentmanager.h",
+        "mmsvattachmentmanagersync.h",
         "msvapi.h",
+        "msventry.h",
+        "msvfind.h",
+        "msvftext.h",
+        "msvids.h",
+        "msvrcpt.h",
+        "msvreg.h",
+        "msvruids.h",
         "msvstd.h",
-        "mtclbase.h"
+        "msvstore.h",
+        "msvuids.h",
+        "mtclbase.h",
+        "mtclreg.h",
+        "mtmdef.h",
+        "mtmuids.h",
+        "mtsr.h",
+        "tmsvsystemprogress.h"
       ],
       "dependencies": [
         "StreamsNative"
@@ -1560,8 +1581,14 @@
       "target": "SendAs",
       "dll": "sendas2.dll",
       "headers": [
+        "csendasaccounts.h",
+        "csendasmessagetypes.h",
         "rsendas.h",
-        "rsendasmessage.h"
+        "rsendasmessage.h",
+        "sendas2.h",
+        "sendasserver.rh",
+        "tsendasclientpanic.h",
+        "tsendasmessagetypefilter.h"
       ],
       "dependencies": [
         "Messaging"
@@ -2708,6 +2735,187 @@
         "euser",
         "speechrecognitioncustomcommands",
         "mmfcontrollerframework"
+      ]
+    },
+    {
+      "target": "MessagingUiBase",
+      "dll": "mtur.dll",
+      "headers": [
+        "mtmuibas.h",
+        "mtud.rh",
+        "mtudcbas.h",
+        "mtudreg.h",
+        "mtuireg.h",
+        "mturutils.h"
+      ],
+      "dependencies": [
+        "Messaging",
+        "Eikon",
+        "Cone"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "messagingmw/messagingfw/msgsrvnstore/mtmbase/eabi/V2_MTURU.DEF",
+      "mmp": "messagingmw/messagingfw/msgsrvnstore/mtmbase/group/MTUR.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "efsrv",
+        "bafl",
+        "cone",
+        "ws32",
+        "fbscli",
+        "eikcore",
+        "msgs"
+      ]
+    },
+    {
+      "target": "ScheduledMessaging",
+      "dll": "schsend.dll",
+      "headers": [
+        "msventryscheduledata.h",
+        "msvoffpeaktime.h",
+        "msvscheduledentry.h",
+        "msvschedulepackage.h",
+        "msvschedulesend.h",
+        "msvschedulesettings.h",
+        "msvsenderroraction.h",
+        "msvsysagentaction.h",
+        "schedulebaseservermtm.h",
+        "schsend.rh"
+      ],
+      "dependencies": [
+        "Messaging",
+        "CentralRepository",
+        "Bafl"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "messagingmw/messagingfw/scheduledsendmtm/schedulesendmtm/eabi/v2_schsendu.def",
+      "mmp": "messagingmw/messagingfw/scheduledsendmtm/schedulesendmtm/group/schsend.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "estor",
+        "efsrv",
+        "msgs",
+        "schsvr",
+        "bafl",
+        "centralrepository",
+        "flogger"
+      ]
+    },
+    {
+      "target": "BioDatabase",
+      "dll": "biodb.dll",
+      "headers": [
+        "biodb.h"
+      ],
+      "dependencies": [
+        "Messaging",
+        "Bafl"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "messagingmw/messagingfw/biomsgfw/BDB/eabi/biodbu.def",
+      "mmp": "messagingmw/messagingfw/biomsgfw/BDB/group/BIODB.MMP",
+      "implementation_dependencies": [
+        "euser",
+        "efsrv",
+        "bifu",
+        "bafl"
+      ]
+    },
+    {
+      "target": "BioUtilities",
+      "dll": "bifu.dll",
+      "headers": [
+        "bif.h"
+      ],
+      "dependencies": [
+        "Messaging",
+        "Bafl"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "messagingmw/messagingfw/biomsgfw/BIFU/eabi/bifu.def",
+      "mmp": "messagingmw/messagingfw/biomsgfw/BIFU/group/BIFU.MMP",
+      "implementation_dependencies": [
+        "euser",
+        "efsrv",
+        "estor",
+        "bafl"
+      ]
+    },
+    {
+      "target": "BioTransport",
+      "dll": "biut.dll",
+      "headers": [
+        "biouids.h",
+        "bsp.h",
+        "cbioasyncwaiter.h",
+        "ipaddr.h",
+        "regpsdll.h"
+      ],
+      "dependencies": [
+        "Messaging",
+        "BioUtilities"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "messagingmw/messagingfw/biomsgfw/BIUT/eabi/biutu.def",
+      "mmp": "messagingmw/messagingfw/biomsgfw/BIUT/group/BIUT.MMP",
+      "implementation_dependencies": [
+        "euser",
+        "msgs",
+        "estor",
+        "efsrv",
+        "insock"
+      ]
+    },
+    {
+      "target": "BioClient",
+      "dll": "bioc.dll",
+      "headers": [
+        "biocmtm.h",
+        "bioscmds.h"
+      ],
+      "dependencies": [
+        "Messaging",
+        "BioDatabase",
+        "BioUtilities",
+        "BioTransport"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "messagingmw/messagingfw/biomsgfw/BIOC/eabi/biocu.def",
+      "mmp": "messagingmw/messagingfw/biomsgfw/BIOC/group/BIOC.MMP",
+      "implementation_dependencies": [
+        "euser",
+        "msgs",
+        "biodb",
+        "bifu",
+        "biut",
+        "etext",
+        "efsrv"
+      ]
+    },
+    {
+      "target": "WapPushUtils",
+      "dll": "wappushutils.dll",
+      "headers": [
+        "thttpfields.h"
+      ],
+      "dependencies": [
+        "Uri",
+        "Messaging"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "messagingmw/messagingfw/wappushfw/eabi/WapPushUtilsU.def",
+      "mmp": "messagingmw/messagingfw/wappushfw/pushutils/group/pushutils.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "ecom",
+        "inetprotutil"
       ]
     }
   ]

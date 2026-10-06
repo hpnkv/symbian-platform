@@ -7942,3 +7942,35 @@ and converted to E32 on ARMv6; its call was intentionally not executed.
 The selected RM-807 Belle Z-drive contains the new MMF and speech DLL names.
 This is file-presence and compiler/linker evidence, not codec, speech or
 sensor runtime acceptance. Remaining unowned public export records: 1,271.
+
+### 2026-10-06: messaging, scheduled send, BIO and WAP Push
+
+The pinned message-server and SendAs export manifests now map all their public
+headers to existing `msgs.dll` and `sendas2.dll` frozen targets. Separate
+MMP/DEF pairs identify `mtur.dll` for message type module UI bases and the
+selected V2 `schsend.dll` frozen table for scheduled sending. BIO messaging
+uses distinct `biodb.dll`, `bifu.dll`, `biut.dll` and `bioc.dll` imports;
+`wappushutils.dll` owns the exported HTTP-field definitions. The frozen DEF
+tables retain original ordinal holes, including an absent early
+`TMsvOffPeakTime` ordinal in the selected scheduled-send table.
+
+Independent canaries found missing original prerequisites in public
+`msvrcpt.h`, `msvoffpeaktime.h`, `biouids.h` and `thttpfields.h`; narrow
+compatibility edits include original E32 headers or add the missing stream
+forward declaration. The exported `schsend_panic.h` declares `@internalAll`,
+so it is classified private/internal despite its public macro. BIO's
+`biomessageuids.h` is `@publishedPartner`; it remains only a textual
+dependency of public `biouids.h`. The selected `sendui.dll` facility remains
+blocked because a reviewed frozen DEF/library identity is absent.
+
+The relocated SDK staged complete frozen imports and passed payload
+validation, then compiled 1,572 selected public-header canary objects on
+both ARMv5T and ARMv6. A disposable consumer linked the scheduled-send
+`TMsvOffPeakTime` constructor/Reset through `Symbian::ScheduledMessaging`
+alongside BIO and WAP targets, and converted to E32 on ARMv6. Its branch was
+not executed. All selected target DLL names exist in the preserved RM-807
+Belle Z-drive and configuration passed, but no newly surfaced API call or
+firmware ordinal match has been demonstrated. The automatically generated
+source SDK export completed during this slice but contains an earlier
+inventory snapshot; a final fresh export is still required. Remaining
+unowned public export records: 1,218.

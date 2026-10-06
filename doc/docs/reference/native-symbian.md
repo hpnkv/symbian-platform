@@ -60,6 +60,11 @@ check and Close action.
 | `mmf/server/mmfcodec.h`, `mmf/server/mmfdatapath.h` | `Symbian::MmfServerBase` | Original MMF server/codec base classes. |
 | `mmf/server/mmfformat.h` | `Symbian::MmfFormatBase` | Original format plug-in base classes. |
 | `speechrecognitionutility.h` | `Symbian::SpeechRecognition` | Original speech-recognition utility, with command/data imports transitively. |
+| `msvrcpt.h`, `msventry.h` | `Symbian::Messaging` | Original message server/client data interfaces. |
+| `msvoffpeaktime.h`, `msvschedulesend.h` | `Symbian::ScheduledMessaging` | Original scheduled-send interfaces. |
+| `mtmuibas.h` | `Symbian::MessagingUiBase` | Message type module UI base classes. |
+| `biouids.h`, `biocmtm.h` | `Symbian::BioTransport`, `Symbian::BioClient` | Original BIO/Smart Messaging interfaces. |
+| `thttpfields.h` | `Symbian::WapPushUtils` | Original WAP Push HTTP field definitions. |
 | `authority8.h`, `delimitedquery16.h`, `uriutils.h`, `wspdecoder.h` | `Symbian::Uri` | Original InetProtUtil public URI, parser, WSP and date headers. |
 | `babackup.h`, `baclipb.h`, `basched.h`, `barsread2.h` | `Symbian::Bafl` | Original BAFL backup, clipboard, scheduler and resource utilities. |
 | `ecom/implementationproxy.h`, `ecom/publicregistry.h`, `ecom/resolver.h` | `Symbian::ECom` | Original public plug-in registration and resolver headers. |
@@ -122,6 +127,15 @@ original DLL interfaces: `SpeechRecognition`, `SpeechRecognitionCommands`
 and `SpeechRecognitionData`. The selected RM-807 Belle Z-drive contains the
 MMF and speech DLL filenames, but header compilation and E32 conversion do
 not establish that every sensor, codec or speech service is present or usable.
+
+Messaging adds the original `msgs.dll` client/store headers and separate
+`sendas2.dll`, `mtur.dll`, `schsend.dll`, BIO and WAP Push interfaces. The
+`Symbian::ScheduledMessaging` target uses the V2 frozen definition selected
+by its MMP, including absent ordinal slots. `Symbian::BioClient` pulls in
+its BIO database, utility and transport imports. The old Send UI facility
+still lacks a reviewed frozen import identity and is rejected on selection.
+The selected RM-807 Belle Z-drive contains the delivered DLL filenames, but
+messaging operations and compatibility with other firmware remain unverified.
 
 Qt targets also include `Symbian::QtCore`, `QtGui`, `QtSvg`, `QtScript`,
 `QtXmlPatterns`, `QtDeclarative`, `QtMultimedia`, `QtOpenVG` and `QtTest`.

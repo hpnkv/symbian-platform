@@ -191,13 +191,16 @@ def exports(root: Path, names: list[str]) -> tuple[list[dict], list[dict]]:
                 if include.casefold() in (
                     "stdapis/libxml2/xmlengtriodef.h",
                     "stdapis/libxml2/xmlengtrionan.h",
+                    "schsend_panic.h",
                 ):
-                    # These source files say @publishedPartner despite the
-                    # broad export macro in this component's bld.inf.
+                    # Source publication annotations are narrower than the
+                    # broad public export macro in these component manifests.
                     record["classification"] = "private_internal"
                     record["exclusion_reason"] = (
-                        "Header declares @publishedPartner; public SDK API "
-                        "status not established"
+                        "Header declares @internalAll"
+                        if include.casefold() == "schsend_panic.h"
+                        else "Header declares @publishedPartner; public SDK "
+                        "API status not established"
                     )
                 if source.is_file():
                     record["sha256"] = digest(source)

@@ -3742,3 +3742,19 @@ the MMF and speech DLL filenames, but newly added API behavior has not been
 run there. The inventory still has 1,271 public export records without
 reviewed delivery/ownership. Automatic fresh source export, Linux bundle
 acceptance, SDL and 0.2.0 publication remain open.
+
+2026-10-06 messaging/BIO slice: The original message-server and SendAs
+manifests now have full public header ownership. New `MessagingUiBase`,
+`ScheduledMessaging`, `BioDatabase`, `BioUtilities`, `BioTransport`,
+`BioClient` and `WapPushUtils` targets ship complete frozen import interfaces
+and their reviewed public headers. The `@internalAll` scheduled-send panic
+header is excluded as a public API, while partner BIO UID declarations are
+included only as textual support. The relocated SDK passed 1,572 independent
+public-header canary object builds on both ARM profiles, payload validation
+and an ARMv6 scheduled/BIO/WAP consumer through E32 conversion. The selected
+RM-807 Belle Z-drive contains the DLL filenames and passes configuration;
+runtime calls and ordinal equivalence remain unverified. The fresh automatic
+source export started at `31af53d` finished, but its embedded inventory
+predates these ongoing messaging edits, so a final export remains required.
+The inventory has 1,218 public export records without reviewed ownership.
+Linux bundle acceptance, SDL and release 0.2.0 remain open.

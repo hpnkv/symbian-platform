@@ -6525,9 +6525,30 @@
       "target": "Messaging",
       "dll": "msgs.dll",
       "headers": [
+        "cmsvattachment.h",
+        "cmsvmimeheaders.h",
+        "cmsvplainbodytext.h",
+        "cmsvrecipientlist.h",
+        "cmsvtechnologytypedefaultmtmsettings.h",
+        "mmsvattachmentmanager.h",
+        "mmsvattachmentmanagersync.h",
         "msvapi.h",
+        "msventry.h",
+        "msvfind.h",
+        "msvftext.h",
+        "msvids.h",
+        "msvrcpt.h",
+        "msvreg.h",
+        "msvruids.h",
         "msvstd.h",
-        "mtclbase.h"
+        "msvstore.h",
+        "msvuids.h",
+        "mtclbase.h",
+        "mtclreg.h",
+        "mtmdef.h",
+        "mtmuids.h",
+        "mtsr.h",
+        "tmsvsystemprogress.h"
       ],
       "dependencies": [
         "StreamsNative"
@@ -6555,8 +6576,13 @@
         "include/native/E32BASE.H",
         "include/native/badesca.h",
         "include/native/bamdesca.h",
+        "include/native/charconv.h",
+        "include/native/cinstalledmtmgroup.h",
         "include/native/cmsvattachment.h",
+        "include/native/cmsvmimeheaders.h",
+        "include/native/cmsvplainbodytext.h",
         "include/native/cmsvrecipientlist.h",
+        "include/native/cmsvtechnologytypedefaultmtmsettings.h",
         "include/native/d32locd.h",
         "include/native/d32locd.inl",
         "include/native/e32base.h",
@@ -6603,22 +6629,42 @@
         "include/native/flogger.inl",
         "include/native/mclient.h",
         "include/native/mentact.h",
+        "include/native/mmsvattachmentmanager.h",
+        "include/native/mmsvattachmentmanagersync.h",
         "include/native/mmsvstoremanager.h",
         "include/native/msgerr.h",
         "include/native/msvapi.h",
         "include/native/msvapi.inl",
         "include/native/msvarray.h",
+        "include/native/msvconsts.h",
+        "include/native/msventry.h",
+        "include/native/msventry.inl",
+        "include/native/msvfind.h",
+        "include/native/msvfind.inl",
+        "include/native/msvftext.h",
+        "include/native/msvftext.inl",
+        "include/native/msvids.h",
         "include/native/msvipc.h",
         "include/native/msvipc.inl",
+        "include/native/msvrcpt.h",
+        "include/native/msvrcpt.inl",
         "include/native/msvreg.h",
         "include/native/msvreg.inl",
+        "include/native/msvruids.h",
         "include/native/msvsearchsortconstants.h",
         "include/native/msvsearchsortquery.h",
         "include/native/msvstd.h",
         "include/native/msvstd.hrh",
         "include/native/msvstd.inl",
         "include/native/msvstore.h",
+        "include/native/msvuids.h",
         "include/native/mtclbase.h",
+        "include/native/mtclreg.h",
+        "include/native/mtmdef.h",
+        "include/native/mtmdef.hrh",
+        "include/native/mtmuids.h",
+        "include/native/mtmuidsdef.hrh",
+        "include/native/mtsr.h",
         "include/native/partitions.h",
         "include/native/s32buf.h",
         "include/native/s32buf.inl",
@@ -6644,8 +6690,14 @@
       "target": "SendAs",
       "dll": "sendas2.dll",
       "headers": [
+        "csendasaccounts.h",
+        "csendasmessagetypes.h",
         "rsendas.h",
-        "rsendasmessage.h"
+        "rsendasmessage.h",
+        "sendas2.h",
+        "sendasserver.rh",
+        "tsendasclientpanic.h",
+        "tsendasmessagetypefilter.h"
       ],
       "dependencies": [
         "Messaging"
@@ -6672,6 +6724,7 @@
         "include/native/bamdesca.h",
         "include/native/cmsvrecipientlist.h",
         "include/native/csendasaccounts.h",
+        "include/native/csendasmessagetypes.h",
         "include/native/d32locd.h",
         "include/native/d32locd.inl",
         "include/native/e32base.h",
@@ -6751,8 +6804,12 @@
         "include/native/s32stor.inl",
         "include/native/s32strm.h",
         "include/native/s32strm.inl",
+        "include/native/sendas2.h",
+        "include/native/sendasserver.rh",
         "include/native/tmsvsystemprogress.h",
-        "include/native/tnonoperationmtmdata.h"
+        "include/native/tnonoperationmtmdata.h",
+        "include/native/tsendasclientpanic.h",
+        "include/native/tsendasmessagetypefilter.h"
       ],
       "ms_extensions": false
     },
@@ -10158,6 +10215,812 @@
         "include/native/speechrecognitionuids.hrh",
         "include/native/speechrecognitionutility.h",
         "include/native/speechrecognitionutilityobserver.h"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "MessagingUiBase",
+      "dll": "mtur.dll",
+      "headers": [
+        "mtmuibas.h",
+        "mtud.rh",
+        "mtudcbas.h",
+        "mtudreg.h",
+        "mtuireg.h",
+        "mturutils.h"
+      ],
+      "dependencies": [
+        "Messaging",
+        "Eikon",
+        "Cone"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "messagingmw/messagingfw/msgsrvnstore/mtmbase/eabi/V2_MTURU.DEF",
+        "sha256": "41472856260e16bfc89000f4118724f58d48729a10a41435a660f39b796d240e",
+        "destination": "share/symbian/native/defs/mtur.dll.def"
+      },
+      "mmp": "messagingmw/messagingfw/msgsrvnstore/mtmbase/group/MTUR.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "efsrv",
+        "bafl",
+        "cone",
+        "ws32",
+        "fbscli",
+        "eikcore",
+        "msgs"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/badesca.h",
+        "include/native/bamdesca.h",
+        "include/native/barsread.h",
+        "include/native/cmsvattachment.h",
+        "include/native/cmsvrecipientlist.h",
+        "include/native/d32locd.h",
+        "include/native/d32locd.inl",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32btrace.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32debug.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32event.h",
+        "include/native/e32event_private.h",
+        "include/native/e32hal.h",
+        "include/native/e32keys.h",
+        "include/native/e32ktran.h",
+        "include/native/e32lang.h",
+        "include/native/e32ldr.h",
+        "include/native/e32ldr_private.h",
+        "include/native/e32lmsg.h",
+        "include/native/e32notif.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/e32svr.h",
+        "include/native/f32file.h",
+        "include/native/f32file.inl",
+        "include/native/f32file64.h",
+        "include/native/f32file64.inl",
+        "include/native/f32file_private.h",
+        "include/native/f32notification.h",
+        "include/native/flogger.h",
+        "include/native/flogger.inl",
+        "include/native/mclient.h",
+        "include/native/mentact.h",
+        "include/native/mmsvstoremanager.h",
+        "include/native/msgerr.h",
+        "include/native/msvapi.h",
+        "include/native/msvapi.inl",
+        "include/native/msvarray.h",
+        "include/native/msvipc.h",
+        "include/native/msvipc.inl",
+        "include/native/msvreg.h",
+        "include/native/msvreg.inl",
+        "include/native/msvsearchsortconstants.h",
+        "include/native/msvsearchsortquery.h",
+        "include/native/msvstd.h",
+        "include/native/msvstd.hrh",
+        "include/native/msvstd.inl",
+        "include/native/msvstore.h",
+        "include/native/mtclbase.h",
+        "include/native/mtclreg.h",
+        "include/native/mtmuibas.h",
+        "include/native/mtud.hrh",
+        "include/native/mtud.rh",
+        "include/native/mtudcbas.h",
+        "include/native/mtudreg.h",
+        "include/native/mtuireg.h",
+        "include/native/mturutils.h",
+        "include/native/partitions.h",
+        "include/native/s32buf.h",
+        "include/native/s32buf.inl",
+        "include/native/s32file.h",
+        "include/native/s32file.inl",
+        "include/native/s32filebufsize.h",
+        "include/native/s32page.h",
+        "include/native/s32page.inl",
+        "include/native/s32share.h",
+        "include/native/s32share.inl",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32stor.h",
+        "include/native/s32stor.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl",
+        "include/native/tmsvsystemprogress.h",
+        "include/native/tnonoperationmtmdata.h"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "ScheduledMessaging",
+      "dll": "schsend.dll",
+      "headers": [
+        "msventryscheduledata.h",
+        "msvoffpeaktime.h",
+        "msvscheduledentry.h",
+        "msvschedulepackage.h",
+        "msvschedulesend.h",
+        "msvschedulesettings.h",
+        "msvsenderroraction.h",
+        "msvsysagentaction.h",
+        "schedulebaseservermtm.h",
+        "schsend.rh"
+      ],
+      "dependencies": [
+        "Messaging",
+        "CentralRepository",
+        "Bafl"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "messagingmw/messagingfw/scheduledsendmtm/schedulesendmtm/eabi/v2_schsendu.def",
+        "sha256": "94d4f17425da09153c7873aa218d2c3fd5dcd11ca0554436555181bb2800c978",
+        "destination": "share/symbian/native/defs/schsend.dll.def"
+      },
+      "mmp": "messagingmw/messagingfw/scheduledsendmtm/schedulesendmtm/group/schsend.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "estor",
+        "efsrv",
+        "msgs",
+        "schsvr",
+        "bafl",
+        "centralrepository",
+        "flogger"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/badesca.h",
+        "include/native/bamdesca.h",
+        "include/native/barsc.h",
+        "include/native/barsread.h",
+        "include/native/cinstalledmtmgroup.h",
+        "include/native/csch_cli.h",
+        "include/native/d32locd.h",
+        "include/native/d32locd.inl",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32btrace.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32cons.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32debug.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32event.h",
+        "include/native/e32event_private.h",
+        "include/native/e32hal.h",
+        "include/native/e32keys.h",
+        "include/native/e32ktran.h",
+        "include/native/e32lang.h",
+        "include/native/e32ldr.h",
+        "include/native/e32ldr_private.h",
+        "include/native/e32lmsg.h",
+        "include/native/e32notif.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/e32svr.h",
+        "include/native/f32file.h",
+        "include/native/f32file.inl",
+        "include/native/f32file64.h",
+        "include/native/f32file64.inl",
+        "include/native/f32file_private.h",
+        "include/native/f32notification.h",
+        "include/native/msventryscheduledata.h",
+        "include/native/msvoffpeaktime.h",
+        "include/native/msvrcpt.h",
+        "include/native/msvrcpt.inl",
+        "include/native/msvreg.h",
+        "include/native/msvreg.inl",
+        "include/native/msvscheduledentry.h",
+        "include/native/msvscheduledentry.inl",
+        "include/native/msvschedulepackage.h",
+        "include/native/msvschedulesend.h",
+        "include/native/msvschedulesend.inl",
+        "include/native/msvschedulesettings.h",
+        "include/native/msvsenderroraction.h",
+        "include/native/msvstd.h",
+        "include/native/msvstd.hrh",
+        "include/native/msvstd.inl",
+        "include/native/msvstore.h",
+        "include/native/msvsysagentaction.h",
+        "include/native/mtsr.h",
+        "include/native/partitions.h",
+        "include/native/s32buf.h",
+        "include/native/s32buf.inl",
+        "include/native/s32file.h",
+        "include/native/s32file.inl",
+        "include/native/s32filebufsize.h",
+        "include/native/s32page.h",
+        "include/native/s32page.inl",
+        "include/native/s32share.h",
+        "include/native/s32share.inl",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32stor.h",
+        "include/native/s32stor.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl",
+        "include/native/schedulebaseservermtm.h",
+        "include/native/schinfo.h",
+        "include/native/schinfointernal.h",
+        "include/native/schsend.hrh",
+        "include/native/schsend.rh",
+        "include/native/schtask.h",
+        "include/native/schtime.h",
+        "include/native/tnonoperationmtmdata.h"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "BioDatabase",
+      "dll": "biodb.dll",
+      "headers": [
+        "biodb.h"
+      ],
+      "dependencies": [
+        "Messaging",
+        "Bafl"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "messagingmw/messagingfw/biomsgfw/BDB/eabi/biodbu.def",
+        "sha256": "20253f3e061a74852bd185689b0e060be54d49b454bffbaf7736414c99669fcf",
+        "destination": "share/symbian/native/defs/biodb.dll.def"
+      },
+      "mmp": "messagingmw/messagingfw/biomsgfw/BDB/group/BIODB.MMP",
+      "implementation_dependencies": [
+        "euser",
+        "efsrv",
+        "bifu",
+        "bafl"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/apmrec.h",
+        "include/native/apmrec.inl",
+        "include/native/apmstd.h",
+        "include/native/bif.h",
+        "include/native/bifbase.h",
+        "include/native/bifchangeobserver.h",
+        "include/native/biodb.h",
+        "include/native/d32locd.h",
+        "include/native/d32locd.inl",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32btrace.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32debug.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32event.h",
+        "include/native/e32event_private.h",
+        "include/native/e32hal.h",
+        "include/native/e32keys.h",
+        "include/native/e32ktran.h",
+        "include/native/e32lang.h",
+        "include/native/e32ldr.h",
+        "include/native/e32ldr_private.h",
+        "include/native/e32lmsg.h",
+        "include/native/e32notif.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/e32svr.h",
+        "include/native/f32file.h",
+        "include/native/f32file.inl",
+        "include/native/f32file64.h",
+        "include/native/f32file64.inl",
+        "include/native/f32file_private.h",
+        "include/native/f32notification.h",
+        "include/native/partitions.h",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "BioUtilities",
+      "dll": "bifu.dll",
+      "headers": [
+        "bif.h"
+      ],
+      "dependencies": [
+        "Messaging",
+        "Bafl"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "messagingmw/messagingfw/biomsgfw/BIFU/eabi/bifu.def",
+        "sha256": "801dd870f6e948fc93d978a5a8216c338923a7cd4fda387f0e22908e0ddb0693",
+        "destination": "share/symbian/native/defs/bifu.dll.def"
+      },
+      "mmp": "messagingmw/messagingfw/biomsgfw/BIFU/group/BIFU.MMP",
+      "implementation_dependencies": [
+        "euser",
+        "efsrv",
+        "estor",
+        "bafl"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/apmrec.h",
+        "include/native/apmrec.inl",
+        "include/native/apmstd.h",
+        "include/native/bif.h",
+        "include/native/bifbase.h",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32lang.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "BioTransport",
+      "dll": "biut.dll",
+      "headers": [
+        "biouids.h",
+        "bsp.h",
+        "cbioasyncwaiter.h",
+        "ipaddr.h",
+        "regpsdll.h"
+      ],
+      "dependencies": [
+        "Messaging",
+        "BioUtilities"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "messagingmw/messagingfw/biomsgfw/BIUT/eabi/biutu.def",
+        "sha256": "6158ddcd8dd76be004aea60a180adac2a55c24e5be725948e51b3c3acca62d62",
+        "destination": "share/symbian/native/defs/biut.dll.def"
+      },
+      "mmp": "messagingmw/messagingfw/biomsgfw/BIUT/group/BIUT.MMP",
+      "implementation_dependencies": [
+        "euser",
+        "msgs",
+        "estor",
+        "efsrv",
+        "insock"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/apmrec.h",
+        "include/native/apmrec.inl",
+        "include/native/apmstd.h",
+        "include/native/badesca.h",
+        "include/native/bamdesca.h",
+        "include/native/bif.h",
+        "include/native/bifbase.h",
+        "include/native/biomessageuids.h",
+        "include/native/biouids.h",
+        "include/native/bsp.h",
+        "include/native/bsp.inl",
+        "include/native/cbioasyncwaiter.h",
+        "include/native/cmsvattachment.h",
+        "include/native/cmsvrecipientlist.h",
+        "include/native/comms-infras/es_event.h",
+        "include/native/comms-infras/es_parameterset.h",
+        "include/native/comms-infras/metacontainer.h",
+        "include/native/comms-infras/metadata.h",
+        "include/native/d32locd.h",
+        "include/native/d32locd.inl",
+        "include/native/displaymode.h",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32btrace.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32debug.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32event.h",
+        "include/native/e32event_private.h",
+        "include/native/e32hal.h",
+        "include/native/e32keys.h",
+        "include/native/e32ktran.h",
+        "include/native/e32lang.h",
+        "include/native/e32ldr.h",
+        "include/native/e32ldr_private.h",
+        "include/native/e32lmsg.h",
+        "include/native/e32notif.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/e32svr.h",
+        "include/native/elements/cftransportmacro.h",
+        "include/native/elements/h_tdeallocator.h",
+        "include/native/elements/metacontainer.h",
+        "include/native/elements/metacontainer.inl",
+        "include/native/elements/metadata.h",
+        "include/native/elements/metadata.inl",
+        "include/native/elements/sd_errors.h",
+        "include/native/es_sock.h",
+        "include/native/es_sock.inl",
+        "include/native/es_sock_internal.h",
+        "include/native/es_sock_internal.inl",
+        "include/native/es_sock_partner.h",
+        "include/native/f32file.h",
+        "include/native/f32file.inl",
+        "include/native/f32file64.h",
+        "include/native/f32file64.inl",
+        "include/native/f32file_private.h",
+        "include/native/f32notification.h",
+        "include/native/fldbase.h",
+        "include/native/fldbltin.h",
+        "include/native/fldinfo.h",
+        "include/native/fldset.h",
+        "include/native/flogger.h",
+        "include/native/flogger.inl",
+        "include/native/gdi.h",
+        "include/native/gdi.inl",
+        "include/native/graphics/gdi/gdiconsts.h",
+        "include/native/graphics/gdi/gdiinline.inl",
+        "include/native/graphics/gdi/gdistructs.h",
+        "include/native/graphics/gdi/glyphsample.h",
+        "include/native/in_sock.h",
+        "include/native/in_sock_internal.h",
+        "include/native/ipaddr.h",
+        "include/native/mclient.h",
+        "include/native/medobsrv.h",
+        "include/native/mentact.h",
+        "include/native/mmsvstoremanager.h",
+        "include/native/mparser.h",
+        "include/native/msgerr.h",
+        "include/native/msvapi.h",
+        "include/native/msvapi.inl",
+        "include/native/msvarray.h",
+        "include/native/msvipc.h",
+        "include/native/msvipc.inl",
+        "include/native/msvreg.h",
+        "include/native/msvreg.inl",
+        "include/native/msvsearchsortconstants.h",
+        "include/native/msvsearchsortquery.h",
+        "include/native/msvstd.h",
+        "include/native/msvstd.hrh",
+        "include/native/msvstd.inl",
+        "include/native/msvstore.h",
+        "include/native/mtclbase.h",
+        "include/native/mtclreg.h",
+        "include/native/nifvar.h",
+        "include/native/nifvar_internal.h",
+        "include/native/partitions.h",
+        "include/native/regpsdll.h",
+        "include/native/regpsdll.inl",
+        "include/native/s32buf.h",
+        "include/native/s32buf.inl",
+        "include/native/s32file.h",
+        "include/native/s32file.inl",
+        "include/native/s32filebufsize.h",
+        "include/native/s32page.h",
+        "include/native/s32page.inl",
+        "include/native/s32share.h",
+        "include/native/s32share.inl",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32stor.h",
+        "include/native/s32stor.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl",
+        "include/native/tmsvbioinfo.h",
+        "include/native/tmsvsystemprogress.h",
+        "include/native/tnonoperationmtmdata.h",
+        "include/native/txtclipboard.h",
+        "include/native/txtetext.h",
+        "include/native/txtetext.inl",
+        "include/native/txtetext_internal.h",
+        "include/native/txtfmlyr.h",
+        "include/native/txtfmlyr.inl",
+        "include/native/txtfmlyr_internal.h",
+        "include/native/txtfmstm.h",
+        "include/native/txtfrmat.h",
+        "include/native/txtfrmat.inl",
+        "include/native/txtglobl.h",
+        "include/native/txtglobl.inl",
+        "include/native/txtlaydc.h",
+        "include/native/txtmfmtx.h",
+        "include/native/txtrich.h",
+        "include/native/txtrich.inl",
+        "include/native/txtrich_internal.h",
+        "include/native/txtstyle.h",
+        "include/native/txtstyle.inl",
+        "include/native/txtstyle_internal.h"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "BioClient",
+      "dll": "bioc.dll",
+      "headers": [
+        "biocmtm.h",
+        "bioscmds.h"
+      ],
+      "dependencies": [
+        "Messaging",
+        "BioDatabase",
+        "BioUtilities",
+        "BioTransport"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "messagingmw/messagingfw/biomsgfw/BIOC/eabi/biocu.def",
+        "sha256": "8aae95420a60cbb1f1e9984c6b5993ee0264c462e5a6be00ec3838cd44fefa48",
+        "destination": "share/symbian/native/defs/bioc.dll.def"
+      },
+      "mmp": "messagingmw/messagingfw/biomsgfw/BIOC/group/BIOC.MMP",
+      "implementation_dependencies": [
+        "euser",
+        "msgs",
+        "biodb",
+        "bifu",
+        "biut",
+        "etext",
+        "efsrv"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/apmrec.h",
+        "include/native/apmrec.inl",
+        "include/native/apmstd.h",
+        "include/native/badesca.h",
+        "include/native/bamdesca.h",
+        "include/native/bif.h",
+        "include/native/bifbase.h",
+        "include/native/biocmtm.h",
+        "include/native/bioscmds.h",
+        "include/native/bsp.h",
+        "include/native/bsp.inl",
+        "include/native/cmsvattachment.h",
+        "include/native/cmsvrecipientlist.h",
+        "include/native/d32locd.h",
+        "include/native/d32locd.inl",
+        "include/native/displaymode.h",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32btrace.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32debug.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32event.h",
+        "include/native/e32event_private.h",
+        "include/native/e32hal.h",
+        "include/native/e32keys.h",
+        "include/native/e32ktran.h",
+        "include/native/e32lang.h",
+        "include/native/e32ldr.h",
+        "include/native/e32ldr_private.h",
+        "include/native/e32lmsg.h",
+        "include/native/e32notif.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/e32svr.h",
+        "include/native/f32file.h",
+        "include/native/f32file.inl",
+        "include/native/f32file64.h",
+        "include/native/f32file64.inl",
+        "include/native/f32file_private.h",
+        "include/native/f32notification.h",
+        "include/native/fldbase.h",
+        "include/native/fldbltin.h",
+        "include/native/fldinfo.h",
+        "include/native/fldset.h",
+        "include/native/flogger.h",
+        "include/native/flogger.inl",
+        "include/native/gdi.h",
+        "include/native/gdi.inl",
+        "include/native/graphics/gdi/gdiconsts.h",
+        "include/native/graphics/gdi/gdiinline.inl",
+        "include/native/graphics/gdi/gdistructs.h",
+        "include/native/graphics/gdi/glyphsample.h",
+        "include/native/mclient.h",
+        "include/native/medobsrv.h",
+        "include/native/mentact.h",
+        "include/native/mmsvstoremanager.h",
+        "include/native/mparser.h",
+        "include/native/msgerr.h",
+        "include/native/msvapi.h",
+        "include/native/msvapi.inl",
+        "include/native/msvarray.h",
+        "include/native/msvipc.h",
+        "include/native/msvipc.inl",
+        "include/native/msvreg.h",
+        "include/native/msvreg.inl",
+        "include/native/msvsearchsortconstants.h",
+        "include/native/msvsearchsortquery.h",
+        "include/native/msvstd.h",
+        "include/native/msvstd.hrh",
+        "include/native/msvstd.inl",
+        "include/native/msvstore.h",
+        "include/native/mtclbase.h",
+        "include/native/mtclreg.h",
+        "include/native/partitions.h",
+        "include/native/s32buf.h",
+        "include/native/s32buf.inl",
+        "include/native/s32file.h",
+        "include/native/s32file.inl",
+        "include/native/s32filebufsize.h",
+        "include/native/s32page.h",
+        "include/native/s32page.inl",
+        "include/native/s32share.h",
+        "include/native/s32share.inl",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32stor.h",
+        "include/native/s32stor.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl",
+        "include/native/tmsvbioinfo.h",
+        "include/native/tmsvsystemprogress.h",
+        "include/native/tnonoperationmtmdata.h",
+        "include/native/txtclipboard.h",
+        "include/native/txtetext.h",
+        "include/native/txtetext.inl",
+        "include/native/txtetext_internal.h",
+        "include/native/txtfmlyr.h",
+        "include/native/txtfmlyr.inl",
+        "include/native/txtfmlyr_internal.h",
+        "include/native/txtfmstm.h",
+        "include/native/txtfrmat.h",
+        "include/native/txtfrmat.inl",
+        "include/native/txtglobl.h",
+        "include/native/txtglobl.inl",
+        "include/native/txtlaydc.h",
+        "include/native/txtmfmtx.h",
+        "include/native/txtrich.h",
+        "include/native/txtrich.inl",
+        "include/native/txtrich_internal.h",
+        "include/native/txtstyle.h",
+        "include/native/txtstyle.inl",
+        "include/native/txtstyle_internal.h"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "WapPushUtils",
+      "dll": "wappushutils.dll",
+      "headers": [
+        "thttpfields.h"
+      ],
+      "dependencies": [
+        "Uri",
+        "Messaging"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "messagingmw/messagingfw/wappushfw/eabi/WapPushUtilsU.def",
+        "sha256": "a2ee4e6d8ebf74a4469d3834307f1de2a43d2f63a68bdaeb8e49b47b854a80a2",
+        "destination": "share/symbian/native/defs/wappushutils.dll.def"
+      },
+      "mmp": "messagingmw/messagingfw/wappushfw/pushutils/group/pushutils.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "ecom",
+        "inetprotutil"
+      ],
+      "header_payloads": [
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32lang.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/thttpfields.h"
       ],
       "ms_extensions": false
     },
@@ -25981,6 +26844,7 @@
       "sha256": "48305c21486b4a9fb4bc4eac7180f0563ab94a24fd0df2decb90e147421c4add",
       "destination": "include/native/elements/metadata.h",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -26009,6 +26873,7 @@
       "sha256": "0e6525b4cfd0ec5fc2d99d48d4afc69b15c49ec99e6a2272b6d9ab6ba0efa90c",
       "destination": "include/native/elements/metadata.inl",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -26037,6 +26902,7 @@
       "sha256": "e458a4b4fc5d5b9f8de0a439e6d2c6e97808bae0cb7438f255e64395c84823b2",
       "destination": "include/native/elements/cftransportmacro.h",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -26211,6 +27077,7 @@
       "sha256": "2c3fa72b317b9744aeed047129eb2eec6248843938e6849b118d0c7f306de7d8",
       "destination": "include/native/comms-infras/es_parameterset.h",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -26235,6 +27102,7 @@
       "sha256": "4706ba260fbc497b4b043d2314d312e57abb1e9267d47d4706cdad947017c4c2",
       "destination": "include/native/comms-infras/es_event.h",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -26309,6 +27177,7 @@
       "sha256": "38486b31caf380a7c0d2ee2ca6ec8970ffe79c2cb065ccb1ed1548c17afe24c1",
       "destination": "include/native/es_sock.h",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -28013,6 +28882,8 @@
         "AppArc",
         "AppArcBase",
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -28055,6 +28926,8 @@
         "AppArc",
         "AppArcBase",
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -28147,6 +29020,8 @@
         "AppArc",
         "AppArcBase",
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -28985,6 +29860,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -29025,6 +29904,7 @@
         "Location",
         "MediaClient",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -29081,6 +29961,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -29132,6 +30013,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -29172,6 +30057,7 @@
         "Location",
         "MediaClient",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -29228,6 +30114,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -29276,6 +30163,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -29317,6 +30208,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -29376,6 +30268,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -29398,6 +30291,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -29414,7 +30308,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "07c30533d1eb47307c99c0174a9b4ee9e65548087cb11a034c3f29e4d8c1198f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/e32cons.h",
+      "targets": [
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "e32const.h",
@@ -29434,6 +30331,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -29475,6 +30376,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -29534,6 +30436,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -29556,6 +30459,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -29582,6 +30486,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -29623,6 +30531,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -29682,6 +30591,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -29704,6 +30614,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -29730,6 +30641,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -29771,6 +30686,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -29830,6 +30746,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -29852,6 +30769,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -29878,6 +30796,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -29919,6 +30841,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -29982,6 +30905,7 @@
         "OpenVGU",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -30004,6 +30928,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -30030,6 +30955,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -30071,6 +31000,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -30130,6 +31060,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -30152,6 +31083,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -30178,6 +31110,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -30219,6 +31155,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -30278,6 +31215,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -30300,6 +31238,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -30326,6 +31265,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -30367,6 +31310,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -30426,6 +31370,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -30448,6 +31393,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -30483,6 +31429,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -30506,6 +31455,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -30532,6 +31482,7 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -30567,6 +31518,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -30608,6 +31563,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -30667,6 +31623,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -30689,6 +31646,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -30715,6 +31673,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -30756,6 +31718,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -30815,6 +31778,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -30837,6 +31801,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -30928,6 +31893,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -30969,6 +31938,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -31028,6 +31998,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -31050,6 +32021,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -31079,6 +32051,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -31120,6 +32096,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -31179,6 +32156,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -31201,6 +32179,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -31226,6 +32205,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -31249,6 +32231,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -31275,6 +32258,7 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -31309,6 +32293,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -31332,6 +32319,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -31358,6 +32346,7 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -31392,6 +32381,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -31415,6 +32407,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -31441,6 +32434,7 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -31550,6 +32544,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -31573,6 +32570,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -31596,6 +32594,7 @@
         "Native_npdlib",
         "Native_ptiengine",
         "Native_servicehandler",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -31630,6 +32629,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -31653,6 +32655,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -31676,6 +32679,7 @@
         "Native_npdlib",
         "Native_ptiengine",
         "Native_servicehandler",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -31712,6 +32716,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -31735,6 +32742,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -31758,6 +32766,7 @@
         "Native_npdlib",
         "Native_ptiengine",
         "Native_servicehandler",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -31794,6 +32803,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -31817,6 +32829,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -31840,6 +32853,7 @@
         "Native_npdlib",
         "Native_ptiengine",
         "Native_servicehandler",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -31876,6 +32890,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -31899,6 +32916,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -31922,6 +32940,7 @@
         "Native_npdlib",
         "Native_ptiengine",
         "Native_servicehandler",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -33514,7 +34533,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6a6ab552c3e53d11533dfd4daa65c1552c27fbd268ecfe5c5f6f4031eaaf5d5e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/biodb.h",
+      "targets": [
+        "BioDatabase"
+      ]
     },
     {
       "include": "bif.h",
@@ -33524,7 +34546,13 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "3f721769370b7a37976c0f9a813258acf4d2588cec1119c9b4d7b4f942342dce",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/bif.h",
+      "targets": [
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities"
+      ]
     },
     {
       "include": "bioscmds.h",
@@ -33534,7 +34562,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "107c7c9426ab02dec1e5bebad572fa8999261392033bd799b9d04512b0980718",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/bioscmds.h",
+      "targets": [
+        "BioClient"
+      ]
     },
     {
       "include": "biocmtm.h",
@@ -33544,7 +34575,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "2d698fd25f6c466ea120a38c56dc7c2a5c3f67bc5f2aab7b21d92ff210c1f2a0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/biocmtm.h",
+      "targets": [
+        "BioClient"
+      ]
     },
     {
       "include": "regpsdll.h",
@@ -33554,7 +34588,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c13b929b0c2c54849944f766d104a934d995a4dc473156caa7b3920386109b0e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/regpsdll.h",
+      "targets": [
+        "BioTransport"
+      ]
     },
     {
       "include": "bsp.h",
@@ -33564,7 +34601,11 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e722578e0e71f2d3f727bd1f9e97af15d3e61a6005dda8f851bb3d84fc1c0748",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/bsp.h",
+      "targets": [
+        "BioClient",
+        "BioTransport"
+      ]
     },
     {
       "include": "biouids.h",
@@ -33573,8 +34614,19 @@
       "declaration": "../BIUTINC/BIOUIDS.H SYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(biouids.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "159beedf6be695f2b93d8502a467f68f8042e87ceefbe43e80735722a6e6ec3c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "7fdf8acf6129498794c8eb3296e7859b5dbfd0cee491e0e258dc2448be63bcc7",
+      "source_sha256": "159beedf6be695f2b93d8502a467f68f8042e87ceefbe43e80735722a6e6ec3c",
+      "compatibility_edits": [
+        {
+          "before": "#define __BIOUTILS_H__",
+          "after": "#define __BIOUTILS_H__\n#include <e32std.h>",
+          "reason": "The original public BIO UID header includes a partner support header with TUid and TInt constants before their e32std.h definitions."
+        }
+      ],
+      "destination": "include/native/biouids.h",
+      "targets": [
+        "BioTransport"
+      ]
     },
     {
       "include": "ipaddr.h",
@@ -33584,7 +34636,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "542772cfa04c2200bb51e23b139f090fac9ad6a08e8e03da06f0bdd0c3159cf6",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/ipaddr.h",
+      "targets": [
+        "BioTransport"
+      ]
     },
     {
       "include": "cbioasyncwaiter.h",
@@ -33594,7 +34649,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "342b92a352da0980ee3406bf20d17adc2cb630f17db3d2db9b6004a1bd75c6ac",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/cbioasyncwaiter.h",
+      "targets": [
+        "BioTransport"
+      ]
     },
     {
       "include": "csmsclass0base.h",
@@ -33624,7 +34682,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "49db010a4eda474a17da50ded7775f462f0595054832b39bc42b7bdd649d14a1",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mtmuibas.h",
+      "targets": [
+        "MessagingUiBase"
+      ]
     },
     {
       "include": "mtuireg.h",
@@ -33634,7 +34695,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "38f8ceb841a00dba7a94fd196e971bbb874fdadd6bc98bb06840808cbac533a9",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mtuireg.h",
+      "targets": [
+        "MessagingUiBase"
+      ]
     },
     {
       "include": "mtudcbas.h",
@@ -33644,7 +34708,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "8f6e5d9aaf6812ee0a788663e4f78240b6c1cd66f1bb56b40a8d8f547c1df218",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mtudcbas.h",
+      "targets": [
+        "MessagingUiBase"
+      ]
     },
     {
       "include": "mtudreg.h",
@@ -33654,7 +34721,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "013f7f0295f13eb859f6213561f8ab1532c4c145aa156fca2d70e944c1284537",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mtudreg.h",
+      "targets": [
+        "MessagingUiBase"
+      ]
     },
     {
       "include": "mtud.rh",
@@ -33664,7 +34734,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "22342a7455e30082e5ed3e6822a20de0a227d6723b0ec310565a43fa06bcbac6",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mtud.rh",
+      "targets": [
+        "MessagingUiBase"
+      ]
     },
     {
       "include": "mturutils.h",
@@ -33674,7 +34747,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "4c901b899ef23980907b13a8168fcf14ae0d299546432a0186cc818ae45e2598",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mturutils.h",
+      "targets": [
+        "MessagingUiBase"
+      ]
     },
     {
       "include": "msvstd.h",
@@ -33686,7 +34762,11 @@
       "sha256": "b96f0febbafae0866ef80b63e019896e3d5b698e68f52ce8b214f2b1eb16157e",
       "destination": "include/native/msvstd.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
+        "ScheduledMessaging",
         "SendAs"
       ]
     },
@@ -33700,7 +34780,11 @@
       "sha256": "ebfd950967fd36b9f1d410eacce2b00fd901de9bdb5fe2bfa9d3cafe9f957364",
       "destination": "include/native/msvstore.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
+        "ScheduledMessaging",
         "SendAs"
       ]
     },
@@ -33714,7 +34798,11 @@
       "sha256": "9af636fdca56823da72274f80ca39f2c78990fbfb9bc3c1e4e8b96c3831d763b",
       "destination": "include/native/msvreg.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
+        "ScheduledMessaging",
         "SendAs"
       ]
     },
@@ -33725,8 +34813,20 @@
       "declaration": "../inc/MSVRCPT.H SYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(msvrcpt.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "2764805463a8ccd42646212dd5e52f158ebc92b59d01c24717e2ba107b95ab16",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "69c0730e1b9482c3efbc90286781b372338fe8f186880a2f15ed3538c4583782",
+      "source_sha256": "2764805463a8ccd42646212dd5e52f158ebc92b59d01c24717e2ba107b95ab16",
+      "compatibility_edits": [
+        {
+          "before": "#define __MSVRCPT_H__",
+          "after": "#define __MSVRCPT_H__\n#include <e32base.h>\nclass RReadStream;",
+          "reason": "The original public messaging recipient header uses CBase and Symbian scalar/time types without e32base.h and omits its RReadStream forward declaration."
+        }
+      ],
+      "destination": "include/native/msvrcpt.h",
+      "targets": [
+        "Messaging",
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "msvids.h",
@@ -33736,7 +34836,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a083ea36b957e896b8b300d1364fcfdcb26f58f82d76549ab09d65c2ad2194ac",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/msvids.h",
+      "targets": [
+        "Messaging"
+      ]
     },
     {
       "include": "msvuids.h",
@@ -33746,7 +34849,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f4b4ea19f35a04dab23cd21292ae08ed179f7382dab21d453c83d9ecf86cea15",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/msvuids.h",
+      "targets": [
+        "Messaging"
+      ]
     },
     {
       "include": "msvruids.h",
@@ -33756,7 +34862,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "3ef485b3022589ce39c4c40ae3702ec4a4ad427c5efc4c713bf45f3b644c3ead",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/msvruids.h",
+      "targets": [
+        "Messaging"
+      ]
     },
     {
       "include": "msventry.h",
@@ -33766,7 +34875,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6ac77a8cc71b0fa0094a8143fd071d1e19b4a7fb09cbf991322cf57ea0a07379",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/msventry.h",
+      "targets": [
+        "Messaging"
+      ]
     },
     {
       "include": "mtsr.h",
@@ -33776,7 +34888,11 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "bb689c4f9328c6c2af9e49be39ba7724b51f3dcd7b893554b0ef57464de6cc56",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mtsr.h",
+      "targets": [
+        "Messaging",
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "msvapi.h",
@@ -33788,7 +34904,10 @@
       "sha256": "472bbbcaef7a25fa607b937233611ab6e8a1e2593e78c3f02a6b48514e271327",
       "destination": "include/native/msvapi.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
         "SendAs"
       ]
     },
@@ -33802,7 +34921,10 @@
       "sha256": "a6ae7a1217b4ac55dfa044a9fbaa7fbac1aa6cd2c33586e54019c9a5345209f3",
       "destination": "include/native/mtclbase.h",
       "targets": [
-        "Messaging"
+        "BioClient",
+        "BioTransport",
+        "Messaging",
+        "MessagingUiBase"
       ]
     },
     {
@@ -33813,7 +34935,13 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0831cd7a8afb7b5addd1219697367e823283a397062dc08273adb750929c990a",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mtclreg.h",
+      "targets": [
+        "BioClient",
+        "BioTransport",
+        "Messaging",
+        "MessagingUiBase"
+      ]
     },
     {
       "include": "mtmdef.h",
@@ -33823,7 +34951,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "8608ad4cc34b5369d9926cec94e5c2fbe93197c8beb44556a4e4a814cc080d4a",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mtmdef.h",
+      "targets": [
+        "Messaging"
+      ]
     },
     {
       "include": "mtmuids.h",
@@ -33833,7 +34964,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "45e7a635b4bfe517360e83c2debdc83881e11e42d19007f8251eca1386f196b7",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mtmuids.h",
+      "targets": [
+        "Messaging"
+      ]
     },
     {
       "include": "msvfind.h",
@@ -33843,7 +34977,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0b85b1d205a9fd295027f3b46268f3538877b600f5fe8965769026a9adec53d1",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/msvfind.h",
+      "targets": [
+        "Messaging"
+      ]
     },
     {
       "include": "msvftext.h",
@@ -33853,7 +34990,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "1e7c583c0da3d606c29b41f2947a5e47ee2d9422c289ff31c2373b42d68f19c7",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/msvftext.h",
+      "targets": [
+        "Messaging"
+      ]
     },
     {
       "include": "cmsvplainbodytext.h",
@@ -33863,7 +35003,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6f565b361a1aee5e5ee2f7a36a0bcd40fa24a669f68b956aaf8417c0d1cce0b0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/cmsvplainbodytext.h",
+      "targets": [
+        "Messaging"
+      ]
     },
     {
       "include": "mmsvattachmentmanager.h",
@@ -33873,7 +35016,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "97a3a030e1c3dd8caaf1c794afa2f12543c8aa47b27f7bde793c5a281e8a7b84",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmsvattachmentmanager.h",
+      "targets": [
+        "Messaging"
+      ]
     },
     {
       "include": "mmsvattachmentmanagersync.h",
@@ -33883,7 +35029,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "8a5758d869228fd05c051e14aaff32a290783d29dce6e3190b087d718b21e080",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmsvattachmentmanagersync.h",
+      "targets": [
+        "Messaging"
+      ]
     },
     {
       "include": "cmsvattachment.h",
@@ -33895,7 +35044,10 @@
       "sha256": "f4e87fa123949176f3e07e0fb6b436ffccd88b1c203db99d57f0f19500e9aed3",
       "destination": "include/native/cmsvattachment.h",
       "targets": [
-        "Messaging"
+        "BioClient",
+        "BioTransport",
+        "Messaging",
+        "MessagingUiBase"
       ]
     },
     {
@@ -33906,7 +35058,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c32208f90e1b631d2100290fdc7d7b5de3c2adb7b24daf2ab3433944c7ecc95d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/cmsvmimeheaders.h",
+      "targets": [
+        "Messaging"
+      ]
     },
     {
       "include": "cmsvrecipientlist.h",
@@ -33918,7 +35073,10 @@
       "sha256": "4c09b1172c899f814ee1d762215beb8afd7491a2cfbb74a46df9171d731ac93e",
       "destination": "include/native/cmsvrecipientlist.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
         "SendAs"
       ]
     },
@@ -33930,7 +35088,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a1cfc3371ceb903f3811f66820dcc557e0f6e17ecdd9ad11b1c65bed8fcba181",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/cmsvtechnologytypedefaultmtmsettings.h",
+      "targets": [
+        "Messaging"
+      ]
     },
     {
       "include": "tmsvsystemprogress.h",
@@ -33942,7 +35103,10 @@
       "sha256": "13d5a502878fb2f7c58eed286ca3e4c38ebb4d5eaa406071ba229c93e002ddf7",
       "destination": "include/native/tmsvsystemprogress.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
         "SendAs"
       ]
     },
@@ -33954,7 +35118,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "805b7522a7df128ceb347fb92c1b1b5f409263371f42ae0ed0052903d7714861",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/msvschedulesend.h",
+      "targets": [
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "msvschedulesettings.h",
@@ -33964,7 +35131,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "2748060287502e114acef608f44c3b3ba889e498b350262e1d0a72c16278f62e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/msvschedulesettings.h",
+      "targets": [
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "msvscheduledentry.h",
@@ -33974,7 +35144,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a96ce825c98baae0ad2ea65eb100babe70fb9a6401a75a7e3ed477baf64ab7e2",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/msvscheduledentry.h",
+      "targets": [
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "msventryscheduledata.h",
@@ -33984,7 +35157,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a61db5d2eaaf238485581a96ceecc3012f03d95f7541398acb27163d7438d938",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/msventryscheduledata.h",
+      "targets": [
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "msvoffpeaktime.h",
@@ -33993,8 +35169,19 @@
       "declaration": "../inc/MsvOffPeakTime.h SYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(msvoffpeaktime.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "cd66ca3dee7c5db0e7325fcb9dd2a48edf2cbffc1f8b02dd783453021fd74d84",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "1e5a08ac87fc9355de5721ecfd59b890dd2466273c0609f4fc4b4a174aca81a7",
+      "source_sha256": "cd66ca3dee7c5db0e7325fcb9dd2a48edf2cbffc1f8b02dd783453021fd74d84",
+      "compatibility_edits": [
+        {
+          "before": "#define __MSVOFFPEAKTIME_H__",
+          "after": "#define __MSVOFFPEAKTIME_H__\n#include <e32base.h>",
+          "reason": "The original public scheduled-messaging time header uses Symbian time, scalar and CArrayFixFlat types without including e32base.h."
+        }
+      ],
+      "destination": "include/native/msvoffpeaktime.h",
+      "targets": [
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "schsend.rh",
@@ -34004,7 +35191,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5556f07b90025c8d679795fea61f8a6550228f581d19bb8149c1310329d3bccd",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/schsend.rh",
+      "targets": [
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "msvsenderroraction.h",
@@ -34014,7 +35204,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "405dd53e2338f1120ff3b1541cf3e92db59f0b7672ba4cfd3195d7270a76364b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/msvsenderroraction.h",
+      "targets": [
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "msvschedulepackage.h",
@@ -34024,7 +35217,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "ca4f08c9a6082420734d917e031b57163193fac849c097aabeaf83c49d1a0109",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/msvschedulepackage.h",
+      "targets": [
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "schedulebaseservermtm.h",
@@ -34034,17 +35230,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "910f3413c6aebb43f26f7ec6525b40a14d7142126d275df2415b2deed52a4b56",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
-    },
-    {
-      "include": "schsend_panic.h",
-      "source": "messagingmw/messagingfw/scheduledsendmtm/schedulesendmtm/inc/schsend_panic.h",
-      "manifest": "messagingmw/messagingfw/scheduledsendmtm/schedulesendmtm/group/bld.inf",
-      "declaration": "../inc/schsend_panic.h SYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(schsend_panic.h)",
-      "conditions": [],
-      "classification": "public_base_platform",
-      "sha256": "c6f97c6c59da9eb3fd2ef47edcf07c31f4c02714579c18f3fc2944091357d5e5",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/schedulebaseservermtm.h",
+      "targets": [
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "msvsysagentaction.h",
@@ -34054,7 +35243,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "8d273e421ee7dac7de83d0621554339b9a4027bfd8f2cc410b7f703399798608",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/msvsysagentaction.h",
+      "targets": [
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "sendas2.h",
@@ -34064,7 +35256,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "ddf318ce46d635143a172ee24d62a149cbeb3d4582369710187b21f21ea6b3cc",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sendas2.h",
+      "targets": [
+        "SendAs"
+      ]
     },
     {
       "include": "csendasaccounts.h",
@@ -34087,7 +35282,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a73be0de2e15611074e2eff2f9bbae6946611239301cc980d3210a1513cebc8b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/csendasmessagetypes.h",
+      "targets": [
+        "SendAs"
+      ]
     },
     {
       "include": "rsendasmessage.h",
@@ -34123,7 +35321,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "7eb32d24222f72da7fbfce89e7dbad6d4438ce9d80ed0894434c335a9d129e7d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/tsendasmessagetypefilter.h",
+      "targets": [
+        "SendAs"
+      ]
     },
     {
       "include": "tsendasclientpanic.h",
@@ -34133,7 +35334,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "591497753deb22fba88cc3cf8cabfe40a32ba3900a68f5b40c9a80f1fc59edd2",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/tsendasclientpanic.h",
+      "targets": [
+        "SendAs"
+      ]
     },
     {
       "include": "sendasserver.rh",
@@ -34143,7 +35347,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "af6396979eacea1c824b809a8a64786ef8540507e771197475417507ea877d2c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sendasserver.rh",
+      "targets": [
+        "SendAs"
+      ]
     },
     {
       "include": "thttpfields.h",
@@ -34152,8 +35359,19 @@
       "declaration": "../../pushutils/inc/thttpfields.h\tSYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(thttpfields.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "9e99bdc6f076522b78c04d6239aea6623ed9c29c2bb54b2475ba256f9eaff1e4",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "a47a4023e1cb0895af22a2c0012a4e756ffaa724bc0116970cfedaf9e5ef4c9e",
+      "source_sha256": "9e99bdc6f076522b78c04d6239aea6623ed9c29c2bb54b2475ba256f9eaff1e4",
+      "compatibility_edits": [
+        {
+          "before": "#define __THTTPFIELDS_H__",
+          "after": "#define __THTTPFIELDS_H__\n#include <e32std.h>",
+          "reason": "The original public WAP HTTP-field constants use TInt, TText8 and descriptor literal macros without including e32std.h."
+        }
+      ],
+      "destination": "include/native/thttpfields.h",
+      "targets": [
+        "WapPushUtils"
+      ]
     },
     {
       "include": "CMessageData.h",
@@ -38757,6 +39975,7 @@
       "sha256": "2298ba27f29e6be9f59be2106ee10fa06600a94b0139085b998a5f4d66694464",
       "destination": "include/native/in_sock.h",
       "targets": [
+        "BioTransport",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -38805,6 +40024,7 @@
       "sha256": "4bb2a26010fd1331926b68a105dacad8072f6e9c7088c47253d612b20148a034",
       "destination": "include/native/nifvar.h",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -43290,7 +44510,11 @@
       "sha256": "6a466426c33ddac33e825f59edb53e56e65722651e4e76847baf05d376179b38",
       "destination": "include/native/apmrec.h",
       "targets": [
-        "AppArc"
+        "AppArc",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities"
       ]
     },
     {
@@ -43303,7 +44527,11 @@
       "sha256": "65e545db8e27640e934d019e675463bc9a673656765664630210a0ad89e1edc2",
       "destination": "include/native/apmrec.inl",
       "targets": [
-        "AppArc"
+        "AppArc",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities"
       ]
     },
     {
@@ -43322,6 +44550,10 @@
         "AudioInputStream",
         "AudioStream",
         "Avkon",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "ContentAccessUtils",
         "DevSound",
         "Eikon",
@@ -43460,7 +44692,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "cebcdfd7a07c3add4f55286bb894d4db0bde542f88ae7f3b09bf0b02028d7f7d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/csch_cli.h",
+      "targets": [
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "schtask.h",
@@ -43470,7 +44705,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5dcec5e0264092c05e41c33f79d0eaa593a89392142f659e24ba600f098e739d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/schtask.h",
+      "targets": [
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "schinfo.h",
@@ -43480,7 +44718,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "2d0e37b6422c8dd7d5e156a91a1e7fee72be833140bba46138b2bce54e99a7f0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/schinfo.h",
+      "targets": [
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "schtime.h",
@@ -43490,7 +44731,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5962c6fe30566154ce9756edb3a42415eb1153ced8b69674d877746c6ec130f2",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/schtime.h",
+      "targets": [
+        "ScheduledMessaging"
+      ]
     },
     {
       "include": "bsul/bsul.h",
@@ -43610,6 +44854,8 @@
         "AppArc",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioTransport",
         "Calendar",
         "Cone",
         "Eikon",
@@ -43621,6 +44867,7 @@
         "LandmarkSearch",
         "Landmarks",
         "Messaging",
+        "MessagingUiBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -43633,6 +44880,7 @@
         "Native_eposlmmultidbsearch",
         "Native_ptiengine",
         "Native_servicehandler",
+        "ScheduledMessaging",
         "SdpCodec",
         "SendAs",
         "SipCodec",
@@ -43712,6 +44960,8 @@
         "AppArc",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioTransport",
         "Calendar",
         "Cone",
         "Eikon",
@@ -43723,6 +44973,7 @@
         "LandmarkSearch",
         "Landmarks",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Native_aknhlist",
         "Native_akninputlanguage",
@@ -43738,6 +44989,7 @@
         "Native_eposlmmultidbsearch",
         "Native_ptiengine",
         "Native_servicehandler",
+        "ScheduledMessaging",
         "SdpCodec",
         "SendAs",
         "SipCodec",
@@ -43768,7 +45020,8 @@
         "Native_commonui",
         "Native_eikcdlg",
         "Native_eikctl",
-        "Native_ptiengine"
+        "Native_ptiengine",
+        "ScheduledMessaging"
       ]
     },
     {
@@ -43782,9 +45035,11 @@
       "destination": "include/native/barsread.h",
       "targets": [
         "Bafl",
+        "MessagingUiBase",
         "Native_downloadmgruilib",
         "Native_ptiengine",
-        "Native_servicehandler"
+        "Native_servicehandler",
+        "ScheduledMessaging"
       ]
     },
     {
@@ -50610,7 +51865,10 @@
       "sha256": "6cacec9b5ed9c6ca9f50b1b4c37805988244f6ac0a489b3c996e78a08d88315e",
       "destination": "include/native/flogger.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
         "SendAs"
       ]
     },
@@ -50624,7 +51882,10 @@
       "sha256": "17c8c8da783519af07ce80a09ff2940284286f4754e9c9d1b72f25986e114a30",
       "destination": "include/native/flogger.inl",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
         "SendAs"
       ]
     },
@@ -50776,6 +52037,8 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -50784,6 +52047,7 @@
         "Eikon",
         "Field",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -50816,6 +52080,7 @@
         "Native_sourceorientationeffect",
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipCodec",
         "Sms",
@@ -50846,6 +52111,8 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -50854,6 +52121,7 @@
         "Eikon",
         "Field",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -50886,6 +52154,7 @@
         "Native_sourceorientationeffect",
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipCodec",
         "Sms",
@@ -50932,7 +52201,11 @@
       "destination": "include/native/s32file.h",
       "targets": [
         "Bafl",
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
+        "ScheduledMessaging",
         "SendAs",
         "StreamsNative",
         "X500",
@@ -50950,7 +52223,11 @@
       "destination": "include/native/s32file.inl",
       "targets": [
         "Bafl",
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
+        "ScheduledMessaging",
         "SendAs",
         "StreamsNative",
         "X500",
@@ -51080,6 +52357,8 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -51088,6 +52367,7 @@
         "Eikon",
         "Field",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -51120,6 +52400,7 @@
         "Native_sourceorientationeffect",
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipCodec",
         "SpeechRecognition",
@@ -51149,6 +52430,8 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -51157,6 +52440,7 @@
         "Eikon",
         "Field",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -51189,6 +52473,7 @@
         "Native_sourceorientationeffect",
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipCodec",
         "SpeechRecognition",
@@ -51218,6 +52503,8 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -51226,6 +52513,7 @@
         "Eikon",
         "Field",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -51258,6 +52546,7 @@
         "Native_sourceorientationeffect",
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipCodec",
         "SpeechRecognition",
@@ -51287,6 +52576,8 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -51295,6 +52586,7 @@
         "Eikon",
         "Field",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -51327,6 +52619,7 @@
         "Native_sourceorientationeffect",
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipCodec",
         "SpeechRecognition",
@@ -51358,6 +52651,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -51381,6 +52678,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -51420,6 +52718,7 @@
         "Native_sourceorientationeffect",
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipCodec",
         "SpeechRecognition",
@@ -51452,6 +52751,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -51475,6 +52778,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -51514,6 +52818,7 @@
         "Native_sourceorientationeffect",
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipCodec",
         "SpeechRecognition",
@@ -51544,6 +52849,8 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -51552,6 +52859,7 @@
         "Eikon",
         "Field",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -51584,6 +52892,7 @@
         "Native_sourceorientationeffect",
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipCodec",
         "SpeechRecognition",
@@ -51613,6 +52922,8 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -51621,6 +52932,7 @@
         "Eikon",
         "Field",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -51653,6 +52965,7 @@
         "Native_sourceorientationeffect",
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipCodec",
         "SpeechRecognition",
@@ -51684,6 +52997,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -51712,6 +53029,7 @@
         "LandmarkSearch",
         "Landmarks",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -51753,6 +53071,7 @@
         "Native_sourceorientationeffect",
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -51787,6 +53106,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -51815,6 +53138,7 @@
         "LandmarkSearch",
         "Landmarks",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -51856,6 +53180,7 @@
         "Native_sourceorientationeffect",
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -53478,6 +54803,7 @@
       "targets": [
         "CharConv",
         "Gsm",
+        "Messaging",
         "Native_npdlib"
       ]
     },
@@ -53923,6 +55249,8 @@
       "destination": "include/native/txtetext.h",
       "targets": [
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Eikon",
         "Native_aknnotify",
         "Native_commondialogs",
@@ -53944,6 +55272,8 @@
       "destination": "include/native/txtetext.inl",
       "targets": [
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Eikon",
         "Native_aknnotify",
         "Native_commondialogs",
@@ -53964,6 +55294,8 @@
       "sha256": "c754ba3423767c24d81f8d2e8cd96cc98fc8552f1096e3ca8b08a01647004652",
       "destination": "include/native/txtlaydc.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Text"
       ]
     },
@@ -53977,6 +55309,8 @@
       "sha256": "d5c9027a60e1a6410cae149f361975d0f2a08e0ba42857590fcec83c68cfb964",
       "destination": "include/native/txtglobl.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Text"
       ]
     },
@@ -53990,6 +55324,8 @@
       "sha256": "48e33453d8cabf4b2f11be55c7077bb5591bbf05c7e1bf4caf4aea127c9115e9",
       "destination": "include/native/txtglobl.inl",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Text"
       ]
     },
@@ -54003,6 +55339,8 @@
       "sha256": "f3afaa8c4b6219e0ce7222590044d4ecb2d1bb36437fdfd93191bbd845e1b1bf",
       "destination": "include/native/txtrich.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Text"
       ]
     },
@@ -54016,6 +55354,8 @@
       "sha256": "d1bfd6a466abf875a1abfb95c55a0ab270486eabcd789709571176789b51e293",
       "destination": "include/native/txtrich.inl",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Text"
       ]
     },
@@ -54030,6 +55370,8 @@
       "destination": "include/native/txtfrmat.h",
       "targets": [
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Cone",
         "Eikon",
         "EikonControls",
@@ -54056,6 +55398,8 @@
       "destination": "include/native/txtfrmat.inl",
       "targets": [
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Cone",
         "Eikon",
         "EikonControls",
@@ -54081,6 +55425,8 @@
       "sha256": "a23a07570475a7d98e6db99ac0205bcef1a82dd718f1099edf8efe5d1533f29d",
       "destination": "include/native/txtmfmtx.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Text"
       ]
     },
@@ -54095,6 +55441,8 @@
       "destination": "include/native/txtfmlyr.h",
       "targets": [
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Eikon",
         "Native_aknnotify",
         "Native_commondialogs",
@@ -54116,6 +55464,8 @@
       "destination": "include/native/txtfmlyr.inl",
       "targets": [
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Eikon",
         "Native_aknnotify",
         "Native_commondialogs",
@@ -54137,6 +55487,8 @@
       "destination": "include/native/txtstyle.h",
       "targets": [
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Eikon",
         "Native_aknnotify",
         "Native_commondialogs",
@@ -54158,6 +55510,8 @@
       "destination": "include/native/txtstyle.inl",
       "targets": [
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Eikon",
         "Native_aknnotify",
         "Native_commondialogs",
@@ -54179,6 +55533,8 @@
       "destination": "include/native/txtfmstm.h",
       "targets": [
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Eikon",
         "Native_aknnotify",
         "Native_commondialogs",
@@ -54200,6 +55556,8 @@
       "destination": "include/native/fldbase.h",
       "targets": [
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Eikon",
         "Field",
         "Native_aknnotify",
@@ -54222,6 +55580,8 @@
       "destination": "include/native/fldbltin.h",
       "targets": [
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Eikon",
         "Native_aknnotify",
         "Native_commondialogs",
@@ -54243,6 +55603,8 @@
       "destination": "include/native/fldinfo.h",
       "targets": [
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Eikon",
         "Native_aknnotify",
         "Native_commondialogs",
@@ -54263,6 +55625,8 @@
       "sha256": "bc6e50ff93e40eda1ab49cb086a6d398fe1eacf2554475a7dd095a68417914f5",
       "destination": "include/native/mparser.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Text"
       ]
     },
@@ -54276,6 +55640,8 @@
       "sha256": "457330c108fc1512f4867abbe8b43db5cf5b7258008b48a342e4c260d1a46503",
       "destination": "include/native/medobsrv.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Native_aknnotify",
         "Native_eikcdlg",
         "Native_eikctl",
@@ -62327,7 +63693,11 @@
       "destination": "include/native/s32filebufsize.h",
       "targets": [
         "Bafl",
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
+        "ScheduledMessaging",
         "SendAs",
         "StreamsNative",
         "X500",
@@ -62365,6 +63735,8 @@
       "destination": "include/native/fldset.h",
       "targets": [
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Eikon",
         "Native_aknnotify",
         "Native_commondialogs",
@@ -62388,6 +63760,8 @@
       "destination": "include/native/txtetext_internal.h",
       "targets": [
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Eikon",
         "Native_aknnotify",
         "Native_commondialogs",
@@ -62411,6 +63785,8 @@
       "destination": "include/native/txtclipboard.h",
       "targets": [
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Eikon",
         "Native_aknnotify",
         "Native_commondialogs",
@@ -62435,6 +63811,8 @@
       "included_by": "textandloc-sdk/textrendering/texthandling/inc/TXTRICH.H",
       "destination": "include/native/txtrich_internal.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Text"
       ]
     },
@@ -62771,6 +64149,25 @@
       ]
     },
     {
+      "include": "mentact.h",
+      "source": "messagingmw/messagingfw/msgsrvnstore/server/inc/MENTACT.H",
+      "manifest": "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
+      "declaration": "../inc/MENTACT.H SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(mentact.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "b2cece6feb8a5f0e3cd74a994d39b91a94255870e046092b7cd888e4645fbf0e",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/CMsvPlainBodyText.h",
+      "destination": "include/native/mentact.h",
+      "targets": [
+        "BioClient",
+        "BioTransport",
+        "Messaging",
+        "MessagingUiBase",
+        "SendAs"
+      ]
+    },
+    {
       "include": "msvipc.h",
       "source": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVIPC.H",
       "manifest": "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
@@ -62782,7 +64179,10 @@
       "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVAPI.H",
       "destination": "include/native/msvipc.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
         "SendAs"
       ]
     },
@@ -62798,7 +64198,10 @@
       "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVAPI.H",
       "destination": "include/native/msvarray.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
         "SendAs"
       ]
     },
@@ -62814,7 +64217,10 @@
       "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVAPI.H",
       "destination": "include/native/mclient.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
         "SendAs"
       ]
     },
@@ -62830,8 +64236,56 @@
       "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVAPI.H",
       "destination": "include/native/msvapi.inl",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
         "SendAs"
+      ]
+    },
+    {
+      "include": "msventry.inl",
+      "source": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVENTRY.INL",
+      "manifest": "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
+      "declaration": "../inc/MSVENTRY.INL SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(msventry.inl)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "e0573d6688aab0ed9420a2aafaa3bc910d06d53109f42e332cbbf411e5b54776",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVENTRY.H",
+      "destination": "include/native/msventry.inl",
+      "targets": [
+        "Messaging"
+      ]
+    },
+    {
+      "include": "msvfind.inl",
+      "source": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVFIND.INL",
+      "manifest": "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
+      "declaration": "../inc/MSVFIND.INL SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(msvfind.inl)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "5b310a4c573f31c2d853a4bed49b32708a20006592d000d5161533186ea7d2a7",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVFIND.H",
+      "destination": "include/native/msvfind.inl",
+      "targets": [
+        "Messaging"
+      ]
+    },
+    {
+      "include": "msvftext.inl",
+      "source": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVFTEXT.INL",
+      "manifest": "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
+      "declaration": "../inc/MSVFTEXT.INL SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(msvftext.inl)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "8c85e086279d0a5e9cd7cf0a80fb75911d6038777da7dcb71933bf73ba30ab1b",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVFTEXT.H",
+      "destination": "include/native/msvftext.inl",
+      "targets": [
+        "Messaging"
       ]
     },
     {
@@ -62843,10 +64297,68 @@
       "classification": "private_internal",
       "sha256": "a378b69f5412e634af1914482b1b079e46cc145e49784f557d4fd99f4fee7807",
       "exposure": "required_textual_support",
-      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVSTD.H",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVIDS.H",
       "destination": "include/native/msvstd.hrh",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
+        "ScheduledMessaging",
+        "SendAs"
+      ]
+    },
+    {
+      "include": "msvconsts.h",
+      "source": "messagingmw/messagingfw/msgsrvnstore/server/inc/msvconsts.h",
+      "manifest": "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
+      "declaration": "../inc/msvconsts.h /epoc32/include/msvconsts.h",
+      "conditions": [
+        "#ifndef SYMBIAN_ENABLE_SPLIT_HEADERS",
+        "#ifdef SYMBIAN_OLD_EXPORT_LOCATION"
+      ],
+      "classification": "private_internal",
+      "sha256": "86270f67f577033d6428157d89fc3c9f7404a5da10d98a5b2aa83015ff8a0941",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVIDS.H",
+      "destination": "include/native/msvconsts.h",
+      "targets": [
+        "Messaging"
+      ]
+    },
+    {
+      "include": "msvrcpt.inl",
+      "source": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVRCPT.INL",
+      "manifest": "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
+      "declaration": "../inc/MSVRCPT.INL SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(msvrcpt.inl)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "849ae6f439010a54f1442cc09344f1a2f725906fb57caaebb57c623e2d5f5c7b",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVRCPT.H",
+      "destination": "include/native/msvrcpt.inl",
+      "targets": [
+        "Messaging",
+        "ScheduledMessaging"
+      ]
+    },
+    {
+      "include": "msvreg.inl",
+      "source": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVREG.INL",
+      "manifest": "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
+      "declaration": "../inc/MSVREG.INL SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(msvreg.inl)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "9ab8a2ef660003dbd2883ce6e2192503a204c6d018bd8128f50a65fc5da9b0c3",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVREG.H",
+      "destination": "include/native/msvreg.inl",
+      "targets": [
+        "BioClient",
+        "BioTransport",
+        "Messaging",
+        "MessagingUiBase",
+        "ScheduledMessaging",
         "SendAs"
       ]
     },
@@ -62862,8 +64374,81 @@
       "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVSTD.H",
       "destination": "include/native/msvstd.inl",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
+        "ScheduledMessaging",
         "SendAs"
+      ]
+    },
+    {
+      "include": "mtmdef.hrh",
+      "source": "messagingmw/messagingfw/msgsrvnstore/server/inc/MTMDEF.HRH",
+      "manifest": "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
+      "declaration": "../inc/MTMDEF.HRH /epoc32/include/mtmdef.hrh",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "5c4c0262c9cee6897b0f666e4e22b5358baa198cd9e2ad149367efb418357a39",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MTMDEF.H",
+      "destination": "include/native/mtmdef.hrh",
+      "targets": [
+        "Messaging"
+      ]
+    },
+    {
+      "include": "mtmuidsdef.hrh",
+      "source": "messagingmw/messagingfw/msgsrvnstore/server/inc/mtmuidsdef.hrh",
+      "manifest": "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
+      "declaration": "../inc/mtmuidsdef.hrh /epoc32/include/mtmuidsdef.hrh",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "fd58cc7761e88f91ba357f7f24b13ada6d9657d51bc97fd23b508fb0977f696f",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MTMUIDS.H",
+      "destination": "include/native/mtmuidsdef.hrh",
+      "targets": [
+        "Messaging"
+      ]
+    },
+    {
+      "include": "tnonoperationmtmdata.h",
+      "source": "messagingmw/messagingfw/msgsrvnstore/server/inc/tnonoperationmtmdata.h",
+      "manifest": "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
+      "declaration": "../inc/tnonoperationmtmdata.h SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(tnonoperationmtmdata.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "cdbe35efce615d066917eae4fd37a745db0c986c2cd3320fa85dd94217f92480",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MTSR.H",
+      "destination": "include/native/tnonoperationmtmdata.h",
+      "targets": [
+        "BioClient",
+        "BioTransport",
+        "Messaging",
+        "MessagingUiBase",
+        "ScheduledMessaging",
+        "SendAs"
+      ]
+    },
+    {
+      "include": "cinstalledmtmgroup.h",
+      "source": "messagingmw/messagingfw/msgsrvnstore/server/inc/cinstalledmtmgroup.h",
+      "manifest": "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
+      "declaration": "../inc/cinstalledmtmgroup.h /epoc32/include/cinstalledmtmgroup.h",
+      "conditions": [
+        "#ifndef SYMBIAN_ENABLE_SPLIT_HEADERS",
+        "#ifdef SYMBIAN_OLD_EXPORT_LOCATION"
+      ],
+      "classification": "private_internal",
+      "sha256": "ca8d70227ef4803542dfce167e197202fe452ec26c332905c9a852d12e8bd84b",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MTSR.H",
+      "destination": "include/native/cinstalledmtmgroup.h",
+      "targets": [
+        "Messaging",
+        "ScheduledMessaging"
       ]
     },
     {
@@ -62986,6 +64571,148 @@
       ]
     },
     {
+      "include": "mtud.hrh",
+      "source": "messagingmw/messagingfw/msgsrvnstore/mtmbase/inc/MTUD.HRH",
+      "manifest": "messagingmw/messagingfw/msgsrvnstore/mtmbase/group/bld.inf",
+      "declaration": "../inc/MTUD.HRH /epoc32/include/mtud.hrh",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "7a37581b7e86b1d12966f5e12220478d8d7dabfc7e26f2c8022b76f65e6bf3ac",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/mtmbase/inc/MTUD.RH",
+      "destination": "include/native/mtud.hrh",
+      "targets": [
+        "MessagingUiBase"
+      ]
+    },
+    {
+      "include": "msvscheduledentry.inl",
+      "source": "messagingmw/messagingfw/scheduledsendmtm/schedulesendmtm/inc/MsvScheduledEntry.inl",
+      "manifest": "messagingmw/messagingfw/scheduledsendmtm/schedulesendmtm/group/bld.inf",
+      "declaration": "../inc/MsvScheduledEntry.inl SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(msvscheduledentry.inl)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "602217922c87e359ea335ed214d5499d822f8eed61eb88658bb0104b279acde5",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/scheduledsendmtm/schedulesendmtm/inc/MsvScheduledEntry.h",
+      "destination": "include/native/msvscheduledentry.inl",
+      "targets": [
+        "ScheduledMessaging"
+      ]
+    },
+    {
+      "include": "msvschedulesend.inl",
+      "source": "messagingmw/messagingfw/scheduledsendmtm/schedulesendmtm/inc/MsvScheduleSend.inl",
+      "manifest": "messagingmw/messagingfw/scheduledsendmtm/schedulesendmtm/group/bld.inf",
+      "declaration": "../inc/MsvScheduleSend.inl SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(msvschedulesend.inl)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "b5f37c5dd388e29628ab0c9783e9457fd450c5fa04e4f2549c29ffd801272179",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/scheduledsendmtm/schedulesendmtm/inc/MsvScheduleSend.h",
+      "destination": "include/native/msvschedulesend.inl",
+      "targets": [
+        "ScheduledMessaging"
+      ]
+    },
+    {
+      "include": "schsend.hrh",
+      "source": "messagingmw/messagingfw/scheduledsendmtm/schedulesendmtm/inc/schsend.hrh",
+      "manifest": "messagingmw/messagingfw/scheduledsendmtm/schedulesendmtm/group/bld.inf",
+      "declaration": "../inc/schsend.hrh /epoc32/include/schsend.hrh",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "d80bf88424d560d1a1fbdc0ce36d23f2d985e69c8e368c8e81f357a40590d867",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/scheduledsendmtm/schedulesendmtm/inc/MsvSendErrorAction.h",
+      "destination": "include/native/schsend.hrh",
+      "targets": [
+        "ScheduledMessaging"
+      ]
+    },
+    {
+      "include": "bifchangeobserver.h",
+      "source": "messagingmw/messagingfw/biomsgfw/BDBINC/bifchangeobserver.h",
+      "manifest": "messagingmw/messagingfw/biomsgfw/BDB/BLD.INF",
+      "declaration": "../BDBINC/bifchangeobserver.h SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(bifchangeobserver.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "43fc47a416c5d528cb2a42cb6e70a3b6e54041924463eacfab354fefcdf7589f",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/biomsgfw/BDBINC/BIODB.H",
+      "destination": "include/native/bifchangeobserver.h",
+      "targets": [
+        "BioDatabase"
+      ]
+    },
+    {
+      "include": "bifbase.h",
+      "source": "messagingmw/messagingfw/biomsgfw/BIFUINC/bifbase.h",
+      "manifest": "messagingmw/messagingfw/biomsgfw/BIFU/BLD.INF",
+      "declaration": "../BIFUINC/bifbase.h SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(bifbase.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "35cb29cfd7349d67a9ce3e17ab97202558030f027696f328ee6f148fc911e1d4",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/biomsgfw/BIFUINC/BIF.H",
+      "destination": "include/native/bifbase.h",
+      "targets": [
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities"
+      ]
+    },
+    {
+      "include": "biomessageuids.h",
+      "source": "messagingmw/messagingfw/biomsgfw/BIUTINC/biomessageuids.h",
+      "manifest": "messagingmw/messagingfw/biomsgfw/BIUT/BLD.INF",
+      "declaration": "../BIUTINC/biomessageuids.h SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(biomessageuids.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "b82b631cb246950d7ac90921a863d84485b3d1867015cfce7481331b8e469e4d",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/biomsgfw/BIUTINC/BIOUIDS.H",
+      "destination": "include/native/biomessageuids.h",
+      "targets": [
+        "BioTransport"
+      ]
+    },
+    {
+      "include": "tmsvbioinfo.h",
+      "source": "messagingmw/messagingfw/biomsgfw/BIUTINC/tmsvbioinfo.h",
+      "manifest": "messagingmw/messagingfw/biomsgfw/BIUT/BLD.INF",
+      "declaration": "../BIUTINC/tmsvbioinfo.h /epoc32/include/tmsvbioinfo.h",
+      "conditions": [
+        "#ifndef SYMBIAN_ENABLE_SPLIT_HEADERS",
+        "#ifdef SYMBIAN_OLD_EXPORT_LOCATION"
+      ],
+      "classification": "private_internal",
+      "sha256": "2d331477027132cd781f3465deabb84bb1cb7f185ff5b58f8dfa9311609c72ca",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/biomsgfw/BIUTINC/BSP.H",
+      "destination": "include/native/tmsvbioinfo.h",
+      "targets": [
+        "BioClient",
+        "BioTransport"
+      ]
+    },
+    {
+      "include": "regpsdll.inl",
+      "source": "messagingmw/messagingfw/biomsgfw/BIUTINC/REGPSDLL.INL",
+      "manifest": "messagingmw/messagingfw/biomsgfw/BIUT/BLD.INF",
+      "declaration": "../BIUTINC/REGPSDLL.INL SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(regpsdll.inl)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "770260cbd975b7129db2abbf5ecd79b44428787ea3d45580a36e8133467925df",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/biomsgfw/BIUTINC/REGPSDLL.H",
+      "destination": "include/native/regpsdll.inl",
+      "targets": [
+        "BioTransport"
+      ]
+    },
+    {
       "include": "e32svr.h",
       "source": "kernelhwsrv/kernel/eka/include/e32svr.h",
       "manifest": "kernelhwsrv/kernel/eka/bld.inf",
@@ -63004,6 +64731,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -63027,6 +64757,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -63053,6 +64784,7 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -63112,6 +64844,7 @@
       "included_by": "ipconnmgmt/ipcm_pub/extendedconnpref_api/inc/extendedconnpref.h",
       "destination": "include/native/comms-infras/metadata.h",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -63177,6 +64910,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -63218,6 +64955,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -63277,6 +65015,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -63299,6 +65038,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -63326,6 +65066,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -63349,6 +65092,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -63372,6 +65116,7 @@
         "Native_npdlib",
         "Native_ptiengine",
         "Native_servicehandler",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -63564,6 +65309,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -63604,6 +65353,7 @@
         "Location",
         "MediaClient",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -63660,6 +65410,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -63859,6 +65610,8 @@
         "AppArc",
         "AppArcBase",
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -63903,6 +65656,8 @@
         "AppArc",
         "AppArcBase",
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -63947,6 +65702,8 @@
         "AppArc",
         "AppArcBase",
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -63991,6 +65748,8 @@
         "AppArc",
         "AppArcBase",
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -64040,6 +65799,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -64081,6 +65844,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -64140,6 +65904,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -64162,6 +65927,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -64372,6 +66138,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -64413,6 +66183,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -64476,6 +66247,7 @@
         "OpenVGU",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -64498,6 +66270,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -64521,6 +66294,8 @@
       "destination": "include/native/txtstyle_internal.h",
       "targets": [
         "Avkon",
+        "BioClient",
+        "BioTransport",
         "Eikon",
         "Native_aknnotify",
         "Native_commondialogs",
@@ -64587,6 +66362,7 @@
       "included_by": "commsfw/datacommsserver/esockserver/inc/ES_SOCK.H",
       "destination": "include/native/comms-infras/metacontainer.h",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -64615,6 +66391,7 @@
       "included_by": "commsfw/datacommsserver/esockserver/inc/ES_SOCK.H",
       "destination": "include/native/elements/sd_errors.h",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -64641,6 +66418,7 @@
       "included_by": "commsfw/datacommsserver/esockserver/inc/ES_SOCK.H",
       "destination": "include/native/es_sock_internal.h",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -64667,6 +66445,7 @@
       "included_by": "commsfw/datacommsserver/esockserver/inc/ES_SOCK.H",
       "destination": "include/native/es_sock_partner.h",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -64693,6 +66472,7 @@
       "included_by": "commsfw/datacommsserver/esockserver/inc/ES_SOCK.H",
       "destination": "include/native/es_sock.inl",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -64899,7 +66679,10 @@
       "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVIPC.H",
       "destination": "include/native/msvsearchsortquery.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
         "SendAs"
       ]
     },
@@ -64915,7 +66698,10 @@
       "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVIPC.H",
       "destination": "include/native/msvipc.inl",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
         "SendAs"
       ]
     },
@@ -64931,23 +66717,10 @@
       "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MCLIENT.H",
       "destination": "include/native/mmsvstoremanager.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
-        "SendAs"
-      ]
-    },
-    {
-      "include": "tnonoperationmtmdata.h",
-      "source": "messagingmw/messagingfw/msgsrvnstore/server/inc/tnonoperationmtmdata.h",
-      "manifest": "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
-      "declaration": "../inc/tnonoperationmtmdata.h SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(tnonoperationmtmdata.h)",
-      "conditions": [],
-      "classification": "private_internal",
-      "sha256": "cdbe35efce615d066917eae4fd37a745db0c986c2cd3320fa85dd94217f92480",
-      "exposure": "required_textual_support",
-      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MCLIENT.H",
-      "destination": "include/native/tnonoperationmtmdata.h",
-      "targets": [
-        "Messaging",
+        "MessagingUiBase",
         "SendAs"
       ]
     },
@@ -65232,12 +67005,69 @@
       "included_by": "networkingsrv/esockapiextensions/internetsockets/inc/in_sock.h",
       "destination": "include/native/in_sock_internal.h",
       "targets": [
+        "BioTransport",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
         "Native_eikctl",
         "SdpCodec",
         "SipClient"
+      ]
+    },
+    {
+      "include": "schinfointernal.h",
+      "source": "ossrv/genericservices/taskscheduler/INC/SCHINFOINTERNAL.H",
+      "manifest": "ossrv/genericservices/taskscheduler/group/bld.inf",
+      "declaration": "../INC/SCHINFOINTERNAL.H \tSYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(schinfointernal.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "e81a0b109089487d2f99a1076a0f5b10885c7a5010899807cbf573926f5eb8f4",
+      "exposure": "required_textual_support",
+      "included_by": "ossrv/genericservices/taskscheduler/INC/SCHINFO.H",
+      "destination": "include/native/schinfointernal.h",
+      "targets": [
+        "ScheduledMessaging"
+      ]
+    },
+    {
+      "include": "txtfmlyr_internal.h",
+      "source": "textandloc-sdk/textrendering/texthandling/inc/TXTFMLYR_INTERNAL.H",
+      "manifest": "textandloc-sdk/textrendering/texthandling/group/bld.inf",
+      "declaration": "../inc/TXTFMLYR_INTERNAL.H \tSYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(txtfmlyr_internal.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "e20b6b97ea987636b8c62d035f91e3aa9fadddcb8defac9f7446ca2edbba050e",
+      "exposure": "required_textual_support",
+      "included_by": "textandloc-sdk/textrendering/texthandling/inc/TXTFMLYR.H",
+      "destination": "include/native/txtfmlyr_internal.h",
+      "targets": [
+        "Avkon",
+        "BioClient",
+        "BioTransport",
+        "Eikon",
+        "Native_aknnotify",
+        "Native_commondialogs",
+        "Native_commonui",
+        "Native_eikcdlg",
+        "Native_eikctl",
+        "Text",
+        "TextLayout"
+      ]
+    },
+    {
+      "include": "bsp.inl",
+      "source": "messagingmw/messagingfw/biomsgfw/BIUTINC/BSP.INL",
+      "manifest": "messagingmw/messagingfw/biomsgfw/BIUT/BLD.INF",
+      "declaration": "../BIUTINC/BSP.INL SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(bsp.inl)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "4664f4f145f78cfe6cc398420023f337af27feb5dc8c8a8c3d680c43ca4a0f76",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/biomsgfw/BIUTINC/tmsvbioinfo.h",
+      "destination": "include/native/bsp.inl",
+      "targets": [
+        "BioClient",
+        "BioTransport"
       ]
     },
     {
@@ -65309,6 +67139,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -65332,6 +67165,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -65358,6 +67192,7 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -65394,6 +67229,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -65417,6 +67255,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -65443,6 +67282,7 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -65479,6 +67319,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -65502,6 +67345,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -65528,6 +67372,7 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -65564,6 +67409,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -65587,6 +67435,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -65613,6 +67462,7 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -65649,6 +67499,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -65672,6 +67525,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -65698,6 +67552,7 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -65734,6 +67589,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -65757,6 +67615,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -65783,6 +67642,7 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -65819,6 +67679,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -65842,6 +67705,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -65868,6 +67732,7 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -66011,6 +67876,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -66034,6 +67902,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -66060,6 +67929,7 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -66114,6 +67984,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -66155,6 +68029,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -66214,6 +68089,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -66236,6 +68112,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -66264,6 +68141,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -66305,6 +68186,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -66364,6 +68246,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -66386,6 +68269,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -66414,6 +68298,10 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
+        "BioUtilities",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -66455,6 +68343,7 @@
         "MediaClient",
         "MediaClientUtility",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "Mime",
         "MmfController",
@@ -66514,6 +68403,7 @@
         "OpenC",
         "PowerNative",
         "RandomNative",
+        "ScheduledMessaging",
         "SdpAgent",
         "SdpCodec",
         "SdpDatabase",
@@ -66536,6 +68426,7 @@
         "Uri",
         "Vibra",
         "Video",
+        "WapPushUtils",
         "X500",
         "X509",
         "Xml",
@@ -66563,29 +68454,6 @@
       ]
     },
     {
-      "include": "txtfmlyr_internal.h",
-      "source": "textandloc-sdk/textrendering/texthandling/inc/TXTFMLYR_INTERNAL.H",
-      "manifest": "textandloc-sdk/textrendering/texthandling/group/bld.inf",
-      "declaration": "../inc/TXTFMLYR_INTERNAL.H \tSYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(txtfmlyr_internal.h)",
-      "conditions": [],
-      "classification": "private_internal",
-      "sha256": "e20b6b97ea987636b8c62d035f91e3aa9fadddcb8defac9f7446ca2edbba050e",
-      "exposure": "required_textual_support",
-      "included_by": "textandloc-sdk/textrendering/texthandling/inc/TXTFMLYR.H",
-      "destination": "include/native/txtfmlyr_internal.h",
-      "targets": [
-        "Avkon",
-        "Eikon",
-        "Native_aknnotify",
-        "Native_commondialogs",
-        "Native_commonui",
-        "Native_eikcdlg",
-        "Native_eikctl",
-        "Text",
-        "TextLayout"
-      ]
-    },
-    {
       "include": "nifvar_internal.h",
       "source": "networkingsrv/linklayercontrol/networkinterfacemgr/inc/nifvar_internal.h",
       "manifest": "networkingsrv/linklayercontrol/networkinterfacemgr/group/bld.inf",
@@ -66597,6 +68465,7 @@
       "included_by": "networkingsrv/linklayercontrol/networkinterfacemgr/inc/NIFVAR.H",
       "destination": "include/native/nifvar_internal.h",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -66623,6 +68492,7 @@
       "included_by": "commsfw/datacommsserver/esockserver/compatibility_headers/inc/MetaContainer.h",
       "destination": "include/native/elements/metacontainer.h",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -66651,6 +68521,7 @@
       "included_by": "commsfw/datacommsserver/esockserver/inc/es_sock_internal.h",
       "destination": "include/native/es_sock_internal.inl",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -66698,22 +68569,6 @@
       ]
     },
     {
-      "include": "mentact.h",
-      "source": "messagingmw/messagingfw/msgsrvnstore/server/inc/MENTACT.H",
-      "manifest": "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
-      "declaration": "../inc/MENTACT.H SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(mentact.h)",
-      "conditions": [],
-      "classification": "private_internal",
-      "sha256": "b2cece6feb8a5f0e3cd74a994d39b91a94255870e046092b7cd888e4645fbf0e",
-      "exposure": "required_textual_support",
-      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/msvsearchsortquery.h",
-      "destination": "include/native/mentact.h",
-      "targets": [
-        "Messaging",
-        "SendAs"
-      ]
-    },
-    {
       "include": "msgerr.h",
       "source": "messagingmw/messagingfw/msgsrvnstore/server/inc/msgerr.h",
       "manifest": "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
@@ -66725,7 +68580,10 @@
       "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/msvsearchsortquery.h",
       "destination": "include/native/msgerr.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
+        "MessagingUiBase",
         "SendAs"
       ]
     },
@@ -66744,23 +68602,10 @@
       "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/msvsearchsortquery.h",
       "destination": "include/native/msvsearchsortconstants.h",
       "targets": [
+        "BioClient",
+        "BioTransport",
         "Messaging",
-        "SendAs"
-      ]
-    },
-    {
-      "include": "msvreg.inl",
-      "source": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVREG.INL",
-      "manifest": "messagingmw/messagingfw/msgsrvnstore/server/group/bld.inf",
-      "declaration": "../inc/MSVREG.INL SYMBIAN_MW_LAYER_PLATFORM_EXPORT_PATH(msvreg.inl)",
-      "conditions": [],
-      "classification": "private_internal",
-      "sha256": "9ab8a2ef660003dbd2883ce6e2192503a204c6d018bd8128f50a65fc5da9b0c3",
-      "exposure": "required_textual_support",
-      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVREG.H",
-      "destination": "include/native/msvreg.inl",
-      "targets": [
-        "Messaging",
+        "MessagingUiBase",
         "SendAs"
       ]
     },
@@ -66783,6 +68628,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -66806,6 +68654,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -66832,6 +68681,7 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -66868,6 +68718,9 @@
         "AudioStream",
         "Avkon",
         "Bafl",
+        "BioClient",
+        "BioDatabase",
+        "BioTransport",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -66891,6 +68744,7 @@
         "ImageDisplay",
         "ImageTransform",
         "Messaging",
+        "MessagingUiBase",
         "Midi",
         "MmfController",
         "MmfCustomCommands",
@@ -66917,6 +68771,7 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "Native_stereowideningutility",
+        "ScheduledMessaging",
         "SendAs",
         "SipClient",
         "SipCodec",
@@ -66961,6 +68816,7 @@
       "included_by": "commsfw/commsfwsupport/commselements/NetMeta/inc/MetaData.h",
       "destination": "include/native/elements/h_tdeallocator.h",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -67027,6 +68883,7 @@
       "included_by": "commsfw/commsfwsupport/commselements/NetMeta/inc/MetaContainer.h",
       "destination": "include/native/elements/metacontainer.inl",
       "targets": [
+        "BioTransport",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -67127,7 +68984,7 @@
       ]
     }
   ],
-  "private_export_count": 4604,
+  "private_export_count": 4605,
   "auxiliary_manifests": [
     {
       "destination": "share/symbian/native/openc-header-usage.json",

@@ -166,5 +166,33 @@
       "after": "#define SENSRVCHANNELCONDITIONLISTENER_H\nclass CSensrvChannel;",
       "reason": "The original public sensor listener uses CSensrvChannel by reference without its forward declaration; add only the missing declaration."
     }
+  ],
+  "msvrcpt.h": [
+    {
+      "before": "#define __MSVRCPT_H__",
+      "after": "#define __MSVRCPT_H__\n#include <e32base.h>\nclass RReadStream;",
+      "reason": "The original public messaging recipient header uses CBase and Symbian scalar/time types without e32base.h and omits its RReadStream forward declaration."
+    }
+  ],
+  "msvoffpeaktime.h": [
+    {
+      "before": "#define __MSVOFFPEAKTIME_H__",
+      "after": "#define __MSVOFFPEAKTIME_H__\n#include <e32base.h>",
+      "reason": "The original public scheduled-messaging time header uses Symbian time, scalar and CArrayFixFlat types without including e32base.h."
+    }
+  ],
+  "biouids.h": [
+    {
+      "before": "#define __BIOUTILS_H__",
+      "after": "#define __BIOUTILS_H__\n#include <e32std.h>",
+      "reason": "The original public BIO UID header includes a partner support header with TUid and TInt constants before their e32std.h definitions."
+    }
+  ],
+  "thttpfields.h": [
+    {
+      "before": "#define __THTTPFIELDS_H__",
+      "after": "#define __THTTPFIELDS_H__\n#include <e32std.h>",
+      "reason": "The original public WAP HTTP-field constants use TInt, TText8 and descriptor literal macros without including e32std.h."
+    }
   ]
 }
