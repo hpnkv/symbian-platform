@@ -3676,3 +3676,20 @@ ongoing GL areas, active SDK/toolchains or tracked source. The active IDE
 still invokes CMake 4.4.3 and its model acceptance is unverified. The 1,536
 unreviewed public header exports, portable SDL, Linux bundle acceptance and
 0.2.0 release remain open; physical hardware was not operated.
+
+2026-10-06 utility-header manifest slice: The pinned InetProtUtil, BAFL and
+ECom public export manifests now map 36 previously unowned original headers
+to their existing `Symbian::Uri`, `Symbian::Bafl` and `Symbian::ECom` frozen
+import targets. ECom's exported error constants required their original
+`e32std.h` type prerequisite; a recorded narrow header edit supplies it.
+An updated relocated installed SDK passed 1,271 independent C/C++ canary
+object builds for each of ARMv5T and ARMv6, plus payload validation. Forty-seven
+focused native inventory/surface tests passed. The independent legacy
+`genericopenlibs/cstdlib` public `libc/*` tree failed C canaries with missing
+private prerequisites and conflicting socket types against the chosen Open C
+layout; its 65 entries remain undelivered with an explicit inventory blocker.
+There are still 1,563 public exported header records without reviewed
+delivery/target ownership. These checks establish compiler/header acceptance,
+not loader or named-firmware execution for newly surfaced declarations. A
+fresh automatic source export and macOS/Linux bundle checks remain required;
+SDL and 0.2.0 publication remain open.

@@ -7814,3 +7814,29 @@ checks passed. The release inventory still has 1,536 public exports without
 reviewed target ownership and 174 private/internal headers intentionally
 excluded. SDL, broader manifest closure, Linux bundle validation and 0.2.0
 publication remain open.
+
+### 2026-10-06: public utility export manifests and legacy libc layout
+
+The pinned `ossrv/genericservices/httputils/group/bld.inf` exports all 22
+InetProtUtil public header spellings and names `InetProtUtil.mmp`, whose frozen
+import target is already `Symbian::Uri`. The pinned BAFL apputils export
+manifest likewise names `BAFL.MMP`; its additional 14 public spellings now
+belong to `Symbian::Bafl`. The ECom plugin framework export manifest supplies
+four more public plug-in and error-code headers for `Symbian::ECom`. These
+records retain source manifest, source digest, frozen DEF and target in the
+generated inventory. An independently included ECom error header initially
+failed because it used `TInt` without `e32std.h`; the compatibility map records
+that single prerequisite edit. The relocated installed SDK then compiled all
+1,271 selected public-header canary objects on each ARMv5T and ARMv6.
+
+An attempted 65-header `genericopenlibs/cstdlib` expansion exposed a separate
+legacy `libc/*` include tree. `estlib.h` requires C++ despite the C library
+context; `libc/math.h` reaches absent `sys/stdio_t.h`; `libc/netinet/in.h`
+collides with the selected Open C socket definitions; other packet headers
+lack their expected BSD typedef prerequisites. The facility assignment was
+reverted and the 65 public exports remain in the inventory with a precise
+unresolved reason. Historical public export status alone cannot establish a
+single working Open C layout. No firmware execution or device result follows
+from this header-only batch. The current remaining public export count is
+1,563; larger XML, SIP/RTP, classic UI and Open C++ groups need separate ABI
+and ownership review before any completeness claim or 0.2.0 release.

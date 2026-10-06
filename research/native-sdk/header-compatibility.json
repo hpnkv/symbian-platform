@@ -89,5 +89,12 @@
       "after": "#define AKN_INTERNAL_ICON_UTILS_H\n#include <e32std.h>",
       "reason": "Original exported header omits the declaration prerequisite; include the original defining header for independent consumer compilation."
     }
+  ],
+  "ecom/ecomerrorcodes.h": [
+    {
+      "before": "#define __ECOMERRORCODES_H__",
+      "after": "#define __ECOMERRORCODES_H__\n#include <e32std.h>",
+      "reason": "The original public ECom error constants use TInt without including its defining e32std.h; supply that prerequisite for independent consumers."
+    }
   ]
 }

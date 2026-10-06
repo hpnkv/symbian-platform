@@ -521,14 +521,19 @@ def generate(workspace: Path) -> dict:
         if item:
             headers.append(item)
         else:
+            reason = (
+                "Alternative legacy cstdlib/libc export tree conflicts with "
+                "the selected Open C headers in independent C canaries; "
+                "consumer include layout and ABI ownership require review"
+                if record["manifest"]
+                == "ossrv/genericopenlibs/cstdlib/group/bld.inf"
+                else "Public export inventoried; target ownership "
+                "has not been reviewed"
+            )
             headers.append(
                 {
                     **record,
-                    "blocked": record.get(
-                        "blocked",
-                        "Public export inventoried; target ownership "
-                        "has not been reviewed",
-                    ),
+                    "blocked": record.get("blocked", reason),
                 }
             )
     headers += list(delivered.values())

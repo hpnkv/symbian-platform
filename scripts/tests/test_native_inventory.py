@@ -62,6 +62,52 @@ def test_inventory_covers_more_than_requested_facilities():
     assert any(f.get("api_metadata") for f in inventory["facilities"])
 
 
+def test_reviewed_utility_manifests_have_target_owned_payloads():
+    root = Path(__file__).resolve().parents[2]
+    inventory = json.loads(
+        (root / "research/native-sdk/inventory.json").read_text()
+    )
+    owners = {
+        "ossrv/genericservices/httputils/group/bld.inf": "Uri",
+        "ossrv/lowlevellibsandfws/apputils/group/bld.inf": "Bafl",
+        "ossrv/lowlevellibsandfws/pluginfw/Group/bld.inf": "ECom",
+    }
+    for manifest, owner in owners.items():
+        headers = [
+            header
+            for header in inventory["headers"]
+            if header.get("manifest") == manifest
+            and header.get("classification") == "public_base_platform"
+            and header.get("sha256")
+        ]
+        assert headers
+        for header in headers:
+            assert header.get("destination") == (
+                "include/native/" + header["include"]
+            )
+            assert owner in header["targets"]
+
+
+def test_legacy_cstdlib_conflict_remains_explicit():
+    root = Path(__file__).resolve().parents[2]
+    inventory = json.loads(
+        (root / "research/native-sdk/inventory.json").read_text()
+    )
+    headers = [
+        header
+        for header in inventory["headers"]
+        if header.get("manifest")
+        == "ossrv/genericopenlibs/cstdlib/group/bld.inf"
+        and header.get("classification") == "public_base_platform"
+    ]
+    assert headers
+    assert any(
+        "Alternative legacy cstdlib/libc export tree"
+        in header.get("blocked", "")
+        for header in headers
+    )
+
+
 def test_qt_mobility_aliases_exclude_private_classes(tmp_path):
     header = tmp_path / "src/contacts/qcontact.h"
     header.parent.mkdir(parents=True)

@@ -55,6 +55,9 @@ check and Close action.
 | `fbs.h` | `Symbian::Bitmap` | Font and bitmap server. |
 | `imageconversion.h` | `Symbian::ImageConversion` | Image decoders and encoders. |
 | `hwrmvibra.h` | `Symbian::Vibra` | Hardware Resource Manager vibration. |
+| `authority8.h`, `delimitedquery16.h`, `uriutils.h`, `wspdecoder.h` | `Symbian::Uri` | Original InetProtUtil public URI, parser, WSP and date headers. |
+| `babackup.h`, `baclipb.h`, `basched.h`, `barsread2.h` | `Symbian::Bafl` | Original BAFL backup, clipboard, scheduler and resource utilities. |
+| `ecom/implementationproxy.h`, `ecom/publicregistry.h`, `ecom/resolver.h` | `Symbian::ECom` | Original public plug-in registration and resolver headers. |
 | `QtNetwork/QHostAddress` | `Symbian::QtNetwork` | Original Qt 4.8.1 guest module. |
 | `QtSql/QSqlDatabase` | `Symbian::QtSql` | Original Qt SQL; drivers are separate runtime plugins. |
 | `QtXml/QDomDocument` | `Symbian::QtXml` | Original Qt XML. |
@@ -98,6 +101,10 @@ requires inclusion through `<netinet/in.h>`. The exported `sys/event.h`
 cannot be compiled from this source release because it contains an undefined
 `struct klist`; the frozen libc interface also lacks `kqueue` and `kevent`.
 It remains recorded as blocked rather than presented as a working event API.
+The separate `genericopenlibs/cstdlib` manifest exports a legacy `libc/*`
+tree. Direct C canaries found missing private include prerequisites and type
+conflicts with the selected Open C layout, so these duplicate headers remain
+unowned in the inventory pending a reviewed layout and ABI contract.
 The `examples/openc_app_classic` project uses the original libc functions
 directly.
 

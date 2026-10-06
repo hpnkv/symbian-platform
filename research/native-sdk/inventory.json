@@ -4061,10 +4061,30 @@
       "target": "Bafl",
       "dll": "bafl.dll",
       "headers": [
+        "babackup.h",
+        "babitflags.h",
+        "bacell.h",
+        "bacline.h",
+        "baclipb.h",
+        "bacntf.h",
+        "badesca.h",
+        "baerrhan.h",
+        "baerrrsvr.rh",
+        "bafindf.h",
+        "baliba.h",
+        "bamatch.h",
+        "bamdesca.h",
+        "banamedplugins.h",
         "barsc.h",
+        "barsc2.h",
         "barsread.h",
+        "barsread2.h",
+        "basched.h",
+        "baspi.h",
+        "bassnd.h",
         "bautils.h",
-        "badesca.h"
+        "stringpool.h",
+        "stringpool.inl"
       ],
       "dependencies": [
         "FileServer",
@@ -4087,10 +4107,28 @@
       ],
       "header_payloads": [
         "include/native/E32BASE.H",
+        "include/native/babackup.h",
+        "include/native/babitflags.h",
+        "include/native/bacell.h",
+        "include/native/bacline.h",
+        "include/native/baclipb.h",
+        "include/native/bacntf.h",
         "include/native/badesca.h",
+        "include/native/baerrhan.h",
+        "include/native/baerrrsvr.rh",
+        "include/native/bafindf.h",
+        "include/native/baliba.h",
+        "include/native/bamatch.h",
         "include/native/bamdesca.h",
+        "include/native/banamedplugins.h",
         "include/native/barsc.h",
+        "include/native/barsc2.h",
         "include/native/barsread.h",
+        "include/native/barsread2.h",
+        "include/native/basched.h",
+        "include/native/baspi.h",
+        "include/native/bassnd.h",
+        "include/native/bassnduid.h",
         "include/native/bautils.h",
         "include/native/d32locd.h",
         "include/native/d32locd.inl",
@@ -4134,7 +4172,26 @@
         "include/native/f32file64.inl",
         "include/native/f32file_private.h",
         "include/native/f32notification.h",
-        "include/native/partitions.h"
+        "include/native/mmf/common/mmfbase.h",
+        "include/native/partitions.h",
+        "include/native/s32buf.h",
+        "include/native/s32buf.inl",
+        "include/native/s32file.h",
+        "include/native/s32file.inl",
+        "include/native/s32filebufsize.h",
+        "include/native/s32page.h",
+        "include/native/s32page.inl",
+        "include/native/s32share.h",
+        "include/native/s32share.inl",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32stor.h",
+        "include/native/s32stor.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl",
+        "include/native/stringpool.h",
+        "include/native/stringpool.inl",
+        "include/native/stringpoolerr.h"
       ],
       "ms_extensions": false
     },
@@ -5081,7 +5138,16 @@
       "target": "ECom",
       "dll": "ecom.dll",
       "headers": [
-        "ecom/ecom.h"
+        "ecom/ecom.h",
+        "ecom/ecomerrorcodes.h",
+        "ecom/ecomresolverparams.h",
+        "ecom/ecomresolverparams.inl",
+        "ecom/implementationinformation.h",
+        "ecom/implementationinformation.inl",
+        "ecom/implementationproxy.h",
+        "ecom/publicregistry.h",
+        "ecom/registryinfo.rh",
+        "ecom/resolver.h"
       ],
       "dependencies": [
         "FileServer"
@@ -5143,8 +5209,14 @@
         "include/native/ecom/ecomextendedinterfaceerrorcodes.h",
         "include/native/ecom/ecomresolverparams.h",
         "include/native/ecom/ecomresolverparams.inl",
+        "include/native/ecom/extendedinterfaceimplementationproxy.h",
         "include/native/ecom/implementationinformation.h",
         "include/native/ecom/implementationinformation.inl",
+        "include/native/ecom/implementationproxy.h",
+        "include/native/ecom/publicregistry.h",
+        "include/native/ecom/registryinfo.rh",
+        "include/native/ecom/registryinfoconst.hrh",
+        "include/native/ecom/resolver.h",
         "include/native/f32file.h",
         "include/native/f32file.inl",
         "include/native/f32file64.h",
@@ -6729,8 +6801,28 @@
       "target": "Uri",
       "dll": "inetprotutil.dll",
       "headers": [
+        "authority16.h",
+        "authority8.h",
+        "authoritycommon.h",
+        "delimitedparser16.h",
+        "delimitedparser8.h",
+        "delimitedparsercommon.h",
+        "delimitedpath16.h",
+        "delimitedpath8.h",
+        "delimitedpathsegment16.h",
+        "delimitedpathsegment8.h",
+        "delimitedquery16.h",
+        "delimitedquery8.h",
+        "escapeutils.h",
+        "inetprottextutils.h",
+        "tinternetdate.h",
+        "uri16.h",
         "uri8.h",
-        "escapeutils.h"
+        "uricommon.h",
+        "uriutils.h",
+        "uriutilscommon.h",
+        "wspdecoder.h",
+        "wspencoder.h"
       ],
       "dependencies": [],
       "classification": "public_base_platform",
@@ -6749,8 +6841,22 @@
       ],
       "header_payloads": [
         "include/native/E32BASE.H",
+        "include/native/authority16.h",
+        "include/native/authority8.h",
+        "include/native/authoritycommon.h",
+        "include/native/badesca.h",
+        "include/native/bamdesca.h",
         "include/native/d32locd.h",
         "include/native/d32locd.inl",
+        "include/native/delimitedparser16.h",
+        "include/native/delimitedparser8.h",
+        "include/native/delimitedparsercommon.h",
+        "include/native/delimitedpath16.h",
+        "include/native/delimitedpath8.h",
+        "include/native/delimitedpathsegment16.h",
+        "include/native/delimitedpathsegment8.h",
+        "include/native/delimitedquery16.h",
+        "include/native/delimitedquery8.h",
         "include/native/e32base.h",
         "include/native/e32base.inl",
         "include/native/e32base_private.h",
@@ -6792,10 +6898,19 @@
         "include/native/f32file64.inl",
         "include/native/f32file_private.h",
         "include/native/f32notification.h",
+        "include/native/inetprottextutils.h",
         "include/native/partitions.h",
+        "include/native/stringpool.h",
+        "include/native/stringpool.inl",
+        "include/native/stringpoolerr.h",
+        "include/native/tinternetdate.h",
+        "include/native/uri16.h",
         "include/native/uri8.h",
         "include/native/uricommon.h",
-        "include/native/uriutilscommon.h"
+        "include/native/uriutils.h",
+        "include/native/uriutilscommon.h",
+        "include/native/wspdecoder.h",
+        "include/native/wspencoder.h"
       ],
       "ms_extensions": false
     },
@@ -35151,6 +35266,7 @@
         "Audio",
         "AudioInputStream",
         "AudioStream",
+        "Bafl",
         "DevSound",
         "ImageDisplay",
         "MediaClient",
@@ -38338,7 +38454,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "fb3e28f017d87fab039707779c1a7a7a3a07cef05e50e2c0613f749e6b9fdcf5",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/assert.h",
@@ -38348,7 +38464,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "91a8fadcf1f730f3466aea6e2ac82a7794d779aaf5e254a0b506801e07d45284",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/ctype.h",
@@ -38358,7 +38474,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c4e07eba26da291f227c0af80c3e8f7c58afda394fb682dea124b753b24a8380",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/dirent.h",
@@ -38368,7 +38484,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "b337faa6f7d6348ad22b1a60c25d778ae4bde77e1353b61ee38e0f2d1fe2a382",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/errno.h",
@@ -38378,7 +38494,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6bc643eed78817a4d6b26f9228038062f33e7a2a9f7b061d486a08bdb0f41425",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/fcntl.h",
@@ -38388,7 +38504,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "2ef4f2dee15498d0345540a6f9950aa66d77a3ab1cb118d60b4d224c325ca9d5",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/ieeefp.h",
@@ -38398,7 +38514,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c7ff0faab2401f2506373ef62bbc3f5abb093d867277680522a40e4c49346e8c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/limits.h",
@@ -38408,7 +38524,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "4b6a5bdd6cd635d16708b8714f75949c5fd923e21b108891a27f3c81628dce54",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/locale.h",
@@ -38418,7 +38534,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "df64fb5e31adffac621216c10e35be76a4aa4bc019192fad69450d3368b585eb",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/math.h",
@@ -38428,7 +38544,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "520166af3a8263a7ba2f7a856119552d71fa10f1ce4c155d5436c79ea893e16b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/netdb.h",
@@ -38438,7 +38554,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "34eb569e77e9c46367a179fe9e1eeb9020bb9f26b45b29d239ec5da7eaea0513",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/netdb_r.h",
@@ -38448,7 +38564,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "36cb6fdd1b1c26cdf477fb7dee112ae61bdce7c3ec5c91c802c7f614a32a4461",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/process.h",
@@ -38458,7 +38574,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e37cbe27d01c64b7d8857ea6bca421a89b20e948f3d73c4bd3191e819a4f8ace",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/pwd.h",
@@ -38468,7 +38584,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "05ce17d596f7e5584fd215aa45b3a29a9dfbe22f75bbafc89582eef3d5469450",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/reent.h",
@@ -38478,7 +38594,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "25af5701c8b53e84e787456886237c5f54413264768b59eb30edc05ed1015c5e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/setjmp.h",
@@ -38488,7 +38604,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e020a5dc1e4b30afda8922ad87ef1a65cb766e47a21e4c7908be617fbc2f2942",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/signal.h",
@@ -38498,7 +38614,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "b910fb6a174e64fb4855de06f7ca991e95144b930cd36c42f92b96b562c6ffcd",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/stdarg.h",
@@ -38508,7 +38624,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5cd5e367b27199174ec60d4974cad9d257d5f5f1ba8c60a7d87bdeef916997f5",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/stdarg_e.h",
@@ -38518,7 +38634,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f6abccc64f5837330b991722073e78b120a628074530c2c195a3ae65536e55c6",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/stddef.h",
@@ -38528,7 +38644,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f0b0de8e47f0048f4f4189bf0bac52776888854efe3bf09b66e5164e71defeed",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/stdio.h",
@@ -38538,7 +38654,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "db3e085f398d765435ba0de1418d94bbd7e965cea4f74d00bb8c485a9da1730e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/stdio_r.h",
@@ -38548,7 +38664,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "2fcf4214111e8ee7555ddd2cf10fcf9718ed22ba41495f81c04ed4a8183efcb3",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/stdlib.h",
@@ -38558,7 +38674,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "2efe17a17309df06e3e290715522c2c368e8ac1ac46109c701aff5d7d9abf79e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/stdlib_r.h",
@@ -38568,7 +38684,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "07d3fca85f05137e0925dcab0384d5c3580cc4212ded5562822ec16b5051c92f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/string.h",
@@ -38578,7 +38694,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "8228ed9a18b94fcfe5c0303a4a9e636a6be3916857bd332fdf368e080abeb7f2",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/time.h",
@@ -38588,7 +38704,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "7219c4fa81b6a583ae025e1d6dfd31e9392361370ef42e4c7eaa2847306e48c4",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/unistd.h",
@@ -38598,7 +38714,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "3d002eb4fa8e1c7d9db284085028f295b411113f55bf89c1ed9a848c359a3889",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/_ansi.h",
@@ -38608,7 +38724,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "683602e3d3209825e2413cc243e68b388475dcb7cf2c185a9b683c05471a3d42",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/config.h",
@@ -38618,7 +38734,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c47b4d7b7c1e7798f5173d92ae173c4386e1e070ab70c5f7efbcc48e2cf5ffb5",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/dirent.h",
@@ -38628,7 +38744,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "871c2f0bccbcd3837ead45c4d8319e0ff0bda0cde6fbe412ce4f6a055380c200",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/errno.h",
@@ -38638,7 +38754,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0a2c60364e8b8b85d3419962cf4c6df76ff53c489f47d643430554fec637b43d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/fcntl.h",
@@ -38648,7 +38764,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "2cc78f9d627ce105e2716cb6694d0f1df727e255c99468020386cf31a89200f6",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/file.h",
@@ -38658,7 +38774,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "2ef4f2dee15498d0345540a6f9950aa66d77a3ab1cb118d60b4d224c325ca9d5",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/ioctl.h",
@@ -38668,7 +38784,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d0ac86f57ecbbb89135d6cd3efed8ae4d7e94ebd8212eda3a912110d4ecf30a3",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/param.h",
@@ -38678,7 +38794,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "1f397c6d18c29718909059cffd2c601e89826418f20485895ea6c8f003e84573",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/reent.h",
@@ -38688,7 +38804,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "51e496cc2e2cb7a579a484f5b8486096b43a6bfb12a391b90ba9e024cf23d23e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/resource.h",
@@ -38698,7 +38814,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "4eb943ba0a9b99cb04d844c87f5fb942017b6eeb6cedd502147190090e146dcf",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/signal.h",
@@ -38708,7 +38824,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "85a1fb05e3b980aab26c863941f8cebf46815e3e685ed1c8c4a461853c6d8d71",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/socket.h",
@@ -38718,7 +38834,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "157acec7c27e3de6356633e755953f927f619854b8edb21d295396548b1dcd4b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/stat.h",
@@ -38728,7 +38844,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a83b7ed5c769f7c4f94096ac64dffe5b1551dce5955a0bcbee1a98cb339fc096",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/stdio_t.h",
@@ -38738,7 +38854,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "53ba9329a8e872dfb0904ab1bb6bf5d6c16c80979445e7df5fd4be7820960426",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/time.h",
@@ -38748,7 +38864,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "7f2f1d7c9a4c3ece1f6cb973ab701868f72c2283dafa9067ff6e527e114ada93",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/times.h",
@@ -38758,7 +38874,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6f7213cb70d31fd73628b6d726014ef2f8b2b6aed5c8fac5965beba9efafa9f6",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/types.h",
@@ -38768,7 +38884,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "933742c61987356d2a2014abc5d3f6a2461036ea67d45fce04a0f2486c633eaa",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/unistd.h",
@@ -38778,7 +38894,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c1826b6cc8482be25c5a938ccbebe404eb09b3a0850c549c873e3ea305083fc6",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/wait.h",
@@ -38788,7 +38904,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "3bf63f70ee468b8ccbad039f74cdbe0ea2adcbef68932e2f885ae8dcae105c98",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/_types.h",
@@ -38798,7 +38914,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "16265c304edca8a140c9c61fd52244442f4e2112abbed9e793bd6e20be6baf08",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/serial.h",
@@ -38808,7 +38924,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d3ac205737ec6caf7ddea3fb76151b780b1064163271cbbecc3f693cdbf46f79",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/sys/types1.h",
@@ -38818,7 +38934,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0dafdc0cabc82f86e6ff7299f3ecbeb1c8f112643507c6e60eec0e88a247179c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/machine/ieeefp.h",
@@ -38828,7 +38944,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0c55dcfca34ff1477276c7fc7bf66fbb2ad3fc986c564cbf4bcc02b56ef1a0dd",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/machine/types.h",
@@ -38838,7 +38954,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "11767d68f4927f342e5a09e611ac00f4f28016bc9f5ead28d3d7dc45a867ab0f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/netinet/net_types.h",
@@ -38848,7 +38964,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "ad6b07b5db8c9ff3d379abb12146a80cab65e37c166d1171f0479bb01dea2520",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/netinet/arp.h",
@@ -38858,7 +38974,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "785b1b2760efebaec8994cf8969644ae55ed69e0a4b84d02760b9c7511085f8b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/netinet/in.h",
@@ -38868,7 +38984,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f784e235af99ee6299d61297d55f64246a12ba6a86fa28db6407f621de6625c6",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/netinet/ip.h",
@@ -38878,7 +38994,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "730dc34a854bcd6bb6a0d506b670c35cf68c81da33ee4b1c66a4d80fda654b6f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/netinet/ip_icmp.h",
@@ -38888,7 +39004,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "3855165fb1fb262f9cc65ee9954f4f024aaa99e86263d22425ae9fffacab9242",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/netinet/tcp.h",
@@ -38898,7 +39014,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "8191e0668853f52d5f0cba6b449763a58285b5f98ec1b12a32e3bc36058ebc73",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/netinet/tcp_fsm.h",
@@ -38908,7 +39024,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "77fe3dc40a7836fc55faf0654b9ac7be98c6b93e330d6f749adaccf8879e6651",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/netinet/tcp_seq.h",
@@ -38918,7 +39034,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "b618c0ab68e08222093209b873f3cb4da120006c7992c767f7ecde093063a416",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/netinet/udp.h",
@@ -38928,7 +39044,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "1a5b85819b2ae5218c80d378c76fbe123c864d03a7ece7c72178454ee32582c6",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/arpa/ftp.h",
@@ -38938,7 +39054,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "3464fb77fa7f1096fe92018c64d5a1a5d09d1815bfb3c681e735716c0020402f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/arpa/inet.h",
@@ -38948,7 +39064,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "de8f2c736a2d385618b282146b6cd80e3e2cebf870bd9f8a429d79b64c9722f6",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/arpa/nameser.h",
@@ -38958,7 +39074,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "218c25aee54df509a8acc516625f37cc230f66ebaf3cfda17072af480bfb5ad7",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/arpa/telnet.h",
@@ -38968,7 +39084,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "234e1e8c5e0b10d0e245e44b26ccfcb948cd790245b4b5bb2e8530aa408c81ae",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "libc/arpa/tftp.h",
@@ -38978,7 +39094,7 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5d27c5e3e7c0c360c0aadddba9ecc5458f6f25b098deabe01c1e37c26c8e213b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Alternative legacy cstdlib/libc export tree conflicts with the selected Open C headers in independent C canaries; consumer include layout and ABI ownership require review"
     },
     {
       "include": "ewsd.h",
@@ -40591,7 +40707,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "fcd315e36b8ea4801741f3a1322edb36d580f8c1723563c060558dfa2d2fb76d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/authority8.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "authority16.h",
@@ -40601,7 +40720,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "59a111688cf93763455584fc9d626c2541589b8479ca856d400cebc8a329a9ee",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/authority16.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "authoritycommon.h",
@@ -40611,7 +40733,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5b3f07ceae38a1bc26b7fcfbe5028b77c57ed86a2ee25c3cbb5f9d8f63561691",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/authoritycommon.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "delimitedparser8.h",
@@ -40621,7 +40746,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "b67d64a1fcca9f14665f6ab65f960dee89affa37473917d250c8a697004d54dc",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/delimitedparser8.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "delimitedparser16.h",
@@ -40631,7 +40759,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "170ec18aa17954cdcb651f8bd717c769d4538d9955b9e285a0abbd5480883583",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/delimitedparser16.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "delimitedparsercommon.h",
@@ -40641,7 +40772,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "97c3fd773188de175fabcddf1f1f8febfb32fae3713b59468a8f8bc31e0fdc99",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/delimitedparsercommon.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "delimitedpath8.h",
@@ -40651,7 +40785,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "4bfb90caaaa6022ca6a20a210fec8a3db1c5724162ab865d64ae13bf36e02e9e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/delimitedpath8.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "delimitedpath16.h",
@@ -40661,7 +40798,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "1491884a587d38d140e6f72eede764034f3d6cd5607d9089815a8ecd0b53edce",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/delimitedpath16.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "delimitedpathsegment8.h",
@@ -40671,7 +40811,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f4e5d5cef64383c57a1ffa1f49318634d111e089fb01791c2b76b94982c4d088",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/delimitedpathsegment8.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "delimitedpathsegment16.h",
@@ -40681,7 +40824,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "ece5d112e61fb0e5c261cb574b50129409061b415ee16f7c28a71910038a85dd",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/delimitedpathsegment16.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "delimitedquery8.h",
@@ -40691,7 +40837,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d901b19b40efde524eb6fecd0463f93873ff2042ca616668a8e2951ff52bf9d0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/delimitedquery8.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "delimitedquery16.h",
@@ -40701,7 +40850,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "4ea79aa5853786b8f0e75c153a1f2d5a81c846a0069a2931a9aa4211f35bbbbf",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/delimitedquery16.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "escapeutils.h",
@@ -40724,7 +40876,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "54beb873f87f77f0a679c7280b334e0a54773a7a50522800761c9abdc75181ca",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/inetprottextutils.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "uri8.h",
@@ -40750,7 +40905,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "86553d53a4efdbd2aea16f94333f9657b11ab96105841373a70f8aa4147f6268",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/uri16.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "uricommon.h",
@@ -40776,7 +40934,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "047d1ed3b432027ffc963bc4ac0cab5f3815ec0bc2f5a0b1e4e8e71a8e2b412c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/uriutils.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "uriutilscommon.h",
@@ -40799,7 +40960,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f5cb4d9ec488899eafcfacc77d7201b56f85b76be57c3a6e7c5a31e66a0e8285",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/wspdecoder.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "wspencoder.h",
@@ -40809,7 +40973,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6c3154da0620ec2cfc8abefa72a12b1e7cddca0139208283832e687dae4121a0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/wspencoder.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "tinternetdate.h",
@@ -40819,7 +40986,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "4a9130ddb5406debeda5fa76e162ae0e6f1be9fbfef1f85e7cbac101e6702fea",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/tinternetdate.h",
+      "targets": [
+        "Uri"
+      ]
     },
     {
       "include": "apmrec.h",
@@ -41077,7 +41247,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "559aed6ef9159236a91fe45e7b72612cf72ad2b9140fa7e31c544913584c7785",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/babackup.h",
+      "targets": [
+        "Bafl"
+      ]
     },
     {
       "include": "bacell.h",
@@ -41087,7 +41260,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f4313a19e083a9cf9559719627fef1b406874798ffd972408c7d85a25146ef89",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/bacell.h",
+      "targets": [
+        "Bafl"
+      ]
     },
     {
       "include": "bacline.h",
@@ -41097,7 +41273,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "9b62cc1108330396cce9c7e5ceccabad8c1fb7f8d9fef9d5c3923e8349c66194",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/bacline.h",
+      "targets": [
+        "Bafl"
+      ]
     },
     {
       "include": "baclipb.h",
@@ -41107,7 +41286,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "487d2a1796dc3b15e22479f571bd68a315573a007b5c97d94595b015cbb44a27",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/baclipb.h",
+      "targets": [
+        "Bafl"
+      ]
     },
     {
       "include": "bacntf.h",
@@ -41117,7 +41299,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c9c0979edd499be7b7998c157002a1a0c1ecdc31267cb008917eafbdd4ff2376",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/bacntf.h",
+      "targets": [
+        "Bafl"
+      ]
     },
     {
       "include": "badesca.h",
@@ -41155,7 +41340,8 @@
         "Native_eposlmmultidbsearch",
         "Native_ptiengine",
         "Native_servicehandler",
-        "SendAs"
+        "SendAs",
+        "Uri"
       ]
     },
     {
@@ -41169,6 +41355,7 @@
       "destination": "include/native/baerrhan.h",
       "targets": [
         "Avkon",
+        "Bafl",
         "Eikon",
         "Native_aknnotify",
         "Native_commondialogs",
@@ -41185,7 +41372,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "ac10ab753818e4395cfe6f739e75eabe8af3e1cc994baf8f81155244e596ba2f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/bafindf.h",
+      "targets": [
+        "Bafl"
+      ]
     },
     {
       "include": "baliba.h",
@@ -41195,7 +41385,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c6bdd282c1d9fdd5e989f575c4388eaa3c003325294c2c130a102c1371e5fed4",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/baliba.h",
+      "targets": [
+        "Bafl"
+      ]
     },
     {
       "include": "bamatch.h",
@@ -41205,7 +41398,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "dd1c7ba1d2a06c33c0f7f5acbb225ffe3aec6348629cde3baf1546815d8f44eb",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/bamatch.h",
+      "targets": [
+        "Bafl"
+      ]
     },
     {
       "include": "bamdesca.h",
@@ -41246,7 +41442,8 @@
         "Native_eposlmmultidbsearch",
         "Native_ptiengine",
         "Native_servicehandler",
-        "SendAs"
+        "SendAs",
+        "Uri"
       ]
     },
     {
@@ -41302,6 +41499,7 @@
       "destination": "include/native/basched.h",
       "targets": [
         "Avkon",
+        "Bafl",
         "Cone",
         "Eikon",
         "EikonControls",
@@ -41323,7 +41521,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "2ef38f0990baa4b16c98846683403a65cced420677de439f0c17701485b0984f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/bassnd.h",
+      "targets": [
+        "Bafl"
+      ]
     },
     {
       "include": "bautils.h",
@@ -41346,7 +41547,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "3713bd45be81e40ea044ef9d6ace9ab18914dbd7fd65b0364e12a9e0d86164f5",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/banamedplugins.h",
+      "targets": [
+        "Bafl"
+      ]
     },
     {
       "include": "stringpool.h",
@@ -41358,10 +41562,12 @@
       "sha256": "6ce1ac960c63910515b891bf3d650477f7fae9ace584ad48ba888e0f22dd6d05",
       "destination": "include/native/stringpool.h",
       "targets": [
+        "Bafl",
         "HttpNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib",
         "StringPool",
+        "Uri",
         "Xml"
       ]
     },
@@ -41375,10 +41581,12 @@
       "sha256": "441cd18f29c5c311c11e1a00a4d8f231151a92b17c3c2851020c276b7ef6d528",
       "destination": "include/native/stringpool.inl",
       "targets": [
+        "Bafl",
         "HttpNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib",
         "StringPool",
+        "Uri",
         "Xml"
       ]
     },
@@ -41394,6 +41602,7 @@
       "targets": [
         "AppArc",
         "Avkon",
+        "Bafl",
         "Cone",
         "Eikon",
         "EikonControls",
@@ -41421,7 +41630,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "03cfdabd7fb7ed50bf490a34487936954a262b899f0d1ec0272eb5ac67d70bef",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/barsc2.h",
+      "targets": [
+        "Bafl"
+      ]
     },
     {
       "include": "barsread2.h",
@@ -41431,7 +41643,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c1726ef141df9ed29bf277605167c221f1f02bb2676e48e588104ee16cdc5f23",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/barsread2.h",
+      "targets": [
+        "Bafl"
+      ]
     },
     {
       "include": "baerrrsvr.rh",
@@ -41441,7 +41656,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "55e6ea901cdfa9a80b87b309a5ab8d26cdfdf03fca8475228f728ef32c9c0ecb",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/baerrrsvr.rh",
+      "targets": [
+        "Bafl"
+      ]
     },
     {
       "include": "baspi.h",
@@ -41451,7 +41669,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c7b5caa826ddd2f7fc45e570eb909986327edcc19019c29519e2aedad9f9a726",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/baspi.h",
+      "targets": [
+        "Bafl"
+      ]
     },
     {
       "include": "euserhl.h",
@@ -41600,7 +41821,15 @@
       "declaration": "../Framework/inc/EComErrorCodes.h\t\t\t\tSYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(ecom/ecomerrorcodes.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "140f1596e548250db9be93e5fa0b255b1a3810c4d826e14c312231faa3a4a5ee",
+      "sha256": "3a95f5898cc65e23c94fc023143c9373039b7dda9f2513dba7792e50a849f804",
+      "source_sha256": "140f1596e548250db9be93e5fa0b255b1a3810c4d826e14c312231faa3a4a5ee",
+      "compatibility_edits": [
+        {
+          "before": "#define __ECOMERRORCODES_H__",
+          "after": "#define __ECOMERRORCODES_H__\n#include <e32std.h>",
+          "reason": "The original public ECom error constants use TInt without including its defining e32std.h; supply that prerequisite for independent consumers."
+        }
+      ],
       "destination": "include/native/ecom/ecomerrorcodes.h",
       "targets": [
         "AppArc",
@@ -41821,7 +42050,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "7cdababb4c3549627b15317018a6aeabdc0c6b7654f49c3e9ff8d4367768b808",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/ecom/implementationproxy.h",
+      "targets": [
+        "ECom"
+      ]
     },
     {
       "include": "ecom/publicregistry.h",
@@ -41831,7 +42063,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "ea39a5a5dd024600fb9c102ac4b144a1a805f09ee1d9038af3c88052a9ed2b34",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/ecom/publicregistry.h",
+      "targets": [
+        "ECom"
+      ]
     },
     {
       "include": "ecom/resolver.h",
@@ -41841,7 +42076,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "bdd9dce954d076c278a253f2216ccb9e8008190a0e153072a761d534d2842387",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/ecom/resolver.h",
+      "targets": [
+        "ECom"
+      ]
     },
     {
       "include": "ecom/registryinfo.rh",
@@ -41851,7 +42089,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c156aa5e9ce0dd89faa4d2b148e01324c8dbfb4f4f2a2fffee2630f3bec59765",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/ecom/registryinfo.rh",
+      "targets": [
+        "ECom"
+      ]
     },
     {
       "include": "stdapis/stlport/stl/_ctraits_fns.h",
@@ -48201,6 +48442,7 @@
         "AudioInputStream",
         "AudioStream",
         "Avkon",
+        "Bafl",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -48263,6 +48505,7 @@
         "AudioInputStream",
         "AudioStream",
         "Avkon",
+        "Bafl",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -48341,6 +48584,7 @@
       "sha256": "7aa34bcecd35e7dd10ad2df8f0a51884bc455f948f39d640badc6e8e0182b362",
       "destination": "include/native/s32file.h",
       "targets": [
+        "Bafl",
         "Messaging",
         "SendAs",
         "StreamsNative",
@@ -48358,6 +48602,7 @@
       "sha256": "dfb5a8d783daada9daddd9cd0b99fb4a87cf498c668f7f399f3230d22b393d24",
       "destination": "include/native/s32file.inl",
       "targets": [
+        "Bafl",
         "Messaging",
         "SendAs",
         "StreamsNative",
@@ -48473,6 +48718,7 @@
         "AudioInputStream",
         "AudioStream",
         "Avkon",
+        "Bafl",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -48534,6 +48780,7 @@
         "AudioInputStream",
         "AudioStream",
         "Avkon",
+        "Bafl",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -48595,6 +48842,7 @@
         "AudioInputStream",
         "AudioStream",
         "Avkon",
+        "Bafl",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -48656,6 +48904,7 @@
         "AudioInputStream",
         "AudioStream",
         "Avkon",
+        "Bafl",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -48719,6 +48968,7 @@
         "AudioInputStream",
         "AudioStream",
         "Avkon",
+        "Bafl",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -48805,6 +49055,7 @@
         "AudioInputStream",
         "AudioStream",
         "Avkon",
+        "Bafl",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -48889,6 +49140,7 @@
         "AudioInputStream",
         "AudioStream",
         "Avkon",
+        "Bafl",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -48950,6 +49202,7 @@
         "AudioInputStream",
         "AudioStream",
         "Avkon",
+        "Bafl",
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
@@ -49013,6 +49266,7 @@
         "AudioInputStream",
         "AudioStream",
         "Avkon",
+        "Bafl",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -49107,6 +49361,7 @@
         "AudioInputStream",
         "AudioStream",
         "Avkon",
+        "Bafl",
         "Bitmap",
         "BitmapGdi",
         "BitmapTransform",
@@ -58481,6 +58736,38 @@
       ]
     },
     {
+      "include": "bassnduid.h",
+      "source": "ossrv/lowlevellibsandfws/apputils/inc/BASSNDUID.h",
+      "manifest": "ossrv/lowlevellibsandfws/apputils/group/bld.inf",
+      "declaration": "../inc/BASSNDUID.h \tSYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(bassnduid.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "2ee748b42676f79c13e531b7ff5815d0c854341d8dd6cfeef77c75ef99b5ea68",
+      "destination": "include/native/bassnduid.h",
+      "targets": [
+        "Bafl"
+      ]
+    },
+    {
+      "include": "stringpoolerr.h",
+      "source": "ossrv/lowlevellibsandfws/apputils/inc/StringPoolErr.h",
+      "manifest": "ossrv/lowlevellibsandfws/apputils/group/bld.inf",
+      "declaration": "../inc/StringPoolErr.h SYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(stringpoolerr.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "2cc7eeab0a52e7ceda12241e1ec6c364b79bc6470947b072555b358fc5b310df",
+      "destination": "include/native/stringpoolerr.h",
+      "targets": [
+        "Bafl",
+        "HttpNative",
+        "Native_downloadmgr",
+        "Native_downloadmgruilib",
+        "StringPool",
+        "Uri",
+        "Xml"
+      ]
+    },
+    {
       "include": "s32filebufsize.h",
       "source": "persistentdata/persistentstorage/store/INC/S32FILEBUFSIZE.H",
       "manifest": "persistentdata/persistentstorage/store/group/bld.inf",
@@ -58493,6 +58780,7 @@
       "sha256": "3e82e32472bd00dcae3dbb9ffb336e12e466fa42d4b71714c0712679e4a4d754",
       "destination": "include/native/s32filebufsize.h",
       "targets": [
+        "Bafl",
         "Messaging",
         "SendAs",
         "StreamsNative",
@@ -58649,6 +58937,76 @@
       "destination": "include/native/calinstanceiterator.h",
       "targets": [
         "Calendar"
+      ]
+    },
+    {
+      "include": "ecom/ecomextendedinterfaceerrorcodes.h",
+      "source": "ossrv/lowlevellibsandfws/pluginfw/Framework/inc/EComExtendedInterfaceErrorCodes.h",
+      "manifest": "ossrv/lowlevellibsandfws/pluginfw/Group/bld.inf",
+      "declaration": "../Framework/inc/EComExtendedInterfaceErrorCodes.h\tSYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(ecom/ecomextendedinterfaceerrorcodes.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "5bb1fde31dbea33d2317959eb31da231360a9e7a697aa1a4f11b98d5c04d14be",
+      "destination": "include/native/ecom/ecomextendedinterfaceerrorcodes.h",
+      "targets": [
+        "AppArc",
+        "Audio",
+        "AudioInputStream",
+        "AudioStream",
+        "Avkon",
+        "Bitmap",
+        "BitmapGdi",
+        "BitmapTransform",
+        "Cone",
+        "DevSound",
+        "ECom",
+        "Eikon",
+        "EikonControls",
+        "EikonDialogs",
+        "FontStore",
+        "ImageConversion",
+        "ImageDisplay",
+        "ImageTransform",
+        "Midi",
+        "MmfController",
+        "MmfCustomCommands",
+        "Native_aknhlist",
+        "Native_aknnotify",
+        "Native_browserengine",
+        "Native_commondialogs",
+        "Native_commonui",
+        "Native_downloadmgruilib",
+        "Native_drmaudioplayutility",
+        "Native_eikcdlg",
+        "Native_eikctl",
+        "TextLayout",
+        "Video"
+      ]
+    },
+    {
+      "include": "ecom/extendedinterfaceimplementationproxy.h",
+      "source": "ossrv/lowlevellibsandfws/pluginfw/Framework/inc/ExtendedInterfaceImplementationProxy.h",
+      "manifest": "ossrv/lowlevellibsandfws/pluginfw/Group/bld.inf",
+      "declaration": "../Framework/inc/ExtendedInterfaceImplementationProxy.h\t SYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(ecom/extendedinterfaceimplementationproxy.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "cdccfa2a8df2024d5a407cfbf1a863aa0f2e1e3b0d176f35c4a07cc0f507c0e3",
+      "destination": "include/native/ecom/extendedinterfaceimplementationproxy.h",
+      "targets": [
+        "ECom"
+      ]
+    },
+    {
+      "include": "ecom/registryinfoconst.hrh",
+      "source": "ossrv/lowlevellibsandfws/pluginfw/Framework/inc/registryinfoconst.hrh",
+      "manifest": "ossrv/lowlevellibsandfws/pluginfw/Group/bld.inf",
+      "declaration": "../Framework/inc/registryinfoconst.hrh\t\t\t/epoc32/include/ecom/registryinfoconst.hrh",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "f53325a6cde5beb713ae281066f15b153b20f0681513d1d9cda3ce13aca76329",
+      "destination": "include/native/ecom/registryinfoconst.hrh",
+      "targets": [
+        "ECom"
       ]
     },
     {
@@ -58898,23 +59256,6 @@
       "targets": [
         "Messaging",
         "SendAs"
-      ]
-    },
-    {
-      "include": "stringpoolerr.h",
-      "source": "ossrv/lowlevellibsandfws/apputils/inc/StringPoolErr.h",
-      "manifest": "ossrv/lowlevellibsandfws/apputils/group/bld.inf",
-      "declaration": "../inc/StringPoolErr.h SYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(stringpoolerr.h)",
-      "conditions": [],
-      "classification": "private_internal",
-      "sha256": "2cc7eeab0a52e7ceda12241e1ec6c364b79bc6470947b072555b358fc5b310df",
-      "destination": "include/native/stringpoolerr.h",
-      "targets": [
-        "HttpNative",
-        "Native_downloadmgr",
-        "Native_downloadmgruilib",
-        "StringPool",
-        "Xml"
       ]
     },
     {
@@ -60215,69 +60556,6 @@
       ]
     },
     {
-      "include": "txtstyle_internal.h",
-      "source": "textandloc-sdk/textrendering/texthandling/inc/TXTSTYLE_INTERNAL.H",
-      "manifest": "textandloc-sdk/textrendering/texthandling/group/bld.inf",
-      "declaration": "../inc/TXTSTYLE_INTERNAL.H /epoc32/include/txtstyle_internal.h",
-      "conditions": [
-        "#ifdef SYMBIAN_OLD_EXPORT_LOCATION"
-      ],
-      "classification": "private_internal",
-      "sha256": "340d92f68a4a2c259609434b5c7ff34352080e0d70d2b93558e365a1c0ac7e1e",
-      "destination": "include/native/txtstyle_internal.h",
-      "targets": [
-        "Avkon",
-        "Eikon",
-        "Native_aknnotify",
-        "Native_commondialogs",
-        "Native_commonui",
-        "Native_eikcdlg",
-        "Native_eikctl",
-        "Text",
-        "TextLayout"
-      ]
-    },
-    {
-      "include": "tagma_internal.h",
-      "source": "textandloc-sdk/textrendering/textformatting/inc/TAGMA_INTERNAL.H",
-      "manifest": "textandloc-sdk/textrendering/textformatting/group/bld.inf",
-      "declaration": "../inc/TAGMA_INTERNAL.H SYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(tagma_internal.h)",
-      "conditions": [],
-      "classification": "private_internal",
-      "sha256": "6aeb2db852cf69f2da319c8228ce5bbdfe8f43aae51801f42f2654d1a14e234d",
-      "destination": "include/native/tagma_internal.h",
-      "targets": [
-        "Avkon",
-        "Eikon",
-        "Native_aknnotify",
-        "Native_commondialogs",
-        "Native_commonui",
-        "Native_eikcdlg",
-        "Native_eikctl",
-        "TextLayout"
-      ]
-    },
-    {
-      "include": "tagmalayoutandsource.h",
-      "source": "textandloc-sdk/textrendering/textformatting/inc/tagmaLayoutAndSource.h",
-      "manifest": "textandloc-sdk/textrendering/textformatting/group/bld.inf",
-      "declaration": "../inc/tagmaLayoutAndSource.h SYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(tagmalayoutandsource.h)",
-      "conditions": [],
-      "classification": "private_internal",
-      "sha256": "d08a5630b7474f1301cfb8ec91f44098f7a9fe17f7c6dbf217634c44ecba83b5",
-      "destination": "include/native/tagmalayoutandsource.h",
-      "targets": [
-        "Avkon",
-        "Eikon",
-        "Native_aknnotify",
-        "Native_commondialogs",
-        "Native_commonui",
-        "Native_eikcdlg",
-        "Native_eikctl",
-        "TextLayout"
-      ]
-    },
-    {
       "include": "e32def_private.h",
       "source": "kernelhwsrv/kernel/eka/include/e32def_private.h",
       "manifest": "kernelhwsrv/kernel/eka/bld.inf",
@@ -60419,47 +60697,66 @@
       ]
     },
     {
-      "include": "ecom/ecomextendedinterfaceerrorcodes.h",
-      "source": "ossrv/lowlevellibsandfws/pluginfw/Framework/inc/EComExtendedInterfaceErrorCodes.h",
-      "manifest": "ossrv/lowlevellibsandfws/pluginfw/Group/bld.inf",
-      "declaration": "../Framework/inc/EComExtendedInterfaceErrorCodes.h\tSYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(ecom/ecomextendedinterfaceerrorcodes.h)",
-      "conditions": [],
+      "include": "txtstyle_internal.h",
+      "source": "textandloc-sdk/textrendering/texthandling/inc/TXTSTYLE_INTERNAL.H",
+      "manifest": "textandloc-sdk/textrendering/texthandling/group/bld.inf",
+      "declaration": "../inc/TXTSTYLE_INTERNAL.H /epoc32/include/txtstyle_internal.h",
+      "conditions": [
+        "#ifdef SYMBIAN_OLD_EXPORT_LOCATION"
+      ],
       "classification": "private_internal",
-      "sha256": "5bb1fde31dbea33d2317959eb31da231360a9e7a697aa1a4f11b98d5c04d14be",
-      "destination": "include/native/ecom/ecomextendedinterfaceerrorcodes.h",
+      "sha256": "340d92f68a4a2c259609434b5c7ff34352080e0d70d2b93558e365a1c0ac7e1e",
+      "destination": "include/native/txtstyle_internal.h",
       "targets": [
-        "AppArc",
-        "Audio",
-        "AudioInputStream",
-        "AudioStream",
         "Avkon",
-        "Bitmap",
-        "BitmapGdi",
-        "BitmapTransform",
-        "Cone",
-        "DevSound",
-        "ECom",
         "Eikon",
-        "EikonControls",
-        "EikonDialogs",
-        "FontStore",
-        "ImageConversion",
-        "ImageDisplay",
-        "ImageTransform",
-        "Midi",
-        "MmfController",
-        "MmfCustomCommands",
-        "Native_aknhlist",
         "Native_aknnotify",
-        "Native_browserengine",
         "Native_commondialogs",
         "Native_commonui",
-        "Native_downloadmgruilib",
-        "Native_drmaudioplayutility",
         "Native_eikcdlg",
         "Native_eikctl",
-        "TextLayout",
-        "Video"
+        "Text",
+        "TextLayout"
+      ]
+    },
+    {
+      "include": "tagma_internal.h",
+      "source": "textandloc-sdk/textrendering/textformatting/inc/TAGMA_INTERNAL.H",
+      "manifest": "textandloc-sdk/textrendering/textformatting/group/bld.inf",
+      "declaration": "../inc/TAGMA_INTERNAL.H SYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(tagma_internal.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "6aeb2db852cf69f2da319c8228ce5bbdfe8f43aae51801f42f2654d1a14e234d",
+      "destination": "include/native/tagma_internal.h",
+      "targets": [
+        "Avkon",
+        "Eikon",
+        "Native_aknnotify",
+        "Native_commondialogs",
+        "Native_commonui",
+        "Native_eikcdlg",
+        "Native_eikctl",
+        "TextLayout"
+      ]
+    },
+    {
+      "include": "tagmalayoutandsource.h",
+      "source": "textandloc-sdk/textrendering/textformatting/inc/tagmaLayoutAndSource.h",
+      "manifest": "textandloc-sdk/textrendering/textformatting/group/bld.inf",
+      "declaration": "../inc/tagmaLayoutAndSource.h SYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(tagmalayoutandsource.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "d08a5630b7474f1301cfb8ec91f44098f7a9fe17f7c6dbf217634c44ecba83b5",
+      "destination": "include/native/tagmalayoutandsource.h",
+      "targets": [
+        "Avkon",
+        "Eikon",
+        "Native_aknnotify",
+        "Native_commondialogs",
+        "Native_commonui",
+        "Native_eikcdlg",
+        "Native_eikctl",
+        "TextLayout"
       ]
     },
     {
