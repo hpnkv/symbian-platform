@@ -53,18 +53,19 @@ def resolve_case(path: Path) -> Path:
         if part == "..":
             current = current.parent
         elif part != ".":
-            exact = current / part
-            if exact.exists():
-                current = exact
-            elif current.is_dir():
+            if current.is_dir():
                 matches = [
                     p
                     for p in current.iterdir()
                     if p.name.casefold() == part.casefold()
                 ]
-                if len(matches) != 1:
+                exact = next((p for p in matches if p.name == part), None)
+                if exact is not None:
+                    current = exact
+                elif len(matches) == 1:
+                    current = matches[0]
+                else:
                     return path
-                current = matches[0]
             else:
                 return path
     return current

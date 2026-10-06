@@ -8129,3 +8129,18 @@ this tag and retains its host/native archive audit before publication. A
 regression test checks the dedicated description path. Focused release-asset
 tests, YAML parsing and strict docs passed locally. Tag publication and the
 four-host native bundle matrix remain pending; no release was claimed yet.
+
+### 2026-10-06: Linux source-case failure in tagged release attempt
+
+The first tagged 0.2.0 release workflow passed the four-host matrix but its
+native guest job failed before building imports: `stage_native_headers` could
+not find `.../BitmapTransform/inc_pub/BitmTrans/BitmTransPanic.h` on Linux.
+The pinned Git tree actually stores the directory as `bitmtrans`; the prior
+inventory generator trusted a case-insensitive macOS `Path.exists()` result
+and recorded the manifest's historical Windows casing. `resolve_case` now
+checks actual directory-entry spellings on every host and records the exact
+pinned path. A regression test asserts canonical casing, the inventory was
+regenerated, and all 2,148 delivered header/DEF source paths were checked
+against 31 pinned Git indexes with zero mismatches. The staged payload and
+56 focused native tests pass locally. No release assets were published by the
+failed workflow; the tag must be updated to the fixed commit before rerunning.

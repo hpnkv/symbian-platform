@@ -8064,7 +8064,7 @@
       "classification": "public_base_platform",
       "availability": "unknown_firmware",
       "definition": {
-        "source": "security/crypto/weakcryptospi/EABI/hashU.def",
+        "source": "security/crypto/weakcryptospi/EABI/hashU.DEF",
         "sha256": "21a624674e990e41782178181919d0b2636f6de8e8ca841f6ee38dff1de604a5",
         "destination": "share/symbian/native/defs/hash.dll.def"
       },
@@ -8110,7 +8110,7 @@
       "classification": "public_base_platform",
       "availability": "unknown_firmware",
       "definition": {
-        "source": "security/crypto/weakcryptospi/EABI/randomU.def",
+        "source": "security/crypto/weakcryptospi/EABI/randomU.DEF",
         "sha256": "959b54421993863ddce7f5d046407f9f4a4decb90966d1646c5595fff82d6616",
         "destination": "share/symbian/native/defs/random.dll.def"
       },
@@ -44404,7 +44404,7 @@
     },
     {
       "include": "bitmtrans/bitmtranspanic.h",
-      "source": "mmimaging/imaging/imagingfws/BitmapTransform/inc_pub/BitmTrans/BitmTransPanic.h",
+      "source": "mmimaging/imaging/imagingfws/BitmapTransform/inc_pub/bitmtrans/BitmTransPanic.h",
       "manifest": "mmimaging/imaging/imagingfws/BitmapTransform/group/bld.inf",
       "declaration": "../inc_pub/BitmTrans/BitmTransPanic.h\tSYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(bitmtrans/bitmtranspanic.h)",
       "conditions": [],
@@ -62009,7 +62009,7 @@
     },
     {
       "include": "brctlinterface.h",
-      "source": "web/web_pub/browser_control_api/inc/brctlinterface.h",
+      "source": "web/web_pub/browser_control_api/inc/BrCtlInterface.h",
       "manifest": "web/web_pub/browser_control_api/group/bld.inf",
       "declaration": "../inc/brctlinterface.h           /epoc32/include/brctlinterface.h",
       "conditions": [
@@ -62447,7 +62447,7 @@
     },
     {
       "include": "favouritesdb.h",
-      "source": "web/web_pub/favourites_engine_api/inc/favouritesdb.h",
+      "source": "web/web_pub/favourites_engine_api/inc/FavouritesDb.h",
       "manifest": "web/web_pub/favourites_engine_api/group/bld.inf",
       "declaration": "../inc/favouritesdb.h               MW_LAYER_PUBLIC_EXPORT_PATH(favouritesdb.h)",
       "conditions": [],
@@ -62464,7 +62464,7 @@
     },
     {
       "include": "favouritesfile.h",
-      "source": "web/web_pub/favourites_engine_api/inc/favouritesfile.h",
+      "source": "web/web_pub/favourites_engine_api/inc/FavouritesFile.h",
       "manifest": "web/web_pub/favourites_engine_api/group/bld.inf",
       "declaration": "../inc/favouritesfile.h             MW_LAYER_PUBLIC_EXPORT_PATH(favouritesfile.h)",
       "conditions": [],
@@ -62481,7 +62481,7 @@
     },
     {
       "include": "favouritesdbIncremental.h",
-      "source": "web/web_pub/favourites_engine_api/inc/favouritesdbIncremental.h",
+      "source": "web/web_pub/favourites_engine_api/inc/FavouritesDbIncremental.h",
       "manifest": "web/web_pub/favourites_engine_api/group/bld.inf",
       "declaration": "../inc/favouritesdbIncremental.h    MW_LAYER_PUBLIC_EXPORT_PATH(favouritesdbIncremental.h)",
       "conditions": [],
@@ -62498,7 +62498,7 @@
     },
     {
       "include": "favouritesdbnotifier.h",
-      "source": "web/web_pub/favourites_engine_api/inc/favouritesdbnotifier.h",
+      "source": "web/web_pub/favourites_engine_api/inc/FavouritesDbNotifier.h",
       "manifest": "web/web_pub/favourites_engine_api/group/bld.inf",
       "declaration": "../inc/favouritesdbnotifier.h       MW_LAYER_PUBLIC_EXPORT_PATH(favouritesdbnotifier.h)",
       "conditions": [],
@@ -62515,7 +62515,7 @@
     },
     {
       "include": "favouritesdbobserver.h",
-      "source": "web/web_pub/favourites_engine_api/inc/favouritesdbobserver.h",
+      "source": "web/web_pub/favourites_engine_api/inc/FavouritesDbObserver.h",
       "manifest": "web/web_pub/favourites_engine_api/group/bld.inf",
       "declaration": "../inc/favouritesdbobserver.h       MW_LAYER_PUBLIC_EXPORT_PATH(favouritesdbobserver.h)",
       "conditions": [],
@@ -62532,7 +62532,7 @@
     },
     {
       "include": "favouritesitem.h",
-      "source": "web/web_pub/favourites_engine_api/inc/favouritesitem.h",
+      "source": "web/web_pub/favourites_engine_api/inc/FavouritesItem.h",
       "manifest": "web/web_pub/favourites_engine_api/group/bld.inf",
       "declaration": "../inc/favouritesitem.h             MW_LAYER_PUBLIC_EXPORT_PATH(favouritesitem.h)",
       "conditions": [],
@@ -62549,7 +62549,7 @@
     },
     {
       "include": "favouriteslimits.h",
-      "source": "web/web_pub/favourites_engine_api/inc/favouriteslimits.h",
+      "source": "web/web_pub/favourites_engine_api/inc/FavouritesLimits.h",
       "manifest": "web/web_pub/favourites_engine_api/group/bld.inf",
       "declaration": "../inc/favouriteslimits.h           MW_LAYER_PUBLIC_EXPORT_PATH(favouriteslimits.h)",
       "conditions": [],
@@ -62574,7 +62574,7 @@
     },
     {
       "include": "favouriteswapap.h",
-      "source": "web/web_pub/favourites_engine_api/inc/favouriteswapap.h",
+      "source": "web/web_pub/favourites_engine_api/inc/FavouritesWapAp.h",
       "manifest": "web/web_pub/favourites_engine_api/group/bld.inf",
       "declaration": "../inc/favouriteswapap.h            MW_LAYER_PUBLIC_EXPORT_PATH(favouriteswapap.h)",
       "conditions": [],
@@ -62591,7 +62591,7 @@
     },
     {
       "include": "favouritesitemlist.h",
-      "source": "web/web_pub/favourites_engine_api/inc/favouritesitemlist.h",
+      "source": "web/web_pub/favourites_engine_api/inc/FavouritesItemList.h",
       "manifest": "web/web_pub/favourites_engine_api/group/bld.inf",
       "declaration": "../inc/favouritesitemlist.h         MW_LAYER_PUBLIC_EXPORT_PATH(favouritesitemlist.h)",
       "conditions": [],
@@ -62608,7 +62608,7 @@
     },
     {
       "include": "favouritesitemdata.h",
-      "source": "web/web_pub/favourites_engine_api/inc/favouritesitemdata.h",
+      "source": "web/web_pub/favourites_engine_api/inc/FavouritesItemData.h",
       "manifest": "web/web_pub/favourites_engine_api/group/bld.inf",
       "declaration": "../inc/favouritesitemdata.h         MW_LAYER_PUBLIC_EXPORT_PATH(favouritesitemdata.h)",
       "conditions": [],
@@ -62625,7 +62625,7 @@
     },
     {
       "include": "favouritessession.h",
-      "source": "web/web_pub/favourites_engine_api/inc/favouritessession.h",
+      "source": "web/web_pub/favourites_engine_api/inc/FavouritesSession.h",
       "manifest": "web/web_pub/favourites_engine_api/group/bld.inf",
       "declaration": "../inc/favouritessession.h          MW_LAYER_PUBLIC_EXPORT_PATH(favouritessession.h)",
       "conditions": [],
@@ -62642,7 +62642,7 @@
     },
     {
       "include": "favouritessession.inl",
-      "source": "web/web_pub/favourites_engine_api/inc/favouritessession.inl",
+      "source": "web/web_pub/favourites_engine_api/inc/FavouritesSession.inl",
       "manifest": "web/web_pub/favourites_engine_api/group/bld.inf",
       "declaration": "../inc/favouritessession.inl        MW_LAYER_PUBLIC_EXPORT_PATH(favouritessession.inl)",
       "conditions": [],
@@ -62659,7 +62659,7 @@
     },
     {
       "include": "favouriteshandle.h",
-      "source": "web/web_pub/favourites_engine_api/inc/favouriteshandle.h",
+      "source": "web/web_pub/favourites_engine_api/inc/FavouritesHandle.h",
       "manifest": "web/web_pub/favourites_engine_api/group/bld.inf",
       "declaration": "../inc/favouriteshandle.h           MW_LAYER_PUBLIC_EXPORT_PATH(favouriteshandle.h)",
       "conditions": [],
@@ -62676,7 +62676,7 @@
     },
     {
       "include": "favouriteshandle.inl",
-      "source": "web/web_pub/favourites_engine_api/inc/favouriteshandle.inl",
+      "source": "web/web_pub/favourites_engine_api/inc/FavouritesHandle.inl",
       "manifest": "web/web_pub/favourites_engine_api/group/bld.inf",
       "declaration": "../inc/favouriteshandle.inl         MW_LAYER_PUBLIC_EXPORT_PATH(favouriteshandle.inl)",
       "conditions": [],
@@ -62739,7 +62739,7 @@
     },
     {
       "include": "brctlinterface.h",
-      "source": "web/webengine/osswebengine/WebKit/s60/webview/webview_api_test/inc/brctlinterface.h",
+      "source": "web/webengine/osswebengine/WebKit/s60/webview/webview_api_test/inc/BrCtlInterface.h",
       "manifest": "web/webengine/osswebengine/WebKit/s60/webview/webview_api_test/group/bld.inf",
       "declaration": "../inc/brctlinterface.h           MW_LAYER_PUBLIC_EXPORT_PATH(brctlinterface.h)",
       "conditions": [
@@ -62751,7 +62751,7 @@
     },
     {
       "include": "gmxmldomconstants.h",
-      "source": "xmlsrv/xml/legacyminidomparser/XMLDom/inc/gmxmldomconstants.h",
+      "source": "xmlsrv/xml/legacyminidomparser/XMLDom/INC/GMxmldomconstants.h",
       "manifest": "xmlsrv/xml/legacyminidomparser/XMLDom/GROUP/bld.inf",
       "declaration": "../inc/gmxmldomconstants.h \t\t\t\tSYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(gmxmldomconstants.h)",
       "conditions": [],
@@ -62765,7 +62765,7 @@
     },
     {
       "include": "gmxmlparser.h",
-      "source": "xmlsrv/xml/legacyminidomparser/XMLParser/inc/gmxmlparser.h",
+      "source": "xmlsrv/xml/legacyminidomparser/XMLParser/INC/GMXMLParser.h",
       "manifest": "xmlsrv/xml/legacyminidomparser/XMLParser/GROUP/bld.inf",
       "declaration": "../inc/gmxmlparser.h \t\t\tSYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(gmxmlparser.h)",
       "conditions": [],
@@ -62778,7 +62778,7 @@
     },
     {
       "include": "gmxmlconstants.h",
-      "source": "xmlsrv/xml/legacyminidomparser/XMLParser/inc/gmxmlconstants.h",
+      "source": "xmlsrv/xml/legacyminidomparser/XMLParser/INC/GMXMLConstants.h",
       "manifest": "xmlsrv/xml/legacyminidomparser/XMLParser/GROUP/bld.inf",
       "declaration": "../inc/gmxmlconstants.h \t\tSYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(gmxmlconstants.h)",
       "conditions": [],
@@ -70917,11 +70917,11 @@
     },
     {
       "include": "favouritesfile.inl",
-      "source": "web/web_pub/favourites_engine_api/inc/favouritesfile.inl",
+      "source": "web/web_pub/favourites_engine_api/inc/FavouritesFile.inl",
       "sha256": "888d385f4113498c18ae69153f8ed66e57402403d4857f5dff54a4f48d32b760",
       "classification": "private_internal",
       "exposure": "required_textual_support",
-      "included_by": "web/web_pub/favourites_engine_api/inc/favouritesfile.h",
+      "included_by": "web/web_pub/favourites_engine_api/inc/FavouritesFile.h",
       "destination": "include/native/favouritesfile.inl",
       "targets": [
         "Native_favouritesengine"
@@ -71312,7 +71312,7 @@
     },
     {
       "include": "graphics/windowserverconstants.h",
-      "source": "graphics/windowing/windowserver/inc/graphics/windowserverconstants.h",
+      "source": "graphics/windowing/windowserver/inc/Graphics/windowserverconstants.h",
       "manifest": "graphics/windowing/windowserver/group/openwfc/BLD.INF",
       "declaration": "../../inc/graphics/windowserverconstants.h /epoc32/include/graphics/windowserverconstants.h",
       "conditions": [
@@ -71348,7 +71348,7 @@
     },
     {
       "include": "graphics/pointereventdata.h",
-      "source": "graphics/windowing/windowserver/inc/graphics/pointereventdata.h",
+      "source": "graphics/windowing/windowserver/inc/Graphics/pointereventdata.h",
       "manifest": "graphics/windowing/windowserver/group/openwfc/BLD.INF",
       "declaration": "../../inc/graphics/pointereventdata.h SYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(graphics/pointereventdata.h)",
       "conditions": [],
@@ -75783,7 +75783,7 @@
     },
     {
       "include": "eiksrv.pan",
-      "source": "classicui/commonuisupport/uikon/srvinc/eiksrv.pan",
+      "source": "classicui/commonuisupport/uikon/srvinc/EIKSRV.PAN",
       "sha256": "1877aa1e6e789cb181b495065200ced65002f4980871d16f4fc34b49e1e89f17",
       "classification": "private_internal",
       "exposure": "required_textual_support",

@@ -3833,3 +3833,10 @@ breadth interfaces. The release workflow will use this description after its
 host/native artifact audit. Focused release tests, YAML parsing and strict
 docs pass. Publication is pending the tagged workflow; no release assets have
 been uploaded yet.
+
+The first tagged 0.2.0 workflow passed its four-host matrix but stopped in
+native guest staging on a macOS-only casing error; publish was skipped and no
+release exists. The inventory generator now stores exact pinned Git tree
+casing. All 2,148 delivered source paths match 31 pinned indexes, local
+payload validation and 56 focused tests pass. Rerun the tagged release after
+moving the unpublished tag to this fix.

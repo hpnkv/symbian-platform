@@ -45,6 +45,7 @@ def test_platform_source_does_not_imply_public_api(tmp_path):
 def test_windows_source_case_resolves_on_every_host(tmp_path):
     (tmp_path / "Upper.H").write_text("original")
     assert resolve_case(tmp_path / "upper.h").read_text() == "original"
+    assert resolve_case(tmp_path / "upper.h").name == "Upper.H"
 
 
 def test_inventory_covers_more_than_requested_facilities():
