@@ -6979,8 +6979,16 @@
       "target": "Xml",
       "dll": "xmlframework.dll",
       "headers": [
+        "xml/attribute.h",
+        "xml/contenthandler.h",
+        "xml/contentprocessoruids.h",
+        "xml/matchdata.h",
         "xml/parser.h",
-        "xml/contenthandler.h"
+        "xml/parserfeature.h",
+        "xml/stringdictionarycollection.h",
+        "xml/taginfo.h",
+        "xml/wbxmlextensionhandler.h",
+        "xml/xmlframeworkerrors.h"
       ],
       "dependencies": [
         "StringPool",
@@ -7004,15 +7012,19 @@
       ],
       "header_payloads": [
         "include/native/E32BASE.H",
+        "include/native/d32locd.h",
+        "include/native/d32locd.inl",
         "include/native/e32base.h",
         "include/native/e32base.inl",
         "include/native/e32base_private.h",
+        "include/native/e32btrace.h",
         "include/native/e32capability.h",
         "include/native/e32cmn.h",
         "include/native/e32cmn.inl",
         "include/native/e32cmn_private.h",
         "include/native/e32const.h",
         "include/native/e32const_private.h",
+        "include/native/e32debug.h",
         "include/native/e32def.h",
         "include/native/e32def_private.h",
         "include/native/e32des16.h",
@@ -7020,20 +7032,58 @@
         "include/native/e32des8.h",
         "include/native/e32des8_private.h",
         "include/native/e32err.h",
+        "include/native/e32event.h",
+        "include/native/e32event_private.h",
+        "include/native/e32hal.h",
+        "include/native/e32keys.h",
+        "include/native/e32ktran.h",
         "include/native/e32lang.h",
+        "include/native/e32ldr.h",
+        "include/native/e32ldr_private.h",
+        "include/native/e32lmsg.h",
+        "include/native/e32notif.h",
         "include/native/e32reg.h",
         "include/native/e32std.H",
         "include/native/e32std.h",
         "include/native/e32std.inl",
         "include/native/e32std_private.h",
+        "include/native/e32svr.h",
+        "include/native/ecom/implementationinformation.h",
+        "include/native/ecom/implementationinformation.inl",
+        "include/native/f32file.h",
+        "include/native/f32file.inl",
+        "include/native/f32file64.h",
+        "include/native/f32file64.inl",
+        "include/native/f32file_private.h",
+        "include/native/f32notification.h",
+        "include/native/partitions.h",
+        "include/native/s32buf.h",
+        "include/native/s32buf.inl",
+        "include/native/s32mem.h",
+        "include/native/s32mem.inl",
+        "include/native/s32page.h",
+        "include/native/s32page.inl",
+        "include/native/s32share.h",
+        "include/native/s32share.inl",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32stor.h",
+        "include/native/s32stor.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl",
         "include/native/stringpool.h",
         "include/native/stringpool.inl",
         "include/native/stringpoolerr.h",
         "include/native/xml/attribute.h",
         "include/native/xml/contenthandler.h",
         "include/native/xml/contentprocessoruids.h",
+        "include/native/xml/matchdata.h",
         "include/native/xml/parser.h",
-        "include/native/xml/taginfo.h"
+        "include/native/xml/parserfeature.h",
+        "include/native/xml/stringdictionarycollection.h",
+        "include/native/xml/taginfo.h",
+        "include/native/xml/wbxmlextensionhandler.h",
+        "include/native/xml/xmlframeworkerrors.h"
       ],
       "ms_extensions": false
     },
@@ -7041,9 +7091,71 @@
       "target": "XmlDom",
       "dll": "xmlenginedom.dll",
       "headers": [
-        "xml/dom/xmlengdocument.h"
+        "xml/dom/xmlengattr.h",
+        "xml/dom/xmlengattr.inl",
+        "xml/dom/xmlengbinarycontainer.h",
+        "xml/dom/xmlengbinarycontainer.inl",
+        "xml/dom/xmlengcdatasection.h",
+        "xml/dom/xmlengcdatasection.inl",
+        "xml/dom/xmlengcharacterdata.h",
+        "xml/dom/xmlengcharacterdata.inl",
+        "xml/dom/xmlengchunkcontainer.h",
+        "xml/dom/xmlengchunkcontainer.inl",
+        "xml/dom/xmlengcomment.h",
+        "xml/dom/xmlengcomment.inl",
+        "xml/dom/xmlengdatacontainer.h",
+        "xml/dom/xmlengdatacontainer.inl",
+        "xml/dom/xmlengdataserializer.h",
+        "xml/dom/xmlengdocument.h",
+        "xml/dom/xmlengdocument.inl",
+        "xml/dom/xmlengdocumentfragment.h",
+        "xml/dom/xmlengdocumentfragment.inl",
+        "xml/dom/xmlengdom.h",
+        "xml/dom/xmlengdomimplementation.h",
+        "xml/dom/xmlengdomparser.h",
+        "xml/dom/xmlengdomutils.h",
+        "xml/dom/xmlengelement.h",
+        "xml/dom/xmlengelement.inl",
+        "xml/dom/xmlengentityreference.h",
+        "xml/dom/xmlengentityreference.inl",
+        "xml/dom/xmlengerrors.h",
+        "xml/dom/xmlengfilecontainer.h",
+        "xml/dom/xmlengfilecontainer.inl",
+        "xml/dom/xmlengnamespace.h",
+        "xml/dom/xmlengnamespace.inl",
+        "xml/dom/xmlengnamespaceresolver.h",
+        "xml/dom/xmlengnode.h",
+        "xml/dom/xmlengnode.inl",
+        "xml/dom/xmlengnodefilter.h",
+        "xml/dom/xmlengnodelist.h",
+        "xml/dom/xmlengnodelist.inl",
+        "xml/dom/xmlengnodelist_impl.h",
+        "xml/dom/xmlengnodeset.h",
+        "xml/dom/xmlengnodeset.inl",
+        "xml/dom/xmlengoutputstream.h",
+        "xml/dom/xmlengprocessinginstruction.h",
+        "xml/dom/xmlengprocessinginstruction.inl",
+        "xml/dom/xmlengserializationoptions.h",
+        "xml/dom/xmlengtext.h",
+        "xml/dom/xmlengtext.inl",
+        "xml/dom/xmlenguserdata.h",
+        "xml/dom/xmlengxformsinstancemap.h",
+        "xml/dom/xmlengxpath.h",
+        "xml/dom/xmlengxpathconfiguration.h",
+        "xml/dom/xmlengxpatherrors.h",
+        "xml/dom/xmlengxpathevaluationcontext.h",
+        "xml/dom/xmlengxpathevaluator.h",
+        "xml/dom/xmlengxpathevaluator.inl",
+        "xml/dom/xmlengxpathexpression.h",
+        "xml/dom/xmlengxpathexpression.inl",
+        "xml/dom/xmlengxpathextensionfunction.h",
+        "xml/dom/xmlengxpathresult.h",
+        "xml/dom/xmlengxpathresult.inl",
+        "xml/dom/xmlengxpathutils.h",
+        "xml/dom/xmlengxpathutils.inl"
       ],
       "dependencies": [
+        "XmlEngineUtils",
         "XmlEngine"
       ],
       "classification": "public_base_platform",
@@ -7108,23 +7220,117 @@
         "include/native/f32file_private.h",
         "include/native/f32notification.h",
         "include/native/partitions.h",
+        "include/native/xml/dom/xmlengattr.h",
+        "include/native/xml/dom/xmlengattr.inl",
+        "include/native/xml/dom/xmlengbinarycontainer.h",
+        "include/native/xml/dom/xmlengbinarycontainer.inl",
+        "include/native/xml/dom/xmlengcdatasection.h",
+        "include/native/xml/dom/xmlengcdatasection.inl",
+        "include/native/xml/dom/xmlengcharacterdata.h",
+        "include/native/xml/dom/xmlengcharacterdata.inl",
+        "include/native/xml/dom/xmlengchunkcontainer.h",
+        "include/native/xml/dom/xmlengchunkcontainer.inl",
+        "include/native/xml/dom/xmlengcomment.h",
+        "include/native/xml/dom/xmlengcomment.inl",
+        "include/native/xml/dom/xmlengdatacontainer.h",
+        "include/native/xml/dom/xmlengdatacontainer.inl",
+        "include/native/xml/dom/xmlengdataserializer.h",
         "include/native/xml/dom/xmlengdocument.h",
         "include/native/xml/dom/xmlengdocument.inl",
+        "include/native/xml/dom/xmlengdocumentfragment.h",
+        "include/native/xml/dom/xmlengdocumentfragment.inl",
+        "include/native/xml/dom/xmlengdom.h",
+        "include/native/xml/dom/xmlengdomimplementation.h",
+        "include/native/xml/dom/xmlengdomparser.h",
+        "include/native/xml/dom/xmlengdomutils.h",
+        "include/native/xml/dom/xmlengelement.h",
+        "include/native/xml/dom/xmlengelement.inl",
+        "include/native/xml/dom/xmlengentityreference.h",
+        "include/native/xml/dom/xmlengentityreference.inl",
+        "include/native/xml/dom/xmlengerrors.h",
+        "include/native/xml/dom/xmlengfilecontainer.h",
+        "include/native/xml/dom/xmlengfilecontainer.inl",
+        "include/native/xml/dom/xmlengnamespace.h",
+        "include/native/xml/dom/xmlengnamespace.inl",
+        "include/native/xml/dom/xmlengnamespaceresolver.h",
         "include/native/xml/dom/xmlengnode.h",
         "include/native/xml/dom/xmlengnode.inl",
-        "include/native/xml/dom/xmlengserializationoptions.h"
+        "include/native/xml/dom/xmlengnodefilter.h",
+        "include/native/xml/dom/xmlengnodelist.h",
+        "include/native/xml/dom/xmlengnodelist.inl",
+        "include/native/xml/dom/xmlengnodelist_impl.h",
+        "include/native/xml/dom/xmlengnodeset.h",
+        "include/native/xml/dom/xmlengnodeset.inl",
+        "include/native/xml/dom/xmlengoutputstream.h",
+        "include/native/xml/dom/xmlengprocessinginstruction.h",
+        "include/native/xml/dom/xmlengprocessinginstruction.inl",
+        "include/native/xml/dom/xmlengserializationoptions.h",
+        "include/native/xml/dom/xmlengtext.h",
+        "include/native/xml/dom/xmlengtext.inl",
+        "include/native/xml/dom/xmlenguserdata.h",
+        "include/native/xml/dom/xmlengxformsinstancemap.h",
+        "include/native/xml/dom/xmlengxpath.h",
+        "include/native/xml/dom/xmlengxpathconfiguration.h",
+        "include/native/xml/dom/xmlengxpatherrors.h",
+        "include/native/xml/dom/xmlengxpathevaluationcontext.h",
+        "include/native/xml/dom/xmlengxpathevaluator.h",
+        "include/native/xml/dom/xmlengxpathevaluator.inl",
+        "include/native/xml/dom/xmlengxpathexpression.h",
+        "include/native/xml/dom/xmlengxpathexpression.inl",
+        "include/native/xml/dom/xmlengxpathextensionfunction.h",
+        "include/native/xml/dom/xmlengxpathresult.h",
+        "include/native/xml/dom/xmlengxpathresult.inl",
+        "include/native/xml/dom/xmlengxpathutils.h",
+        "include/native/xml/dom/xmlengxpathutils.inl"
       ],
-      "ms_extensions": false,
-      "blocked": "Required public dependency Symbian::XmlEngine is blocked: Public header export not established: libxml2/libxml/parser.h"
+      "ms_extensions": false
     },
     {
       "target": "XmlEngine",
       "dll": "xmlengine.dll",
       "headers": [
-        "libxml2/libxml/parser.h"
+        "stdapis/libxml2/libxml2_c14n.h",
+        "stdapis/libxml2/libxml2_chvalid.h",
+        "stdapis/libxml2/libxml2_dict.h",
+        "stdapis/libxml2/libxml2_encoding.h",
+        "stdapis/libxml2/libxml2_entities.h",
+        "stdapis/libxml2/libxml2_globals.h",
+        "stdapis/libxml2/libxml2_hash.h",
+        "stdapis/libxml2/libxml2_htmlparser.h",
+        "stdapis/libxml2/libxml2_htmltree.h",
+        "stdapis/libxml2/libxml2_list.h",
+        "stdapis/libxml2/libxml2_modules.h",
+        "stdapis/libxml2/libxml2_parser.h",
+        "stdapis/libxml2/libxml2_parserinternals.h",
+        "stdapis/libxml2/libxml2_sax.h",
+        "stdapis/libxml2/libxml2_sax2.h",
+        "stdapis/libxml2/libxml2_schemasinternals.h",
+        "stdapis/libxml2/libxml2_threads.h",
+        "stdapis/libxml2/libxml2_tree.h",
+        "stdapis/libxml2/libxml2_uri.h",
+        "stdapis/libxml2/libxml2_valid.h",
+        "stdapis/libxml2/libxml2_xinclude.h",
+        "stdapis/libxml2/libxml2_xlink.h",
+        "stdapis/libxml2/libxml2_xmlerror.h",
+        "stdapis/libxml2/libxml2_xmlexports.h",
+        "stdapis/libxml2/libxml2_xmlio.h",
+        "stdapis/libxml2/libxml2_xmlmemory.h",
+        "stdapis/libxml2/libxml2_xmlreader.h",
+        "stdapis/libxml2/libxml2_xmlsave.h",
+        "stdapis/libxml2/libxml2_xmlschemas.h",
+        "stdapis/libxml2/libxml2_xmlschemasglobals.h",
+        "stdapis/libxml2/libxml2_xmlschemastypes.h",
+        "stdapis/libxml2/libxml2_xmlstring.h",
+        "stdapis/libxml2/libxml2_xmlversion.h",
+        "stdapis/libxml2/libxml2_xmlwriter.h",
+        "stdapis/libxml2/libxml2_xpath.h",
+        "stdapis/libxml2/libxml2_xpathinternals.h",
+        "stdapis/libxml2/libxml2_xpointer.h",
+        "stdapis/libxml2/xmlengconfig.h",
+        "stdapis/libxml2/xmlengxeconfig.h"
       ],
       "dependencies": [
-        "C"
+        "OpenC"
       ],
       "classification": "public_base_platform",
       "availability": "unknown_firmware",
@@ -7139,8 +7345,49 @@
         "libm",
         "euser"
       ],
-      "blocked": "Public header export not established: libxml2/libxml/parser.h",
-      "header_payloads": [],
+      "header_payloads": [
+        "include/native/stdapis/libxml2/libxml2_c14n.h",
+        "include/native/stdapis/libxml2/libxml2_chvalid.h",
+        "include/native/stdapis/libxml2/libxml2_dict.h",
+        "include/native/stdapis/libxml2/libxml2_encoding.h",
+        "include/native/stdapis/libxml2/libxml2_entities.h",
+        "include/native/stdapis/libxml2/libxml2_globals.h",
+        "include/native/stdapis/libxml2/libxml2_hash.h",
+        "include/native/stdapis/libxml2/libxml2_htmlparser.h",
+        "include/native/stdapis/libxml2/libxml2_htmltree.h",
+        "include/native/stdapis/libxml2/libxml2_list.h",
+        "include/native/stdapis/libxml2/libxml2_modules.h",
+        "include/native/stdapis/libxml2/libxml2_parser.h",
+        "include/native/stdapis/libxml2/libxml2_parserinternals.h",
+        "include/native/stdapis/libxml2/libxml2_sax.h",
+        "include/native/stdapis/libxml2/libxml2_sax2.h",
+        "include/native/stdapis/libxml2/libxml2_schemasinternals.h",
+        "include/native/stdapis/libxml2/libxml2_threads.h",
+        "include/native/stdapis/libxml2/libxml2_tree.h",
+        "include/native/stdapis/libxml2/libxml2_uri.h",
+        "include/native/stdapis/libxml2/libxml2_valid.h",
+        "include/native/stdapis/libxml2/libxml2_xinclude.h",
+        "include/native/stdapis/libxml2/libxml2_xlink.h",
+        "include/native/stdapis/libxml2/libxml2_xmlerror.h",
+        "include/native/stdapis/libxml2/libxml2_xmlexports.h",
+        "include/native/stdapis/libxml2/libxml2_xmlio.h",
+        "include/native/stdapis/libxml2/libxml2_xmlmemory.h",
+        "include/native/stdapis/libxml2/libxml2_xmlreader.h",
+        "include/native/stdapis/libxml2/libxml2_xmlsave.h",
+        "include/native/stdapis/libxml2/libxml2_xmlschemas.h",
+        "include/native/stdapis/libxml2/libxml2_xmlschemasglobals.h",
+        "include/native/stdapis/libxml2/libxml2_xmlschemastypes.h",
+        "include/native/stdapis/libxml2/libxml2_xmlstring.h",
+        "include/native/stdapis/libxml2/libxml2_xmlversion.h",
+        "include/native/stdapis/libxml2/libxml2_xmlwriter.h",
+        "include/native/stdapis/libxml2/libxml2_xpath.h",
+        "include/native/stdapis/libxml2/libxml2_xpathinternals.h",
+        "include/native/stdapis/libxml2/libxml2_xpointer.h",
+        "include/native/stdapis/libxml2/xmlengconfig.h",
+        "include/native/stdapis/libxml2/xmlengtriodef.h",
+        "include/native/stdapis/libxml2/xmlengtrionan.h",
+        "include/native/stdapis/libxml2/xmlengxeconfig.h"
+      ],
       "ms_extensions": false
     },
     {
@@ -8940,6 +9187,152 @@
         "include/native/sipprofileservercrkeys.h",
         "include/native/sipprofiletypeinfo.h",
         "include/native/sipregistrationcontext.h"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "XmlEngineUtils",
+      "dll": "xmlengineutils.dll",
+      "headers": [
+        "xml/utils/xmlengmem.h",
+        "xml/utils/xmlengutils.h",
+        "xml/utils/xmlengxestd.h",
+        "xml/utils/xmlengxestrings.h",
+        "xml/utils/xmlengxestrings.inl"
+      ],
+      "dependencies": [
+        "XmlEngine",
+        "CharConv"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "xmlsrv/xml/libxml2libs/eabi/xmlengineutils.def",
+        "sha256": "57ec02ff582ac6dce4085e0f1f4f32f83087edc598d03ab184bcb5fa89e6b231",
+        "destination": "share/symbian/native/defs/xmlengineutils.dll.def"
+      },
+      "mmp": "xmlsrv/xml/libxml2libs/group/xmlengineutils.mmp",
+      "implementation_dependencies": [
+        "libc",
+        "euser",
+        "charconv",
+        "xmlengine"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32lang.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/xml/utils/xmlengmem.h",
+        "include/native/xml/utils/xmlengutils.h",
+        "include/native/xml/utils/xmlengxestd.h",
+        "include/native/xml/utils/xmlengxestrings.h",
+        "include/native/xml/utils/xmlengxestrings.inl"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "XmlSerializer",
+      "dll": "xmlengineserializer.dll",
+      "headers": [
+        "xml/dom/xmlengdeserializer.h",
+        "xml/dom/xmlengdeserializerdom.h",
+        "xml/dom/xmlengextendedcontenthandler.h",
+        "xml/dom/xmlengparsingoptions.h",
+        "xml/dom/xmlengserializeerrors.h",
+        "xml/dom/xmlengserializer.h"
+      ],
+      "dependencies": [
+        "XmlDom",
+        "XmlEngineUtils",
+        "Xml",
+        "Bafl",
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "xmlsrv/xml/xmldomandxpath/eabi/xmlengineserializer.def",
+        "sha256": "d018d0da85e909ec1d5e8e6afd800f1b9429dea8b096ad4fb0d1194cfa8887be",
+        "destination": "share/symbian/native/defs/xmlengineserializer.dll.def"
+      },
+      "mmp": "xmlsrv/xml/xmldomandxpath/group/xmlengineserializer.mmp",
+      "implementation_dependencies": [
+        "libc",
+        "euser",
+        "efsrv",
+        "bafl",
+        "xmlengine",
+        "xmlengineutils",
+        "xmlenginedom",
+        "multipartparser",
+        "ezlib",
+        "xmlframework",
+        "bsul",
+        "sysutil"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32lang.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/stringpool.h",
+        "include/native/stringpool.inl",
+        "include/native/stringpoolerr.h",
+        "include/native/xml/attribute.h",
+        "include/native/xml/contenthandler.h",
+        "include/native/xml/contentprocessoruids.h",
+        "include/native/xml/dom/xmlengdatacontainer.h",
+        "include/native/xml/dom/xmlengdatacontainer.inl",
+        "include/native/xml/dom/xmlengdeserializer.h",
+        "include/native/xml/dom/xmlengdeserializerdom.h",
+        "include/native/xml/dom/xmlengextendedcontenthandler.h",
+        "include/native/xml/dom/xmlengnode.h",
+        "include/native/xml/dom/xmlengnode.inl",
+        "include/native/xml/dom/xmlengparsingoptions.h",
+        "include/native/xml/dom/xmlengserializationoptions.h",
+        "include/native/xml/dom/xmlengserializeerrors.h",
+        "include/native/xml/dom/xmlengserializer.h",
+        "include/native/xml/parser.h",
+        "include/native/xml/taginfo.h"
       ],
       "ms_extensions": false
     },
@@ -27827,7 +28220,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ],
       "aliases": [
         "include/native/E32BASE.H"
@@ -27967,7 +28362,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -28108,7 +28505,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -28259,7 +28658,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -28400,7 +28801,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -28541,7 +28944,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -28686,7 +29091,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -28827,7 +29234,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -28968,7 +29377,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -29109,7 +29520,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -29196,6 +29609,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -29337,7 +29751,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -29478,7 +29894,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -29684,7 +30102,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ],
       "aliases": [
         "include/native/e32std.H"
@@ -29828,7 +30248,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -29905,6 +30327,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -29982,6 +30405,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -30059,6 +30483,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -30208,6 +30633,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -30282,6 +30708,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -30358,6 +30785,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -30434,6 +30862,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -30510,6 +30939,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -42246,7 +42676,8 @@
         "SipCodec",
         "StringPool",
         "Uri",
-        "Xml"
+        "Xml",
+        "XmlSerializer"
       ]
     },
     {
@@ -42268,7 +42699,8 @@
         "SipCodec",
         "StringPool",
         "Uri",
-        "Xml"
+        "Xml",
+        "XmlSerializer"
       ]
     },
     {
@@ -42676,7 +43108,8 @@
         "Native_eikcdlg",
         "Native_eikctl",
         "TextLayout",
-        "Video"
+        "Video",
+        "Xml"
       ]
     },
     {
@@ -42720,7 +43153,8 @@
         "Native_eikcdlg",
         "Native_eikctl",
         "TextLayout",
-        "Video"
+        "Video",
+        "Xml"
       ]
     },
     {
@@ -49170,7 +49604,8 @@
         "TextLayout",
         "Video",
         "X500",
-        "X509"
+        "X509",
+        "Xml"
       ]
     },
     {
@@ -49234,7 +49669,8 @@
         "TextLayout",
         "Video",
         "X500",
-        "X509"
+        "X509",
+        "Xml"
       ]
     },
     {
@@ -49338,7 +49774,8 @@
         "Native_stereowideningutility",
         "SipCodec",
         "StreamsNative",
-        "Video"
+        "Video",
+        "Xml"
       ]
     },
     {
@@ -49386,7 +49823,8 @@
         "Native_stereowideningutility",
         "SipCodec",
         "StreamsNative",
-        "Video"
+        "Video",
+        "Xml"
       ]
     },
     {
@@ -49449,7 +49887,8 @@
         "TextLayout",
         "Video",
         "X500",
-        "X509"
+        "X509",
+        "Xml"
       ]
     },
     {
@@ -49512,7 +49951,8 @@
         "TextLayout",
         "Video",
         "X500",
-        "X509"
+        "X509",
+        "Xml"
       ]
     },
     {
@@ -49575,7 +50015,8 @@
         "TextLayout",
         "Video",
         "X500",
-        "X509"
+        "X509",
+        "Xml"
       ]
     },
     {
@@ -49638,7 +50079,8 @@
         "TextLayout",
         "Video",
         "X500",
-        "X509"
+        "X509",
+        "Xml"
       ]
     },
     {
@@ -49726,7 +50168,8 @@
         "TextLayout",
         "Video",
         "X500",
-        "X509"
+        "X509",
+        "Xml"
       ]
     },
     {
@@ -49814,7 +50257,8 @@
         "TextLayout",
         "Video",
         "X500",
-        "X509"
+        "X509",
+        "Xml"
       ]
     },
     {
@@ -49877,7 +50321,8 @@
         "TextLayout",
         "Video",
         "X500",
-        "X509"
+        "X509",
+        "Xml"
       ]
     },
     {
@@ -49940,7 +50385,8 @@
         "TextLayout",
         "Video",
         "X500",
-        "X509"
+        "X509",
+        "Xml"
       ]
     },
     {
@@ -50037,7 +50483,8 @@
         "TextLayout",
         "Video",
         "X500",
-        "X509"
+        "X509",
+        "Xml"
       ]
     },
     {
@@ -50134,7 +50581,8 @@
         "TextLayout",
         "Video",
         "X500",
-        "X509"
+        "X509",
+        "Xml"
       ]
     },
     {
@@ -54103,7 +54551,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6230a2f41e54015b26ee45976ff4f5e653a8b0058d69da96bba90b11e2d8ab3f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_valid.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_parser.h",
@@ -54113,7 +54564,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "54527d50150f0fbfd38de28d9966505bcce70b90fade79533bcdc5f0ed2130ab",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_parser.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_sax.h",
@@ -54123,7 +54577,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "897cbcc5b20138dcf2d63c2c3e4a6127f25d4553faf26a461e8121091e196f89",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_sax.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_tree.h",
@@ -54133,7 +54590,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "b7aa05dfbe8c2257665fab2189be0832cbcf1e2c11a5217b8188b5fab003f7ab",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_tree.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_entities.h",
@@ -54143,7 +54603,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "453c75efaa843365ff230a429cf4d8d989ad83e88dc506477c886c1c40907a69",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_entities.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_sax2.h",
@@ -54153,7 +54616,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5ea437432aadd9d373035b006f7c0b627f0fa573b0f517c856e831d9cfddaad0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_sax2.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_parserinternals.h",
@@ -54163,7 +54629,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "b09027eba2601c66b6c23ce972fe5b77266eeac0bddf2de5433e484175a3c296",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_parserinternals.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/xmlengxeconfig.h",
@@ -54173,17 +54642,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "b88dc22a7ef0c1ac0e4fdfa2a82fe25735cbf41e0976273603b11cdaf0627a25",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
-    },
-    {
-      "include": "stdapis/libxml2/xmlengtriodef.h",
-      "source": "xmlsrv/xml/libxml2libs/inc/libxml2/xmlengtriodef.h",
-      "manifest": "xmlsrv/xml/libxml2libs/group/bld.inf",
-      "declaration": "../inc/libxml2/xmlengtriodef.h     SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(stdapis/libxml2/xmlengtriodef.h)",
-      "conditions": [],
-      "classification": "public_base_platform",
-      "sha256": "f062f9489faf7a46bbdaf874d75c48a74c70912b8305fe01c4a3f353dd8656e7",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/xmlengxeconfig.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/xmlengconfig.h",
@@ -54193,7 +54655,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "1c596f9329d192d8bf45f068f3190f12b1fbafbecab3448f39e23afd608d4e3c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/xmlengconfig.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xmlstring.h",
@@ -54203,7 +54668,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f0812dd903308e1b224417368d3caf5280c547a73dddef1945987384e8b1c93d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xmlstring.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_list.h",
@@ -54213,7 +54681,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "7254df0609fcaf6329842ad9c5dafa7753b97bc3bad041b875834a9397c15286",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_list.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xmlio.h",
@@ -54223,7 +54694,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "9189102ded566cc2936aa4143938f3f3f9c779a056cec5e5a058c7ea29feb0a0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xmlio.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xmlversion.h",
@@ -54233,7 +54707,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "51060747b1324c74831e4cd31c91d90343ca11f9f0bc7ca2a3745b6aac440556",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xmlversion.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_encoding.h",
@@ -54243,7 +54720,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "39dd93b76dfcb0625b636035dc6bde765e5425106536fa95b43cb716ba480c3c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_encoding.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xmlmemory.h",
@@ -54253,7 +54733,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "496cc587dc96b1a9bb0f38e8c6280416a3eb6f75faba2dbec5c3a3364e529d48",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xmlmemory.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_globals.h",
@@ -54263,7 +54746,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "214f618b9d33c120a75f2281bceb58fa8274fb39a3ddc4c47db0ddbfa221cffb",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_globals.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xmlexports.h",
@@ -54273,17 +54759,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "eab3394cf1c61f345469e3d6f55295b51a1982d632e4a461385e81faa1cd8044",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
-    },
-    {
-      "include": "stdapis/libxml2/xmlengtrionan.h",
-      "source": "xmlsrv/xml/libxml2libs/inc/libxml2/xmlengtrionan.h",
-      "manifest": "xmlsrv/xml/libxml2libs/group/bld.inf",
-      "declaration": "../inc/libxml2/xmlengtrionan.h     SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(stdapis/libxml2/xmlengtrionan.h)",
-      "conditions": [],
-      "classification": "public_base_platform",
-      "sha256": "460d523fe4339408d56d41715402f74d893623a9d91210bb029474e12c888ddf",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xmlexports.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xmlerror.h",
@@ -54293,7 +54772,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "cadf4f13743125d46203914c0f073945d5910bf8f4bc97644a2b9de51fdb001d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xmlerror.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_chvalid.h",
@@ -54303,7 +54785,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "1024c2d2ac98e70b9b3da169727034825615095b364133b4834fb8e4ce5dde37",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_chvalid.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_modules.h",
@@ -54313,7 +54798,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c4966026a251a64e74f0ea4974fb4c2ade0a8167e5f4eeee5717adc2662e7eeb",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_modules.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_dict.h",
@@ -54323,7 +54811,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "2cdc6b352a6294b00682cbbf62b5768c53cd894a6ccfc901d6006c4fae15ca64",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_dict.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_threads.h",
@@ -54333,7 +54824,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "cd9d115d331cb5b0ea7d25e3406c4abb85324dc33c4fe77c7452c49333a98ac0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_threads.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_hash.h",
@@ -54343,7 +54837,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "40135fc19807730aae9071dcadbd74150ad4096ba161f367f0d5b4c534b55727",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_hash.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xlink.h",
@@ -54353,7 +54850,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "14b920cdfe52e35875d765c08c8bc7cbc417e4cdc15413ac8aa087b9add63353",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xlink.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xmlschemastypes.h",
@@ -54363,7 +54863,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "4dbf4d0ba39fd39f5ce7c099a6f2ceaee46382e96dbbbbf5ef75866bd33e1b1a",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xmlschemastypes.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_schemasinternals.h",
@@ -54372,8 +54875,19 @@
       "declaration": "../inc/libxml2/libxml2_schemasinternals.h     SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(stdapis/libxml2/libxml2_schemasinternals.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "fffdc42c9e438b961c2171849d13292c7f9e34994d5da94a19694d709f95ed63",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "de71a9054e82879c5dfd1994c793b6e2ea7dad3d0ca859ccc5358aa220610188",
+      "source_sha256": "fffdc42c9e438b961c2171849d13292c7f9e34994d5da94a19694d709f95ed63",
+      "compatibility_edits": [
+        {
+          "before": "#define XML_SCHEMA_INTERNALS_H",
+          "after": "#define XML_SCHEMA_INTERNALS_H\n#include <stdapis/libxml2/libxml2_tree.h>",
+          "reason": "The original public libxml2 schema internals header uses xmlNodePtr and xmlDocPtr without including their exported tree declaration header."
+        }
+      ],
+      "destination": "include/native/stdapis/libxml2/libxml2_schemasinternals.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xmlschemasglobals.h",
@@ -54383,7 +54897,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0f0e923493a29ec6495f8c31a9ecfabe585e236afb9ff7dc4fe059a808b1b72d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xmlschemasglobals.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xmlschemas.h",
@@ -54393,7 +54910,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "7be953015e066b12614ad510ec07aaafa237bd9c81f0946399a0184b9585b135",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xmlschemas.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xpathinternals.h",
@@ -54403,7 +54923,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "9ef7994e3ff04439fa1facf7255040816c539f77315a3f03e4b80f5b2bade4be",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xpathinternals.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xpath.h",
@@ -54413,7 +54936,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "9ce34d50aa1d9376b8df299e0f86d22efb1bd50137d1dd9cc5f5bfd3b6b564b0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xpath.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_c14n.h",
@@ -54423,7 +54949,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0c0f6df3f03f1ce110a5008fd642bba1da547119e3021e0c4ef245eaa975fe5d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_c14n.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xpointer.h",
@@ -54433,7 +54962,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "319784445132674f74e5d05e96fc7a8cc71f5b3294e12303fae6c6c9c4f02d0c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xpointer.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_uri.h",
@@ -54443,7 +54975,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "cfb2324c6317d24945110a3d22e3bd4dd2b22895198952f66af9062eb5f482eb",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_uri.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xmlsave.h",
@@ -54453,7 +54988,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "bedeb6f9d3d74fb76edd7253de5b0242b9346e969c4677f1ed75cfc46c7e5003",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xmlsave.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_htmlparser.h",
@@ -54463,7 +55001,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0a23f7b001120f35a19afa0f1784d1ff72490f410546171ae71181a37d339216",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_htmlparser.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_htmltree.h",
@@ -54473,7 +55014,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "bacae29107585515521e7289ebf12968b3cd352f8c9988574810e90be1501647",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_htmltree.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xinclude.h",
@@ -54483,7 +55027,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c7798c545f62198a20553d3ddbd4de4615b773982799b7cfa97d5700199ad3bf",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xinclude.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xmlreader.h",
@@ -54493,7 +55040,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "1806519c2e2a78abf02050babbabeaa4551f949a84c9c1669a8a19b8b1b9fac0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xmlreader.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "stdapis/libxml2/libxml2_xmlwriter.h",
@@ -54503,7 +55053,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "545061bc3f7c2069f10e90f627535c56a95038a2b1bbf76be0e283397f1c547c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/stdapis/libxml2/libxml2_xmlwriter.h",
+      "targets": [
+        "XmlEngine"
+      ]
     },
     {
       "include": "xml/utils/xmlengxestd.h",
@@ -54513,7 +55066,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "31c6c9627712d39e56ccb6123cdfc25c6044e52fe80c181eb59e3f322656eaee",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/utils/xmlengxestd.h",
+      "targets": [
+        "XmlEngineUtils"
+      ]
     },
     {
       "include": "xml/utils/xmlengxestrings.h",
@@ -54523,7 +55079,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "87671bd97f43e6f789f097df518d94f7cf9a449ba79b595f516d0b8f2eaaffc1",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/utils/xmlengxestrings.h",
+      "targets": [
+        "XmlEngineUtils"
+      ]
     },
     {
       "include": "xml/utils/xmlengmem.h",
@@ -54533,7 +55092,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "398947f1449ea99bbd8ed07a808f43a874315dbcbe3e0f9006437f6fac6e6da5",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/utils/xmlengmem.h",
+      "targets": [
+        "XmlEngineUtils"
+      ]
     },
     {
       "include": "xml/utils/xmlengutils.h",
@@ -54543,7 +55105,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d76e6fea881a592bcb3eafdbd9611c73ab2532cb87b4824bddcf587feffd35ba",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/utils/xmlengutils.h",
+      "targets": [
+        "XmlEngineUtils"
+      ]
     },
     {
       "include": "xml/utils/xmlengxestrings.inl",
@@ -54553,7 +55118,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d79b73a8311386b490dce8757f1a3eceda0eaee7b9cad56ffeb853beeda79be8",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/utils/xmlengxestrings.inl",
+      "targets": [
+        "XmlEngineUtils"
+      ]
     },
     {
       "include": "xml/dom/xmlengdom.h",
@@ -54563,7 +55131,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "32bda1a0e253369d8c16d739f7f7601b43d34a588912995c62ff0b96bcd99fa0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengdom.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengattr.h",
@@ -54573,7 +55144,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "75c7c04f85bf53b66931e205586b8c9421da5fd5cda9a615cf7ef3e37288758f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengattr.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengnodelist_impl.h",
@@ -54583,7 +55157,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a8b999bed6ea10854b2456f30554a8c9f8a57e3a732cbc0f9e6ea9295149295d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengnodelist_impl.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengnode.h",
@@ -54595,7 +55172,8 @@
       "sha256": "32b4e4926413d224c42b439d7419d415c090caf6211fe73b739bce84bac39abd",
       "destination": "include/native/xml/dom/xmlengnode.h",
       "targets": [
-        "XmlDom"
+        "XmlDom",
+        "XmlSerializer"
       ]
     },
     {
@@ -54606,7 +55184,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d8527cf5c883074d103b3184100ed9bb26576e088dbce0e5a0ab67bffcd78fa1",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengelement.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengnodelist.inl",
@@ -54616,7 +55197,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "3e398b2e5f0d1e19375a9f8b89dd80c1f98f784f804f529303fa829b624c097a",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengnodelist.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengbinarycontainer.h",
@@ -54626,7 +55210,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "99fe6c46079ca5c35aa2bd19d518720fee66d1d8c080dd778a678a5ba9a114c3",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengbinarycontainer.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlenguserdata.h",
@@ -54636,7 +55223,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "ab86dd562f786ca01a78d3606742a155266b6e9a12759f595ab88caff75810cf",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlenguserdata.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengdomimplementation.h",
@@ -54646,7 +55236,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "67b4033f2a5db342e35ea32d78b1ee97d1b72f1f78a5f0df2fa55618c6502533",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengdomimplementation.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengprocessinginstruction.inl",
@@ -54656,7 +55249,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "806720c16a1ee1728951cea2856102d8b7df72f489e38019e99d26f981af3dbe",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengprocessinginstruction.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengdatacontainer.h",
@@ -54666,7 +55262,11 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f8e05c9e7af460098f036cb89d0860aad3ab6d699272681429d0560168f931bb",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengdatacontainer.h",
+      "targets": [
+        "XmlDom",
+        "XmlSerializer"
+      ]
     },
     {
       "include": "xml/dom/xmlengdataserializer.h",
@@ -54676,7 +55276,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d7ba3ff1a443682fa712bec6ec066a3d0e3c2680edb1994275ebf0c0fd3d9002",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengdataserializer.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengdocumentfragment.inl",
@@ -54686,7 +55289,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d6f6cbb08649564ec6bc551f06c3043885079f73ce3f04b38537b029661b677d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengdocumentfragment.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengtext.inl",
@@ -54696,7 +55302,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "fee7768b4d0b768da021a4acc5c311e242dca05a75c8a66a0f2ae93dbd00ce46",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengtext.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengfilecontainer.inl",
@@ -54706,7 +55315,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "92ac73b9698c2fea0762f925f263baad9ebbc0cce3a92b927f23aa757ae01e2b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengfilecontainer.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengnodelist.h",
@@ -54716,7 +55328,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "699a655671813bdaec2dd9db3433c584c983a370c7641b8581aefa1d4050a2ae",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengnodelist.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengnamespace.h",
@@ -54726,7 +55341,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "833062a5126c16d3f16dde7fac7a0b75fcf212b0412858227f838ebc43a94104",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengnamespace.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengdomutils.h",
@@ -54736,7 +55354,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "4b2295cd59b71e0f5935298ba5ce0000eef295f80aecb05bf0b4d55959177e33",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengdomutils.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengcharacterdata.h",
@@ -54746,7 +55367,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a3685704f150ddc630b6ede3ce1ee10b894daf63dfbf3a60fe786fabcac4e607",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengcharacterdata.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengdatacontainer.inl",
@@ -54756,7 +55380,11 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "9227ae4bf0a216e511088b23eabf999d95b28e07eaed8c719568ebcf96eda142",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengdatacontainer.inl",
+      "targets": [
+        "XmlDom",
+        "XmlSerializer"
+      ]
     },
     {
       "include": "xml/dom/xmlengserializationoptions.h",
@@ -54768,7 +55396,8 @@
       "sha256": "8f918db8f3baaa531d4538f81d4a9ae944d29f59b45ae72a52260a057095becd",
       "destination": "include/native/xml/dom/xmlengserializationoptions.h",
       "targets": [
-        "XmlDom"
+        "XmlDom",
+        "XmlSerializer"
       ]
     },
     {
@@ -54779,7 +55408,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "1fc75fc411008a2024bca9cbbc21c73e0ccc166554101e61da3272a401a2a306",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengcomment.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengchunkcontainer.h",
@@ -54789,7 +55421,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "41818fabe900b394500800aa35f7f28c271f5e8e3dc954582ca56f1bbf3ebfc9",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengchunkcontainer.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengerrors.h",
@@ -54799,7 +55434,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "dfcfdfbb2db430fc540b551f5d5a7d4bce67639a93d324f5a8a2d806ae026eaf",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengerrors.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengdocument.inl",
@@ -54822,7 +55460,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "132270e9a68f8ee4e91c1b99dba3fa6b262f043974d8e6a813243c20214d9912",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengentityreference.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengbinarycontainer.inl",
@@ -54832,7 +55473,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d54fce76717947eaf4a134b7bc1dd43808295a9f05da417ccbcdc16d0f3b3075",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengbinarycontainer.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengdocument.h",
@@ -54855,7 +55499,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "89fab8655ffded4bdf585591ac346e4666f53e764e6034d4ecd8930024328b52",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengcomment.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengnamespace.inl",
@@ -54865,7 +55512,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "24e9179dca905606f5a8d0ad3db341e1e927e546fba80fb456203be6b6632954",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengnamespace.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengnode.inl",
@@ -54877,7 +55527,8 @@
       "sha256": "ba913220652a8a5b041a1134276f01e301a59aadd81459f8e9ee48c0a2332e08",
       "destination": "include/native/xml/dom/xmlengnode.inl",
       "targets": [
-        "XmlDom"
+        "XmlDom",
+        "XmlSerializer"
       ]
     },
     {
@@ -54888,7 +55539,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0709b916887430847c438ae2243107da2ceed216a890215100edaf1b0f971fa1",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengentityreference.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengdocumentfragment.h",
@@ -54898,7 +55552,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "7a1a34a6b49e9cd6bb38fabcfc30b8067ec10224b9f8d891adf61679bc4dbacc",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengdocumentfragment.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengcdatasection.inl",
@@ -54908,7 +55565,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "89548ac5f884d1a2445b8697ed2f48065a6b0d1ce07173ace4071af188eea9d6",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengcdatasection.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengcdatasection.h",
@@ -54918,7 +55578,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "3326a77619ea58c247cd980b5f456f1d14f3c5b8c4fd74237eda561f5853b3bf",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengcdatasection.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengdomparser.h",
@@ -54928,7 +55591,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "746f665a3d172ac391b7d0093cc4e5cb669a859d3e498556b75d3bc9b06845ba",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengdomparser.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengnodefilter.h",
@@ -54938,7 +55604,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "61923fa2395e9b9a079027a63f517622d47607c33fb884a7b1a98f30ac837d78",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengnodefilter.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengprocessinginstruction.h",
@@ -54948,7 +55617,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e199b04f04b2ee3eb7ce512e5ca848c9df2d45d2bd37328de7cdae45001c461c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengprocessinginstruction.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengchunkcontainer.inl",
@@ -54958,7 +55630,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "3ad4d3928cad8da1f5090d5f5a324b1abef0b82a9fe1dd6b9d75be9e96632406",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengchunkcontainer.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengtext.h",
@@ -54968,7 +55643,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "4a0ca2a5945655a4e631e0ff9ac8559e2dd2a7512229bfb3816dacc6be520ea5",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengtext.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengoutputstream.h",
@@ -54978,7 +55656,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "7ee8ffd885108d51506daedbdd67769b4a6d3c4fe3f24f8987ab7532249e44f3",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengoutputstream.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengfilecontainer.h",
@@ -54988,7 +55669,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "b22c5076887c2253b4046bd8ab9046db45d4e62455de6666c47564ad3ee6ba8b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengfilecontainer.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengelement.h",
@@ -54998,7 +55682,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "8a8b996ba6df8342fc2bd47989158b8889aa4eebd6ce5fa652474ddccd5a4b88",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengelement.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengcharacterdata.inl",
@@ -55008,7 +55695,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "31b6bc7df4bb4324f8f4fa2156377f3906c3b5b6efc8c15f45ddda69d3891867",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengcharacterdata.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengattr.inl",
@@ -55018,7 +55708,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0522cf12cc88624bd82f15d3445a5c34d8063d9910f5cc1f73dfea9c6634fb56",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengattr.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengxpath.h",
@@ -55028,7 +55721,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "ac036092a03c9896ad98729ca4dcae90ad50b6be246a47eda4e259d3015d57ac",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengxpath.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengxformsinstancemap.h",
@@ -55038,7 +55734,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "651fb88e8cba6dacb3e135453aa5841645de332186b22e27146c052604a2d844",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengxformsinstancemap.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengxpathevaluator.h",
@@ -55048,7 +55747,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "bc96880d639df3cbdc5666893fdba9d2ef94e0f6ad45de61d25e5142a9b8ef2f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengxpathevaluator.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengxpathevaluator.inl",
@@ -55058,7 +55760,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "04c30a581b1b78577d23bcb378c80d0cdf04ea9fcdf542cb00a556ac355a947a",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengxpathevaluator.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengxpathevaluationcontext.h",
@@ -55068,7 +55773,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "be2b0610e440aba90bc6b2c6e437ed3b92bac711900b8f7ebc0be106e8658418",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengxpathevaluationcontext.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengxpathexpression.inl",
@@ -55078,7 +55786,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c53be5c6903863e0f1ee98a3520a7290c0d57798301b91e87cb60e88e9b4a4e0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengxpathexpression.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengxpathextensionfunction.h",
@@ -55088,7 +55799,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f51d474c609f81d0f98313a742536f0c024952e51ae185557b68ac3f97f0a897",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengxpathextensionfunction.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengnodeset.h",
@@ -55098,7 +55812,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "8cf22946f8876c225ea3fb4c750bcc752c6ae7eba9e004aab2ab21acd9f087bf",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengnodeset.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengxpathresult.inl",
@@ -55108,7 +55825,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c09487489449581280ab29ce5f742d34a65c84571311561278c1e466ce4217c8",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengxpathresult.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengxpathutils.inl",
@@ -55118,7 +55838,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "cec2da60091f5e02a524e0c67feeabe52808c43e80f5833f5eb14aa535d330ca",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengxpathutils.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengxpathexpression.h",
@@ -55128,7 +55851,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "93007b52c5022ba839ee7fe601256af69a2ad2725a057b5006ed0c1b7dabfe45",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengxpathexpression.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengnodeset.inl",
@@ -55138,7 +55864,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "62c1b9ba522b3da222e5827fd0293c1b38d7812d4784f77da32fdd29df97ee90",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengnodeset.inl",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengxpathconfiguration.h",
@@ -55148,7 +55877,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "9db5d87980ad6e9f609e7467b49db85d2989c9d67714824c7c2b8dfdd16eae97",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengxpathconfiguration.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengnamespaceresolver.h",
@@ -55157,8 +55889,19 @@
       "declaration": "../inc/xpath/xmlengnamespaceresolver.h     SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(xml/dom/xmlengnamespaceresolver.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "e048d7bf1029a8becd55ab1becdc9f9c25602699a0527b5effb36dbfca0c6539",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "54087142e0df7971edf27d8678a195e19a86614d2f5d29978e0631f23c5258bd",
+      "source_sha256": "e048d7bf1029a8becd55ab1becdc9f9c25602699a0527b5effb36dbfca0c6539",
+      "compatibility_edits": [
+        {
+          "before": "#define XMLENGNAMESPACERESOLVER_H",
+          "after": "#define XMLENGNAMESPACERESOLVER_H\n#include <e32std.h>",
+          "reason": "The original public XML namespace resolver uses TPtrC8 and TDesC8 without including their defining e32std.h header."
+        }
+      ],
+      "destination": "include/native/xml/dom/xmlengnamespaceresolver.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengxpathresult.h",
@@ -55168,7 +55911,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "633eb3c933bf6cd6fd428cf6b0aed12525d3defcfdb6974d3abaf768729d7e8d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengxpathresult.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengxpathutils.h",
@@ -55178,7 +55924,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6cbea8d603cd54561f1c3efae6d50c143f55afd11643879fe4675ae24853fdf1",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengxpathutils.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengxpatherrors.h",
@@ -55187,8 +55936,19 @@
       "declaration": "../inc/xpath/xmlengxpatherrors.h     SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(xml/dom/xmlengxpatherrors.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "01b1731c02222bae6499d2ec1fc23958f24bb4048df24e57c623a41c0d02fc98",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "7cae865a23446ae7842e1ed85a04e60015856dcee1c294f82fd0d64abc2639b1",
+      "source_sha256": "01b1731c02222bae6499d2ec1fc23958f24bb4048df24e57c623a41c0d02fc98",
+      "compatibility_edits": [
+        {
+          "before": "#define XMLENGDOMXPATHERRORS_H",
+          "after": "#define XMLENGDOMXPATHERRORS_H\n#include <e32std.h>",
+          "reason": "The original public XML XPath error constants use TInt without including its defining e32std.h header."
+        }
+      ],
+      "destination": "include/native/xml/dom/xmlengxpatherrors.h",
+      "targets": [
+        "XmlDom"
+      ]
     },
     {
       "include": "xml/dom/xmlengserializer.h",
@@ -55198,7 +55958,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "02ce021b21691375db538ffcee55db4f190775649c95b2e0e172dce7f6fa1820",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengserializer.h",
+      "targets": [
+        "XmlSerializer"
+      ]
     },
     {
       "include": "xml/dom/xmlengdeserializer.h",
@@ -55208,7 +55971,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "cfcdc1a71a342685b31d8aeb852d7a1b463d325ff3a7292267ac91dd3c90f37a",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengdeserializer.h",
+      "targets": [
+        "XmlSerializer"
+      ]
     },
     {
       "include": "xml/dom/xmlengextendedcontenthandler.h",
@@ -55218,7 +55984,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0a7527c4de3f391f9c36f7dffc470f949c742ce00a229ef682841c2b8fb3fab4",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengextendedcontenthandler.h",
+      "targets": [
+        "XmlSerializer"
+      ]
     },
     {
       "include": "xml/dom/xmlengdeserializerdom.h",
@@ -55228,7 +55997,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "9d10289f19df23398bd24c9d611defe00576a9f970d1bbdd96bd4bdfd7596d3b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengdeserializerdom.h",
+      "targets": [
+        "XmlSerializer"
+      ]
     },
     {
       "include": "xml/dom/xmlengparsingoptions.h",
@@ -55238,7 +56010,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0defd249478844feba60d1433ded81f6f7c6132c4657f11c679b58776baf8d4f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengparsingoptions.h",
+      "targets": [
+        "XmlSerializer"
+      ]
     },
     {
       "include": "xml/dom/xmlengserializeerrors.h",
@@ -55248,7 +56023,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "46d628fcab248a488abfe2cac0170461162fcae5377c2f2e8680ece34d8a2e9e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/dom/xmlengserializeerrors.h",
+      "targets": [
+        "XmlSerializer"
+      ]
     },
     {
       "include": "xml/attribute.h",
@@ -55260,7 +56038,8 @@
       "sha256": "b8e287b2aeb874a01dc34b938e9160dd7ab3daf50a18c0f7dbb99177e0dd0047",
       "destination": "include/native/xml/attribute.h",
       "targets": [
-        "Xml"
+        "Xml",
+        "XmlSerializer"
       ]
     },
     {
@@ -55273,7 +56052,8 @@
       "sha256": "984e6ef9605e5c4a169ee52a73880bac98f18629c8dbc8f32d701623faba8e9f",
       "destination": "include/native/xml/contenthandler.h",
       "targets": [
-        "Xml"
+        "Xml",
+        "XmlSerializer"
       ]
     },
     {
@@ -55286,7 +56066,8 @@
       "sha256": "bbb970939772680c640ca6b10a0a7c1a44cfc4da96ea47608a987344c0cb6332",
       "destination": "include/native/xml/contentprocessoruids.h",
       "targets": [
-        "Xml"
+        "Xml",
+        "XmlSerializer"
       ]
     },
     {
@@ -55297,7 +56078,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5c72ab7613a04586bd1e35355b1caaa5e5e0df5b2bdd9bdee8702a92083e3468",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/matchdata.h",
+      "targets": [
+        "Xml"
+      ]
     },
     {
       "include": "xml/parser.h",
@@ -55309,7 +56093,8 @@
       "sha256": "ac8106f32380b190a0e895d12325f3f75516a9a02fb2865900f9ea9c21401d73",
       "destination": "include/native/xml/parser.h",
       "targets": [
-        "Xml"
+        "Xml",
+        "XmlSerializer"
       ]
     },
     {
@@ -55320,7 +56105,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d95e89bfb47248f7b987e2b76c77292512405801d56ab20c521e5c2403c87505",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/parserfeature.h",
+      "targets": [
+        "Xml"
+      ]
     },
     {
       "include": "xml/stringdictionarycollection.h",
@@ -55330,7 +56118,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6710b2d39b628d1bdeff422bd8298fb9c7f5fc7e5d335f7f3873cc81e4438624",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/stringdictionarycollection.h",
+      "targets": [
+        "Xml"
+      ]
     },
     {
       "include": "xml/taginfo.h",
@@ -55342,7 +56133,8 @@
       "sha256": "b4b869def669aa91676f21e94d40c9855602f8be01f84f82818a608dd662296f",
       "destination": "include/native/xml/taginfo.h",
       "targets": [
-        "Xml"
+        "Xml",
+        "XmlSerializer"
       ]
     },
     {
@@ -55353,7 +56145,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a437672ff08ea958b983843383009c1c25173d74316040b4d7d0843a66854a63",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/wbxmlextensionhandler.h",
+      "targets": [
+        "Xml"
+      ]
     },
     {
       "include": "xml/xmlframeworkerrors.h",
@@ -55363,7 +56158,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "81641808935199b4b34d9cfa3a5225fff167ce61ff211cd9e8823ddfaaddebc5",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/xml/xmlframeworkerrors.h",
+      "targets": [
+        "Xml"
+      ]
     },
     {
       "include": "apacmdln.h",
@@ -59409,6 +60207,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "dadc99fa6a368522461709242d01b8f271f29abff676471a627a6466477d9438",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/MdaAudioSamplePlayer.h",
       "destination": "include/native/mmf/common/mmfdrmcustomcommands.h",
       "targets": [
         "Audio",
@@ -59425,6 +60225,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "28a828899880e741a20b49c4dfda2724d091ab6662bd53d560805f16736c06f0",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/MdaAudioSampleEditor.h",
       "destination": "include/native/mda/client/resource.h",
       "targets": [
         "Audio"
@@ -59438,6 +60240,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "a637c8be386313273b93fa2a99d22641d9e97fa263e72f86ae35098964bb99b2",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/VideoPlayer.h",
       "destination": "include/native/mmf/common/mmcaf.h",
       "targets": [
         "Audio",
@@ -59458,6 +60262,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "842dde1898069fa8abefb9913783623fe8e26d934d3de31875606c603400cf18",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/ControllerFramework/mmfcontroller.h",
       "destination": "include/native/mmf/plugin/mmfplugininterfaceuids.hrh",
       "targets": [
         "Audio",
@@ -59479,6 +60285,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "6dde4b1d19e9102ddbc6c057dba074b63d4f14974cfe335f01cc335574be7ad0",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/ControllerFramework/mmfcontroller.h",
       "destination": "include/native/mmf/common/mmfcontrollerextendeddata.h",
       "targets": [
         "Audio",
@@ -59500,6 +60308,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "283555fe92df2473da5a589bc698649483e49229af31cd83b013a5eef08aea40",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/ControllerFramework/mmfcontroller.h",
       "destination": "include/native/mmf/common/mmfcustomcommandparsermanager.h",
       "targets": [
         "Audio",
@@ -59521,6 +60331,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "5854d56826d2434d9328a1435abf9d6c0d4e3b1a71c4028ff814e6f5b8aaaf23",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/ControllerFramework/mmfstandardcustomcommands.h",
       "destination": "include/native/mmf/common/mmfstandardcustomcommandsenums.h",
       "targets": [
         "Audio",
@@ -59541,6 +60353,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "4722609b4f11e8aa59a51524954b62047d0ea1fe06991db9c6a8d73f004dc43c",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/ControllerFramework/mmfstandardcustomcommands.h",
       "destination": "include/native/mmf/common/mmfstandardcustomcommandsimpl.h",
       "targets": [
         "Audio",
@@ -59561,6 +60375,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "761b3d6e93c5bc558c0d710744b605aaf97d7d3db6c2a9b5d61ff82974805b0b",
+      "exposure": "required_textual_support",
+      "included_by": "mmimaging/imaging/imagingfws/inc_pub/ImageConversion.h",
       "destination": "include/native/icl/icl_uids.hrh",
       "targets": [
         "ImageConversion"
@@ -59574,6 +60390,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "afcdc80ab6fbc29ecb41a9abaf4d0f0c6c6c2793b08cd1b8a032e57d2996f642",
+      "exposure": "required_textual_support",
+      "included_by": "mmimaging/imaging/imagingfws/inc_pub/ImageConversion.h",
       "destination": "include/native/iclrecognizerutil.h",
       "targets": [
         "ImageConversion"
@@ -59587,6 +60405,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "7bbde75ab3003721a57efdc613c7eea66ba5ed5132b943668b78daec909a1c37",
+      "exposure": "required_textual_support",
+      "included_by": "graphics/fbs/fontandbitmapserver/inc/BITMAP.H",
       "destination": "include/native/graphics/bitmapuid.h",
       "targets": [
         "AppArc",
@@ -59622,6 +60442,8 @@
       ],
       "classification": "private_internal",
       "sha256": "ed3bd39c836161b8c1a73c7339810ebae4181299fa4f2e4a0ea1427087d3ddc3",
+      "exposure": "required_textual_support",
+      "included_by": "graphics/graphicsdeviceinterface/bitgdi/inc/BITSTD.H",
       "destination": "include/native/bitgdi/bitgcextradata.h",
       "targets": [
         "AppArc",
@@ -59652,6 +60474,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "4d1f5ec6fc50f503381b7d1474bbc3eab47ba9d49d95d067073927a143cbbc37",
+      "exposure": "required_textual_support",
+      "included_by": "textandloc-sdk/fontservices/fontstore/inc/OPENFONT.H",
       "destination": "include/native/graphics/openfontconstants.h",
       "targets": [
         "AppArc",
@@ -59687,6 +60511,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "d8fdb64bbcc5c1b653c66c2b9c7f5dfdbf9a54af873568691166f2b456da1c69",
+      "exposure": "required_textual_support",
+      "included_by": "textandloc-sdk/fontservices/fontstore/inc/OPENFONT.H",
       "destination": "include/native/graphics/openfontrasterizer.h",
       "targets": [
         "AppArc",
@@ -59722,6 +60548,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "62d4cb1d8bcd5835db108baf2a22cef312514416e008e6907c78bdb38fe98618",
+      "exposure": "required_textual_support",
+      "included_by": "textandloc-sdk/fontservices/fontstore/inc/OPENFONT.H",
       "destination": "include/native/graphics/openfontlinkedtypefacespecification.h",
       "targets": [
         "AppArc",
@@ -59757,6 +60585,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "96fa0765b9c8ae8dad89633c009244ffd3e5e3e8c38a000fd61ec16384c3aa51",
+      "exposure": "required_textual_support",
+      "included_by": "textandloc-sdk/fontservices/fontstore/inc/OPENFONT.H",
       "destination": "include/native/graphics/openfontlinkedtypefaceextension.h",
       "targets": [
         "AppArc",
@@ -59792,6 +60622,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "f12a97fec29024b00fabbd0dc2a3644a2a08af4b7382fbb533c1a6860d4f1ac2",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/lafagnosticuifoundation/cone/inc/COEMAIN.H",
       "destination": "include/native/graphics/cone/coescheduler.h",
       "targets": [
         "Avkon",
@@ -59816,6 +60648,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "b6042632a99d94dcb99d558959d0426d643405c3ab59d7440b2c34c7dbdba725",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/coreinc/EIKDOC.H",
       "destination": "include/native/savenotf.h",
       "targets": [
         "Avkon",
@@ -59830,6 +60664,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "5dc49ea4e10cb7368fc7adf7ff7f0e8171715b563e12bb2c7d40343337cfe206",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/coreinc/EIKDOC.H",
       "destination": "include/native/uikon/eikdefaulticondefs.h",
       "targets": [
         "Avkon",
@@ -59844,6 +60680,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "dc8dbc1e923a11ec06aeb72645e0199e2c0153bc3c0b140908ad42db0a4acdb2",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/coreinc/EIKENV.H",
       "destination": "include/native/uikon.hrh",
       "targets": [
         "Avkon",
@@ -59864,6 +60702,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "8ef8f17c77c5f0e3334ea22069dc1ce6d0c2c8eb25d018ca80427bde80864401",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/coreinc/EIKENV.H",
       "destination": "include/native/lafmain.h",
       "targets": [
         "Avkon",
@@ -59883,6 +60723,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "b96b3f0c8b8d6432e4386ac5b1526a937ead4cd2fe9d5b8890ddff2ad93aab37",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/coreinc/EIKENV.H",
       "destination": "include/native/eikpicturefactory.h",
       "targets": [
         "Avkon",
@@ -59902,6 +60744,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "071a7d6ddce49c23dfb9d9665c79d91d7eaffbc3fe3090af3eb8554137497c35",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/coreinc/EIKENV.H",
       "destination": "include/native/eikdgfty.h",
       "targets": [
         "Avkon",
@@ -59921,6 +60765,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "a25dbb15d0477676de11301ab2f4874c448e03b0054523f345a17595281a36e3",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/coreinc/EIKENV.H",
       "destination": "include/native/eiklibry.h",
       "targets": [
         "Avkon",
@@ -59940,6 +60786,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "33e7337a4aa507ce1104848724ab85f2cd575678cc273156f650c749dc05dd41",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/coreinc/EIKENV.H",
       "destination": "include/native/uikon/eikenvinterface.h",
       "targets": [
         "Avkon",
@@ -59959,6 +60807,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "980285aac0ed554f7bb669516bb948d73fc63d553261194478ccc32f35c3921c",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/classicui_plat/dialogs_api/inc/EIKDIALG.H",
       "destination": "include/native/gulftflg.hrh",
       "targets": [
         "Avkon",
@@ -59983,6 +60833,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "2ee748b42676f79c13e531b7ff5815d0c854341d8dd6cfeef77c75ef99b5ea68",
+      "exposure": "required_textual_support",
+      "included_by": "ossrv/lowlevellibsandfws/apputils/inc/BASSND.H",
       "destination": "include/native/bassnduid.h",
       "targets": [
         "Bafl"
@@ -59996,6 +60848,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "2cc7eeab0a52e7ceda12241e1ec6c364b79bc6470947b072555b358fc5b310df",
+      "exposure": "required_textual_support",
+      "included_by": "ossrv/lowlevellibsandfws/apputils/inc/stringpool.inl",
       "destination": "include/native/stringpoolerr.h",
       "targets": [
         "Bafl",
@@ -60007,7 +60861,8 @@
         "SipCodec",
         "StringPool",
         "Uri",
-        "Xml"
+        "Xml",
+        "XmlSerializer"
       ]
     },
     {
@@ -60021,6 +60876,8 @@
       ],
       "classification": "private_internal",
       "sha256": "3e82e32472bd00dcae3dbb9ffb336e12e466fa42d4b71714c0712679e4a4d754",
+      "exposure": "required_textual_support",
+      "included_by": "persistentdata/persistentstorage/store/INC/S32FILE.H",
       "destination": "include/native/s32filebufsize.h",
       "targets": [
         "Bafl",
@@ -60042,6 +60899,8 @@
       ],
       "classification": "private_internal",
       "sha256": "383f0a984ef65c6e06ab1c2b5e18b72979b8f42ff75dd513099ebbb3ed79cfc8",
+      "exposure": "required_textual_support",
+      "included_by": "persistentdata/persistentstorage/sql/INC/SqlDb.h",
       "destination": "include/native/sqlresourcetester.h",
       "targets": [
         "SqlNative"
@@ -60055,6 +60914,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "dccb61deba82c84d574bc9590ab1fc3f522d082b642698d19f53ae79644a91e9",
+      "exposure": "required_textual_support",
+      "included_by": "textandloc-sdk/textrendering/texthandling/inc/TXTETEXT.H",
       "destination": "include/native/fldset.h",
       "targets": [
         "Avkon",
@@ -60076,6 +60937,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "25a5f35816b4dba1560961a4d8ac13d57cf845db7e57f7ecab521c5295235e3c",
+      "exposure": "required_textual_support",
+      "included_by": "textandloc-sdk/textrendering/texthandling/inc/TXTETEXT.H",
       "destination": "include/native/txtetext_internal.h",
       "targets": [
         "Avkon",
@@ -60097,6 +60960,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "93a3a4ae76cda1f1bb18a9f13815448bf645670f0ad7f6f8a94c4340656ae831",
+      "exposure": "required_textual_support",
+      "included_by": "textandloc-sdk/textrendering/texthandling/inc/TXTETEXT.H",
       "destination": "include/native/txtclipboard.h",
       "targets": [
         "Avkon",
@@ -60120,6 +60985,8 @@
       ],
       "classification": "private_internal",
       "sha256": "0989c4b586c69ad83aea39133bd9874f4db7351b9f90f36d46a16939bf43e0ac",
+      "exposure": "required_textual_support",
+      "included_by": "textandloc-sdk/textrendering/texthandling/inc/TXTRICH.H",
       "destination": "include/native/txtrich_internal.h",
       "targets": [
         "Text"
@@ -60135,6 +61002,8 @@
       ],
       "classification": "private_internal",
       "sha256": "650d90e542d1c7a6a670d8b21c32c9c5754007818adb72de2f08db5d283e5852",
+      "exposure": "required_textual_support",
+      "included_by": "textandloc-sdk/textrendering/textformatting/inc/FRMTLAY.H",
       "destination": "include/native/frmtlay_internal.h",
       "targets": [
         "Avkon",
@@ -60158,6 +61027,8 @@
       ],
       "classification": "private_internal",
       "sha256": "44ffd389175cc1160933b61cfcc9a0761919283c169a2d040b812d67f05d60af",
+      "exposure": "required_textual_support",
+      "included_by": "persistentdata/persistentstorage/centralrepository/include/centralrepository.h",
       "destination": "include/native/centralrepositoryinternal.h",
       "targets": [
         "CentralRepository",
@@ -60177,6 +61048,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "d4c680e33aca19102c8fb869ffed12005630bd856041f42630d07c5753f5bcc0",
+      "exposure": "required_textual_support",
+      "included_by": "organizer/pimappservices/calendar/inc/calinstanceview.h",
       "destination": "include/native/calinstanceiterator.h",
       "targets": [
         "Calendar"
@@ -60190,6 +61063,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "5bb1fde31dbea33d2317959eb31da231360a9e7a697aa1a4f11b98d5c04d14be",
+      "exposure": "required_textual_support",
+      "included_by": "ossrv/lowlevellibsandfws/pluginfw/Framework/inc/EComErrorCodes.h",
       "destination": "include/native/ecom/ecomextendedinterfaceerrorcodes.h",
       "targets": [
         "AppArc",
@@ -60234,6 +61109,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "cdccfa2a8df2024d5a407cfbf1a863aa0f2e1e3b0d176f35c4a07cc0f507c0e3",
+      "exposure": "required_textual_support",
+      "included_by": "ossrv/lowlevellibsandfws/pluginfw/Framework/inc/ImplementationProxy.h",
       "destination": "include/native/ecom/extendedinterfaceimplementationproxy.h",
       "targets": [
         "ECom"
@@ -60247,6 +61124,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "f53325a6cde5beb713ae281066f15b153b20f0681513d1d9cda3ce13aca76329",
+      "exposure": "required_textual_support",
+      "included_by": "ossrv/lowlevellibsandfws/pluginfw/Framework/inc/registryinfo.rh",
       "destination": "include/native/ecom/registryinfoconst.hrh",
       "targets": [
         "ECom"
@@ -60260,6 +61139,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "16029ac08d99ef97b9a3a7cd1e3f42e40a83f9aebe4e18e5b4c2ab2b8167b22f",
+      "exposure": "required_textual_support",
+      "included_by": "bt/bluetoothmgmt/bluetoothclientlib/inc/bt_sock.h",
       "destination": "include/native/bthci.h",
       "targets": [
         "Bluetooth"
@@ -60273,6 +61154,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "b82309dbfd7299dcb208e30f23aa2b42798cec8d74e2c7285f07627e05cdc602",
+      "exposure": "required_textual_support",
+      "included_by": "bt/bluetoothmgmt/bluetoothclientlib/inc/bt_sock.h",
       "destination": "include/native/d32comm.h",
       "targets": [
         "Bluetooth",
@@ -60288,6 +61171,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "d088a0dc9500becdddd4e484df5761d899a7daeaa07826ac0963401e171e1dc7",
+      "exposure": "required_textual_support",
+      "included_by": "bt/bluetoothmgmt/btmgr/Inc/btdevice.h",
       "destination": "include/native/bluetooth/hci/hciopcodes.h",
       "targets": [
         "Bluetooth",
@@ -60303,6 +61188,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "bdbb2265078ca621da5da67bfc3451f94fea795f8fa06fdcae94ead4c1167580",
+      "exposure": "required_textual_support",
+      "included_by": "bt/bluetoothmgmt/btmgr/Inc/btdevice.h",
       "destination": "include/native/bluetooth/hci/hciconsts.h",
       "targets": [
         "Bluetooth",
@@ -60318,6 +61205,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "62a21dbe3cd25d7ce86b97c930db991df45ab2ac87fe1db8395db967664a58e4",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/commsconfig/commsdatabaseshim/commdbshim/INC/COMMDB.H",
       "destination": "include/native/commdb.inl",
       "targets": [
         "CommsDatabase"
@@ -60331,6 +61220,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "659f95ea0624616effa0610d9cfccf9acc9fef43a67d1546bf3489a0774c23b3",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/commsfwtools/preparedefaultcommsdatabase/inc/CommsDat.h",
       "destination": "include/native/comms-infras/metatype.h",
       "targets": [
         "CommsDat",
@@ -60345,6 +61236,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "02f11df32c1c9e3dddbcf94a156d7ccb67bbb8e9c71501ca1dd10aa1d6f8bd0b",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/commsfwtools/preparedefaultcommsdatabase/inc/CommsDat.h",
       "destination": "include/native/commsdat_internal.h",
       "targets": [
         "CommsDat",
@@ -60359,6 +61252,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "86ed29442ed5e15bebe99f42708c1a1b236ec002f5587c26f43b5fb14c5f8355",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/commsfwtools/preparedefaultcommsdatabase/inc/CommsDat.h",
       "destination": "include/native/commsdat_partner.h",
       "targets": [
         "CommsDat",
@@ -60373,6 +61268,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "41cfa59d8df0a3cf3849bdbc87725b349b387037eaee2f5a88cda4188ce49e56",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/commsfwtools/preparedefaultcommsdatabase/inc/CommsDatTypesV1_1.h",
       "destination": "include/native/commsdattypeinfov1_1.h",
       "targets": [
         "CommsDat"
@@ -60386,6 +61283,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "d37777e3e1b7202043beec70559725d661d0074892c8480be37691a8d1e55de9",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/commsfwtools/preparedefaultcommsdatabase/inc/CommsDatTypesV1_1.h",
       "destination": "include/native/etelqos.h",
       "targets": [
         "CommsDat"
@@ -60399,6 +61298,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "217d01a395982196a7a9e292b02bf0f7d8d3d06caa3079bd235db6e5d7b5c47e",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/commsfwtools/preparedefaultcommsdatabase/inc/CommsDatTypesV1_1.h",
       "destination": "include/native/commsdattypesv1_1_partner.h",
       "targets": [
         "CommsDat"
@@ -60412,6 +61313,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "cb86909484ceafd7b51813ce3b8d90126ad83a16d1b7d186e1e9e72eaf767b63",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/commsfwtools/preparedefaultcommsdatabase/inc/CommsDatTypesV1_1.h",
       "destination": "include/native/commsdattypesv1_1_internal.h",
       "targets": [
         "CommsDat"
@@ -60425,6 +61328,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "6a77f58796c362c116fada543e72a4a32782c655ef72cd4e643a63d88fcbafe8",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVAPI.H",
       "destination": "include/native/msvipc.h",
       "targets": [
         "Messaging",
@@ -60439,6 +61344,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "81c16c442527d5bd88276dcdf97be8596866b5dfc290d88e7f341dd35b45cc51",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVAPI.H",
       "destination": "include/native/msvarray.h",
       "targets": [
         "Messaging",
@@ -60453,6 +61360,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "25f752382c90b01be7168d82ce621a8faa5d96870853a8e52aae791f5a33aca1",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVAPI.H",
       "destination": "include/native/mclient.h",
       "targets": [
         "Messaging",
@@ -60467,6 +61376,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "2a9fe89b9a78b3d801b3544e4ada3ce0627aab06cb01829aa7718028fdb1e8d6",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVAPI.H",
       "destination": "include/native/msvapi.inl",
       "targets": [
         "Messaging",
@@ -60481,6 +61392,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "a378b69f5412e634af1914482b1b079e46cc145e49784f557d4fd99f4fee7807",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVSTD.H",
       "destination": "include/native/msvstd.hrh",
       "targets": [
         "Messaging",
@@ -60495,10 +61408,44 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "47f2c1ee96448eba8402d08501cbccb3112096042f0cd2a8158918d0ecf61910",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVSTD.H",
       "destination": "include/native/msvstd.inl",
       "targets": [
         "Messaging",
         "SendAs"
+      ]
+    },
+    {
+      "include": "stdapis/libxml2/xmlengtriodef.h",
+      "source": "xmlsrv/xml/libxml2libs/inc/libxml2/xmlengtriodef.h",
+      "manifest": "xmlsrv/xml/libxml2libs/group/bld.inf",
+      "declaration": "../inc/libxml2/xmlengtriodef.h     SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(stdapis/libxml2/xmlengtriodef.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "exclusion_reason": "Header declares @publishedPartner; public SDK API status not established",
+      "sha256": "f062f9489faf7a46bbdaf874d75c48a74c70912b8305fe01c4a3f353dd8656e7",
+      "exposure": "required_textual_support",
+      "included_by": "xmlsrv/xml/libxml2libs/inc/libxml2/libxml2_globals.h",
+      "destination": "include/native/stdapis/libxml2/xmlengtriodef.h",
+      "targets": [
+        "XmlEngine"
+      ]
+    },
+    {
+      "include": "stdapis/libxml2/xmlengtrionan.h",
+      "source": "xmlsrv/xml/libxml2libs/inc/libxml2/xmlengtrionan.h",
+      "manifest": "xmlsrv/xml/libxml2libs/group/bld.inf",
+      "declaration": "../inc/libxml2/xmlengtrionan.h     SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(stdapis/libxml2/xmlengtrionan.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "exclusion_reason": "Header declares @publishedPartner; public SDK API status not established",
+      "sha256": "460d523fe4339408d56d41715402f74d893623a9d91210bb029474e12c888ddf",
+      "exposure": "required_textual_support",
+      "included_by": "xmlsrv/xml/libxml2libs/inc/libxml2/libxml2_globals.h",
+      "destination": "include/native/stdapis/libxml2/xmlengtrionan.h",
+      "targets": [
+        "XmlEngine"
       ]
     },
     {
@@ -60509,6 +61456,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "a44a2de32af311bf0e00bc093c73f958d13ca4461ebef27141618877588f0215",
+      "exposure": "required_textual_support",
+      "included_by": "security/contentmgmt/contentaccessfwfordrm/inc/caf.h",
       "destination": "include/native/caf/cafplatform.h",
       "targets": [
         "Audio",
@@ -60533,6 +61482,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "8f133f7eff19e7852e88c33996a0e4892e7736e9ed38b6acf6dc2035dcff21dc",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmaudio_pub/audio_effects_presets_api/inc/AudioEqualizerUtility.h",
       "destination": "include/native/e32svr.h",
       "targets": [
         "AppArc",
@@ -60599,6 +61550,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -60610,6 +61562,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "9c30dcfae1bfda4f39e2ebc9272599b0e8f3a99b7f70449aad723aa78bb27467",
+      "exposure": "required_textual_support",
+      "included_by": "web/web_pub/browser_plugin_api/inc/npapi.h",
       "destination": "include/native/Events.h",
       "targets": [
         "Native_browserengine"
@@ -60623,6 +61577,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "daf225c0ad68c8efb03d14b6d56dac1c2fc1b12a54e935ad6753a87da86a67ab",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/classicui_plat/editors_api/inc/EIKRTED.H",
       "destination": "include/native/txtmrtsr.h",
       "targets": [
         "Native_eikctl"
@@ -60636,6 +61592,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "f913f6f373a5e5dc798a6a49dfc4c72c207aa61c5f64e5fa252bfd4bc331efb6",
+      "exposure": "required_textual_support",
+      "included_by": "ipconnmgmt/ipcm_pub/extendedconnpref_api/inc/extendedconnpref.h",
       "destination": "include/native/comms-infras/metadata.h",
       "targets": [
         "Bluetooth",
@@ -60676,6 +61634,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "1e24a0f3734cb234d7a62c4540730e0b85625f6deb9ec1f0d7c55ee61cbd05d8",
+      "exposure": "required_textual_support",
+      "included_by": "locationsrv/locsrv_pub/location_triggering_api/inc/lbtgeocell.h",
       "destination": "include/native/etelmm.h",
       "targets": [
         "Native_lbt"
@@ -60689,6 +61649,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "faf39ea85ff47e12ea95c310fb0bcd158ccb3c03b9143dd4f95695a4748d67cc",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/e32std.h",
       "destination": "include/native/e32std_private.h",
       "targets": [
         "AppArc",
@@ -60819,7 +61781,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -60830,6 +61794,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "fd73754c9b69ae583a0c6d4cfebbcb88d47a860f24444937d381f83a41f3d04c",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/userlibandfileserver/fileserver/inc/f32file.h",
       "destination": "include/native/f32file_private.h",
       "targets": [
         "AppArc",
@@ -60893,6 +61859,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -60904,6 +61871,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "7c98c22148866df26c304ccf9743c0058e0c5ec57cddc8c1ac5d7c55ca8a7cb5",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/ControllerFramework/mmfdrmcustomcommands.h",
       "destination": "include/native/mmf/common/mmfdrmcustomcommandsenum.h",
       "targets": [
         "Audio",
@@ -60920,6 +61889,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "d048dfa1d2f18d119cc6d1ae0fb695447c28e592654f917bb26ba3b20b3b7f09",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/ControllerFramework/mmfdurationinfocustomcommands.h",
       "destination": "include/native/mmf/common/mmfdurationinfocustomcommandsimpl.h",
       "targets": [
         "Audio",
@@ -60934,6 +61905,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "a0969e724f95108a49d15d5c4e9cb111b4a8cc40d4fc12b9aba010a559ba2cfa",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/ControllerFramework/mmfdurationinfocustomcommands.h",
       "destination": "include/native/mmf/common/mmfdurationinfocustomcommandsenums.h",
       "targets": [
         "Audio",
@@ -60948,6 +61921,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "89a778db7402002fa1375d92ca7b94b3060b333f13fcc139e9f8ac022a84a338",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Audio.h",
       "destination": "include/native/mda/common/audio.hrh",
       "targets": [
         "Audio"
@@ -60961,6 +61936,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "c9141b651a6ad03af439c1809395d6458fa7d5f27420d7462279aea56cfdd255",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Audio.h",
       "destination": "include/native/mda/common/audiostream.hrh",
       "targets": [
         "Audio"
@@ -60977,6 +61954,8 @@
       ],
       "classification": "private_internal",
       "sha256": "24a8aa6f8443973ce0dec077e9c0f762e0e117171020463799aa57ea112278ff",
+      "exposure": "required_textual_support",
+      "included_by": "graphics/windowing/windowserver/inc/W32STD.H",
       "destination": "include/native/graphics/windowserverconstants.h",
       "targets": [
         "AppArc",
@@ -61004,6 +61983,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "8b4af6c2c907c22fbf96f0a278ecd4e99eff05d4ccbf834479039128add7278e",
+      "exposure": "required_textual_support",
+      "included_by": "graphics/windowing/windowserver/inc/W32STD.H",
       "destination": "include/native/graphics/pointereventdata.h",
       "targets": [
         "AppArc",
@@ -61031,6 +62012,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "b1a137462eadaac05d485ac376c0a5cb0079124c31a8d4ad47a8f4b9933a50dc",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/common/MmfUtilities.h",
       "destination": "include/native/mmf/common/mmfhelper.h",
       "targets": [
         "Audio",
@@ -61052,6 +62035,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "ed7f8336f06201b0a87a08801b458e43aff7f1b6f57c8e2dd0b62dfdb07640db",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/e32base.h",
       "destination": "include/native/e32base_private.h",
       "targets": [
         "AppArc",
@@ -61178,7 +62163,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -61189,6 +62176,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "dc66a617a4088d5b526bc9e7a7ddf70f49f224831cae750ecbf5fc7d33dc33ab",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/server/mmfdatasource.h",
       "destination": "include/native/mmf/server/mmfdatasourcesink.hrh",
       "targets": [
         "Audio",
@@ -61210,6 +62199,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "cd208ef77fc87f7688e5a752be67eb518b4e27b29d64a16f742d9229f8c3d0c6",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/ControllerFramework/mmfcontrollerpluginresolver.h",
       "destination": "include/native/mmf/common/taggeddataparser.h",
       "targets": [
         "Audio",
@@ -61231,6 +62222,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "842dde1898069fa8abefb9913783623fe8e26d934d3de31875606c603400cf18",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/ControllerFramework/mmfcontrollerextendeddata.h",
       "destination": "include/native/mmfplugininterfaceuids.hrh",
       "targets": [
         "Audio",
@@ -61252,6 +62245,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "4894234b48c4a134d6e57f629b750f559784a8d7be8109d147541f8d2d88f5f7",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/common/MmfVideo.h",
       "destination": "include/native/mmf/common/mmfvideoenums.h",
       "targets": [
         "Audio",
@@ -61272,6 +62267,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "32e665becccd8d85ae1a8ef780785bebca256f0ef3c997b239fe4913da1632de",
+      "exposure": "required_textual_support",
+      "included_by": "mmimaging/imaging/imagingfws/inc_pub/icl/ICL_UIDS.hrh",
       "destination": "include/native/icl/icl_uids_const.hrh",
       "targets": [
         "ImageConversion"
@@ -61285,6 +62282,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "04af961be07ac303b40e281559ceeb74f779d1ab04c3eed7c609b08a02591d89",
+      "exposure": "required_textual_support",
+      "included_by": "mmimaging/imaging/imagingfws/inc_pub/icl/ICL_UIDS.hrh",
       "destination": "include/native/icl/icl_uids_def.hrh",
       "targets": [
         "ImageConversion"
@@ -61298,6 +62297,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "ccb7a1d25ad336bb7c20c389a4d17d2a86009ae6be6090cd22a5f25c631c21b0",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Resource.h",
       "destination": "include/native/mda/common/port.h",
       "targets": [
         "Audio",
@@ -61312,6 +62313,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "e2462cf501d1525aa1078e48f7a9a9cca6752da450eeb5e8350f895c4ee8f715",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Resource.h",
       "destination": "include/native/mda/common/controller.h",
       "targets": [
         "Audio",
@@ -61326,6 +62329,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "1262cc22ca8c6f687dba5a2e493fd06dd31e307973ab4e0c854a6604b14be23e",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Resource.h",
       "destination": "include/native/mda/common/resource.hrh",
       "targets": [
         "Audio",
@@ -61340,6 +62345,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "748b7caa6541f09335f1343f40fc06b353e4328801b6031b950b016faf95c6b9",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Video.h",
       "destination": "include/native/mda/common/video.hrh",
       "targets": [
         "ImageDisplay"
@@ -61353,6 +62360,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "df900fc6ec06b30bb5640c843d844f0cb3d3e92b8a758a2ff33ba466a88d5625",
+      "exposure": "required_textual_support",
+      "included_by": "graphics/graphicsdeviceinterface/gdi/inc/GDI.H",
       "destination": "include/native/graphics/gdi/glyphsample.h",
       "targets": [
         "AppArc",
@@ -61394,6 +62403,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "f8b3f01610beb8e4a3a1c283b106e04a55c6865b7adea6f4a65c708f5f58d74f",
+      "exposure": "required_textual_support",
+      "included_by": "graphics/graphicsdeviceinterface/gdi/inc/GDI.H",
       "destination": "include/native/graphics/gdi/gdiconsts.h",
       "targets": [
         "AppArc",
@@ -61435,6 +62446,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "16ec5f0b6d481afb483bd1d909db5dfacce53e38533f82cd236668206345e849",
+      "exposure": "required_textual_support",
+      "included_by": "graphics/graphicsdeviceinterface/gdi/inc/GDI.H",
       "destination": "include/native/graphics/gdi/gdistructs.h",
       "targets": [
         "AppArc",
@@ -61476,6 +62489,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "61292ebca33c1d23bb61bc8c023cd086e5a3e3296983d16e6f11142c3513d239",
+      "exposure": "required_textual_support",
+      "included_by": "graphics/graphicsdeviceinterface/gdi/inc/GDI.H",
       "destination": "include/native/graphics/gdi/gdiinline.inl",
       "targets": [
         "AppArc",
@@ -61517,6 +62532,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "dccc40d6a434e22095464376129ef8ee34914829bcc43875d4cd2f594ecf2ba1",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/e32cmn.h",
       "destination": "include/native/e32cmn_private.h",
       "targets": [
         "AppArc",
@@ -61647,7 +62664,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -61658,6 +62677,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "6e2783dd2d1d6ac1af9b80f4aefc8178b8adbbb744f233a22186b4439e2af6b7",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/lafagnosticuifoundation/cone/inc/COEDEF.H",
       "destination": "include/native/graphics/cone/coedefkeys.h",
       "targets": [
         "Avkon",
@@ -61684,6 +62705,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "ca66b561f3834879b7cda3f1b39bd243a81f943f8ac52d3adc8bd7bf574c5927",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/coreinc/EIKDEF.H",
       "destination": "include/native/uikon/eikdefconst.h",
       "targets": [
         "Avkon",
@@ -61704,6 +62727,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "f569445883025ee046513522f9cba037de849bdbe45e705ea3ed999fc895b704",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/coreinc/EIKDEF.H",
       "destination": "include/native/uikon/eikdefmacros.h",
       "targets": [
         "Avkon",
@@ -61726,6 +62751,8 @@
       ],
       "classification": "private_internal",
       "sha256": "0158618b6cb40b7d054570f36767bd09092b15354517a809c70cfb447876ac1d",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/coreinc/EIKDEF.H",
       "destination": "include/native/uikon/eikdefconstinternal.h",
       "targets": [
         "Avkon",
@@ -61746,6 +62773,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "52d5f26e644c22d0ecd03ef184655049f0d598d1f673a5dbefb18ddfa6d63db4",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uilaf/inc/uikon.hrh",
       "destination": "include/native/uiklaf/private/pluginuid.hrh",
       "targets": [
         "Avkon",
@@ -61766,6 +62795,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "7c89668f592b162f953989404dc3f9d62b3521e2fc15be6f8d2ba064dd704f0a",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/coreinc/eikamnt.h",
       "destination": "include/native/uikon/eikautomenutitlearray.h",
       "targets": [
         "Avkon",
@@ -61785,6 +62816,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "28fec0a49aadc575beffda9d62ecf217fdd33e1b0aa9f34d1de6687902f5fe33",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/coreinc/EIKFCTRY.H",
       "destination": "include/native/uikon/eikctrlstatus.h",
       "targets": [
         "Avkon",
@@ -61805,6 +62838,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "20af2dc7fd94466526378273a1689aaefdc3e250b0f10891246c963e4243f98b",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/coreinc/eikenvinterface.h",
       "destination": "include/native/uikon/eikenvinterface.inl",
       "targets": [
         "Avkon",
@@ -61824,6 +62859,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "6ec17ff6ed1003beb79139b4703f665609ab1efec29dab94c2c9caf11cad067a",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/e32def.h",
       "destination": "include/native/e32def_private.h",
       "targets": [
         "AppArc",
@@ -61958,7 +62995,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -61971,6 +63010,8 @@
       ],
       "classification": "private_internal",
       "sha256": "340d92f68a4a2c259609434b5c7ff34352080e0d70d2b93558e365a1c0ac7e1e",
+      "exposure": "required_textual_support",
+      "included_by": "textandloc-sdk/textrendering/texthandling/inc/TXTSTYLE.H",
       "destination": "include/native/txtstyle_internal.h",
       "targets": [
         "Avkon",
@@ -61992,6 +63033,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "6aeb2db852cf69f2da319c8228ce5bbdfe8f43aae51801f42f2654d1a14e234d",
+      "exposure": "required_textual_support",
+      "included_by": "textandloc-sdk/textrendering/textformatting/inc/TAGMA.H",
       "destination": "include/native/tagma_internal.h",
       "targets": [
         "Avkon",
@@ -62012,6 +63055,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "d08a5630b7474f1301cfb8ec91f44098f7a9fe17f7c6dbf217634c44ecba83b5",
+      "exposure": "required_textual_support",
+      "included_by": "textandloc-sdk/textrendering/textformatting/inc/TAGMA.H",
       "destination": "include/native/tagmalayoutandsource.h",
       "targets": [
         "Avkon",
@@ -62032,6 +63077,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "557fce6c82859e1caa76a40260d59d4be7ff72f7fdf1218777d2068323dbdb2c",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/datacommsserver/esockserver/inc/ES_SOCK.H",
       "destination": "include/native/comms-infras/metacontainer.h",
       "targets": [
         "Bluetooth",
@@ -62058,6 +63105,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "4f498f468e2d9325ceb38bbf42dde05e7532419042415eccc9287b0e5f97fad2",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/datacommsserver/esockserver/inc/ES_SOCK.H",
       "destination": "include/native/elements/sd_errors.h",
       "targets": [
         "Bluetooth",
@@ -62082,6 +63131,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "5ae78692827d87f47bc584a10ccdd499e211319fbc365b82c017c481de449677",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/datacommsserver/esockserver/inc/ES_SOCK.H",
       "destination": "include/native/es_sock_internal.h",
       "targets": [
         "Bluetooth",
@@ -62106,6 +63157,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "737b499d36880f2c4465eda84552abddc61123d8d7f32458d6f3d2be50c71ce1",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/datacommsserver/esockserver/inc/ES_SOCK.H",
       "destination": "include/native/es_sock_partner.h",
       "targets": [
         "Bluetooth",
@@ -62130,6 +63183,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "0d1ec5cceb1b1f9d6de60cfca26d29e1b7c21dd9583d58c96c1eb8ef53ca2b0f",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/datacommsserver/esockserver/inc/ES_SOCK.H",
       "destination": "include/native/es_sock.inl",
       "targets": [
         "Bluetooth",
@@ -62154,6 +63209,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "ffa7656c5d7aae124d430a4afd587a005236a63b82231dfd3a5587053bebcdfa",
+      "exposure": "required_textual_support",
+      "included_by": "bt/bluetoothmgmt/bluetoothclientlib/inc/bttypes.h",
       "destination": "include/native/bttypespartner.h",
       "targets": [
         "Bluetooth",
@@ -62171,6 +63228,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "7c900f5b1d2690beec4a2184e9bc426976aeefea1b02b2fe7e5c8e6f3a94b1f6",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/d32comm.h",
       "destination": "include/native/e32ver.h",
       "targets": [
         "Bluetooth",
@@ -62186,6 +63245,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "0e7aa618f0e7223fb77c55d1b332862f87569754307b4b9b838d9960498cf7ef",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/d32comm.h",
       "destination": "include/native/d32comm.inl",
       "targets": [
         "Bluetooth",
@@ -62201,6 +63262,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "814e0efd9107fdbb3aeff60353dd3cfe8ced7945340d94dfe94fbf495bd8d31c",
+      "exposure": "required_textual_support",
+      "included_by": "bt/bluetoothmgmt/bluetoothclientlib/inc/bt_subscribe_sec.h",
       "destination": "include/native/bt_subscribe_partner.h",
       "targets": [
         "Bluetooth"
@@ -62214,6 +63277,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "cd5ede5cf57d29b13d83074c586991e708d9948543e312ceb585cd35ad23122e",
+      "exposure": "required_textual_support",
+      "included_by": "bt/bthci/bthci2/corehci/interface/hciconsts.h",
       "destination": "include/native/bluetooth/hci/hcitypes.h",
       "targets": [
         "Bluetooth",
@@ -62229,6 +63294,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "ace4bce16233a40df8e0fc473d8bb73ba051d891b25f7eaf4837e932f55d88ab",
+      "exposure": "required_textual_support",
+      "included_by": "bt/bthci/bthci2/corehci/interface/hciconsts.h",
       "destination": "include/native/bluetooth/hci/hciframe.h",
       "targets": [
         "Bluetooth",
@@ -62244,6 +63311,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "ddda3391210329db091d111a3e7116c673fce1c5e77340fbc6350be088ea2d8b",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/commsfwtools/preparedefaultcommsdatabase/inc/MetaDatabase.h",
       "destination": "include/native/metadatabase_partner.h",
       "targets": [
         "CommsDat",
@@ -62258,6 +63327,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "0b94dea05f9ba60a7678049e95cb14c2d85ff01f6209fd5ed0902d5b9e6a2f89",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/datacommsserver/esockserver/compatibility_headers/inc/MetaType.h",
       "destination": "include/native/elements/metatype.h",
       "targets": [
         "CommsDat",
@@ -62272,6 +63343,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "43f6c722bbbf1b3021f215dd78d1557035e29cbbeec269958b4ff4c1b79c39bb",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/commsfwtools/preparedefaultcommsdatabase/inc/CommsDatTypeInfoV1_1.h",
       "destination": "include/native/commsdattypeinfov1_1_internal.h",
       "targets": [
         "CommsDat"
@@ -62285,6 +63358,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "836611b93fb19dac64b9975fb98631cbf36c3c0b69f16eef0bbee21e80d1364a",
+      "exposure": "required_textual_support",
+      "included_by": "cellularsrv/telephonyserver/etelpacketdata/inc/etelQoS.h",
       "destination": "include/native/etelpckt.h",
       "targets": [
         "CommsDat"
@@ -62298,6 +63373,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "939cc37458e7819f1956932891bbde85ec6cff79fa1cb4b7306ea35788f487e6",
+      "exposure": "required_textual_support",
+      "included_by": "lbs/locationmgmt/locationcore/LbsClient/LbsApi/inc/LbsIpc.h",
       "destination": "include/native/lbs/lbsipc.hrh",
       "targets": [
         "Location",
@@ -62312,6 +63389,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "c99195746e26741c009bb2b84e973130cba3730d9b9186cd37755c30a8609803",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVIPC.H",
       "destination": "include/native/msvsearchsortquery.h",
       "targets": [
         "Messaging",
@@ -62326,6 +63405,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "7f128d6c5ee1e9705a7b4b08d8c85899a3fa90a2d5066aa67afc7b0412e6c4ae",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVIPC.H",
       "destination": "include/native/msvipc.inl",
       "targets": [
         "Messaging",
@@ -62340,6 +63421,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "082d638d9b4e66651ab06c2638605bd65c787039638f7b856d6a17d91d5b9c71",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MCLIENT.H",
       "destination": "include/native/mmsvstoremanager.h",
       "targets": [
         "Messaging",
@@ -62354,6 +63437,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "cdbe35efce615d066917eae4fd37a745db0c986c2cd3320fa85dd94217f92480",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MCLIENT.H",
       "destination": "include/native/tnonoperationmtmdata.h",
       "targets": [
         "Messaging",
@@ -62368,6 +63453,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "6afbfda1a2efb680bce7bec05df626612b93c6b3a1976d0dc5a3b291ded719d7",
+      "exposure": "required_textual_support",
+      "included_by": "security/contentmgmt/contentaccessfwfordrm/inc/cafplatform.h",
       "destination": "include/native/caf/rightsinfo.h",
       "targets": [
         "Audio",
@@ -62392,6 +63479,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "584eb2eb24ca31c3a116c5f70e3415344a3bf0b28cc0420d9769d82f13d57bdd",
+      "exposure": "required_textual_support",
+      "included_by": "security/contentmgmt/contentaccessfwfordrm/inc/cafplatform.h",
       "destination": "include/native/caf/supplieroutputfile.h",
       "targets": [
         "Audio",
@@ -62416,6 +63505,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "ca800012bdc47f67877af4b21f656c59045fa38e90ec81537297596af1b10031",
+      "exposure": "required_textual_support",
+      "included_by": "security/contentmgmt/contentaccessfwfordrm/inc/cafplatform.h",
       "destination": "include/native/caf/manager.h",
       "targets": [
         "Audio",
@@ -62440,6 +63531,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "c4e3e8871def7aac384512523d49efed9f9e8388c4a9e1cac3a91693081c2c39",
+      "exposure": "required_textual_support",
+      "included_by": "security/contentmgmt/contentaccessfwfordrm/inc/cafplatform.h",
       "destination": "include/native/caf/supplier.h",
       "targets": [
         "Audio",
@@ -62464,6 +63557,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "43b72df6bde5757f2e055b1244c13c50a2cf62f1d5f54301e9f661be7c3be869",
+      "exposure": "required_textual_support",
+      "included_by": "security/contentmgmt/contentaccessfwfordrm/inc/cafplatform.h",
       "destination": "include/native/caf/importfile.h",
       "targets": [
         "Audio",
@@ -62488,6 +63583,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "1f80a4912cb5b1966856a103879edd2887bca5a23ddb3d6b3a8e9f843ac4233a",
+      "exposure": "required_textual_support",
+      "included_by": "security/contentmgmt/contentaccessfwfordrm/inc/cafplatform.h",
       "destination": "include/native/caf/rightsmanager.h",
       "targets": [
         "Audio",
@@ -62512,6 +63609,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "a030d7b39c43e7636088671da372c70a993019f38088ad8547fc0ec4c0f5ac92",
+      "exposure": "required_textual_support",
+      "included_by": "security/contentmgmt/contentaccessfwfordrm/inc/cafplatform.h",
       "destination": "include/native/caf/attribute.h",
       "targets": [
         "Audio",
@@ -62536,6 +63635,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "bdcb57fdda578b87cb726f8e4e082d0eab722b4a48a4b3a715906be46724c695",
+      "exposure": "required_textual_support",
+      "included_by": "security/contentmgmt/contentaccessfwfordrm/inc/cafplatform.h",
       "destination": "include/native/caf/cafmimeheader.h",
       "targets": [
         "Audio",
@@ -62572,6 +63673,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "6135b90e2a5d7047589018165883806e2dda66284dccd4afac916caa2a79cad0",
+      "exposure": "required_textual_support",
+      "included_by": "security/cryptomgmtlibs/cryptotokenfw/inc/securitydefs.h",
       "destination": "include/native/securitydefsconst.h",
       "targets": [
         "Certificates",
@@ -62587,6 +63690,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "024eb08bbe741372f7370d31baaea90d44780347a36f33470614cd8cdef6ea9d",
+      "exposure": "required_textual_support",
+      "included_by": "networkingsrv/esockapiextensions/internetsockets/inc/in_sock.h",
       "destination": "include/native/in_sock_internal.h",
       "targets": [
         "Native_aknnotify",
@@ -62605,6 +63710,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "dbba9532d32f7d6415d5b0492049d5fbd9136b15f237847a87a5fa873e4b01b7",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/srvinc/eiknotapi.h",
       "destination": "include/native/uikon/eikscchange.h",
       "targets": [
         "Native_aknnotify"
@@ -62618,6 +63725,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "c29e8484e8457e64731ecb83d3625ee8b6530c821da6a2f8fcbfa3b9ab7dc0ae",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmaudio_pub/multimedia_extension_interfaces_api/inc/MCustomInterface.h",
       "destination": "include/native/mmf/common/mcustominterface.h",
       "targets": [
         "Native_audioequalizereffect",
@@ -62651,6 +63760,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "91149c31285e58c834780a864b2328b9ea8cc8fd0a6a55ac12f5de9e249032d2",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/e32svr.h",
       "destination": "include/native/e32hal.h",
       "targets": [
         "AppArc",
@@ -62717,6 +63828,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -62728,6 +63840,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "5fe1ec7d4f33d01085e814419ee67ff0a2f7f33b281c7658d233e03bef06f850",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/e32svr.h",
       "destination": "include/native/d32locd.h",
       "targets": [
         "AppArc",
@@ -62794,6 +63908,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -62805,6 +63920,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "881e6416fd96828dc5e789d2adc54f56285b0357131d3e27cd4525bad038eabd",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/e32svr.h",
       "destination": "include/native/e32notif.h",
       "targets": [
         "AppArc",
@@ -62871,6 +63988,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -62882,6 +64000,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "8e2dd5218b6b588b4f5c3e0b873f956c8fbee0bf02385002bd253ea5cab1cd28",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/e32svr.h",
       "destination": "include/native/e32ldr_private.h",
       "targets": [
         "AppArc",
@@ -62948,6 +64068,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -62959,6 +64080,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "58ca0baf316573c8bc43786256d9599f97cb50f0cb98b260ff93e60dc4dcff41",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/e32svr.h",
       "destination": "include/native/e32event_private.h",
       "targets": [
         "AppArc",
@@ -63025,6 +64148,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -63036,6 +64160,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "67baaba333e6ef62413096074f7740d196388dd15a56f7c6da5f9c4013ea7116",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/e32svr.h",
       "destination": "include/native/e32ktran.h",
       "targets": [
         "AppArc",
@@ -63102,6 +64228,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -63113,6 +64240,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "709e71aebd2c7c37f796df42b7965077dcd5b1750d014b9f794c0db63318b8fa",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/e32svr.h",
       "destination": "include/native/e32lmsg.h",
       "targets": [
         "AppArc",
@@ -63179,6 +64308,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -63190,6 +64320,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "3d365b804f825c4ca68a15fc8abcbd22d275e4a4c64a450c874fc958cacfd08b",
+      "exposure": "required_textual_support",
+      "included_by": "mmmw/mmmw_plat/enhanced_media_client_api/inc/Events.h",
       "destination": "include/native/StreamControl.h",
       "targets": [
         "Native_browserengine"
@@ -63203,6 +64335,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "0c43363419120122f97b82be3fb796f67c82948b22934d5d11eb83dda4161c95",
+      "exposure": "required_textual_support",
+      "included_by": "ossrv/genericservices/s60compatibilityheaders/commonengine/inc/textresolver.h",
       "destination": "include/native/textresolver.hrh",
       "targets": [
         "Native_commonui"
@@ -63216,6 +64350,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "20744cd6acba3e83a13d100f674306c91fc9bef4ba129a3b41c52c01ba8655c1",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/classicui_plat/ui_framework_definitions_api/inc/EIKON.HRH",
       "destination": "include/native/eikcolor.hrh",
       "targets": [
         "Avkon",
@@ -63234,6 +64370,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "578cd20264c6e18054664b48d10dd4f7214c26b79ecdc66eb755560e1d746178",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/lafagnosticuifoundation/uigraphicsutils/gulinc/GULBORDR.H",
       "destination": "include/native/graphics/uigraphicsutils/gullogicalborder.h",
       "targets": [
         "Avkon",
@@ -63258,6 +64396,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "51d1d4bd9c0d695d0325a72be79a679f83f2c48bb4f30240f35a75eae4356bc8",
+      "exposure": "required_textual_support",
+      "included_by": "cellularsrv/telephonyserver/etelmultimode/INC/ETELMM.H",
       "destination": "include/native/etel.h",
       "targets": [
         "CommsDat",
@@ -63272,6 +64412,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "778bee0ba13041027a38f3dfbd81e8d086cd0ab71b8aa82867ad3e58911902e5",
+      "exposure": "required_textual_support",
+      "included_by": "cellularsrv/telephonyserver/etelmultimode/INC/ETELMM.H",
       "destination": "include/native/etelmmcs.h",
       "targets": [
         "Native_lbt"
@@ -63285,6 +64427,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "2aae7dcab6cf771404d1a167a846656f1a6c31101cbbf0d35bbf3b1d74b2b54e",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/e32event.h",
       "destination": "include/native/e32btrace.h",
       "targets": [
         "AppArc",
@@ -63351,6 +64495,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -63362,6 +64507,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "6c40f84913526a32d7b9af02e87bfbcaf1929698b24f7d1752ea5947181ad810",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Port.h",
       "destination": "include/native/mda/common/port.hrh",
       "targets": [
         "Audio",
@@ -63376,6 +64523,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "d8433177c45197477054e95bd531d2c54af7045093772849df672ccd7c1f6f70",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/e32const.h",
       "destination": "include/native/e32const_private.h",
       "targets": [
         "AppArc",
@@ -63506,7 +64655,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -63517,6 +64668,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "db1b20c0ec598a7170710252d5ca4277ee8587331139eec28fc27cbb688d6de1",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/e32des8.h",
       "destination": "include/native/e32des8_private.h",
       "targets": [
         "AppArc",
@@ -63647,7 +64800,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -63658,6 +64813,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "266db3670160294fbdce5d7225a85c67250a881ac4e89caba601639ec5d19337",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/e32des16.h",
       "destination": "include/native/e32des16_private.h",
       "targets": [
         "AppArc",
@@ -63788,7 +64945,9 @@
         "X500",
         "X509",
         "Xml",
-        "XmlDom"
+        "XmlDom",
+        "XmlEngineUtils",
+        "XmlSerializer"
       ]
     },
     {
@@ -63799,6 +64958,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "7f932029b41207e2d13aae32f6d51abe8009ccedd6bc43a056c8d8d81d8c203d",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/classicui_plat/status_pane_api/inc/eikspmod.h",
       "destination": "include/native/eiksrvc.h",
       "targets": [
         "Avkon",
@@ -63815,6 +64976,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "e20b6b97ea987636b8c62d035f91e3aa9fadddcb8defac9f7446ca2edbba050e",
+      "exposure": "required_textual_support",
+      "included_by": "textandloc-sdk/textrendering/texthandling/inc/TXTFMLYR.H",
       "destination": "include/native/txtfmlyr_internal.h",
       "targets": [
         "Avkon",
@@ -63836,6 +64999,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "12832123209ed3629709de7d81bb7822bcae36a023f9ceba88dcde8e3242e0f8",
+      "exposure": "required_textual_support",
+      "included_by": "networkingsrv/linklayercontrol/networkinterfacemgr/inc/NIFVAR.H",
       "destination": "include/native/nifvar_internal.h",
       "targets": [
         "Bluetooth",
@@ -63860,6 +65025,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "9f00d399fa8ab00e4d7bb3922ff77950d06c8c6873a1398d10e82fc462706bdd",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/datacommsserver/esockserver/compatibility_headers/inc/MetaContainer.h",
       "destination": "include/native/elements/metacontainer.h",
       "targets": [
         "Bluetooth",
@@ -63886,6 +65053,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "af880901c052fdc6bf19f7753a8b0e9444a8c53f18c8f41d86a47884d6370d74",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/datacommsserver/esockserver/inc/es_sock_internal.h",
       "destination": "include/native/es_sock_internal.inl",
       "targets": [
         "Bluetooth",
@@ -63910,6 +65079,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "e6b60180fb91a1ad474ebcb8d826bae7ef0a4c48cf1eec00a852e4b79aead8ce",
+      "exposure": "required_textual_support",
+      "included_by": "bt/bthci/bthci2/corehci/interface/hciframe.h",
       "destination": "include/native/bluetooth/hci/aclpacketconsts.h",
       "targets": [
         "Bluetooth",
@@ -63925,6 +65096,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "d66618a87ffd7cd03a468471bebfb33af3546acf166b0c17f3ce02d468de3d41",
+      "exposure": "required_textual_support",
+      "included_by": "cellularsrv/telephonyserver/etelpacketdata/inc/etelpckt.h",
       "destination": "include/native/etelutils.h",
       "targets": [
         "CommsDat"
@@ -63938,6 +65111,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "b2cece6feb8a5f0e3cd74a994d39b91a94255870e046092b7cd888e4645fbf0e",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/msvsearchsortquery.h",
       "destination": "include/native/mentact.h",
       "targets": [
         "Messaging",
@@ -63952,6 +65127,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "714b3b8604ada3fe7cc618e92690174a272b65ee70cd45f027a9bb8b4f099c3d",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/msvsearchsortquery.h",
       "destination": "include/native/msgerr.h",
       "targets": [
         "Messaging",
@@ -63969,6 +65146,8 @@
       ],
       "classification": "private_internal",
       "sha256": "e6865a4b50595ce33770cd781f237982e2e63225d6d339fa8e0ee2dec43c3387",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/msvsearchsortquery.h",
       "destination": "include/native/msvsearchsortconstants.h",
       "targets": [
         "Messaging",
@@ -63983,6 +65162,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "9ab8a2ef660003dbd2883ce6e2192503a204c6d018bd8128f50a65fc5da9b0c3",
+      "exposure": "required_textual_support",
+      "included_by": "messagingmw/messagingfw/msgsrvnstore/server/inc/MSVREG.H",
       "destination": "include/native/msvreg.inl",
       "targets": [
         "Messaging",
@@ -63997,6 +65178,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "86e46432019e48449d4aa436e6acb689bcdc41916199a58345b100a9e83803dc",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/d32locd.h",
       "destination": "include/native/partitions.h",
       "targets": [
         "AppArc",
@@ -64063,6 +65246,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -64074,6 +65258,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "6d7fd3510c4c10edf57483c1bff28b50e031ae6ebf5c8cfe5aad2ffb8ae551d5",
+      "exposure": "required_textual_support",
+      "included_by": "kernelhwsrv/kernel/eka/include/d32locd.h",
       "destination": "include/native/d32locd.inl",
       "targets": [
         "AppArc",
@@ -64140,6 +65326,7 @@
         "Video",
         "X500",
         "X509",
+        "Xml",
         "XmlDom"
       ]
     },
@@ -64151,6 +65338,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "4ff7905dc68bc77f7039f0cad52e43e3a30b0ada09e34649102d0476370cafe7",
+      "exposure": "required_textual_support",
+      "included_by": "mmmw/mmmw_plat/enhanced_media_client_api/inc/StreamControl.h",
       "destination": "include/native/Control.h",
       "targets": [
         "Native_browserengine"
@@ -64164,6 +65353,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "47bd450c6373cb14d3e4a5a6a29c2b023c047544b64a6d53bc9dd25f9744b01e",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/commsfwsupport/commselements/NetMeta/inc/MetaData.h",
       "destination": "include/native/elements/h_tdeallocator.h",
       "targets": [
         "Bluetooth",
@@ -64192,6 +65383,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "e3e156b74b7345001a1ef2491c3c1e06be0f7fba6d1813f281312bf9b0266aaa",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/srvinc/EIKSRVC.H",
       "destination": "include/native/eiksrvs.h",
       "targets": [
         "Avkon",
@@ -64208,6 +65401,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "e9ba186afdce8b1da9defcb9e4049be4f0ba3050b191fb563e5df3969e0440dc",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/srvinc/EIKSRVC.H",
       "destination": "include/native/eiksrv.h",
       "targets": [
         "Avkon",
@@ -64224,6 +65419,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "0609b445e26e398f51910d559e0a02112f5dfb6728036809fc61158bb7ed8912",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/commsfwsupport/commselements/NetMeta/inc/MetaContainer.h",
       "destination": "include/native/elements/metacontainer.inl",
       "targets": [
         "Bluetooth",
@@ -64250,6 +65447,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "5b1f763ae50af5aa2c2e1d49e9f7d5311ff2f110f0836fce2dc205534de6e0c0",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/serialserver/c32serialserver/INC/C32COMM.H",
       "destination": "include/native/c32comm_internal.h",
       "targets": [
         "CommsDat",
@@ -64264,6 +65463,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "aeb96c43b70cb8937c43f32013b999530add8c138f45ba2790aedbd0175d22d2",
+      "exposure": "required_textual_support",
+      "included_by": "cellularsrv/telephonyserver/etelserverandcore/INC/FAXDEFN.H",
       "destination": "include/native/fax_reversebytes.h",
       "targets": [
         "CommsDat",
@@ -64293,6 +65494,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "c986ae31242c59e752ab4aa93e548068870f33ee6930be5bcb759605703a4111",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/srvinc/eiksrv.h",
       "destination": "include/native/vwsappst.h",
       "targets": [
         "Avkon",
@@ -64309,6 +65512,8 @@
       "conditions": [],
       "classification": "private_internal",
       "sha256": "8bc2c13e950a956d406aa456e21308cc2ef020a9bd1ef8f8fd9adf918b067507",
+      "exposure": "required_textual_support",
+      "included_by": "classicui/commonuisupport/uikon/srvinc/eiksrv.h",
       "destination": "include/native/eikcycledef.h",
       "targets": [
         "Avkon",
@@ -64318,7 +65523,7 @@
       ]
     }
   ],
-  "private_export_count": 4602,
+  "private_export_count": 4604,
   "auxiliary_manifests": [
     {
       "destination": "share/symbian/native/openc-header-usage.json",

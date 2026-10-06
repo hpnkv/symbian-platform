@@ -62,6 +62,11 @@ check and Close action.
 | `sipaddress.h`, `sipstrconsts.h` | `Symbian::SipCodec` | Original SIP message codec and generated string table. |
 | `sip.h`, `sipconnection.h` | `Symbian::SipClient` | Original SIP session and transaction client; pulls in the codec. |
 | `sipprofile.h`, `sipprofileregistry.h` | `Symbian::SipProfiles` | Public profile client; links `Symbian::SipProfileCore` and SIP client imports. |
+| `xml/parser.h`, `xml/matchdata.h` | `Symbian::Xml` | Original XML framework. |
+| `stdapis/libxml2/libxml2_parser.h` | `Symbian::XmlEngine` | Original public libxml2 2.6.10 API, backed by `xmlengine.dll`. |
+| `xml/utils/xmlengutils.h` | `Symbian::XmlEngineUtils` | XML engine string and memory utilities. |
+| `xml/dom/xmlengdocument.h` | `Symbian::XmlDom` | Original DOM/XPath API. |
+| `xml/dom/xmlengserializer.h` | `Symbian::XmlSerializer` | Original DOM serialization; links DOM and XML framework imports. |
 | `QtNetwork/QHostAddress` | `Symbian::QtNetwork` | Original Qt 4.8.1 guest module. |
 | `QtSql/QSqlDatabase` | `Symbian::QtSql` | Original Qt SQL; drivers are separate runtime plugins. |
 | `QtXml/QDomDocument` | `Symbian::QtXml` | Original Qt XML. |
@@ -89,6 +94,18 @@ DLL filenames, so selecting that complete drive passes configuration. The
 current E32 inspector cannot parse those firmware DLL image profiles; ordinal
 identity and execution of SIP/SDP operations remain unverified. Other
 firmware and physical-device compatibility remain unknown.
+
+The XML targets retain the historical `stdapis/libxml2/libxml2_*.h` spelling,
+not a modern desktop libxml2 include layout. `Symbian::XmlEngine` supplies
+the frozen `xmlengine.dll` import, with `XmlEngineUtils`, `XmlDom` and
+`XmlSerializer` for the original utility, DOM/XPath and serializer layers.
+The public XML framework remains independently available through
+`Symbian::Xml`. Two source headers labeled `@publishedPartner` are staged
+only as required textual support and are not selectable public APIs. A
+relocated SDK compiled the reviewed XML public exports on ARMv5T and ARMv6
+and converted a linked XML consumer to E32. The named RM-807 Belle Z-drive
+contains the XML DLL filenames; their ordinal equivalence and runtime
+behavior remain unverified.
 
 Qt targets also include `Symbian::QtCore`, `QtGui`, `QtSvg`, `QtScript`,
 `QtXmlPatterns`, `QtDeclarative`, `QtMultimedia`, `QtOpenVG` and `QtTest`.

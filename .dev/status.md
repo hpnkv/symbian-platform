@@ -3713,3 +3713,17 @@ equivalence and named-firmware SIP execution are unverified. Focused native
 tests passed; 1,426 public export records still lack reviewed delivery/target
 ownership. Fresh automatic source export, cross-host bundles, SDL and release
 0.2.0 remain outstanding.
+
+2026-10-06 XML manifest slice: `Symbian::Xml` now owns its remaining public
+framework headers. `Symbian::XmlEngine` ships 39 public libxml2 2.6.10
+headers with the original `stdapis/libxml2/` layout and a complete frozen
+`xmlengine.dll` import. New `XmlEngineUtils` and `XmlSerializer` targets ship
+their frozen imports and public headers; `XmlDom` now owns the public DOM/XPath
+manifest. Two `@publishedPartner` libxml2 headers are marked private/internal
+and staged only as textual support. The relocated SDK passed 1,474 canary
+object builds per ARM profile, payload validation and an ARMv6 XML C API
+consumer linked through E32 conversion. The selected RM-807 Belle Z-drive
+contains all five XML DLL filenames, but no XML call or ordinal comparison
+against those firmware images has passed. There are 1,312 public export
+records still lacking reviewed delivery/target ownership. Fresh source export,
+cross-host bundles, SDL and release 0.2.0 remain open.

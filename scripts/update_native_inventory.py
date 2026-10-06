@@ -188,6 +188,17 @@ def exports(root: Path, names: list[str]) -> tuple[list[dict], list[dict]]:
                         else "private_internal"
                     ),
                 }
+                if include.casefold() in (
+                    "stdapis/libxml2/xmlengtriodef.h",
+                    "stdapis/libxml2/xmlengtrionan.h",
+                ):
+                    # These source files say @publishedPartner despite the
+                    # broad export macro in this component's bld.inf.
+                    record["classification"] = "private_internal"
+                    record["exclusion_reason"] = (
+                        "Header declares @publishedPartner; public SDK API "
+                        "status not established"
+                    )
                 if source.is_file():
                     record["sha256"] = digest(source)
                 else:
@@ -531,7 +542,13 @@ def generate(workspace: Path) -> dict:
                 if len({r["sha256"] for r in same_repo}) != 1:
                     continue
                 choices = same_repo
-            queue.append(({**choices[0], "include": include}, owner))
+            dependency_record = {**choices[0], "include": include}
+            if dependency_record["classification"] == "private_internal":
+                dependency_record.setdefault(
+                    "exposure", "required_textual_support"
+                )
+                dependency_record.setdefault("included_by", record["source"])
+            queue.append((dependency_record, owner))
     headers = []
     for record in public:
         item = delivered.get(record["include"].casefold())

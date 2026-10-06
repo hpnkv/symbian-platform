@@ -131,5 +131,26 @@
       "after": "#define PROFILESERVERCRKEYS_H_\n#include <e32std.h>",
       "reason": "The original public SIP Profile Central Repository key header declares TUid but includes only e32def.h."
     }
+  ],
+  "stdapis/libxml2/libxml2_schemasinternals.h": [
+    {
+      "before": "#define XML_SCHEMA_INTERNALS_H",
+      "after": "#define XML_SCHEMA_INTERNALS_H\n#include <stdapis/libxml2/libxml2_tree.h>",
+      "reason": "The original public libxml2 schema internals header uses xmlNodePtr and xmlDocPtr without including their exported tree declaration header."
+    }
+  ],
+  "xml/dom/xmlengnamespaceresolver.h": [
+    {
+      "before": "#define XMLENGNAMESPACERESOLVER_H",
+      "after": "#define XMLENGNAMESPACERESOLVER_H\n#include <e32std.h>",
+      "reason": "The original public XML namespace resolver uses TPtrC8 and TDesC8 without including their defining e32std.h header."
+    }
+  ],
+  "xml/dom/xmlengxpatherrors.h": [
+    {
+      "before": "#define XMLENGDOMXPATHERRORS_H",
+      "after": "#define XMLENGDOMXPATHERRORS_H\n#include <e32std.h>",
+      "reason": "The original public XML XPath error constants use TInt without including its defining e32std.h header."
+    }
   ]
 }

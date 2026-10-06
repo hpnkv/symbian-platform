@@ -7879,3 +7879,34 @@ unverified. Header compilation, E32 conversion and file presence do not
 establish SIP registration or other named-firmware execution. The remaining
 unowned public export-record count is 1,426; SDL, broad native groups, Linux
 bundle acceptance and 0.2.0 publication remain open.
+
+### 2026-10-06: XML/libxml2 and DOM public export closure
+
+The pinned `xmlsrv/xml/libxml2libs/group/bld.inf` exports the original
+`stdapis/libxml2/libxml2_*.h` layout for libxml2 2.6.10, plus public
+`xml/utils/` headers. Its MMP/DEF pair identifies `xmlengine.dll` and
+`xmlengineutils.dll`; the latter depends on the former. The
+`xmldomandxpath/group/bld.inf` manifest and MMPs split public DOM/XPath
+headers from six serializer headers, with frozen `xmlenginedom.dll` and
+`xmlengineserializer.dll` interfaces. The existing `xmlframework.dll` target
+now owns its remaining public framework headers. Independent canaries found
+missing original prerequisites in `libxml2_schemasinternals.h`,
+`xmlengnamespaceresolver.h` and `xmlengxpatherrors.h`; recorded edits include
+only their exported defining headers. The original `xmlengtriodef.h` and
+`xmlengtrionan.h` explicitly say `@publishedPartner` despite a broad public
+export macro. They are classified private/internal and staged solely as
+required textual support to public headers.
+
+An updated relocated SDK staged complete frozen import proxies, passed
+payload validation and compiled 1,474 selected public-header canary objects
+on each ARMv5T and ARMv6. A disposable XML consumer included public
+libxml2, DOM and serializer headers, linked through `Symbian::XmlSerializer`,
+referenced `xmlParseMemory`/`xmlFreeDoc`, and converted to E32 on ARMv6.
+The selected RM-807 Belle Z-drive contains `xmlframework.dll`,
+`xmlengine.dll`, `xmlengineutils.dll`, `xmlenginedom.dll` and
+`xmlengineserializer.dll`; selected-firmware configuration passed. The XML
+functions were not run in the emulator and the firmware DLL profile is not
+yet supported by the owned E32 inspector, so ordinal equivalence and
+named-firmware XML behavior remain unproven. Three legacy mini-DOM parser
+exports have versioned DEF choices still requiring review. Remaining
+unowned public export records: 1,312.

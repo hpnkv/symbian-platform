@@ -160,6 +160,49 @@ def test_sip_stringtables_and_frozen_public_interfaces_are_inventoried():
         assert header["generator"]["source"].endswith("stringtable.pl")
 
 
+def test_partner_only_xml_headers_are_textual_support_not_public_apis():
+    root = Path(__file__).resolve().parents[2]
+    inventory = json.loads(
+        (root / "research/native-sdk/inventory.json").read_text()
+    )
+    for name in (
+        "stdapis/libxml2/xmlengtriodef.h",
+        "stdapis/libxml2/xmlengtrionan.h",
+    ):
+        header = next(
+            item for item in inventory["headers"] if item["include"] == name
+        )
+        assert header["classification"] == "private_internal"
+        assert header["exclusion_reason"].startswith(
+            "Header declares @publishedPartner"
+        )
+        if header.get("destination"):
+            assert header["exposure"] == "required_textual_support"
+
+
+def test_reviewed_xml_export_manifests_have_target_owned_payloads():
+    root = Path(__file__).resolve().parents[2]
+    inventory = json.loads(
+        (root / "research/native-sdk/inventory.json").read_text()
+    )
+    manifests = (
+        "xmlsrv/xml/xmlfw/group/bld.inf",
+        "xmlsrv/xml/libxml2libs/group/bld.inf",
+        "xmlsrv/xml/xmldomandxpath/group/bld.inf",
+    )
+    for manifest in manifests:
+        public = [
+            header
+            for header in inventory["headers"]
+            if header.get("manifest") == manifest
+            and header.get("classification") == "public_base_platform"
+            and header.get("sha256")
+        ]
+        assert public
+        assert all(header.get("destination") for header in public)
+        assert all(header.get("targets") for header in public)
+
+
 def test_qt_mobility_aliases_exclude_private_classes(tmp_path):
     header = tmp_path / "src/contacts/qcontact.h"
     header.parent.mkdir(parents=True)
