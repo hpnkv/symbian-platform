@@ -105,3 +105,11 @@ its SIP repository and timer-key IDs come from the original public
 The read returned a positive timer value and exited normally in the preserved
 RM-807/Dynarmic emulator. Other firmware and physical-device behavior remain
 unknown.
+
+`Symbian::Bafl` supplies the original resource-reader and file-utility
+headers and transitively selects `Symbian::FileServer` and
+`Symbian::StreamsNative`. `examples/bafl_app_classic` checks a public file
+through `BaflUtils::FileExists` and reads an in-memory stream while linking
+only BAFL. Both operations exited normally in the preserved RM-807/Dynarmic
+emulator. The example's file path is fixture-specific; other firmware remains
+unverified.

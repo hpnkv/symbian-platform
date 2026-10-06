@@ -1,4 +1,4 @@
-"""Independent application-framework and Central Repository header checks."""
+"""Independent application-framework and utility public-header checks."""
 
 import json
 import os
@@ -32,6 +32,8 @@ def test_public_s60_framework_headers_compile_independently(tmp_path):
         "Cone",
         "CentralRepository",
         "CenRepNotification",
+        "Bafl",
+        "StreamsNative",
     ):
         facility = next(
             item for item in inventory["facilities"] if item["target"] == name
@@ -50,7 +52,7 @@ def test_public_s60_framework_headers_compile_independently(tmp_path):
                 ]
             )
             count += 1
-    assert count == 12
+    assert count == 20
     (tmp_path / "CMakeLists.txt").write_text("\n".join(cmake) + "\n")
     build = tmp_path / "build"
     configure = subprocess.run(

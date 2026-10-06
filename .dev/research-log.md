@@ -1,5 +1,22 @@
 # Research log
 
+2026-10-06: BAFL's original `bautils.h` and stream headers compile as eight
+independent ARMv6 canaries with only their owning `Symbian::Bafl` or
+`Symbian::StreamsNative` targets. The new `bafl_app_classic` links only BAFL,
+yet ARMv5T/ARMv6 E32 imports include `bafl.dll`, `efsrv.dll`, `estor.dll` and
+`euser.dll` because the SDK owns the transitive file-server/stream libraries.
+In the preserved RM-807/Dynarmic disposable emulator, `RFs::Entry` failed
+for both `Z:\sys\bin\euser.dll` and the app's own `C:\sys\bin` executable,
+so those paths cannot serve as positive file controls under this process
+profile. `Z:\data\animations\startup.aac` passed both `RFs::Entry` and
+`BaflUtils::FileExists`; the same process read integer 1 from a local
+`RMemReadStream` and exited with guest type/reason `0/0`. The failure on the
+`sys\bin` paths has not been attributed to a specific policy or emulator
+implementation. The opt-in two-case native-utility guest regression passed in
+30.23 seconds, and the root Debug graph built `bafl_app_classic_e32` after a
+cached shared-input configure. This names one fixture, not general device
+compatibility.
+
 2026-10-06: The source-backed inventory already named the original
 `centralrepository.dll` and `cenrepnotifhandler.dll` DEFs and public headers.
 The new read-only `central_repository_app_classic` calls `CRepository::NewL`

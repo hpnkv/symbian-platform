@@ -1,0 +1,28 @@
+#include <bautils.h>
+#include <s32mem.h>
+
+_LIT(KPublicFile, "Z:\\data\\animations\\startup.aac");
+
+int main() {
+  RFs files;
+  if (files.Connect() != KErrNone) {
+    return 1;
+  }
+  TEntry entry;
+  const TInt entry_error = files.Entry(KPublicFile, entry);
+  if (entry_error != KErrNone) {
+    files.Close();
+    return 4;
+  }
+  const TBool found = BaflUtils::FileExists(files, KPublicFile);
+  files.Close();
+  if (!found) {
+    return 2;
+  }
+  const TUint8 bytes[] = {1, 0, 0, 0};
+  RMemReadStream stream(bytes, sizeof(bytes));
+  TInt32 value = 0;
+  TRAPD(error, value = stream.ReadInt32L());
+  stream.Close();
+  return error == KErrNone && value == 1 ? 0 : 3;
+}

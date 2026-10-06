@@ -1,5 +1,15 @@
 # Status
 
+2026-10-06 BAFL/streams native slice: eight independent public-header
+canaries passed. `bafl_app_classic` links through `Symbian::Bafl` with
+transitive original FileServer and StreamsNative imports; ARMv5T/ARMv6 E32
+builds and an ARMv6 SIS package passed. A disposable named RM-807/Dynarmic
+instance found a public drive-Z file through BAFL, read an in-memory stream
+and exited normally; the two-case native-utility guest regression passed.
+The root Debug project exposed and built `bafl_app_classic_e32`. System-bin
+path checks failed at `RFs::Entry`; the exact
+reason remains unknown. Other firmware and physical hardware are untested.
+
 2026-10-06 Central Repository native slice: `Symbian::CentralRepository`
 and `Symbian::CenRepNotification` retained their original frozen interfaces;
 three independent ARMv6 public-header canaries passed, including the
