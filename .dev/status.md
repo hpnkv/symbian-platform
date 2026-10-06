@@ -1,5 +1,15 @@
 # Status
 
+2026-10-06 GUI Debug firmware selection: the local saved GDB supervisor now
+resolves the preserved RM-807 fixture by its exact SHA-256 identity from the
+ignored repository store after an explicit machine-local global selection.
+Manifest integrity and the exact ROM/EUSER profile passed. A disposable debug
+launch accepted a batch ARM GDB remote connection and reported `_E32Startup`
+at PC `0x70000000`; GDB exited zero after disconnect. The CLion frontend and
+source-breakpoint path remain unverified. A rapid rerun on the fixed port
+reported it busy, while a second port worked. The guide now documents local
+selection. No physical hardware was used.
+
 2026-10-04 resident agent workspace listing: the guest now offers authenticated,
 read-only pagination of its own private workspace root through the existing
 control session. Requests cannot name a path or read contents; each page has

@@ -1,5 +1,24 @@
 # Research log
 
+2026-10-06: The saved root `GUI Debug` Remote Debug configuration used its
+generated GDB supervisor correctly, but local emulator resolution had no
+firmware selection and pointed at the empty default store
+`~/.symbian/firmware`. The preserved RM-807 object was in the repository's
+ignored `.symbian/firmware-store`. I explicitly selected content ID
+`e4502051aee69bb1b7060f47c4e5d5dbf63db3277f8ea918a81076b43ab47e8d`
+and that store in ignored global emulator settings. `symbian emu resolve
+--project examples/gui_app` verified all 13,438 manifest files and selected
+the exact ROM/EUSER `rm807-113.010.1508` profile. The saved `gui-gdb`
+supervisor launched a disposable Debug instance; a batch ARM GDB connection
+reached `_E32Startup` at PC `0x70000000` and exited zero after `disconnect`.
+The emulator frontend needed a forced reap (`frontend_exit=-9`) after that
+debugger disconnect. Immediate reuse of port 24689 reported `GDB port busy`,
+likely a short socket reuse interval; a distinct port 24701 succeeded.
+Open questions: validate CLion's actual Remote Debug UI connection and source
+breakpoint behavior, and make rapid same-port restarts reliable without
+attaching to an unrelated listener. This is named-firmware emulator and GDB
+connection evidence, not physical-device compatibility.
+
 2026-10-04: The connected 808's MTP `Installs` listing included handle
 `0x010000af`, but `GetObjectInfo` returned `0x2002` for it. The handset then
 briefly vanished from USB discovery and reappeared. A later upload and

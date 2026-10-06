@@ -19,7 +19,24 @@ CMake target and has a different role.*
 
 1. [Load the ARM CMake profile](clion-profiles.md) in the `examples/gui_app`
    project and [import compatible firmware](firmware.md). A named ROM/Z
-   fixture is required for this workflow.
+   fixture is required for this workflow. Check the selection before opening
+   **GUI Debug**:
+
+   ```sh
+   symbian emu resolve --project examples/gui_app
+   ```
+
+   If it reports `No firmware selected` but the fixture is already in a local
+   store, select its exact ID and that store explicitly:
+
+   ```sh
+   symbian firmware list --store /path/to/firmware-store
+   symbian emu configure --scope global --store /path/to/firmware-store \
+     --firmware sha256:YOUR_IMPORTED_ID
+   symbian emu resolve --project examples/gui_app
+   ```
+
+   The store and selection live in local emulator settings, outside Git.
 2. Run `symbian emu configure-ide` from the repository root if the
    saved configurations are absent. Reopen the project to load the generated
    `.idea` settings.
