@@ -284,3 +284,28 @@ remain separate unverified scope.
 without making a network request. The new HTTP and URI-list imports have
 compiler/linker evidence only; HTTP transport, browser integration and other
 firmware require separate runtime validation.
+
+The 0.2.0 breadth pass adds frozen import targets from pinned public exports
+and MMP/DEF pairs. Representative mappings are:
+
+| Public include | CMake target | DLL |
+| --- | --- | --- |
+| `mmf/devvideo/devvideobase.h` | `Symbian::DevVideo` | `devvideo.dll` |
+| `imageprocessor/imageprocessor.h` | `Symbian::ImageProcessor` | `imageprocessor.dll` |
+| `icl/imagetransformplugin.h` | `Symbian::ImageTransform` | `imagetransform.dll` |
+| `imagedisplay.h` | `Symbian::ImageDisplayFramework` | `imagedisplay.dll` |
+| `remconcoreapi.h` | `Symbian::RemConCore` | `remconcoreapi.dll` |
+| `conarc.h` | `Symbian::ConverterArc` | `conarc.dll` |
+| `tzlocalizer.h` | `Symbian::TimeZoneLocalization` | `timezonelocalization.dll` |
+| `connect/abclient.h` | `Symbian::BackupClient` | `abclient.dll` |
+
+The installed inventory gives the exact spelling and target for every staged
+public header. This breadth pass has independent-header and import-payload
+checks; it does not establish named-firmware execution for these new targets.
+Some public manifest exports remain blocked by missing ABI ownership or
+conflicting historical layouts, including the original STLport/Open C++
+runtime and an alternative legacy C header tree. The inventory records each
+unresolved export and its reason.
+The GSM/SMS utility headers are inventoried, but their targets remain blocked
+because the required `etelmm.h` is marked `@publishedPartner` in the pinned
+source rather than established as a public SDK interface.

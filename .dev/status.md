@@ -3812,3 +3812,16 @@ converted to E32 from that relocated copy. No new API calls were run. This
 closes the local source-export/relocation checkpoint for the current inventory,
 while macOS/Linux native bundles, full manifest coverage and release 0.2.0
 remain open.
+
+2026-10-06 breadth release pass: 163 more pinned public header spellings were
+assigned across 40 library families, including new image, video, RemCon,
+converter, location, backup and XML targets. The inventory now has 213
+facilities and 187 frozen import interfaces; staged imports and
+payload validation pass. Relocated-SDK independent header canaries pass 1,775
+objects on each ARM profile. Fifty-six focused tests, strict docs and style
+checks pass. No newly exposed call was run. Public export records still
+without reviewed ownership: 952, with precise major blockers recorded in the
+inventory/research log. `Gsm`/`Sms` remain blocked by partner-only ETel
+Multimode declarations. The 0.2.0 release may ship as an explicitly limited
+breadth release under the user's revised validation schedule; final bundle
+CI, publication and later runtime testing remain open.

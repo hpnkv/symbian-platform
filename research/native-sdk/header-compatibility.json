@@ -229,5 +229,54 @@
       "after": "#include <cryptospi/rulecharacteristics.h>",
       "reason": "The public CryptoSPI rule selector includes its original unexported textual prerequisite by a flat spelling; use the staged cryptospi/ layout required by the public manifest while keeping the prerequisite classified private/internal."
     }
+  ],
+  "coefepff.h": [
+    {
+      "before": "class CCoeFepParameters;",
+      "after": "class CCoeEnv;\nclass CCoeFepParameters;",
+      "reason": "The original public FEP factory-function header names CCoeEnv without declaring it; preserve its signature with the missing forward declaration."
+    }
+  ],
+  "graphics/cone/coeerrorconsts.h": [
+    {
+      "before": "#define COEERRORCONSTS_H_",
+      "after": "#define COEERRORCONSTS_H_\n#include <e32std.h>",
+      "reason": "The original private Cone constant header is textual support for public coeerror.h and names TUid without its E32 definition; keep it private while supplying the prerequisite."
+    }
+  ],
+  "graphics/clock/displayaddition.h": [
+    {
+      "before": "#define DISPLAYADDITION_H",
+      "after": "#define DISPLAYADDITION_H\n#include <e32base.h>",
+      "reason": "The original clock.h includes this internal textual-support header, which names TBuf8 and TDesC8 without its E32 prerequisite; the helper remains private/internal."
+    }
+  ],
+  "imageprocessor/imageprocessorinputinfo.h": [
+    {
+      "before": "#define __IMAGE_PROCESSOR_INPUT_INFO_H__",
+      "after": "#define __IMAGE_PROCESSOR_INPUT_INFO_H__\n#include <displaymode.h>",
+      "reason": "The original public image input-info header uses TDisplayMode without its defining displaymode.h."
+    }
+  ],
+  "exifutility.h": [
+    {
+      "before": "#define __EXIFUTILITY_H__",
+      "after": "#define __EXIFUTILITY_H__\n#include <e32base.h>",
+      "reason": "The original public Exif utility header uses IMPORT_C and Symbian basic types without its E32 prerequisite."
+    }
+  ],
+  "networking/dnd_err.h": [
+    {
+      "before": "#define __DND_ERR_H__",
+      "after": "#define __DND_ERR_H__\n#include <e32std.h>",
+      "reason": "The original public IPv6/DNS error header names TInt constants without its E32 prerequisite."
+    }
+  ],
+  "siphlerr.h": [
+    {
+      "before": "#define SIPHLERR_H",
+      "after": "#define SIPHLERR_H\n#include <e32std.h>",
+      "reason": "The original public SIP high-level error header names TInt without its E32 prerequisite."
+    }
   ]
 }

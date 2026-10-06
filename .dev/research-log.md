@@ -8083,3 +8083,37 @@ relocation, compiler/linker and E32-format evidence; it does not establish
 named-firmware execution, DLL ordinal equivalence or physical-device support.
 The export was started before the later CI cache-key-only commit, which did
 not change its staged payload or embedded inventory.
+
+### 2026-10-06: source-backed breadth pass for release 0.2.0
+
+A nearest-component review of pinned public BLD.INF exports against frozen
+MMP/DEF pairs assigned 163 previously unowned header spellings to 40 library
+families. Existing DLL targets retained their names; new targets cover
+DevVideo, image processing/display/transform, converter architecture, RemCon,
+location, time-zone localization, backup, XML parsing and other independent
+families. The source inventory now records 213 facilities, of which 187 have
+frozen import interfaces. Staging regenerated their complete DEF
+proxies with original ordinal holes and passed the native payload validator.
+Independent relocated-SDK canaries compiled 1,775 selected public-header
+objects on both ARMv5T and ARMv6. The 56 focused inventory/surface tests,
+strict documentation and owned C++/Python style checks passed. Newly exposed
+API calls were not executed, and ordinal equivalence against Belle firmware
+DLLs remains unknown.
+
+The broad public export macro also included Cone clock and backup helper
+headers whose own declarations are wholly internal. They are classified
+private/internal, with only necessary textual prerequisites staged. Narrow
+E32 prerequisite edits were recorded for FEP, clock, image input, Exif,
+IPv6/DNS errors and SIP errors. `Gsm`/`Sms` remain blocked despite their
+additional inventoried public utility headers: their transitive
+`TelephonyMultimode` target requires `etelmm.h`, which the source publishes
+only to partners. The fallback STLport/Open C++ and alternate legacy C trees
+remain blocked by ABI/layout evidence, not silently substituted with libc++.
+
+Of 2,694 public export records, 952 still lack reviewed delivery/target
+ownership: 320 original STLport/Open C++ ABI, 65 conflicting legacy C layout,
+62 exports escaping their include root, 16 differing source variants, one
+absent source file and 488 further unreviewed ownership cases. A 0.2.0
+breadth release must state these limits plainly; this pass is not a complete
+Nokia SDK equivalence claim. A fresh final source export and macOS/Linux
+bundle matrix remain to be checked by the release workflow.

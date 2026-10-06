@@ -18,6 +18,27 @@ from symbian.project.native_surface import (
     generate_stringtable,
 )
 
+INTERNAL_EXPORTS = {
+    "stdapis/libxml2/xmlengtriodef.h": "Header declares @publishedPartner",
+    "stdapis/libxml2/xmlengtrionan.h": "Header declares @publishedPartner",
+    "schsend_panic.h": "Header declares @internalAll",
+    "graphics/cone/coeerrorconsts.h": (
+        "Header declares only @internalTechnology constants"
+    ),
+    "graphics/clock/displayaddition.h": (
+        "Header declarations are marked @internalComponent"
+    ),
+    "connect/tserverstart.h": (
+        "Header declarations are marked @internalComponent"
+    ),
+    "connect/abclientserver.h": (
+        "Header declarations are marked @internalComponent"
+    ),
+    "connect/panic.h": (
+        "Backup client panic definitions are internal implementation details"
+    ),
+}
+
 
 def digest(path: Path) -> str:
     """Returns the preserved input's byte digest."""
@@ -188,20 +209,13 @@ def exports(root: Path, names: list[str]) -> tuple[list[dict], list[dict]]:
                         else "private_internal"
                     ),
                 }
-                if include.casefold() in (
-                    "stdapis/libxml2/xmlengtriodef.h",
-                    "stdapis/libxml2/xmlengtrionan.h",
-                    "schsend_panic.h",
-                ):
+                if include.casefold() in INTERNAL_EXPORTS:
                     # Source publication annotations are narrower than the
                     # broad public export macro in these component manifests.
                     record["classification"] = "private_internal"
-                    record["exclusion_reason"] = (
-                        "Header declares @internalAll"
-                        if include.casefold() == "schsend_panic.h"
-                        else "Header declares @publishedPartner; public SDK "
-                        "API status not established"
-                    )
+                    record["exclusion_reason"] = INTERNAL_EXPORTS[
+                        include.casefold()
+                    ]
                 if source.is_file():
                     record["sha256"] = digest(source)
                 else:
@@ -573,7 +587,14 @@ def generate(workspace: Path) -> dict:
             )
         else:
             reason = (
-                "Alternative legacy cstdlib/libc export tree conflicts with "
+                "Historical STLport/Open C++ headers require their original "
+                "runtime, startup and compiler ABI; compatibility with the "
+                "selected Clang/libc++ guest runtime is unverified"
+                if record["include"].startswith(
+                    ("stdapis/stlport/", "stdapis/stlportv5/")
+                )
+                else "Alternative legacy cstdlib/libc export tree conflicts "
+                "with "
                 "the selected Open C headers in independent C canaries; "
                 "consumer include layout and ABI ownership require review"
                 if record["manifest"]

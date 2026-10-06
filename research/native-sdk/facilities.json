@@ -271,10 +271,19 @@
       "target": "ImageTransform",
       "dll": "imagetransform.dll",
       "headers": [
+        "icl/imagetransformpaniccodes.h",
+        "icl/imagetransformplugin.h",
+        "icl/imagetransformpluginext.h",
+        "icl/orientationtransformextension.h",
+        "icl/overlaytransformextension.h",
+        "icl/squeezetransformextension.h",
         "imagetransform.h"
       ],
       "dependencies": [
-        "ImageConversion"
+        "Bitmap",
+        "ECom",
+        "ImageConversion",
+        "StreamsNative"
       ],
       "classification": "public_base_platform",
       "availability": "unknown_firmware",
@@ -292,11 +301,13 @@
       "target": "BitmapTransform",
       "dll": "bitmaptransforms.dll",
       "headers": [
-        "bitmaptransforms.h"
+        "bitmaptransforms.h",
+        "bitmtrans/bitmtranspanic.h"
       ],
       "dependencies": [
         "Bitmap",
-        "ECom"
+        "ECom",
+        "ImageConversion"
       ],
       "classification": "public_base_platform",
       "availability": "unknown_firmware",
@@ -603,13 +614,27 @@
       "dll": "cone.dll",
       "headers": [
         "coecntrl.h",
-        "coemain.h"
+        "coeerror.h",
+        "coefepff.h",
+        "coefontprovider.h",
+        "coelayoutman.h",
+        "coemain.h",
+        "coesndpy.h",
+        "coeutils.h",
+        "fepplugin.h",
+        "fepplugin.inl"
       ],
       "dependencies": [
-        "WindowServer",
-        "Gdi",
+        "Audio",
+        "Bafl",
         "Bitmap",
-        "Bafl"
+        "CentralRepository",
+        "ECom",
+        "Gdi",
+        "MediaClient",
+        "StreamsNative",
+        "StringPool",
+        "WindowServer"
       ],
       "classification": "public_base_platform",
       "availability": "unknown_firmware",
@@ -883,10 +908,25 @@
       "target": "StreamsNative",
       "dll": "estor.dll",
       "headers": [
-        "s32strm.h",
+        "pcstore/checkeduid.h",
+        "pcstore/descriptors.h",
+        "pcstore/directfilestore.h",
+        "pcstore/pcstore.h",
+        "pcstore/pcstoredef.h",
+        "pcstore/storeexception.h",
+        "pcstore/storereadstream.h",
+        "pcstore/storewritestream.h",
+        "pcstore/streamid.h",
+        "pcstore/uid.h",
+        "s32btree.h",
+        "s32btree.inl",
+        "s32cont.h",
+        "s32cont.inl",
         "s32file.h",
         "s32mem.h",
-        "s32stor.h"
+        "s32stor.h",
+        "s32strm.h",
+        "s32ucmp.h"
       ],
       "dependencies": [
         "FileServer"
@@ -1290,7 +1330,10 @@
       "target": "Telephony",
       "dll": "etel.dll",
       "headers": [
-        "etel.h"
+        "et_struc.h",
+        "etel.h",
+        "etslotnum.h",
+        "tsy.rh"
       ],
       "dependencies": [],
       "classification": "public_base_platform",
@@ -1327,10 +1370,13 @@
       "target": "TelephonyPacket",
       "dll": "etelpckt.dll",
       "headers": [
+        "eteldefaultqos.h",
         "etelpckt.h"
       ],
       "dependencies": [
-        "Telephony"
+        "StreamsNative",
+        "Telephony",
+        "TelephonyMultimode"
       ],
       "classification": "public_base_platform",
       "availability": "unknown_firmware",
@@ -1368,10 +1414,20 @@
       "dll": "gsmu.dll",
       "headers": [
         "gsmubuf.h",
-        "gsmumsg.h"
+        "gsmuieoperations.h",
+        "gsmumsg.h",
+        "gsmunonieoperations.h",
+        "gsmuset.h",
+        "gsmuset.inl",
+        "gsmustor.h",
+        "gsmustor.inl"
       ],
       "dependencies": [
-        "StreamsNative"
+        "Bitmap",
+        "BitmapGdi",
+        "CharConv",
+        "StreamsNative",
+        "TelephonyMultimode"
       ],
       "classification": "public_base_platform",
       "availability": "unknown_firmware",
@@ -1391,12 +1447,19 @@
       "target": "Sms",
       "dll": "smsu.dll",
       "headers": [
-        "smsustrm.h",
-        "smsuaddr.h"
+        "smsuact.h",
+        "smsuaddr.h",
+        "smsulog.h",
+        "smsulog.inl",
+        "smsuset.h",
+        "smsuset.inl",
+        "smsustrm.h"
       ],
       "dependencies": [
         "Gsm",
-        "SocketServer"
+        "SocketServer",
+        "StreamsNative",
+        "StringPool"
       ],
       "classification": "public_base_platform",
       "availability": "unknown_firmware",
@@ -1476,9 +1539,13 @@
       "dll": "lbs.dll",
       "headers": [
         "lbs.h",
-        "lbspositioninfo.h"
+        "lbspositioncalc.h",
+        "lbspositioninfo.h",
+        "lbssatellite.h"
       ],
-      "dependencies": [],
+      "dependencies": [
+        "StreamsNative"
+      ],
       "classification": "public_base_platform",
       "availability": "unknown_firmware",
       "definition": "lbs/locationmgmt/locationcore/LbsClient/LbsApi/EABI/LbsU.DEF",
@@ -3140,6 +3207,720 @@
         "efsrv",
         "estor",
         "cryptography"
+      ]
+    },
+    {
+      "target": "SoftwareTransaction",
+      "dll": "stsclient.dll",
+      "headers": [
+        "usif/sts/sts.h",
+        "usif/sts/stsdefs.h"
+      ],
+      "dependencies": [],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "appinstall/installationservices/swtransactionservices/eabi/stsclientu.def",
+      "mmp": "appinstall/installationservices/swtransactionservices/group/stsclient.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "scsclient",
+        "efsrv"
+      ]
+    },
+    {
+      "target": "BluetoothTextNotifiers",
+      "dll": "btextnotifiers.dll",
+      "headers": [
+        "btextnotifiers.h",
+        "btextnotifiersconsts.h"
+      ],
+      "dependencies": [
+        "Bluetooth",
+        "BluetoothDevice"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "bt/bluetooth/btextnotifiers/eabi/BTExtNotifiersU.DEF",
+      "mmp": "bt/bluetooth/btextnotifiers/src/BTExtNotifiers.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "bluetooth",
+        "btdevice"
+      ]
+    },
+    {
+      "target": "InfraredTransfer",
+      "dll": "irtranp.dll",
+      "headers": [
+        "tranp.h"
+      ],
+      "dependencies": [
+        "Native_c32"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "bt/irda/irdastack/eabi/irtranpU.DEF",
+      "mmp": "bt/irda/irdastack/irtranp/IRTRANP.MMP",
+      "implementation_dependencies": [
+        "euser",
+        "c32",
+        "efsrv"
+      ]
+    },
+    {
+      "target": "WapMessageClient",
+      "dll": "wapmsgcli.dll",
+      "headers": [
+        "wapmessage.h"
+      ],
+      "dependencies": [
+        "ECom",
+        "InternetSockets"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "cellularsrv/wapstack/wapmessageapi/eabi/wapmsgcliU.DEF",
+      "mmp": "cellularsrv/wapstack/wapmessageapi/group/wapmsgcli.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "ecom",
+        "esock",
+        "insock"
+      ]
+    },
+    {
+      "target": "Grid",
+      "dll": "grid.dll",
+      "headers": [
+        "grdcells.h",
+        "grddef.h",
+        "grdprint.h",
+        "grdprint.inl",
+        "grdstd.h",
+        "grdstd.inl"
+      ],
+      "dependencies": [
+        "Bitmap",
+        "BitmapGdi",
+        "StreamsNative",
+        "StringPool"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "classicui/commonuisupport/grid/eabi/GRIDU.def",
+      "mmp": "classicui/commonuisupport/grid/group/GRID.MMP",
+      "implementation_dependencies": [
+        "euser",
+        "estor",
+        "gdi",
+        "bafl",
+        "fbscli",
+        "bitgdi",
+        "ws32"
+      ]
+    },
+    {
+      "target": "BitmapAnimation",
+      "dll": "bmpanim.dll",
+      "headers": [
+        "bmpanconsts.h",
+        "bmpansrv.h"
+      ],
+      "dependencies": [
+        "Bitmap"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "classicui/lafagnosticuifoundation/bmpanimation/eabi/BmpAnimU.DEF",
+      "mmp": "classicui/lafagnosticuifoundation/bmpanimation/group/BmpAnim.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "ws32",
+        "fbscli"
+      ]
+    },
+    {
+      "target": "Clock",
+      "dll": "clock.dll",
+      "headers": [
+        "clock.h"
+      ],
+      "dependencies": [],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "classicui/lafagnosticuifoundation/clockanim/eabi/CLOCKU.DEF",
+      "mmp": "classicui/lafagnosticuifoundation/clockanim/group/CLOCK.MMP",
+      "implementation_dependencies": [
+        "euser",
+        "ws32"
+      ]
+    },
+    {
+      "target": "Native_c32",
+      "dll": "c32.dll",
+      "headers": [
+        "cs_port.h",
+        "csy.rh"
+      ],
+      "dependencies": [],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "commsfw/serialserver/c32serialserver/eabi/c32U.def",
+      "mmp": "commsfw/serialserver/c32serialserver/group/C32.MMP",
+      "implementation_dependencies": [
+        "euser",
+        "efsrv",
+        "commsfw",
+        "nodemessages",
+        "c32root"
+      ]
+    },
+    {
+      "target": "RemConCore",
+      "dll": "remconcoreapi.dll",
+      "headers": [
+        "remconcoreapi.h",
+        "remconcoreapicontroller.h",
+        "remconcoreapicontrollerobserver.h",
+        "remconcoreapitarget.h",
+        "remconcoreapitargetobserver.h"
+      ],
+      "dependencies": [
+        "RemConInterfaceBase"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "devicesrv/accessoryservices/remotecontrolfw/client/coreapi/eabi/remconcoreapiU.DEF",
+      "mmp": "devicesrv/accessoryservices/remotecontrolfw/client/coreapi/group/remconcoreapi.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "remconinterfacebase"
+      ]
+    },
+    {
+      "target": "RemConTrackInfo",
+      "dll": "remconextapi1.dll",
+      "headers": [
+        "remconabsvolcontroller.h",
+        "remconabsvolcontrollerobserver.h",
+        "remconabsvoltarget.h",
+        "remconabsvoltargetobserver.h",
+        "remcontrackinfocontroller.h",
+        "remcontrackinfocontrollerobserver.h",
+        "remcontrackinfotarget.h",
+        "remcontrackinfotargetobserver.h"
+      ],
+      "dependencies": [
+        "RemConInterfaceBase"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "devicesrv/accessoryservices/remotecontrolfw/client/extapi1/eabi/remconextapi1U.DEF",
+      "mmp": "devicesrv/accessoryservices/remotecontrolfw/client/extapi1/group/remconextapi1.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "remconinterfacebase"
+      ]
+    },
+    {
+      "target": "RemConInterfaceBase",
+      "dll": "remconinterfacebase.dll",
+      "headers": [
+        "remcon/remconinterfacebase.h",
+        "remcon/remconinterfacefeatures.h",
+        "remcon/remconinterfaceif.h",
+        "remconerrorobserver.h",
+        "remconinterfaceselector.h"
+      ],
+      "dependencies": [
+        "RemConTypes",
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "devicesrv/accessoryservices/remotecontrolfw/client/intermediate/eabi/remconinterfacebaseU.DEF",
+      "mmp": "devicesrv/accessoryservices/remotecontrolfw/client/intermediate/group/remconinterfacebase.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "remconclient",
+        "remcontypes",
+        "estor"
+      ]
+    },
+    {
+      "target": "RemConTypes",
+      "dll": "remcontypes.dll",
+      "headers": [
+        "remcon/clienttype.h",
+        "remcon/messagetype.h",
+        "remcon/playertype.h",
+        "remconaddress.h"
+      ],
+      "dependencies": [
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "devicesrv/accessoryservices/remotecontrolfw/types/eabi/remcontypesU.DEF",
+      "mmp": "devicesrv/accessoryservices/remotecontrolfw/types/group/remcontypes.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "estor"
+      ]
+    },
+    {
+      "target": "Palette",
+      "dll": "palette.dll",
+      "headers": [
+        "palette.h"
+      ],
+      "dependencies": [],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "graphics/graphicsdeviceinterface/colourpalette/eabi/PALETTEU.DEF",
+      "mmp": "graphics/graphicsdeviceinterface/colourpalette/group/palette.mmp",
+      "implementation_dependencies": [
+        "euser"
+      ]
+    },
+    {
+      "target": "DevVideo",
+      "dll": "devvideo.dll",
+      "headers": [
+        "mmf/devvideo/avc.h",
+        "mmf/devvideo/devvideobase.h",
+        "mmf/devvideo/devvideobase.inl",
+        "mmf/devvideo/devvideoconstants.h",
+        "mmf/devvideo/devvideoplay.h",
+        "mmf/devvideo/devvideoplay.inl",
+        "mmf/devvideo/devvideorecord.h",
+        "mmf/devvideo/devvideorecord.inl",
+        "mmf/devvideo/h263.h",
+        "mmf/devvideo/mpeg4visual.h",
+        "mmf/devvideo/on2vp6.h",
+        "mmf/devvideo/sorensonspark.h",
+        "mmf/devvideo/vc1.h",
+        "mmf/devvideo/videoplayhwdevice.h",
+        "mmf/devvideo/videorecordhwdevice.h"
+      ],
+      "dependencies": [
+        "ECom"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "mm/mmhais/videohai/devvideo/mmpfiles/eabi/DevVideoU.DEF",
+      "mmp": "mm/mmhais/videohai/devvideo/mmpfiles/DevVideo/DevVideo.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "ecom",
+        "mmcommonutils",
+        "puresolverutils"
+      ]
+    },
+    {
+      "target": "GifScaler",
+      "dll": "gifscaler.dll",
+      "headers": [
+        "gifscaler.h"
+      ],
+      "dependencies": [
+        "Bitmap",
+        "BitmapTransform"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "mmimaging/imaging/imagingfws/GifScaler/eabi/GifScalerU.def",
+      "mmp": "mmimaging/imaging/imagingfws/GifScaler/MmpFiles/GifScaler.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "fbscli",
+        "gdi",
+        "hal",
+        "bitmaptransforms"
+      ]
+    },
+    {
+      "target": "ImageDisplayFramework",
+      "dll": "imagedisplay.dll",
+      "headers": [
+        "icl/exifimagedisplayext.h",
+        "icl/imagedisplaypaniccodes.h",
+        "icl/imagedisplayplugin.h",
+        "icl/imagedisplaypluginext.h",
+        "imagedisplay.h"
+      ],
+      "dependencies": [
+        "ContentAccess",
+        "ContentAccessUtils",
+        "ECom",
+        "ImageConversion",
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "mmimaging/imaging/imagingfws/ImageDisplay/eabi/ImageDisplayU.DEF",
+      "mmp": "mmimaging/imaging/imagingfws/ImageDisplay/MmpFiles/ImageDisplay.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "estor",
+        "ecom",
+        "efsrv",
+        "caf",
+        "mmcommon",
+        "imageconversion",
+        "cafutils"
+      ]
+    },
+    {
+      "target": "ImageProcessor",
+      "dll": "imageprocessor.dll",
+      "headers": [
+        "imageprocessor/imageprocessor.h",
+        "imageprocessor/imageprocessoreffect.h",
+        "imageprocessor/imageprocessorinputinfo.h",
+        "imageprocessor/imageprocessorobserver.h",
+        "imageprocessor/imageprocessoroutputinfo.h",
+        "imageprocessor/imageprocessoroverlay.h",
+        "imageprocessor/imageprocessorpreview.h",
+        "imageprocessor/imageprocessorprogressinfo.h"
+      ],
+      "dependencies": [
+        "Bitmap",
+        "ContentAccess",
+        "ECom",
+        "ImageConversion"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "mmimaging/imaging/imagingfws/ImageProcessor/eabi/imageprocessor.def",
+      "mmp": "mmimaging/imaging/imagingfws/ImageProcessor/group/imageprocessor.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "ecom",
+        "imageconversion",
+        "caf",
+        "mmcommon",
+        "fbscli",
+        "mmcommonutils"
+      ]
+    },
+    {
+      "target": "ExifUtility",
+      "dll": "exifutility.dll",
+      "headers": [
+        "exifutility.h"
+      ],
+      "dependencies": [],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "mmimaging/imaging/imagingfws/ExifUtility/eabi/EXIFUTILITYU.DEF",
+      "mmp": "mmimaging/imaging/imagingfws/ExifUtility/mmpfiles/ExifUtility.mmp",
+      "implementation_dependencies": [
+        "euser"
+      ]
+    },
+    {
+      "target": "Panorama",
+      "dll": "panorama.dll",
+      "headers": [
+        "panorama/panorama.h"
+      ],
+      "dependencies": [
+        "Bitmap",
+        "ECom",
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "mmimaging/imaging/imagingfws/panorama/eabi/panoramau.def",
+      "mmp": "mmimaging/imaging/imagingfws/panorama/group/panorama.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "estor",
+        "efsrv",
+        "ecom",
+        "mmcommonutils",
+        "fbscli"
+      ]
+    },
+    {
+      "target": "InternetSockets",
+      "dll": "insock.dll",
+      "headers": [
+        "eui_addr.h",
+        "in6_if.h",
+        "in6_opt.h",
+        "inet6err.h"
+      ],
+      "dependencies": [],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "networkingsrv/esockapiextensions/internetsockets/eabi/insockU.DEF",
+      "mmp": "networkingsrv/esockapiextensions/internetsockets/group/insock.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "esock"
+      ]
+    },
+    {
+      "target": "Ipv6Hook",
+      "dll": "inhook6.dll",
+      "headers": [
+        "arp_hdr.h",
+        "ext_hdr.h",
+        "icmp6_hdr.h",
+        "in_chk.h",
+        "in_hdr.h",
+        "in_pkt.h",
+        "ip4_hdr.h",
+        "ip6_hdr.h",
+        "networking/dnd_err.h",
+        "sbque.h",
+        "tcp_hdr.h",
+        "tcpseq.h",
+        "udp_hdr.h"
+      ],
+      "dependencies": [
+        "InternetSockets"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "networkingsrv/networkprotocols/iphook/inhook6/eabi/inhook6u.def",
+      "mmp": "networkingsrv/networkprotocols/iphook/inhook6/group/inhook6.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "esock",
+        "esocksvr",
+        "mbufmgr",
+        "insock"
+      ]
+    },
+    {
+      "target": "PunycodeConverter",
+      "dll": "punycodeconverter.dll",
+      "headers": [
+        "punycodeconverter.h"
+      ],
+      "dependencies": [],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "networkingsrv/tcpiputils/punycodeconv/eabi/punycodeconverteru.def",
+      "mmp": "networkingsrv/tcpiputils/punycodeconv/group/punycodeconverter.mmp",
+      "implementation_dependencies": [
+        "euser"
+      ]
+    },
+    {
+      "target": "BackupClient",
+      "dll": "abclient.dll",
+      "headers": [
+        "connect/abclient.h",
+        "connect/sbdefs.h"
+      ],
+      "dependencies": [],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "ossrv/genericservices/activebackupclient/EABI/abclientU.DEF",
+      "mmp": "ossrv/genericservices/activebackupclient/group/abclient.mmp",
+      "implementation_dependencies": [
+        "euser"
+      ]
+    },
+    {
+      "target": "CommonEngine",
+      "dll": "commonengine.dll",
+      "headers": [
+        "StringLoader.h",
+        "commonphoneparser.h",
+        "finditemengine.h",
+        "sysutil.h"
+      ],
+      "dependencies": [
+        "Cone",
+        "ECom",
+        "Eikon",
+        "StringPool"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "ossrv/genericservices/s60compatibilityheaders/commonengine/eabi/CommonEngineCRu.DEF",
+      "mmp": "ossrv/genericservices/s60compatibilityheaders/commonengine/group/commonengine.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "efsrv",
+        "ecom",
+        "cone",
+        "bafl",
+        "eikcore",
+        "apfile",
+        "gdi",
+        "etul"
+      ]
+    },
+    {
+      "target": "LineBreak",
+      "dll": "linebreak.dll",
+      "headers": [
+        "bidivisual.h",
+        "shapeinfo.h",
+        "textbase.h"
+      ],
+      "dependencies": [],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "textandloc-sdk/fontservices/textbase/eabi/LineBreakU.def",
+      "mmp": "textandloc-sdk/fontservices/textbase/group/LineBreak.mmp",
+      "implementation_dependencies": [
+        "euser"
+      ]
+    },
+    {
+      "target": "Native_xmldom",
+      "dll": "xmldom.dll",
+      "headers": [
+        "gmxmldomconstants.h"
+      ],
+      "dependencies": [
+        "StringPool"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "xmlsrv/xml/legacyminidomparser/XMLDom/eabi/V2_XMLDOMu.DEF",
+      "mmp": "xmlsrv/xml/legacyminidomparser/XMLDom/GROUP/XMLDOM.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "bafl"
+      ]
+    },
+    {
+      "target": "GmXmlParser",
+      "dll": "xmlparser.dll",
+      "headers": [
+        "gmxmlconstants.h",
+        "gmxmlparser.h"
+      ],
+      "dependencies": [
+        "CharConv",
+        "Native_xmldom",
+        "StringPool"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "xmlsrv/xml/legacyminidomparser/XMLParser/eabi/v2_xmlparseru.DEF",
+      "mmp": "xmlsrv/xml/legacyminidomparser/XMLParser/GROUP/xmlparser.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "efsrv",
+        "charconv",
+        "bafl",
+        "xmldom"
+      ]
+    },
+    {
+      "target": "ConverterArc",
+      "dll": "conarc.dll",
+      "headers": [
+        "cnftool.rh",
+        "conarc.h",
+        "concnf.h",
+        "confndr.h",
+        "conlist.h",
+        "conplugin.rh"
+      ],
+      "dependencies": [
+        "ECom",
+        "Mime",
+        "StreamsNative",
+        "StringPool"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "appsupport-sdk/filehandling/fileconverterfw/eabi/CONARC_9_REMOVE_UI_FRAMEWORKS_V1U.DEF",
+      "mmp": "appsupport-sdk/filehandling/fileconverterfw/group/CONARC.MMP",
+      "implementation_dependencies": [
+        "euser",
+        "efsrv",
+        "estor",
+        "bafl",
+        "apmime",
+        "ecom"
+      ]
+    },
+    {
+      "target": "TimeZoneLocalization",
+      "dll": "timezonelocalization.dll",
+      "headers": [
+        "tzlocalizationdatatypes.h",
+        "tzlocalizationdatatypes.inl",
+        "tzlocalizer.h"
+      ],
+      "dependencies": [
+        "CentralRepository",
+        "Dbms",
+        "StringPool"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "appsupport-sdk/tzservices/tzloc/eabi/TimeZoneLocalizationU.DEF",
+      "mmp": "appsupport-sdk/tzservices/tzloc/group/TimeZoneLocalization.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "edbms",
+        "bafl",
+        "efsrv",
+        "tzclient",
+        "centralrepository"
+      ]
+    },
+    {
+      "target": "Native_sipstatemachine",
+      "dll": "sipstatemachine.dll",
+      "headers": [
+        "siphlerr.h"
+      ],
+      "dependencies": [
+        "SdpCodec",
+        "SipClient",
+        "SipCodec",
+        "SipProfileCore",
+        "SipProfiles",
+        "StreamsNative",
+        "Uri"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "ipappprotocols/sipproviderplugins/sipprovider/sipstatemachine/eabi/SipStateMachineU.def",
+      "mmp": "ipappprotocols/sipproviderplugins/sipprovider/sipstatemachine/group/SipStateMachine.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "efsrv",
+        "esocksvr",
+        "estor",
+        "sipcodec",
+        "sdpcodec",
+        "sipprofile",
+        "sipprofilecli",
+        "siprsvclient",
+        "sipclient",
+        "inetprotutil"
+      ]
+    },
+    {
+      "target": "CalendarConverter",
+      "dll": "ccon.dll",
+      "headers": [
+        "calendarconverter.h"
+      ],
+      "dependencies": [
+        "ECom"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "organizer/pimappsupport/chinesecalendarconverter/eabi/CConU.DEF",
+      "mmp": "organizer/pimappsupport/chinesecalendarconverter/group/CCon.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "ecom"
       ]
     }
   ]

@@ -107,7 +107,7 @@ def check(prefix: Path, output: Path, architecture: str) -> None:
     ]
     subprocess.run(command, check=True, env=environment)
     subprocess.run(
-        ["cmake", "--build", str(project / "build"), "-j", "6"],
+        ["cmake", "--build", str(project / "build"), "-j", "6", "--", "-k0"],
         check=True,
         env=environment,
     )

@@ -339,3 +339,28 @@ def test_native_bundle_caches_follow_public_surface_changes():
             "scripts/update_native_inventory.py",
         ):
             assert f"'{source}'" in key
+
+
+def test_breadth_imports_retain_public_manifest_ownership():
+    root = Path(__file__).resolve().parents[2]
+    data = json.loads((root / "research/native-sdk/inventory.json").read_text())
+    facilities = {item["target"]: item for item in data["facilities"]}
+    for target in (
+        "DevVideo",
+        "ImageProcessor",
+        "ImageTransform",
+        "ImageDisplayFramework",
+        "RemConCore",
+        "ConverterArc",
+        "TimeZoneLocalization",
+        "BackupClient",
+    ):
+        facility = facilities[target]
+        assert not facility.get("blocked"), target
+        definition = facility["definition"]["source"].lower()
+        assert "/eabi/" in definition and definition.endswith(".def")
+        assert any(
+            target in header.get("targets", [])
+            and header["classification"] == "public_base_platform"
+            for header in data["headers"]
+        )
