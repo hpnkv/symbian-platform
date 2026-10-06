@@ -7127,3 +7127,32 @@ OpenC socket test deselected), covering TLS 1.2/1.3 client/server and owned
 session controls. Standalone legacy OpenSSL/Mbed builds and their grouped
 header canaries pass on ARMv5T and ARMv6. The final live run uses the complete
 installed SDK and both explicit emulator/firmware fixture selectors.
+
+### 2026-10-06: public native SDK expansion — inventory foundation
+
+Waited until `git status --porcelain=v1` reported a clean worktree before
+reading guidance or expanding scope. The prior GLES/EGL and pointer/entropy
+work is preserved. The user subsequently authorized incremental commits/pushes
+and a dedicated 0.2.0 release after completion; no hardware operation is in scope.
+
+Recovered pinned public source snapshots for native multimedia, S60 frameworks,
+hardware resources, telephony, Bluetooth/USB, location, PIM, security, XML,
+network protocols and historical Qt extensions. Original textandloc and
+appsupport research inputs are partial preserved checkouts; separate full
+`*-sdk` research checkouts avoid resetting their staged state. Upstream trees
+remain ignored. Nokia `.metaxml` release categories establish public SDK APIs
+such as Avkon even where header-export macros use PLATFORM paths. PLATFORM
+exports without this additional evidence remain private/internal candidates.
+
+The first maintained inventory contains 153 facility records, 2,854 public
+export records and 1,303 reviewed header/include-closure payloads. Counts are
+intermediate. Secondary `bld_include.inf` exports matter (MIDI was initially
+missed by scanning only bld.inf). Four scanner controls pass, including SDK
+metadata promotion, exclusion of test/private exports and case-sensitive host
+path resolution. Regeneration checks and Black/Ruff pass. This is inventory
+and staging groundwork; native-header compilation, complete bundles and runtime
+acceptance have not yet been established for the expanded surface.
+
+Open question: these public source revisions predate Belle FP2. A complete,
+redistributable Belle FP2 SDK packaging/header manifest and exact shipped
+version/ordinal comparison remain required for a Belle completeness claim.

@@ -1,0 +1,186 @@
+{
+  "schema": "symbian.native-sources/v1",
+  "baseline": "Symbian^3 public source snapshots; Belle FP2 SDK equivalence unverified",
+  "sources": {
+    "appinstall": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.appinstall",
+      "revision": "760927eba63e3324cceee974b9ed582da90cb9a3"
+    },
+    "appsupport": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.appsupport",
+      "revision": "3efd2b6c5ad920873846770a70f9769721e494c8"
+    },
+    "bt": {
+      "repository": "SymbianSource/oss.FCL.sf.os.bt",
+      "revision": "ba9e7d24a7fa29d6dd93808867c28bffa2206bae"
+    },
+    "btservices": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.btservices",
+      "revision": "f6a4b12b2d9caba29c7e27e38cfaa1e478fd115b"
+    },
+    "cellularsrv": {
+      "repository": "SymbianSource/oss.FCL.sf.os.cellularsrv",
+      "revision": "d33b71b9b498e69cb71c0a1a1f4b5221181dbb9e"
+    },
+    "classicui": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.classicui",
+      "revision": "dcea899751dfa099dcca7a5508cf32eab64afa7a"
+    },
+    "commonemail": {
+      "repository": "SymbianSource/oss.FCL.sf.app.commonemail",
+      "revision": "6a784f9441eb3508444b19fcbeeea6a806df27e6"
+    },
+    "commsfw": {
+      "repository": "SymbianSource/oss.FCL.sf.os.commsfw",
+      "revision": "bc8ac1a6d5273cbfa7852bbb8ce27d6ddc076984"
+    },
+    "deviceplatformrelease": {
+      "repository": "SymbianSource/oss.FCL.sf.os.deviceplatformrelease",
+      "revision": "b7c838933e1ac74d3873b8722538aba029479ab2"
+    },
+    "devicesrv": {
+      "repository": "SymbianSource/oss.FCL.sf.os.devicesrv",
+      "revision": "ce33ac3d46a302f839e326636a065bd35a6406e4"
+    },
+    "drm": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.drm",
+      "revision": "43dc91f0edd14204d64ec3b0541a1e76072eece3"
+    },
+    "graphics": {
+      "repository": "SymbianSource/oss.FCL.sf.os.graphics",
+      "revision": "ff133bc50e6158bfb08cc093b0f0055321dcde99"
+    },
+    "imghandling": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.imghandling",
+      "revision": "f81ed9b07070b7a20bfb83a96d1a2dc2ab9af58e"
+    },
+    "ipconnmgmt": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.ipconnmgmt",
+      "revision": "7c6f294faf11b41753e2402de392b6359acc8a2e"
+    },
+    "kernelhwsrv": {
+      "repository": "SymbianSource/oss.FCL.sf.os.kernelhwsrv",
+      "revision": "0c3208650587ac0230aed8a74e9bddb5288023eb"
+    },
+    "lbs": {
+      "repository": "SymbianSource/oss.FCL.sf.os.lbs",
+      "revision": "7190b98a3d90027016daca88f8f01d071a1f8cb1"
+    },
+    "locationsrv": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.locationsrv",
+      "revision": "282094c09b81e1848755ad40e31052da0bcac81b"
+    },
+    "mds": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.mds",
+      "revision": "6a336727266557c351987111e793a270f86a6291"
+    },
+    "messagingmw": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.messagingmw",
+      "revision": "7af85768c2d2bc370cbb3b95e01103f7b7577455"
+    },
+    "mm": {
+      "repository": "SymbianSource/oss.FCL.sf.os.mm",
+      "revision": "ebaa78373866f90dbf706e8d4eeb59ff65f1e107"
+    },
+    "mmappfw": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.mmappfw",
+      "revision": "f6d6d94e162009a9f116bf0d69dbbb8c864db9d4"
+    },
+    "mmaudio": {
+      "repository": "SymbianSource/oss.FCL.sf.os.mmaudio",
+      "revision": "a39c075cce88671b23d13598fda2f7cbf008f3bb"
+    },
+    "mmimaging": {
+      "repository": "SymbianSource/oss.FCL.sf.os.mmimaging",
+      "revision": "dcc68da0bf7c10c664c864262d3213b5b30124c9"
+    },
+    "mmmw": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.mmmw",
+      "revision": "038ca7403b6f3fd773f7827add19ed1562e4ef51"
+    },
+    "networkingsrv": {
+      "repository": "SymbianSource/oss.FCL.sf.os.networkingsrv",
+      "revision": "b283ce17f27f4a95f37cdb38c6ce79d38ae6ebf9"
+    },
+    "ossrv": {
+      "repository": "SymbianSource/oss.FCL.sf.os.ossrv",
+      "revision": "1e9520caca186c601dd9768449b86bc72be39a22"
+    },
+    "persistentdata": {
+      "repository": "SymbianSource/oss.FCL.sf.os.persistentdata",
+      "revision": "ef8baa21cee9cd1e214e1a7986595c60b3a63271"
+    },
+    "phonesrv": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.phonesrv",
+      "revision": "fae51ff53b72187b3e0330967cab1328d0391186"
+    },
+    "qtextensions": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.qtextensions",
+      "revision": "6940fe99c4e22c0f2f4c91133f161af2f4df739f"
+    },
+    "qtmobility": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.qtmobility",
+      "revision": "a462a7d9493bb0bfb809c09d5c331498b47a2cd6"
+    },
+    "qtwebkit": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.qtwebkit",
+      "revision": "3aae234071c49f50b6cfc6307fb755568c7bbb05"
+    },
+    "security": {
+      "repository": "SymbianSource/oss.FCL.sf.os.security",
+      "revision": "79579fe70243065899b3bc4fbc51706e24d9b57b"
+    },
+    "securitysrv": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.securitysrv",
+      "revision": "c9e2e54cd87f6932cb2def1c1c2102f7ef158bae"
+    },
+    "textandloc-sdk": {
+      "repository": "SymbianSource/oss.FCL.sf.os.textandloc",
+      "revision": "59666d6704fee305b0fdd74974f7b4f42659c6a6"
+    },
+    "uiresources": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.uiresources",
+      "revision": "b78660bec78835802edd6575b96897d4aba58376"
+    },
+    "usb": {
+      "repository": "SymbianSource/oss.FCL.sf.os.usb",
+      "revision": "34b79e372c4bc772dd4c6a8ff39b6ce8cb906965"
+    },
+    "usbservices": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.usbservices",
+      "revision": "ea7d525c670f4cca267f70a29b3dfa47da0e9130"
+    },
+    "web": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.web",
+      "revision": "50303e652d73bc9a7aa7031d35c50e9b285272aa"
+    },
+    "xmlsrv": {
+      "repository": "SymbianSource/oss.FCL.sf.os.xmlsrv",
+      "revision": "333ed3d1a8964b73ce3424bbd46aa4dbe91f027d"
+    },
+    "appsupport-sdk": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.appsupport",
+      "revision": "3efd2b6c5ad920873846770a70f9769721e494c8"
+    },
+    "ipappprotocols": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.ipappprotocols",
+      "revision": "62e4b48a47014a0ddfcb6d4ff24bf07590bf510e"
+    },
+    "contacts": {
+      "repository": "SymbianSource/oss.FCL.sf.app.contacts",
+      "revision": "6f02a4a26d8bd207b3f770e5100c1f23764208f3"
+    },
+    "organizer": {
+      "repository": "SymbianSource/oss.FCL.sf.app.organizer",
+      "revision": "e15734d1943a012120b188fe3ffd5dd7594d145f"
+    },
+    "shortlinkconn": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.shortlinkconn",
+      "revision": "39618d5dc6d43cee9c38a3ee08c9716c21c2a8a8"
+    },
+    "netprotocols": {
+      "repository": "SymbianSource/oss.FCL.sf.mw.netprotocols",
+      "revision": "cc43765893d358f20903b5635a2a125134a2ede8"
+    }
+  }
+}
