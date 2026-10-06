@@ -592,6 +592,14 @@ def generate(workspace: Path) -> dict:
         "facilities": facilities,
         "headers": headers,
         "private_export_count": len(support),
+        "auxiliary_manifests": [
+            {
+                "destination": "share/symbian/native/openc-header-usage.json",
+                "sha256": digest(
+                    workspace / "research/native-sdk/openc-header-usage.json"
+                ),
+            }
+        ],
         "licenses": [
             {
                 "source": str(path.relative_to(root)),

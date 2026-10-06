@@ -43,7 +43,7 @@ foreach(directory compiler openc libc libm pthread posix4 native/stdapis
 endforeach()
 target_compile_definitions(SymbianNativeAbi INTERFACE
   _UNICODE __GCC32__ __GCCV3__ __EABI__ __EPOC32__ __MARM__ __MARM_ARMV5__
-  __SYMBIAN32__ __LONG_LONG_SUPPORTED SYMBIAN_CAF_V2)
+  __SYMBIAN32__ __LONG_LONG_SUPPORTED SYMBIAN_CAF_V2 __SOFTFP=)
 target_compile_options(SymbianNativeAbi INTERFACE
   -fshort-wchar -fdeclspec -Wno-ignored-attributes)
 string(JSON count LENGTH "${native_surface}" facilities)

@@ -62395,6 +62395,12 @@
     }
   ],
   "private_export_count": 4602,
+  "auxiliary_manifests": [
+    {
+      "destination": "share/symbian/native/openc-header-usage.json",
+      "sha256": "213955b1e282249418c4b1b788286ef671a685f34fcd3c9563afc7a6b41c97b2"
+    }
+  ],
   "licenses": [
     {
       "source": "appinstall/installationservices/swcomponentregistry/sqlite_secure/TEST/TCL/tcldistribution/compat/license.terms",

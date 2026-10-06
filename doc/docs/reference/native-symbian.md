@@ -53,6 +53,7 @@ equivalence as open work; do not infer a runtime guarantee from a header.
 | `QtLocation/QGeoCoordinate` | `Symbian::QtMobilityLocation` | Position and mapping declarations. |
 | `QtMultimediaKit/QMediaPlayer` | `Symbian::QtMobilityMultimediaKit` | Mobility media API; distinct from QtMultimedia. |
 | `QtVersit/QVersitContactExporter` | `Symbian::QtMobilityVersit` | Includes Mobility Contacts transitively. |
+| `stdio.h`, `stdlib.h`, `string.h` | `Symbian::OpenC` | Original Open C `libc.dll` imports; C and pthread prerequisites follow transitively. |
 
 Qt targets also include `Symbian::QtCore`, `QtGui`, `QtSvg`, `QtScript`,
 `QtXmlPatterns`, `QtDeclarative`, `QtMultimedia`, `QtOpenVG` and `QtTest`.
@@ -69,3 +70,15 @@ source-backed inventory records these original-header exceptions. Historical
 source inclusion does not establish the version on every Belle firmware or
 plugin/service availability. See [the capability map](../capabilities/index.md) for modern wrappers
 that remain independent of these original APIs.
+
+The original Open C header export uses the familiar `<stdio.h>` and
+`<sys/...>` spellings. Its `Symbian::OpenC` target uses the guest software
+floating-point ABI and frozen `libc.dll` ordinals. The
+`share/symbian/native/openc-header-usage.json` map records headers that need
+historical prerequisite includes or C++ mode. `netinet6/in6.h` explicitly
+requires inclusion through `<netinet/in.h>`. The exported `sys/event.h`
+cannot be compiled from this source release because it contains an undefined
+`struct klist`; the frozen libc interface also lacks `kqueue` and `kevent`.
+It remains recorded as blocked rather than presented as a working event API.
+The `examples/openc_app_classic` project uses the original libc functions
+directly.

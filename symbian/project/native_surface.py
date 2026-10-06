@@ -120,6 +120,7 @@ def stage_native_headers(workspace: Path, output: Path) -> None:
         "sources.json",
         "facilities.json",
         "header-compatibility.json",
+        "openc-header-usage.json",
     ):
         shutil.copyfile(
             workspace / "research/native-sdk" / name, metadata / name
@@ -179,6 +180,7 @@ def validate_native_payload(prefix: Path) -> None:
     )
     records = [h for h in data["headers"] if h.get("destination")]
     records += data.get("licenses", [])
+    records += data.get("auxiliary_manifests", [])
     records += [
         f["definition"] for f in data["facilities"] if not f.get("blocked")
     ]

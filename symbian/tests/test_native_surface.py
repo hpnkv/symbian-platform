@@ -198,6 +198,30 @@ def test_inventory_rejects_missing_or_modified_header(tmp_path, action):
         validate_native_payload(tmp_path)
 
 
+def test_native_bundle_rejects_missing_open_c_usage_manifest(tmp_path):
+    """The usage/blocker map is required in an installed or bundled SDK."""
+    metadata = tmp_path / "share/symbian/native/inventory.json"
+    metadata.parent.mkdir(parents=True)
+    metadata.write_text(
+        json.dumps(
+            {
+                "facilities": [],
+                "headers": [],
+                "auxiliary_manifests": [
+                    {
+                        "destination": (
+                            "share/symbian/native/openc-header-usage.json"
+                        ),
+                        "sha256": "0" * 64,
+                    }
+                ],
+            }
+        )
+    )
+    with pytest.raises(ValueError, match="Missing native SDK payload"):
+        validate_native_payload(tmp_path)
+
+
 @pytest.mark.parametrize("damage", ["header", "definition", "proxy", "private"])
 def test_qt_inventory_rejects_missing_payload(tmp_path, damage):
     header = tmp_path / "include/qt4/QtNetwork/QHostAddress"
@@ -353,7 +377,9 @@ def test_qt_mobility_selected_graph_rejects_invalid_inputs(
             "set_source_files_properties(app.cc PROPERTIES "
             "COMPILE_OPTIONS -mfloat-abi=hard)"
         ),
-        "architecture": "target_compile_options(wrapper INTERFACE -march=armv5t)",
+        "architecture": (
+            "target_compile_options(wrapper INTERFACE -march=armv5t)"
+        ),
         "kernel": "set_property(TARGET app PROPERTY SYMBIAN_IMAGE_KERNEL eka1)",
     }.get(damage, "")
     result = run(body, extra)

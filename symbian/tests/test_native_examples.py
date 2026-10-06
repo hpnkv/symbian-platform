@@ -152,3 +152,25 @@ def test_qt_mobility_example_links_frozen_modules(tmp_path, architecture):
     assert {"qtcontacts.dll", "qtlocation.dll", "qtcore.dll"} <= imports
     assert report["e32"]["architecture"] == architecture
     assert not report["runtime_verified"]
+
+
+@pytest.mark.parametrize("architecture", ["armv5t", "armv6"])
+def test_open_c_example_links_original_libc(tmp_path, architecture):
+    """Builds the original Open C headers and complete libc import interface."""
+    sdk = AppSdk.load(Path(SDK))
+    source = tmp_path / "openc classic"
+    shutil.copytree(ROOT / "examples/openc_app_classic", source)
+    (source / "sdk-location.json").write_text(
+        json.dumps({"sdk": str(sdk.prefix)})
+    )
+    report = build(
+        source,
+        tmp_path / "output",
+        str(sdk.compiler),
+        str(sdk.linker),
+        architecture=architecture,
+    )
+    imports = {item["dll"] for item in report["e32"]["imports"]}
+    assert {"libc.dll", "libpthread.dll", "euser.dll"} <= imports
+    assert report["e32"]["architecture"] == architecture
+    assert not report["runtime_verified"]

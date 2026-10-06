@@ -7297,3 +7297,34 @@ import counts at 20-facility intervals through 120/130, then completion.
 Concurrent CLion reloads reported that they were waiting for the shared lock;
 the next configuration reported cached inputs current. The progress log is
 build state, not a tracked source artifact.
+
+### 2026-10-06: original Open C header and libc slice
+
+The already inventoried original Open C export has 108 public `stdapis/`
+headers and a complete frozen `libcu.def`. A relocated ARMv5T/ARMv6
+`openc_app_classic` consumer included `<stdio.h>`, `<stdlib.h>` and
+`<string.h>`, linked `Symbian::OpenC` and converted to E32. Its imports include
+`libc.dll`, `libpthread.dll` and `euser.dll`; it has not been executed against
+a named firmware. `__SOFTFP` is an empty declaration marker in the original
+soft-float GCC header, but Open C's `time.h` only defines it under the old
+WINSCW branch. The target now supplies the empty macro for the selected
+software-float AAPCS profile, allowing original C header consumers to compile.
+
+An independent ARMv6 C/C++ matrix then compiled 107 of 108 Open C exported
+headers with their recorded historical prerequisites. `sys/aeselect.h` is
+C++-only because it names `TRequestStatus`. `netinet6/in6.h` explicitly
+rejects direct inclusion and compiles through `<netinet/in.h>`; the matrix
+checks its indirect guard. The remaining `sys/event.h` is a genuine blocked
+export: it defines `struct knlist` with a by-value `struct klist` that is not
+defined in the pinned public source, and the frozen libc DEF has no `kqueue`
+or `kevent`. The original file is retained for provenance, but no working
+event API is claimed. A tracked usage map records these exact cases and is
+required by SDK/bundle payload validation. Open C++/STLport ABI and the other
+Open C family libraries remain separate work; this slice does not establish
+all C runtime behavior on Belle FP2 or on a physical Nokia 808.
+The root source Debug graph also exposed and built
+`openc_app_classic_e32`; its cached CMake configure took 6.9 seconds. The
+relocated fixture's native inventory validator accepted the new usage map,
+all copied headers and complete import interfaces. Thirty-one focused native
+configuration/payload controls passed; strict documentation and owned C++
+style checks passed.

@@ -3447,3 +3447,17 @@ reports live CMake progress and writes `.symbian/workspace-inputs.log`; a
 workspace progress unit control passes. Source host Debug and installed SDK
 builds retain the E32 publication path. IDE indexing/ELF linkage does not prove
 firmware execution.
+
+2026-10-06 Open C slice: the original `Symbian::OpenC` target builds a small
+`openc_app_classic` consumer through ARMv5T/ARMv6 E32 conversion with frozen
+`libc.dll` imports. ARMv6 independent canaries compile 107/108 exported Open C
+headers using recorded prerequisite/language profiles; direct
+`netinet6/in6.h` inclusion is intentionally forbidden by its original source
+and is checked through `<netinet/in.h>`. `sys/event.h` remains explicitly
+blocked because the source declares undefined `struct klist` and libc has no
+`kqueue`/`kevent` frozen exports. The usage map is part of SDK payload
+validation. This is compilation/conversion evidence; Open C++ ABI, other
+Open C libraries, named-firmware execution and release 0.2.0 remain open.
+The root Debug project built `openc_app_classic_e32`, the relocated native
+payload validator accepted the usage map, 31 native configuration/payload
+controls passed, and strict documentation and style checks passed.

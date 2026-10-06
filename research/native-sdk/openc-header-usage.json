@@ -1,0 +1,35 @@
+{
+  "schema": "symbian.openc-header-usage/v1",
+  "facility": "Symbian::OpenC",
+  "source": "SymbianSource/oss.FCL.sf.os.ossrv genericopenlibs/openenvcore libc/group/bld.inf",
+  "default_language": "C",
+  "profiles": {
+    "stdapis/machine/_types.h": {"preinclude": ["sys/cdefs.h"]},
+    "stdapis/net/if.h": {"preinclude": ["sys/types.h", "sys/socket.h"]},
+    "stdapis/net/if_var.h": {"preinclude": ["sys/types.h", "sys/socket.h"]},
+    "stdapis/net/radix.h": {"preinclude": ["sys/types.h"]},
+    "stdapis/net/route.h": {"preinclude": ["sys/types.h", "sys/socket.h"]},
+    "stdapis/netinet/in.h": {"preinclude": ["sys/types.h", "sys/socket.h"]},
+    "stdapis/netinet6/in6.h": {
+      "preinclude": ["sys/types.h", "sys/socket.h"],
+      "include_via": "netinet/in.h",
+      "indirect_guard": "_NETINET6_IN6_H_",
+      "reason": "The original header explicitly rejects direct inclusion; netinet/in.h includes it."
+    },
+    "stdapis/netinet6/in6_var.h": {
+      "preinclude": ["sys/types.h", "sys/socket.h", "sys/queue.h", "net/if.h", "netinet/in.h"]
+    },
+    "stdapis/resolv.h": {"preinclude": ["sys/types.h", "sys/socket.h", "netinet/in.h"]},
+    "stdapis/sys/_sigset.h": {"preinclude": ["sys/types.h"]},
+    "stdapis/sys/aeselect.h": {
+      "language": "C++",
+      "reason": "The original C-looking header declares TRequestStatus and includes e32base.h."
+    },
+    "stdapis/sys/event.h": {
+      "blocked": "Original public export declares struct knlist containing undefined struct klist; frozen libc DEF has no kqueue/kevent interface. Do not infer a working event API from header presence."
+    },
+    "stdapis/sys/syslimits.h": {"preinclude": ["sys/cdefs.h"]},
+    "stdapis/sys/timespec.h": {"preinclude": ["sys/types.h", "time.h"]},
+    "stdapis/sys/un.h": {"preinclude": ["sys/types.h", "sys/socket.h"]}
+  }
+}

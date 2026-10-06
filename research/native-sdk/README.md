@@ -27,3 +27,8 @@ The Nokia 808/Belle fixture remains the initial runtime validation target.
 Sources remain under ignored `research/upstream/`; only metadata and owned
 staging/build logic belong in Git. Original notices accompany copied headers.
 Import proxies contain frozen interfaces, not redistributed firmware DLL bodies.
+
+`openc-header-usage.json` records original Open C header prerequisite includes,
+one C++-only public header, an umbrella-only IPv6 header and a noncompilable
+exported event header. The native inventory pins and packages this usage map;
+its selected Open C target still uses the complete frozen libc interface.
