@@ -38,7 +38,8 @@ policy explicitly. `PROJECT_DLLS BUNDLE` places those DLLs in the SIS beside
 the executable; `PROJECT_DLLS RUNTIME` keeps their imports but expects an
 independent installation. An omitted or unknown value fails configuration.
 Imported firmware DLLs provide interfaces only and are never bundled. See
-[native libraries](project-libraries.md) and [the linking example](../../../examples/linking_app/CMakeLists.txt).
+[native libraries](project-libraries.md) and `examples/linking_app` in the
+source tree.
 
 In the root IDE's guest-index profile, the executable and library ELF targets
 remain available for analysis; E32 publication is skipped when that profile

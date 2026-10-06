@@ -13,6 +13,10 @@ list(APPEND CMAKE_TRY_COMPILE_PLATFORM_VARIABLES
   SYMBIAN_TARGET_ARCH SYMBIAN_SDK_PREFIX SYMBIAN_SOURCE_WORKSPACE)
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR "${SYMBIAN_TARGET_ARCH}")
+if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Debug CACHE STRING
+      "Symbian guest build type (Debug, Release, RelWithDebInfo, MinSizeRel)" FORCE)
+endif()
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY CACHE STRING
     "Cross-compiler probes must not link a host executable" FORCE)
 
@@ -53,9 +57,9 @@ set(CMAKE_CXX_COMPILER_TARGET ${SYMBIAN_TARGET_ARCH}-none-eabi)
 set(CMAKE_C_COMPILER_TARGET ${SYMBIAN_TARGET_ARCH}-none-eabi)
 set(CMAKE_ASM_COMPILER_TARGET ${SYMBIAN_TARGET_ARCH}-none-eabi)
 set(CMAKE_CXX_FLAGS_INIT
-    "--target=${SYMBIAN_TARGET_ARCH}-none-eabi -mthumb -march=${SYMBIAN_TARGET_ARCH} -mfpu=none -mfloat-abi=soft -mabi=aapcs -ffreestanding -fno-exceptions -fno-rtti -nostdinc -O2")
+    "--target=${SYMBIAN_TARGET_ARCH}-none-eabi -mthumb -march=${SYMBIAN_TARGET_ARCH} -mfpu=none -mfloat-abi=soft -mabi=aapcs -ffreestanding -fno-exceptions -fno-rtti -nostdinc")
 set(CMAKE_C_FLAGS_INIT
-    "--target=${SYMBIAN_TARGET_ARCH}-none-eabi -mthumb -march=${SYMBIAN_TARGET_ARCH} -mfpu=none -mfloat-abi=soft -mabi=aapcs -ffreestanding -nostdinc -O2")
+    "--target=${SYMBIAN_TARGET_ARCH}-none-eabi -mthumb -march=${SYMBIAN_TARGET_ARCH} -mfpu=none -mfloat-abi=soft -mabi=aapcs -ffreestanding -nostdinc")
 set(CMAKE_ASM_FLAGS_INIT "--target=${SYMBIAN_TARGET_ARCH}-none-eabi -marm -march=${SYMBIAN_TARGET_ARCH} -mfpu=none -mfloat-abi=soft -nostdinc")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

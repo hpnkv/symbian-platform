@@ -3602,3 +3602,15 @@ and style checks passed. The broad bundle smoke remains blocked by the
 pre-existing GL/libc++ placement-operator conflict. SDL, FreeType, much of
 the native manifest, Linux acceptance and 0.2.0 readiness remain open; no
 physical hardware was operated.
+
+2026-10-06 CI and guest-debug repair: Documentation CI's strict external-link
+gate now accepts the linking example reference; the full local `doc/build.sh
+--strict` passed. Host SDK CI's CMake entry now disables guest examples, which
+had imported FastAPI in its minimal wheel environment; a host-only Release
+configure completed locally with static zlib supplied. Fresh installed-SDK
+guest CMake configurations show default Debug and explicit Release as separate
+profiles. The Debug linking example built to E32, and its ELF contains a
+DWARF frame-relative location for the `result` local; Release retains `-O3`.
+The root guest-index configure remains blocked by a concurrently rebuilt
+Khronos proxy whose repeated builds differ, so root graph validation of these
+flags is open. No live IDE variable inspection or physical-device claim follows.

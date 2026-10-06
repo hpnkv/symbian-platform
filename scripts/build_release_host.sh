@@ -27,6 +27,7 @@ if [[ "${SYMBIAN_REUSE_HOST_SDK:-false}" != true ]]; then
     -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$prefix" \
     -DCMAKE_INSTALL_LIBDIR=lib -DSYMBIAN_DEPS_PREFIX="$SYMBIAN_DEPS_PREFIX" \
     -DSYMBIAN_BUILD_PYTHON=OFF -DSYMBIAN_BUILD_GUI_EXAMPLE=OFF \
+    -DSYMBIAN_BUILD_NATIVE_EXAMPLES=OFF \
     -DSYMBIAN_INSTALL_HOST_SDK=ON -DBUILD_TESTING=ON "${args[@]}"
   cmake --build "$build" --parallel "${CMAKE_BUILD_PARALLEL_LEVEL:-4}"
   ctest --test-dir "$build" --output-on-failure

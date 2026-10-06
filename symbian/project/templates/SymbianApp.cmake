@@ -338,7 +338,8 @@ function(symbian_add_static_library target)
   cmake_language(EVAL CODE
     "cmake_language(DEFER CALL _symbian_link_default_runtime ${target})")
   target_compile_options(${target} PRIVATE -g -gdwarf-4
-    "-fdebug-prefix-map=${CMAKE_BINARY_DIR}=/symbian-build/library")
+    "-fdebug-prefix-map=${CMAKE_BINARY_DIR}=/symbian-build/library"
+    "$<$<CONFIG:Debug>:-O0>")
   set_target_properties(${target} PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 endfunction()

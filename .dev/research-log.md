@@ -7623,3 +7623,32 @@ at the original `e32cmn.h`/libc++ placement new/delete conflict; its ignored
 log is `.symbian/sdk-surface/jpeg-fresh-smoke.log`. No GL source was changed.
 Linux bundle acceptance, portable SDL/FreeType, remaining public-manifest
 coverage and 0.2.0 release readiness remain open.
+
+### 2026-10-06: CI failures and guest Debug variable locations
+
+Documentation run 37506731358 failed `doc/build.sh --strict` because two
+reference pages linked outside the built site to `examples/linking_app`.
+References now name the source-tree path without an out-of-site URL; the exact
+local strict build command passed. Host SDK run 37506731253 failed on all four
+hosts while configuring its wheel core: default-enabled native examples called
+workspace preparation, which imported `fastapi` absent from the minimal wheel
+environment. The host release script now selects
+`SYMBIAN_BUILD_NATIVE_EXAMPLES=OFF`; a local host-only Release configure
+completed after pointing FindZLIB to Homebrew's static zlib. Full CI build and
+tests still need a new run.
+
+The original guest toolchain put `-O2` in base C/C++ flags, including Debug and
+the standalone GUI preset with no build type. The toolchain now defaults
+single-configuration guest projects to Debug and leaves optimization to the
+selected CMake build type; SDK executable, static-library and dynamic-library
+helpers request `-O0` for Debug, including older CMake caches with inherited
+`-O2`. Against a relocated installed SDK, a fresh Debug project compiled its
+application and DLL with `-O0`, linked and converted `linking_app` to E32.
+`llvm-dwarfdump` found `result` at `DW_OP_fbreg +32` in the linked ELF. An
+explicit Release configure used `-O3`. The installed bundle predated the
+static-helper patch, so its static-library compile command showed `-g` without
+explicit `-O0`, and the source template change still needs fresh export
+validation. Live CLion variable inspection was not performed. Root guest-index
+reconfigure separately hit `DATA_LOSS: Proxy builds differ` during a concurrent
+Khronos import rebuild; that failure needs investigation without discarding
+the other session's GLES/EGL work.

@@ -68,6 +68,14 @@ CMake target and has a different role.*
    address. Inspect variables and step through the guest; Stop cleans up the
    owned emulator child.
 
+The guest toolchain defaults single-configuration projects to `Debug`, with
+unoptimized application and in-project library code plus DWARF symbols.
+Select `-DCMAKE_BUILD_TYPE=Release` explicitly for optimized builds. If an IDE
+keeps a CMake cache from an older SDK, reload its CMake profile so the Debug
+settings are applied to the next build. Values can still be unavailable when
+the source has no live value at the selected instruction or when stepping into
+an optimized prebuilt SDK or firmware library.
+
 Guest stack unwinding can be incomplete. If the debug profile is
 missing, reopen the GUI project after running `configure-ide`. If the port is
 busy, stop the conflicting session before starting another; the supervisor

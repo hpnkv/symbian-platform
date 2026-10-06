@@ -238,7 +238,8 @@ function(symbian_add_dynamic_library target)
   add_library(${target} SHARED "${startup}" ${DLL_SOURCES})
   # E32 relocates code and writable storage independently. Absolute local
   # references carry typed fixups; ELF PIC code-to-data deltas cannot survive.
-  target_compile_options(${target} PRIVATE -fno-pic)
+  target_compile_options(${target} PRIVATE -fno-pic -g -gdwarf-4
+    "$<$<CONFIG:Debug>:-O0>")
   set_target_properties(${target} PROPERTIES PREFIX "" SUFFIX ".dso"
     NO_SONAME TRUE LINK_DEPENDS "${script}" SYMBIAN_ORDINAL_LIBRARY TRUE)
   target_link_options(${target} PRIVATE -T "${script}")

@@ -44,7 +44,7 @@ requires this choice whenever the executable links a project-built DLL, even
 through a static library. Firmware DLL imports are never bundled. An invalid
 or omitted choice fails during CMake configuration, and the SDK checks staged
 DLL digests again during packaging. The
-[linking example](../../../examples/linking_app/CMakeLists.txt) exercises a
+`examples/linking_app` in the source tree exercises a
 project static library, dynamic library, and application together.
 
 Visible function definitions form the initial export interface. Mark internal
