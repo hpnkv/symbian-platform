@@ -154,8 +154,8 @@ absl::StatusOr<std::array<std::uint8_t, 4>> DiscoverHost() {
   std::copy(nonce.begin(), nonce.end(), response.begin() + 5);
   std::array<std::uint8_t, 32> request_mac{};
   std::array<std::uint8_t, 32> response_mac{};
-  if (!message("symbian-agent-discover-v1", request_mac) ||
-      !message("symbian-agent-offer-v1", response_mac)) {
+  if (!message("symbian-agent-discover-v1", &request_mac) ||
+      !message("symbian-agent-offer-v1", &response_mac)) {
     return absl::InternalError("Agent discovery HMAC failed");
   }
   std::copy(request_mac.begin(), request_mac.end(), request.begin() + 13);
@@ -206,7 +206,7 @@ bool Authenticate(WebSocketStream* absl_nonnull client) {
                            label.size() + 64, result->data()) == 0;
   };
   std::array<std::uint8_t, 32> expected{};
-  if (!digest(kClientLabel, expected)) {
+  if (!digest(kClientLabel, &expected)) {
     return false;
   }
   std::uint8_t difference = 0;
@@ -218,7 +218,7 @@ bool Authenticate(WebSocketStream* absl_nonnull client) {
   }
   std::array<std::uint8_t, 32> proof{};
   const bool authenticated =
-      digest(kServerLabel, proof) && WriteExactly(client, proof, deadline);
+      digest(kServerLabel, &proof) && WriteExactly(client, proof, deadline);
   mbedtls_platform_zeroize(reply.data(), reply.size());
   return authenticated;
 }
@@ -379,7 +379,7 @@ class AgentService final
                     *host, kHostPort, absl::Now() + absl::Seconds(3));
                 if (client.ok() && !stop->load()) {
                   link_phase.store(LinkPhase::kAuthenticating);
-                  Serve(std::move(*client), log);
+                  Serve(std::move(*client), log.get());
                 } else if (!stop->load()) {
                   link_phase.store(LinkPhase::kDialError);
                 }
@@ -413,7 +413,7 @@ class AgentService final
       // The bounded queue closes a rejected client through its captured owner.
       worker_.PostFiber(
           [client = std::move(*result), log = log_]() mutable {
-            Serve(std::move(client), log);
+            Serve(std::move(client), log.get());
           },
           kWorkerStackBytes);
     }

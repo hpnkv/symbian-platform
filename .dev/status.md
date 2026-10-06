@@ -3858,3 +3858,11 @@ path. A subprocess regression test passes without editable-install behavior;
 the scripts suite passes 71 tests with one skip, plus Black and Ruff.
 The corrected tagged source-workspace, bundle audit and publication remain
 pending. No release has been published.
+
+The next release attempt was cancelled after a local source-workspace build
+found six stale pointer call sites in `agent_service.cc`. They are corrected.
+The full source-workspace control passes twice-configure/twice-build checks
+on both ARM profiles, including the guest probe index, GUI, classic Qt and
+agent service targets. Three agent identity tests and C++ style pass. This
+does not establish runtime behavior. Native bundle CI, audit and publication
+remain pending; no release exists yet.

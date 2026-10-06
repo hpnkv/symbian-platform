@@ -8170,3 +8170,17 @@ can import that installed host extension during configuration. A subprocess
 test reproduces a source package plus separate installed extension without
 editable-install machinery. The scripts suite passes 71 tests with one skip;
 Black, Ruff and diff checks pass. Native bundle rerun remains required.
+
+### 2026-10-07: local source-workspace compile control
+
+The next tagged run was cancelled while its host matrix was rebuilding after
+a local full `check_source_workspace.py` run exposed six pre-existing
+`agent_service.cc` call sites left inconsistent with pointer-parameter
+contracts. The source control includes `agent_service`, so those errors would
+have blocked release after another long guest build. Passing array addresses
+and `.get()` for captured shared ownership fixes the calls without changing
+their lifetime. The full local source-workspace control now passes ARMv6 and
+ARMv5T, including two configure/build passes, source selection checks,
+`symbian_probe_index`, `gui_app`, `qt_app_classic` and `agent_service`.
+Three agent identity tests and owned C++ style pass. This is compiler/linker
+evidence, not firmware execution. A new tagged Linux bundle run is required.
