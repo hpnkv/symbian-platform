@@ -175,6 +175,10 @@ def build_import_proxy(
                 f"-DCMAKE_ASM_COMPILER={tools['compiler']}",
                 f"-DCMAKE_LINKER={tools['linker']}",
                 f"-DCMAKE_MAKE_PROGRAM={tools['ninja']}",
+                # Import proxies are generated SDK inputs. The guest toolchain
+                # defaults applications to Debug, whose ASM line tables embed
+                # the distinct reproducibility-check build directories.
+                "-DCMAKE_BUILD_TYPE=Release",
                 f"-DSYMBIAN_PROXY_SONAME={soname}",
                 f"-DSYMBIAN_SDK_HEADERS={headers or ''}",
             ],

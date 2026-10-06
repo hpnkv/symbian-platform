@@ -29,6 +29,8 @@ def proxy(tmp_path_factory):
 
 def test_real_proxy_preserves_sparse_ordinals_and_version_metadata(proxy):
     assert proxy["reproducible"]
+    cache = Path(proxy["artifact"]).parent / "cmake/CMakeCache.txt"
+    assert "CMAKE_BUILD_TYPE:STRING=Release" in cache.read_text()
     assert proxy["proxy"]["target_dll"] == "euser.dll"
     assert [item["ordinal"] for item in proxy["proxy"]["exports"]] == [7, 641]
     assert inspect_proxy(Path(proxy["artifact"])) == proxy["proxy"]
