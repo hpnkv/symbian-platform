@@ -13,3 +13,9 @@
 # limitations under the License.
 
 """Runtime support package for A11's pybind11 Abseil status casters."""
+
+from pkgutil import extend_path
+
+# A source checkout supplies the Python package while the selected host wheel
+# supplies its compiled status caster during root CMake configuration.
+__path__ = extend_path(__path__, __name__)

@@ -9,7 +9,13 @@ from pathlib import Path
 def test_checkout_finds_installed_native_extension(tmp_path):
     wheel_package = tmp_path / "symbian"
     wheel_package.mkdir()
-    (wheel_package / "_native.py").write_text("marker = 'installed wheel'\n")
+    (wheel_package / "_native.py").write_text(
+        "import pybind11_abseil.status\n"
+        "marker = pybind11_abseil.status.marker\n"
+    )
+    caster_package = tmp_path / "pybind11_abseil"
+    caster_package.mkdir()
+    (caster_package / "status.py").write_text("marker = 'installed wheel'\n")
     root = Path(__file__).resolve().parents[2]
     environment = {
         **os.environ,

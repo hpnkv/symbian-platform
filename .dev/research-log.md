@@ -8184,3 +8184,17 @@ ARMv5T, including two configure/build passes, source selection checks,
 `symbian_probe_index`, `gui_app`, `qt_app_classic` and `agent_service`.
 Three agent identity tests and owned C++ style pass. This is compiler/linker
 evidence, not firmware execution. A new tagged Linux bundle run is required.
+
+### 2026-10-07: installed status caster in fourth tagged attempt
+
+The fourth tagged workflow passed source packaging and four host jobs, then
+completed native payload staging but its Linux source-workspace configure
+failed loading the installed `_native` extension: `pybind11_abseil.status`
+was hidden by the checkout's `pybind11_abseil` package. This is the same
+source/wheel package-path issue already fixed for `symbian`. The caster
+package now also extends its search path. A subprocess regression test loads
+both simulated installed modules with `-S`, and a direct isolated import used
+the real installed SDK `_native` and `pybind11_abseil.status` binaries from a
+separate path. The source workspace entry point then ran with those binaries
+and cached inputs. The Linux tagged run must be repeated; no bundle was
+published by this failure.

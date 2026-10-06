@@ -3866,3 +3866,11 @@ on both ARM profiles, including the guest probe index, GUI, classic Qt and
 agent service targets. Three agent identity tests and C++ style pass. This
 does not establish runtime behavior. Native bundle CI, audit and publication
 remain pending; no release exists yet.
+
+The fourth tagged run passed source packaging and all four host jobs, but the
+Linux source-workspace check failed loading the installed status caster from
+`pybind11_abseil` because the source package hid the wheel path. That package
+now extends its path too. The regression test covers both native extensions;
+an isolated `-S` import loaded real installed SDK binaries and entered source
+workspace preparation. The corrected Linux bundle, audit and publication are
+pending. No release exists yet.
