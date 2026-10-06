@@ -43,6 +43,24 @@ TEST(SdkTest, RejectsDuplicateMalformedAndUnsupportedDefinitions) {
   EXPECT_FALSE(ParseExports("EXPORTS\nA\x01 @ 1 NONAME").ok());
 }
 
+TEST(SdkTest, AvkonTombstonesNeedNoNonameQualifier) {
+  constexpr std::string_view definition =
+      "EXPORTS\nLive @ 1 NONAME\nRemoved @ 506 ABSENT\n"
+      "Last @4000 NONAME\n";
+  const auto table = ParseExports(definition);
+  ASSERT_TRUE(table.ok()) << table.status();
+  ASSERT_EQ(table->size(), 3);
+  EXPECT_TRUE((*table)[1].absent);
+  EXPECT_EQ((*table)[1].ordinal, 506);
+  const auto proxy = GenerateProxy(definition, {}, "avkon.dso", "avkon.dll");
+  ASSERT_TRUE(proxy.ok()) << proxy.status();
+  ASSERT_EQ(proxy->exports.size(), 2);
+  EXPECT_EQ(proxy->exports[1].ordinal, 4000);
+  EXPECT_FALSE(GenerateProxy(definition, {"Removed"}, "avkon.dso", "avkon.dll")
+                   .ok());
+  EXPECT_FALSE(ParseExports("EXPORTS\nLive @ 1 DATA 4\n").ok());
+}
+
 TEST(SdkTest, GeneratesStableOrdinalSourceInOrdinalOrder) {
   const auto first = GenerateProxy(kDefinition, {"_ZN4User4ExitEi", "Function"},
                                    "euser.dso", "euser.dll");

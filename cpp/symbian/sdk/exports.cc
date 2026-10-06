@@ -116,7 +116,17 @@ absl::StatusOr<std::vector<Export>> ParseExports(std::string_view text) {
     }
     std::vector<std::string_view> words =
         absl::StrSplit(line, absl::ByAnyChar(" \t\r"), absl::SkipEmpty());
-    if (words.size() < 4 || words[1] != "@" || words[3] != "NONAME" ||
+    if (words.size() >= 2 && words[1].size() > 1 && words[1][0] == '@') {
+      const std::string_view ordinal = words[1].substr(1);
+      words[1] = "@";
+      words.insert(words.begin() + 2, ordinal);
+    }
+    // Nokia's Avkon frozen table omits NONAME on removed exports. These are
+    // ordinal tombstones, never named/linkable exports. Keep live exports
+    // strict while retaining the original holes without rewriting the DEF.
+    const bool unnamed_tombstone = words.size() == 4 && words[3] == "ABSENT";
+    if (words.size() < 4 || words[1] != "@" ||
+        (words[3] != "NONAME" && !unnamed_tombstone) ||
         !SymbolName(words[0])) {
       return absl::UnimplementedError("Unsupported DEF export declaration");
     }
@@ -125,6 +135,7 @@ absl::StatusOr<std::vector<Export>> ParseExports(std::string_view text) {
       return ordinal.status();
     }
     Export item{std::string(words[0]), *ordinal};
+    item.absent = unnamed_tombstone;
     for (size_t i = 4; i < words.size(); ++i) {
       if (words[i] == "ABSENT" && !item.absent) {
         item.absent = true;

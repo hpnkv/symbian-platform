@@ -7156,3 +7156,12 @@ acceptance have not yet been established for the expanded surface.
 Open question: these public source revisions predate Belle FP2. A complete,
 redistributable Belle FP2 SDK packaging/header manifest and exact shipped
 version/ordinal comparison remain required for a Belle completeness claim.
+
+Native import expansion exposed two authentic Avkon DEF forms beyond the
+previous Khronos case: removed entries written `symbol @ ordinal ABSENT`
+without NONAME, and a live entry written `symbol @4492 NONAME`. The native
+parser now accepts those precise forms, retains tombstone ordinals and rejects
+linking a removed name. The 8 native SDK GTests pass; original Avkon parsing
+and the owned C++ style checker pass. No original DEF was rewritten and no
+firmware implementation was copied. Continued import staging and public-header
+acceptance remain in progress.
