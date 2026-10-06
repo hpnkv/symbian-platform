@@ -105,7 +105,8 @@
       "target": "MediaClient",
       "dll": "mediaclient.dll",
       "headers": [
-        "mda/common/base.h"
+        "mda/common/base.h",
+        "mda/common/gsmaudio.h"
       ],
       "dependencies": [],
       "classification": "public_base_platform",
@@ -147,7 +148,9 @@
       "target": "MmfController",
       "dll": "mmfcontrollerframework.dll",
       "headers": [
-        "mmf/common/mmfcontroller.h"
+        "mmf/common/mmfcontroller.h",
+        "mmf/common/mmfmeta.h",
+        "mmf/common/mmfpaniccodes.h"
       ],
       "dependencies": [
         "StreamsNative",
@@ -408,7 +411,8 @@
       "target": "Vibra",
       "dll": "hwrmvibraclient.dll",
       "headers": [
-        "hwrmvibra.h"
+        "hwrmvibra.h",
+        "hwrmvibrasdkcrkeys.h"
       ],
       "dependencies": [],
       "classification": "public_base_platform",
@@ -446,7 +450,8 @@
       "target": "PowerNative",
       "dll": "hwrmpowerclient.dll",
       "headers": [
-        "hwrmpower.h"
+        "hwrmpower.h",
+        "hwrmpowerstatesdkpskeys.h"
       ],
       "dependencies": [],
       "classification": "public_base_platform",
@@ -467,8 +472,25 @@
       "target": "SensorNative",
       "dll": "sensrvclient.dll",
       "headers": [
+        "sensrvaccelerometersensor.h",
         "sensrvchannel.h",
-        "sensrvchannelfinder.h"
+        "sensrvchannelcondition.h",
+        "sensrvchannelconditionlistener.h",
+        "sensrvchannelconditionset.h",
+        "sensrvchannelfinder.h",
+        "sensrvchannelinfo.h",
+        "sensrvchannellistener.h",
+        "sensrvdatalistener.h",
+        "sensrvgeneralproperties.h",
+        "sensrvilluminationsensor.h",
+        "sensrvmagneticnorthsensor.h",
+        "sensrvmagnetometersensor.h",
+        "sensrvorientationsensor.h",
+        "sensrvproperty.h",
+        "sensrvpropertylistener.h",
+        "sensrvproximitysensor.h",
+        "sensrvtappingsensor.h",
+        "sensrvtypes.h"
       ],
       "dependencies": [],
       "classification": "public_base_platform",
@@ -2553,6 +2575,139 @@
         "xmlframework",
         "bsul",
         "sysutil"
+      ]
+    },
+    {
+      "target": "MmfFormatBase",
+      "dll": "mmfformatbaseclasses.dll",
+      "headers": [
+        "mmf/server/mmfdes.h",
+        "mmf/server/mmffile.h",
+        "mmf/server/mmfformat.h",
+        "mmf/server/mmfformat.inl",
+        "mmf/server/mmfurl.h"
+      ],
+      "dependencies": [
+        "MmfServerBase",
+        "MmfController",
+        "DevSound",
+        "ECom"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "mmaudio/mmlibs/mmfw/MMPFiles/eabi/MMFFormatBaseClasses.def",
+      "mmp": "mmaudio/mmlibs/mmfw/MMPFiles/plugin_common/MMFFormatBaseClasses.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "ecom",
+        "mmfdevsound",
+        "mmfcontrollerframework",
+        "mmfserverbaseclasses"
+      ]
+    },
+    {
+      "target": "MmfServerBase",
+      "dll": "mmfserverbaseclasses.dll",
+      "headers": [
+        "mmf/server/mmfaudioinput.h",
+        "mmf/server/mmfaudiooutput.h",
+        "mmf/server/mmfbuffer.h",
+        "mmf/server/mmfbuffer.hrh",
+        "mmf/server/mmfclip.h",
+        "mmf/server/mmfcodec.h",
+        "mmf/server/mmfdatabuffer.h",
+        "mmf/server/mmfdatapath.h",
+        "mmf/server/mmfdatapath2.h",
+        "mmf/server/mmfdatapathproxy.h",
+        "mmf/server/mmfdatasink.h",
+        "mmf/server/mmfdatasource.h",
+        "mmf/server/mmfsubthreadbase.h",
+        "mmf/server/mmfvideoframebuffer.h"
+      ],
+      "dependencies": [
+        "MmfController",
+        "DevSound",
+        "ECom",
+        "Bitmap"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "mmaudio/mmlibs/mmfw/MMPFiles/eabi/mmfserverbaseclasses.def",
+      "mmp": "mmaudio/mmlibs/mmfw/MMPFiles/server/mmfserverbaseclasses.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "fbscli",
+        "ecom",
+        "mmfdevsound",
+        "mmfcontrollerframework",
+        "mmcommonutils",
+        "audioutils"
+      ]
+    },
+    {
+      "target": "SpeechRecognitionData",
+      "dll": "speechrecognitiondata.dll",
+      "headers": [
+        "mmf/common/speechrecognitiondataclient.h",
+        "mmf/common/speechrecognitiondatacommon.h",
+        "mmf/common/speechrecognitiondatadevasr.h",
+        "mmf/common/speechrecognitiondatatest.h"
+      ],
+      "dependencies": [
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "mmaudio/mmdevicefw/speechrecogsupport/ASR/eabi/SpeechRecognitionData.DEF",
+      "mmp": "mmaudio/mmdevicefw/speechrecogsupport/ASR/mmpfiles/speechrecognitiondata.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "estor"
+      ]
+    },
+    {
+      "target": "SpeechRecognitionCommands",
+      "dll": "speechrecognitioncustomcommands.dll",
+      "headers": [
+        "mmf/common/speechrecognitioncustomcommandimplementor.h",
+        "mmf/common/speechrecognitioncustomcommandparser.h",
+        "mmf/common/speechrecognitioncustomcommands.h"
+      ],
+      "dependencies": [
+        "SpeechRecognitionData",
+        "MmfController"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "mmaudio/mmdevicefw/speechrecogsupport/ASR/eabi/SpeechRecognitionCustomCommands.DEF",
+      "mmp": "mmaudio/mmdevicefw/speechrecogsupport/ASR/mmpfiles/speechrecognitioncustomcommands.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "mmfcontrollerframework",
+        "speechrecognitiondata",
+        "estor"
+      ]
+    },
+    {
+      "target": "SpeechRecognition",
+      "dll": "speechrecognitionutility.dll",
+      "headers": [
+        "speechrecognitionuids.hrh",
+        "speechrecognitionutility.h",
+        "speechrecognitionutilityobserver.h"
+      ],
+      "dependencies": [
+        "SpeechRecognitionCommands",
+        "MmfController"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "mmaudio/mmdevicefw/speechrecogsupport/ASR/eabi/SpeechRecognitionUtility.DEF",
+      "mmp": "mmaudio/mmdevicefw/speechrecogsupport/ASR/mmpfiles/speechrecognitionutility.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "speechrecognitioncustomcommands",
+        "mmfcontrollerframework"
       ]
     }
   ]

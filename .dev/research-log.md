@@ -7910,3 +7910,35 @@ yet supported by the owned E32 inspector, so ordinal equivalence and
 named-firmware XML behavior remain unproven. Three legacy mini-DOM parser
 exports have versioned DEF choices still requiring review. Remaining
 unowned public export records: 1,312.
+
+### 2026-10-06: sensor, MMF server/format and speech headers
+
+The pinned `devicesrv` sensor-definition and sensor-channel export manifests
+add original sensor data type and listener headers to the existing
+`sensrvclient.dll` import target. Public HWRM Central Repository/Publish &
+Subscribe keys add to the corresponding vibration and power targets. The
+MMF export manifest has multiple DLL owners: the `MMFFormatBaseClasses.def`
+and `mmfserverbaseclasses.def` tables provide separate format and server
+base-class imports, while controller/common headers and GSM audio use the
+existing `MmfController` and `MediaClient` targets. The pinned speech
+recognition MMP/DEF pairs provide `speechrecognitionutility.dll`,
+`speechrecognitioncustomcommands.dll` and `speechrecognitiondata.dll`; all
+ten manifest-exported speech headers now have those targets.
+
+Independent canaries found that the original public `gsmaudio.h` includes its
+codec subclass before the `TMdaWavCodec` base declaration, and the sensor
+condition-listener header uses `CSensrvChannel` without a forward declaration.
+The compatibility map records an original-header include and a forward
+declaration, respectively. An initial attempt to explicitly own every MMF
+common header also exposed several server-internal prerequisites; those
+previously transitive headers were left as textual support until their
+specific library ownership and publication status are reviewed.
+
+The relocated SDK staged complete frozen imports and passed payload
+validation, then compiled 1,522 selected public-header canary objects on
+each ARMv5T and ARMv6. A disposable consumer included codec, format, sensor
+and vibration headers, linked `CMMFCodec::NewL` through the new MMF target
+and converted to E32 on ARMv6; its call was intentionally not executed.
+The selected RM-807 Belle Z-drive contains the new MMF and speech DLL names.
+This is file-presence and compiler/linker evidence, not codec, speech or
+sensor runtime acceptance. Remaining unowned public export records: 1,271.

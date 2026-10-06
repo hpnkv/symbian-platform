@@ -55,6 +55,11 @@ check and Close action.
 | `fbs.h` | `Symbian::Bitmap` | Font and bitmap server. |
 | `imageconversion.h` | `Symbian::ImageConversion` | Image decoders and encoders. |
 | `hwrmvibra.h` | `Symbian::Vibra` | Hardware Resource Manager vibration. |
+| `hwrmvibrasdkcrkeys.h` | `Symbian::Vibra` | Public vibration Central Repository keys. |
+| `sensrvaccelerometersensor.h`, `sensrvchannelconditionlistener.h` | `Symbian::SensorNative` | Public sensor data definitions and listener callbacks. |
+| `mmf/server/mmfcodec.h`, `mmf/server/mmfdatapath.h` | `Symbian::MmfServerBase` | Original MMF server/codec base classes. |
+| `mmf/server/mmfformat.h` | `Symbian::MmfFormatBase` | Original format plug-in base classes. |
+| `speechrecognitionutility.h` | `Symbian::SpeechRecognition` | Original speech-recognition utility, with command/data imports transitively. |
 | `authority8.h`, `delimitedquery16.h`, `uriutils.h`, `wspdecoder.h` | `Symbian::Uri` | Original InetProtUtil public URI, parser, WSP and date headers. |
 | `babackup.h`, `baclipb.h`, `basched.h`, `barsread2.h` | `Symbian::Bafl` | Original BAFL backup, clipboard, scheduler and resource utilities. |
 | `ecom/implementationproxy.h`, `ecom/publicregistry.h`, `ecom/resolver.h` | `Symbian::ECom` | Original public plug-in registration and resolver headers. |
@@ -106,6 +111,17 @@ relocated SDK compiled the reviewed XML public exports on ARMv5T and ARMv6
 and converted a linked XML consumer to E32. The named RM-807 Belle Z-drive
 contains the XML DLL filenames; their ordinal equivalence and runtime
 behavior remain unverified.
+
+The MMF additions expose the original server and format plug-in base classes
+through `Symbian::MmfServerBase` and `Symbian::MmfFormatBase`, each with its own
+complete frozen import interface. `Symbian::MediaClient` also supplies the
+public GSM audio declarations. Sensor channel listener and data-definition
+headers follow `Symbian::SensorNative`; vibration and power metadata follow
+their existing hardware-resource targets. Speech recognition uses three
+original DLL interfaces: `SpeechRecognition`, `SpeechRecognitionCommands`
+and `SpeechRecognitionData`. The selected RM-807 Belle Z-drive contains the
+MMF and speech DLL filenames, but header compilation and E32 conversion do
+not establish that every sensor, codec or speech service is present or usable.
 
 Qt targets also include `Symbian::QtCore`, `QtGui`, `QtSvg`, `QtScript`,
 `QtXmlPatterns`, `QtDeclarative`, `QtMultimedia`, `QtOpenVG` and `QtTest`.

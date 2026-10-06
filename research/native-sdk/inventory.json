@@ -906,7 +906,8 @@
       "target": "MediaClient",
       "dll": "mediaclient.dll",
       "headers": [
-        "mda/common/base.h"
+        "mda/common/base.h",
+        "mda/common/gsmaudio.h"
       ],
       "dependencies": [],
       "classification": "public_base_platform",
@@ -945,9 +946,20 @@
         "include/native/e32std.h",
         "include/native/e32std.inl",
         "include/native/e32std_private.h",
+        "include/native/mda/common/audio.h",
+        "include/native/mda/common/audio.hrh",
+        "include/native/mda/common/audiostream.hrh",
         "include/native/mda/common/base.h",
         "include/native/mda/common/base.hrh",
         "include/native/mda/common/base.inl",
+        "include/native/mda/common/controller.h",
+        "include/native/mda/common/gsmaudio.h",
+        "include/native/mda/common/gsmaudio.hrh",
+        "include/native/mda/common/mdagsmwavcodec.h",
+        "include/native/mda/common/port.h",
+        "include/native/mda/common/port.hrh",
+        "include/native/mda/common/resource.h",
+        "include/native/mda/common/resource.hrh",
         "include/native/mmf/common/mmfbase.h"
       ],
       "ms_extensions": false
@@ -1009,7 +1021,9 @@
       "target": "MmfController",
       "dll": "mmfcontrollerframework.dll",
       "headers": [
-        "mmf/common/mmfcontroller.h"
+        "mmf/common/mmfcontroller.h",
+        "mmf/common/mmfmeta.h",
+        "mmf/common/mmfpaniccodes.h"
       ],
       "dependencies": [
         "StreamsNative",
@@ -1127,6 +1141,8 @@
         "include/native/mmf/common/mmfipc.inl",
         "include/native/mmf/common/mmfipcserver.h",
         "include/native/mmf/common/mmfipcserver.inl",
+        "include/native/mmf/common/mmfmeta.h",
+        "include/native/mmf/common/mmfpaniccodes.h",
         "include/native/mmf/common/mmfutilities.h",
         "include/native/mmf/common/mmfutilities.inl",
         "include/native/mmf/common/taggeddataparser.h",
@@ -2478,7 +2494,8 @@
       "target": "Vibra",
       "dll": "hwrmvibraclient.dll",
       "headers": [
-        "hwrmvibra.h"
+        "hwrmvibra.h",
+        "hwrmvibrasdkcrkeys.h"
       ],
       "dependencies": [],
       "classification": "public_base_platform",
@@ -2522,7 +2539,8 @@
         "include/native/e32std.h",
         "include/native/e32std.inl",
         "include/native/e32std_private.h",
-        "include/native/hwrmvibra.h"
+        "include/native/hwrmvibra.h",
+        "include/native/hwrmvibrasdkcrkeys.h"
       ],
       "ms_extensions": false
     },
@@ -2578,7 +2596,8 @@
       "target": "PowerNative",
       "dll": "hwrmpowerclient.dll",
       "headers": [
-        "hwrmpower.h"
+        "hwrmpower.h",
+        "hwrmpowerstatesdkpskeys.h"
       ],
       "dependencies": [],
       "classification": "public_base_platform",
@@ -2622,7 +2641,8 @@
         "include/native/e32std.h",
         "include/native/e32std.inl",
         "include/native/e32std_private.h",
-        "include/native/hwrmpower.h"
+        "include/native/hwrmpower.h",
+        "include/native/hwrmpowerstatesdkpskeys.h"
       ],
       "ms_extensions": false
     },
@@ -2630,8 +2650,25 @@
       "target": "SensorNative",
       "dll": "sensrvclient.dll",
       "headers": [
+        "sensrvaccelerometersensor.h",
         "sensrvchannel.h",
-        "sensrvchannelfinder.h"
+        "sensrvchannelcondition.h",
+        "sensrvchannelconditionlistener.h",
+        "sensrvchannelconditionset.h",
+        "sensrvchannelfinder.h",
+        "sensrvchannelinfo.h",
+        "sensrvchannellistener.h",
+        "sensrvdatalistener.h",
+        "sensrvgeneralproperties.h",
+        "sensrvilluminationsensor.h",
+        "sensrvmagneticnorthsensor.h",
+        "sensrvmagnetometersensor.h",
+        "sensrvorientationsensor.h",
+        "sensrvproperty.h",
+        "sensrvpropertylistener.h",
+        "sensrvproximitysensor.h",
+        "sensrvtappingsensor.h",
+        "sensrvtypes.h"
       ],
       "dependencies": [],
       "classification": "public_base_platform",
@@ -2671,12 +2708,24 @@
         "include/native/e32std.h",
         "include/native/e32std.inl",
         "include/native/e32std_private.h",
+        "include/native/sensrvaccelerometersensor.h",
         "include/native/sensrvchannel.h",
         "include/native/sensrvchannelcondition.h",
+        "include/native/sensrvchannelconditionlistener.h",
         "include/native/sensrvchannelconditionset.h",
         "include/native/sensrvchannelfinder.h",
         "include/native/sensrvchannelinfo.h",
+        "include/native/sensrvchannellistener.h",
+        "include/native/sensrvdatalistener.h",
+        "include/native/sensrvgeneralproperties.h",
+        "include/native/sensrvilluminationsensor.h",
+        "include/native/sensrvmagneticnorthsensor.h",
+        "include/native/sensrvmagnetometersensor.h",
+        "include/native/sensrvorientationsensor.h",
         "include/native/sensrvproperty.h",
+        "include/native/sensrvpropertylistener.h",
+        "include/native/sensrvproximitysensor.h",
+        "include/native/sensrvtappingsensor.h",
         "include/native/sensrvtypes.h"
       ],
       "ms_extensions": false
@@ -9333,6 +9382,782 @@
         "include/native/xml/dom/xmlengserializer.h",
         "include/native/xml/parser.h",
         "include/native/xml/taginfo.h"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "MmfFormatBase",
+      "dll": "mmfformatbaseclasses.dll",
+      "headers": [
+        "mmf/server/mmfdes.h",
+        "mmf/server/mmffile.h",
+        "mmf/server/mmfformat.h",
+        "mmf/server/mmfformat.inl",
+        "mmf/server/mmfurl.h"
+      ],
+      "dependencies": [
+        "MmfServerBase",
+        "MmfController",
+        "DevSound",
+        "ECom"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "mmaudio/mmlibs/mmfw/MMPFiles/eabi/MMFFormatBaseClasses.def",
+        "sha256": "fbf7bd54de5ea62f69dfa0180374361a0a071257aeb4d8f20194b71b3e197a3d",
+        "destination": "share/symbian/native/defs/mmfformatbaseclasses.dll.def"
+      },
+      "mmp": "mmaudio/mmlibs/mmfw/MMPFiles/plugin_common/MMFFormatBaseClasses.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "ecom",
+        "mmfdevsound",
+        "mmfcontrollerframework",
+        "mmfserverbaseclasses"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/apmstd.h",
+        "include/native/caf/agent.h",
+        "include/native/caf/attribute.h",
+        "include/native/caf/attributeset.h",
+        "include/native/caf/caf.h",
+        "include/native/caf/caferr.h",
+        "include/native/caf/cafmimeheader.h",
+        "include/native/caf/cafpanic.h",
+        "include/native/caf/cafplatform.h",
+        "include/native/caf/caftypes.h",
+        "include/native/caf/content.h",
+        "include/native/caf/content.inl",
+        "include/native/caf/data.h",
+        "include/native/caf/dirstreamable.h",
+        "include/native/caf/embeddedobject.h",
+        "include/native/caf/importfile.h",
+        "include/native/caf/manager.h",
+        "include/native/caf/metadata.h",
+        "include/native/caf/metadataarray.h",
+        "include/native/caf/rightsinfo.h",
+        "include/native/caf/rightsmanager.h",
+        "include/native/caf/streamableptrarray.h",
+        "include/native/caf/streamableptrarray.inl",
+        "include/native/caf/stringattributeset.h",
+        "include/native/caf/supplier.h",
+        "include/native/caf/supplieroutputfile.h",
+        "include/native/caf/virtualpath.h",
+        "include/native/caf/virtualpathptr.h",
+        "include/native/d32locd.h",
+        "include/native/d32locd.inl",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32btrace.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32debug.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32event.h",
+        "include/native/e32event_private.h",
+        "include/native/e32hal.h",
+        "include/native/e32keys.h",
+        "include/native/e32ktran.h",
+        "include/native/e32lang.h",
+        "include/native/e32ldr.h",
+        "include/native/e32ldr_private.h",
+        "include/native/e32lmsg.h",
+        "include/native/e32notif.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/e32svr.h",
+        "include/native/ecom/ecom.h",
+        "include/native/ecom/ecomerrorcodes.h",
+        "include/native/ecom/ecomextendedinterfaceerrorcodes.h",
+        "include/native/ecom/ecomresolverparams.h",
+        "include/native/ecom/ecomresolverparams.inl",
+        "include/native/ecom/implementationinformation.h",
+        "include/native/ecom/implementationinformation.inl",
+        "include/native/f32file.h",
+        "include/native/f32file.inl",
+        "include/native/f32file64.h",
+        "include/native/f32file64.inl",
+        "include/native/f32file_private.h",
+        "include/native/f32notification.h",
+        "include/native/mm/mmcaf.h",
+        "include/native/mmf/common/mmcaf.h",
+        "include/native/mmf/common/mmfbase.h",
+        "include/native/mmf/common/mmfcontrollerframework.h",
+        "include/native/mmf/common/mmfcontrollerframeworkbase.h",
+        "include/native/mmf/common/mmfcontrollerframeworkclasses.h",
+        "include/native/mmf/common/mmffourcc.h",
+        "include/native/mmf/common/mmfhelper.h",
+        "include/native/mmf/common/mmfipc.h",
+        "include/native/mmf/common/mmfipc.inl",
+        "include/native/mmf/common/mmfipcserver.h",
+        "include/native/mmf/common/mmfipcserver.inl",
+        "include/native/mmf/common/mmfutilities.h",
+        "include/native/mmf/common/mmfutilities.inl",
+        "include/native/mmf/plugin/mmfplugininterfaceuids.hrh",
+        "include/native/mmf/server/mmfbuffer.h",
+        "include/native/mmf/server/mmfbuffer.hrh",
+        "include/native/mmf/server/mmfclip.h",
+        "include/native/mmf/server/mmfdatabuffer.h",
+        "include/native/mmf/server/mmfdatasink.h",
+        "include/native/mmf/server/mmfdatasource.h",
+        "include/native/mmf/server/mmfdatasourcesink.hrh",
+        "include/native/mmf/server/mmfdes.h",
+        "include/native/mmf/server/mmffile.h",
+        "include/native/mmf/server/mmfformat.h",
+        "include/native/mmf/server/mmfformat.inl",
+        "include/native/mmf/server/mmfurl.h",
+        "include/native/partitions.h",
+        "include/native/s32buf.h",
+        "include/native/s32buf.inl",
+        "include/native/s32mem.h",
+        "include/native/s32mem.inl",
+        "include/native/s32page.h",
+        "include/native/s32page.inl",
+        "include/native/s32share.h",
+        "include/native/s32share.inl",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32stor.h",
+        "include/native/s32stor.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "MmfServerBase",
+      "dll": "mmfserverbaseclasses.dll",
+      "headers": [
+        "mmf/server/mmfaudioinput.h",
+        "mmf/server/mmfaudiooutput.h",
+        "mmf/server/mmfbuffer.h",
+        "mmf/server/mmfbuffer.hrh",
+        "mmf/server/mmfclip.h",
+        "mmf/server/mmfcodec.h",
+        "mmf/server/mmfdatabuffer.h",
+        "mmf/server/mmfdatapath.h",
+        "mmf/server/mmfdatapath2.h",
+        "mmf/server/mmfdatapathproxy.h",
+        "mmf/server/mmfdatasink.h",
+        "mmf/server/mmfdatasource.h",
+        "mmf/server/mmfsubthreadbase.h",
+        "mmf/server/mmfvideoframebuffer.h"
+      ],
+      "dependencies": [
+        "MmfController",
+        "DevSound",
+        "ECom",
+        "Bitmap"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "mmaudio/mmlibs/mmfw/MMPFiles/eabi/mmfserverbaseclasses.def",
+        "sha256": "d5e7fb16aaa119321b993953c3aa42aac1fe6657057172aeac90fbe968dab03d",
+        "destination": "share/symbian/native/defs/mmfserverbaseclasses.dll.def"
+      },
+      "mmp": "mmaudio/mmlibs/mmfw/MMPFiles/server/mmfserverbaseclasses.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "fbscli",
+        "ecom",
+        "mmfdevsound",
+        "mmfcontrollerframework",
+        "mmcommonutils",
+        "audioutils"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/apmstd.h",
+        "include/native/bitmap.h",
+        "include/native/caf/agent.h",
+        "include/native/caf/attribute.h",
+        "include/native/caf/attributeset.h",
+        "include/native/caf/caf.h",
+        "include/native/caf/caferr.h",
+        "include/native/caf/cafmimeheader.h",
+        "include/native/caf/cafpanic.h",
+        "include/native/caf/cafplatform.h",
+        "include/native/caf/caftypes.h",
+        "include/native/caf/content.h",
+        "include/native/caf/content.inl",
+        "include/native/caf/data.h",
+        "include/native/caf/dirstreamable.h",
+        "include/native/caf/embeddedobject.h",
+        "include/native/caf/importfile.h",
+        "include/native/caf/manager.h",
+        "include/native/caf/metadata.h",
+        "include/native/caf/metadataarray.h",
+        "include/native/caf/rightsinfo.h",
+        "include/native/caf/rightsmanager.h",
+        "include/native/caf/streamableptrarray.h",
+        "include/native/caf/streamableptrarray.inl",
+        "include/native/caf/stringattributeset.h",
+        "include/native/caf/supplier.h",
+        "include/native/caf/supplieroutputfile.h",
+        "include/native/caf/virtualpath.h",
+        "include/native/caf/virtualpathptr.h",
+        "include/native/d32locd.h",
+        "include/native/d32locd.inl",
+        "include/native/displaymode.h",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32btrace.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32debug.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32event.h",
+        "include/native/e32event_private.h",
+        "include/native/e32hal.h",
+        "include/native/e32keys.h",
+        "include/native/e32ktran.h",
+        "include/native/e32lang.h",
+        "include/native/e32ldr.h",
+        "include/native/e32ldr_private.h",
+        "include/native/e32lmsg.h",
+        "include/native/e32notif.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/e32svr.h",
+        "include/native/ecom/ecom.h",
+        "include/native/ecom/ecomerrorcodes.h",
+        "include/native/ecom/ecomextendedinterfaceerrorcodes.h",
+        "include/native/ecom/ecomresolverparams.h",
+        "include/native/ecom/ecomresolverparams.inl",
+        "include/native/ecom/implementationinformation.h",
+        "include/native/ecom/implementationinformation.inl",
+        "include/native/f32file.h",
+        "include/native/f32file.inl",
+        "include/native/f32file64.h",
+        "include/native/f32file64.inl",
+        "include/native/f32file_private.h",
+        "include/native/f32notification.h",
+        "include/native/fbs.h",
+        "include/native/fntstore.h",
+        "include/native/gdi.h",
+        "include/native/gdi.inl",
+        "include/native/graphics/bitmapuid.h",
+        "include/native/graphics/fbsdefs.h",
+        "include/native/graphics/gdi/gdiconsts.h",
+        "include/native/graphics/gdi/gdiinline.inl",
+        "include/native/graphics/gdi/gdistructs.h",
+        "include/native/graphics/gdi/glyphsample.h",
+        "include/native/graphics/openfontconstants.h",
+        "include/native/graphics/openfontlinkedtypefaceextension.h",
+        "include/native/graphics/openfontlinkedtypefacespecification.h",
+        "include/native/graphics/openfontrasterizer.h",
+        "include/native/linkedfonts.h",
+        "include/native/mm/mmcaf.h",
+        "include/native/mmf/common/mmcaf.h",
+        "include/native/mmf/common/mmfbase.h",
+        "include/native/mmf/common/mmfcontroller.h",
+        "include/native/mmf/common/mmfcontrollerextendeddata.h",
+        "include/native/mmf/common/mmfcontrollerframework.h",
+        "include/native/mmf/common/mmfcontrollerframeworkbase.h",
+        "include/native/mmf/common/mmfcontrollerframeworkclasses.h",
+        "include/native/mmf/common/mmfcontrollerpluginresolver.h",
+        "include/native/mmf/common/mmfcustomcommandparsermanager.h",
+        "include/native/mmf/common/mmffourcc.h",
+        "include/native/mmf/common/mmfhelper.h",
+        "include/native/mmf/common/mmfipc.h",
+        "include/native/mmf/common/mmfipc.inl",
+        "include/native/mmf/common/mmfipcserver.h",
+        "include/native/mmf/common/mmfipcserver.inl",
+        "include/native/mmf/common/mmfpaniccodes.h",
+        "include/native/mmf/common/mmfstandardcustomcommands.h",
+        "include/native/mmf/common/mmfstandardcustomcommandsenums.h",
+        "include/native/mmf/common/mmfstandardcustomcommandsimpl.h",
+        "include/native/mmf/common/mmfutilities.h",
+        "include/native/mmf/common/mmfutilities.inl",
+        "include/native/mmf/common/mmfvideo.h",
+        "include/native/mmf/common/mmfvideoenums.h",
+        "include/native/mmf/common/taggeddataparser.h",
+        "include/native/mmf/plugin/mmfplugininterfaceuids.hrh",
+        "include/native/mmf/server/mmfaudioinput.h",
+        "include/native/mmf/server/mmfaudiooutput.h",
+        "include/native/mmf/server/mmfbuffer.h",
+        "include/native/mmf/server/mmfbuffer.hrh",
+        "include/native/mmf/server/mmfclip.h",
+        "include/native/mmf/server/mmfcodec.h",
+        "include/native/mmf/server/mmfdatabuffer.h",
+        "include/native/mmf/server/mmfdatapath.h",
+        "include/native/mmf/server/mmfdatapath2.h",
+        "include/native/mmf/server/mmfdatapathproxy.h",
+        "include/native/mmf/server/mmfdatapathproxyserver.h",
+        "include/native/mmf/server/mmfdatasink.h",
+        "include/native/mmf/server/mmfdatasource.h",
+        "include/native/mmf/server/mmfdatasourcesink.hrh",
+        "include/native/mmf/server/mmfdevsoundcustominterfaceobserver.h",
+        "include/native/mmf/server/mmfdevsoundcustominterfacesupport.h",
+        "include/native/mmf/server/mmfdevsoundcustominterfacesupportclasses.h",
+        "include/native/mmf/server/mmfformat.h",
+        "include/native/mmf/server/mmfformat.inl",
+        "include/native/mmf/server/mmfsubthreadbase.h",
+        "include/native/mmf/server/mmfsubthreadbaseimpl.h",
+        "include/native/mmf/server/mmfvideoframebuffer.h",
+        "include/native/mmf/server/sounddevice.h",
+        "include/native/mmf/server/sounddevice.inl",
+        "include/native/mmfplugininterfaceuids.hrh",
+        "include/native/openfont.h",
+        "include/native/openfontlinkedtypefaceelementspec.h",
+        "include/native/partitions.h",
+        "include/native/s32buf.h",
+        "include/native/s32buf.inl",
+        "include/native/s32mem.h",
+        "include/native/s32mem.inl",
+        "include/native/s32page.h",
+        "include/native/s32page.inl",
+        "include/native/s32share.h",
+        "include/native/s32share.inl",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32stor.h",
+        "include/native/s32stor.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "SpeechRecognitionData",
+      "dll": "speechrecognitiondata.dll",
+      "headers": [
+        "mmf/common/speechrecognitiondataclient.h",
+        "mmf/common/speechrecognitiondatacommon.h",
+        "mmf/common/speechrecognitiondatadevasr.h",
+        "mmf/common/speechrecognitiondatatest.h"
+      ],
+      "dependencies": [
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "mmaudio/mmdevicefw/speechrecogsupport/ASR/eabi/SpeechRecognitionData.DEF",
+        "sha256": "c277615d045926df0f17fe85dd93458269084c949ecc7fd06a820b6e2ed45ae6",
+        "destination": "share/symbian/native/defs/speechrecognitiondata.dll.def"
+      },
+      "mmp": "mmaudio/mmdevicefw/speechrecogsupport/ASR/mmpfiles/speechrecognitiondata.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "estor"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/d32locd.h",
+        "include/native/d32locd.inl",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32btrace.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32debug.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32event.h",
+        "include/native/e32event_private.h",
+        "include/native/e32hal.h",
+        "include/native/e32keys.h",
+        "include/native/e32ktran.h",
+        "include/native/e32lang.h",
+        "include/native/e32ldr.h",
+        "include/native/e32ldr_private.h",
+        "include/native/e32lmsg.h",
+        "include/native/e32notif.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/e32svr.h",
+        "include/native/f32file.h",
+        "include/native/f32file.inl",
+        "include/native/f32file64.h",
+        "include/native/f32file64.inl",
+        "include/native/f32file_private.h",
+        "include/native/f32notification.h",
+        "include/native/mmf/common/mmfcontrollerframework.h",
+        "include/native/mmf/common/mmfcontrollerframeworkbase.h",
+        "include/native/mmf/common/mmfcontrollerframeworkclasses.h",
+        "include/native/mmf/common/mmffourcc.h",
+        "include/native/mmf/common/mmfhelper.h",
+        "include/native/mmf/common/mmfipc.h",
+        "include/native/mmf/common/mmfipc.inl",
+        "include/native/mmf/common/mmfipcserver.h",
+        "include/native/mmf/common/mmfipcserver.inl",
+        "include/native/mmf/common/mmfutilities.h",
+        "include/native/mmf/common/mmfutilities.inl",
+        "include/native/mmf/common/speechrecognitiondataclient.h",
+        "include/native/mmf/common/speechrecognitiondatacommon.h",
+        "include/native/mmf/common/speechrecognitiondatadevasr.h",
+        "include/native/mmf/common/speechrecognitiondatatest.h",
+        "include/native/mmf/server/mmfbuffer.h",
+        "include/native/mmf/server/mmfbuffer.hrh",
+        "include/native/mmf/server/mmfdatabuffer.h",
+        "include/native/partitions.h",
+        "include/native/s32buf.h",
+        "include/native/s32buf.inl",
+        "include/native/s32mem.h",
+        "include/native/s32mem.inl",
+        "include/native/s32page.h",
+        "include/native/s32page.inl",
+        "include/native/s32share.h",
+        "include/native/s32share.inl",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32stor.h",
+        "include/native/s32stor.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl",
+        "include/native/speechrecognitionuids.hrh"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "SpeechRecognitionCommands",
+      "dll": "speechrecognitioncustomcommands.dll",
+      "headers": [
+        "mmf/common/speechrecognitioncustomcommandimplementor.h",
+        "mmf/common/speechrecognitioncustomcommandparser.h",
+        "mmf/common/speechrecognitioncustomcommands.h"
+      ],
+      "dependencies": [
+        "SpeechRecognitionData",
+        "MmfController"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "mmaudio/mmdevicefw/speechrecogsupport/ASR/eabi/SpeechRecognitionCustomCommands.DEF",
+        "sha256": "06f9e9648e8a11a36e5ff91de9402c9b7163febf9fdc6d593296fba3ba8c4859",
+        "destination": "share/symbian/native/defs/speechrecognitioncustomcommands.dll.def"
+      },
+      "mmp": "mmaudio/mmdevicefw/speechrecogsupport/ASR/mmpfiles/speechrecognitioncustomcommands.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "mmfcontrollerframework",
+        "speechrecognitiondata",
+        "estor"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/apmstd.h",
+        "include/native/caf/agent.h",
+        "include/native/caf/attribute.h",
+        "include/native/caf/attributeset.h",
+        "include/native/caf/caf.h",
+        "include/native/caf/caferr.h",
+        "include/native/caf/cafmimeheader.h",
+        "include/native/caf/cafpanic.h",
+        "include/native/caf/cafplatform.h",
+        "include/native/caf/caftypes.h",
+        "include/native/caf/content.h",
+        "include/native/caf/content.inl",
+        "include/native/caf/data.h",
+        "include/native/caf/dirstreamable.h",
+        "include/native/caf/embeddedobject.h",
+        "include/native/caf/importfile.h",
+        "include/native/caf/manager.h",
+        "include/native/caf/metadata.h",
+        "include/native/caf/metadataarray.h",
+        "include/native/caf/rightsinfo.h",
+        "include/native/caf/rightsmanager.h",
+        "include/native/caf/streamableptrarray.h",
+        "include/native/caf/streamableptrarray.inl",
+        "include/native/caf/stringattributeset.h",
+        "include/native/caf/supplier.h",
+        "include/native/caf/supplieroutputfile.h",
+        "include/native/caf/virtualpath.h",
+        "include/native/caf/virtualpathptr.h",
+        "include/native/d32locd.h",
+        "include/native/d32locd.inl",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32btrace.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32debug.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32event.h",
+        "include/native/e32event_private.h",
+        "include/native/e32hal.h",
+        "include/native/e32keys.h",
+        "include/native/e32ktran.h",
+        "include/native/e32lang.h",
+        "include/native/e32ldr.h",
+        "include/native/e32ldr_private.h",
+        "include/native/e32lmsg.h",
+        "include/native/e32notif.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/e32svr.h",
+        "include/native/ecom/ecom.h",
+        "include/native/ecom/ecomerrorcodes.h",
+        "include/native/ecom/ecomextendedinterfaceerrorcodes.h",
+        "include/native/ecom/ecomresolverparams.h",
+        "include/native/ecom/ecomresolverparams.inl",
+        "include/native/ecom/implementationinformation.h",
+        "include/native/ecom/implementationinformation.inl",
+        "include/native/f32file.h",
+        "include/native/f32file.inl",
+        "include/native/f32file64.h",
+        "include/native/f32file64.inl",
+        "include/native/f32file_private.h",
+        "include/native/f32notification.h",
+        "include/native/mmf/common/mmfbase.h",
+        "include/native/mmf/common/mmfcontroller.h",
+        "include/native/mmf/common/mmfcontrollerextendeddata.h",
+        "include/native/mmf/common/mmfcontrollerframework.h",
+        "include/native/mmf/common/mmfcontrollerframeworkbase.h",
+        "include/native/mmf/common/mmfcontrollerframeworkclasses.h",
+        "include/native/mmf/common/mmfcontrollerpluginresolver.h",
+        "include/native/mmf/common/mmfcustomcommandparsermanager.h",
+        "include/native/mmf/common/mmffourcc.h",
+        "include/native/mmf/common/mmfhelper.h",
+        "include/native/mmf/common/mmfipc.h",
+        "include/native/mmf/common/mmfipc.inl",
+        "include/native/mmf/common/mmfipcserver.h",
+        "include/native/mmf/common/mmfipcserver.inl",
+        "include/native/mmf/common/mmfutilities.h",
+        "include/native/mmf/common/mmfutilities.inl",
+        "include/native/mmf/common/speechrecognitioncustomcommandimplementor.h",
+        "include/native/mmf/common/speechrecognitioncustomcommandparser.h",
+        "include/native/mmf/common/speechrecognitioncustomcommands.h",
+        "include/native/mmf/common/speechrecognitiondataclient.h",
+        "include/native/mmf/common/speechrecognitiondatacommon.h",
+        "include/native/mmf/common/taggeddataparser.h",
+        "include/native/mmf/plugin/mmfplugininterfaceuids.hrh",
+        "include/native/mmf/server/mmfbuffer.h",
+        "include/native/mmf/server/mmfbuffer.hrh",
+        "include/native/mmf/server/mmfdatabuffer.h",
+        "include/native/mmf/server/mmfdatasink.h",
+        "include/native/mmf/server/mmfdatasource.h",
+        "include/native/mmf/server/mmfdatasourcesink.hrh",
+        "include/native/mmfplugininterfaceuids.hrh",
+        "include/native/partitions.h",
+        "include/native/s32buf.h",
+        "include/native/s32buf.inl",
+        "include/native/s32mem.h",
+        "include/native/s32mem.inl",
+        "include/native/s32page.h",
+        "include/native/s32page.inl",
+        "include/native/s32share.h",
+        "include/native/s32share.inl",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32stor.h",
+        "include/native/s32stor.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl",
+        "include/native/speechrecognitionuids.hrh"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "SpeechRecognition",
+      "dll": "speechrecognitionutility.dll",
+      "headers": [
+        "speechrecognitionuids.hrh",
+        "speechrecognitionutility.h",
+        "speechrecognitionutilityobserver.h"
+      ],
+      "dependencies": [
+        "SpeechRecognitionCommands",
+        "MmfController"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "mmaudio/mmdevicefw/speechrecogsupport/ASR/eabi/SpeechRecognitionUtility.DEF",
+        "sha256": "d1541ba862e4d19d5c586c8db6dbd2894d0f8ef5890fcc3a7f1b3fbf5da7d270",
+        "destination": "share/symbian/native/defs/speechrecognitionutility.dll.def"
+      },
+      "mmp": "mmaudio/mmdevicefw/speechrecogsupport/ASR/mmpfiles/speechrecognitionutility.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "speechrecognitioncustomcommands",
+        "mmfcontrollerframework"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/apmstd.h",
+        "include/native/caf/agent.h",
+        "include/native/caf/attribute.h",
+        "include/native/caf/attributeset.h",
+        "include/native/caf/caf.h",
+        "include/native/caf/caferr.h",
+        "include/native/caf/cafmimeheader.h",
+        "include/native/caf/cafpanic.h",
+        "include/native/caf/cafplatform.h",
+        "include/native/caf/caftypes.h",
+        "include/native/caf/content.h",
+        "include/native/caf/content.inl",
+        "include/native/caf/data.h",
+        "include/native/caf/dirstreamable.h",
+        "include/native/caf/embeddedobject.h",
+        "include/native/caf/importfile.h",
+        "include/native/caf/manager.h",
+        "include/native/caf/metadata.h",
+        "include/native/caf/metadataarray.h",
+        "include/native/caf/rightsinfo.h",
+        "include/native/caf/rightsmanager.h",
+        "include/native/caf/streamableptrarray.h",
+        "include/native/caf/streamableptrarray.inl",
+        "include/native/caf/stringattributeset.h",
+        "include/native/caf/supplier.h",
+        "include/native/caf/supplieroutputfile.h",
+        "include/native/caf/virtualpath.h",
+        "include/native/caf/virtualpathptr.h",
+        "include/native/d32locd.h",
+        "include/native/d32locd.inl",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32btrace.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32debug.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32event.h",
+        "include/native/e32event_private.h",
+        "include/native/e32hal.h",
+        "include/native/e32keys.h",
+        "include/native/e32ktran.h",
+        "include/native/e32lang.h",
+        "include/native/e32ldr.h",
+        "include/native/e32ldr_private.h",
+        "include/native/e32lmsg.h",
+        "include/native/e32notif.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/e32svr.h",
+        "include/native/ecom/ecom.h",
+        "include/native/ecom/ecomerrorcodes.h",
+        "include/native/ecom/ecomextendedinterfaceerrorcodes.h",
+        "include/native/ecom/ecomresolverparams.h",
+        "include/native/ecom/ecomresolverparams.inl",
+        "include/native/ecom/implementationinformation.h",
+        "include/native/ecom/implementationinformation.inl",
+        "include/native/f32file.h",
+        "include/native/f32file.inl",
+        "include/native/f32file64.h",
+        "include/native/f32file64.inl",
+        "include/native/f32file_private.h",
+        "include/native/f32notification.h",
+        "include/native/mmf/common/mmfbase.h",
+        "include/native/mmf/common/mmfcontroller.h",
+        "include/native/mmf/common/mmfcontrollerextendeddata.h",
+        "include/native/mmf/common/mmfcontrollerframework.h",
+        "include/native/mmf/common/mmfcontrollerframeworkbase.h",
+        "include/native/mmf/common/mmfcontrollerframeworkclasses.h",
+        "include/native/mmf/common/mmfcontrollerpluginresolver.h",
+        "include/native/mmf/common/mmfcustomcommandparsermanager.h",
+        "include/native/mmf/common/mmffourcc.h",
+        "include/native/mmf/common/mmfhelper.h",
+        "include/native/mmf/common/mmfipc.h",
+        "include/native/mmf/common/mmfipc.inl",
+        "include/native/mmf/common/mmfipcserver.h",
+        "include/native/mmf/common/mmfipcserver.inl",
+        "include/native/mmf/common/mmfutilities.h",
+        "include/native/mmf/common/mmfutilities.inl",
+        "include/native/mmf/common/speechrecognitioncustomcommands.h",
+        "include/native/mmf/common/speechrecognitiondataclient.h",
+        "include/native/mmf/common/speechrecognitiondatacommon.h",
+        "include/native/mmf/common/taggeddataparser.h",
+        "include/native/mmf/plugin/mmfplugininterfaceuids.hrh",
+        "include/native/mmf/server/mmfbuffer.h",
+        "include/native/mmf/server/mmfbuffer.hrh",
+        "include/native/mmf/server/mmfdatabuffer.h",
+        "include/native/mmf/server/mmfdatasink.h",
+        "include/native/mmf/server/mmfdatasource.h",
+        "include/native/mmf/server/mmfdatasourcesink.hrh",
+        "include/native/mmfplugininterfaceuids.hrh",
+        "include/native/partitions.h",
+        "include/native/s32buf.h",
+        "include/native/s32buf.inl",
+        "include/native/s32mem.h",
+        "include/native/s32mem.inl",
+        "include/native/s32page.h",
+        "include/native/s32page.inl",
+        "include/native/s32share.h",
+        "include/native/s32share.inl",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32stor.h",
+        "include/native/s32stor.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl",
+        "include/native/speechrecognitionuids.hrh",
+        "include/native/speechrecognitionutility.h",
+        "include/native/speechrecognitionutilityobserver.h"
       ],
       "ms_extensions": false
     },
@@ -26234,12 +27059,23 @@
       "declaration": "../inc/sensrvchannelconditionlistener.h OS_LAYER_PUBLIC_EXPORT_PATH(sensrvchannelconditionlistener.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "34dfc6425b064496de9d16c6fb15a5fe84593a7591fa88ab885a71093f15a7db",
+      "sha256": "89d1b51836e9a5c3d581178540f0e470fc226c9f3d608624976600f334c35b6c",
       "api_metadata": "devicesrv/devicesrv_pub/sensor_channel_api/sensor_channel_api.metaxml",
       "api_libraries": [
         "SensrvClient.lib"
       ],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "source_sha256": "34dfc6425b064496de9d16c6fb15a5fe84593a7591fa88ab885a71093f15a7db",
+      "compatibility_edits": [
+        {
+          "before": "#define SENSRVCHANNELCONDITIONLISTENER_H",
+          "after": "#define SENSRVCHANNELCONDITIONLISTENER_H\nclass CSensrvChannel;",
+          "reason": "The original public sensor listener uses CSensrvChannel by reference without its forward declaration; add only the missing declaration."
+        }
+      ],
+      "destination": "include/native/sensrvchannelconditionlistener.h",
+      "targets": [
+        "SensorNative"
+      ]
     },
     {
       "include": "sensrvchannelconditionset.h",
@@ -26304,7 +27140,10 @@
       "api_libraries": [
         "SensrvClient.lib"
       ],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sensrvchannellistener.h",
+      "targets": [
+        "SensorNative"
+      ]
     },
     {
       "include": "sensrvdatalistener.h",
@@ -26318,7 +27157,10 @@
       "api_libraries": [
         "SensrvClient.lib"
       ],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sensrvdatalistener.h",
+      "targets": [
+        "SensorNative"
+      ]
     },
     {
       "include": "sensrvpropertylistener.h",
@@ -26332,7 +27174,10 @@
       "api_libraries": [
         "SensrvClient.lib"
       ],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sensrvpropertylistener.h",
+      "targets": [
+        "SensorNative"
+      ]
     },
     {
       "include": "sensrvproperty.h",
@@ -26414,7 +27259,10 @@
       "sha256": "6c245f3026a36614e6218f21bd35d93d1eb3c8a88e10562e78136e1224962f5a",
       "api_metadata": "devicesrv/devicesrv_pub/sensor_definitions_api/sensor_definitions_api.metaxml",
       "api_libraries": [],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sensrvaccelerometersensor.h",
+      "targets": [
+        "SensorNative"
+      ]
     },
     {
       "include": "sensrvgeneralproperties.h",
@@ -26426,7 +27274,10 @@
       "sha256": "a75c2b6d56e13a3d7a85d562645113c683828393ae5c0b5170a614202aa3d11e",
       "api_metadata": "devicesrv/devicesrv_pub/sensor_definitions_api/sensor_definitions_api.metaxml",
       "api_libraries": [],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sensrvgeneralproperties.h",
+      "targets": [
+        "SensorNative"
+      ]
     },
     {
       "include": "sensrvilluminationsensor.h",
@@ -26438,7 +27289,10 @@
       "sha256": "dd8284989a3ba81529b1a6cf676e7a80afadbe29c92cf70aa1295cf990d130fc",
       "api_metadata": "devicesrv/devicesrv_pub/sensor_definitions_api/sensor_definitions_api.metaxml",
       "api_libraries": [],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sensrvilluminationsensor.h",
+      "targets": [
+        "SensorNative"
+      ]
     },
     {
       "include": "sensrvmagnetometersensor.h",
@@ -26450,7 +27304,10 @@
       "sha256": "86d2d1467f03be274504468a92900ba651432bc8e306dc924418681f89fe7ff5",
       "api_metadata": "devicesrv/devicesrv_pub/sensor_definitions_api/sensor_definitions_api.metaxml",
       "api_libraries": [],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sensrvmagnetometersensor.h",
+      "targets": [
+        "SensorNative"
+      ]
     },
     {
       "include": "sensrvorientationsensor.h",
@@ -26462,7 +27319,10 @@
       "sha256": "b4d4c097309c742d92011faa652c494e0c78736924a31729ce738a0e7b2b6050",
       "api_metadata": "devicesrv/devicesrv_pub/sensor_definitions_api/sensor_definitions_api.metaxml",
       "api_libraries": [],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sensrvorientationsensor.h",
+      "targets": [
+        "SensorNative"
+      ]
     },
     {
       "include": "sensrvproximitysensor.h",
@@ -26474,7 +27334,10 @@
       "sha256": "1e4ce891bf2386a4085f89b1555c270ecf017e8c4f553391eef08c5e394197da",
       "api_metadata": "devicesrv/devicesrv_pub/sensor_definitions_api/sensor_definitions_api.metaxml",
       "api_libraries": [],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sensrvproximitysensor.h",
+      "targets": [
+        "SensorNative"
+      ]
     },
     {
       "include": "sensrvtappingsensor.h",
@@ -26486,7 +27349,10 @@
       "sha256": "33497c3d84bdbf946ae13ccecf5d9d557b2d6bcc81a164332d5e9ae8f9b23d4c",
       "api_metadata": "devicesrv/devicesrv_pub/sensor_definitions_api/sensor_definitions_api.metaxml",
       "api_libraries": [],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sensrvtappingsensor.h",
+      "targets": [
+        "SensorNative"
+      ]
     },
     {
       "include": "sensrvmagneticnorthsensor.h",
@@ -26498,7 +27364,10 @@
       "sha256": "40435f1a67f96243b411e8b446b8730bac5c3a9425cbf95c1583473108cc1572",
       "api_metadata": "devicesrv/devicesrv_pub/sensor_definitions_api/sensor_definitions_api.metaxml",
       "api_libraries": [],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sensrvmagneticnorthsensor.h",
+      "targets": [
+        "SensorNative"
+      ]
     },
     {
       "include": "versioninfo.h",
@@ -26555,7 +27424,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "49672b9797471ee13ced9764b6f3ad6bf92b8771aa6e445072b0b3768e16fa93",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/hwrmvibrasdkcrkeys.h",
+      "targets": [
+        "Vibra"
+      ]
     },
     {
       "include": "hwrmpowerstatesdkpskeys.h",
@@ -26565,7 +27437,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "441bbd45a5c627bccb71522db134cd0a53a5c9def59574f0f02760c4d867dad3",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/hwrmpowerstatesdkpskeys.h",
+      "targets": [
+        "PowerNative"
+      ]
     },
     {
       "include": "hwrmvibra.h",
@@ -26865,6 +27740,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -26898,6 +27774,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -26931,6 +27808,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -27147,6 +28025,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -27188,6 +28067,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -27279,6 +28159,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -28147,6 +29028,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -28208,6 +29091,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -28289,6 +29175,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -28350,6 +29238,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -28430,6 +29321,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -28493,6 +29386,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -28583,6 +29479,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -28646,6 +29544,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -28726,6 +29627,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -28789,6 +29692,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -28869,6 +29775,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -28932,6 +29840,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -29012,6 +29923,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -29079,6 +29992,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -29159,6 +30075,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -29222,6 +30140,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -29302,6 +30223,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -29365,6 +30288,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -29445,6 +30371,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -29508,6 +30436,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -29578,6 +30509,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -29602,6 +30535,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -29676,6 +30612,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -29739,6 +30677,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -29819,6 +30760,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -29882,6 +30825,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -30027,6 +30973,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -30090,6 +31038,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -30173,6 +31124,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -30236,6 +31189,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -30296,6 +31252,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -30320,6 +31278,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -30374,6 +31335,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -30398,6 +31361,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -30452,6 +31418,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -30476,6 +31444,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -30605,6 +31576,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -30626,6 +31599,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -30680,6 +31656,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -30701,6 +31679,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -30757,6 +31738,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -30778,6 +31761,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -30834,6 +31820,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -30855,6 +31843,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -30911,6 +31902,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -30932,6 +31925,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -33511,7 +34507,8 @@
       "sha256": "9193f6a9208625adf04bf44402c7adff44cea82bdeaf4715a31a18649f7beb6d",
       "destination": "include/native/mmf/server/sounddevice.h",
       "targets": [
-        "DevSound"
+        "DevSound",
+        "MmfServerBase"
       ]
     },
     {
@@ -33524,7 +34521,8 @@
       "sha256": "e30698d742cd61dd6de5c1c3a9cb8f4e64167a4d45ce6cc9262fb589a97fc1da",
       "destination": "include/native/mmf/server/sounddevice.inl",
       "targets": [
-        "DevSound"
+        "DevSound",
+        "MmfServerBase"
       ]
     },
     {
@@ -33547,7 +34545,8 @@
       "sha256": "7ca36c9dac8fa151337cce766aa91712d70def28a265093b03c94eef4e6cbb53",
       "destination": "include/native/mmf/server/mmfdevsoundcustominterfacesupport.h",
       "targets": [
-        "DevSound"
+        "DevSound",
+        "MmfServerBase"
       ]
     },
     {
@@ -33560,7 +34559,8 @@
       "sha256": "80049c4ab5a2991866dda7bede2911f746d3d2cbf0997aff823030287788f464",
       "destination": "include/native/mmf/server/mmfdevsoundcustominterfaceobserver.h",
       "targets": [
-        "DevSound"
+        "DevSound",
+        "MmfServerBase"
       ]
     },
     {
@@ -33573,7 +34573,8 @@
       "sha256": "4cd763035dec09688426025386158a6dbf2f0b7bf24cf3c251192c7c488965e3",
       "destination": "include/native/mmf/server/mmfdevsoundcustominterfacesupportclasses.h",
       "targets": [
-        "DevSound"
+        "DevSound",
+        "MmfServerBase"
       ]
     },
     {
@@ -36069,7 +37070,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "b1de0626f8a1d326d7b2aea905460f086cb49e8393f88de28c346339a9dd68f3",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/speechrecognitionutility.h",
+      "targets": [
+        "SpeechRecognition"
+      ]
     },
     {
       "include": "speechrecognitionutilityobserver.h",
@@ -36079,7 +37083,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6c4e0ddb13e851af53b2eb02811e26288ada02d9b5271e41c0595e13a46ed7e2",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/speechrecognitionutilityobserver.h",
+      "targets": [
+        "SpeechRecognition"
+      ]
     },
     {
       "include": "speechrecognitionuids.hrh",
@@ -36089,7 +37096,12 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "b605fe06521a179f96e978162c1cd14fd34304c8c9b263d7b8010819fe070869",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/speechrecognitionuids.hrh",
+      "targets": [
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData"
+      ]
     },
     {
       "include": "mmf/common/speechrecognitioncustomcommands.h",
@@ -36099,7 +37111,11 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "710d47ce366403bd1891fed1d5e333a248e30d6d13305297952b95cb4822cfaf",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/common/speechrecognitioncustomcommands.h",
+      "targets": [
+        "SpeechRecognition",
+        "SpeechRecognitionCommands"
+      ]
     },
     {
       "include": "mmf/common/speechrecognitioncustomcommandparser.h",
@@ -36109,7 +37125,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "def8dc3005632438867707f0c5d7cadf0a55a173096f12b192abf8d445c7e3c9",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/common/speechrecognitioncustomcommandparser.h",
+      "targets": [
+        "SpeechRecognitionCommands"
+      ]
     },
     {
       "include": "mmf/common/speechrecognitioncustomcommandimplementor.h",
@@ -36119,7 +37138,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e22a0715d44d57fd0761f18555dc83311fa6944617aa08824b088691dacde632",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/common/speechrecognitioncustomcommandimplementor.h",
+      "targets": [
+        "SpeechRecognitionCommands"
+      ]
     },
     {
       "include": "mmf/common/speechrecognitiondataclient.h",
@@ -36129,7 +37151,12 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "be91f982606fb76f4db1f929564dc7aac18056ef32609b2740b5f441e3fcc8b4",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/common/speechrecognitiondataclient.h",
+      "targets": [
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData"
+      ]
     },
     {
       "include": "mmf/common/speechrecognitiondatadevasr.h",
@@ -36139,7 +37166,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a7da8832fbb7fe363c4eabc8f8a6d1b1031ee7de7656d8edb1d59c4a225819a0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/common/speechrecognitiondatadevasr.h",
+      "targets": [
+        "SpeechRecognitionData"
+      ]
     },
     {
       "include": "mmf/common/speechrecognitiondatacommon.h",
@@ -36149,7 +37179,12 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "026ac9a798187db6817cbcfa89fc665f6e9184493aa7902c7388f797baf4254c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/common/speechrecognitiondatacommon.h",
+      "targets": [
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData"
+      ]
     },
     {
       "include": "mmf/common/speechrecognitiondatatest.h",
@@ -36159,7 +37194,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d108149ce52d2e816a4c7ed0ff75d89cb52cbef0c78a108dce91fdce681c440d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/common/speechrecognitiondatatest.h",
+      "targets": [
+        "SpeechRecognitionData"
+      ]
     },
     {
       "include": "mmf/devasr/devasr.h",
@@ -36357,7 +37395,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -36393,6 +37435,7 @@
         "DevSound",
         "Midi",
         "MmfCustomCommands",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
         "Video"
       ]
@@ -36414,7 +37457,12 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "Video"
       ]
     },
@@ -36435,7 +37483,12 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "Video"
       ]
     },
@@ -36456,7 +37509,12 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "Video"
       ]
     },
@@ -36468,7 +37526,11 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a770fc2598fb29dd883604e418bd4439729a13702690fea2ace1852b351c7d86",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/common/mmfpaniccodes.h",
+      "targets": [
+        "MmfController",
+        "MmfServerBase"
+      ]
     },
     {
       "include": "mmf/common/mmfmeta.h",
@@ -36478,7 +37540,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "146ac1b5ad0e7c0a77081bcdb7753b0e90b8a4601e913f2647f91c7eb1782b89",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/common/mmfmeta.h",
+      "targets": [
+        "MmfController"
+      ]
     },
     {
       "include": "mmf/common/mmfipc.h",
@@ -36497,7 +37562,12 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "Video"
       ]
     },
@@ -36518,7 +37588,12 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "Video"
       ]
     },
@@ -36539,7 +37614,12 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "Video"
       ]
     },
@@ -36560,7 +37640,12 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "Video"
       ]
     },
@@ -36572,7 +37657,11 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6da218a5b833c60fef4e1406259eceaf03338daefdec6c24a539499bd2144daa",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/server/mmfformat.h",
+      "targets": [
+        "MmfFormatBase",
+        "MmfServerBase"
+      ]
     },
     {
       "include": "mmf/server/mmfformat.inl",
@@ -36582,7 +37671,11 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "aa34bf06ca331d80473a182197103d357f7385f041186bed2764b34350cd4b5f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/server/mmfformat.inl",
+      "targets": [
+        "MmfFormatBase",
+        "MmfServerBase"
+      ]
     },
     {
       "include": "mmf/server/mmfclip.h",
@@ -36592,7 +37685,11 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "ff354940b547728733df763363824921ad8f40c01b5906ffcf46ac6c0486d1e0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/server/mmfclip.h",
+      "targets": [
+        "MmfFormatBase",
+        "MmfServerBase"
+      ]
     },
     {
       "include": "mmf/server/mmfdatabuffer.h",
@@ -36611,7 +37708,12 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "Video"
       ]
     },
@@ -36623,7 +37725,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d1832f2a53eceeda0a31b7e2a581e57ccb6fcfb90bc8009aa0ff7b6298c63b38",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/server/mmffile.h",
+      "targets": [
+        "MmfFormatBase"
+      ]
     },
     {
       "include": "mmf/server/mmfdes.h",
@@ -36633,7 +37738,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "cd64d47c078b67cbbb98373a3d3a19db04c4c346d932248dea30e93ca8e6d4ec",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/server/mmfdes.h",
+      "targets": [
+        "MmfFormatBase"
+      ]
     },
     {
       "include": "mmf/server/mmfurl.h",
@@ -36643,7 +37751,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0bdc8aa3464537e5e66523406c8f6c6d2660ca8096b5e98924c06f0c33b2bdde",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/server/mmfurl.h",
+      "targets": [
+        "MmfFormatBase"
+      ]
     },
     {
       "include": "mmf/server/mmfbuffer.h",
@@ -36662,7 +37773,12 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "Video"
       ]
     },
@@ -36683,7 +37799,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -36704,7 +37824,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -36725,7 +37849,12 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "Video"
       ]
     },
@@ -36737,7 +37866,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d7e4d8c9cee5e77160827530163a2fa92c0213335c375c99b359697bf4538133",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/server/mmfdatapath.h",
+      "targets": [
+        "MmfServerBase"
+      ]
     },
     {
       "include": "mmf/server/mmfdatapath2.h",
@@ -36747,7 +37879,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "91b62bd8f6e16693fd0109bd1f654c7841978f871ec1879b43f13511165904ff",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/server/mmfdatapath2.h",
+      "targets": [
+        "MmfServerBase"
+      ]
     },
     {
       "include": "mmf/server/mmfsubthreadbase.h",
@@ -36757,7 +37892,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e99902130849543a9f1dbcc8db55b2be7af724b70633044112a98e86bd47ba5d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/server/mmfsubthreadbase.h",
+      "targets": [
+        "MmfServerBase"
+      ]
     },
     {
       "include": "mmf/server/mmfaudiooutput.h",
@@ -36767,7 +37905,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "9f225cb51acaa6446bfaaf7dd30f88f924ebf8342c8409dab0bce65974d5bb1b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/server/mmfaudiooutput.h",
+      "targets": [
+        "MmfServerBase"
+      ]
     },
     {
       "include": "mmf/server/mmfaudioinput.h",
@@ -36777,7 +37918,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "ec00e60e566f2b8fcf2d91411a0e3d5b212ea143e36d7e9b09fe43089a225ae7",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/server/mmfaudioinput.h",
+      "targets": [
+        "MmfServerBase"
+      ]
     },
     {
       "include": "mmf/server/mmfvideoframebuffer.h",
@@ -36787,7 +37931,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "702ad2ebd31347804db769a8c439ce30d97b7f9afbf7fc288b720d2e49146712",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/server/mmfvideoframebuffer.h",
+      "targets": [
+        "MmfServerBase"
+      ]
     },
     {
       "include": "mmf/server/mmfdatapathproxy.h",
@@ -36797,7 +37944,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f4eaa9a4ac94cd62803cd28b9352d5ac0ba43897ddeb917cf318f3005741e28e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/server/mmfdatapathproxy.h",
+      "targets": [
+        "MmfServerBase"
+      ]
     },
     {
       "include": "mmf/server/mmfcodec.h",
@@ -36807,7 +37957,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "2aaff19b25b16105cefd6d615d26cb6afb17a8b0a88d69c6de5fa59a3649e2bd",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mmf/server/mmfcodec.h",
+      "targets": [
+        "MmfServerBase"
+      ]
     },
     {
       "include": "mmf/common/mmfcontroller.h",
@@ -36826,7 +37979,10 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -36847,7 +38003,10 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -36868,7 +38027,12 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "Video"
       ]
     },
@@ -36889,7 +38053,12 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "Video"
       ]
     },
@@ -36910,7 +38079,12 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "Video"
       ]
     },
@@ -36930,6 +38104,7 @@
         "DevSound",
         "Midi",
         "MmfCustomCommands",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
         "Video"
       ]
@@ -37028,7 +38203,8 @@
       "destination": "include/native/mda/common/resource.h",
       "targets": [
         "Audio",
-        "ImageDisplay"
+        "ImageDisplay",
+        "MediaClient"
       ]
     },
     {
@@ -37067,7 +38243,8 @@
       "sha256": "be8111bef548370f1d716eff864f2f5dd63ee3b5dcdd16b73328a6e056150237",
       "destination": "include/native/mda/common/audio.h",
       "targets": [
-        "Audio"
+        "Audio",
+        "MediaClient"
       ]
     },
     {
@@ -37077,8 +38254,19 @@
       "declaration": "../inc/Mda/Common/GsmAudio.h\t\t\tSYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(mda/common/gsmaudio.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "1b3b2ff33ab7f0f156629fb8d01dcd8754688875e72b995ea4a2298ec06bea9b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "d17e47753b31fa21c329c71fb460b3bba16ce5971c9d6b6a9ec262bc475661af",
+      "source_sha256": "1b3b2ff33ab7f0f156629fb8d01dcd8754688875e72b995ea4a2298ec06bea9b",
+      "compatibility_edits": [
+        {
+          "before": "#include <e32base.h>",
+          "after": "#include <e32base.h>\n#include <mda/common/audio.h>",
+          "reason": "The original public GSM audio header includes a compatibility codec subclass before the TMdaWavCodec base declaration; include the original defining audio header first."
+        }
+      ],
+      "destination": "include/native/mda/common/gsmaudio.h",
+      "targets": [
+        "MediaClient"
+      ]
     },
     {
       "include": "mm/mmcaf.h",
@@ -37098,6 +38286,8 @@
         "ImageDisplay",
         "Midi",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
         "Video"
       ]
@@ -42141,6 +43331,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknnotify",
         "Native_browserengine",
         "Native_commondialogs",
@@ -42148,6 +43340,8 @@
         "Native_drmaudioplayutility",
         "Native_eikcdlg",
         "Native_eikctl",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -42914,6 +44108,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -42923,6 +44119,8 @@
         "Native_drmaudioplayutility",
         "Native_eikcdlg",
         "Native_eikctl",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "TextLayout",
         "Video"
       ]
@@ -42966,6 +44164,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -42975,6 +44175,8 @@
         "Native_drmaudioplayutility",
         "Native_eikcdlg",
         "Native_eikctl",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "TextLayout",
         "Video"
       ]
@@ -43010,6 +44212,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -43019,6 +44223,8 @@
         "Native_drmaudioplayutility",
         "Native_eikcdlg",
         "Native_eikctl",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "TextLayout",
         "Video"
       ]
@@ -43054,6 +44260,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -43063,6 +44271,8 @@
         "Native_drmaudioplayutility",
         "Native_eikcdlg",
         "Native_eikctl",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "TextLayout",
         "Video"
       ]
@@ -43098,6 +44308,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -43107,6 +44319,8 @@
         "Native_drmaudioplayutility",
         "Native_eikcdlg",
         "Native_eikctl",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "TextLayout",
         "Video",
         "Xml"
@@ -43143,6 +44357,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -43152,6 +44368,8 @@
         "Native_drmaudioplayutility",
         "Native_eikcdlg",
         "Native_eikctl",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "TextLayout",
         "Video",
         "Xml"
@@ -49569,6 +50787,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknnotify",
         "Native_audioequalizereffect",
         "Native_audioequalizerutility",
@@ -49599,6 +50819,9 @@
         "SendAs",
         "SipCodec",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -49634,6 +50857,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknnotify",
         "Native_audioequalizereffect",
         "Native_audioequalizerutility",
@@ -49664,6 +50889,9 @@
         "SendAs",
         "SipCodec",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -49750,6 +50978,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_audioequalizereffect",
         "Native_audioequalizerutility",
         "Native_bassboosteffect",
@@ -49773,6 +51003,9 @@
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Video",
         "Xml"
@@ -49799,6 +51032,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_audioequalizereffect",
         "Native_audioequalizerutility",
         "Native_bassboosteffect",
@@ -49822,6 +51057,9 @@
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Video",
         "Xml"
@@ -49853,6 +51091,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknnotify",
         "Native_audioequalizereffect",
         "Native_audioequalizerutility",
@@ -49882,6 +51122,9 @@
         "Native_stereowideningutility",
         "SendAs",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -49917,6 +51160,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknnotify",
         "Native_audioequalizereffect",
         "Native_audioequalizerutility",
@@ -49946,6 +51191,9 @@
         "Native_stereowideningutility",
         "SendAs",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -49981,6 +51229,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknnotify",
         "Native_audioequalizereffect",
         "Native_audioequalizerutility",
@@ -50010,6 +51260,9 @@
         "Native_stereowideningutility",
         "SendAs",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -50045,6 +51298,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknnotify",
         "Native_audioequalizereffect",
         "Native_audioequalizerutility",
@@ -50074,6 +51329,9 @@
         "Native_stereowideningutility",
         "SendAs",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -50126,6 +51384,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -50162,6 +51422,9 @@
         "Native_stereowideningutility",
         "SendAs",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "Text",
@@ -50215,6 +51478,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -50251,6 +51516,9 @@
         "Native_stereowideningutility",
         "SendAs",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "Text",
@@ -50287,6 +51555,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknnotify",
         "Native_audioequalizereffect",
         "Native_audioequalizerutility",
@@ -50316,6 +51586,9 @@
         "Native_stereowideningutility",
         "SendAs",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -50351,6 +51624,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknnotify",
         "Native_audioequalizereffect",
         "Native_audioequalizerutility",
@@ -50380,6 +51655,9 @@
         "Native_stereowideningutility",
         "SendAs",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -50437,6 +51715,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -50477,6 +51757,9 @@
         "SipClient",
         "SipCodec",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "Text",
@@ -50535,6 +51818,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -50575,6 +51860,9 @@
         "SipClient",
         "SipCodec",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "Text",
@@ -50775,7 +52063,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -50800,7 +52092,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -50824,7 +52120,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -50848,7 +52148,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -50873,7 +52177,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -50898,7 +52206,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -50923,7 +52235,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -50947,7 +52263,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -50971,7 +52291,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -50995,7 +52319,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -51020,7 +52348,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -51045,7 +52377,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -51069,7 +52405,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -51093,7 +52433,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -51117,7 +52461,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -51142,7 +52490,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -51167,7 +52519,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -51191,7 +52547,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -52166,6 +53526,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -52200,6 +53561,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -52235,6 +53597,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -52270,6 +53633,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -60250,8 +61614,73 @@
         "DevSound",
         "Midi",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
         "Video"
+      ]
+    },
+    {
+      "include": "mda/common/controller.h",
+      "source": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Controller.h",
+      "manifest": "mmaudio/mmlibs/mmfw/group/bld.inf",
+      "declaration": "../inc/Mda/Common/Controller.h\t\t\tSYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(mda/common/controller.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "e2462cf501d1525aa1078e48f7a9a9cca6752da450eeb5e8350f895c4ee8f715",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/GsmAudio.h",
+      "destination": "include/native/mda/common/controller.h",
+      "targets": [
+        "Audio",
+        "ImageDisplay",
+        "MediaClient"
+      ]
+    },
+    {
+      "include": "mda/common/audio.hrh",
+      "source": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Audio.hrh",
+      "manifest": "mmaudio/mmlibs/mmfw/group/bld.inf",
+      "declaration": "../inc/Mda/Common/Audio.hrh\t\t\t/epoc32/include/mda/common/audio.hrh",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "89a778db7402002fa1375d92ca7b94b3060b333f13fcc139e9f8ac022a84a338",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/GsmAudio.h",
+      "destination": "include/native/mda/common/audio.hrh",
+      "targets": [
+        "Audio",
+        "MediaClient"
+      ]
+    },
+    {
+      "include": "mda/common/gsmaudio.hrh",
+      "source": "mmaudio/mmlibs/mmfw/inc/Mda/Common/GsmAudio.hrh",
+      "manifest": "mmaudio/mmlibs/mmfw/group/bld.inf",
+      "declaration": "../inc/Mda/Common/GsmAudio.hrh\t\t\t/epoc32/include/mda/common/gsmaudio.hrh",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "d99156566c4bbe411bb63e347a0750ddb191bd9bee7e976f583e05fdf7e4d105",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/GsmAudio.h",
+      "destination": "include/native/mda/common/gsmaudio.hrh",
+      "targets": [
+        "MediaClient"
+      ]
+    },
+    {
+      "include": "mda/common/mdagsmwavcodec.h",
+      "source": "mmaudio/mmlibs/mmfw/inc/Mda/Common/mdagsmwavcodec.h",
+      "manifest": "mmaudio/mmlibs/mmfw/group/bld.inf",
+      "declaration": "../inc/Mda/Common/mdagsmwavcodec.h\t\tSYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(mda/common/mdagsmwavcodec.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "dd15b0431098ea2d06af584162c608d1e3dbdda008dca56404bae29a75ee70ad",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/GsmAudio.h",
+      "destination": "include/native/mda/common/mdagsmwavcodec.h",
+      "targets": [
+        "MediaClient"
       ]
     },
     {
@@ -60273,7 +61702,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -60296,7 +61729,10 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -60319,7 +61755,10 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -60341,6 +61780,7 @@
         "DevSound",
         "Midi",
         "MmfCustomCommands",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
         "Video"
       ]
@@ -60363,6 +61803,7 @@
         "DevSound",
         "Midi",
         "MmfCustomCommands",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
         "Video"
       ]
@@ -60421,6 +61862,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -60491,6 +61933,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -60528,6 +61971,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -60565,6 +62009,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -60602,6 +62047,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -61088,6 +62534,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknnotify",
         "Native_browserengine",
@@ -61097,6 +62545,8 @@
         "Native_drmaudioplayutility",
         "Native_eikcdlg",
         "Native_eikctl",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "TextLayout",
         "Video"
       ]
@@ -61470,8 +62920,69 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
+      ]
+    },
+    {
+      "include": "mmf/server/mmfdatapathproxyserver.h",
+      "source": "mmaudio/mmlibs/mmfw/inc/mmf/server/mmfdatapathproxyserver.h",
+      "manifest": "mmaudio/mmlibs/mmfw/group/bld.inf",
+      "declaration": "../inc/mmf/server/mmfdatapathproxyserver.h\t\tSYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(mmf/server/mmfdatapathproxyserver.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "6df0b3b0bb4cd4c4096d34fbbf934a4483bf717233264b453f8d02bd0107663b",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/server/mmfdatapathproxy.h",
+      "destination": "include/native/mmf/server/mmfdatapathproxyserver.h",
+      "targets": [
+        "MmfServerBase"
+      ]
+    },
+    {
+      "include": "mmf/server/mmfdatasourcesink.hrh",
+      "source": "mmaudio/mmlibs/mmfw/inc/mmf/server/mmfdatasourcesink.hrh",
+      "manifest": "mmaudio/mmlibs/mmfw/group/bld.inf",
+      "declaration": "../inc/mmf/server/mmfdatasourcesink.hrh\t/epoc32/include/mmf/server/mmfdatasourcesink.hrh",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "dc66a617a4088d5b526bc9e7a7ddf70f49f224831cae750ecbf5fc7d33dc33ab",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/server/mmfdatasink.h",
+      "destination": "include/native/mmf/server/mmfdatasourcesink.hrh",
+      "targets": [
+        "Audio",
+        "AudioInputStream",
+        "AudioStream",
+        "DevSound",
+        "Midi",
+        "MmfController",
+        "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
+        "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "Video"
+      ]
+    },
+    {
+      "include": "mmf/server/mmfsubthreadbaseimpl.h",
+      "source": "mmaudio/mmlibs/mmfw/inc/mmf/server/mmfsubthreadbaseimpl.h",
+      "manifest": "mmaudio/mmlibs/mmfw/group/bld.inf",
+      "declaration": "../inc/mmf/server/mmfsubthreadbaseimpl.h\tSYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(mmf/server/mmfsubthreadbaseimpl.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "4106b4ada006302d4cb0f485045897ac7521711866eee79da6d8b8189fb9def4",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/server/mmfsubthreadbase.h",
+      "destination": "include/native/mmf/server/mmfsubthreadbaseimpl.h",
+      "targets": [
+        "MmfServerBase"
       ]
     },
     {
@@ -61519,6 +63030,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -61543,6 +63056,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -61706,6 +63222,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -61769,6 +63287,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -61831,6 +63352,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -61852,6 +63375,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -61914,21 +63440,6 @@
       ]
     },
     {
-      "include": "mda/common/audio.hrh",
-      "source": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Audio.hrh",
-      "manifest": "mmaudio/mmlibs/mmfw/group/bld.inf",
-      "declaration": "../inc/Mda/Common/Audio.hrh\t\t\t/epoc32/include/mda/common/audio.hrh",
-      "conditions": [],
-      "classification": "private_internal",
-      "sha256": "89a778db7402002fa1375d92ca7b94b3060b333f13fcc139e9f8ac022a84a338",
-      "exposure": "required_textual_support",
-      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Audio.h",
-      "destination": "include/native/mda/common/audio.hrh",
-      "targets": [
-        "Audio"
-      ]
-    },
-    {
       "include": "mda/common/audiostream.hrh",
       "source": "mmaudio/mmlibs/mmfw/inc/Mda/Common/AudioStream.hrh",
       "manifest": "mmaudio/mmlibs/mmfw/group/bld.inf",
@@ -61940,7 +63451,8 @@
       "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Audio.h",
       "destination": "include/native/mda/common/audiostream.hrh",
       "targets": [
-        "Audio"
+        "Audio",
+        "MediaClient"
       ]
     },
     {
@@ -62023,7 +63535,12 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "Video"
       ]
     },
@@ -62090,6 +63607,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -62151,6 +63670,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -62169,26 +63691,37 @@
       ]
     },
     {
-      "include": "mmf/server/mmfdatasourcesink.hrh",
-      "source": "mmaudio/mmlibs/mmfw/inc/mmf/server/mmfdatasourcesink.hrh",
+      "include": "mda/common/port.h",
+      "source": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Port.h",
       "manifest": "mmaudio/mmlibs/mmfw/group/bld.inf",
-      "declaration": "../inc/mmf/server/mmfdatasourcesink.hrh\t/epoc32/include/mmf/server/mmfdatasourcesink.hrh",
+      "declaration": "../inc/Mda/Common/Port.h\t\t\tSYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(mda/common/port.h)",
       "conditions": [],
       "classification": "private_internal",
-      "sha256": "dc66a617a4088d5b526bc9e7a7ddf70f49f224831cae750ecbf5fc7d33dc33ab",
+      "sha256": "ccb7a1d25ad336bb7c20c389a4d17d2a86009ae6be6090cd22a5f25c631c21b0",
       "exposure": "required_textual_support",
-      "included_by": "mmaudio/mmlibs/mmfw/inc/mmf/server/mmfdatasource.h",
-      "destination": "include/native/mmf/server/mmfdatasourcesink.hrh",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Resource.h",
+      "destination": "include/native/mda/common/port.h",
       "targets": [
         "Audio",
-        "AudioInputStream",
-        "AudioStream",
-        "DevSound",
-        "Midi",
-        "MmfController",
-        "MmfCustomCommands",
-        "Native_drmaudioplayutility",
-        "Video"
+        "ImageDisplay",
+        "MediaClient"
+      ]
+    },
+    {
+      "include": "mda/common/resource.hrh",
+      "source": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Resource.hrh",
+      "manifest": "mmaudio/mmlibs/mmfw/group/bld.inf",
+      "declaration": "../inc/Mda/Common/Resource.hrh\t\t\t/epoc32/include/mda/common/resource.hrh",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "1262cc22ca8c6f687dba5a2e493fd06dd31e307973ab4e0c854a6604b14be23e",
+      "exposure": "required_textual_support",
+      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Resource.h",
+      "destination": "include/native/mda/common/resource.hrh",
+      "targets": [
+        "Audio",
+        "ImageDisplay",
+        "MediaClient"
       ]
     },
     {
@@ -62210,7 +63743,10 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -62233,7 +63769,10 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -62255,6 +63794,7 @@
         "DevSound",
         "Midi",
         "MmfCustomCommands",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
         "Video"
       ]
@@ -62287,54 +63827,6 @@
       "destination": "include/native/icl/icl_uids_def.hrh",
       "targets": [
         "ImageConversion"
-      ]
-    },
-    {
-      "include": "mda/common/port.h",
-      "source": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Port.h",
-      "manifest": "mmaudio/mmlibs/mmfw/group/bld.inf",
-      "declaration": "../inc/Mda/Common/Port.h\t\t\tSYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(mda/common/port.h)",
-      "conditions": [],
-      "classification": "private_internal",
-      "sha256": "ccb7a1d25ad336bb7c20c389a4d17d2a86009ae6be6090cd22a5f25c631c21b0",
-      "exposure": "required_textual_support",
-      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Resource.h",
-      "destination": "include/native/mda/common/port.h",
-      "targets": [
-        "Audio",
-        "ImageDisplay"
-      ]
-    },
-    {
-      "include": "mda/common/controller.h",
-      "source": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Controller.h",
-      "manifest": "mmaudio/mmlibs/mmfw/group/bld.inf",
-      "declaration": "../inc/Mda/Common/Controller.h\t\t\tSYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(mda/common/controller.h)",
-      "conditions": [],
-      "classification": "private_internal",
-      "sha256": "e2462cf501d1525aa1078e48f7a9a9cca6752da450eeb5e8350f895c4ee8f715",
-      "exposure": "required_textual_support",
-      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Resource.h",
-      "destination": "include/native/mda/common/controller.h",
-      "targets": [
-        "Audio",
-        "ImageDisplay"
-      ]
-    },
-    {
-      "include": "mda/common/resource.hrh",
-      "source": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Resource.hrh",
-      "manifest": "mmaudio/mmlibs/mmfw/group/bld.inf",
-      "declaration": "../inc/Mda/Common/Resource.hrh\t\t\t/epoc32/include/mda/common/resource.hrh",
-      "conditions": [],
-      "classification": "private_internal",
-      "sha256": "1262cc22ca8c6f687dba5a2e493fd06dd31e307973ab4e0c854a6604b14be23e",
-      "exposure": "required_textual_support",
-      "included_by": "mmaudio/mmlibs/mmfw/inc/Mda/Common/Resource.h",
-      "destination": "include/native/mda/common/resource.hrh",
-      "targets": [
-        "Audio",
-        "ImageDisplay"
       ]
     },
     {
@@ -62379,6 +63871,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -62422,6 +63915,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -62465,6 +63959,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -62508,6 +64003,7 @@
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -62589,6 +64085,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -62652,6 +64150,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -62916,6 +64417,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -62983,6 +64486,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -63467,7 +64973,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -63493,7 +65003,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -63519,7 +65033,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -63545,7 +65063,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -63571,7 +65093,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -63597,7 +65123,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -63623,7 +65153,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -63649,7 +65183,11 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_drmaudioplayutility",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
         "Video"
       ]
     },
@@ -63797,6 +65335,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -63821,6 +65361,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -63877,6 +65420,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -63901,6 +65446,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -63957,6 +65505,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -63981,6 +65531,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -64037,6 +65590,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -64061,6 +65616,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -64117,6 +65675,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -64141,6 +65701,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -64197,6 +65760,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -64221,6 +65786,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -64277,6 +65845,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -64301,6 +65871,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -64464,6 +66037,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -64488,6 +66063,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -64512,7 +66090,8 @@
       "destination": "include/native/mda/common/port.hrh",
       "targets": [
         "Audio",
-        "ImageDisplay"
+        "ImageDisplay",
+        "MediaClient"
       ]
     },
     {
@@ -64580,6 +66159,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -64643,6 +66224,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -64725,6 +66309,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -64788,6 +66374,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -64870,6 +66459,8 @@
         "Mime",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_akninputlanguage",
@@ -64933,6 +66524,9 @@
         "SipCodec",
         "SipProfiles",
         "Sms",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "SqlNative",
         "StreamsNative",
         "StringPool",
@@ -65215,6 +66809,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -65239,6 +66835,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -65295,6 +66894,8 @@
         "Midi",
         "MmfController",
         "MmfCustomCommands",
+        "MmfFormatBase",
+        "MmfServerBase",
         "Native_aknhlist",
         "Native_aknicon",
         "Native_aknnotify",
@@ -65319,6 +66920,9 @@
         "SendAs",
         "SipClient",
         "SipCodec",
+        "SpeechRecognition",
+        "SpeechRecognitionCommands",
+        "SpeechRecognitionData",
         "StreamsNative",
         "Text",
         "TextLayout",

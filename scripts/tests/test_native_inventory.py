@@ -203,6 +203,39 @@ def test_reviewed_xml_export_manifests_have_target_owned_payloads():
         assert all(header.get("targets") for header in public)
 
 
+def test_sensor_and_speech_public_manifests_have_owned_payloads():
+    root = Path(__file__).resolve().parents[2]
+    inventory = json.loads(
+        (root / "research/native-sdk/inventory.json").read_text()
+    )
+    owners = {
+        "devicesrv/devicesrv_pub/sensor_definitions_api/group/bld.inf": (
+            "SensorNative"
+        ),
+        "devicesrv/devicesrv_pub/sensor_channel_api/group/bld.inf": (
+            "SensorNative"
+        ),
+        "mmaudio/mmdevicefw/speechrecogsupport/ASR/group/bld.inf": (
+            "SpeechRecognition",
+            "SpeechRecognitionCommands",
+            "SpeechRecognitionData",
+        ),
+    }
+    for manifest, targets in owners.items():
+        if isinstance(targets, str):
+            targets = (targets,)
+        headers = [
+            header
+            for header in inventory["headers"]
+            if header.get("manifest") == manifest
+            and header.get("classification") == "public_base_platform"
+            and header.get("sha256")
+        ]
+        assert headers
+        assert all(header.get("destination") for header in headers)
+        assert all(set(header["targets"]) & set(targets) for header in headers)
+
+
 def test_qt_mobility_aliases_exclude_private_classes(tmp_path):
     header = tmp_path / "src/contacts/qcontact.h"
     header.parent.mkdir(parents=True)

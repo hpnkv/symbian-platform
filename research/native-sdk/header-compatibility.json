@@ -152,5 +152,19 @@
       "after": "#define XMLENGDOMXPATHERRORS_H\n#include <e32std.h>",
       "reason": "The original public XML XPath error constants use TInt without including its defining e32std.h header."
     }
+  ],
+  "mda/common/gsmaudio.h": [
+    {
+      "before": "#include <e32base.h>",
+      "after": "#include <e32base.h>\n#include <mda/common/audio.h>",
+      "reason": "The original public GSM audio header includes a compatibility codec subclass before the TMdaWavCodec base declaration; include the original defining audio header first."
+    }
+  ],
+  "sensrvchannelconditionlistener.h": [
+    {
+      "before": "#define SENSRVCHANNELCONDITIONLISTENER_H",
+      "after": "#define SENSRVCHANNELCONDITIONLISTENER_H\nclass CSensrvChannel;",
+      "reason": "The original public sensor listener uses CSensrvChannel by reference without its forward declaration; add only the missing declaration."
+    }
   ]
 }

@@ -3727,3 +3727,18 @@ contains all five XML DLL filenames, but no XML call or ordinal comparison
 against those firmware images has passed. There are 1,312 public export
 records still lacking reviewed delivery/target ownership. Fresh source export,
 cross-host bundles, SDL and release 0.2.0 remain open.
+
+2026-10-06 sensor/MMF/speech slice: Public sensor data definitions and channel
+listener headers now belong to `Symbian::SensorNative`; vibration and power
+metadata follow their HWRM targets. New `MmfServerBase` and `MmfFormatBase`
+targets ship complete frozen MMF import interfaces and the corresponding
+public server/format base headers. Public GSM audio is owned by
+`Symbian::MediaClient`. Three speech-recognition targets ship the original
+utility, command and data frozen imports and their public headers. The
+relocated SDK passed 1,522 independent public-header canary object builds
+on each ARM profile, payload validation and an ARMv6 MMF/sensor/vibration
+consumer through E32 conversion. Existing named RM-807 Belle metadata shows
+the MMF and speech DLL filenames, but newly added API behavior has not been
+run there. The inventory still has 1,271 public export records without
+reviewed delivery/ownership. Automatic fresh source export, Linux bundle
+acceptance, SDL and 0.2.0 publication remain open.
