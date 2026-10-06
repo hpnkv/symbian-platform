@@ -1,8 +1,8 @@
 # Build a Symbian Qt app
 
-`examples/qt_app_classic` displays a full-screen Qt button. Tapping it closes the
-application through the Qt event loop and runs the normal application
-destructors. It uses guest Symbian Qt 4.8.1; the Qt 6 desktop libraries bundled
+`examples/qt_app_classic` displays a full-screen Qt card. **Run QtCore check**
+shows a `QByteArray` result, and **Close** exits through the Qt event loop and
+runs the normal application destructors. It uses guest Symbian Qt 4.8.1; the Qt 6 desktop libraries bundled
 with the emulator serve its host interface and cannot provide guest widgets.
 
 ## Install the SDK and emulator
@@ -59,25 +59,31 @@ Select your imported firmware and launch the application:
 symbian app run --project "$qt_project" --firmware my-phone --backend dynarmic
 ```
 
-The SDK stages the executable and its application resources, then opens the
-full-screen button. It reads “Hello from Symbian Qt / Tap to close”; a tap
-exits the guest application and closes the emulator. `--backend dyncom`
+The SDK stages the executable and its application resources. Tap **Run QtCore
+check** to show the byte-array result, then tap **Close** to exit the guest
+application and close the emulator. `--backend dyncom`
 selects the other CPU backend.
 
 To browse the firmware's application list instead, use
 `symbian emu run --project "$qt_project" --firmware my-phone`, open
 **Symbian Qt**, and close the emulator window when finished.
 
-The application constructs its widgets after QApplication and connects the
-button's signal to the application slot:
+The application constructs its widgets after QApplication. A Qt signal mapper
+connects the Run button to the result label, while Close connects to the
+application's quit slot:
 
 ```cpp
-QPushButton button(QString::fromUtf8("Hello from Symbian Qt\nTap to close"));
-button.setWindowTitle(QString::fromUtf8("Symbian Qt"));
-if (!QObject::connect(&button, SIGNAL(clicked()), &application, SLOT(quit()))) {
-  return 3;
+QByteArray payload;
+payload.append("808");
+QSignalMapper mapper(&panel);
+mapper.setMapping(&run, QString::fromUtf8("QByteArray contains 808 (3 bytes)"));
+QObject::connect(&run, SIGNAL(clicked()), &mapper, SLOT(map()));
+QObject::connect(&mapper, SIGNAL(mapped(QString)), &result,
+                 SLOT(setText(QString)));
+if (!QObject::connect(&close, SIGNAL(clicked()), &application, SLOT(quit()))) {
+  return 4;
 }
-button.showFullScreen();
+panel.showFullScreen();
 return application.exec();
 ```
 

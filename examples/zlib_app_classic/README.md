@@ -1,8 +1,9 @@
 # zlib_app_classic
 
 This app compresses and decompresses a fixed string with source-built zlib
-1.3.1, then verifies the bytes and CRC. It links only
-`Symbian::PortableZlib`; the SDK supplies its Open C and runtime dependencies.
+1.3.1, then verifies the bytes and CRC. It links
+`Symbian::PortableZlib` plus Window Server/GDI for its result screen; the SDK
+supplies zlib's Open C and runtime dependencies.
 No file access or firmware zlib DLL is required.
 
 Select an installed native SDK in ignored `sdk-location.json`, then run

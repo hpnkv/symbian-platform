@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 
 import pytest
-from PIL import Image
+from PIL import Image, ImageChops
 
 from symbian.e32 import convert_imported_executable
 from symbian.emulator import Control
@@ -108,7 +108,7 @@ def test_original_qt_button_and_shutdown(tmp_path, backend):
 
 
 def _button_and_shutdown(process, control, tmp_path):
-    """Requires readable guest text, delivered input and normal guest exit."""
+    """Requires visible QtCore result, explicit Close and normal guest exit."""
     deadline = time.monotonic() + 60
     attempt = 0
     while True:
@@ -119,21 +119,40 @@ def _button_and_shutdown(process, control, tmp_path):
         assert frame["source"] == "eka2l1-screen-texture"
         with Image.open(frame["path"]) as captured:
             image = captured.convert("RGB").resize((360, 640))
-            # Text needs contrast against the Plastique button;
-            # a black frame during startup must not pass.
-            histogram = image.convert("L").crop((90, 290, 270, 350)).histogram()
+            histogram = image.convert("L").crop((90, 70, 270, 100)).histogram()
             dark = sum(histogram[:100])
             light = sum(histogram[150:])
-        if 150 < dark < 3000 and light > 6000:
+        if 150 < dark < 3000 and light > 3000:
             shutil.copyfile(frame["path"], tmp_path / "button.png")
+            before = image.crop((10, 100, 320, 135))
             break
         assert time.monotonic() < deadline
         time.sleep(0.1)
     time.sleep(0.5)
     assert control.status()["process_exits"] == []
-    _ready(lambda: control.pointer(180, 320, "press"))
+    _ready(lambda: control.pointer(180, 84, "press"))
     time.sleep(0.2)
-    _ready(lambda: control.pointer(180, 320, "release"))
+    _ready(lambda: control.pointer(180, 84, "release"))
+    result_attempt = 0
+    while True:
+        assert process.poll() is None
+        name = f"qt-result-{result_attempt}"
+        frame = _ready(lambda name=name: control.capture(name))
+        result_attempt += 1
+        with Image.open(frame["path"]) as captured:
+            after = captured.convert("RGB").resize((360, 640))
+        difference = ImageChops.difference(
+            before, after.crop((10, 100, 320, 135))
+        )
+        if difference.getbbox() is not None:
+            shutil.copyfile(frame["path"], tmp_path / "result.png")
+            break
+        assert time.monotonic() < deadline
+        time.sleep(0.1)
+    assert control.status()["process_exits"] == []
+    _ready(lambda: control.pointer(180, 615, "press"))
+    time.sleep(0.2)
+    _ready(lambda: control.pointer(180, 615, "release"))
     assert process.wait(timeout=30) == 0
     final = json.loads(
         control.endpoint.with_name(

@@ -4,6 +4,8 @@
 #include <fbs.h>
 #include <imageconversion.h>
 
+#include "ui.h"
+
 namespace {
 
 // An owned one-pixel RGB PNG; the OS supplies the real image decoder plugin.
@@ -36,7 +38,7 @@ class Decode final : public CActive {
   CImageDecoder* absl_nonnull decoder_;
 };
 
-void LoadL() {
+void LoadL(TUint32* absl_nonnull preview) {
   RFs files;
   User::LeaveIfError(files.Connect());
   CleanupClosePushL(files);
@@ -56,6 +58,7 @@ void LoadL() {
   if (pixel.Red() != 255 || pixel.Green() != 0 || pixel.Blue() != 0) {
     User::Leave(KErrCorrupt);
   }
+  *preview = 0x00ff0000;
   CleanupStack::PopAndDestroy(request);
   CleanupStack::PopAndDestroy(bitmap);
   CleanupStack::PopAndDestroy(decoder);
@@ -64,15 +67,30 @@ void LoadL() {
 
 }  // namespace
 
-int main() {
+int RunFeature(TUint32* absl_nonnull preview) {
   const TInt connected = RFbsSession::Connect();
   if (connected != KErrNone) {
     return connected;
   }
   CActiveScheduler scheduler;
   CActiveScheduler::Install(&scheduler);
-  TRAPD(error, LoadL());
+  TRAPD(error, LoadL(preview));
   RFbsSession::Disconnect();
   CActiveScheduler::Install(nullptr);
   return error;
+}
+
+int InvokeFeature(void* absl_nullable context) {
+  if (context == nullptr) {
+    return KErrArgument;
+  }
+  return RunFeature(static_cast<TUint32*>(context));
+}
+
+int main() {
+  TUint32 preview = 0;
+  return classic_demo_ui::Show(
+      _L("IMAGE CONVERSION"), _L("Decodes an embedded PNG."),
+      _L("Loads pixels into a bitmap."), _L("PNG PIXEL LOADED"), &InvokeFeature,
+      &preview, &preview, 1, 1);
 }

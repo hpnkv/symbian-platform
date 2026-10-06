@@ -1,7 +1,8 @@
 # Symbian Qt button
 
 This is a guest Symbian Qt 4.8.1 application, using original QtCore/QtGui
-headers and DLL exports. It displays a button and exits when tapped.
+headers and DLL exports. Run shows a QtCore `QByteArray` result in a QtGui
+window; Close exits through the Qt event loop.
 
 Open the example directory in CLion and choose **App Run** or **App Debug**.
 The shared **qt_app_classic Standalone Run/Debug** configurations live in `.idea/runConfigurations/`,

@@ -4,6 +4,9 @@ function(symbian_guest_runtime_header_canaries root)
   symbian_header_canary(symbian_runtime_header_canary
     HEADERS "${root}/cpp/symbian/runtime/abi.h"
     LIBRARIES symbian_guest_runtime)
+  symbian_header_canary(symbian_native_cpp_compat_header_canary
+    HEADERS "${root}/symbian/toolchain/cmake/native_cpp_compat.h"
+    LIBRARIES symbian_guest_runtime)
   symbian_header_canary(symbian_runtime_c_header_canary C
     HEADERS "${root}/cpp/symbian/runtime/mimalloc_port.h"
     LIBRARIES symbian_guest_runtime)

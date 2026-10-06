@@ -537,6 +537,8 @@ def generate(workspace: Path) -> dict:
             record["targets"] = sorted(set(record["targets"]))
         if record.get("destination"):
             text = (root / record["source"]).read_text(errors="replace")
+            if record["include"].startswith("stdapis/glib-2.0/gobject/"):
+                record["include_via"] = "glib-object.h"
             umbrella = re.search(r"#error[^\n]*?<([^>]+)>", text)
             if umbrella and umbrella[1] in ("glib.h", "glib-object.h"):
                 record["include_via"] = umbrella[1]
@@ -563,6 +565,14 @@ def generate(workspace: Path) -> dict:
             )
             for record in headers
         )
+    avkon_resources = next(
+        facility["selection_blocked"]
+        for facility in facilities
+        if facility["target"] == "Avkon"
+    )
+    for facility in facilities:
+        if "include/native/AknUtils.h" in facility["header_payloads"]:
+            facility.setdefault("selection_blocked", avkon_resources)
     by_name = {f["target"]: f for f in facilities}
     changed = True
     while changed:

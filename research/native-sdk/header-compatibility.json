@@ -76,6 +76,13 @@
       "reason": "Original exported header omits the declaration prerequisite; include the original defining header for independent consumer compilation."
     }
   ],
+  "ptidefs.h": [
+    {
+      "before": "#include <e32keys.h>",
+      "after": "#include <e32base.h>\n#include <e32keys.h>",
+      "reason": "The original public PtiDefs.h uses Symbian descriptors and basic types but includes only e32keys.h; e32base.h supplies its missing declarations."
+    }
+  ],
   "akninternaliconutils.h": [
     {
       "before": "#define AKN_INTERNAL_ICON_UTILS_H",

@@ -8,10 +8,13 @@ from pathlib import Path
 
 
 def check(prefix: Path, output: Path, architecture: str) -> None:
-    """Builds independent header consumers with each API's public dependencies."""
+    """Builds independent header consumers with public dependencies."""
     prefix = prefix.resolve()
     data = json.loads(
         (prefix / "share/symbian/native/inventory.json").read_text()
+    )
+    openc = json.loads(
+        (prefix / "share/symbian/native/openc-header-usage.json").read_text()
     )
     output.mkdir(parents=True, exist_ok=True)
     project = output / architecture
@@ -30,26 +33,51 @@ def check(prefix: Path, output: Path, architecture: str) -> None:
     }
     for facility in data["facilities"]:
         name = facility["target"]
-        if facility.get("blocked"):
-            rejected[name] = facility["blocked"]
+        reason = facility.get("blocked") or facility.get("selection_blocked")
+        if reason:
+            rejected[name] = reason
             continue
         for index, header in enumerate(facility["headers"]):
             if Path(header).suffix.lower() != ".h":
                 continue
             target = f"canary_{name}_{index}"
-            source = project / f"{target}.cc"
+            profile = (
+                openc["profiles"].get(header, {}) if name == "OpenC" else {}
+            )
+            if profile.get("blocked"):
+                rejected[f"{name}:{header}"] = profile["blocked"]
+                continue
+            language = profile.get(
+                "language",
+                openc["default_language"] if name == "OpenC" else "C++",
+            )
+            source = project / f"{target}.{'c' if language == 'C' else 'cc'}"
             prerequisites = headers[header.casefold()].get(
                 "include_prerequisites", []
             )
             record = headers[header.casefold()]
-            includes = [*prerequisites, record.get("include_via", header)]
+            includes = [
+                *prerequisites,
+                *profile.get("preinclude", []),
+                profile.get("include_via", record.get("include_via", header)),
+            ]
+            guard = profile.get("indirect_guard", record.get("include_guard"))
             source.write_text(
                 "".join(f"#include <{h}>\n" for h in includes)
                 + (
-                    f'#ifndef {record["include_guard"]}\n'
+                    f"#ifndef {guard}\n"
                     '#error "Original umbrella omitted its public header"\n'
                     "#endif\n"
-                    if record.get("include_via") and record.get("include_guard")
+                    if (
+                        (
+                            profile.get("include_via")
+                            and profile.get("indirect_guard")
+                        )
+                        or (
+                            record.get("include_via")
+                            and record.get("include_guard")
+                        )
+                    )
                     else ""
                 )
             )

@@ -98,6 +98,7 @@ class ReleaseAssetsTest(unittest.TestCase):
                     "examples/qt_app_classic/symbian.toml",
                     "cmake/SymbianGraphics.cmake",
                     "cmake/modern_cpp.h",
+                    "cmake/native_cpp_compat.h",
                     "proxies/libglesv1_cm/libglesv1_cm.dso",
                     "proxies/libglesv2/libglesv2.dso",
                     "proxies/libegl/libegl.dso",

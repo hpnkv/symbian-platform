@@ -3630,3 +3630,49 @@ Host CI next reached Python wheel compilation but found a Python binding
 header canary missing its owner target's `cpp` include root. The canary now
 receives it, and the local macOS canary target builds; clean CI confirmation
 is pending. No live IDE variable inspection or physical-device claim follows.
+
+2026-10-06 classic GUI and IDE follow-up: Non-Qt `_classic` capability examples
+now share a persistent Window Server card with explanatory text, Run and Close
+buttons, a real API callback, visible status and preview pixels where useful.
+The redundant card heading was removed. The first nine named RM-807/Dynarmic
+utility/portable examples passed button input, result display and clean Close
+exit (9/9); a later JPEG check also asserted that its decoded red pixel is
+displayed red (1/1) after correcting packed `TRgb` channel order. The full
+interaction rerun after that color change also passed (9/9). CMake 4.4.3 emits
+two incomplete Abseil abstract-target File API records that the installed
+IntelliJ IDEA 2026.2 CLion plugin rejects despite successful configuration.
+CMake 3.31.10 generated a valid 211-target codemodel for the same active
+ARMv6 preset. JetBrains ignored the preset's `cmakeExecutable`; the ignored
+local preset now names the `Symbian ARM` IDE toolchain, whose local CMake path
+was set to 3.31.10. Actual IDE reload acceptance after this toolchain change
+and live debugger variable inspection remain unverified. All four
+`a9e2dac` GitHub Actions workflows passed. Broad native manifest coverage,
+SDL, Linux bundle acceptance and release 0.2.0 remain open; no physical
+hardware was operated.
+
+The latest root ARMv6 build converts both `gl_app_e32` and
+`qt_app_classic_e32`. A narrow libc++/original-header preinclude is covered by
+an independent guest canary and the 18-example ARM build. A disposable
+RM-807/Dynarmic Qt run showed the QtCore result after Run and exited normally
+after Close (guest type/reason 0, frontend exit 0); the updated maintained
+button oracle passed against that instance. Forty-four focused tests passed
+with 12 optional skips. A fresh installed/relocated SDK build for this latest
+preinclude and the actual IDE reload are still required. No GL rendering or
+physical-device result follows from E32 conversion. Manifest completeness,
+SDL, Linux bundle acceptance and release 0.2.0 remain open.
+
+The automatic source SDK export now builds and includes the standalone
+`symbian-native` publisher. Its relocated copy built the Qt classic app
+through E32; the installed Qt Run/result/Close check passed on both RM-807
+emulator CPU backends (2/2). The updated native inventory marks four
+Avkon-resource-dependent targets unavailable for selection, records the
+PtiDefs prerequisite, and drives Open C/GLib header usage. The relocated
+fixture passed 1,314 independent public-header canaries on each ARM target;
+its inventory and PtiDefs payload were refreshed after the last full export,
+so one final source export/bundle validation remains. Fifty-two focused tests
+passed with 12 opt-in skips; strict docs and style passed. About 37 GB of
+obsolete generated scratch data was removed without touching firmware,
+ongoing GL areas, active SDK/toolchains or tracked source. The active IDE
+still invokes CMake 4.4.3 and its model acceptance is unverified. The 1,536
+unreviewed public header exports, portable SDL, Linux bundle acceptance and
+0.2.0 release remain open; physical hardware was not operated.

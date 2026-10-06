@@ -78,6 +78,7 @@ def check(dist: Path, assets: Path, version: str) -> None:
             "./cmake/SymbianPlatform.cmake",
             "./cmake/SymbianGraphics.cmake",
             "./cmake/modern_cpp.h",
+            "./cmake/native_cpp_compat.h",
             "./cmake/exe_startup.S",
             "./cmake/exe_image.ld",
             "./cmake/eka1_startup.S",

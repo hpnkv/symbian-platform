@@ -101,6 +101,7 @@ def _audit_installed_behavior() -> None:
         "symbian/toolchain/cmake/SymbianPic.cmake",
         "symbian/toolchain/cmake/SymbianSdk.cmake",
         "symbian/toolchain/cmake/modern_cpp.h",
+        "symbian/toolchain/cmake/native_cpp_compat.h",
         "symbian/sdk/resources/header_probe.cc",
         "symbian/project/templates/app.cc",
         "symbian/project/templates/.clang-format",

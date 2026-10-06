@@ -7695,3 +7695,122 @@ macOS binding graph configured and the canary target built, with the include
 root visible in its compiler command. Clean CI validation is pending. Six
 real proxy tests pass with one public-kernel-source gated skip and now assert
 Release proxy configuration.
+
+### 2026-10-06: interactive classic GUIs, channel order and CLion File API
+
+The shared native Window Server card was changed from timed display to a
+persistent event loop with Run and Close buttons. The feature callback runs
+only on Run; the card then draws status and any preview pixels. All 18 root
+ARM example targets compiled and linked in the first interactive revision. A
+focused fresh-bundle FreeType run pressed Run and Close and exited with guest
+type/reason zero on preserved RM-807/Dynarmic. Nine native utility/portable
+examples passed the same interaction sequence (9/9, 141.89 seconds). Their
+actual screen uses 360×640 logical pixels; the initial test sampled text
+instead of button fill. The ignored capture
+`.symbian/sdk-surface/freetype-interactive-debug.png` verified the visual
+layout. The redundant card heading was removed after user feedback.
+
+The original preview helper passed `0xRRGGBB` through Symbian's packed
+`TRgb(TUint32)` constructor, which displayed red as blue. It now constructs
+`TRgb` from explicit channel values. A fresh-bundle JPEG GUI run asserts a
+red rendered preview pixel after the codec round trip, then exits through
+Close (1/1). The full nine-example matrix after the visual change passed
+again (9/9, 169.95 seconds). No physical-device color result follows.
+
+The user's CLion reload failure is post-configure: CMake 4.4.3's File API
+codemodel 2.11 includes `abstractTargets` entries for
+`absl_non_temporal_memcpy` and `absl_random_internal_uniform_helper` with
+only an empty backtrace graph, installer and paths, while the IntelliJ IDEA
+2026.2 CLion plugin requires a target backtrace. The exact local preset
+configured in about ten seconds but its model failed to load. CMake 3.31.10
+configured the same guest preset in 10.7 seconds in a fresh ignored build and
+10.5 seconds in the active guest build. Its File API codemodel 2.7 has 211
+concrete targets, no abstract target section and no target record without a
+backtrace. An attempted `cmakeExecutable` field in the ignored local preset
+did not change this plugin's selected CMake; the live log still reported
+4.4.3, and an intervening reload of the 3.31-generated build directory
+failed the guest cross-toolchain check. The local preset now names the
+`Symbian ARM` IDE toolchain, whose ignored machine setting was updated to the
+locally installed CMake 3.31.10. A fresh 3.31 configure restored the active
+build directory and valid codemodel; actual IDE reload acceptance remains to
+be observed after the IDE reloads its toolchain settings.
+No upstream Abseil checkout was changed. Documentation records this version
+constraint. The four GitHub Actions workflows on `a9e2dac` (Documentation,
+C++ source contracts, Host SDK and Emulator) completed successfully.
+
+### 2026-10-06: GL runtime headers and explicit Qt interaction
+
+The original `e32cmn.h` placement-allocation declarations collide with libc++
+when a C++ example links `Symbian::Runtime`. A forced narrow runtime preinclude
+now loads libc++ `<new>`, preserves Symbian's leaving overloads, and suppresses
+duplicate ordinary placement declarations. The first attempted broad
+`modern_cpp.h` preinclude selected STLport exception headers unavailable to
+the audio/native-leave path, so it was replaced with this focused header.
+Root ARMv6 builds of `gl_app`, native-leave audio and AppArc passed; the complete
+18-example classic ELF matrix also passed. The header's independent guest
+canary compiled, and `gl_app_e32` converted successfully. These are compiler
+and E32-format results, not a GL rendering result.
+
+The Qt classic Run/Close revision initially linked but failed E32 conversion
+because subclassing `QPushButton` left an unreferenced dynamic meta-object
+symbol in the image. The example now uses public Qt 4 `QSignalMapper` to update
+the result label and a separate Close button. `qt_app_classic_e32` built from
+the root ARMv6 graph. A disposable preserved RM-807 Belle/Dynarmic instance
+displayed the card, changed the result from its instruction to “QByteArray
+contains 808 (3 bytes)” after Run, and exited with guest type/reason zero and
+frontend exit zero after Close. The maintained Qt button oracle was changed to
+check those two steps and passed in the same disposable instance. This does
+not establish every firmware or physical-device Qt behavior. The separate
+installed SDK copy predates the runtime preinclude; its standalone Qt build
+still fails to find `absl/base/nullability.h`, so a fresh installed/relocated
+SDK export remains an explicit gate for this revision.
+
+Forty-four focused release-asset, application-machinery and native-surface
+tests passed, with 12 opt-in skips. C++ style and whitespace checks passed.
+Actual CLion reload after its saved CMake toolchain update remains unobserved.
+
+The initial fresh source SDK export failed after the guest Debug default made
+the sealed runtime's two isolated builds differ. The compatibility runtime
+probe and all three runtime-archive profiles now select Release explicitly;
+the source export then completed. An installed Qt build exposed a separate
+source-export omission: `bin/symbian-native` was absent even though CMake E32
+publication requires it. The exporter now builds this host tool from the
+pinned repository source before staging target inputs. A complete automatic
+source export produced the tool, and a copy relocated to a path with spaces
+built `qt_app_classic` through E32. The maintained installed Qt test passed on
+both RM-807 Belle emulator CPU backends (2/2), checking result display, Close,
+guest exit type/reason zero and frontend exit zero.
+
+The relocated native-surface canary sweep found that Avkon's generated
+`avkon.rsg` blocker also applies to four other public-library targets whose
+headers include `AknUtils.h`. Inventory generation now propagates that exact
+selection blocker. Open C canaries now use the packaged prerequisite/language
+map, including its explicitly blocked `sys/event.h`; GLib GObject headers
+use their original `glib-object.h` umbrella. `PtiDefs.h` needs `e32base.h`
+for its exported Symbian type declarations, so a recorded header compatibility
+edit supplies it. The revised inventory and generated PtiDefs payload passed
+1,314 independent public-header canaries on each of ARMv5T and ARMv6 from the
+relocated SDK fixture. That fixture had the newly generated inventory/header
+copied into it after the last complete source export; a final export with those
+two changes is still required before release packaging.
+
+The active IDEA/CLion process continued to invoke CMake 4.4.3 with host
+compiler overrides even after the saved `Symbian ARM` toolchain was changed to
+3.31.10. Its contaminated guest cache recorded Darwin. A fresh 3.31.10 ARMv6
+configure recorded Generic and succeeded, but a live IDE reload later reused
+4.4.3 and restored the host-system cache. Actual IDE model acceptance remains
+unverified; the running IDE must load the saved toolchain setting before that
+gate can close. This did not change the guest toolchain or firmware evidence.
+
+At the user's request, obsolete generated SDK bundles, test instances,
+environments and host/workspace build trees were removed from `.symbian/` and
+`build/`. `.symbian/` fell from roughly 49 GB to about 12 GB; the retained
+bulk is firmware, active SDK/toolchains and ongoing GLES/EGL research. Two
+runtime-probe caches still named a removed SDK and were regenerated during
+the export check. No tracked source checkout or firmware store was deleted.
+Fifty-two focused inventory/surface/application/release tests passed with 12
+opt-in skips; strict documentation, Black/Ruff, C++ style and whitespace
+checks passed. The release inventory still has 1,536 public exports without
+reviewed target ownership and 174 private/internal headers intentionally
+excluded. SDL, broader manifest closure, Linux bundle validation and 0.2.0
+publication remain open.

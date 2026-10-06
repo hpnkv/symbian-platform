@@ -3,6 +3,8 @@
 #include <mda/common/audio.h>
 #include <mdaaudiooutputstream.h>
 
+#include "ui.h"
+
 namespace {
 
 class Audio final : public MMdaAudioOutputStreamCallback {
@@ -72,7 +74,14 @@ void PlayL() {
 
 }  // namespace
 
-int main() {
+int RunFeature(void* absl_nullable) {
   TRAPD(error, PlayL());
   return error;
+}
+
+int main() {
+  return classic_demo_ui::Show(_L("MDA AUDIO STREAM"),
+                               _L("Generates a 250 Hz PCM tone."),
+                               _L("Plays it with an MDA stream."),
+                               _L("MDA TONE PLAYED"), &RunFeature, nullptr);
 }

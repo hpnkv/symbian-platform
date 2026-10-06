@@ -128,6 +128,7 @@ def _build_runtime_variant(
                     str(tree),
                     "-G",
                     "Ninja",
+                    "-DCMAKE_BUILD_TYPE=Release",
                     f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}",
                     f"-DSYMBIAN_PLATFORM_ROOT={workspace}",
                     f"-DSYMBIAN_TARGET_ARCH={architecture}",
@@ -174,6 +175,47 @@ def _build_runtime_variant(
             f"Independent {profile} runtime builds differ",
         )
     return outputs[0]
+
+
+def _build_native_converter(
+    workspace: Path, output: Path, cmake: str, ninja: str
+) -> None:
+    """Builds the host E32 publisher required by installed CMake projects."""
+    with tempfile.TemporaryDirectory(prefix="symbian-native-converter-") as d:
+        build = Path(d) / "build"
+        configure = [
+            cmake,
+            "-S",
+            str(workspace),
+            "-B",
+            str(build),
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            f"-DCMAKE_MAKE_PROGRAM={ninja}",
+            "-DSYMBIAN_BUILD_PYTHON=OFF",
+            "-DSYMBIAN_BUILD_GUI_EXAMPLE=OFF",
+            "-DSYMBIAN_BUILD_NATIVE_EXAMPLES=OFF",
+            "-DBUILD_TESTING=OFF",
+            "-DSYMBIAN_ABSEIL_SOURCE_DIR="
+            + str(workspace / "research/upstream/abseil-cpp"),
+        ]
+        cached_json = workspace / "build/debug/_deps/nlohmann_json-src"
+        if (cached_json / "CMakeLists.txt").is_file():
+            configure.append(
+                f"-DFETCHCONTENT_SOURCE_DIR_NLOHMANN_JSON={cached_json}"
+            )
+        run(configure, cwd=workspace, timeout=180)
+        run(
+            [cmake, "--build", str(build), "--target", "symbian_native_tool"],
+            cwd=workspace,
+            timeout=300,
+        )
+        (output / "bin").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(
+            build / "cpp/symbian/tools/symbian-native",
+            output / "bin/symbian-native",
+        )
 
 
 def _build_abseil(
@@ -754,6 +796,10 @@ def prepare(
             str(linker),
             architecture=architecture,
             cmake_variables={
+                # This sealed compatibility artifact is independent of the
+                # user-facing Debug default. Its two-build byte check must
+                # not contain build-directory DWARF paths.
+                "CMAKE_BUILD_TYPE": "Release",
                 "SYMBIAN_IMPORT_PROXIES": str(
                     workspace / ".symbian/runtime-sdk/euser/euser.dso"
                 ),
@@ -789,6 +835,14 @@ def prepare(
     libcxx = source / "llvm-project/libcxx"
     output.mkdir(parents=True)
     try:
+        if include_host:
+            host_cmake = shutil.which("cmake")
+            host_ninja = shutil.which("ninja")
+            if host_cmake is None or host_ninja is None:
+                raise StatusError(
+                    Code.NOT_FOUND, "CMake and Ninja are required"
+                )
+            _build_native_converter(workspace, output, host_cmake, host_ninja)
         stage_headers(workspace, output, compiler)
         # __config_site and assertion handler are generated with the library;
         # consumers must use these exact files, not host libc++ configuration.
@@ -1420,7 +1474,7 @@ def install_tools(sdk: AppSdk, workspace: Path | None = None) -> AppSdk:
         .read_bytes()
     )
     bin_path = prefix / "bin"
-    bin_path.mkdir()
+    bin_path.mkdir(exist_ok=True)
     _install_resource_tools(bin_path, workspace=workspace)
     dependencies = {
         "clang++": sdk.compiler,

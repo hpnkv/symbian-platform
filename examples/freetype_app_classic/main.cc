@@ -2,6 +2,7 @@
 #include FT_FREETYPE_H
 
 #include "absl/base/nullability.h"
+#include "ui.h"
 
 namespace {
 constexpr char kFont[] =
@@ -25,14 +26,13 @@ constexpr char kFont[] =
     "ENDFONT\n";
 }  // namespace
 
-int main() {
+int RunFeature(TUint32* absl_nonnull preview) {
   FT_Library library = nullptr;
   if (FT_Init_FreeType(&library) != 0) {
     return 1;
   }
   FT_Face face = nullptr;
-  const FT_Byte* absl_nonnull bytes =
-      reinterpret_cast<const FT_Byte*>(kFont);
+  const FT_Byte* absl_nonnull bytes = reinterpret_cast<const FT_Byte*>(kFont);
   if (FT_New_Memory_Face(library, bytes, sizeof(kFont) - 1, 0, &face) != 0) {
     FT_Done_FreeType(library);
     return 2;
@@ -45,7 +45,41 @@ int main() {
     FT_Done_FreeType(library);
     return 3;
   }
+  const FT_Bitmap& bitmap = face->glyph->bitmap;
+  if (bitmap.width > 8 || bitmap.rows > 8 || bitmap.pitch <= 0) {
+    FT_Done_Face(face);
+    FT_Done_FreeType(library);
+    return 4;
+  }
+  for (unsigned int y = 0; y < bitmap.rows; ++y) {
+    for (unsigned int x = 0; x < bitmap.width; ++x) {
+      if (bitmap.pixel_mode == FT_PIXEL_MODE_MONO) {
+        preview[y * 8 + x] =
+            bitmap.buffer[y * bitmap.pitch + x / 8] & (0x80 >> (x % 8))
+                ? 0x00ffffff
+                : 0;
+      } else if (bitmap.pixel_mode == FT_PIXEL_MODE_GRAY) {
+        preview[y * 8 + x] =
+            bitmap.buffer[y * bitmap.pitch + x] != 0 ? 0x00ffffff : 0;
+      }
+    }
+  }
   FT_Done_Face(face);
   FT_Done_FreeType(library);
   return 0;
+}
+
+int InvokeFeature(void* absl_nullable context) {
+  if (context == nullptr) {
+    return KErrArgument;
+  }
+  return RunFeature(static_cast<TUint32*>(context));
+}
+
+int main() {
+  TUint32 preview[64] = {};
+  return classic_demo_ui::Show(
+      _L("FREETYPE FONT"), _L("Loads an embedded BDF font."),
+      _L("Rasterizes the letter A."), _L("LETTER A RASTERIZED"), &InvokeFeature,
+      preview, preview, 8, 8);
 }

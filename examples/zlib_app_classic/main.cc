@@ -1,6 +1,8 @@
 #include <zlib.h>
 
-int main() {
+#include "ui.h"
+
+int RunFeature(void* absl_nullable) {
   const Bytef plain[] = "portable zlib on Symbian";
   Bytef compressed[96] = {};
   uLongf compressed_size = sizeof(compressed);
@@ -25,4 +27,11 @@ int main() {
   return crc32(0, restored, restored_size) == crc32(0, plain, sizeof(plain))
              ? 0
              : 5;
+}
+
+int main() {
+  return classic_demo_ui::Show(
+      _L("PORTABLE ZLIB"), _L("Compresses a short message."),
+      _L("Restores it and checks CRC."), _L("CRC + ROUND TRIP MATCH"),
+      &RunFeature, nullptr);
 }

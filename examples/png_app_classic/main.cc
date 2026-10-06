@@ -1,6 +1,8 @@
 #include <png.h>
 
-int main() {
+#include "ui.h"
+
+int RunFeature(TUint32* absl_nonnull preview) {
   const png_byte pixel[4] = {19, 83, 147, 211};
   png_image writer = {};
   writer.version = PNG_IMAGE_VERSION;
@@ -41,5 +43,22 @@ int main() {
       return 5;
     }
   }
+  *preview = (static_cast<TUint32>(decoded[0]) << 16) |
+             (static_cast<TUint32>(decoded[1]) << 8) | decoded[2];
   return 0;
+}
+
+int InvokeFeature(void* absl_nullable context) {
+  if (context == nullptr) {
+    return KErrArgument;
+  }
+  return RunFeature(static_cast<TUint32*>(context));
+}
+
+int main() {
+  TUint32 preview = 0;
+  return classic_demo_ui::Show(
+      _L("PORTABLE PNG"), _L("Encodes one RGBA pixel."),
+      _L("Decodes and checks it."), _L("RGBA PIXEL DECODED"), &InvokeFeature,
+      &preview, &preview, 1, 1);
 }

@@ -21,3 +21,4 @@ target_sources(gl_app PRIVATE ${shader_files} shaders.h.in)
 target_link_libraries(gl_app PRIVATE
   Symbian::GLES2 Symbian::EGL Symbian::WindowServer Symbian::Gdi
   Symbian::Math Symbian::Hal)
+symbian_publish_executable(gl_app UID3 0xe0000831)

@@ -58,6 +58,25 @@ its normal host discovery; select matching Clang 23+, LLD and archive tools.
 Host and guest profiles have separate build directories and compiler caches.
 Do not run two CMake configurations into the same build directory at once.
 
+The root guest profile is currently validated with CMake 3.31.10 in the
+IntelliJ IDEA 2026.2 CLion plugin. CMake 4.4.3 can finish configuration but
+emit incomplete File API `abstractTargets` records for two Abseil header-only
+targets; this plugin then reports `target-absl_non_temporal_memcpy-...json: no
+backtrace` and refuses to load the model. Select CMake 3.31.10 under
+**Settings → Build, Execution, Deployment → Toolchains** for the toolchain
+named by the local guest preset, then reload CMake. The plugin used its
+toolchain's CMake 4.4.3 even when `cmakeExecutable` named 3.31.10 in the
+preset. Do not alternate CMake versions in one build directory during an IDE
+reload. A successful configure line alone does not establish that CLion
+accepted the File API model.
+If CMake reports `Guest probe indexing requires the symbian-arm.cmake cross
+toolchain`, inspect the command in the IDE CMake log. Host compiler overrides
+such as `/usr/bin/clang` can leave an existing guest build cache identifying
+Darwin. Select the **Symbian ARM** toolchain, restart the IDE so it loads that
+saved toolchain setting, remove the ignored `build/guest-probes-armv6` cache,
+and reload the guest preset. A fresh ARM cache records `Generic` as its system
+and `armv6-none-eabi` as its C++ compiler target.
+
 To check configuration, repeat reloads and actual source builds for both guest
 architectures and the host GUI target:
 

@@ -1,9 +1,11 @@
 #include <bautils.h>
 #include <s32mem.h>
 
+#include "ui.h"
+
 _LIT(KPublicFile, "Z:\\data\\animations\\startup.aac");
 
-int main() {
+int RunFeature(void* absl_nullable) {
   RFs files;
   if (files.Connect() != KErrNone) {
     return 1;
@@ -25,4 +27,11 @@ int main() {
   TRAPD(error, value = stream.ReadInt32L());
   stream.Close();
   return error == KErrNone && value == 1 ? 0 : 3;
+}
+
+int main() {
+  return classic_demo_ui::Show(_L("BAFL + STREAMS"), _L("Opens a public file."),
+                               _L("Reads an integer from it."),
+                               _L("INTEGER READ FROM FILE"), &RunFeature,
+                               nullptr);
 }

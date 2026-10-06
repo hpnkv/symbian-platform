@@ -66,6 +66,9 @@ set(runtime_archive "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian
 if(NOT SYMBIAN_WORKSPACE_INPUTS AND NOT EXISTS "${runtime_archive}")
   message(FATAL_ERROR "SDK has no ${SYMBIAN_TARGET_ARCH} runtime; update the SDK or select a supported target")
 endif()
+if(NOT EXISTS "${SYMBIAN_SDK_PREFIX}/cmake/native_cpp_compat.h")
+  message(FATAL_ERROR "SDK lacks cmake/native_cpp_compat.h; update the SDK")
+endif()
 add_library(SymbianRuntime STATIC IMPORTED)
 set_target_properties(SymbianRuntime PROPERTIES
   IMPORTED_LOCATION "${runtime_archive}" SYMBIAN_RUNTIME_PROFILE default)
@@ -88,6 +91,7 @@ target_compile_definitions(SymbianRuntime INTERFACE
 target_compile_options(SymbianRuntime INTERFACE
   -fno-pic -fshort-wchar -fvisibility=hidden -fno-exceptions
   $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
+  "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-include \"${SYMBIAN_SDK_PREFIX}/cmake/native_cpp_compat.h\">"
   -ffunction-sections -fdata-sections)
 add_library(Symbian::Runtime ALIAS SymbianRuntime)
 set(math_proxy "${SYMBIAN_SDK_PREFIX}/proxies/libm/libm.dso")
@@ -161,6 +165,7 @@ if((SYMBIAN_WORKSPACE_INPUTS OR EXISTS "${stream_archive}") AND EXISTS "${stream
   target_compile_options(SymbianStreams INTERFACE
     -fno-pic -fshort-wchar -fvisibility=hidden -fno-exceptions
     $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
+    "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-include \"${SYMBIAN_SDK_PREFIX}/cmake/native_cpp_compat.h\">"
     -ffunction-sections -fdata-sections)
   target_link_libraries(SymbianStreams INTERFACE
     "${math_proxy}"

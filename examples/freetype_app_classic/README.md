@@ -1,8 +1,9 @@
 # freetype_app_classic
 
 This example loads a tiny original BDF test font embedded in its source and
-renders the letter A through source-built FreeType 2.13.2. Link only
-`Symbian::PortableFreeType`; the SDK supplies Open C and runtime dependencies.
+renders the letter A through source-built FreeType 2.13.2. It links
+`Symbian::PortableFreeType` plus Window Server/GDI to show the glyph and its
+result; the SDK supplies FreeType's Open C and runtime dependencies.
 The font bytes are part of this example, so no firmware font service or file
 access is needed.
 

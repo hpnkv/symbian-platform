@@ -8950,7 +8950,8 @@
         "include/native/w32std.h",
         "include/native/wspublishandsubscribedata.h"
       ],
-      "ms_extensions": true
+      "ms_extensions": true,
+      "selection_blocked": "Public AknUtils.h requires generated avkon.rsg. Original avkon.rss compilation also needs avkon.mbg, callstatus.mbg, smiley.mbg and eikctl.rsg; a reviewed redistributable generation path for these inputs is not established."
     },
     {
       "target": "Native_aknpictograph",
@@ -10205,7 +10206,8 @@
         "include/native/w32std.h",
         "include/native/wspublishandsubscribedata.h"
       ],
-      "ms_extensions": false
+      "ms_extensions": false,
+      "selection_blocked": "Public AknUtils.h requires generated avkon.rsg. Original avkon.rss compilation also needs avkon.mbg, callstatus.mbg, smiley.mbg and eikctl.rsg; a reviewed redistributable generation path for these inputs is not established."
     },
     {
       "target": "Native_commonui",
@@ -12021,7 +12023,8 @@
         "include/native/w32std.h",
         "include/native/wspublishandsubscribedata.h"
       ],
-      "ms_extensions": true
+      "ms_extensions": true,
+      "selection_blocked": "Public AknUtils.h requires generated avkon.rsg. Original avkon.rss compilation also needs avkon.mbg, callstatus.mbg, smiley.mbg and eikctl.rsg; a reviewed redistributable generation path for these inputs is not established."
     },
     {
       "target": "Native_eikctl",
@@ -12491,7 +12494,8 @@
         "include/native/w32std.h",
         "include/native/wspublishandsubscribedata.h"
       ],
-      "ms_extensions": true
+      "ms_extensions": true,
+      "selection_blocked": "Public AknUtils.h requires generated avkon.rsg. Original avkon.rss compilation also needs avkon.mbg, callstatus.mbg, smiley.mbg and eikctl.rsg; a reviewed redistributable generation path for these inputs is not established."
     },
     {
       "target": "Native_environmentalreverbeffect",
@@ -44658,7 +44662,8 @@
       "destination": "include/native/stdapis/glib-2.0/gobject/gmarshal.h",
       "targets": [
         "Native_libgobject"
-      ]
+      ],
+      "include_via": "glib-object.h"
     },
     {
       "include": "stdapis/glib-2.0/gobject/gclosure.h",
@@ -45674,7 +45679,8 @@
       "destination": "include/native/stdapis/glib-2.0/gobject/gvaluecollector.h",
       "targets": [
         "Native_libgobject"
-      ]
+      ],
+      "include_via": "glib-object.h"
     },
     {
       "include": "stdapis/glib-2.0/gobject/gobject.h",
@@ -57777,10 +57783,18 @@
       "declaration": "../inc/PtiDefs.h     MW_LAYER_PUBLIC_EXPORT_PATH(PtiDefs.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "ab6a992e6138e0eb66829b728a696e6634ffad31da64e8159773d117622ee2ac",
+      "sha256": "008f05c4a729fdff275f7b5b67f5c33f9d85cb384d64cb969687b9175533d8b6",
       "api_metadata": "inputmethods/inputmethods_pub/ptiengine_iti_api/ptiengine_api.metaxml",
       "api_libraries": [
         "ptiengine.lib"
+      ],
+      "source_sha256": "ab6a992e6138e0eb66829b728a696e6634ffad31da64e8159773d117622ee2ac",
+      "compatibility_edits": [
+        {
+          "before": "#include <e32keys.h>",
+          "after": "#include <e32base.h>\n#include <e32keys.h>",
+          "reason": "The original public PtiDefs.h uses Symbian descriptors and basic types but includes only e32keys.h; e32base.h supplies its missing declarations."
+        }
       ],
       "destination": "include/native/PtiDefs.h",
       "targets": [

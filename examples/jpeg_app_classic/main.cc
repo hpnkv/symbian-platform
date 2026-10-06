@@ -1,11 +1,13 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>
+
 #include <jpeglib.h>
 
 #include "absl/base/nullability.h"
+#include "ui.h"
 
-int main() {
+int RunFeature(TUint32* absl_nonnull preview) {
   jpeg_compress_struct encoder = {};
   jpeg_error_mgr encode_error = {};
   encoder.err = jpeg_std_error(&encode_error);
@@ -56,5 +58,22 @@ int main() {
   if (decoded[0] < 180 || decoded[1] > 80 || decoded[2] > 90) {
     return 4;
   }
+  *preview = (static_cast<TUint32>(decoded[0]) << 16) |
+             (static_cast<TUint32>(decoded[1]) << 8) | decoded[2];
   return 0;
+}
+
+int InvokeFeature(void* absl_nullable context) {
+  if (context == nullptr) {
+    return KErrArgument;
+  }
+  return RunFeature(static_cast<TUint32*>(context));
+}
+
+int main() {
+  TUint32 preview = 0;
+  return classic_demo_ui::Show(
+      _L("PORTABLE JPEG"), _L("Encodes one red pixel."),
+      _L("Decodes it and checks RGB."), _L("RED PIXEL DECODED"), &InvokeFeature,
+      &preview, &preview, 1, 1);
 }

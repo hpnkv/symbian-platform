@@ -41,6 +41,13 @@ its dependency on portable zlib.
 The inventory still records unresolved exports and Belle FP2 version
 equivalence as open work; do not infer a runtime guarantee from a header.
 
+The `_classic` examples provide a native Window Server interface with Run
+and Close buttons. They describe the original API call, show a specific result
+or error after Run, and keep the window open until Close is pressed. The bitmap,
+image, PNG, JPEG and FreeType examples also show pixels produced by their
+respective features. The Qt GUI example uses Qt buttons for its QByteArray
+check and Close action.
+
 | Include | CMake target | Notes |
 | --- | --- | --- |
 | `mdaaudiosampleplayer.h` | `Symbian::Audio` | MDA playback and recording clients. |
