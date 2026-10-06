@@ -3797,3 +3797,9 @@ Fifty-four focused tests, strict docs and owned C++ style passed. Public
 export records without reviewed ownership: 1,153. Broad remaining groups,
 SDL, fresh source export, cross-host bundles and 0.2.0 publication remain
 open.
+
+Native release cache correction: The guest and assembled native SDK cache keys
+now include the public inventory/manifests, native-surface staging code and
+inventory generator. A focused test passes. This prevents a cached archive
+from silently retaining a previous public surface after these source changes;
+workflow execution on Linux/macOS and final bundle acceptance remain open.

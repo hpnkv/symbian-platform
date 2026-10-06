@@ -324,3 +324,18 @@ def test_calendar_default_frozen_variant_is_explicit():
     assert calendar["definition"]["source"].endswith("/calinterimapiv3u.def")
     assert calendar["mmp"].endswith("/calinterimapi.mmp")
     assert len(calendar["headers"]) == 23
+
+
+def test_native_bundle_caches_follow_public_surface_changes():
+    root = Path(__file__).resolve().parents[2]
+    workflow = (root / ".github/workflows/native-sdk.yml").read_text()
+    for prefix in ("native-guest-v2-", "native-archive-v2-"):
+        key = next(
+            line for line in workflow.splitlines() if f"key: {prefix}" in line
+        )
+        for source in (
+            "research/native-sdk/**",
+            "symbian/project/native_surface.py",
+            "scripts/update_native_inventory.py",
+        ):
+            assert f"'{source}'" in key

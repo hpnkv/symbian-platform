@@ -8056,3 +8056,14 @@ The preserved RM-807 Belle Z-drive copies contain `cryptospi.dll`; that
 filename check does not identify which conditional DEF branch matches its
 exports. The owned E32 inspector still cannot establish ordinal equivalence
 for that firmware image profile.
+
+### 2026-10-06: native bundle cache invalidation
+
+The native SDK workflow validated assembled bundles against their embedded
+inventory, but both the guest-payload and assembled-archive cache keys omitted
+`research/native-sdk/**` and the owned native-surface staging/generator code.
+A cache hit could therefore reuse a prior header/import payload after a new
+public-surface commit and still pass the embedded-inventory validator. Both
+cache keys now include those inputs. A focused workflow test checks the two
+keys, and the fresh source export will establish the current payload from
+source independently of a cache hit.
