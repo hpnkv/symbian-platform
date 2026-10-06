@@ -9,6 +9,7 @@ import pytest
 
 from symbian.project.native_surface import validate_native_payload
 from symbian.project.portable import (
+    validate_freetype_payload,
     validate_jpeg_payload,
     validate_png_payload,
     validate_zlib_payload,
@@ -448,6 +449,60 @@ def test_portable_jpeg_bundle_rejects_missing_header(tmp_path):
     )
     with pytest.raises(ValueError, match="Portable libjpeg header missing"):
         validate_jpeg_payload(tmp_path)
+
+
+def test_portable_freetype_rejects_missing_archive_at_configuration(configure):
+    run, sdk = configure
+    manifest = sdk / "share/symbian/portable/freetype.json"
+    manifest.parent.mkdir(parents=True, exist_ok=True)
+    manifest.write_text(
+        json.dumps(
+            {
+                "headers": {
+                    "ft2build.h": "include/portable/freetype/ft2build.h"
+                },
+                "licenses": {
+                    "LICENSE.TXT": "licenses/portable/freetype-LICENSE.TXT"
+                },
+            }
+        )
+    )
+    for relative in (
+        "include/portable/freetype/ft2build.h",
+        "licenses/portable/freetype-LICENSE.TXT",
+    ):
+        path = sdk / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("configuration fixture")
+    result = run(
+        "add_library(Symbian::Runtime INTERFACE IMPORTED GLOBAL)\n"
+        "add_library(Symbian::OpenC INTERFACE IMPORTED GLOBAL)\n"
+        f'include("{ROOT}/symbian/toolchain/cmake/SymbianPortable.cmake")\n'
+        "target_link_libraries(app PRIVATE Symbian::PortableFreeType)"
+    )
+    assert result.returncode != 0
+    assert (
+        "PortableFreeType is unavailable: missing SDK payload" in result.stderr
+    )
+
+
+def test_portable_freetype_bundle_rejects_missing_header(tmp_path):
+    manifest = tmp_path / "share/symbian/portable/freetype.json"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text(
+        json.dumps(
+            {
+                "headers": {
+                    "ft2build.h": "include/portable/freetype/ft2build.h"
+                },
+                "licenses": {},
+                "files": {"include/ft2build.h": "0" * 64},
+                "archive": "lib/{architecture}/libsymbian_portable_freetype.a",
+            }
+        )
+    )
+    with pytest.raises(ValueError, match="Portable FreeType header missing"):
+        validate_freetype_payload(tmp_path)
 
 
 @pytest.mark.parametrize("damage", ["header", "definition", "proxy", "private"])

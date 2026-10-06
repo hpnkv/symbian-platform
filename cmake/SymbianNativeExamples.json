@@ -10,6 +10,7 @@
     "zlib_app_classic",
     "png_app_classic",
     "jpeg_app_classic",
+    "freetype_app_classic",
     "apparc_app_classic",
     "central_repository_app_classic",
     "bafl_app_classic",

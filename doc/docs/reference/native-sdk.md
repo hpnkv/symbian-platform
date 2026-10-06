@@ -32,6 +32,7 @@ required Abseil status/runtime profile and, where needed, an OS import proxy.
 | `Symbian::PortableZlib` | `zlib.h`, `zconf.h` | Compression and decompression | Optional zlib 1.3.1 static archive built for both ARM profiles; Open C and guest runtime follow transitively. |
 | `Symbian::PortablePng` | `png.h`, `pngconf.h`, `pnglibconf.h` | PNG encode and decode | Optional libpng 1.6.53 static archive; portable zlib, Open C and runtime follow transitively. |
 | `Symbian::PortableJpeg` | `jpeglib.h`, `jconfig.h`, `jmorecfg.h`, `jerror.h` | JPEG encode and decode | Optional IJG libjpeg 8c static archive; Open C and runtime follow transitively. |
+| `Symbian::PortableFreeType` | `ft2build.h`, `freetype/freetype.h` | Load and render fonts | Optional FreeType 2.13.2 static archive; 54 applicable public/support headers, Open C and runtime follow transitively. |
 
 Graphics targets supply original platform headers and complete frozen ordinal
 imports when linked. They support EKA2 ARMv5T and ARMv6 with soft-float AAPCS.

@@ -7624,6 +7624,32 @@ log is `.symbian/sdk-surface/jpeg-fresh-smoke.log`. No GL source was changed.
 Linux bundle acceptance, portable SDL/FreeType, remaining public-manifest
 coverage and 0.2.0 release readiness remain open.
 
+### 2026-10-06: optional FreeType 2.13.2 slice
+
+The pinned FreeType source at revision
+`f42ce25563b73fed0123d18a2556b9ba01d2c76b` and its original build
+manifest yield one static library with external zlib, bzip2, PNG, HarfBuzz
+and Brotli disabled. The inventory hashes 481 inputs and maps 54 staged
+public/configuration headers and FTL/GPL notices; 42 headers compile
+independently with upstream prerequisite includes. Error macro fragments and
+configuration headers remain support-only, while the Mac-specific `ftmac.h`
+requires unavailable Mac OS types and is explicitly excluded. The two ARM
+archives retain matching headers and an Open C/runtime transitive closure.
+
+A fresh full SDK export completed both installed ARM header-canary profiles.
+A macOS arm64 bundle passed its payload checks and all 30 relocated native
+example compile/link/E32 cases, including FreeType on ARMv5T and ARMv6; the
+37 native surface controls passed. The tiny embedded BDF `A` glyph rendered
+through `FT_New_Memory_Face` and `FT_Load_Char` and the process exited with
+guest type/reason zero on the preserved `nokia808` RM-807 Belle/Dynarmic
+fixture. This is one named-firmware emulator result; physical hardware and
+broader font-format behavior remain untested. The root Debug graph built
+`freetype_app_classic_e32`, but a later root guest-index refresh was initially
+blocked by the SDK import-proxy Debug reproducibility regression described
+below. Strict documentation, Black/Ruff, C++ style and whitespace checks
+passed. The broad Python-free bundle smoke still hits the pre-existing
+GL/libc++ placement-operator conflict; SDL and Linux acceptance remain open.
+
 ### 2026-10-06: CI failures and guest Debug variable locations
 
 Documentation run 37506731358 failed `doc/build.sh --strict` because two
@@ -7647,8 +7673,25 @@ application and DLL with `-O0`, linked and converted `linking_app` to E32.
 `llvm-dwarfdump` found `result` at `DW_OP_fbreg +32` in the linked ELF. An
 explicit Release configure used `-O3`. The installed bundle predated the
 static-helper patch, so its static-library compile command showed `-g` without
-explicit `-O0`, and the source template change still needs fresh export
-validation. Live CLion variable inspection was not performed. Root guest-index
-reconfigure separately hit `DATA_LOSS: Proxy builds differ` during a concurrent
-Khronos import rebuild; that failure needs investigation without discarding
-the other session's GLES/EGL work.
+explicit `-O0`. A newer FreeType bundle picked up the corrected SDK template:
+its relocated linking example configured as Debug, compiled the EXE, static
+library and DLL with `-O0` and DWARF, and built through E32 conversion.
+Live CLion variable inspection was not performed. Root guest-index
+reconfigure initially hit `DATA_LOSS: Proxy builds differ` on Khronos imports.
+The new Debug default also reached SDK-generated proxies. Debug assembly
+carries build-directory line tables, so the primary and temporary proxy
+builds differed with unchanged DEF inputs. Proxy CMake now requests Release
+explicitly; the root ARMv6 guest-index configure subsequently completed all
+Khronos, Qt Mobility and 131 base-platform frozen imports in 197.1 seconds,
+with progress visible in CMake. The cached guest C++ base flags still carry
+historic `-O2`, while Debug application options end with `-O0`; fresh SDK
+projects have no base `-O2`.
+
+Host run 37509256416 passed the earlier FastAPI configure point on all four
+hosts, then failed wheel compilation because the Python binding header canary
+could not resolve `python/status_interop.h`. Its owner target had the `cpp`
+include root privately; the canary now receives that root explicitly. A local
+macOS binding graph configured and the canary target built, with the include
+root visible in its compiler command. Clean CI validation is pending. Six
+real proxy tests pass with one public-kernel-source gated skip and now assert
+Release proxy configuration.

@@ -33,6 +33,10 @@ EXTRA = {
         "pnggroup/libpng",
         "4e3f57d50f552841550a36eabbb3fbcecacb7750",
     ),
+    "freetype": (
+        "freetype/freetype",
+        "f42ce25563b73fed0123d18a2556b9ba01d2c76b",
+    ),
 }
 
 

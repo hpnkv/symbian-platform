@@ -320,3 +320,110 @@ def validate_jpeg_payload(prefix: Path) -> None:
         archive = prefix / record["archive"].format(architecture=architecture)
         if not archive.is_file() or archive.stat().st_size == 0:
             raise ValueError(f"Portable libjpeg archive missing: {archive}")
+
+
+def freetype_manifest(workspace: Path) -> dict:
+    """Verifies the pinned FreeType source, headers and license inputs."""
+    record = json.loads(
+        (workspace / "research/portable/freetype.json").read_text()
+    )
+    source = workspace / "research/upstream" / record["source"]
+    for name, expected in record["files"].items():
+        path = source / name
+        if (
+            not path.is_file()
+            or hashlib.sha256(path.read_bytes()).hexdigest() != expected
+        ):
+            raise ValueError(
+                f"Pinned FreeType input missing or changed: {path}"
+            )
+    return record
+
+
+def stage_freetype_headers(workspace: Path, output: Path) -> None:
+    """Stages the exact public layout and original dual-license notices."""
+    record = freetype_manifest(workspace)
+    source = workspace / "research/upstream" / record["source"]
+    for name, destination in record["headers"].items():
+        path = output / destination
+        path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source / "include" / name, path)
+    for name, destination in record["licenses"].items():
+        path = output / destination
+        path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source / name, path)
+    manifest_path = output / "share/symbian/portable/freetype.json"
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text(json.dumps(record, indent=2) + "\n")
+
+
+def build_freetype(workspace: Path, output: Path, compiler: Path) -> None:
+    """Builds FreeType for both guest ABIs with external codecs disabled."""
+    record = freetype_manifest(workspace)
+    source = workspace / "research/upstream" / record["source"]
+    for architecture in ("armv5t", "armv6"):
+        with tempfile.TemporaryDirectory(
+            prefix=f"portable-freetype-{architecture}-"
+        ) as directory:
+            build = Path(directory) / "build"
+            run(
+                [
+                    "cmake",
+                    "-S",
+                    str(workspace / "cpp/symbian/portable/freetype"),
+                    "-B",
+                    str(build),
+                    "-G",
+                    "Ninja",
+                    "-DCMAKE_TOOLCHAIN_FILE="
+                    f"{output / 'cmake/symbian-arm.cmake'}",
+                    f"-DSYMBIAN_SDK_PREFIX={output}",
+                    f"-DSYMBIAN_TARGET_ARCH={architecture}",
+                    f"-DCMAKE_C_COMPILER={compiler.parent / 'clang'}",
+                    f"-DCMAKE_CXX_COMPILER={compiler}",
+                    f"-DSYMBIAN_FREETYPE_SOURCE={source}",
+                ],
+                cwd=workspace,
+                timeout=120,
+            )
+            run(
+                ["cmake", "--build", str(build), "-j", "6"],
+                cwd=workspace,
+                timeout=120,
+            )
+            destination = output / record["archive"].format(
+                architecture=architecture
+            )
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(build / "upstream/libfreetype.a", destination)
+
+
+def validate_freetype_payload(prefix: Path) -> None:
+    """Rejects missing or changed public FreeType headers and archives."""
+    record = json.loads(
+        (prefix / "share/symbian/portable/freetype.json").read_text()
+    )
+    for name, destination in record["headers"].items():
+        path = prefix / destination
+        if (
+            not path.is_file()
+            or hashlib.sha256(path.read_bytes()).hexdigest()
+            != record["files"][f"include/{name}"]
+        ):
+            raise ValueError(
+                f"Portable FreeType header missing or changed: {path}"
+            )
+    for name, destination in record["licenses"].items():
+        path = prefix / destination
+        if (
+            not path.is_file()
+            or hashlib.sha256(path.read_bytes()).hexdigest()
+            != record["files"][name]
+        ):
+            raise ValueError(
+                f"Portable FreeType license missing or changed: {path}"
+            )
+    for architecture in ("armv5t", "armv6"):
+        archive = prefix / record["archive"].format(architecture=architecture)
+        if not archive.is_file() or archive.stat().st_size == 0:
+            raise ValueError(f"Portable FreeType archive missing: {archive}")

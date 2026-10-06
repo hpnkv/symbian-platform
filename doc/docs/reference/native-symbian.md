@@ -64,6 +64,7 @@ equivalence as open work; do not infer a runtime guarantee from a header.
 | `zlib.h`, `zconf.h` | `Symbian::PortableZlib` | zlib 1.3.1 static archive and matching headers under `include/portable/zlib`. |
 | `png.h`, `pngconf.h`, `pnglibconf.h` | `Symbian::PortablePng` | libpng 1.6.53 static archive and matching headers under `include/portable/png`; depends on portable zlib. |
 | `jpeglib.h`, `jconfig.h`, `jmorecfg.h`, `jerror.h` | `Symbian::PortableJpeg` | IJG libjpeg 8c static archive and matching headers under `include/portable/jpeg`. |
+| `ft2build.h`, `freetype/freetype.h` and applicable `freetype/*.h` | `Symbian::PortableFreeType` | FreeType 2.13.2 static archive and 54 public/configuration headers under `include/portable/freetype`; Mac-only `ftmac.h` is unavailable to Symbian guests. |
 
 Qt targets also include `Symbian::QtCore`, `QtGui`, `QtSvg`, `QtScript`,
 `QtXmlPatterns`, `QtDeclarative`, `QtMultimedia`, `QtOpenVG` and `QtTest`.
@@ -122,6 +123,18 @@ expects `size_t` and `FILE` from its caller. `examples/jpeg_app_classic`
 encodes and decodes a pixel in memory without a firmware JPEG DLL import.
 That round trip exited normally on the preserved RM-807/Dynarmic fixture.
 Broader codec behavior, other firmware and physical devices remain unverified.
+
+`Symbian::PortableFreeType` ships source-built FreeType 2.13.2 with its
+original `ft2build.h` and `freetype/` include layout. The FreeType License and
+alternative GPL notices are preserved. Its build disables optional external
+zlib, bzip2, libpng, HarfBuzz and Brotli dependencies; the SDK target still
+supplies Open C and runtime links. `examples/freetype_app_classic` loads an
+embedded BDF font and renders a glyph without a firmware font-service import.
+The upstream `freetype/ftmac.h` is omitted from the guest payload because it
+requires Classic Mac OS `Handle`, `FSSpec` and `FSRef` types; the inventory
+records that unavailable header explicitly.
+That bounded example exited normally on the preserved RM-807/Dynarmic fixture;
+other font formats, firmware and physical-device behavior remain unverified.
 
 AppArc, Eikon and CONE retain separate targets, original frozen imports and
 their own public headers. The nine representative framework headers compile

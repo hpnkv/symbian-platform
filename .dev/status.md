@@ -3603,6 +3603,18 @@ pre-existing GL/libc++ placement-operator conflict. SDL, FreeType, much of
 the native manifest, Linux acceptance and 0.2.0 readiness remain open; no
 physical hardware was operated.
 
+2026-10-06 optional FreeType slice: `Symbian::PortableFreeType` packages
+upstream FreeType 2.13.2 from pinned source with original FTL/GPL notices,
+54 matching public/configuration headers and source-built ARMv5T/ARMv6
+archives. The Mac-only `ftmac.h` is explicitly unavailable on Symbian.
+The fresh full guest export passed both installed-header canary profiles; a
+macOS bundle passed all 30 relocated native-example cases and 37 native
+surface controls. `freetype_app_classic` rendered its embedded BDF glyph and
+exited normally on the preserved RM-807/Dynarmic fixture. Header acceptance,
+one font operation and one named firmware do not establish all font formats or
+physical-device compatibility. Portable SDL, broad native manifest coverage,
+Linux acceptance and the 0.2.0 release remain open.
+
 2026-10-06 CI and guest-debug repair: Documentation CI's strict external-link
 gate now accepts the linking example reference; the full local `doc/build.sh
 --strict` passed. Host SDK CI's CMake entry now disables guest examples, which
@@ -3611,6 +3623,10 @@ configure completed locally with static zlib supplied. Fresh installed-SDK
 guest CMake configurations show default Debug and explicit Release as separate
 profiles. The Debug linking example built to E32, and its ELF contains a
 DWARF frame-relative location for the `result` local; Release retains `-O3`.
-The root guest-index configure remains blocked by a concurrently rebuilt
-Khronos proxy whose repeated builds differ, so root graph validation of these
-flags is open. No live IDE variable inspection or physical-device claim follows.
+The root guest-index configure then failed on differing Debug import-proxy
+builds. Generated proxies now explicitly use Release, and the root ARMv6
+guest-index configure completed in 197.1 seconds with all frozen imports.
+Host CI next reached Python wheel compilation but found a Python binding
+header canary missing its owner target's `cpp` include root. The canary now
+receives it, and the local macOS canary target builds; clean CI confirmation
+is pending. No live IDE variable inspection or physical-device claim follows.

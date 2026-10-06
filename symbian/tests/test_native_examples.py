@@ -263,6 +263,31 @@ def test_portable_jpeg_example_uses_source_built_archive(
 
 
 @pytest.mark.parametrize("architecture", ["armv5t", "armv6"])
+def test_portable_freetype_example_renders_embedded_font(
+    tmp_path, architecture
+):
+    """Links a real font rasterizer without a firmware font-service import."""
+    sdk = AppSdk.load(Path(SDK))
+    source = tmp_path / "portable freetype classic"
+    shutil.copytree(ROOT / "examples/freetype_app_classic", source)
+    (source / "sdk-location.json").write_text(
+        json.dumps({"sdk": str(sdk.prefix)})
+    )
+    report = build(
+        source,
+        tmp_path / "output",
+        str(sdk.compiler),
+        str(sdk.linker),
+        architecture=architecture,
+    )
+    imports = {item["dll"] for item in report["e32"]["imports"]}
+    assert {"libc.dll", "euser.dll"} <= imports
+    assert "fbscli.dll" not in imports
+    assert report["e32"]["architecture"] == architecture
+    assert not report["runtime_verified"]
+
+
+@pytest.mark.parametrize("architecture", ["armv5t", "armv6"])
 def test_apparc_example_links_original_application_service(
     tmp_path, architecture
 ):

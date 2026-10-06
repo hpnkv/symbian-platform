@@ -68,6 +68,9 @@ symbian_publish_executable(png_check UID3 0xe0000835)
 symbian_add_executable(jpeg_check jpeg_check.cc)
 target_link_libraries(jpeg_check PRIVATE Symbian::PortableJpeg)
 symbian_publish_executable(jpeg_check UID3 0xe0000836)
+symbian_add_executable(freetype_check freetype_check.cc)
+target_link_libraries(freetype_check PRIVATE Symbian::PortableFreeType)
+symbian_publish_executable(freetype_check UID3 0xe0000837)
 """
 
 EKA1_CMAKE = """cmake_minimum_required(VERSION 3.28)
@@ -141,6 +144,10 @@ def check(sdk: Path) -> None:
             moved / "examples/jpeg_app_classic/main.cc",
             example / "jpeg_check.cc",
         )
+        shutil.copyfile(
+            moved / "examples/freetype_app_classic/main.cc",
+            example / "freetype_check.cc",
+        )
         with (example / "CMakeLists.txt").open("a") as cmake:
             cmake.write(STARTUP_CMAKE + QT_CMAKE + GL_CMAKE + ZLIB_CMAKE)
         eka1 = root / "eka1 application"
@@ -201,6 +208,7 @@ def check(sdk: Path) -> None:
                 "zlib_check",
                 "png_check",
                 "jpeg_check",
+                "freetype_check",
             ):
                 image = (build / "e32" / f"{name}.exe").read_bytes()
                 if image[16:20] != b"EPOC":

@@ -72,4 +72,23 @@ function(symbian_sdk_header_canaries)
       PREINCLUDES cstddef cstdio
       HEADERS ${jpeg_headers} LIBRARIES Symbian::PortableJpeg)
   endif()
+  if(TARGET Symbian::PortableFreeType)
+    file(READ
+      "${SYMBIAN_SDK_PREFIX}/share/symbian/portable/freetype.json"
+      freetype_json)
+    string(JSON freetype_count LENGTH "${freetype_json}" canary_headers)
+    set(freetype_headers)
+    math(EXPR freetype_last "${freetype_count} - 1")
+    foreach(index RANGE 0 ${freetype_last})
+      string(JSON name GET "${freetype_json}" canary_headers ${index})
+      string(JSON relative GET "${freetype_json}" headers ${name})
+      list(APPEND freetype_headers "${SYMBIAN_SDK_PREFIX}/${relative}")
+    endforeach()
+    symbian_header_canary(symbian_sdk_portable_freetype_c_header_canary C
+      PREINCLUDES ft2build.h freetype/freetype.h
+      HEADERS ${freetype_headers} LIBRARIES Symbian::PortableFreeType)
+    symbian_header_canary(symbian_sdk_portable_freetype_cpp_header_canary
+      PREINCLUDES ft2build.h freetype/freetype.h
+      HEADERS ${freetype_headers} LIBRARIES Symbian::PortableFreeType)
+  endif()
 endfunction()
