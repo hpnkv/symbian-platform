@@ -8030,3 +8030,29 @@ Independent installed-header canaries passed on ARMv5T and ARMv6 (1,635
 objects per architecture). The inventory now has 1,166 public export records
 without reviewed delivery/target ownership. Original header/license provenance
 remains tied to the pinned source snapshot; Belle FP2 compatibility is unknown.
+
+### 2026-10-06: CryptoSPI default export branch
+
+The pinned `security/crypto/weakcryptospi/group/bld.inf` marks random, hash,
+parameter, selector, characteristic, key and error headers as public. Its
+`cryptospi.mmp` selects `cryptospi.def` by default and
+`cryptospi_v2.def` only under `SYMBIAN_SDP_IPSEC_VOIP_SUPPORT`, which also
+compiles `cryptomacapi.cpp`. The default `EABI/cryptospiU.def` is now the
+frozen `Symbian::CryptoSpi` interface. The conditional public
+`cryptospi/cryptomacapi.h` remains unowned: a selected-firmware ABI/variant
+match is needed before claiming the v2 MAC ordinals. `ruleselector.h`
+includes an unexported `rulecharacteristics.h` by a flat spelling; the
+staged prerequisite remains classified private/internal textual support, and
+a narrow compatibility edit uses its original `cryptospi/` layout.
+
+The relocated SDK staged and validated the default import proxy and public
+headers. A disposable consumer linked `CryptoSpi::CRandomFactory::CreateRandomL`
+through `Symbian::CryptoSpi` and converted to E32 on ARMv6. It was not run,
+so no random or hash behavior is established. The default public-header
+canaries passed on ARMv5T and ARMv6 (1,647 objects each). The pinned
+source headers retain their EPL-1.0 provenance. Public export records without
+reviewed ownership: 1,153, including the conditional MAC header.
+The preserved RM-807 Belle Z-drive copies contain `cryptospi.dll`; that
+filename check does not identify which conditional DEF branch matches its
+exports. The owned E32 inspector still cannot establish ordinal equivalence
+for that firmware image profile.

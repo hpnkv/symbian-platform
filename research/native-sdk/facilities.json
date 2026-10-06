@@ -3108,6 +3108,39 @@
         "euser",
         "estor"
       ]
+    },
+    {
+      "target": "CryptoSpi",
+      "dll": "cryptospi.dll",
+      "headers": [
+        "cryptospi/cryptorandomapi.h",
+        "cryptospi/cryptohashapi.h",
+        "cryptospi/cryptoparams.h",
+        "cryptospi/cryptobaseapi.h",
+        "cryptospi/plugincharacteristics.h",
+        "cryptospi/ruleselector.h",
+        "cryptospi/pluginselectorbase.h",
+        "cryptospi/extendedcharacteristics.h",
+        "cryptospi/cryptocharacteristics.h",
+        "cryptospi/cryptospistateapi.h",
+        "cryptospi/keys.h",
+        "cryptospi/cryptospi_errs.h"
+      ],
+      "dependencies": [
+        "CryptoNative",
+        "StreamsNative",
+        "FileServer"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "security/crypto/weakcryptospi/EABI/cryptospiU.def",
+      "mmp": "security/crypto/weakcryptospi/group/cryptospi.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "efsrv",
+        "estor",
+        "cryptography"
+      ]
     }
   ]
 }

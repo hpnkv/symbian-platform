@@ -256,6 +256,15 @@ including all three headers linked `CParserVCard::NewL` and
 `CParserVCal::NewL` through VCard and VCal and converted to E32. It was not
 executed; parsing behavior and other firmware remain unverified.
 
+`Symbian::CryptoSpi` supplies the default frozen `cryptospi.dll` imports and
+public `<cryptospi/cryptorandomapi.h>`, hash, parameter, selector, key and
+characteristic headers. Its public stream and file-server prerequisites are
+selected transitively. The pinned MMP chooses a different DEF when
+`SYMBIAN_SDP_IPSEC_VOIP_SUPPORT` is defined; the public MAC API from that
+branch remains unavailable pending firmware variant and ordinal evidence.
+A relocated consumer linked `CRandomFactory::CreateRandomL` and converted to
+E32, but no cryptographic operation was executed.
+
 `Symbian::Messaging` supplies the original `<msvapi.h>`, `<msvstd.h>` and
 `<mtclbase.h>` headers with frozen `msgs.dll` imports. The direct
 `examples/messaging_app_classic` consumer opens and closes a `CMsvSession`

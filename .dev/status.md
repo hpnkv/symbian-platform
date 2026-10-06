@@ -3783,3 +3783,17 @@ runtime behavior are unverified. Fifty-four focused inventory/surface tests
 passed. Public export records without reviewed ownership: 1,166. Remaining
 manifest groups, SDL, fresh automatic source export, cross-host bundles and
 0.2.0 publication are open.
+
+2026-10-06 CryptoSPI default branch: `Symbian::CryptoSpi` now ships the
+pinned default frozen `cryptospi.dll` interface and 12 original public
+headers; the conditional MAC/v2 DEF branch remains explicitly unreviewed.
+Its unexported rule-characteristics prerequisite is staged only as private
+textual support. The relocated SDK passed payload validation and 1,647
+independent public-header canary object builds on both ARM profiles. A
+`CRandomFactory::CreateRandomL` consumer linked and converted to E32 on
+ARMv6; no crypto operation ran. The selected RM-807 Belle Z-drive copies
+contain `cryptospi.dll`, but export-branch/ordinal equivalence is unverified.
+Fifty-four focused tests, strict docs and owned C++ style passed. Public
+export records without reviewed ownership: 1,153. Broad remaining groups,
+SDL, fresh source export, cross-host bundles and 0.2.0 publication remain
+open.

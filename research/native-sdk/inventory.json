@@ -11681,6 +11681,97 @@
       "ms_extensions": false
     },
     {
+      "target": "CryptoSpi",
+      "dll": "cryptospi.dll",
+      "headers": [
+        "cryptospi/cryptorandomapi.h",
+        "cryptospi/cryptohashapi.h",
+        "cryptospi/cryptoparams.h",
+        "cryptospi/cryptobaseapi.h",
+        "cryptospi/plugincharacteristics.h",
+        "cryptospi/ruleselector.h",
+        "cryptospi/pluginselectorbase.h",
+        "cryptospi/extendedcharacteristics.h",
+        "cryptospi/cryptocharacteristics.h",
+        "cryptospi/cryptospistateapi.h",
+        "cryptospi/keys.h",
+        "cryptospi/cryptospi_errs.h"
+      ],
+      "dependencies": [
+        "CryptoNative",
+        "StreamsNative",
+        "FileServer"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "security/crypto/weakcryptospi/EABI/cryptospiU.def",
+        "sha256": "fe05f74cf84f07e85502dfe5a3a69f4cc47cffd555a128d504c22afdff33d080",
+        "destination": "share/symbian/native/defs/cryptospi.dll.def"
+      },
+      "mmp": "security/crypto/weakcryptospi/group/cryptospi.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "efsrv",
+        "estor",
+        "cryptography"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/bigint.h",
+        "include/native/cryptospi/cryptobaseapi.h",
+        "include/native/cryptospi/cryptocharacteristics.h",
+        "include/native/cryptospi/cryptohashapi.h",
+        "include/native/cryptospi/cryptoparams.h",
+        "include/native/cryptospi/cryptorandomapi.h",
+        "include/native/cryptospi/cryptospi_errs.h",
+        "include/native/cryptospi/cryptospistateapi.h",
+        "include/native/cryptospi/extendedcharacteristics.h",
+        "include/native/cryptospi/keys.h",
+        "include/native/cryptospi/plugincharacteristics.h",
+        "include/native/cryptospi/pluginselectorbase.h",
+        "include/native/cryptospi/ruleselector.h",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32hashtab.h",
+        "include/native/e32lang.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/s32buf.h",
+        "include/native/s32buf.inl",
+        "include/native/s32mem.h",
+        "include/native/s32mem.inl",
+        "include/native/s32page.h",
+        "include/native/s32page.inl",
+        "include/native/s32share.h",
+        "include/native/s32share.inl",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32stor.h",
+        "include/native/s32stor.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl"
+      ],
+      "ms_extensions": false
+    },
+    {
       "target": "Native_agentdialog",
       "dll": "agentdialog.dll",
       "headers": [
@@ -30555,6 +30646,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -30713,6 +30805,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -30868,6 +30961,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -31041,6 +31135,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -31201,6 +31296,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -31361,6 +31457,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -31521,6 +31618,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -31685,6 +31783,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -31845,6 +31944,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -32005,6 +32105,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -32133,7 +32234,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "ab89886fee4450f3f052713a1e75af2414b75e53a4b3dcf883389cae4ab0ae9b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/e32hashtab.h",
+      "targets": [
+        "CryptoSpi"
+      ]
     },
     {
       "include": "e32keys.h",
@@ -32268,6 +32372,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -32428,6 +32533,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -32659,6 +32765,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -32822,6 +32929,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -52871,6 +52979,7 @@
         "BluetoothDevice",
         "BluetoothManager",
         "CommsDat",
+        "CryptoSpi",
         "DevSound",
         "Eikon",
         "Field",
@@ -52948,6 +53057,7 @@
         "BluetoothDevice",
         "BluetoothManager",
         "CommsDat",
+        "CryptoSpi",
         "DevSound",
         "Eikon",
         "Field",
@@ -53091,6 +53201,7 @@
         "BluetoothDevice",
         "BluetoothManager",
         "CommsDat",
+        "CryptoSpi",
         "DevSound",
         "Midi",
         "MmfController",
@@ -53145,6 +53256,7 @@
         "BluetoothDevice",
         "BluetoothManager",
         "CommsDat",
+        "CryptoSpi",
         "DevSound",
         "Midi",
         "MmfController",
@@ -53203,6 +53315,7 @@
         "BluetoothDevice",
         "BluetoothManager",
         "CommsDat",
+        "CryptoSpi",
         "DevSound",
         "Eikon",
         "Field",
@@ -53279,6 +53392,7 @@
         "BluetoothDevice",
         "BluetoothManager",
         "CommsDat",
+        "CryptoSpi",
         "DevSound",
         "Eikon",
         "Field",
@@ -53355,6 +53469,7 @@
         "BluetoothDevice",
         "BluetoothManager",
         "CommsDat",
+        "CryptoSpi",
         "DevSound",
         "Eikon",
         "Field",
@@ -53431,6 +53546,7 @@
         "BluetoothDevice",
         "BluetoothManager",
         "CommsDat",
+        "CryptoSpi",
         "DevSound",
         "Eikon",
         "Field",
@@ -53518,6 +53634,7 @@
         "CommsDat",
         "CommsDatabase",
         "Cone",
+        "CryptoSpi",
         "Dbms",
         "DevSound",
         "ECom",
@@ -53622,6 +53739,7 @@
         "CommsDat",
         "CommsDatabase",
         "Cone",
+        "CryptoSpi",
         "Dbms",
         "DevSound",
         "ECom",
@@ -53715,6 +53833,7 @@
         "BluetoothDevice",
         "BluetoothManager",
         "CommsDat",
+        "CryptoSpi",
         "DevSound",
         "Eikon",
         "Field",
@@ -53791,6 +53910,7 @@
         "BluetoothDevice",
         "BluetoothManager",
         "CommsDat",
+        "CryptoSpi",
         "DevSound",
         "Eikon",
         "Field",
@@ -53880,6 +54000,7 @@
         "Cone",
         "ContentAccess",
         "ContentAccessUtils",
+        "CryptoSpi",
         "Dbms",
         "DevSound",
         "ECom",
@@ -53993,6 +54114,7 @@
         "Cone",
         "ContentAccess",
         "ContentAccessUtils",
+        "CryptoSpi",
         "Dbms",
         "DevSound",
         "ECom",
@@ -54835,7 +54957,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "ef12d5c003c36db3c15b7554a8fd4b9a674fa8d19b7000e3739884e2bf126d33",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/cryptospi/cryptorandomapi.h",
+      "targets": [
+        "CryptoSpi"
+      ]
     },
     {
       "include": "cryptospi/cryptohashapi.h",
@@ -54845,7 +54970,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "460645eebf0dd2a2b3413c42124a88978c8ecbd6c6430a175814e7a9f22a5d58",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/cryptospi/cryptohashapi.h",
+      "targets": [
+        "CryptoSpi"
+      ]
     },
     {
       "include": "cryptospi/cryptoparams.h",
@@ -54855,7 +54983,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5019e3ecde6f3e9279b1042196863912fa59379fdbe533da1c2d7a87d3d972da",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/cryptospi/cryptoparams.h",
+      "targets": [
+        "CryptoSpi"
+      ]
     },
     {
       "include": "cryptospi/cryptobaseapi.h",
@@ -54865,7 +54996,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "84078be629b40374d6f18d4655ceff3abb997a3c97f336a0809f8178e227a0c8",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/cryptospi/cryptobaseapi.h",
+      "targets": [
+        "CryptoSpi"
+      ]
     },
     {
       "include": "cryptospi/plugincharacteristics.h",
@@ -54875,7 +55009,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "3758910ef94bf440d00bc543756cecc270c4b65a00dcb357f84afc77b97e3605",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/cryptospi/plugincharacteristics.h",
+      "targets": [
+        "CryptoSpi"
+      ]
     },
     {
       "include": "cryptospi/ruleselector.h",
@@ -54884,8 +55021,19 @@
       "declaration": "../inc/spi/ruleselector.h\t\t\t\tSYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(cryptospi/ruleselector.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "055c1426d2329cb74c1a7caa737f5a0d30f395cce3a0591a04b6b98232d23322",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "a5fb3c3894218ff3453fe82d572cb76095a9830243ea6461fb02f11e3265cf10",
+      "source_sha256": "055c1426d2329cb74c1a7caa737f5a0d30f395cce3a0591a04b6b98232d23322",
+      "compatibility_edits": [
+        {
+          "before": "#include <rulecharacteristics.h>",
+          "after": "#include <cryptospi/rulecharacteristics.h>",
+          "reason": "The public CryptoSPI rule selector includes its original unexported textual prerequisite by a flat spelling; use the staged cryptospi/ layout required by the public manifest while keeping the prerequisite classified private/internal."
+        }
+      ],
+      "destination": "include/native/cryptospi/ruleselector.h",
+      "targets": [
+        "CryptoSpi"
+      ]
     },
     {
       "include": "cryptospi/pluginselectorbase.h",
@@ -54895,7 +55043,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6c472dfd69e286d33f15b73c2d601875f300f770b0e8f3e2f7faaa4cd3dec18c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/cryptospi/pluginselectorbase.h",
+      "targets": [
+        "CryptoSpi"
+      ]
     },
     {
       "include": "cryptospi/extendedcharacteristics.h",
@@ -54905,7 +55056,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "9c02bcd9c6eb4a400e9fcc3d1d732021bac98bc725aca479789c2f819fe7496b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/cryptospi/extendedcharacteristics.h",
+      "targets": [
+        "CryptoSpi"
+      ]
     },
     {
       "include": "cryptospi/cryptocharacteristics.h",
@@ -54915,7 +55069,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "7cafa823657e9e4d61ec912dcf1cd0aa3836a1e763aba7c7a9f261510f8c08f2",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/cryptospi/cryptocharacteristics.h",
+      "targets": [
+        "CryptoSpi"
+      ]
     },
     {
       "include": "cryptospi/cryptospistateapi.h",
@@ -54925,7 +55082,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "988b9357a41b6eb45cda0c2a04dbeacc8bffa9d9a1c70faa1aaebf1f68520934",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/cryptospi/cryptospistateapi.h",
+      "targets": [
+        "CryptoSpi"
+      ]
     },
     {
       "include": "cryptospi/cryptomacapi.h",
@@ -54947,7 +55107,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "b30927b7791d6ed58e7481f31825135414a1adb3f715c68bd5ece1df0365e4fe",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/cryptospi/keys.h",
+      "targets": [
+        "CryptoSpi"
+      ]
     },
     {
       "include": "cryptospi/cryptospi_errs.h",
@@ -54957,7 +55120,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5865e6cbafb2a48c799c2ae2fcca8ce9f3ce408021dec771d82dbde0edfead5b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/cryptospi/cryptospi_errs.h",
+      "targets": [
+        "CryptoSpi"
+      ]
     },
     {
       "include": "cryptopanic.h",
@@ -55018,7 +55184,8 @@
       "sha256": "6dffa285a28dfb4676914a990162dac8e8202c484f7db26c8a7d640d49b148b1",
       "destination": "include/native/bigint.h",
       "targets": [
-        "CryptoNative"
+        "CryptoNative",
+        "CryptoSpi"
       ]
     },
     {
@@ -66039,6 +66206,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -66448,6 +66616,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -66943,6 +67112,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -67287,6 +67457,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -68286,6 +68457,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -69382,6 +69554,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",
@@ -69544,6 +69717,7 @@
         "ContentAccess",
         "ContentAccessUtils",
         "CryptoNative",
+        "CryptoSpi",
         "CryptoTokens",
         "Dbms",
         "DevSound",

@@ -222,5 +222,12 @@
       "after": "static const TDesC &EscapeChar(TBool aIsShiftJis);",
       "reason": "The original public Versit utility header redundantly qualifies a member declaration inside its own class; removing the qualification preserves the symbol and ABI for Clang consumers."
     }
+  ],
+  "cryptospi/ruleselector.h": [
+    {
+      "before": "#include <rulecharacteristics.h>",
+      "after": "#include <cryptospi/rulecharacteristics.h>",
+      "reason": "The public CryptoSPI rule selector includes its original unexported textual prerequisite by a flat spelling; use the staged cryptospi/ layout required by the public manifest while keeping the prerequisite classified private/internal."
+    }
   ]
 }
