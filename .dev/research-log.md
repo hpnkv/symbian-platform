@@ -6795,3 +6795,28 @@ SYMBIAN_APP_SDK/SYMBIAN_SDK_MANIFEST unset; its runtime probe caches contain
 the internal EUSER proxy and no SYMBIAN_SDK_PREFIX. Linux clean export also passes, with no selected SDK prefix
 (`/tmp/symbian-linux-native-clean-bootstrap.log`).
 The failed v0.1.4 tag stays unchanged. Advance VERSION to 0.1.5 for the fix.
+
+### 2026-10-06 — Complete archive assembly and bundled Qt source
+
+The clean CI native payload passed in 37388266366. Its archive assembly then
+failed on all hosts because the bundled Qt example has no assets directory;
+its registration uses generated default resources. The bundler now treats
+that optional directory correctly. The relocated native gate compiles the
+actual bundled Qt app, including its QByteArray DATA import, rather than a
+smaller surrogate. The release audit requires the example source and project
+files. Seven release-matrix regression checks pass.
+
+Full fresh SDK assembly and relocated ARMv5T/ARMv6 GUI, Qt, startup and EKA1
+checks pass locally on macOS arm64 and Linux x86_64
+(`/tmp/symbian-native-full-assembly-qt-macos.log`,
+`/tmp/symbian-native-full-assembly-linux.log`). The Linux replay builds resource
+tools from current source; mixing a previous SDK's tool dependency closure
+correctly failed its library-basename collision check. The native inputs use
+the successful 0.1.5 host archives and clean bootstrap payload; this is an
+assembly-logic check, not publication of a 0.1.6 distribution. Prepare VERSION
+0.1.6 and run the complete workflow manually before creating its final tag.
+
+Fresh original-header XML contains 5,395 indexed public/protected members,
+with 712 still missing semantic descriptions. The audit excludes private
+members and friends and does not claim complete parameter/class coverage.
+No new generated descriptions were published in this release correction.

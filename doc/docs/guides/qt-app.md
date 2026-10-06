@@ -24,12 +24,12 @@ replace the Qt DLLs in another device's firmware with this example's imports.
 ## Prepare the example
 
 The native SDK supplies the original QtCore/QtGui headers, complete import
-libraries, compatibility settings and allocator hook. Obtain the example source:
+libraries, compatibility settings and allocator hook. It also includes the
+example source. After installing the SDK at `~/dev/symbian-sdk`, build it:
 
 ```sh
-git clone https://github.com/hpnkv/symbian-platform.git
-cd symbian-platform
-symbian build --project examples/qt_app --output .symbian/qt-app
+qt_project="$HOME/dev/symbian-sdk/examples/qt_app"
+symbian build --project "$qt_project" --output .symbian/qt-app
 symbian inspect --format e32 .symbian/qt-app/qt_app.exe
 ```
 
@@ -47,16 +47,16 @@ startup files. `sdk-location.json` can select another installed native SDK.
 If `Symbian::QtGui` is unavailable, install a native SDK containing guest Qt
 support. Older SDK distributions do not provide this target.
 
-On Debian or Ubuntu, install Git with `sudo apt-get install git`; on macOS,
-install the command-line development tools with `xcode-select --install`.
-The native SDK supplies Clang, LLD, CMake and Ninja on both hosts.
+The native SDK supplies Clang, LLD, CMake and Ninja on both hosts. From a
+source checkout, set `qt_project="$PWD/examples/qt_app"` to use the repository
+copy instead.
 
 ## Run the button
 
 Select your imported firmware and stage the registered application:
 
 ```sh
-symbian emu run --project examples/qt_app --firmware my-phone --backend dynarmic
+symbian emu run --project "$qt_project" --firmware my-phone --backend dynarmic
 ```
 
 Open **Symbian Qt** in the emulator's application list. The button reads
@@ -89,7 +89,7 @@ are outside its tested configuration.
 The supplied `symbian.toml` declares the executable, menu caption and package:
 
 ```sh
-symbian package --project examples/qt_app \
+symbian package --project "$qt_project" \
   --artifact .symbian/qt-app/qt_app.exe --output .symbian/qt-package
 symbian inspect --format sis .symbian/qt-package/qt_app.sis
 ```

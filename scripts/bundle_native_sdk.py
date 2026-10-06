@@ -347,7 +347,8 @@ def bundle(args: argparse.Namespace) -> None:
     qt.mkdir()
     for name in ("app.cc", "CMakeLists.txt", "symbian.toml", "README.md"):
         shutil.copy(root / "examples/qt_app" / name, qt / name)
-    shutil.copytree(root / "examples/qt_app/assets", qt / "assets")
+    if (root / "examples/qt_app/assets").is_dir():
+        shutil.copytree(root / "examples/qt_app/assets", qt / "assets")
     shutil.copy(root / ".clang-format", qt / ".clang-format")
     presets = json.loads(
         (root / "examples/qt_app/CMakePresets.json").read_text()

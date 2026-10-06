@@ -90,6 +90,9 @@ def check(dist: Path, assets: Path, version: str) -> None:
             "./host/lib/cmake/SymbianHost/SymbianHostConfig.cmake",
             "./licenses/Symbian-Apache-2.0.txt",
             "./examples/hello_time/CMakeLists.txt",
+            "./examples/qt_app/app.cc",
+            "./examples/qt_app/CMakeLists.txt",
+            "./examples/qt_app/symbian.toml",
             *(
                 f"./lib/{target}/lib{component}.a"
                 for target in ("armv5t", "armv6")

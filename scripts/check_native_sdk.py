@@ -50,17 +50,6 @@ target_link_libraries(qt_check PRIVATE Symbian::Runtime Symbian::QtGui)
 symbian_publish_executable(qt_check UID3 0xe0000832)
 """
 
-QT_SOURCE = """#include <QtGui/QApplication>
-#include <QtGui/QPushButton>
-
-int main(int argc, char** argv) {
-  QApplication application(argc, argv);
-  QPushButton button(QString::fromUtf8("Native SDK Qt"));
-  button.show();
-  return application.exec();
-}
-"""
-
 EKA1_CMAKE = """cmake_minimum_required(VERSION 3.28)
 project(eka1_check LANGUAGES CXX ASM)
 include(SymbianPic)
@@ -123,7 +112,9 @@ def check(sdk: Path) -> None:
         # Build another main() target through the same SDK startup machinery.
         example = moved / "examples/hello_time"
         (example / "startup_check.cc").write_text(STARTUP_SOURCE)
-        (example / "qt_check.cc").write_text(QT_SOURCE)
+        shutil.copyfile(
+            moved / "examples/qt_app/app.cc", example / "qt_check.cc"
+        )
         with (example / "CMakeLists.txt").open("a") as cmake:
             cmake.write(STARTUP_CMAKE + QT_CMAKE)
         eka1 = root / "eka1 application"

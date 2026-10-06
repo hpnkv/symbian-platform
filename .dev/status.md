@@ -3236,3 +3236,13 @@ SDK for its initial runtime probe. The SDK now selects its prepared bootstrap
 EUSER proxy internally and supplies source platform headers without an
 installed prefix. Fresh macOS and Linux no-active-SDK guest exports pass. Nothing
 from 0.1.4 was published; retaining the failed tag and preparing 0.1.5.
+
+2026-10-06: Clean CI native export passed for 0.1.5; assembly exposed an
+optional Qt assets directory being copied unconditionally. Corrected that
+packaging error. Full fresh assembly plus relocated native checks pass on
+macOS arm64 and Linux x86_64, now compiling the actual shipped Qt source.
+Release audit requires the bundled Qt app; seven audit regressions pass.
+Nothing from 0.1.5 was published. Preparing 0.1.6; its complete manual workflow
+will run before final tagging. Original documentation audit: 712 of 5,395
+indexed public/protected members lack descriptions; broader class/parameter
+coverage and mutable-reference/nullability migration remain outstanding.
