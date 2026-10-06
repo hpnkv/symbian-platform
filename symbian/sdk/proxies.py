@@ -142,7 +142,7 @@ def build_import_proxy(
     }
     (source / "CMakePresets.json").write_text(json.dumps(preset) + "\n")
     toolchain = Path(
-        str(files("symbian.toolchain").joinpath("cmake/armv5t-pic.cmake"))
+        str(files("symbian.toolchain").joinpath("cmake/symbian-arm.cmake"))
     )
 
     def build(tree: Path) -> tuple[bytes, str]:
@@ -170,6 +170,7 @@ def build_import_proxy(
                 "-B",
                 str(tree),
                 f"-DCMAKE_TOOLCHAIN_FILE={toolchain}",
+                "-DSYMBIAN_TARGET_ARCH=armv5t",
                 f"-DCMAKE_CXX_COMPILER={tools['compiler']}",
                 f"-DCMAKE_ASM_COMPILER={tools['compiler']}",
                 f"-DCMAKE_LINKER={tools['linker']}",

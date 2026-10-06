@@ -44,7 +44,6 @@ def _fake_sdk(tmp_path):
         path = prefix / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.touch()
-    (prefix / "golden").mkdir()
     sdk = AppSdk(
         prefix=prefix,
         architectures=("armv5t", "armv6"),
@@ -52,7 +51,6 @@ def _fake_sdk(tmp_path):
         linker=prefix / "linker",
         python=Path(sys.executable),
         emulator=prefix / "emulator",
-        golden=prefix / "golden",
     )
     (prefix / "sdk.json").write_text(sdk.model_dump_json())
     return sdk
@@ -63,7 +61,7 @@ def test_sdk_manifest_survives_relocation(tmp_path, relative):
     sdk = _fake_sdk(tmp_path)
     data = sdk.model_dump(mode="json")
     if relative:
-        for name in ("prefix", "compiler", "linker", "emulator", "golden"):
+        for name in ("prefix", "compiler", "linker", "emulator"):
             data[name] = str(Path(data[name]).relative_to(sdk.prefix))
         data["python"] = None
     (sdk.prefix / "sdk.json").write_text(json.dumps(data))
@@ -82,7 +80,7 @@ def test_sdk_manifest_survives_relocation(tmp_path, relative):
 def test_install_native_archive_without_active_sdk(tmp_path, monkeypatch):
     sdk = _fake_sdk(tmp_path)
     data = sdk.model_dump(mode="json")
-    for name in ("prefix", "compiler", "linker", "emulator", "golden"):
+    for name in ("prefix", "compiler", "linker", "emulator"):
         data[name] = str(Path(data[name]).relative_to(sdk.prefix))
     data["python"] = None
     (sdk.prefix / "sdk.json").write_text(json.dumps(data))

@@ -85,3 +85,26 @@ def test_python_and_cmake_find_the_same_sdk(tmp_path, monkeypatch, layout):
         "endif()\n"
     )
     run(["cmake", "-P", str(script)], cwd=tmp_path)
+
+
+def test_source_workspace_ignores_all_installed_sdk_selectors(
+    tmp_path, monkeypatch
+):
+    root = tmp_path / "source"
+    app = root / "examples/app"
+    app.mkdir(parents=True)
+    (app / "sdk-location.json").write_text('{"sdk":"/wrong-project-sdk"}')
+    monkeypatch.setenv("SYMBIAN_SDK_MANIFEST", "/wrong-env-sdk/sdk.json")
+    module = Path(__file__).parents[1] / "toolchain/cmake/SymbianSdk.cmake"
+    script = tmp_path / "select-source.cmake"
+    script.write_text(
+        f'include("{module}")\n'
+        f'set(SYMBIAN_SOURCE_WORKSPACE "{root}")\n'
+        'set(SYMBIAN_SDK_PREFIX "/wrong-cache-sdk")\n'
+        f'symbian_select_sdk("{app}")\n'
+        f'set(expected "{root}/.symbian/workspace-inputs")\n'
+        "if(NOT SYMBIAN_SDK_PREFIX STREQUAL expected)\n"
+        '  message(FATAL_ERROR "Source selected installed SDK files")\n'
+        "endif()\n"
+    )
+    run(["cmake", "-P", str(script)], cwd=tmp_path)

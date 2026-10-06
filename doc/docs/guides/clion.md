@@ -33,10 +33,25 @@ the same archives and prefer the workspace's current public headers. Editing
 an SDK header or implementation therefore updates the application build and
 its compiler context without exporting an SDK first.
 
-The active SDK still supplies preserved platform headers, import proxies,
-host tools, and the pinned Abseil and Mbed TLS dependency archives. Standalone
-application projects consume the exported SDK. After changing the selected
-compiler installation, configure with `cmake --fresh --preset
-guest-probes-armv6` to replace its compiler cache. Each profile writes its
-own `compile_commands.json`; an ARM ELF build does not establish loader or
-physical device compatibility.
+Prepare the [source dependencies](source-prerequisites.md) first. Root
+profiles create `.symbian/workspace-inputs` from those repository inputs,
+including platform headers, complete OS and guest Qt imports and patched
+Abseil sources. Runtime, Abseil, Mbed TLS and device API archives are built
+from source. Root profiles ignore the active SDK and project SDK selectors;
+standalone application projects use their selected installed SDK.
+
+The host `debug` profile builds host tools. Its `gui_app` target builds the
+source ARM graph in `build/debug/guest-armv6`, and `gui_app_e32` converts the
+result with the source-built host tool. Use a guest profile to edit and index
+ARM sources. Host and guest compiler caches remain separate.
+
+```sh
+cmake --preset debug
+cmake --build --preset debug --target gui_app_e32
+cmake --preset guest-probes-armv6
+cmake --build --preset guest-probes-armv6
+cmake --build build/guest-probes-armv6 --target gui_app qt_app
+```
+
+Each profile writes its own `compile_commands.json`. These builds do not
+establish emulator or physical-device compatibility.

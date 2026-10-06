@@ -38,7 +38,6 @@
       "toolchainFile": "${sourceDir}/symbian/toolchain/cmake/symbian-arm.cmake",
       "cacheVariables": {
         "SYMBIAN_INDEX_GUEST_PROBES": "ON",
-        "SYMBIAN_USE_ACTIVE_SDK": "ON",
         "SYMBIAN_TARGET_ARCH": "armv6",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }

@@ -95,7 +95,7 @@ def _audit_installed_behavior() -> None:
         importlib.import_module(module)
     distribution = importlib.metadata.distribution("symbian-platform")
     for resource in (
-        "symbian/toolchain/cmake/armv5t-pic.cmake",
+        "symbian/toolchain/cmake/symbian-arm.cmake",
         "symbian/toolchain/cmake/armv6-pic.cmake",
         "symbian/toolchain/cmake/symbian-arm.cmake",
         "symbian/toolchain/cmake/SymbianPic.cmake",

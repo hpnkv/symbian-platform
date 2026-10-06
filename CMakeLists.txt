@@ -4,6 +4,7 @@ if(NOT SYMBIAN_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
   message(FATAL_ERROR "VERSION must contain one semantic version")
 endif()
 if(SYMBIAN_INDEX_GUEST_PROBES)
+  include(cmake/SymbianWorkspaceInputs.cmake)
   project(symbian_platform VERSION ${SYMBIAN_VERSION} LANGUAGES C CXX ASM)
 else()
   project(symbian_platform VERSION ${SYMBIAN_VERSION} LANGUAGES C CXX)
@@ -21,17 +22,10 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
       "Guest probe indexing requires the symbian-arm.cmake cross toolchain")
   endif()
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-  set(SYMBIAN_LIBCXX_SOURCE
-    "${CMAKE_SOURCE_DIR}/research/upstream/llvm-project/libcxx")
-  set(SYMBIAN_OPENC_SOURCE
-    "${CMAKE_SOURCE_DIR}/research/upstream/ossrv/genericopenlibs/openenvcore")
-  set(SYMBIAN_GUI_SDK_INCLUDE
-    "${CMAKE_SOURCE_DIR}/.symbian/gui-sdk/include")
-  # The indexing target uses the widest currently implemented no-exceptions
-  # libc++ profile. The standalone probe project remains the execution entry;
-  # no host IDE Run target is created for an ARM ELF.
-  set(SYMBIAN_RUNTIME_LOCALE_STREAM ON CACHE BOOL "" FORCE)
+  include(cmake/SymbianWorkspaceInputs.cmake)
   add_subdirectory(cpp/symbian/runtime)
+  include(cmake/SymbianWorkspace.cmake)
+  symbian_workspace_abseil()
   # Give each probe its own target so an IDE uses the right local include
   # directory and can report the source's project membership. Specialized
   # profiles below retain their exact source and dependency choices.
@@ -72,22 +66,18 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
   target_include_directories(symbian_index_runtime PRIVATE
     "${CMAKE_SOURCE_DIR}/cpp/symbian/concurrency/guest"
     "${CMAKE_SOURCE_DIR}/cpp/symbian/concurrency/common")
-  if(NOT EXISTS "${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
-    message(FATAL_ERROR
-      "Abseil probe indexing needs SYMBIAN_SDK_PREFIX with an installed SDK")
-  endif()
-  set(SYMBIAN_WORKSPACE_BUILD ON)
   include(symbian/project/templates/SymbianApp.cmake)
-  if(NOT TARGET Symbian::AbseilStatusOr)
-    message(FATAL_ERROR
-      "The selected SDK has no Abseil StatusOr indexing profile; update it")
-  endif()
   # Component CMake files own the actual guest library sources and include
   # paths. Loading them here makes SDK internals navigable in the same ARM
   # profile as applications, without per-file IDE registration.
   add_subdirectory(cpp/symbian/api EXCLUDE_FROM_ALL)
   include(cmake/SymbianWorkspace.cmake)
   symbian_workspace_components()
+  set(SYMBIAN_MBEDTLS_OPENSSL_COMPAT OFF)
+  add_subdirectory(third_party/mbedtls-symbian EXCLUDE_FROM_ALL)
+  add_library(Symbian::Crypto ALIAS mbedcrypto)
+  set_property(TARGET SymbianTls PROPERTY INTERFACE_LINK_LIBRARIES
+    "Symbian::Connectivity;MbedTLS::mbedtls;MbedTLS::mbedx509;MbedTLS::mbedcrypto")
   add_subdirectory(cpp/symbian/tls EXCLUDE_FROM_ALL)
   symbian_workspace_archive(SymbianTls symbian_api_tls)
   add_library(symbian_index_http OBJECT EXCLUDE_FROM_ALL
@@ -322,8 +312,7 @@ option(SYMBIAN_BUILD_GUI_EXAMPLE "Expose the prepared ARM GUI in the host projec
 set(SYMBIAN_GUI_SDK_INCLUDE "${CMAKE_SOURCE_DIR}/.symbian/gui-sdk/include"
     CACHE PATH "Materialized/staged Symbian GUI headers")
 if(SYMBIAN_BUILD_GUI_EXAMPLE)
-  if(EXISTS "${SYMBIAN_GUI_SDK_INCLUDE}/w32std.h" AND
-     CMAKE_CXX_COMPILER_ID MATCHES "^(AppleClang|Clang)$")
+  if(EXISTS "${SYMBIAN_GUI_SDK_INCLUDE}/w32std.h")
     include(symbian/toolchain/cmake/SymbianSdk.cmake)
     symbian_add_guest_subdirectory(examples/gui_app)
     # CLion can run an executable target. A custom build target only executes
@@ -341,7 +330,7 @@ if(SYMBIAN_BUILD_GUI_EXAMPLE)
       SYMBIAN_LAUNCH_PYTHON="${SYMBIAN_HOST_PYTHON}"
       SYMBIAN_LAUNCH_ROOT="${CMAKE_SOURCE_DIR}")
   else()
-    message(STATUS "GUI target unavailable: prepare-gui-sdk and a Clang host compiler are required")
+    message(STATUS "GUI target unavailable: prepare the source platform headers")
   endif()
 endif()
 symbian_index_remaining_native(symbian_index_remaining_host absl::statusor

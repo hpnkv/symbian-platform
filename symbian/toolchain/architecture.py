@@ -51,14 +51,16 @@ def target(value: str) -> ArmTarget:
 
 
 def project_architecture(project: Path, options: dict, preset: str) -> str:
-    """Resolves an explicit target, retaining legacy named toolchain choices."""
+    """Resolves the declared project or CMake target architecture."""
     declared = options.get("architecture")
     if declared is not None:
         return target(declared).architecture
     preferences = project / "symbian-project.json"
     if preferences.is_file():
         saved = json.loads(preferences.read_text())["preferences"]
-        return target(saved.get("architecture", "armv5t")).architecture
+        return target(
+            saved.get("architecture", DEFAULT_ARCHITECTURE)
+        ).architecture
     presets = json.loads((project / "CMakePresets.json").read_text())
     chosen = next(
         (
@@ -71,15 +73,6 @@ def project_architecture(project: Path, options: dict, preset: str) -> str:
     cached = chosen.get("cacheVariables", {}).get("SYMBIAN_TARGET_ARCH")
     if cached is not None:
         return target(cached).architecture
-    # Existing projects explicitly selected this toolchain; that is a choice,
-    # not a new default. Their sources/configuration are never rewritten here.
-    toolchain = chosen.get("toolchainFile", "")
-    if toolchain.endswith("armv5t-pic.cmake"):
-        return "armv5t"
-    if (project / "sdk.cmake").is_file() and "armv5t-pic.cmake" in (
-        project / "sdk.cmake"
-    ).read_text():
-        return "armv5t"
     return DEFAULT_ARCHITECTURE
 
 

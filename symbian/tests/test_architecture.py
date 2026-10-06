@@ -21,7 +21,7 @@ TOOLS = all(
 )
 
 
-def test_default_legacy_and_single_project_authority(tmp_path):
+def test_default_and_single_project_authority(tmp_path):
     (tmp_path / "CMakePresets.json").write_text(
         json.dumps({"configurePresets": [{"name": "app"}]})
     )

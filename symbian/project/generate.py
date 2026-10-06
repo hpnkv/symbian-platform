@@ -159,9 +159,6 @@ def _ide(project: Path, settings: Preferences, sdk: AppSdk) -> None:
         configurations = ET.SubElement(component, "configurations")
     # IDE releases differ in how configure/build presets become profile IDs.
     # Keep a stable ordinary IDE profile; CMake itself still owns the SDK/ABI.
-    legacy = configurations.find("./configuration[@PROFILE_NAME='symbian-pic']")
-    if legacy is not None:
-        legacy.set("ENABLED", "false")
     entry = configurations.find("./configuration[@PROFILE_NAME='Symbian App']")
     if entry is None:
         entry = ET.SubElement(
@@ -268,7 +265,7 @@ def configure_project(
             Code.FAILED_PRECONDITION,
             f"Selected SDK has no {settings.architecture} runtime. "
             "Update the SDK "
-            "or choose --architecture armv5t for a legacy SDK",
+            "or choose --architecture armv5t for an SDK providing ARMv5T",
         )
     name = settings.name
     task_profile = "ON" if settings.timer_tasks else "OFF"

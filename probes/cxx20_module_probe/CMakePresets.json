@@ -4,8 +4,8 @@
     "name": "symbian-pic",
     "generator": "Ninja",
     "binaryDir": "${sourceDir}/../../.symbian/cmake/cxx20-module-probe",
-    "toolchainFile": "${sourceDir}/../../symbian/toolchain/cmake/armv5t-pic.cmake",
-    "cacheVariables": {"CMAKE_EXPORT_COMPILE_COMMANDS": "ON"}
+    "toolchainFile": "${sourceDir}/../../symbian/toolchain/cmake/symbian-arm.cmake",
+    "cacheVariables": {"CMAKE_EXPORT_COMPILE_COMMANDS": "ON", "SYMBIAN_TARGET_ARCH": "armv5t"}
   }],
   "buildPresets": [{
     "name": "symbian-pic",

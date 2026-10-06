@@ -39,7 +39,7 @@ jobs:
         id: guest
         with:
           path: ${{ runner.temp }}/native-guest
-          key: native-guest-v2-${{ hashFiles('cpp/symbian/**', 'cmake/**', 'third_party/**', 'symbian/project/sdk.py', 'symbian/project/qt.py', 'symbian/project/templates/*.cmake', 'symbian/toolchain/**', 'symbian/sdk/**', 'symbian/process.py', 'symbian/status.py', 'symbian/native.py', 'symbian/analysis/**', 'probes/runtime_probe/**', 'probes/abseil_status_probe/**', 'research/gui_app/source-profile.json', 'research/llvm/**', 'research/abseil/**', 'scripts/prepare_native_sources.py', 'scripts/build_native_guest.py', 'scripts/bootstrap_native_tools.py') }}
+          key: native-guest-v2-${{ hashFiles('cpp/symbian/**', 'cmake/**', 'third_party/**', 'symbian/project/sdk.py', 'symbian/project/qt.py', 'symbian/project/workspace.py', 'scripts/check_source_workspace.py', 'symbian/project/templates/*.cmake', 'symbian/toolchain/**', 'symbian/sdk/**', 'symbian/process.py', 'symbian/status.py', 'symbian/native.py', 'symbian/analysis/**', 'probes/runtime_probe/**', 'probes/abseil_status_probe/**', 'research/gui_app/source-profile.json', 'research/llvm/**', 'research/abseil/**', 'scripts/prepare_native_sources.py', 'scripts/build_native_guest.py', 'scripts/bootstrap_native_tools.py') }}
       - uses: actions/download-artifact@v4
         if: steps.guest.outputs.cache-hit != 'true'
         with:
@@ -68,6 +68,7 @@ jobs:
           export PATH="$SYMBIAN_LLVM_BIN:$PATH"
           python scripts/prepare_native_sources.py --workspace "$PWD"
           python scripts/build_native_guest.py --workspace "$PWD" --output "${{ runner.temp }}/native-guest"
+          python scripts/check_source_workspace.py --workspace "$PWD" --output "${{ runner.temp }}/source-cmake"
       - uses: actions/upload-artifact@v4
         with:
           name: native-guest

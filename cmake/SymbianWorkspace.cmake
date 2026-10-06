@@ -40,3 +40,9 @@ function(symbian_workspace_components)
       ${source_includes})
   endforeach()
 endfunction()
+
+# Source dependencies use the same guest ABI/configuration as source libraries.
+function(symbian_workspace_abseil)
+  add_subdirectory(cmake/guest-abseil EXCLUDE_FROM_ALL)
+  set(SYMBIAN_WORKSPACE_ABSEIL ON PARENT_SCOPE)
+endfunction()

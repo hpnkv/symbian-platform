@@ -1,3 +1,10 @@
+if(SYMBIAN_WORKSPACE_ABSEIL AND TARGET absl::statusor)
+  add_library(SymbianAbseilStatusOr INTERFACE)
+  target_link_libraries(SymbianAbseilStatusOr INTERFACE
+    absl::statusor absl::flat_hash_map absl::time Symbian::Streams Symbian::EUser)
+  add_library(Symbian::AbseilStatusOr ALIAS SymbianAbseilStatusOr)
+  return()
+endif()
 # Installed Abseil Status/StatusOr closure built from the A11-pinned sources.
 # The alternate streams runtime supplies the matching libc++ configuration.
 set(_symbian_abseil_root

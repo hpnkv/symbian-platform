@@ -35,8 +35,6 @@ class AppSdk(BaseModel):
     ranlib: Path | None = None
     python: Path | None = None
     emulator: Path | None = None
-    # Deprecated development-export field; firmware now lives in a shared store.
-    golden: Path | None = None
     firmware_importer: Path | None = None
     gdb: Path | None = None
     architectures: tuple[Literal["armv5t", "armv6"], ...] = (
@@ -62,7 +60,6 @@ class AppSdk(BaseModel):
                 "ranlib",
                 "python",
                 "emulator",
-                "golden",
                 "firmware_importer",
                 "gdb",
             ):
@@ -415,6 +412,223 @@ def _build_mbedtls(
     return source
 
 
+def stage_headers(workspace: Path, output: Path, compiler: Path) -> None:
+    """Stages shared platform and SDK headers for exports and source builds."""
+    source = workspace / "research/upstream"
+    libcxx = source / "llvm-project/libcxx"
+    openc = source / "ossrv/genericopenlibs/openenvcore"
+    mimalloc = source / "mimalloc"
+    shutil.copytree(
+        workspace / ".symbian/gui-sdk/include", output / "include/platform"
+    )
+    for header in ("hal.h", "hal_data.h"):
+        shutil.copyfile(
+            workspace
+            / "research/upstream/kernelhwsrv/halservices/hal/inc"
+            / header,
+            output / "include/platform" / header,
+        )
+    for header in ("e32math.h", "e32math.inl"):
+        shutil.copyfile(
+            source / "kernelhwsrv/kernel/eka/include" / header,
+            output / "include/platform" / header,
+        )
+    camera_headers = (
+        "ECam.h",
+        "ecamdef.h",
+        "ecamconst.h",
+        "ECamUids.hrh",
+        "ecamuidsconst.hrh",
+        "ecamuidsdef.hrh",
+    )
+    camera_source = (
+        workspace / "research/upstream/mm/imagingandcamerafws/camerafw/Include"
+    )
+    for header in camera_headers:
+        shutil.copyfile(
+            camera_source / header,
+            output / "include/platform" / header,
+        )
+    # ECam.h names this include in lower case; preserve it on case-sensitive
+    # SDK hosts as well as the upstream-cased original file.
+    shutil.copyfile(
+        camera_source / "ECamUids.hrh",
+        output / "include/platform/ecamuids.hrh",
+    )
+    shutil.copyfile(
+        workspace
+        / "research/upstream/appsupport/appfw/apparchitecture/inc"
+        / "AppInfo.rh",
+        output / "include/platform/AppInfo.rh",
+    )
+    shutil.copytree(libcxx / "include", output / "include/c++")
+    resource = Path(
+        run([str(compiler), "-print-resource-dir"], cwd=workspace).strip()
+    )
+    shutil.copytree(resource / "include", output / "include/compiler")
+    shutil.copytree(openc / "include", output / "include/openc")
+    shutil.copytree(openc / "libm/include", output / "include/libm")
+    shutil.copytree(openc / "libc/inc", output / "include/libc")
+    shutil.copytree(openc / "libpthread/inc", output / "include/pthread")
+    shutil.copytree(openc / "include/posix4", output / "include/posix4")
+    shutil.copytree(
+        mimalloc / "include", output / "include", dirs_exist_ok=True
+    )
+    shutil.copytree(
+        workspace / "third_party/symbian-network-headers/include",
+        output / "include/platform",
+        dirs_exist_ok=True,
+    )
+    startup = output / "share/symbian/runtime"
+    startup.mkdir(parents=True)
+    for source_name, target_name in (
+        ("exe_startup.S", "startup.S"),
+        ("exe_startup.cc", "startup.cc"),
+        ("exe_image.ld", "image.ld"),
+    ):
+        shutil.copyfile(
+            workspace / "symbian/toolchain/cmake" / source_name,
+            startup / target_name,
+        )
+    (output / "include/symbian").mkdir()
+    shutil.copyfile(
+        workspace / "cpp/symbian/runtime/abi.h",
+        output / "include/symbian/runtime.h",
+    )
+    shutil.copytree(
+        workspace / "cpp/symbian/concurrency/common/symbian",
+        output / "include/symbian",
+        dirs_exist_ok=True,
+    )
+    shutil.copytree(
+        workspace / "cpp/symbian/concurrency/guest/symbian",
+        output / "include/symbian",
+        dirs_exist_ok=True,
+    )
+    shutil.copytree(
+        workspace / "cpp/symbian/api/include/symbian",
+        output / "include/symbian",
+        dirs_exist_ok=True,
+    )
+    for component in ("http", "net"):
+        destination = output / "include/symbian" / component
+        destination.mkdir()
+        for header in (workspace / "cpp/symbian" / component).glob("*.h"):
+            shutil.copyfile(header, destination / header.name)
+    (output / "include/symbian/websocket").mkdir()
+    shutil.copyfile(
+        workspace / "cpp/symbian/websocket/websocket.h",
+        output / "include/symbian/websocket/websocket.h",
+    )
+    (output / "include/symbian/agent").mkdir()
+    shutil.copyfile(
+        workspace / "cpp/symbian/agent/guest_control.h",
+        output / "include/symbian/agent/guest_control.h",
+    )
+    shutil.copyfile(
+        workspace / "cpp/symbian/agent/guest_log.h",
+        output / "include/symbian/agent/guest_log.h",
+    )
+    shutil.copyfile(
+        workspace / "cpp/symbian/agent/guest_files.h",
+        output / "include/symbian/agent/guest_files.h",
+    )
+    shutil.copytree(
+        workspace / "cpp/symbian/concurrency/common/thread",
+        output / "include/thread",
+    )
+    shutil.copytree(
+        workspace / "cpp/symbian/concurrency/guest/thread",
+        output / "include/thread",
+        dirs_exist_ok=True,
+        ignore=shutil.ignore_patterns("*.cc"),
+    )
+    host_headers = output / "include/host/thread"
+    host_headers.mkdir(parents=True)
+    for header in (workspace / "cpp/symbian/concurrency/host/thread").glob(
+        "*.h"
+    ):
+        shutil.copyfile(header, host_headers / header.name)
+
+
+def stage_imports(
+    workspace: Path, output: Path, compiler: Path, linker: Path
+) -> None:
+    """Builds complete OS and Qt import interfaces once for SDK consumers."""
+    source = workspace / "research/upstream"
+    # Every original library target owns its complete frozen ordinal ABI.
+    for dll, definition in (
+        ("euser", source / "kernelhwsrv/kernel/eka/eabi/euseru.def"),
+        (
+            "ws32",
+            source / "graphics/windowing/windowserver/eabi/WS322U.DEF",
+        ),
+        (
+            "gdi",
+            source / "graphics/graphicsdeviceinterface/gdi/eabi/GDI2U.def",
+        ),
+        ("hal", source / "kernelhwsrv/halservices/hal/eabi/halu.def"),
+        ("ecam", source / "mm/imagingandcamerafws/camerafw/eabi/ecamU.def"),
+        (
+            "efsrv",
+            source
+            / "kernelhwsrv/userlibandfileserver/fileserver/eabi/efsrvu.def",
+        ),
+        (
+            "esock",
+            workspace / "third_party/symbian-network-headers/esockU.def",
+        ),
+        (
+            "insock",
+            workspace / "third_party/symbian-network-headers/insockU.def",
+        ),
+        (
+            "libc",
+            source / "ossrv/genericopenlibs/openenvcore/libc/eabi/libcu.def",
+        ),
+        (
+            "libm",
+            source / "ossrv/genericopenlibs/openenvcore/libm/eabi/libmu.def",
+        ),
+        (
+            "libpthread",
+            source
+            / "ossrv/genericopenlibs/openenvcore/libpthread/eabi"
+            / "libpthreadu.def",
+        ),
+        (
+            "drtaeabi",
+            source / "kernelhwsrv/kernel/eka/compsupp/eabi/drtaeabiu.def",
+        ),
+    ):
+        build_import_proxy(
+            definition,
+            [],
+            dll + ".dll",
+            output / "proxies" / dll,
+            str(compiler),
+            str(linker),
+        )
+    shutil.copytree(output / "proxies/euser", output / "proxies/euser-native64")
+    from symbian.project.qt import prepare_qt
+
+    build_import_proxy(
+        workspace / "symbian/toolchain/cmake/euser_eka1.def",
+        [],
+        "euser.dll",
+        output / "proxies/euser-eka1",
+        str(compiler),
+        str(linker),
+    )
+
+    prepare_qt(
+        workspace / "research/upstream/qt4",
+        output,
+        str(compiler),
+        str(linker),
+    )
+
+
 def prepare(
     workspace: Path, output: Path, *, include_host: bool = True
 ) -> AppSdk:
@@ -526,141 +740,9 @@ def prepare(
     ]  # Compatibility archive for older project files.
     source = workspace / "research/upstream"
     libcxx = source / "llvm-project/libcxx"
-    openc = source / "ossrv/genericopenlibs/openenvcore"
     output.mkdir(parents=True)
     try:
-        shutil.copytree(
-            workspace / ".symbian/gui-sdk/include", output / "include/platform"
-        )
-        for header in ("hal.h", "hal_data.h"):
-            shutil.copyfile(
-                workspace
-                / "research/upstream/kernelhwsrv/halservices/hal/inc"
-                / header,
-                output / "include/platform" / header,
-            )
-        for header in ("e32math.h", "e32math.inl"):
-            shutil.copyfile(
-                source / "kernelhwsrv/kernel/eka/include" / header,
-                output / "include/platform" / header,
-            )
-        camera_headers = (
-            "ECam.h",
-            "ecamdef.h",
-            "ecamconst.h",
-            "ECamUids.hrh",
-            "ecamuidsconst.hrh",
-            "ecamuidsdef.hrh",
-        )
-        camera_source = (
-            workspace
-            / "research/upstream/mm/imagingandcamerafws/camerafw/Include"
-        )
-        for header in camera_headers:
-            shutil.copyfile(
-                camera_source / header,
-                output / "include/platform" / header,
-            )
-        # ECam.h names this include in lower case; preserve it on case-sensitive
-        # SDK hosts as well as the upstream-cased original file.
-        shutil.copyfile(
-            camera_source / "ECamUids.hrh",
-            output / "include/platform/ecamuids.hrh",
-        )
-        shutil.copyfile(
-            workspace
-            / "research/upstream/appsupport/appfw/apparchitecture/inc"
-            / "AppInfo.rh",
-            output / "include/platform/AppInfo.rh",
-        )
-        shutil.copytree(libcxx / "include", output / "include/c++")
-        resource = Path(
-            run([str(compiler), "-print-resource-dir"], cwd=workspace).strip()
-        )
-        shutil.copytree(resource / "include", output / "include/compiler")
-        shutil.copytree(openc / "include", output / "include/openc")
-        shutil.copytree(openc / "libm/include", output / "include/libm")
-        shutil.copytree(openc / "libc/inc", output / "include/libc")
-        shutil.copytree(openc / "libpthread/inc", output / "include/pthread")
-        shutil.copytree(openc / "include/posix4", output / "include/posix4")
-        shutil.copytree(
-            mimalloc / "include", output / "include", dirs_exist_ok=True
-        )
-        shutil.copytree(
-            workspace / "third_party/symbian-network-headers/include",
-            output / "include/platform",
-            dirs_exist_ok=True,
-        )
-        startup = output / "share/symbian/runtime"
-        startup.mkdir(parents=True)
-        for source_name, target_name in (
-            ("exe_startup.S", "startup.S"),
-            ("exe_startup.cc", "startup.cc"),
-            ("exe_image.ld", "image.ld"),
-        ):
-            shutil.copyfile(
-                workspace / "symbian/toolchain/cmake" / source_name,
-                startup / target_name,
-            )
-        (output / "include/symbian").mkdir()
-        shutil.copyfile(
-            workspace / "cpp/symbian/runtime/abi.h",
-            output / "include/symbian/runtime.h",
-        )
-        shutil.copytree(
-            workspace / "cpp/symbian/concurrency/common/symbian",
-            output / "include/symbian",
-            dirs_exist_ok=True,
-        )
-        shutil.copytree(
-            workspace / "cpp/symbian/concurrency/guest/symbian",
-            output / "include/symbian",
-            dirs_exist_ok=True,
-        )
-        shutil.copytree(
-            workspace / "cpp/symbian/api/include/symbian",
-            output / "include/symbian",
-            dirs_exist_ok=True,
-        )
-        for component in ("http", "net"):
-            destination = output / "include/symbian" / component
-            destination.mkdir()
-            for header in (workspace / "cpp/symbian" / component).glob("*.h"):
-                shutil.copyfile(header, destination / header.name)
-        (output / "include/symbian/websocket").mkdir()
-        shutil.copyfile(
-            workspace / "cpp/symbian/websocket/websocket.h",
-            output / "include/symbian/websocket/websocket.h",
-        )
-        (output / "include/symbian/agent").mkdir()
-        shutil.copyfile(
-            workspace / "cpp/symbian/agent/guest_control.h",
-            output / "include/symbian/agent/guest_control.h",
-        )
-        shutil.copyfile(
-            workspace / "cpp/symbian/agent/guest_log.h",
-            output / "include/symbian/agent/guest_log.h",
-        )
-        shutil.copyfile(
-            workspace / "cpp/symbian/agent/guest_files.h",
-            output / "include/symbian/agent/guest_files.h",
-        )
-        shutil.copytree(
-            workspace / "cpp/symbian/concurrency/common/thread",
-            output / "include/thread",
-        )
-        shutil.copytree(
-            workspace / "cpp/symbian/concurrency/guest/thread",
-            output / "include/thread",
-            dirs_exist_ok=True,
-            ignore=shutil.ignore_patterns("*.cc"),
-        )
-        host_headers = output / "include/host/thread"
-        host_headers.mkdir(parents=True)
-        for header in (workspace / "cpp/symbian/concurrency/host/thread").glob(
-            "*.h"
-        ):
-            shutil.copyfile(header, host_headers / header.name)
+        stage_headers(workspace, output, compiler)
         # __config_site and assertion handler are generated with the library;
         # consumers must use these exact files, not host libc++ configuration.
         config = runtime / "cmake/runtime/include"
@@ -742,81 +824,7 @@ def prepare(
         (output / "lib/libsymbian_guest_runtime.a").write_bytes(
             default_runtimes["armv5t"][0]
         )
-        # Every original library target owns its complete frozen ordinal ABI.
-        for dll, definition in (
-            ("euser", source / "kernelhwsrv/kernel/eka/eabi/euseru.def"),
-            (
-                "ws32",
-                source / "graphics/windowing/windowserver/eabi/WS322U.DEF",
-            ),
-            (
-                "gdi",
-                source / "graphics/graphicsdeviceinterface/gdi/eabi/GDI2U.def",
-            ),
-            ("hal", source / "kernelhwsrv/halservices/hal/eabi/halu.def"),
-            ("ecam", source / "mm/imagingandcamerafws/camerafw/eabi/ecamU.def"),
-            (
-                "efsrv",
-                source
-                / "kernelhwsrv/userlibandfileserver/fileserver/eabi/efsrvu.def",
-            ),
-            (
-                "esock",
-                workspace / "third_party/symbian-network-headers/esockU.def",
-            ),
-            (
-                "insock",
-                workspace / "third_party/symbian-network-headers/insockU.def",
-            ),
-            (
-                "libc",
-                source
-                / "ossrv/genericopenlibs/openenvcore/libc/eabi/libcu.def",
-            ),
-            (
-                "libm",
-                source
-                / "ossrv/genericopenlibs/openenvcore/libm/eabi/libmu.def",
-            ),
-            (
-                "libpthread",
-                source
-                / "ossrv/genericopenlibs/openenvcore/libpthread/eabi"
-                / "libpthreadu.def",
-            ),
-            (
-                "drtaeabi",
-                source / "kernelhwsrv/kernel/eka/compsupp/eabi/drtaeabiu.def",
-            ),
-        ):
-            build_import_proxy(
-                definition,
-                [],
-                dll + ".dll",
-                output / "proxies" / dll,
-                str(compiler),
-                str(linker),
-            )
-        shutil.copytree(
-            output / "proxies/euser", output / "proxies/euser-native64"
-        )
-        from symbian.project.qt import prepare_qt
-
-        build_import_proxy(
-            workspace / "symbian/toolchain/cmake/euser_eka1.def",
-            [],
-            "euser.dll",
-            output / "proxies/euser-eka1",
-            str(compiler),
-            str(linker),
-        )
-
-        prepare_qt(
-            workspace / "research/upstream/qt4",
-            output,
-            str(compiler),
-            str(linker),
-        )
+        stage_imports(workspace, output, compiler, linker)
         cmake = output / "cmake"
         shutil.copytree(workspace / "symbian/toolchain/cmake", cmake)
         (cmake / "SymbianApp.cmake").write_bytes(
@@ -1104,13 +1112,11 @@ def discover_sdk(explicit: Path | None = None) -> Path:
         ).absolute()
     if value := os.environ.get("SYMBIAN_SDK_MANIFEST"):
         return Path(value).absolute()
-    config = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
-    active = config / "symbian/active-sdk.json"
+    from symbian.paths import asset_directory
+
+    active = asset_directory("config") / "active-sdk.json"
     if active.is_file():
         return Path(json.loads(active.read_text())["manifest"])
-    local = Path.cwd() / ".symbian/app-sdk/sdk.json"
-    if local.is_file():
-        return local
     raise StatusError(
         Code.FAILED_PRECONDITION,
         "Install a local SDK with symbian sdk install or pass --sdk",
@@ -1133,8 +1139,9 @@ def project_sdk(project: Path) -> AppSdk:
 
 def activate_sdk(sdk: AppSdk) -> None:
     """Records the active SDK for CLI use from arbitrary directories."""
-    config = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
-    active = config / "symbian/active-sdk.json"
+    from symbian.paths import asset_directory
+
+    active = asset_directory("config") / "active-sdk.json"
     active.parent.mkdir(parents=True, exist_ok=True)
     temporary = active.with_suffix(".tmp")
     temporary.write_text(

@@ -51,14 +51,23 @@ the build authority. `symbian_probe_index` gives each probe a separate ARM
 source target. New probe directories receive a source target automatically;
 specialized probes retain their declared compiler settings.
 
-The shared guest presets follow the active SDK on each CMake configure. After
-exporting a new SDK, reload the profile. If an older CMake cache still selects
-a host compiler or macOS `/usr/bin/ld`, run
-`cmake --fresh --preset clion-guest-probes-armv6` once. The toolchain pins the
-selected SDK's ARM compiler and LLD before CMake checks the compiler.
-`CMakeUserPresets.json` remains an ignored place for local compiler paths.
-`MBEDTLS_SOURCE` should point to this repository's
-`third_party/mbedtls-symbian` source and headers.
+Root guest presets use repository source inputs and ignore installed SDK
+selection. Source preparation chooses LLVM through `SYMBIAN_LLVM_BIN` or
+its normal host discovery; select matching Clang 23+, LLD and archive tools.
+`CMakeUserPresets.json` remains an ignored place for local build settings.
+Host and guest profiles have separate build directories and compiler caches.
+Do not run two CMake configurations into the same build directory at once.
+
+To check configuration, repeat reloads and actual source builds for both guest
+architectures and the host GUI target:
+
+```sh
+python scripts/check_source_workspace.py --workspace "$PWD" \
+  --output build/workspace-check --host
+```
+
+The check deliberately supplies unusable installed-SDK settings, so it also
+checks that the source workspace remains independent of installation defaults.
 
 Registered applications created by `symbian init` attach project-owned native
 files anywhere in their source tree to the actual guest executable target.

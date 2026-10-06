@@ -1,8 +1,13 @@
 # Bounded no-exceptions guest runtime: actual LLVM sources and Symbian heap.
 # It deliberately lives outside the host target graph.
 enable_language(C)
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND
-   CMAKE_CXX_COMPILER_VERSION VERSION_LESS 23)
+if(NOT SYMBIAN_GUEST_CXX_COMPILER)
+  set(SYMBIAN_GUEST_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
+endif()
+execute_process(COMMAND "${SYMBIAN_GUEST_CXX_COMPILER}" --version
+  OUTPUT_VARIABLE guest_compiler_version COMMAND_ERROR_IS_FATAL ANY)
+if(NOT guest_compiler_version MATCHES "clang version ([0-9]+)" OR
+   CMAKE_MATCH_1 LESS 23)
   message(FATAL_ERROR
     "The pinned LLVM 23 libc++ guest runtime requires Clang 23 or later; "
     "select the matching LLVM toolchain with SYMBIAN_LLVM_BIN")
@@ -51,7 +56,7 @@ configure_file("${SYMBIAN_LIBCXX_SOURCE}/include/__config_site.in"
 configure_file("${SYMBIAN_LIBCXX_SOURCE}/vendor/llvm/default_assertion_handler.in"
                "${config}/__assertion_handler" COPYONLY)
 file(CREATE_LINK "${SYMBIAN_OPENC_SOURCE}/include" "${config}/stdapis" SYMBOLIC)
-execute_process(COMMAND "${CMAKE_CXX_COMPILER}" -print-resource-dir
+execute_process(COMMAND "${SYMBIAN_GUEST_CXX_COMPILER}" -print-resource-dir
                 OUTPUT_VARIABLE resource OUTPUT_STRIP_TRAILING_WHITESPACE
                 COMMAND_ERROR_IS_FATAL ANY)
 set(builtins "${SYMBIAN_LIBCXX_SOURCE}/../compiler-rt/lib/builtins")
@@ -209,3 +214,7 @@ target_include_directories(symbian_guest_runtime SYSTEM BEFORE PUBLIC
   "${SYMBIAN_OPENC_SOURCE}/include/posix4")
 
 target_include_directories(symbian_guest_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+if(SYMBIAN_WORKSPACE_INPUTS)
+  target_include_directories(symbian_guest_runtime SYSTEM PUBLIC
+    "${SYMBIAN_SDK_PREFIX}/include")
+endif()

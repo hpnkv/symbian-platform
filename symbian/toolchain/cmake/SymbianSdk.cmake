@@ -1,5 +1,9 @@
 # Shared SDK selection for installed applications and source workspaces.
 function(symbian_select_sdk)
+  if(SYMBIAN_SOURCE_WORKSPACE)
+    set(SYMBIAN_SDK_PREFIX "${SYMBIAN_SOURCE_WORKSPACE}/.symbian/workspace-inputs" PARENT_SCOPE)
+    return()
+  endif()
   set(selection_directory "${CMAKE_CURRENT_SOURCE_DIR}")
   if(ARGC GREATER 0)
     get_filename_component(selection_directory "${ARGV0}" ABSOLUTE
@@ -17,10 +21,15 @@ function(symbian_select_sdk)
   elseif(DEFINED ENV{SYMBIAN_SDK_MANIFEST})
     get_filename_component(prefix "$ENV{SYMBIAN_SDK_MANIFEST}" DIRECTORY)
   else()
-    if(DEFINED ENV{XDG_CONFIG_HOME})
+    if(DEFINED ENV{SYMBIAN_HOME} AND NOT "$ENV{SYMBIAN_HOME}" STREQUAL "")
+      set(active "$ENV{SYMBIAN_HOME}/config/active-sdk.json")
+    elseif(DEFINED ENV{XDG_CONFIG_HOME} AND NOT "$ENV{XDG_CONFIG_HOME}" STREQUAL "")
       set(active "$ENV{XDG_CONFIG_HOME}/symbian/active-sdk.json")
     else()
-      set(active "$ENV{HOME}/.config/symbian/active-sdk.json")
+      set(active "$ENV{HOME}/.symbian/config/active-sdk.json")
+    endif()
+    if(NOT IS_ABSOLUTE "${active}")
+      message(FATAL_ERROR "SYMBIAN_HOME and XDG_CONFIG_HOME must be absolute")
     endif()
     if(EXISTS "${active}")
       set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${active}")
@@ -34,53 +43,49 @@ function(symbian_select_sdk)
   endif()
 endfunction()
 
-# A mixed host/guest workspace scopes its ARM toolchain to this directory.
-# Application CMakeLists remain identical to their standalone form.
+# Host and guest compiler/dependency identities require independent CMake graphs.
+# The root guest graph builds the same live sources used by guest IDE profiles.
 function(symbian_add_guest_subdirectory directory)
-  symbian_select_sdk("${directory}")
-  if(NOT EXISTS "${SYMBIAN_SDK_PREFIX}/cmake/SymbianApp.cmake")
-    message(FATAL_ERROR "Install a native SDK with symbian sdk install")
-  endif()
+  include("${CMAKE_SOURCE_DIR}/cmake/SymbianWorkspaceInputs.cmake")
+  include(ExternalProject)
   if(NOT SYMBIAN_TARGET_ARCH)
     set(SYMBIAN_TARGET_ARCH armv6)
   endif()
-  set(SYMBIAN_WORKSPACE_BUILD ON)
-  include("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/symbian-arm.cmake")
-  string(REPLACE "<CMAKE_LINKER>" "\"${CMAKE_LINKER}\""
-    CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_INIT}")
-  set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS_INIT}")
-  set(CMAKE_CXX_LINK_FLAGS "")
-  set(CMAKE_SKIP_RPATH ON)
-  set(CMAKE_OSX_ARCHITECTURES "")
-  set(CMAKE_OSX_SYSROOT "")
-  set(CMAKE_OSX_DEPLOYMENT_TARGET "")
-  # Source workspaces use their maintained CMake definitions with SDK binaries.
-  set(application_modules "${SYMBIAN_SDK_PREFIX}/cmake")
-  if(EXISTS "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../../project/templates/SymbianApp.cmake")
-    set(application_modules
-      "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../../project/templates")
-  endif()
-  list(PREPEND CMAKE_MODULE_PATH "${application_modules}"
-    "${CMAKE_CURRENT_FUNCTION_LIST_DIR}")
-  include(SymbianApp)
-  enable_language(ASM)
-  add_subdirectory("${directory}" EXCLUDE_FROM_ALL)
-  # Publish the project's primary application beside its ELF in host workspaces.
-  # Identity remains in the same project configuration used by the CLI.
-  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${directory}/symbian.toml")
-    file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/${directory}/symbian.toml" name
-      REGEX "^name[ \t]*=[ \t]*\"[A-Za-z][A-Za-z0-9_-]*\"[ \t]*$")
-    file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/${directory}/symbian.toml" uid
-      REGEX "^uid3[ \t]*=[ \t]*0x[0-9A-Fa-f]+[ \t]*$")
-    if(name AND uid)
-      list(GET name 0 name)
-      list(GET uid 0 uid)
-      string(REGEX REPLACE "^name[ \t]*=[ \t]*\"([^\"]+)\"[ \t]*$" "\\1" name "${name}")
-      string(REGEX REPLACE "^uid3[ \t]*=[ \t]*" "" uid "${uid}")
-      if(TARGET "${name}" AND NOT TARGET "${name}_e32")
-        symbian_publish_executable(${name} UID3 "${uid}")
-      endif()
+  set(guest_binary "${CMAKE_BINARY_DIR}/guest-${SYMBIAN_TARGET_ARCH}")
+  file(STRINGS "${CMAKE_SOURCE_DIR}/${directory}/symbian.toml" name
+    REGEX "^name[ \t]*=[ \t]*\"[A-Za-z][A-Za-z0-9_-]*\"[ \t]*$")
+  file(STRINGS "${CMAKE_SOURCE_DIR}/${directory}/symbian.toml" uid
+    REGEX "^uid3[ \t]*=[ \t]*0x[0-9A-Fa-f]+[ \t]*$")
+  string(REGEX REPLACE "^name[ \t]*=[ \t]*\"([^\"]+)\"[ \t]*$" "\\1" name "${name}")
+  string(REGEX REPLACE "^uid3[ \t]*=[ \t]*" "" uid "${uid}")
+  ExternalProject_Add(${name}_guest_build
+    SOURCE_DIR "${CMAKE_SOURCE_DIR}"
+    BINARY_DIR "${guest_binary}"
+    CMAKE_GENERATOR Ninja
+    CMAKE_ARGS
+      "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/symbian/toolchain/cmake/symbian-arm.cmake"
+      "-DSYMBIAN_INDEX_GUEST_PROBES=ON"
+      "-DSYMBIAN_TARGET_ARCH=${SYMBIAN_TARGET_ARCH}"
+      "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+      "-DCMAKE_CXX_COMPILER=${SYMBIAN_SDK_PREFIX}/bin/clang++"
+      "-DCMAKE_C_COMPILER=${SYMBIAN_SDK_PREFIX}/bin/clang"
+      "-DCMAKE_CXX_COMPILER_CLANG_SCAN_DEPS=${SYMBIAN_SDK_PREFIX}/bin/clang-scan-deps"
+    BUILD_COMMAND "${CMAKE_COMMAND}" --build <BINARY_DIR> --target ${name}
+    INSTALL_COMMAND "" BUILD_ALWAYS TRUE EXCLUDE_FROM_ALL TRUE)
+  file(GLOB app_sources CONFIGURE_DEPENDS "${directory}/*.cc" "${directory}/*.h")
+  add_custom_target(${name} DEPENDS ${name}_guest_build SOURCES ${app_sources})
+  set(image "${guest_binary}/${directory}/e32/${name}.exe")
+  file(GLOB proxies "${SYMBIAN_SDK_PREFIX}/proxies/*/*.dso")
+  set(import_options)
+  foreach(proxy IN LISTS proxies)
+    if(NOT proxy MATCHES "/euser-(native64|eka1)/")
+      list(APPEND import_options --import-proxy "${proxy}")
     endif()
-  endif()
+  endforeach()
+  add_custom_target(${name}_e32
+    COMMAND "${CMAKE_COMMAND}" -E make_directory "${guest_binary}/${directory}/e32"
+    COMMAND "$<TARGET_FILE:symbian_native_tool>" convert-exe
+      --input "${guest_binary}/${name}.elf"
+      --uid3 "${uid}" ${import_options} --output "${image}"
+    DEPENDS ${name} symbian_native_tool VERBATIM)
 endfunction()

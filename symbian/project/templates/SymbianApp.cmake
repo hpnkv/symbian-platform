@@ -59,7 +59,7 @@ if(EXISTS
     "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/mbedtls")
 endif()
 set(runtime_archive "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_guest_runtime.a")
-if(NOT EXISTS "${runtime_archive}")
+if(NOT SYMBIAN_WORKSPACE_INPUTS AND NOT EXISTS "${runtime_archive}")
   message(FATAL_ERROR "SDK has no ${SYMBIAN_TARGET_ARCH} runtime; update the SDK or select a supported target")
 endif()
 add_library(SymbianRuntime STATIC IMPORTED)
@@ -133,7 +133,7 @@ endif()
 # __config_site headers and must never be linked together.
 set(stream_archive "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_guest_runtime_streams.a")
 set(stream_libc_proxy "${SYMBIAN_SDK_PREFIX}/proxies/libc/libc.dso")
-if(EXISTS "${stream_archive}" AND EXISTS "${stream_libc_proxy}")
+if((SYMBIAN_WORKSPACE_INPUTS OR EXISTS "${stream_archive}") AND EXISTS "${stream_libc_proxy}")
   add_library(SymbianStreams STATIC IMPORTED)
   set_target_properties(SymbianStreams PROPERTIES
     IMPORTED_LOCATION "${stream_archive}" SYMBIAN_RUNTIME_PROFILE streams)
@@ -163,6 +163,18 @@ if(EXISTS "${stream_archive}" AND EXISTS "${stream_libc_proxy}")
     "${SYMBIAN_SDK_PREFIX}/proxies/libpthread/libpthread.dso"
     "${SYMBIAN_SDK_PREFIX}/proxies/drtaeabi/drtaeabi.dso")
   add_library(Symbian::Streams ALIAS SymbianStreams)
+endif()
+
+if(SYMBIAN_WORKSPACE_INPUTS)
+  include("${SYMBIAN_SOURCE_WORKSPACE}/cmake/SymbianWorkspace.cmake")
+  symbian_workspace_archive(SymbianRuntime symbian_guest_runtime)
+  symbian_workspace_archive(SymbianStreams symbian_guest_runtime)
+  get_target_property(workspace_includes symbian_guest_runtime INTERFACE_INCLUDE_DIRECTORIES)
+  foreach(runtime IN ITEMS SymbianRuntime SymbianStreams)
+    set_property(TARGET ${runtime} PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${workspace_includes}")
+    # The workspace builds one streams-capable runtime, shared by all consumers.
+    set_property(TARGET ${runtime} PROPERTY SYMBIAN_RUNTIME_PROFILE streams)
+  endforeach()
 endif()
 
 # The guest Abseil Status/StatusOr closure is an alternate runtime profile.
