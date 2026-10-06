@@ -6817,8 +6817,49 @@
       "target": "HttpNative",
       "dll": "http.dll",
       "headers": [
+        "chttpformencoder.h",
         "http.h",
-        "http/rhttpsession.h"
+        "http/cauthenticationfilterinterface.h",
+        "http/cecomfilter.h",
+        "http/framework/cheadercodec.h",
+        "http/framework/cprotocolhandler.h",
+        "http/framework/cprottransaction.h",
+        "http/framework/crxdata.h",
+        "http/framework/csecuritypolicy.h",
+        "http/framework/csecuritypolicy.inl",
+        "http/framework/ctxdata.h",
+        "http/framework/httplogger.h",
+        "http/framework/mrxdataobserver.h",
+        "http/framework/rheaderfield.h",
+        "http/mhttpauthenticationcallback.h",
+        "http/mhttpdataoptimiser.h",
+        "http/mhttpdatasupplier.h",
+        "http/mhttpfilter.h",
+        "http/mhttpfilterbase.h",
+        "http/mhttpfiltercreationcallback.h",
+        "http/mhttpsessioneventcallback.h",
+        "http/mhttptransactioncallback.h",
+        "http/rhttpconnectioninfo.h",
+        "http/rhttpfiltercollection.h",
+        "http/rhttpheaders.h",
+        "http/rhttpmessage.h",
+        "http/rhttppropertyset.h",
+        "http/rhttprequest.h",
+        "http/rhttpresponse.h",
+        "http/rhttpsession.h",
+        "http/rhttptransaction.h",
+        "http/rhttptransactionpropertyset.h",
+        "http/tfilterconfigurationiter.h",
+        "http/tfilterinformation.h",
+        "http/thttpevent.h",
+        "http/thttpevent.inl",
+        "http/thttpfilterhandle.h",
+        "http/thttpfilteriterator.h",
+        "http/thttpfilterregistration.h",
+        "http/thttphdrfielditer.h",
+        "http/thttphdrval.h",
+        "httperr.h",
+        "wsp/wsptypes.h"
       ],
       "dependencies": [
         "Uri",
@@ -6842,6 +6883,11 @@
       ],
       "header_payloads": [
         "include/native/E32BASE.H",
+        "include/native/chttpformencoder.h",
+        "include/native/comms-infras/es_event.h",
+        "include/native/comms-infras/es_parameterset.h",
+        "include/native/comms-infras/metacontainer.h",
+        "include/native/comms-infras/metadata.h",
         "include/native/d32locd.h",
         "include/native/d32locd.inl",
         "include/native/e32base.h",
@@ -6878,17 +6924,53 @@
         "include/native/e32std.inl",
         "include/native/e32std_private.h",
         "include/native/e32svr.h",
+        "include/native/ecom/ecom.h",
+        "include/native/ecom/ecomerrorcodes.h",
+        "include/native/ecom/ecomextendedinterfaceerrorcodes.h",
+        "include/native/ecom/ecomresolverparams.h",
+        "include/native/ecom/ecomresolverparams.inl",
+        "include/native/ecom/implementationinformation.h",
+        "include/native/ecom/implementationinformation.inl",
+        "include/native/elements/cftransportmacro.h",
+        "include/native/elements/h_tdeallocator.h",
+        "include/native/elements/metacontainer.h",
+        "include/native/elements/metacontainer.inl",
+        "include/native/elements/metadata.h",
+        "include/native/elements/metadata.inl",
+        "include/native/elements/sd_errors.h",
+        "include/native/es_sock.h",
+        "include/native/es_sock.inl",
+        "include/native/es_sock_internal.h",
+        "include/native/es_sock_internal.inl",
+        "include/native/es_sock_partner.h",
         "include/native/f32file.h",
         "include/native/f32file.inl",
         "include/native/f32file64.h",
         "include/native/f32file64.inl",
         "include/native/f32file_private.h",
         "include/native/f32notification.h",
+        "include/native/flogger.h",
+        "include/native/flogger.inl",
         "include/native/http.h",
+        "include/native/http/cauthenticationfilterinterface.h",
+        "include/native/http/cecomfilter.h",
+        "include/native/http/framework/cheadercodec.h",
+        "include/native/http/framework/cprotocolhandler.h",
+        "include/native/http/framework/cprottransaction.h",
+        "include/native/http/framework/crxdata.h",
+        "include/native/http/framework/csecuritypolicy.h",
+        "include/native/http/framework/csecuritypolicy.inl",
+        "include/native/http/framework/ctxdata.h",
+        "include/native/http/framework/httplogger.h",
+        "include/native/http/framework/mrxdataobserver.h",
+        "include/native/http/framework/rheaderfield.h",
+        "include/native/http/mhttpauthenticationcallback.h",
         "include/native/http/mhttpdataoptimiser.h",
         "include/native/http/mhttpdatasupplier.h",
         "include/native/http/mhttpfilter.h",
         "include/native/http/mhttpfilterbase.h",
+        "include/native/http/mhttpfiltercreationcallback.h",
+        "include/native/http/mhttpsessioneventcallback.h",
         "include/native/http/mhttptransactioncallback.h",
         "include/native/http/rhttpconnectioninfo.h",
         "include/native/http/rhttpfiltercollection.h",
@@ -6900,6 +6982,8 @@
         "include/native/http/rhttpsession.h",
         "include/native/http/rhttptransaction.h",
         "include/native/http/rhttptransactionpropertyset.h",
+        "include/native/http/tfilterconfigurationiter.h",
+        "include/native/http/tfilterinformation.h",
         "include/native/http/thttpevent.h",
         "include/native/http/thttpevent.inl",
         "include/native/http/thttpfilterhandle.h",
@@ -6909,12 +6993,25 @@
         "include/native/http/thttphdrval.h",
         "include/native/httperr.h",
         "include/native/httpstringconstants.h",
+        "include/native/in_sock.h",
+        "include/native/in_sock_internal.h",
+        "include/native/nifvar.h",
+        "include/native/nifvar_internal.h",
         "include/native/partitions.h",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl",
+        "include/native/ssl.h",
+        "include/native/ssl_compatibility.h",
+        "include/native/ssl_internal.h",
+        "include/native/sslerr.h",
         "include/native/stringpool.h",
         "include/native/stringpool.inl",
         "include/native/stringpoolerr.h",
         "include/native/uri8.h",
-        "include/native/uricommon.h"
+        "include/native/uricommon.h",
+        "include/native/wsp/wsptypes.h"
       ],
       "ms_extensions": false
     },
@@ -11021,6 +11118,238 @@
         "include/native/e32std.inl",
         "include/native/e32std_private.h",
         "include/native/thttpfields.h"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "HttpServiceNative",
+      "dll": "httpservice.dll",
+      "headers": [
+        "chttpclienttransaction.h",
+        "chttpnetworkconnectioninfo.h",
+        "chttpservice.h",
+        "httpheaderiter.h",
+        "httpservice.h",
+        "mhttpcontentsink.h",
+        "mhttpcontentsource.h",
+        "mhttpserviceauthentication.h",
+        "thttpheadervaluevariant.h"
+      ],
+      "dependencies": [
+        "HttpNative",
+        "Uri",
+        "Bafl",
+        "ECom"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "netprotocols/applayerprotocols/httpservice/EABI/httpserviceu.def",
+        "sha256": "828d5f47d90c3da5b5f937d376f785f5e41487db84f0e226113d4c6d74fdae79",
+        "destination": "share/symbian/native/defs/httpservice.dll.def"
+      },
+      "mmp": "netprotocols/applayerprotocols/httpservice/group/httpservice.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "http",
+        "esock",
+        "commdb",
+        "inetprotutil",
+        "bafl",
+        "efsrv",
+        "ecom"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/cdbcols.h",
+        "include/native/chttpclienttransaction.h",
+        "include/native/chttpnetworkconnectioninfo.h",
+        "include/native/chttpservice.h",
+        "include/native/commdbconnpref.h",
+        "include/native/commdbconnpref.inl",
+        "include/native/comms-infras/es_event.h",
+        "include/native/comms-infras/es_parameterset.h",
+        "include/native/comms-infras/metacontainer.h",
+        "include/native/comms-infras/metadata.h",
+        "include/native/connpref.h",
+        "include/native/d32locd.h",
+        "include/native/d32locd.inl",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32btrace.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32debug.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32event.h",
+        "include/native/e32event_private.h",
+        "include/native/e32hal.h",
+        "include/native/e32keys.h",
+        "include/native/e32ktran.h",
+        "include/native/e32lang.h",
+        "include/native/e32ldr.h",
+        "include/native/e32ldr_private.h",
+        "include/native/e32lmsg.h",
+        "include/native/e32notif.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/e32svr.h",
+        "include/native/elements/cftransportmacro.h",
+        "include/native/elements/h_tdeallocator.h",
+        "include/native/elements/metacontainer.h",
+        "include/native/elements/metacontainer.inl",
+        "include/native/elements/metadata.h",
+        "include/native/elements/metadata.inl",
+        "include/native/elements/sd_errors.h",
+        "include/native/es_sock.h",
+        "include/native/es_sock.inl",
+        "include/native/es_sock_internal.h",
+        "include/native/es_sock_internal.inl",
+        "include/native/es_sock_partner.h",
+        "include/native/f32file.h",
+        "include/native/f32file.inl",
+        "include/native/f32file64.h",
+        "include/native/f32file64.inl",
+        "include/native/f32file_private.h",
+        "include/native/f32notification.h",
+        "include/native/http.h",
+        "include/native/http/mhttpdataoptimiser.h",
+        "include/native/http/mhttpdatasupplier.h",
+        "include/native/http/mhttpfilter.h",
+        "include/native/http/mhttpfilterbase.h",
+        "include/native/http/mhttptransactioncallback.h",
+        "include/native/http/rhttpconnectioninfo.h",
+        "include/native/http/rhttpfiltercollection.h",
+        "include/native/http/rhttpheaders.h",
+        "include/native/http/rhttpmessage.h",
+        "include/native/http/rhttppropertyset.h",
+        "include/native/http/rhttprequest.h",
+        "include/native/http/rhttpresponse.h",
+        "include/native/http/rhttpsession.h",
+        "include/native/http/rhttptransaction.h",
+        "include/native/http/rhttptransactionpropertyset.h",
+        "include/native/http/thttpevent.h",
+        "include/native/http/thttpevent.inl",
+        "include/native/http/thttpfilterhandle.h",
+        "include/native/http/thttpfilteriterator.h",
+        "include/native/http/thttpfilterregistration.h",
+        "include/native/http/thttphdrfielditer.h",
+        "include/native/http/thttphdrval.h",
+        "include/native/httperr.h",
+        "include/native/httpheaderiter.h",
+        "include/native/httpservice.h",
+        "include/native/httpstringconstants.h",
+        "include/native/in_sock.h",
+        "include/native/in_sock_internal.h",
+        "include/native/mhttpcontentsink.h",
+        "include/native/mhttpcontentsource.h",
+        "include/native/mhttpserviceauthentication.h",
+        "include/native/nifvar.h",
+        "include/native/nifvar_internal.h",
+        "include/native/partitions.h",
+        "include/native/stringpool.h",
+        "include/native/stringpool.inl",
+        "include/native/stringpoolerr.h",
+        "include/native/thttpheadervaluevariant.h",
+        "include/native/uri8.h",
+        "include/native/uricommon.h"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "InetUriList",
+      "dll": "ineturilist.dll",
+      "headers": [
+        "ineturi.h",
+        "ineturilist.h",
+        "ineturilistdef.h",
+        "tldlistdef.h"
+      ],
+      "dependencies": [
+        "Uri",
+        "StreamsNative",
+        "Bafl"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "netprotocols/applayerpluginsandutils/uripermissionservices/eabi/ineturilistu.def",
+        "sha256": "a328cedb4a9e63d3cf6b9e6eab72bedf187a8d9f1dab33b95594fdae722f9563",
+        "destination": "share/symbian/native/defs/ineturilist.dll.def"
+      },
+      "mmp": "netprotocols/applayerpluginsandutils/uripermissionservices/group/InetUriList.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "estor",
+        "inetprotutil",
+        "bafl"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/babitflags.h",
+        "include/native/d32locd.h",
+        "include/native/d32locd.inl",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32btrace.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32debug.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32event.h",
+        "include/native/e32event_private.h",
+        "include/native/e32hal.h",
+        "include/native/e32keys.h",
+        "include/native/e32ktran.h",
+        "include/native/e32lang.h",
+        "include/native/e32ldr.h",
+        "include/native/e32ldr_private.h",
+        "include/native/e32lmsg.h",
+        "include/native/e32notif.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/e32svr.h",
+        "include/native/f32file.h",
+        "include/native/f32file.inl",
+        "include/native/f32file64.h",
+        "include/native/f32file64.inl",
+        "include/native/f32file_private.h",
+        "include/native/f32notification.h",
+        "include/native/ineturi.h",
+        "include/native/ineturilist.h",
+        "include/native/ineturilistdef.h",
+        "include/native/partitions.h",
+        "include/native/tldlistdef.h",
+        "include/native/uri8.h",
+        "include/native/uricommon.h"
       ],
       "ms_extensions": false
     },
@@ -26785,7 +27114,8 @@
       "destination": "include/native/cdbcols.h",
       "targets": [
         "CommsDat",
-        "CommsDatabase"
+        "CommsDatabase",
+        "HttpServiceNative"
       ]
     },
     {
@@ -26796,7 +27126,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "db022981ed421a3689eab191e36277b595694cb3e86cafe76da26bd699644888",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/commdbconnpref.h",
+      "targets": [
+        "HttpServiceNative"
+      ]
     },
     {
       "include": "commdb.h",
@@ -26850,6 +27183,8 @@
         "BluetoothManager",
         "CommsDat",
         "CommsDatabase",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -26879,6 +27214,8 @@
         "BluetoothManager",
         "CommsDat",
         "CommsDatabase",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -26908,6 +27245,8 @@
         "BluetoothManager",
         "CommsDat",
         "CommsDatabase",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -27043,6 +27382,7 @@
       "sha256": "d3e4bd0ab8eae13dbc5402c15f0e3c6fc9ba9b91aa88401a08bd9df1434162dd",
       "destination": "include/native/connpref.h",
       "targets": [
+        "HttpServiceNative",
         "Native_extendedconnpref",
         "Native_netmeta"
       ]
@@ -27081,6 +27421,8 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -27106,6 +27448,8 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -27181,6 +27525,8 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -29895,9 +30241,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -30048,9 +30396,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -30198,9 +30548,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -30366,9 +30718,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -30521,9 +30875,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -30676,9 +31032,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -30831,9 +31189,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -30990,9 +31350,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -31145,9 +31507,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -31300,9 +31664,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -31451,9 +31817,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -31553,9 +31921,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -31708,9 +32078,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -31928,9 +32300,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -32086,9 +32460,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -32227,9 +32603,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -32315,9 +32693,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -32403,9 +32783,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -32566,9 +32948,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -32651,9 +33035,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -32738,9 +33124,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -32825,9 +33213,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -32912,9 +33302,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -39976,6 +40368,8 @@
       "destination": "include/native/in_sock.h",
       "targets": [
         "BioTransport",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -40028,6 +40422,8 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -40233,7 +40629,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "9eb6670923d82d87cfc6b7b2c9f7145675277bb1830670acd40576ef7d15a3e9",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/ssl.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "ssl_compatibility.h",
@@ -40243,7 +40642,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f6548188ae7c9336789843806ead4e60e941bd23171521667b5d12f818fc7baf",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/ssl_compatibility.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "sslerr.h",
@@ -40253,7 +40655,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0ac3cf9961487d8bfabad7adbe1725b9b0696ce9b6ab6772acae586befce1dcb",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sslerr.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "securesocketinterface.h",
@@ -44397,6 +44802,8 @@
       "destination": "include/native/uri8.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
+        "InetUriList",
         "Native_downloadmgr",
         "Native_downloadmgruilib",
         "SipClient",
@@ -44428,6 +44835,8 @@
       "destination": "include/native/uricommon.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
+        "InetUriList",
         "Native_downloadmgr",
         "Native_downloadmgruilib",
         "SipClient",
@@ -45118,6 +45527,7 @@
       "targets": [
         "Bafl",
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib",
         "SdpCodec",
@@ -45141,6 +45551,7 @@
       "targets": [
         "Bafl",
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib",
         "SdpCodec",
@@ -45169,6 +45580,7 @@
         "Eikon",
         "EikonControls",
         "EikonDialogs",
+        "InetUriList",
         "Native_aknhlist",
         "Native_akninputlanguage",
         "Native_aknnotify",
@@ -45357,6 +45769,7 @@
         "EikonControls",
         "EikonDialogs",
         "FontStore",
+        "HttpNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
@@ -45413,6 +45826,7 @@
         "EikonControls",
         "EikonDialogs",
         "FontStore",
+        "HttpNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
@@ -45461,6 +45875,7 @@
         "EikonControls",
         "EikonDialogs",
         "FontStore",
+        "HttpNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
@@ -45509,6 +45924,7 @@
         "EikonControls",
         "EikonDialogs",
         "FontStore",
+        "HttpNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
@@ -45557,6 +45973,7 @@
         "EikonControls",
         "EikonDialogs",
         "FontStore",
+        "HttpNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
@@ -45606,6 +46023,7 @@
         "EikonControls",
         "EikonDialogs",
         "FontStore",
+        "HttpNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
@@ -51867,6 +52285,7 @@
       "targets": [
         "BioClient",
         "BioTransport",
+        "HttpNative",
         "Messaging",
         "MessagingUiBase",
         "SendAs"
@@ -51884,6 +52303,7 @@
       "targets": [
         "BioClient",
         "BioTransport",
+        "HttpNative",
         "Messaging",
         "MessagingUiBase",
         "SendAs"
@@ -52674,6 +53094,7 @@
         "EikonDialogs",
         "Field",
         "FontStore",
+        "HttpNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
@@ -52774,6 +53195,7 @@
         "EikonDialogs",
         "Field",
         "FontStore",
+        "HttpNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
@@ -53023,6 +53445,7 @@
         "Field",
         "FontStore",
         "Gsm",
+        "HttpNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
@@ -53132,6 +53555,7 @@
         "Field",
         "FontStore",
         "Gsm",
+        "HttpNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
@@ -61561,7 +61985,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a7f138ecdb939657d9bd19e55516654c0e4789bb4e12e97e0260859e0dc726b3",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/ineturilist.h",
+      "targets": [
+        "InetUriList"
+      ]
     },
     {
       "include": "ineturilistdef.h",
@@ -61571,7 +61998,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "556d853e1d519bf6a5c7e91f9ed0cf8528d55b403de59793e9217de9ee3176e8",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/ineturilistdef.h",
+      "targets": [
+        "InetUriList"
+      ]
     },
     {
       "include": "tldlistdef.h",
@@ -61581,7 +62011,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "28bd8383544ac2139b8eebe6dea1b9f65687ac13e1ed2d2faa7db5e122169476",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/tldlistdef.h",
+      "targets": [
+        "InetUriList"
+      ]
     },
     {
       "include": "ineturi.h",
@@ -61591,7 +62024,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c5ab00104c5ee9e62ded72c6cd0c6273d7ce37f4e1fbbe6018470de38da7cabf",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/ineturi.h",
+      "targets": [
+        "InetUriList"
+      ]
     },
     {
       "include": "mhttpcontentsource.h",
@@ -61601,7 +62037,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5106ae05b5252d82b9bcf2a9ebcb4c694a5b5390f03c6f0297527d181726a587",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mhttpcontentsource.h",
+      "targets": [
+        "HttpServiceNative"
+      ]
     },
     {
       "include": "mhttpserviceauthentication.h",
@@ -61611,7 +62050,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "10e90a11f7c00e0fd55094978b0532df4af344cbf978dee50b97a9fc2b33eac4",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mhttpserviceauthentication.h",
+      "targets": [
+        "HttpServiceNative"
+      ]
     },
     {
       "include": "chttpnetworkconnectioninfo.h",
@@ -61621,7 +62063,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "dd5d8a8119f09eee109ccb9cecad1c88a218ac37afb5a64b2ef175ef40c2f230",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/chttpnetworkconnectioninfo.h",
+      "targets": [
+        "HttpServiceNative"
+      ]
     },
     {
       "include": "mhttpcontentsink.h",
@@ -61631,7 +62076,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f509cd8adf1b06f7eb23dc206708080de9c9cb98306f16a46c94b3973621ae06",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/mhttpcontentsink.h",
+      "targets": [
+        "HttpServiceNative"
+      ]
     },
     {
       "include": "httpheaderiter.h",
@@ -61641,7 +62089,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "3010efdc2d9d99711707f5da5e0ba2576a78e40887ac3edb41d24e400410beff",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/httpheaderiter.h",
+      "targets": [
+        "HttpServiceNative"
+      ]
     },
     {
       "include": "chttpservice.h",
@@ -61651,7 +62102,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a389b7ede0a61727a93c1708a8d2bd061c73002ef8f16c78184cfa51c65d17e4",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/chttpservice.h",
+      "targets": [
+        "HttpServiceNative"
+      ]
     },
     {
       "include": "thttpheadervaluevariant.h",
@@ -61661,7 +62115,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f07b112bc59b2d86956ae466630bef96ba8905967805982a683b28d468da2345",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/thttpheadervaluevariant.h",
+      "targets": [
+        "HttpServiceNative"
+      ]
     },
     {
       "include": "chttpclienttransaction.h",
@@ -61671,7 +62128,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5d78540752f66bcb742f8d2e59827574a7ee55061eb9f2bc0d639f3a3db96839",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/chttpclienttransaction.h",
+      "targets": [
+        "HttpServiceNative"
+      ]
     },
     {
       "include": "httpservice.h",
@@ -61681,7 +62141,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "639610b6abe65ece3498b6aec5bc59c36a40a2642cc4b0c69a993cf8a340be0e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/httpservice.h",
+      "targets": [
+        "HttpServiceNative"
+      ]
     },
     {
       "include": "http.h",
@@ -61694,6 +62157,7 @@
       "destination": "include/native/http.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -61709,6 +62173,7 @@
       "destination": "include/native/httperr.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -61721,7 +62186,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "03f60ab09286962916fbdbf514d1cc3080b8bc2cc3021166674d4d351250d322",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/chttpformencoder.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/framework/csecuritypolicy.h",
@@ -61731,7 +62199,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "946002bb16282ad581e0b9c6aa3be923f223e7db683ce591d2c658b7a3b788a8",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/http/framework/csecuritypolicy.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/framework/csecuritypolicy.inl",
@@ -61741,7 +62212,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "421e2e4c532d3bdd355329dd3d28f9b3081f3acbebdbba2afa64af455bc3b7a9",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/http/framework/csecuritypolicy.inl",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/framework/cprotocolhandler.h",
@@ -61751,7 +62225,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "dad2abc75304c57c7569c30869196ef56fe9c3a29b4181d0563ab233feaae277",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/http/framework/cprotocolhandler.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/framework/ctxdata.h",
@@ -61761,7 +62238,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "4efd9818f3349162a0d9d98124317e4418a2398efbce8c9db739ef9ab3d7f92e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/http/framework/ctxdata.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/framework/crxdata.h",
@@ -61771,7 +62251,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0c2a3beb462f2a6b4da33fb559453515e9a905a902cf624ac477e0305414d73c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/http/framework/crxdata.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/framework/cheadercodec.h",
@@ -61781,7 +62264,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "84e164a534a7c5668b6a632259ba93c7888f42da79e15a1695c8a93cc82523b8",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/http/framework/cheadercodec.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/framework/cprottransaction.h",
@@ -61791,7 +62277,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d9b3a7a2e9200204c2e08b0f318fa04c544b73f6e92fc844246b84007779bd03",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/http/framework/cprottransaction.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/framework/httplogger.h",
@@ -61801,7 +62290,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "dbed71c067863fcdefeb82de864f68e342cd29c5ac0b9f11dcbd759183bd9083",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/http/framework/httplogger.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/framework/mrxdataobserver.h",
@@ -61811,7 +62303,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c0fdbd8ebb9963831a2e48b7d85a356e77f7e9a807024f4b82c0cd21b2030dd2",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/http/framework/mrxdataobserver.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/framework/rheaderfield.h",
@@ -61821,7 +62316,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "106ac1d8582bac76a2f5cbd021e38aa4a025e6f3decd0ad6b4e222450e8dc33f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/http/framework/rheaderfield.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/cauthenticationfilterinterface.h",
@@ -61831,7 +62329,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a3cd0f3052531119f41112374bb0da913ce8b4b9d11017be6379616767a673ab",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/http/cauthenticationfilterinterface.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/mhttpauthenticationcallback.h",
@@ -61841,7 +62342,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "42e54d1faf0f954635335b876a3d6cc0a02953f7c5f43170dfbbd5fd28c0b6e8",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/http/mhttpauthenticationcallback.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/tfilterinformation.h",
@@ -61850,8 +62354,19 @@
       "declaration": "../inc/http/TFilterInformation.h\t\tSYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(http/tfilterinformation.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "13aa81fcfa9f31e44ef429926be9c5a4d5cfd49080a9e7403096c4ee175a1e36",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "229487f8dce8e6d0ede719058e9e3b28a708ec96d388d743ebee15cb0fda9c81",
+      "source_sha256": "13aa81fcfa9f31e44ef429926be9c5a4d5cfd49080a9e7403096c4ee175a1e36",
+      "compatibility_edits": [
+        {
+          "before": "#define __TFILTERINFORMATION_H__",
+          "after": "#define __TFILTERINFORMATION_H__\n#include <e32base.h>",
+          "reason": "The original public HTTP filter information header uses Symbian descriptors, basic types and UIDs without including the original E32 declaration prerequisite."
+        }
+      ],
+      "destination": "include/native/http/tfilterinformation.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/tfilterconfigurationiter.h",
@@ -61861,7 +62376,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "295718af8201d051c675f3a4b863818863aba5470e0cdcc56422c6def31a4ea8",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/http/tfilterconfigurationiter.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/cecomfilter.h",
@@ -61871,7 +62389,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "209decfecb93468fff3cae39d5ec3d0a294ecb9803e9587a653717f4603a2b4d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/http/cecomfilter.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/mhttpfiltercreationcallback.h",
@@ -61881,7 +62402,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a7fc30c5d439e16f48a3b433e6dd8ed7e6b648d9c705367616afe06aaff164dc",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/http/mhttpfiltercreationcallback.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/mhttpdatasupplier.h",
@@ -61894,6 +62418,7 @@
       "destination": "include/native/http/mhttpdatasupplier.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -61909,6 +62434,7 @@
       "destination": "include/native/http/mhttpfilter.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -61924,6 +62450,7 @@
       "destination": "include/native/http/mhttpfilterbase.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -61939,6 +62466,7 @@
       "destination": "include/native/http/mhttptransactioncallback.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -61951,7 +62479,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "99f0f9e4479a383f2b36fe1544c344703923ff52b4d9b8fede8bf9ed8a2a196f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/http/mhttpsessioneventcallback.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "http/rhttpconnectioninfo.h",
@@ -61964,6 +62495,7 @@
       "destination": "include/native/http/rhttpconnectioninfo.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -61979,6 +62511,7 @@
       "destination": "include/native/http/rhttpfiltercollection.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -61994,6 +62527,7 @@
       "destination": "include/native/http/rhttpheaders.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -62005,10 +62539,19 @@
       "declaration": "../inc/http/rhttpmessage.h\t\t\t\t\tSYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(http/rhttpmessage.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "8ae2d0b89fe2f2e87008611193e514d130f8f1e7adf74dac4cc97c7fde33cb8b",
+      "sha256": "453d02dcf470d2542270f7e5a00ad209e0024945f63b2817e8e3c485d3917b61",
+      "source_sha256": "8ae2d0b89fe2f2e87008611193e514d130f8f1e7adf74dac4cc97c7fde33cb8b",
+      "compatibility_edits": [
+        {
+          "before": "#define __RHTTPMESSAGE_H__",
+          "after": "#define __RHTTPMESSAGE_H__\n#include <e32base.h>",
+          "reason": "The original public HTTP message header uses IMPORT_C and NULL but omits its E32 declaration prerequisite; include the original platform header for standalone consumers."
+        }
+      ],
       "destination": "include/native/http/rhttpmessage.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -62024,6 +62567,7 @@
       "destination": "include/native/http/rhttppropertyset.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -62039,6 +62583,7 @@
       "destination": "include/native/http/rhttprequest.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -62054,6 +62599,7 @@
       "destination": "include/native/http/rhttpresponse.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -62069,6 +62615,7 @@
       "destination": "include/native/http/rhttpsession.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -62084,6 +62631,7 @@
       "destination": "include/native/http/rhttptransaction.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -62099,6 +62647,7 @@
       "destination": "include/native/http/rhttptransactionpropertyset.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -62114,6 +62663,7 @@
       "destination": "include/native/http/thttpevent.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -62129,6 +62679,7 @@
       "destination": "include/native/http/thttpevent.inl",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -62144,6 +62695,7 @@
       "destination": "include/native/http/thttpfilteriterator.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -62159,6 +62711,7 @@
       "destination": "include/native/http/thttpfilterregistration.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -62174,6 +62727,7 @@
       "destination": "include/native/http/thttphdrfielditer.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -62189,6 +62743,7 @@
       "destination": "include/native/http/thttpfilterhandle.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -62204,6 +62759,7 @@
       "destination": "include/native/http/thttphdrval.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -62215,10 +62771,19 @@
       "declaration": "../inc/http/mhttpdataoptimiser.h\t\t\t\tSYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(http/mhttpdataoptimiser.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "585f1a4e9bae921376d5c94e88e66dc23732d03cfbfd076f4faf0987e51d504e",
+      "sha256": "5e4d0e92dbee2b8d2f6d70b045b97578404c25890efd44fbe5bf0179f9f9c9d3",
+      "source_sha256": "585f1a4e9bae921376d5c94e88e66dc23732d03cfbfd076f4faf0987e51d504e",
+      "compatibility_edits": [
+        {
+          "before": "#define\t__MHTTPDATAOPTIMISER_H__",
+          "after": "#define\t__MHTTPDATAOPTIMISER_H__\n#include <e32base.h>",
+          "reason": "The original public HTTP optimiser interface uses descriptors, HBufC8 and TBool without including their defining E32 header; include the original prerequisite for independent consumer compilation."
+        }
+      ],
       "destination": "include/native/http/mhttpdataoptimiser.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -62231,7 +62796,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e5d2883d99836f97b03c50df036b5d8b30915741c36a7a9dc277cbd19cd55de3",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/wsp/wsptypes.h",
+      "targets": [
+        "HttpNative"
+      ]
     },
     {
       "include": "telsess.h",
@@ -62889,6 +63457,7 @@
       "destination": "include/native/httpstringconstants.h",
       "targets": [
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib"
       ]
@@ -63666,6 +64235,7 @@
       "targets": [
         "Bafl",
         "HttpNative",
+        "HttpServiceNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib",
         "SdpCodec",
@@ -63906,6 +64476,7 @@
         "EikonControls",
         "EikonDialogs",
         "FontStore",
+        "HttpNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
@@ -64753,9 +65324,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -64850,6 +65423,8 @@
         "BluetoothManager",
         "CommsDat",
         "CommsDatabase",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -64945,9 +65520,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -65088,9 +65665,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -65344,9 +65923,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -65834,9 +66415,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -66173,9 +66756,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -66366,6 +66951,8 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -66395,6 +66982,8 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -66422,6 +67011,8 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -66449,6 +67040,8 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -66476,6 +67069,8 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -66722,6 +67317,21 @@
         "Messaging",
         "MessagingUiBase",
         "SendAs"
+      ]
+    },
+    {
+      "include": "ssl_internal.h",
+      "source": "networkingsrv/networksecurity/tls/inc/ssl_internal.h",
+      "manifest": "networkingsrv/networksecurity/tls/group/bld.inf",
+      "declaration": "../inc/ssl_internal.h SYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(ssl_internal.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "426f29c8c95c813420f973feca25c88f6e38342ccdf9deb16216937ccc7238a2",
+      "exposure": "required_textual_support",
+      "included_by": "networkingsrv/networksecurity/tls/inc/SSL.H",
+      "destination": "include/native/ssl_internal.h",
+      "targets": [
+        "HttpNative"
       ]
     },
     {
@@ -67006,6 +67616,8 @@
       "destination": "include/native/in_sock_internal.h",
       "targets": [
         "BioTransport",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -67068,6 +67680,21 @@
       "targets": [
         "BioClient",
         "BioTransport"
+      ]
+    },
+    {
+      "include": "commdbconnpref.inl",
+      "source": "commsfw/commsconfig/commsdatabaseshim/commdbshim/INC/CommDbConnPref.inl",
+      "manifest": "commsfw/commsconfig/commsdatabaseshim/commdbshim/group/BLD.INF",
+      "declaration": "../INC/CommDbConnPref.inl SYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(commdbconnpref.inl)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "be8843d0be565bc330681a069468d8c4cac9476e2932f3f8b8d7f12c595fa790",
+      "exposure": "required_textual_support",
+      "included_by": "commsfw/commsconfig/commsdatabaseshim/commdbshim/INC/CommDbConnPref.h",
+      "destination": "include/native/commdbconnpref.inl",
+      "targets": [
+        "HttpServiceNative"
       ]
     },
     {
@@ -67161,9 +67788,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -67251,9 +67880,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -67341,9 +67972,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -67431,9 +68064,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -67521,9 +68156,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -67611,9 +68248,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -67701,9 +68340,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -67898,9 +68539,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -68019,9 +68662,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -68176,9 +68821,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -68333,9 +68980,11 @@
         "Gsm",
         "HashNative",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "LandmarkSearch",
         "Landmarks",
         "Light",
@@ -68469,6 +69118,8 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -68496,6 +69147,8 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -68525,6 +69178,8 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -68650,9 +69305,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -68740,9 +69397,11 @@
         "FontStore",
         "Gsm",
         "HttpNative",
+        "HttpServiceNative",
         "ImageConversion",
         "ImageDisplay",
         "ImageTransform",
+        "InetUriList",
         "Messaging",
         "MessagingUiBase",
         "Midi",
@@ -68822,6 +69481,8 @@
         "BluetoothManager",
         "CommsDat",
         "CommsDatabase",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
@@ -68887,6 +69548,8 @@
         "Bluetooth",
         "BluetoothDevice",
         "BluetoothManager",
+        "HttpNative",
+        "HttpServiceNative",
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",

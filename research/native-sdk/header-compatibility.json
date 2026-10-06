@@ -194,5 +194,26 @@
       "after": "#define __THTTPFIELDS_H__\n#include <e32std.h>",
       "reason": "The original public WAP HTTP-field constants use TInt, TText8 and descriptor literal macros without including e32std.h."
     }
+  ],
+  "http/mhttpdataoptimiser.h": [
+    {
+      "before": "#define\t__MHTTPDATAOPTIMISER_H__",
+      "after": "#define\t__MHTTPDATAOPTIMISER_H__\n#include <e32base.h>",
+      "reason": "The original public HTTP optimiser interface uses descriptors, HBufC8 and TBool without including their defining E32 header; include the original prerequisite for independent consumer compilation."
+    }
+  ],
+  "http/rhttpmessage.h": [
+    {
+      "before": "#define __RHTTPMESSAGE_H__",
+      "after": "#define __RHTTPMESSAGE_H__\n#include <e32base.h>",
+      "reason": "The original public HTTP message header uses IMPORT_C and NULL but omits its E32 declaration prerequisite; include the original platform header for standalone consumers."
+    }
+  ],
+  "http/tfilterinformation.h": [
+    {
+      "before": "#define __TFILTERINFORMATION_H__",
+      "after": "#define __TFILTERINFORMATION_H__\n#include <e32base.h>",
+      "reason": "The original public HTTP filter information header uses Symbian descriptors, basic types and UIDs without including the original E32 declaration prerequisite."
+    }
   ]
 }

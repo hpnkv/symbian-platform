@@ -1610,8 +1610,49 @@
       "target": "HttpNative",
       "dll": "http.dll",
       "headers": [
+        "chttpformencoder.h",
         "http.h",
-        "http/rhttpsession.h"
+        "http/cauthenticationfilterinterface.h",
+        "http/cecomfilter.h",
+        "http/framework/cheadercodec.h",
+        "http/framework/cprotocolhandler.h",
+        "http/framework/cprottransaction.h",
+        "http/framework/crxdata.h",
+        "http/framework/csecuritypolicy.h",
+        "http/framework/csecuritypolicy.inl",
+        "http/framework/ctxdata.h",
+        "http/framework/httplogger.h",
+        "http/framework/mrxdataobserver.h",
+        "http/framework/rheaderfield.h",
+        "http/mhttpauthenticationcallback.h",
+        "http/mhttpdataoptimiser.h",
+        "http/mhttpdatasupplier.h",
+        "http/mhttpfilter.h",
+        "http/mhttpfilterbase.h",
+        "http/mhttpfiltercreationcallback.h",
+        "http/mhttpsessioneventcallback.h",
+        "http/mhttptransactioncallback.h",
+        "http/rhttpconnectioninfo.h",
+        "http/rhttpfiltercollection.h",
+        "http/rhttpheaders.h",
+        "http/rhttpmessage.h",
+        "http/rhttppropertyset.h",
+        "http/rhttprequest.h",
+        "http/rhttpresponse.h",
+        "http/rhttpsession.h",
+        "http/rhttptransaction.h",
+        "http/rhttptransactionpropertyset.h",
+        "http/tfilterconfigurationiter.h",
+        "http/tfilterinformation.h",
+        "http/thttpevent.h",
+        "http/thttpevent.inl",
+        "http/thttpfilterhandle.h",
+        "http/thttpfilteriterator.h",
+        "http/thttpfilterregistration.h",
+        "http/thttphdrfielditer.h",
+        "http/thttphdrval.h",
+        "httperr.h",
+        "wsp/wsptypes.h"
       ],
       "dependencies": [
         "Uri",
@@ -1619,7 +1660,16 @@
       ],
       "classification": "public_base_platform",
       "availability": "unknown_firmware",
-      "blocked": "No reviewed MMP and frozen EABI DEF found in pinned source manifests"
+      "definition": "netprotocols/applayerprotocols/httptransportfw/EABI/httphsu.def",
+      "mmp": "netprotocols/applayerprotocols/httptransportfw/group/http.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "inetprotutil",
+        "bafl",
+        "ecom",
+        "commsdat",
+        "efsrv"
+      ]
     },
     {
       "target": "Uri",
@@ -2916,6 +2966,66 @@
         "euser",
         "ecom",
         "inetprotutil"
+      ]
+    },
+    {
+      "target": "HttpServiceNative",
+      "dll": "httpservice.dll",
+      "headers": [
+        "chttpclienttransaction.h",
+        "chttpnetworkconnectioninfo.h",
+        "chttpservice.h",
+        "httpheaderiter.h",
+        "httpservice.h",
+        "mhttpcontentsink.h",
+        "mhttpcontentsource.h",
+        "mhttpserviceauthentication.h",
+        "thttpheadervaluevariant.h"
+      ],
+      "dependencies": [
+        "HttpNative",
+        "Uri",
+        "Bafl",
+        "ECom"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "netprotocols/applayerprotocols/httpservice/EABI/httpserviceu.def",
+      "mmp": "netprotocols/applayerprotocols/httpservice/group/httpservice.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "http",
+        "esock",
+        "commdb",
+        "inetprotutil",
+        "bafl",
+        "efsrv",
+        "ecom"
+      ]
+    },
+    {
+      "target": "InetUriList",
+      "dll": "ineturilist.dll",
+      "headers": [
+        "ineturi.h",
+        "ineturilist.h",
+        "ineturilistdef.h",
+        "tldlistdef.h"
+      ],
+      "dependencies": [
+        "Uri",
+        "StreamsNative",
+        "Bafl"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "netprotocols/applayerpluginsandutils/uripermissionservices/eabi/ineturilistu.def",
+      "mmp": "netprotocols/applayerpluginsandutils/uripermissionservices/group/InetUriList.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "estor",
+        "inetprotutil",
+        "bafl"
       ]
     }
   ]

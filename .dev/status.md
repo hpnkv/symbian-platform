@@ -3758,3 +3758,16 @@ source export started at `31af53d` finished, but its embedded inventory
 predates these ongoing messaging edits, so a final export remains required.
 The inventory has 1,218 public export records without reviewed ownership.
 Linux bundle acceptance, SDL and release 0.2.0 remain open.
+
+2026-10-06 HTTP/URI-list slice: The original HTTP transport manifest is now
+owned by `Symbian::HttpNative`, with its pinned `http.mmp` and frozen
+`httphsu.def`. New `HttpServiceNative` and `InetUriList` targets ship their
+complete frozen import interfaces and 13 public headers. The relocated SDK
+passed payload validation and 1,624 independent public-header canary object
+builds on both ARMv5T and ARMv6. A disposable installed-SDK HTTP/service/URI
+consumer linked and converted to E32 on ARMv6; it was not executed. The
+preserved RM-807 Belle Z-drive copies contain the three named DLL files, but
+ordinal equivalence and API behavior are unverified. Fifty-four focused tests
+and strict docs passed. Public export records without reviewed ownership:
+1,182. Broad remaining families, SDL, fresh automatic source export,
+macOS/Linux bundle acceptance and 0.2.0 publication remain open.

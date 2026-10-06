@@ -256,9 +256,14 @@ fixture. SMS, MMS, email protocols, message contents and other firmware
 remain separate unverified scope.
 
 `Symbian::Uri` supplies original URI/escape utilities and frozen
-`inetprotutil.dll` imports. `Symbian::HttpNative` and `Symbian::Mime` remain
-separate original targets; their representative public headers also compile
-independently. `examples/uri_app_classic` parses a fixed HTTPS URI and checks
-its host using `TUriParser8`. It exited normally on the named RM-807/Dynarmic
-fixture without making a network request. HTTP transport, browser integration
-and other firmware require separate validation.
+`inetprotutil.dll` imports. `Symbian::HttpNative` supplies the original
+`<http/rhttpsession.h>` transport API and frozen `http.dll` imports;
+`Symbian::HttpServiceNative` supplies `<httpservice.h>` and frozen
+`httpservice.dll` imports, with transport, URI, BAFL and ECom dependencies.
+`Symbian::InetUriList` supplies `<ineturilist.h>` and frozen
+`ineturilist.dll` imports. `Symbian::Mime` remains a separate original target.
+`examples/uri_app_classic` parses a fixed HTTPS URI and checks its host using
+`TUriParser8`. It exited normally on the named RM-807/Dynarmic fixture
+without making a network request. The new HTTP and URI-list imports have
+compiler/linker evidence only; HTTP transport, browser integration and other
+firmware require separate runtime validation.

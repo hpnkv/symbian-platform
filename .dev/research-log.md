@@ -7974,3 +7974,34 @@ firmware ordinal match has been demonstrated. The automatically generated
 source SDK export completed during this slice but contains an earlier
 inventory snapshot; a final fresh export is still required. Remaining
 unowned public export records: 1,218.
+
+### 2026-10-06: original HTTP transport, service and URI-list imports
+
+The pinned `netprotocols/applayerprotocols/httptransportfw/group/bld.inf`
+manifest exports the original HTTP transport header layout, including
+`http/rhttpsession.h` and framework/filter interfaces. Its `http.mmp` and
+`EABI/httphsu.def` select the frozen `http.dll` interface. The separate
+`httpservice` MMP/DEF pair selects `httpservice.dll` and nine public service
+headers, while the URI-permission-service MMP/DEF pair selects
+`ineturilist.dll` and four public URI-list headers. These definitions are
+preserved with original ordinal gaps; no firmware DLL implementation is
+bundled. `HttpServiceNative` carries HTTP, URI, BAFL and ECom target
+requirements, and `InetUriList` carries URI, stream and BAFL requirements.
+
+Three original public HTTP headers omit their E32 type prerequisites:
+`http/mhttpdataoptimiser.h`, `http/rhttpmessage.h` and
+`http/tfilterinformation.h`. Narrow compatibility edits include the original
+`e32base.h` without changing declarations. The relocated installed SDK then
+compiled 1,624 independent selected-header canary objects on each of ARMv5T
+and ARMv6. A disposable installed-SDK consumer included the transport,
+service and URI-list headers, linked actual `RHTTPSession`, `CHttpService`
+and `RInetUriList` imports through only `Symbian::HttpServiceNative` and
+`Symbian::InetUriList`, and converted to E32 on ARMv6. Its API calls were not
+executed. The named RM-807 Belle Z-drive copies contain `http.dll`,
+`httpservice.dll` and `ineturilist.dll`; filename presence does not verify
+frozen ordinal equivalence or behavior. Focused inventory/surface tests and
+strict documentation build passed. The public manifest inventory still has
+1,182 records without reviewed delivery and target ownership. Open C/Open C++,
+classic UI, graphics, imaging, security, device services and other public
+families remain; SDL and cross-host bundle acceptance are also open. Do not
+publish 0.2.0 as complete native coverage yet.
