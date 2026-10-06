@@ -1,5 +1,18 @@
 # Research log
 
+2026-10-06: The existing manifest-derived `Messaging` facility has original
+`msgs.dll` frozen exports and three public headers. All three compiled as
+independent ARMv6 consumers with only `Symbian::Messaging` and runtime. The
+new `messaging_app_classic` installed an active scheduler, opened
+`CMsvSession::OpenSyncL` with a no-op observer, then closed it without reading
+or changing messages. Relocated ARMv5T/ARMv6 E32 builds imported `msgs.dll`
+and packaged the ARMv6 executable. A disposable named RM-807/Dynarmic run
+exited with guest type/reason `0/0`. This demonstrates a message-server
+connection only; it does not establish SMS/MMS/email service behavior or
+Belle FP2 equivalence for the entire original interface. The root Debug graph
+exposed and built `messaging_app_classic_e32`; the four-case opt-in native
+utility guest regression passed in 60.97 seconds.
+
 2026-10-06: The organizer calendar `group/bld.inf` exports 23 public Interim
 API headers. Its `calinterimapi.mmp` selects
 `calinterimapiv3u.def` by default and `calinterimapiu.def` under

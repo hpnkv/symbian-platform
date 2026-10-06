@@ -122,3 +122,10 @@ exited normally in the preserved RM-807/Dynarmic emulator. The original MMP
 selects a different DEF under `SYMBIAN_CALENDAR_ENHANCEDSEARCHANDSORT`;
 complete Belle FP2 ABI equivalence and other firmware availability remain
 unknown.
+
+`Symbian::Messaging` supplies the original `<msvapi.h>`, `<msvstd.h>` and
+`<mtclbase.h>` headers with frozen `msgs.dll` imports. The direct
+`examples/messaging_app_classic` consumer opens and closes a `CMsvSession`
+under an active scheduler. It exited normally on the named RM-807/Dynarmic
+fixture. SMS, MMS, email protocols, message contents and other firmware
+remain separate unverified scope.

@@ -1,5 +1,14 @@
 # Status
 
+2026-10-06 original messaging session slice: three independent public-header
+canaries passed. `messaging_app_classic` linked only `Symbian::Messaging`,
+built from the relocated SDK for ARMv5T/ARMv6, converted to E32 and packaged
+as an ARMv6 SIS. The named RM-807/Dynarmic emulator opened and closed the
+message-server session with a clean guest exit. The four-case opt-in native
+utility guest regression passed, and the root Debug project built
+`messaging_app_classic_e32`. Message contents, SMS/MMS,
+email and other firmware remain untested.
+
 2026-10-06 Calendar Interim API slice: 23 original public headers compile
 independently after two pinned header compatibility edits. `Symbian::Calendar`
 ships the complete original default-branch frozen `calinterimapi.dll` import

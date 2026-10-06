@@ -293,3 +293,31 @@ def test_calendar_example_links_original_interim_api(tmp_path, architecture):
         assert [item["target"] for item in files] == [
             "!:\\sys\\bin\\calendar_app_classic.exe"
         ]
+
+
+@pytest.mark.parametrize("architecture", ["armv5t", "armv6"])
+def test_messaging_example_links_original_session_api(tmp_path, architecture):
+    """Checks a message-server session consumer and frozen msgs imports."""
+    sdk = AppSdk.load(Path(SDK))
+    source = tmp_path / "messaging classic"
+    shutil.copytree(ROOT / "examples/messaging_app_classic", source)
+    (source / "sdk-location.json").write_text(
+        json.dumps({"sdk": str(sdk.prefix)})
+    )
+    report = build(
+        source,
+        tmp_path / "output",
+        str(sdk.compiler),
+        str(sdk.linker),
+        architecture=architecture,
+    )
+    imports = {item["dll"] for item in report["e32"]["imports"]}
+    assert {"msgs.dll", "euser.dll"} <= imports
+    assert report["e32"]["architecture"] == architecture
+    assert not report["runtime_verified"]
+    if architecture == "armv6":
+        built = package(source, Path(report["artifact"]), tmp_path / "package")
+        files = inspect_package(Path(built["artifact"]))["files"]
+        assert [item["target"] for item in files] == [
+            "!:\\sys\\bin\\messaging_app_classic.exe"
+        ]
