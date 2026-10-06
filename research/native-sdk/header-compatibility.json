@@ -96,5 +96,40 @@
       "after": "#define __ECOMERRORCODES_H__\n#include <e32std.h>",
       "reason": "The original public ECom error constants use TInt without including its defining e32std.h; supply that prerequisite for independent consumers."
     }
+  ],
+  "sdpcodecconstants.h": [
+    {
+      "before": "#define __SDPCODECCONSTANTS_H__",
+      "after": "#define __SDPCODECCONSTANTS_H__\n#include <e32std.h>",
+      "reason": "The original public SDP constants use Symbian types without including e32std.h; supply that prerequisite for independent consumers."
+    }
+  ],
+  "sdpcodecerr.h": [
+    {
+      "before": "#define SDPCODECERR_H",
+      "after": "#define SDPCODECERR_H\n#include <e32std.h>",
+      "reason": "The original public SDP constants use Symbian types without including e32std.h; supply that prerequisite for independent consumers."
+    }
+  ],
+  "sipcodecerr.h": [
+    {
+      "before": "#define SIPCODECERR_H",
+      "after": "#define SIPCODECERR_H\n#include <e32std.h>",
+      "reason": "The original public SIP error constants use TInt without including e32std.h; supply that prerequisite for independent consumers."
+    }
+  ],
+  "siphttpdigestchallengeobserver.h": [
+    {
+      "before": "#define MSIPHTTPDIGESTCHALLENGEOBSERVER_H",
+      "after": "#define MSIPHTTPDIGESTCHALLENGEOBSERVER_H\n#include <e32std.h>",
+      "reason": "The original public SIP observer uses TDesC8 without its e32std.h declaration prerequisite."
+    }
+  ],
+  "sipprofileservercrkeys.h": [
+    {
+      "before": "#define PROFILESERVERCRKEYS_H_",
+      "after": "#define PROFILESERVERCRKEYS_H_\n#include <e32std.h>",
+      "reason": "The original public SIP Profile Central Repository key header declares TUid but includes only e32def.h."
+    }
   ]
 }

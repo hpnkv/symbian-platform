@@ -58,6 +58,10 @@ check and Close action.
 | `authority8.h`, `delimitedquery16.h`, `uriutils.h`, `wspdecoder.h` | `Symbian::Uri` | Original InetProtUtil public URI, parser, WSP and date headers. |
 | `babackup.h`, `baclipb.h`, `basched.h`, `barsread2.h` | `Symbian::Bafl` | Original BAFL backup, clipboard, scheduler and resource utilities. |
 | `ecom/implementationproxy.h`, `ecom/publicregistry.h`, `ecom/resolver.h` | `Symbian::ECom` | Original public plug-in registration and resolver headers. |
+| `sdpdocument.h`, `sdpcodecstringconstants.h` | `Symbian::SdpCodec` | Original SDP codec and generated string table. |
+| `sipaddress.h`, `sipstrconsts.h` | `Symbian::SipCodec` | Original SIP message codec and generated string table. |
+| `sip.h`, `sipconnection.h` | `Symbian::SipClient` | Original SIP session and transaction client; pulls in the codec. |
+| `sipprofile.h`, `sipprofileregistry.h` | `Symbian::SipProfiles` | Public profile client; links `Symbian::SipProfileCore` and SIP client imports. |
 | `QtNetwork/QHostAddress` | `Symbian::QtNetwork` | Original Qt 4.8.1 guest module. |
 | `QtSql/QSqlDatabase` | `Symbian::QtSql` | Original Qt SQL; drivers are separate runtime plugins. |
 | `QtXml/QDomDocument` | `Symbian::QtXml` | Original Qt XML. |
@@ -75,6 +79,16 @@ check and Close action.
 | `png.h`, `pngconf.h`, `pnglibconf.h` | `Symbian::PortablePng` | libpng 1.6.53 static archive and matching headers under `include/portable/png`; depends on portable zlib. |
 | `jpeglib.h`, `jconfig.h`, `jmorecfg.h`, `jerror.h` | `Symbian::PortableJpeg` | IJG libjpeg 8c static archive and matching headers under `include/portable/jpeg`. |
 | `ft2build.h`, `freetype/freetype.h` and applicable `freetype/*.h` | `Symbian::PortableFreeType` | FreeType 2.13.2 static archive and 54 public/configuration headers under `include/portable/freetype`; Mac-only `ftmac.h` is unavailable to Symbian guests. |
+
+The SIP/SDP targets use the pinned public Symbian^3 headers and complete
+frozen EABI definitions for `sdpcodec.dll`, `sipcodec.dll`, `sipclient.dll`,
+`sipprofile.dll` and `sipprofilecli.dll`. A relocated installed SDK compiled
+their public headers on ARMv5T and ARMv6 and linked an E32 consumer through
+the profile and SDP targets. The named RM-807 Belle Z-drive contains those
+DLL filenames, so selecting that complete drive passes configuration. The
+current E32 inspector cannot parse those firmware DLL image profiles; ordinal
+identity and execution of SIP/SDP operations remain unverified. Other
+firmware and physical-device compatibility remain unknown.
 
 Qt targets also include `Symbian::QtCore`, `QtGui`, `QtSvg`, `QtScript`,
 `QtXmlPatterns`, `QtDeclarative`, `QtMultimedia`, `QtOpenVG` and `QtTest`.

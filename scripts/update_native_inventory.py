@@ -275,12 +275,29 @@ def generate(workspace: Path) -> dict:
                 ).hexdigest()
     # MMP STRINGTABLE blocks export generated public headers. Reuse the
     # original SDK generator rather than inventing a parallel implementation.
-    http = "netprotocols/applayerprotocols/httptransportfw"
-    table = f"{http}/strings/HttpStringConstants.st"
+    stringtables = (
+        (
+            "netprotocols/applayerprotocols/httptransportfw/strings/HttpStringConstants.st",
+            "netprotocols/applayerprotocols/httptransportfw/group/http.mmp",
+            "httpstringconstants.h",
+        ),
+        (
+            "ipappprotocols/realtimenetprots/sipfw/SDP/strings/SdpCodecStringConstants.st",
+            "ipappprotocols/realtimenetprots/sipfw/SDP/Group/sdpcodec.mmp",
+            "sdpcodecstringconstants.h",
+        ),
+        (
+            "ipappprotocols/realtimenetprots/sipfw/SIP/Codec/strings/SipStrConsts.st",
+            "ipappprotocols/realtimenetprots/sipfw/SIP/Group/sipcodec.mmp",
+            "sipstrconsts.h",
+        ),
+    )
     generator = "ossrv/lowlevellibsandfws/apputils/stringtools/stringtable.pl"
-    if (root / table).is_file() and (root / generator).is_file():
+    for table, mmp, include in stringtables:
+        if not (root / table).is_file() or not (root / generator).is_file():
+            continue
         record = {
-            "include": "httpstringconstants.h",
+            "include": include,
             "source": table,
             "input_sha256": digest(root / table),
             "sha256": hashlib.sha256(
@@ -290,9 +307,9 @@ def generate(workspace: Path) -> dict:
                 "source": generator,
                 "sha256": digest(root / generator),
             },
-            "manifest": f"{http}/group/http.mmp",
+            "manifest": mmp,
             "declaration": (
-                "START STRINGTABLE HttpStringConstants.st; "
+                f"START STRINGTABLE {Path(table).name}; "
                 "EXPORTPATH /epoc32/include"
             ),
             "classification": "public_base_platform",
@@ -517,9 +534,23 @@ def generate(workspace: Path) -> dict:
             queue.append(({**choices[0], "include": include}, owner))
     headers = []
     for record in public:
-        item = delivered.pop(record["include"].casefold(), None)
-        if item:
-            headers.append(item)
+        item = delivered.get(record["include"].casefold())
+        if item and item["sha256"] == record.get("sha256"):
+            # Separate pinned SDK trees can export byte-identical public
+            # headers. Preserve each declaration's provenance while sharing
+            # the reviewed payload and its CMake ownership.
+            headers.append(
+                {
+                    **record,
+                    "destination": item["destination"],
+                    "targets": item["targets"],
+                    **(
+                        {"aliases": item["aliases"]}
+                        if item.get("aliases")
+                        else {}
+                    ),
+                }
+            )
         else:
             reason = (
                 "Alternative legacy cstdlib/libc export tree conflicts with "
@@ -527,8 +558,13 @@ def generate(workspace: Path) -> dict:
                 "consumer include layout and ABI ownership require review"
                 if record["manifest"]
                 == "ossrv/genericopenlibs/cstdlib/group/bld.inf"
-                else "Public export inventoried; target ownership "
-                "has not been reviewed"
+                else (
+                    "Public export differs from the reviewed delivered "
+                    "header variant; source/version selection requires review"
+                    if item
+                    else "Public export inventoried; target ownership "
+                    "has not been reviewed"
+                )
             )
             headers.append(
                 {
@@ -536,7 +572,15 @@ def generate(workspace: Path) -> dict:
                     "blocked": record.get("blocked", reason),
                 }
             )
-    headers += list(delivered.values())
+    covered_public = {
+        (record["include"].casefold(), record.get("sha256"))
+        for record in public
+    }
+    headers += [
+        item
+        for key, item in delivered.items()
+        if (key, item["sha256"]) not in covered_public
+    ]
     for record in headers:
         if record.get("targets"):
             record["targets"] = sorted(set(record["targets"]))

@@ -61,14 +61,23 @@ def configure(tmp_path):
                 "destination": "share/symbian/native/defs/resourceblocked.def"
             },
         },
+        {
+            "target": "NoHeaders",
+            "dll": "noheaders.dll",
+            "headers": [],
+            "dependencies": ["Common"],
+            "definition": {
+                "destination": "share/symbian/native/defs/noheaders.def"
+            },
+        },
     ]
-    for entry in [entries[0], entries[1], entries[3]]:
+    for entry in [entries[0], entries[1], entries[3], entries[4]]:
         dll = entry["dll"].removesuffix(".dll")
-        for relative in [
+        relatives = [
             f"proxies/{dll}/{dll}.dso",
-            f"include/native/{dll}.h",
             entry["definition"]["destination"],
-        ]:
+        ] + [f"include/native/{header}" for header in entry["headers"]]
+        for relative in relatives:
             p = sdk / relative
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text("configuration fixture")
@@ -112,6 +121,16 @@ def test_native_dependencies_configure_after_relocation(configure):
     run, _ = configure
     result = run("target_link_libraries(app PRIVATE Symbian::Audio)")
     assert result.returncode == 0, result.stderr
+
+
+def test_headerless_public_import_retains_transitive_validation(configure):
+    run, sdk = configure
+    result = run("target_link_libraries(app PRIVATE Symbian::NoHeaders)")
+    assert result.returncode == 0, result.stderr
+    (sdk / "proxies/common/common.dso").unlink()
+    result = run("target_link_libraries(app PRIVATE Symbian::NoHeaders)")
+    assert result.returncode != 0
+    assert "Symbian::Common" in result.stderr
 
 
 @pytest.mark.parametrize(

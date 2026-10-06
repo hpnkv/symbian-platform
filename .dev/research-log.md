@@ -7840,3 +7840,42 @@ single working Open C layout. No firmware execution or device result follows
 from this header-only batch. The current remaining public export count is
 1,563; larger XML, SIP/RTP, classic UI and Open C++ groups need separate ABI
 and ownership review before any completeness claim or 0.2.0 release.
+
+### 2026-10-06: duplicate export provenance, AppArc and SIP/SDP imports
+
+The initial inventory generator consumed one delivered record per include
+spelling. Two pinned `appsupport` source trees export 37 byte-identical public
+headers, so the second declaration appeared spuriously blocked. The generator
+now preserves both source/manifest records with the same payload and CMake
+ownership when their digests agree; differing variants stay blocked for
+version selection review. AppArc's `APPARCU.DEF` owns the newly surfaced
+`apadbase.h` and `apamdr.h`, while `apgrfxu.def` owns `apgdoor.h`,
+`apgctl.h` and `apcaptionfile.rh`. Both pinned app-support trees publish
+identical bytes for those spellings.
+
+The pinned SIP/SDP MMP files identify five frozen libraries and their original
+dependencies: `sdpcodec`, `sipcodec`, `sipclient`, `sipprofile` and
+`sipprofilecli`. The public API/source paths supply 100 normal header
+declarations, and `START STRINGTABLE` with `EXPORTPATH /epoc32/include`
+adds generated `sdpcodecstringconstants.h` and `sipstrconsts.h`. The pinned
+`stringtable.pl` produces those payloads. Initial independent canaries found
+missing `e32std.h` prerequisites in `sdpcodecconstants.h`,
+`sdpcodecerr.h`, `sipcodecerr.h`, `siphttpdigestchallengeobserver.h` and
+`sipprofileservercrkeys.h`; exact compatibility edits retain their original
+declarations and ABI. A headerless `sipprofile.dll` dependency exposed a
+CMake zero-length header-loop bug, now covered by a negative/positive
+configuration test.
+
+The relocated SDK regenerated five import proxies and passed payload
+validation, then compiled 1,377 selected public-header canaries on ARMv5T
+and ARMv6. A disposable installed-SDK project linked `CSdpDocument::DecodeL`
+and `CSIPAddress::DecodeL` symbols through `Symbian::SdpCodec` and transitive
+`Symbian::SipProfiles`, then converted to E32. Its functions were not run.
+The preserved RM-807 Belle Z-drive contains the five DLL filenames; selected
+firmware configuration passed, while an empty Z-drive was rejected. The
+current E32 inspector returns `UNIMPLEMENTED: Unsupported E32 image profile`
+for those firmware DLLs, so their frozen ordinal compatibility remains
+unverified. Header compilation, E32 conversion and file presence do not
+establish SIP registration or other named-firmware execution. The remaining
+unowned public export-record count is 1,426; SDL, broad native groups, Linux
+bundle acceptance and 0.2.0 publication remain open.

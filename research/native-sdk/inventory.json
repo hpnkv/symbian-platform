@@ -3825,7 +3825,10 @@
       "target": "AppArc",
       "dll": "apgrfx.dll",
       "headers": [
+        "apcaptionfile.rh",
         "apgcli.h",
+        "apgctl.h",
+        "apgdoor.h",
         "apgtask.h",
         "apgwgnam.h"
       ],
@@ -3862,15 +3865,23 @@
         "include/native/E32BASE.H",
         "include/native/advancedpointerevent.h",
         "include/native/advancedpointerevent.inl",
+        "include/native/apaapp.h",
+        "include/native/apadbase.h",
         "include/native/apadef.h",
+        "include/native/apadoc.h",
         "include/native/apaid.h",
+        "include/native/apaproc.h",
+        "include/native/apcaptionfile.rh",
         "include/native/apgcli.h",
+        "include/native/apgctl.h",
+        "include/native/apgdoor.h",
         "include/native/apgtask.h",
         "include/native/apgupdate.h",
         "include/native/apgwgnam.h",
         "include/native/apmrec.h",
         "include/native/apmrec.inl",
         "include/native/apmstd.h",
+        "include/native/apparc.h",
         "include/native/babitflags.h",
         "include/native/badesca.h",
         "include/native/bamdesca.h",
@@ -3969,8 +3980,10 @@
       "dll": "apparc.dll",
       "headers": [
         "apaapp.h",
+        "apadbase.h",
         "apadoc.h",
-        "apaflrec.h"
+        "apaflrec.h",
+        "apamdr.h"
       ],
       "dependencies": [
         "StreamsNative",
@@ -3995,10 +4008,12 @@
       "header_payloads": [
         "include/native/E32BASE.H",
         "include/native/apaapp.h",
+        "include/native/apadbase.h",
         "include/native/apadef.h",
         "include/native/apadoc.h",
         "include/native/apaflrec.h",
         "include/native/apaid.h",
+        "include/native/apamdr.h",
         "include/native/apmstd.h",
         "include/native/d32locd.h",
         "include/native/d32locd.inl",
@@ -8357,6 +8372,574 @@
         "include/native/stdapis/utmp.h",
         "include/native/stdapis/wchar.h",
         "include/native/stdapis/wctype.h"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "SdpCodec",
+      "dll": "sdpcodec.dll",
+      "headers": [
+        "sdpattributefield.h",
+        "sdpbandwidthfield.h",
+        "sdpcodecconstants.h",
+        "sdpcodecerr.h",
+        "sdpcodecstringpool.h",
+        "sdpconnectionfield.h",
+        "sdpdocument.h",
+        "sdpfmtattributefield.h",
+        "sdpkeyfield.h",
+        "sdpmediafield.h",
+        "sdporiginfield.h",
+        "sdprepeatfield.h",
+        "sdprtpmapvalue.h",
+        "sdptimefield.h",
+        "sdptypedtime.h",
+        "sdpcodecstringconstants.h"
+      ],
+      "dependencies": [
+        "Uri",
+        "Bafl",
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "ipappprotocols/realtimenetprots/sipfw/SDP/EABI/sdpcodecU.DEF",
+        "sha256": "c8e39d2403b608a23967ab2f3e06c5d65b987fb66091edc016037063695637bc",
+        "destination": "share/symbian/native/defs/sdpcodec.dll.def"
+      },
+      "mmp": "ipappprotocols/realtimenetprots/sipfw/SDP/Group/sdpcodec.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "insock",
+        "esock",
+        "estor",
+        "bafl",
+        "inetprotutil"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/badesca.h",
+        "include/native/bamdesca.h",
+        "include/native/comms-infras/es_event.h",
+        "include/native/comms-infras/es_parameterset.h",
+        "include/native/comms-infras/metacontainer.h",
+        "include/native/comms-infras/metadata.h",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32lang.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/elements/cftransportmacro.h",
+        "include/native/elements/h_tdeallocator.h",
+        "include/native/elements/metacontainer.h",
+        "include/native/elements/metacontainer.inl",
+        "include/native/elements/metadata.h",
+        "include/native/elements/metadata.inl",
+        "include/native/elements/sd_errors.h",
+        "include/native/es_sock.h",
+        "include/native/es_sock.inl",
+        "include/native/es_sock_internal.h",
+        "include/native/es_sock_internal.inl",
+        "include/native/es_sock_partner.h",
+        "include/native/in_sock.h",
+        "include/native/in_sock_internal.h",
+        "include/native/nifvar.h",
+        "include/native/nifvar_internal.h",
+        "include/native/sdpattributefield.h",
+        "include/native/sdpbandwidthfield.h",
+        "include/native/sdpcodecconstants.h",
+        "include/native/sdpcodecerr.h",
+        "include/native/sdpcodecstringconstants.h",
+        "include/native/sdpcodecstringpool.h",
+        "include/native/sdpconnectionfield.h",
+        "include/native/sdpdocument.h",
+        "include/native/sdpfmtattributefield.h",
+        "include/native/sdpkeyfield.h",
+        "include/native/sdpmediafield.h",
+        "include/native/sdporiginfield.h",
+        "include/native/sdprepeatfield.h",
+        "include/native/sdprtpmapvalue.h",
+        "include/native/sdptimefield.h",
+        "include/native/sdptypedtime.h",
+        "include/native/stringpool.h",
+        "include/native/stringpool.inl",
+        "include/native/stringpoolerr.h"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "SipCodec",
+      "dll": "sipcodec.dll",
+      "headers": [
+        "sipacceptcontactheader.h",
+        "sipacceptencodingheader.h",
+        "sipacceptheader.h",
+        "sipacceptlanguageheader.h",
+        "sipaddress.h",
+        "sipaddressheaderbase.h",
+        "sipalloweventsheader.h",
+        "sipallowheader.h",
+        "sipauthenticateheaderbase.h",
+        "sipauthheaderbase.h",
+        "sipauthorizationheader.h",
+        "sipauthorizationheaderbase.h",
+        "sipcallidheader.h",
+        "sipcodecerr.h",
+        "sipcontactheader.h",
+        "sipcontentdispositionheader.h",
+        "sipcontentencodingheader.h",
+        "sipcontenttypeheader.h",
+        "sipcseqheader.h",
+        "sipeventheader.h",
+        "sipexpiresheader.h",
+        "sipextensionheader.h",
+        "sipfromheader.h",
+        "sipfromtoheaderbase.h",
+        "sipheaderbase.h",
+        "sipparameterheaderbase.h",
+        "sippassociateduriheader.h",
+        "sipproxyauthenticateheader.h",
+        "sipproxyauthorizationheader.h",
+        "sipproxyrequireheader.h",
+        "siprackheader.h",
+        "siprefertoheader.h",
+        "sipreplytoheader.h",
+        "siprequireheader.h",
+        "sipretryafterheader.h",
+        "siprouteheader.h",
+        "siprouteheaderbase.h",
+        "siprseqheader.h",
+        "sipsecurityclientheader.h",
+        "sipsecurityheaderbase.h",
+        "sipstrings.h",
+        "sipsubscriptionstateheader.h",
+        "sipsupportedheader.h",
+        "siptimestampheader.h",
+        "siptoheader.h",
+        "siptokenheaderbase.h",
+        "sipunsignedintheaderbase.h",
+        "sipunsupportedheader.h",
+        "sipwwwauthenticateheader.h",
+        "sipstrconsts.h"
+      ],
+      "dependencies": [
+        "Uri",
+        "Bafl",
+        "StreamsNative",
+        "CharConv"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "ipappprotocols/realtimenetprots/sipfw/SIP/EABI/SipCodecU.DEF",
+        "sha256": "40034f44f5dc38f77507065b32410cc861eddc6341857226534808a028be3c5a",
+        "destination": "share/symbian/native/defs/sipcodec.dll.def"
+      },
+      "mmp": "ipappprotocols/realtimenetprots/sipfw/SIP/Group/sipcodec.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "bafl",
+        "estor",
+        "charconv",
+        "inetprotutil",
+        "featdiscovery"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/badesca.h",
+        "include/native/bamdesca.h",
+        "include/native/d32locd.h",
+        "include/native/d32locd.inl",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32btrace.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32debug.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32event.h",
+        "include/native/e32event_private.h",
+        "include/native/e32hal.h",
+        "include/native/e32keys.h",
+        "include/native/e32ktran.h",
+        "include/native/e32lang.h",
+        "include/native/e32ldr.h",
+        "include/native/e32ldr_private.h",
+        "include/native/e32lmsg.h",
+        "include/native/e32notif.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/e32svr.h",
+        "include/native/f32file.h",
+        "include/native/f32file.inl",
+        "include/native/f32file64.h",
+        "include/native/f32file64.inl",
+        "include/native/f32file_private.h",
+        "include/native/f32notification.h",
+        "include/native/partitions.h",
+        "include/native/s32buf.h",
+        "include/native/s32buf.inl",
+        "include/native/s32mem.h",
+        "include/native/s32mem.inl",
+        "include/native/s32page.h",
+        "include/native/s32page.inl",
+        "include/native/s32share.h",
+        "include/native/s32share.inl",
+        "include/native/s32std.h",
+        "include/native/s32std.inl",
+        "include/native/s32stor.h",
+        "include/native/s32stor.inl",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl",
+        "include/native/sipacceptcontactheader.h",
+        "include/native/sipacceptencodingheader.h",
+        "include/native/sipacceptheader.h",
+        "include/native/sipacceptlanguageheader.h",
+        "include/native/sipaddress.h",
+        "include/native/sipaddressheaderbase.h",
+        "include/native/sipalloweventsheader.h",
+        "include/native/sipallowheader.h",
+        "include/native/sipauthenticateheaderbase.h",
+        "include/native/sipauthheaderbase.h",
+        "include/native/sipauthorizationheader.h",
+        "include/native/sipauthorizationheaderbase.h",
+        "include/native/sipcallidheader.h",
+        "include/native/sipcodecerr.h",
+        "include/native/sipcontactheader.h",
+        "include/native/sipcontentdispositionheader.h",
+        "include/native/sipcontentencodingheader.h",
+        "include/native/sipcontenttypeheader.h",
+        "include/native/sipcseqheader.h",
+        "include/native/sipeventheader.h",
+        "include/native/sipexpiresheader.h",
+        "include/native/sipextensionheader.h",
+        "include/native/sipfromheader.h",
+        "include/native/sipfromtoheaderbase.h",
+        "include/native/sipheaderbase.h",
+        "include/native/sipparameterheaderbase.h",
+        "include/native/sippassociateduriheader.h",
+        "include/native/sipproxyauthenticateheader.h",
+        "include/native/sipproxyauthorizationheader.h",
+        "include/native/sipproxyrequireheader.h",
+        "include/native/siprackheader.h",
+        "include/native/siprefertoheader.h",
+        "include/native/sipreplytoheader.h",
+        "include/native/siprequireheader.h",
+        "include/native/sipretryafterheader.h",
+        "include/native/siprouteheader.h",
+        "include/native/siprouteheaderbase.h",
+        "include/native/siprseqheader.h",
+        "include/native/sipsecurityclientheader.h",
+        "include/native/sipsecurityheaderbase.h",
+        "include/native/sipstrconsts.h",
+        "include/native/sipstrings.h",
+        "include/native/sipsubscriptionstateheader.h",
+        "include/native/sipsupportedheader.h",
+        "include/native/siptimestampheader.h",
+        "include/native/siptoheader.h",
+        "include/native/siptokenheaderbase.h",
+        "include/native/sipunsignedintheaderbase.h",
+        "include/native/sipunsupportedheader.h",
+        "include/native/sipwwwauthenticateheader.h",
+        "include/native/stringpool.h",
+        "include/native/stringpool.inl",
+        "include/native/stringpoolerr.h",
+        "include/native/uri8.h",
+        "include/native/uricommon.h"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "SipClient",
+      "dll": "sipclient.dll",
+      "headers": [
+        "sip.h",
+        "sipclienttransaction.h",
+        "sipconnection.h",
+        "sipconnectionobserver.h",
+        "sipdefs.h",
+        "sipdialog.h",
+        "sipdialogassocbase.h",
+        "siperr.h",
+        "siphttpdigest.h",
+        "siphttpdigestchallengeobserver.h",
+        "siphttpdigestchallengeobserver2.h",
+        "sipinvitedialogassoc.h",
+        "sipmessageelements.h",
+        "sipnotifydialogassoc.h",
+        "sipobserver.h",
+        "sipreferdialogassoc.h",
+        "siprefresh.h",
+        "sipregistrationbinding.h",
+        "sipregistrationcontext.h",
+        "siprequestelements.h",
+        "sipresponseelements.h",
+        "sipsdkcrkeys.h",
+        "sipservertransaction.h",
+        "sipsubscribedialogassoc.h",
+        "siptransactionbase.h"
+      ],
+      "dependencies": [
+        "SipCodec",
+        "Uri",
+        "Bafl",
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "ipappprotocols/realtimenetprots/sipfw/SIP/EABI/sipclientU.DEF",
+        "sha256": "1333f7cfca4d4cc89bcda8c7e4d4e1262c64b41dd98a557d593a1001d42660fc",
+        "destination": "share/symbian/native/defs/sipclient.dll.def"
+      },
+      "mmp": "ipappprotocols/realtimenetprots/sipfw/SIP/Group/sipclient.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "estor",
+        "bafl",
+        "inetprotutil",
+        "insock",
+        "sipcodec"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/comms-infras/es_event.h",
+        "include/native/comms-infras/es_parameterset.h",
+        "include/native/comms-infras/metacontainer.h",
+        "include/native/comms-infras/metadata.h",
+        "include/native/d32locd.h",
+        "include/native/d32locd.inl",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32btrace.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32debug.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32event.h",
+        "include/native/e32event_private.h",
+        "include/native/e32hal.h",
+        "include/native/e32keys.h",
+        "include/native/e32ktran.h",
+        "include/native/e32lang.h",
+        "include/native/e32ldr.h",
+        "include/native/e32ldr_private.h",
+        "include/native/e32lmsg.h",
+        "include/native/e32notif.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/e32svr.h",
+        "include/native/elements/cftransportmacro.h",
+        "include/native/elements/h_tdeallocator.h",
+        "include/native/elements/metacontainer.h",
+        "include/native/elements/metacontainer.inl",
+        "include/native/elements/metadata.h",
+        "include/native/elements/metadata.inl",
+        "include/native/elements/sd_errors.h",
+        "include/native/es_sock.h",
+        "include/native/es_sock.inl",
+        "include/native/es_sock_internal.h",
+        "include/native/es_sock_internal.inl",
+        "include/native/es_sock_partner.h",
+        "include/native/f32file.h",
+        "include/native/f32file.inl",
+        "include/native/f32file64.h",
+        "include/native/f32file64.inl",
+        "include/native/f32file_private.h",
+        "include/native/f32notification.h",
+        "include/native/in_sock.h",
+        "include/native/in_sock_internal.h",
+        "include/native/nifvar.h",
+        "include/native/nifvar_internal.h",
+        "include/native/partitions.h",
+        "include/native/s32strm.h",
+        "include/native/s32strm.inl",
+        "include/native/sip.h",
+        "include/native/sipclienttransaction.h",
+        "include/native/sipconnection.h",
+        "include/native/sipconnectionobserver.h",
+        "include/native/sipdefs.h",
+        "include/native/sipdialog.h",
+        "include/native/sipdialogassocbase.h",
+        "include/native/siperr.h",
+        "include/native/siphttpdigest.h",
+        "include/native/siphttpdigestchallengeobserver.h",
+        "include/native/siphttpdigestchallengeobserver2.h",
+        "include/native/sipinvitedialogassoc.h",
+        "include/native/sipmessageelements.h",
+        "include/native/sipnotifydialogassoc.h",
+        "include/native/sipobserver.h",
+        "include/native/sipreferdialogassoc.h",
+        "include/native/siprefresh.h",
+        "include/native/sipregistrationbinding.h",
+        "include/native/sipregistrationcontext.h",
+        "include/native/siprequestelements.h",
+        "include/native/sipresponseelements.h",
+        "include/native/sipsdkcrkeys.h",
+        "include/native/sipservertransaction.h",
+        "include/native/sipsubscribedialogassoc.h",
+        "include/native/siptransactionbase.h",
+        "include/native/stringpool.h",
+        "include/native/stringpool.inl",
+        "include/native/stringpoolerr.h",
+        "include/native/uri8.h",
+        "include/native/uricommon.h"
+      ],
+      "ms_extensions": false
+    },
+    {
+      "target": "SipProfileCore",
+      "dll": "sipprofile.dll",
+      "headers": [],
+      "dependencies": [
+        "SipCodec",
+        "Uri",
+        "Bafl",
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "ipappprotocols/realtimenetprots/sipfw/ProfileAgent/EABI/sipprofileU.DEF",
+        "sha256": "955bdb281c96034921def9d6c3d5c8e54d22e5527c370ef212577a20e1b60bd4",
+        "destination": "share/symbian/native/defs/sipprofile.dll.def"
+      },
+      "mmp": "ipappprotocols/realtimenetprots/sipfw/ProfileAgent/Group/sipprofile.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "estor",
+        "bafl",
+        "inetprotutil",
+        "random",
+        "commsdat",
+        "charconv",
+        "efsrv"
+      ],
+      "header_payloads": [],
+      "ms_extensions": false
+    },
+    {
+      "target": "SipProfiles",
+      "dll": "sipprofilecli.dll",
+      "headers": [
+        "sipconcreteprofileobserver.h",
+        "sipmanagedprofile.h",
+        "sipmanagedprofileregistry.h",
+        "sipprofile.h",
+        "sipprofilealrcontroller.h",
+        "sipprofilealrobserver.h",
+        "sipprofileregistry.h",
+        "sipprofileregistrybase.h",
+        "sipprofileregistryobserver.h",
+        "sipprofileservercrkeys.h",
+        "sipprofiletypeinfo.h"
+      ],
+      "dependencies": [
+        "SipProfileCore",
+        "SipClient",
+        "Bafl",
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": {
+        "source": "ipappprotocols/realtimenetprots/sipfw/ProfileAgent/EABI/sipprofilecliU.DEF",
+        "sha256": "6a0cce12e3c37a703bbe5299216548edef59745f8b4ec333ac2d9ba739f22183",
+        "destination": "share/symbian/native/defs/sipprofilecli.dll.def"
+      },
+      "mmp": "ipappprotocols/realtimenetprots/sipfw/ProfileAgent/Group/sipprofileclient.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "estor",
+        "sipprofile",
+        "sipclient",
+        "bafl",
+        "cmmanager"
+      ],
+      "header_payloads": [
+        "include/native/E32BASE.H",
+        "include/native/badesca.h",
+        "include/native/bamdesca.h",
+        "include/native/e32base.h",
+        "include/native/e32base.inl",
+        "include/native/e32base_private.h",
+        "include/native/e32capability.h",
+        "include/native/e32cmn.h",
+        "include/native/e32cmn.inl",
+        "include/native/e32cmn_private.h",
+        "include/native/e32const.h",
+        "include/native/e32const_private.h",
+        "include/native/e32def.h",
+        "include/native/e32def_private.h",
+        "include/native/e32des16.h",
+        "include/native/e32des16_private.h",
+        "include/native/e32des8.h",
+        "include/native/e32des8_private.h",
+        "include/native/e32err.h",
+        "include/native/e32lang.h",
+        "include/native/e32reg.h",
+        "include/native/e32std.H",
+        "include/native/e32std.h",
+        "include/native/e32std.inl",
+        "include/native/e32std_private.h",
+        "include/native/sipconcreteprofileobserver.h",
+        "include/native/sipmanagedprofile.h",
+        "include/native/sipmanagedprofileregistry.h",
+        "include/native/sipprofile.h",
+        "include/native/sipprofilealrcontroller.h",
+        "include/native/sipprofilealrobserver.h",
+        "include/native/sipprofileregistry.h",
+        "include/native/sipprofileregistrybase.h",
+        "include/native/sipprofileregistryobserver.h",
+        "include/native/sipprofileservercrkeys.h",
+        "include/native/sipprofiletypeinfo.h",
+        "include/native/sipregistrationcontext.h"
       ],
       "ms_extensions": false
     },
@@ -17046,7 +17629,11 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "8ac3e2e1442b0fa9b716d72c62e133aeb41fe03d4d251be770d0b49fbf9ba799",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apadbase.h",
+      "targets": [
+        "AppArc",
+        "AppArcBase"
+      ]
     },
     {
       "include": "apadef.h",
@@ -17118,7 +17705,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a8319a103aef5bf9226b44b32fa92f59e65434467bdae0537cfec04a971c7eb0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apamdr.h",
+      "targets": [
+        "AppArcBase"
+      ]
     },
     {
       "include": "apparc.h",
@@ -17130,6 +17720,7 @@
       "sha256": "8fda56c1c4cc05935b49dbcb045beb69f969a010823c9b02ed976da1999314b1",
       "destination": "include/native/apparc.h",
       "targets": [
+        "AppArc",
         "Avkon",
         "Eikon",
         "Native_eikctl"
@@ -17145,6 +17736,7 @@
       "sha256": "f1eac6db1240271303897eaec96ab6580d2b6d7447230d5792f5b3ef759fb44d",
       "destination": "include/native/apaapp.h",
       "targets": [
+        "AppArc",
         "AppArcBase",
         "Avkon",
         "Eikon",
@@ -17161,6 +17753,7 @@
       "sha256": "23cc5dae7c6444b3f050d88589a8139ca06dbba711dca6467957f64ab4482071",
       "destination": "include/native/apadoc.h",
       "targets": [
+        "AppArc",
         "AppArcBase",
         "Avkon",
         "Eikon",
@@ -17177,6 +17770,7 @@
       "sha256": "f2fa8be65b4c5319b41b7f9ab869da64aa2511bdd085ab4b520b2763c9c432f3",
       "destination": "include/native/apaproc.h",
       "targets": [
+        "AppArc",
         "Avkon",
         "Eikon",
         "Native_eikctl"
@@ -17218,7 +17812,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5ec069b5609835507c9853b977eff2bf1ee65a928fe3ad2433e1f44f75973b17",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apgdoor.h",
+      "targets": [
+        "AppArc"
+      ]
     },
     {
       "include": "apgicnfl.h",
@@ -17271,7 +17868,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "73ae806106d766f539796877d528a2734ce696b0b4da25f001957200eb1b09c9",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apgctl.h",
+      "targets": [
+        "AppArc"
+      ]
     },
     {
       "include": "apcaptionfile.rh",
@@ -17281,7 +17881,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f0eb0bc84f279d66f2587ddd3f53f3ea60c171ba07088a2f416c18bd6f43f56c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apcaptionfile.rh",
+      "targets": [
+        "AppArc"
+      ]
     },
     {
       "include": "vwsdef.h",
@@ -18870,7 +19473,7 @@
       ]
     },
     {
-      "include": "akndoc.h",
+      "include": "AknDoc.h",
       "source": "classicui/classicui_plat/application_framework_api/inc/AknDoc.h",
       "manifest": "classicui/classicui_plat/application_framework_api/group/bld.inf",
       "declaration": "../inc/AknDoc.h     MW_LAYER_PLATFORM_EXPORT_PATH(AknDoc.h)",
@@ -24172,7 +24775,9 @@
         "Native_extendedconnpref",
         "Native_netmeta",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -24198,7 +24803,9 @@
         "Native_extendedconnpref",
         "Native_netmeta",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -24224,7 +24831,9 @@
         "Native_extendedconnpref",
         "Native_netmeta",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -24277,7 +24886,11 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f479ece3832634ce79e47b9dd860b8a8dca105a6a38eaae5fc2c6cf2551848db",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/commsdat.h",
+      "targets": [
+        "CommsDat",
+        "CommsDatabase"
+      ]
     },
     {
       "include": "metadatabase.h",
@@ -24287,7 +24900,11 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e731ba53f5b403dd6791ac52e279394077dc9322d4ec2f6b5817aa6f977266d4",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/metadatabase.h",
+      "targets": [
+        "CommsDat",
+        "CommsDatabase"
+      ]
     },
     {
       "include": "commsdattypesv1_1.h",
@@ -24297,7 +24914,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "311bdd95f4cf6b82de59defa3ef0c32e09df2b898d9cb9a885fb47207da38afe",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/commsdattypesv1_1.h",
+      "targets": [
+        "CommsDat"
+      ]
     },
     {
       "include": "comms-infras/cs_mobility_apiext.h",
@@ -24381,7 +25001,9 @@
         "Native_eikcdlg",
         "Native_eikctl",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -24403,7 +25025,9 @@
         "Native_eikcdlg",
         "Native_eikctl",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -24475,7 +25099,9 @@
         "Native_eikcdlg",
         "Native_eikctl",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -25786,7 +26412,7 @@
       ],
       "classification": "public_base_platform",
       "sha256": "3e4b9653b4f44d1a567898db09fe90cd34acfb83a5d3ac0cf3400694782fc614",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Public export differs from the reviewed delivered header variant; source/version selection requires review"
     },
     {
       "include": "EGL/egl.h",
@@ -25822,7 +26448,7 @@
       ],
       "classification": "public_base_platform",
       "sha256": "cfdb079ee11b775fde822193ae1ba1361537d58b68060883dca48b497dde797c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Public export differs from the reviewed delivered header variant; source/version selection requires review"
     },
     {
       "include": "bitmap.h",
@@ -26187,79 +26813,33 @@
     },
     {
       "include": "bidi.h",
-      "source": "textandloc-sdk/fontservices/textbase/inc/BIDI.H",
-      "manifest": "textandloc-sdk/fontservices/textbase/group/BLD.INF",
+      "source": "graphics/graphicsdeviceinterface/gdi/inc/BIDI.H",
+      "manifest": "graphics/graphicsdeviceinterface/gdi/group/BLD.INF",
       "declaration": "../inc/BIDI.H SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(bidi.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "45943ce915534066e6e7b8b9b3bcc95b4ef7098c4a1f5fd0cb8b3005759892fa",
-      "destination": "include/native/bidi.h",
-      "targets": [
-        "Avkon",
-        "Cone",
-        "Eikon",
-        "EikonControls",
-        "EikonDialogs",
-        "Native_aknhlist",
-        "Native_aknnotify",
-        "Native_browserengine",
-        "Native_commondialogs",
-        "Native_commonui",
-        "Native_eikcdlg",
-        "Native_eikctl"
-      ]
+      "sha256": "27a29ff793f962971daee016b2e92a42f34a6064a688ea308ce84c66f7c1d59f",
+      "blocked": "Public export differs from the reviewed delivered header variant; source/version selection requires review"
     },
     {
       "include": "biditext.h",
-      "source": "textandloc-sdk/fontservices/textbase/inc/BidiText.h",
-      "manifest": "textandloc-sdk/fontservices/textbase/group/BLD.INF",
+      "source": "graphics/graphicsdeviceinterface/gdi/inc/BidiText.h",
+      "manifest": "graphics/graphicsdeviceinterface/gdi/group/BLD.INF",
       "declaration": "../inc/BidiText.h SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(biditext.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "15f02a41fd934d0029d437cf989a9199313b81690efcd07d8bb57ecc448159a4",
-      "source_sha256": "6fac9ef2bf15416eefd85c890357e0dfbba2f7c4333e3180e2d9cf483a7ed804",
-      "compatibility_edits": [
-        {
-          "before": "enum CGraphicsContext::TTextAlign;",
-          "after": "// TTextAlign is already defined by the included gdi.h.",
-          "reason": "Clang rejects the redundant qualified enum forward declaration; gdi.h supplies the original enum definition."
-        }
-      ],
-      "destination": "include/native/biditext.h",
-      "targets": [
-        "Avkon",
-        "Cone",
-        "Eikon",
-        "EikonControls",
-        "EikonDialogs",
-        "Native_aknhlist",
-        "Native_aknnotify",
-        "Native_browserengine",
-        "Native_commondialogs",
-        "Native_commonui",
-        "Native_eikcdlg",
-        "Native_eikctl"
-      ]
+      "sha256": "2711c7309d110373f27bb846d0a9060289721f408e89fa58d87648f67ea2683f",
+      "blocked": "Public export differs from the reviewed delivered header variant; source/version selection requires review"
     },
     {
       "include": "linebreak.h",
-      "source": "textandloc-sdk/fontservices/textbase/inc/LineBreak.h",
-      "manifest": "textandloc-sdk/fontservices/textbase/group/BLD.INF",
+      "source": "graphics/graphicsdeviceinterface/gdi/inc/LineBreak.h",
+      "manifest": "graphics/graphicsdeviceinterface/gdi/group/BLD.INF",
       "declaration": "../inc/LineBreak.h SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(linebreak.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "40fcad211b7a63122f960ffadb76571b1e6023b9811b5fe3509a580749cec88f",
-      "destination": "include/native/linebreak.h",
-      "targets": [
-        "Avkon",
-        "Eikon",
-        "Native_aknnotify",
-        "Native_commondialogs",
-        "Native_commonui",
-        "Native_eikcdlg",
-        "Native_eikctl",
-        "TextLayout"
-      ]
+      "sha256": "22c7bdab976e2e995d0d0dfaae725f1583fff05768a40ceebc6ef57a301415b2",
+      "blocked": "Public export differs from the reviewed delivered header variant; source/version selection requires review"
     },
     {
       "include": "bidivisual.h",
@@ -27226,10 +27806,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -27362,10 +27946,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -27499,10 +28087,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -27646,10 +28238,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -27783,10 +28379,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -27920,10 +28520,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -28061,10 +28665,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -28198,10 +28806,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -28335,10 +28947,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -28472,10 +29088,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -28567,6 +29187,8 @@
         "Native_servicehandler",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -28694,10 +29316,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -28831,10 +29457,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -29033,10 +29663,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -29173,10 +29807,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -29258,6 +29896,8 @@
         "Native_servicehandler",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -29333,6 +29973,8 @@
         "Native_servicehandler",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -29408,6 +30050,8 @@
         "Native_servicehandler",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -29555,6 +30199,8 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -29627,6 +30273,8 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -29701,6 +30349,8 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -29775,6 +30425,8 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -29849,6 +30501,8 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -30113,7 +30767,7 @@
       ]
     },
     {
-      "include": "epos_cposlandmark.h",
+      "include": "EPos_CPosLandmark.h",
       "source": "locationsrv/locsrv_pub/landmarks_api/inc/EPos_CPosLandmark.h",
       "manifest": "locationsrv/locsrv_pub/landmarks_api/group/bld.inf",
       "declaration": "../inc/EPos_CPosLandmark.h     MW_LAYER_PUBLIC_EXPORT_PATH(EPos_CPosLandmark.h)",
@@ -30154,7 +30808,7 @@
       ]
     },
     {
-      "include": "epos_cposlandmarkdatabase.h",
+      "include": "EPos_CPosLandmarkDatabase.h",
       "source": "locationsrv/locsrv_pub/landmarks_api/inc/EPos_CPosLandmarkDatabase.h",
       "manifest": "locationsrv/locsrv_pub/landmarks_api/group/bld.inf",
       "declaration": "../inc/EPos_CPosLandmarkDatabase.h     MW_LAYER_PUBLIC_EXPORT_PATH(EPos_CPosLandmarkDatabase.h)",
@@ -30588,7 +31242,7 @@
       ]
     },
     {
-      "include": "epos_cposlandmarksearch.h",
+      "include": "EPos_CPosLandmarkSearch.h",
       "source": "locationsrv/locsrv_pub/landmarks_search_api/inc/EPos_CPosLandmarkSearch.h",
       "manifest": "locationsrv/locsrv_pub/landmarks_search_api/group/bld.inf",
       "declaration": "../inc/EPos_CPosLandmarkSearch.h     MW_LAYER_PUBLIC_EXPORT_PATH(EPos_CPosLandmarkSearch.h)",
@@ -36486,7 +37140,9 @@
         "Native_aknnotify",
         "Native_commondialogs",
         "Native_eikcdlg",
-        "Native_eikctl"
+        "Native_eikctl",
+        "SdpCodec",
+        "SipClient"
       ]
     },
     {
@@ -36537,7 +37193,9 @@
         "Native_eikcdlg",
         "Native_eikctl",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -37022,7 +37680,10 @@
       ],
       "classification": "public_base_platform",
       "sha256": "0e71110f287f320d8bc8556f07368c24a9ce24a8dc18effc56eed67616c7838b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/zlib.h",
+      "targets": [
+        "ImageConversion"
+      ]
     },
     {
       "include": "zconf.h",
@@ -37034,7 +37695,11 @@
       ],
       "classification": "public_base_platform",
       "sha256": "abc583f763653f53b06341dd4ccc683271d8cd68afe3b4438cae403e04d38bc5",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/zconf.h",
+      "targets": [
+        "ImageConversion",
+        "Native_libz"
+      ]
     },
     {
       "include": "stdapis/stlportv5/exception_winscw.h",
@@ -40894,6 +41559,8 @@
         "HttpNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib",
+        "SipClient",
+        "SipCodec",
         "Uri"
       ]
     },
@@ -40923,6 +41590,8 @@
         "HttpNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib",
+        "SipClient",
+        "SipCodec",
         "Uri"
       ]
     },
@@ -41340,7 +42009,10 @@
         "Native_eposlmmultidbsearch",
         "Native_ptiengine",
         "Native_servicehandler",
+        "SdpCodec",
         "SendAs",
+        "SipCodec",
+        "SipProfiles",
         "Uri"
       ]
     },
@@ -41442,7 +42114,10 @@
         "Native_eposlmmultidbsearch",
         "Native_ptiengine",
         "Native_servicehandler",
+        "SdpCodec",
         "SendAs",
+        "SipCodec",
+        "SipProfiles",
         "Uri"
       ]
     },
@@ -41566,6 +42241,9 @@
         "HttpNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib",
+        "SdpCodec",
+        "SipClient",
+        "SipCodec",
         "StringPool",
         "Uri",
         "Xml"
@@ -41585,6 +42263,9 @@
         "HttpNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib",
+        "SdpCodec",
+        "SipClient",
+        "SipCodec",
         "StringPool",
         "Uri",
         "Xml"
@@ -47258,7 +47939,7 @@
       "api_libraries": [
         "libz.lib"
       ],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Public export differs from the reviewed delivered header variant; source/version selection requires review"
     },
     {
       "include": "stdapis/zlib.h",
@@ -47272,7 +47953,7 @@
       "api_libraries": [
         "libz.lib"
       ],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Public export differs from the reviewed delivered header variant; source/version selection requires review"
     },
     {
       "include": "stdapis/stlport/stl/_relops_hash_cont.h",
@@ -48482,6 +49163,7 @@
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
         "SendAs",
+        "SipCodec",
         "Sms",
         "StreamsNative",
         "Text",
@@ -48545,6 +49227,7 @@
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
         "SendAs",
+        "SipCodec",
         "Sms",
         "StreamsNative",
         "Text",
@@ -48653,6 +49336,7 @@
         "Native_sourceorientationeffect",
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
+        "SipCodec",
         "StreamsNative",
         "Video"
       ]
@@ -48700,6 +49384,7 @@
         "Native_sourceorientationeffect",
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
+        "SipCodec",
         "StreamsNative",
         "Video"
       ]
@@ -48758,6 +49443,7 @@
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
         "SendAs",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -48820,6 +49506,7 @@
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
         "SendAs",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -48882,6 +49569,7 @@
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
         "SendAs",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -48944,6 +49632,7 @@
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
         "SendAs",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -49030,6 +49719,7 @@
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
         "SendAs",
+        "SipCodec",
         "SqlNative",
         "StreamsNative",
         "Text",
@@ -49117,6 +49807,7 @@
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
         "SendAs",
+        "SipCodec",
         "SqlNative",
         "StreamsNative",
         "Text",
@@ -49180,6 +49871,7 @@
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
         "SendAs",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -49242,6 +49934,7 @@
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
         "SendAs",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -49335,6 +50028,8 @@
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -49430,6 +50125,8 @@
         "Native_stereowideningeffect",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -50052,70 +50749,48 @@
     },
     {
       "include": "cryptopanic.h",
-      "source": "security/crypto/weakcryptospi/inc/cryptopanic.h",
-      "manifest": "security/crypto/weakcryptospi/group/bld.inf",
+      "source": "security/crypto/weakcrypto/inc/cryptopanic.h",
+      "manifest": "security/crypto/weakcrypto/group/bld.inf",
       "declaration": "../inc/cryptopanic.h SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(cryptopanic.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "5864a39868ab4be377191d5d6c745984a2721d33fe1ba3caf96649b128cf1244",
-      "source_sha256": "5f0d12dd7185b169063a3f2a4653041700d3b1315240f2842b21d6fda6d85d98",
-      "compatibility_edits": [
-        {
-          "before": "#define __CRYPTOPANIC_H__",
-          "after": "#define __CRYPTOPANIC_H__\n#include <e32std.h>",
-          "reason": "Original exported header omits the declaration prerequisite; include the original defining header for independent consumer compilation."
-        }
-      ],
-      "destination": "include/native/cryptopanic.h",
-      "targets": [
-        "CryptoNative"
-      ]
+      "sha256": "fcc7e520bd0446010fbf3f27e97667bfc6c53a5f9472740b5f5747d2670ce52b",
+      "blocked": "Public export differs from the reviewed delivered header variant; source/version selection requires review"
     },
     {
       "include": "hash.h",
-      "source": "security/crypto/weakcryptospi/inc/hash.h",
-      "manifest": "security/crypto/weakcryptospi/group/bld.inf",
+      "source": "security/crypto/weakcrypto/inc/hash.h",
+      "manifest": "security/crypto/weakcrypto/group/bld.inf",
       "declaration": "../inc/hash.h SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(hash.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "5a76e08fafd513ec8055d4c2a478df46884b7a3bcbde4e604f1ac9db97189ae0",
-      "destination": "include/native/hash.h",
-      "targets": [
-        "CryptoNative",
-        "HashNative"
-      ]
+      "sha256": "c9345648f7ecf8df63ce83f7a4f3b81b4a2ceb1dede37b2d806f8f235ab7aac7",
+      "blocked": "Public export differs from the reviewed delivered header variant; source/version selection requires review"
     },
     {
       "include": "random.h",
-      "source": "security/crypto/weakcryptospi/inc/random.h",
-      "manifest": "security/crypto/weakcryptospi/group/bld.inf",
+      "source": "security/crypto/weakcrypto/inc/random.h",
+      "manifest": "security/crypto/weakcrypto/group/bld.inf",
       "declaration": "../inc/random.h SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(random.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "69c271c1dd807a7c71289a4c3b592a162b5b42e582563d6460d77e89bf36663a",
-      "destination": "include/native/random.h",
-      "targets": [
-        "CryptoNative",
-        "RandomNative"
-      ]
+      "sha256": "54b533d11778a69b6884809c99423b1621309609faac21d7b2332f2844461f00",
+      "blocked": "Public export differs from the reviewed delivered header variant; source/version selection requires review"
     },
     {
       "include": "bigint.h",
-      "source": "security/crypto/weakcryptospi/inc/bigint.h",
-      "manifest": "security/crypto/weakcryptospi/strong/bld.inf",
+      "source": "security/crypto/weakcrypto/inc/bigint.h",
+      "manifest": "security/crypto/weakcrypto/strong/bld.inf",
       "declaration": "../inc/bigint.h SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(bigint.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "6dffa285a28dfb4676914a990162dac8e8202c484f7db26c8a7d640d49b148b1",
-      "destination": "include/native/bigint.h",
-      "targets": [
-        "CryptoNative"
-      ]
+      "sha256": "88133999de95d3a18bfcfdcaa08873510e7964f636522fc19a1b9a9513a8f683",
+      "blocked": "Public export differs from the reviewed delivered header variant; source/version selection requires review"
     },
     {
       "include": "asymmetric.h",
-      "source": "security/crypto/weakcryptospi/inc/asymmetric.h",
-      "manifest": "security/crypto/weakcryptospi/strong/bld.inf",
+      "source": "security/crypto/weakcrypto/inc/asymmetric.h",
+      "manifest": "security/crypto/weakcrypto/strong/bld.inf",
       "declaration": "../inc/asymmetric.h SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(asymmetric.h)",
       "conditions": [],
       "classification": "public_base_platform",
@@ -50127,29 +50802,23 @@
     },
     {
       "include": "asymmetrickeys.h",
-      "source": "security/crypto/weakcryptospi/inc/asymmetrickeys.h",
-      "manifest": "security/crypto/weakcryptospi/strong/bld.inf",
+      "source": "security/crypto/weakcrypto/inc/asymmetrickeys.h",
+      "manifest": "security/crypto/weakcrypto/strong/bld.inf",
       "declaration": "../inc/asymmetrickeys.h SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(asymmetrickeys.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "8ba3f3d47e245e19e1edbb2f6b14f3061738d45e12025d4a7d0ffc47c46c6240",
-      "destination": "include/native/asymmetrickeys.h",
-      "targets": [
-        "CryptoNative"
-      ]
+      "sha256": "1596c230c90d05ed784de0b6c7a6424579613808600d681501334cd9f3cf1ad7",
+      "blocked": "Public export differs from the reviewed delivered header variant; source/version selection requires review"
     },
     {
       "include": "padding.h",
-      "source": "security/crypto/weakcryptospi/inc/padding.h",
-      "manifest": "security/crypto/weakcryptospi/strong/bld.inf",
+      "source": "security/crypto/weakcrypto/inc/padding.h",
+      "manifest": "security/crypto/weakcrypto/strong/bld.inf",
       "declaration": "../inc/padding.h SYMBIAN_OS_LAYER_PUBLIC_EXPORT_PATH(padding.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "47e370bc94c8f7c923667324c99685a4e6b59b22cb6d34ee896530b84cdc770a",
-      "destination": "include/native/padding.h",
-      "targets": [
-        "CryptoNative"
-      ]
+      "sha256": "0c5d7035f269d781faa2f18382371ef9db45c69b05a37d81a1c126c249a4e2fd",
+      "blocked": "Public export differs from the reviewed delivered header variant; source/version selection requires review"
     },
     {
       "include": "cryptospi/cryptorandomapi.h",
@@ -50299,7 +50968,10 @@
           "reason": "Original exported header omits the declaration prerequisite; include the original defining header for independent consumer compilation."
         }
       ],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/cryptopanic.h",
+      "targets": [
+        "CryptoNative"
+      ]
     },
     {
       "include": "hash.h",
@@ -50309,7 +50981,11 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5a76e08fafd513ec8055d4c2a478df46884b7a3bcbde4e604f1ac9db97189ae0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/hash.h",
+      "targets": [
+        "CryptoNative",
+        "HashNative"
+      ]
     },
     {
       "include": "random.h",
@@ -50319,7 +50995,11 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "69c271c1dd807a7c71289a4c3b592a162b5b42e582563d6460d77e89bf36663a",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/random.h",
+      "targets": [
+        "CryptoNative",
+        "RandomNative"
+      ]
     },
     {
       "include": "bigint.h",
@@ -50329,7 +51009,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6dffa285a28dfb4676914a990162dac8e8202c484f7db26c8a7d640d49b148b1",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/bigint.h",
+      "targets": [
+        "CryptoNative"
+      ]
     },
     {
       "include": "asymmetric.h",
@@ -50339,7 +51022,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f1ca21d4e505b6b5aab7805eb5465fd67a86df1808e53499b35c2bd0d08da397",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/asymmetric.h",
+      "targets": [
+        "CryptoNative"
+      ]
     },
     {
       "include": "asymmetric.inl",
@@ -50362,7 +51048,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "8ba3f3d47e245e19e1edbb2f6b14f3061738d45e12025d4a7d0ffc47c46c6240",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/asymmetrickeys.h",
+      "targets": [
+        "CryptoNative"
+      ]
     },
     {
       "include": "padding.h",
@@ -50372,7 +51061,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "47e370bc94c8f7c923667324c99685a4e6b59b22cb6d34ee896530b84cdc770a",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/padding.h",
+      "targets": [
+        "CryptoNative"
+      ]
     },
     {
       "include": "ct/mcttokentypefilter.h",
@@ -51160,7 +51852,21 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "45943ce915534066e6e7b8b9b3bcc95b4ef7098c4a1f5fd0cb8b3005759892fa",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/bidi.h",
+      "targets": [
+        "Avkon",
+        "Cone",
+        "Eikon",
+        "EikonControls",
+        "EikonDialogs",
+        "Native_aknhlist",
+        "Native_aknnotify",
+        "Native_browserengine",
+        "Native_commondialogs",
+        "Native_commonui",
+        "Native_eikcdlg",
+        "Native_eikctl"
+      ]
     },
     {
       "include": "biditext.h",
@@ -51178,7 +51884,21 @@
           "reason": "Clang rejects the redundant qualified enum forward declaration; gdi.h supplies the original enum definition."
         }
       ],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/biditext.h",
+      "targets": [
+        "Avkon",
+        "Cone",
+        "Eikon",
+        "EikonControls",
+        "EikonDialogs",
+        "Native_aknhlist",
+        "Native_aknnotify",
+        "Native_browserengine",
+        "Native_commondialogs",
+        "Native_commonui",
+        "Native_eikcdlg",
+        "Native_eikctl"
+      ]
     },
     {
       "include": "linebreak.h",
@@ -51188,7 +51908,17 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "40fcad211b7a63122f960ffadb76571b1e6023b9811b5fe3509a580749cec88f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/linebreak.h",
+      "targets": [
+        "Avkon",
+        "Eikon",
+        "Native_aknnotify",
+        "Native_commondialogs",
+        "Native_commonui",
+        "Native_eikcdlg",
+        "Native_eikctl",
+        "TextLayout"
+      ]
     },
     {
       "include": "bidivisual.h",
@@ -52569,7 +53299,10 @@
       "api_libraries": [
         "BrowserEngine.lib"
       ],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/BrCtlDefs.h",
+      "targets": [
+        "Native_browserengine"
+      ]
     },
     {
       "include": "BrCtlDialogsProvider.h",
@@ -52585,7 +53318,10 @@
       "api_libraries": [
         "BrowserEngine.lib"
       ],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/BrCtlDialogsProvider.h",
+      "targets": [
+        "Native_browserengine"
+      ]
     },
     {
       "include": "brctlinterface.h",
@@ -52617,7 +53353,10 @@
       "api_libraries": [
         "BrowserEngine.lib"
       ],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/BrCtlLayoutObserver.h",
+      "targets": [
+        "Native_browserengine"
+      ]
     },
     {
       "include": "BrCtlLinkResolver.h",
@@ -52633,7 +53372,10 @@
       "api_libraries": [
         "BrowserEngine.lib"
       ],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/BrCtlLinkResolver.h",
+      "targets": [
+        "Native_browserengine"
+      ]
     },
     {
       "include": "BrCtlSoftkeysObserver.h",
@@ -52649,7 +53391,10 @@
       "api_libraries": [
         "BrowserEngine.lib"
       ],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/BrCtlSoftkeysObserver.h",
+      "targets": [
+        "Native_browserengine"
+      ]
     },
     {
       "include": "BrCtlSpecialLoadObserver.h",
@@ -52665,7 +53410,10 @@
       "api_libraries": [
         "BrowserEngine.lib"
       ],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/BrCtlSpecialLoadObserver.h",
+      "targets": [
+        "Native_browserengine"
+      ]
     },
     {
       "include": "BrCtlWindowObserver.h",
@@ -52681,7 +53429,10 @@
       "api_libraries": [
         "BrowserEngine.lib"
       ],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/BrCtlWindowObserver.h",
+      "targets": [
+        "Native_browserengine"
+      ]
     },
     {
       "include": "BrCtlDownloadObserver.h",
@@ -52697,7 +53448,10 @@
       "api_libraries": [
         "BrowserEngine.lib"
       ],
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/BrCtlDownloadObserver.h",
+      "targets": [
+        "Native_browserengine"
+      ]
     },
     {
       "include": "BrowserPluginInterface.h",
@@ -53297,7 +54051,7 @@
       ],
       "classification": "public_base_platform",
       "sha256": "9fa51746efa65dc25552dc9d69184d4c3c656ef21e7cea98640459099d435e16",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "blocked": "Public export differs from the reviewed delivered header variant; source/version selection requires review"
     },
     {
       "include": "brctlinterface.h",
@@ -54619,7 +55373,16 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "144eb3fb13ecb03f38575697fd297f198bf1ae84230a249632f7ee362af57f71",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apacmdln.h",
+      "targets": [
+        "Avkon",
+        "Eikon",
+        "Native_aknnotify",
+        "Native_commondialogs",
+        "Native_commonui",
+        "Native_eikcdlg",
+        "Native_eikctl"
+      ]
     },
     {
       "include": "apadbase.h",
@@ -54629,7 +55392,11 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "8ac3e2e1442b0fa9b716d72c62e133aeb41fe03d4d251be770d0b49fbf9ba799",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apadbase.h",
+      "targets": [
+        "AppArc",
+        "AppArcBase"
+      ]
     },
     {
       "include": "apadef.h",
@@ -54639,7 +55406,18 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "71ee1aaa830f0c8c3678d73760be04d54a930938d3ad964d7634af1c7596f652",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apadef.h",
+      "targets": [
+        "AppArc",
+        "AppArcBase",
+        "Avkon",
+        "Eikon",
+        "Native_aknnotify",
+        "Native_commondialogs",
+        "Native_commonui",
+        "Native_eikcdlg",
+        "Native_eikctl"
+      ]
     },
     {
       "include": "apaflrec.h",
@@ -54649,7 +55427,17 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d48e11115c9d2df989822780d20981ddc1d958841bc4ef99498e671802525b10",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apaflrec.h",
+      "targets": [
+        "AppArcBase",
+        "Avkon",
+        "Eikon",
+        "Native_aknnotify",
+        "Native_commondialogs",
+        "Native_commonui",
+        "Native_eikcdlg",
+        "Native_eikctl"
+      ]
     },
     {
       "include": "apaid.h",
@@ -54659,7 +55447,18 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "dfa9bc9d040dbe42f163e5c3665d62ea839239e2fea67b83837b30c949c33c38",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apaid.h",
+      "targets": [
+        "AppArc",
+        "AppArcBase",
+        "Avkon",
+        "Eikon",
+        "Native_aknnotify",
+        "Native_commondialogs",
+        "Native_commonui",
+        "Native_eikcdlg",
+        "Native_eikctl"
+      ]
     },
     {
       "include": "apamdr.h",
@@ -54669,7 +55468,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a8319a103aef5bf9226b44b32fa92f59e65434467bdae0537cfec04a971c7eb0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apamdr.h",
+      "targets": [
+        "AppArcBase"
+      ]
     },
     {
       "include": "apparc.h",
@@ -54679,7 +55481,13 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "8fda56c1c4cc05935b49dbcb045beb69f969a010823c9b02ed976da1999314b1",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apparc.h",
+      "targets": [
+        "AppArc",
+        "Avkon",
+        "Eikon",
+        "Native_eikctl"
+      ]
     },
     {
       "include": "apaapp.h",
@@ -54689,7 +55497,14 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f1eac6db1240271303897eaec96ab6580d2b6d7447230d5792f5b3ef759fb44d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apaapp.h",
+      "targets": [
+        "AppArc",
+        "AppArcBase",
+        "Avkon",
+        "Eikon",
+        "Native_eikctl"
+      ]
     },
     {
       "include": "apadoc.h",
@@ -54699,7 +55514,14 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "23cc5dae7c6444b3f050d88589a8139ca06dbba711dca6467957f64ab4482071",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apadoc.h",
+      "targets": [
+        "AppArc",
+        "AppArcBase",
+        "Avkon",
+        "Eikon",
+        "Native_eikctl"
+      ]
     },
     {
       "include": "apaproc.h",
@@ -54709,7 +55531,13 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f2fa8be65b4c5319b41b7f9ab869da64aa2511bdd085ab4b520b2763c9c432f3",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apaproc.h",
+      "targets": [
+        "AppArc",
+        "Avkon",
+        "Eikon",
+        "Native_eikctl"
+      ]
     },
     {
       "include": "apgcli.h",
@@ -54719,7 +55547,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "cfc4f3d9e2b6552fa68f737c1eb5099e2538ee99adfa1e4a8ab6633636e55e1f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apgcli.h",
+      "targets": [
+        "AppArc"
+      ]
     },
     {
       "include": "apgupdate.h",
@@ -54731,7 +55562,10 @@
       ],
       "classification": "public_base_platform",
       "sha256": "e3487822eb7d1f8131a42f19f36320a46269f80fa53250df922665cdcb20d63d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apgupdate.h",
+      "targets": [
+        "AppArc"
+      ]
     },
     {
       "include": "apgdoor.h",
@@ -54741,7 +55575,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5ec069b5609835507c9853b977eff2bf1ee65a928fe3ad2433e1f44f75973b17",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apgdoor.h",
+      "targets": [
+        "AppArc"
+      ]
     },
     {
       "include": "apgicnfl.h",
@@ -54751,7 +55588,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f55b3b22f5861508eecc315ece56959ee746e87ff65738fbe967776a3a2b26b5",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apgicnfl.h",
+      "targets": [
+        "Native_eikctl"
+      ]
     },
     {
       "include": "apgtask.h",
@@ -54761,7 +55601,14 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a515f0a7fc092022f2cbb48cef59a9b4384c3203f34dc37c15078a00d71d0706",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apgtask.h",
+      "targets": [
+        "AppArc",
+        "Avkon",
+        "Native_aknnotify",
+        "Native_eikcdlg",
+        "Native_eikctl"
+      ]
     },
     {
       "include": "apgwgnam.h",
@@ -54771,7 +55618,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "11b71a2ce8629b70d9838318ede91a2ccaf84c3f6b69947134dfc6b389788e71",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apgwgnam.h",
+      "targets": [
+        "AppArc"
+      ]
     },
     {
       "include": "apgctl.h",
@@ -54781,7 +55631,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "73ae806106d766f539796877d528a2734ce696b0b4da25f001957200eb1b09c9",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apgctl.h",
+      "targets": [
+        "AppArc"
+      ]
     },
     {
       "include": "apcaptionfile.rh",
@@ -54791,7 +55644,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f0eb0bc84f279d66f2587ddd3f53f3ea60c171ba07088a2f416c18bd6f43f56c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/apcaptionfile.rh",
+      "targets": [
+        "AppArc"
+      ]
     },
     {
       "include": "vwsdef.h",
@@ -54801,7 +55657,16 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "14eadaa0764a8d8929e6dc9049144628231272afac3f0bc525e8f1449b3476e7",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/vwsdef.h",
+      "targets": [
+        "Avkon",
+        "Eikon",
+        "Native_aknnotify",
+        "Native_commondialogs",
+        "Native_downloadmgruilib",
+        "Native_eikcdlg",
+        "Native_eikctl"
+      ]
     },
     {
       "include": "viewcli.h",
@@ -55175,7 +56040,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e94635d5125e0f40345c320c236fb86342af6a1208b8295f7895c0c47e227902",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sdpattributefield.h",
+      "targets": [
+        "SdpCodec"
+      ]
     },
     {
       "include": "sdpbandwidthfield.h",
@@ -55185,7 +56053,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "302424b2d50befa7ee8b91e034e0902f8d3997603e65c2d65f9af74f01509d4f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sdpbandwidthfield.h",
+      "targets": [
+        "SdpCodec"
+      ]
     },
     {
       "include": "sdpcodecconstants.h",
@@ -55194,8 +56065,19 @@
       "declaration": "../SDP/api/SdpCodecConstants.h SYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(sdpcodecconstants.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "1e977f02961689e0e768f5d050de2651ace70aa53a67fcba8f8a85ff0b84c8c7",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "d4ae850ab94a0090d9b15afa8a00ff220fc600f98dbd02b28f9c9287d2fe4535",
+      "source_sha256": "1e977f02961689e0e768f5d050de2651ace70aa53a67fcba8f8a85ff0b84c8c7",
+      "compatibility_edits": [
+        {
+          "before": "#define __SDPCODECCONSTANTS_H__",
+          "after": "#define __SDPCODECCONSTANTS_H__\n#include <e32std.h>",
+          "reason": "The original public SDP constants use Symbian types without including e32std.h; supply that prerequisite for independent consumers."
+        }
+      ],
+      "destination": "include/native/sdpcodecconstants.h",
+      "targets": [
+        "SdpCodec"
+      ]
     },
     {
       "include": "sdpcodecerr.h",
@@ -55204,8 +56086,19 @@
       "declaration": "../SDP/api/SdpCodecErr.h SYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(sdpcodecerr.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "a1f44b8c0950e160dba498e8cdf4daf13df98574808833d2cdc6371fd9d40801",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "4d693b9423a061f72161ed071174ecbd2e100b03edb2008472e805ea1d67f379",
+      "source_sha256": "a1f44b8c0950e160dba498e8cdf4daf13df98574808833d2cdc6371fd9d40801",
+      "compatibility_edits": [
+        {
+          "before": "#define SDPCODECERR_H",
+          "after": "#define SDPCODECERR_H\n#include <e32std.h>",
+          "reason": "The original public SDP constants use Symbian types without including e32std.h; supply that prerequisite for independent consumers."
+        }
+      ],
+      "destination": "include/native/sdpcodecerr.h",
+      "targets": [
+        "SdpCodec"
+      ]
     },
     {
       "include": "sdpcodecstringpool.h",
@@ -55215,7 +56108,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "1e3ee3e6e92c1092b80af9c1ef79a8cd432e52bf65674c48a4a57ae207f0e762",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sdpcodecstringpool.h",
+      "targets": [
+        "SdpCodec"
+      ]
     },
     {
       "include": "sdpconnectionfield.h",
@@ -55225,7 +56121,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "ddc4657921a68a5a8db427e698e12bf4d7029e99a0e108d9f093787a8153990b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sdpconnectionfield.h",
+      "targets": [
+        "SdpCodec"
+      ]
     },
     {
       "include": "sdpdocument.h",
@@ -55235,7 +56134,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "2da4a85670fd5ce38aaf1f255c87e1b61ec238ba77115005b6a0fb8b2830c915",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sdpdocument.h",
+      "targets": [
+        "SdpCodec"
+      ]
     },
     {
       "include": "sdpfmtattributefield.h",
@@ -55245,7 +56147,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "bff30969034220f798bc4fba8cb0c6808e97a1f5938b6eca26e8b5e2e8e738a2",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sdpfmtattributefield.h",
+      "targets": [
+        "SdpCodec"
+      ]
     },
     {
       "include": "sdpkeyfield.h",
@@ -55255,7 +56160,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "29b93da9bf807962d6e597320c6923fd9f936d4df548eaa8d1ecec17a79ff70c",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sdpkeyfield.h",
+      "targets": [
+        "SdpCodec"
+      ]
     },
     {
       "include": "sdpmediafield.h",
@@ -55265,7 +56173,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d26b25e6b4b232e9bfb7ee95938f843f4cae320a576f0f7f93338d6638eeff7f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sdpmediafield.h",
+      "targets": [
+        "SdpCodec"
+      ]
     },
     {
       "include": "sdporiginfield.h",
@@ -55275,7 +56186,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "31919cda1929862b162bf295be3d1249ea63ccc080baa76c985d9f0bda9a2383",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sdporiginfield.h",
+      "targets": [
+        "SdpCodec"
+      ]
     },
     {
       "include": "sdprepeatfield.h",
@@ -55285,7 +56199,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6a914ed0ccf4e56207c2200f4dedfe3fa3e9e0a334e5af2a4fb19958e6ce2c8e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sdprepeatfield.h",
+      "targets": [
+        "SdpCodec"
+      ]
     },
     {
       "include": "sdprtpmapvalue.h",
@@ -55295,7 +56212,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "658a46e11e416a3fa1a4c55e426a5bf39d0ce14cde529da20677a0f5ca3bfbb8",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sdprtpmapvalue.h",
+      "targets": [
+        "SdpCodec"
+      ]
     },
     {
       "include": "sdptimefield.h",
@@ -55305,7 +56225,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e5e73e6a9154e6a36066c5464ce313ee8532bd681dd0c5b7b784b9803dacd35b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sdptimefield.h",
+      "targets": [
+        "SdpCodec"
+      ]
     },
     {
       "include": "sdptypedtime.h",
@@ -55315,7 +56238,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "ddfcb72d1432a96ae30b0438c663a4a45559074d460a556329758cac43467496",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sdptypedtime.h",
+      "targets": [
+        "SdpCodec"
+      ]
     },
     {
       "include": "sip.h",
@@ -55325,7 +56251,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e2e49bd98b1ab2e1ad93116d42e892a2923ae692d69ad7ca0b33e58b06afc6fc",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sip.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipclienttransaction.h",
@@ -55335,7 +56264,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f814a1e3260c0739a7b88c5b73083d73032dc924a49623e4d53ab7921214fca7",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipclienttransaction.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipconnection.h",
@@ -55345,7 +56277,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6715cb50a171f9858003f7b7394433965bacc4ae352a915dedf243094de9af7b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipconnection.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipconnectionobserver.h",
@@ -55355,7 +56290,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "3b50fb82179afa48e431eafd5ae9b42d4cc9cb9ebbb8ac3c7464adc80575dc4f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipconnectionobserver.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipdefs.h",
@@ -55365,7 +56303,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f207ad77d1c372b5211c48b0e615aa66c1bd5e8803bd0ba042f9e27ba79c3403",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipdefs.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipsdkcrkeys.h",
@@ -55385,7 +56326,8 @@
       ],
       "destination": "include/native/sipsdkcrkeys.h",
       "targets": [
-        "CentralRepository"
+        "CentralRepository",
+        "SipClient"
       ]
     },
     {
@@ -55396,7 +56338,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "b7e1acce3a232164f295d44f21048e98e74bb19ca35729c269f070d12f9d5494",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipdialog.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipdialogassocbase.h",
@@ -55406,7 +56351,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "7242831a42b7a40faed2e8c90c782a65ffe216748098c60d0a9403f2ff6f8349",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipdialogassocbase.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "siperr.h",
@@ -55416,7 +56364,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "4ef9693fcbc2c71f19da838e32015a3acedeafd226679796bc1761e8395af195",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/siperr.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "siphttpdigest.h",
@@ -55426,7 +56377,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "4ba7856f28a093ef1042129d2f712a958fdabb24b280feb5dd16f74694da5461",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/siphttpdigest.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "siphttpdigestchallengeobserver.h",
@@ -55435,8 +56389,19 @@
       "declaration": "../SIP/sipapi/api/siphttpdigestchallengeobserver.h SYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(siphttpdigestchallengeobserver.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "aef6855bd33bdb4ac6286bff66ed7261da7a8b61a13b687e55b1ae37c8ac3739",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "e0fac10e34dca21905e14287299e930844db8a8f34d2b74c3e219f63e126bb06",
+      "source_sha256": "aef6855bd33bdb4ac6286bff66ed7261da7a8b61a13b687e55b1ae37c8ac3739",
+      "compatibility_edits": [
+        {
+          "before": "#define MSIPHTTPDIGESTCHALLENGEOBSERVER_H",
+          "after": "#define MSIPHTTPDIGESTCHALLENGEOBSERVER_H\n#include <e32std.h>",
+          "reason": "The original public SIP observer uses TDesC8 without its e32std.h declaration prerequisite."
+        }
+      ],
+      "destination": "include/native/siphttpdigestchallengeobserver.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "siphttpdigestchallengeobserver2.h",
@@ -55446,7 +56411,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "543162c0858080bdd2fc91905ba0b332d25820acdc32af6dd342665178e2fc04",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/siphttpdigestchallengeobserver2.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipinvitedialogassoc.h",
@@ -55456,7 +56424,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f90424dbe87cbc47a624a4d1466c871744ca0d0c2ce0d90a1b9ce106cbf400a2",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipinvitedialogassoc.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipmessageelements.h",
@@ -55466,7 +56437,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "b090aba653ec61540d739c6515422874be57d1796e2d1172d1ef0eb225189564",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipmessageelements.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipnotifydialogassoc.h",
@@ -55476,7 +56450,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "232cf8b245cab70c28b0ac81fc378045744f2a37c3222205f2f1c0dad7c056f9",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipnotifydialogassoc.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipobserver.h",
@@ -55486,7 +56463,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "eac23212021bc569085d68c9240341a1b92b7c346c53fdb363411385b73b8c62",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipobserver.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipreferdialogassoc.h",
@@ -55496,7 +56476,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6b6f1d4322454ee9514d5c18fcf17186aa23024ce9e1281897453d175e4dbd7a",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipreferdialogassoc.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "siprefresh.h",
@@ -55506,7 +56489,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "b8879fe75dbeac6af5fb56f185d48b35ef5ace6546c9a71ff3e82c3602699259",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/siprefresh.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipregistrationbinding.h",
@@ -55516,7 +56502,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "7f829f0328fd64bd55a276c65dc8ca2a5408fb89b84e259ee4cbc45c8389125b",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipregistrationbinding.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipregistrationcontext.h",
@@ -55526,7 +56515,11 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a6d00d12d87dddd569f38975c3e6c66ea828ba38952d049c46a9c636994685c3",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipregistrationcontext.h",
+      "targets": [
+        "SipClient",
+        "SipProfiles"
+      ]
     },
     {
       "include": "siprequestelements.h",
@@ -55536,7 +56529,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "033f75b3299356415582393ed9904a8afdb47b32bbb968362216ce2dcf39bc11",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/siprequestelements.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipresponseelements.h",
@@ -55546,7 +56542,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f96e24c5c849cdd5dbc5fed8bd2f465a628b33f9d21f77743cfc27ba13d00c88",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipresponseelements.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipservertransaction.h",
@@ -55556,7 +56555,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "31741fdc762527d9812e582b5fbceb2d4e1b4011cd41ce0fe5a40de2bf505c56",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipservertransaction.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipsubscribedialogassoc.h",
@@ -55566,7 +56568,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "7ea574c74f57bf4572e871efa76621998b1e67622ef99b39832a51caf026405e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipsubscribedialogassoc.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "siptransactionbase.h",
@@ -55576,7 +56581,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "1e46be1acf213694b407b688b06d630a9fc241aef0e44656c15f26c6eb0a9f38",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/siptransactionbase.h",
+      "targets": [
+        "SipClient"
+      ]
     },
     {
       "include": "sipacceptcontactheader.h",
@@ -55586,7 +56594,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f84d2274aedb400db9fd608d7a483a1a1e19256bd8dc3b2f5786ff7603a25a6e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipacceptcontactheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipacceptencodingheader.h",
@@ -55596,7 +56607,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "9e454188a72747c3871fd07ce61bb255bc6381ea881137b4c1271fe2f804b8f3",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipacceptencodingheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipacceptheader.h",
@@ -55606,7 +56620,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "4a320a33ee1bbe4c98e6ca9c9557217d9ddc5674725153f71019a1cad3af116f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipacceptheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipacceptlanguageheader.h",
@@ -55616,7 +56633,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f3136a04678925ac9740c35232ca1804d8fa887806616d8bcb3d1149a0896d1d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipacceptlanguageheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipaddress.h",
@@ -55626,7 +56646,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "cc76a88a182e1871d4716b53efdd8a067487cfb00948146b969ab0a0a223f672",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipaddress.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipaddressheaderbase.h",
@@ -55636,7 +56659,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "3b6bcfcb96071620d80a663ec8a07dcfa954180f0c16adef5cf1404aa04bdc8e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipaddressheaderbase.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipalloweventsheader.h",
@@ -55646,7 +56672,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a8af60ce53a74e6d2b9933cbba5f22c598d40168c6deb0d1b7797bcd13a00c81",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipalloweventsheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipallowheader.h",
@@ -55656,7 +56685,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "2d2d5c210710005d2d9b586932c70e5b11433bf4b932efe5ab3df36ed5b6af45",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipallowheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipauthenticateheaderbase.h",
@@ -55666,7 +56698,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "242f75d51c9e57292944fa2add232ddaa0f0e1334bfbeaf8db884bf95a00fa50",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipauthenticateheaderbase.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipauthheaderbase.h",
@@ -55676,7 +56711,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "558c52a52f516a730b8985767b13b8366b51b6c69691d5de0f3b5d852d2b1bc0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipauthheaderbase.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipauthorizationheader.h",
@@ -55686,7 +56724,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "fe6d23828e4223cfa46164575bde020a1858f7b604053de587c1ee5340fa8410",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipauthorizationheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipauthorizationheaderbase.h",
@@ -55696,7 +56737,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e541580b2e4e7bb53c0b6311699ee6f2a91101d9909482b9e224e2365e173ca8",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipauthorizationheaderbase.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipproxyauthorizationheader.h",
@@ -55706,7 +56750,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "77726981dd666162a4702be2c36c50b1f403983ea41ef506abec914e0dfc8bac",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipproxyauthorizationheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipcallidheader.h",
@@ -55716,7 +56763,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e874354b8c229cdcc41d7c91e28fbb1b4720ecf6e106e87b7b4ed3bc17a6b8b5",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipcallidheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipcodecerr.h",
@@ -55725,8 +56775,19 @@
       "declaration": "../SIP/Codec/api/sipcodecerr.h SYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(sipcodecerr.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "9cfaa2972c8693b0e0286e516e767016c3d92c716b2f57ba288c638c98e98377",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "37c704effba755d78ea28a7b4d85cde76c415087b1597eba9d54dd2cbbf09193",
+      "source_sha256": "9cfaa2972c8693b0e0286e516e767016c3d92c716b2f57ba288c638c98e98377",
+      "compatibility_edits": [
+        {
+          "before": "#define SIPCODECERR_H",
+          "after": "#define SIPCODECERR_H\n#include <e32std.h>",
+          "reason": "The original public SIP error constants use TInt without including e32std.h; supply that prerequisite for independent consumers."
+        }
+      ],
+      "destination": "include/native/sipcodecerr.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipcontactheader.h",
@@ -55736,7 +56797,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "0cebc99b67f372feb45ea605b60448f0b2afc12cba37b44689fc1de28f1c81d8",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipcontactheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipcontentdispositionheader.h",
@@ -55746,7 +56810,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "f3040f005aeef0ea81e9ca217d9b1cbbe765764e8b3bfdb1dfa17798fdd65ad4",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipcontentdispositionheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipcontentencodingheader.h",
@@ -55756,7 +56823,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5dfb8947e7422ef431eb4eabdd5e1b10f5447102daff47597eb15e6ab02abda0",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipcontentencodingheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipcontenttypeheader.h",
@@ -55766,7 +56836,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "315e0a5050d942cb34d609f38617ab9d26822dd9e01b1ad10be71631b523f19a",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipcontenttypeheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipcseqheader.h",
@@ -55776,7 +56849,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "61d4d96469a7cd8f99c97872eca3c81fa1bc57635afabb6ec2cf0b28fd81c292",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipcseqheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipeventheader.h",
@@ -55786,7 +56862,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "1466f3307f794a6b2685b41c6810a13c3c90301384a9e24091efbb435e941a68",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipeventheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipexpiresheader.h",
@@ -55796,7 +56875,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "eed3966c82ea5eb54948c2807b04b7fe448e24db6ebee4bb9188ca9a3fca3ff1",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipexpiresheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipextensionheader.h",
@@ -55806,7 +56888,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "116964418cf6b043608a51b36320799126bce92d444c5ac4bbad3e1faa6e7118",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipextensionheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipfromheader.h",
@@ -55816,7 +56901,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "fefa00c93c1247f92f03fd6d4ffe483c11867c8a08e297c6e0fe04393111c1a3",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipfromheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipfromtoheaderbase.h",
@@ -55826,7 +56914,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "ef0684a99bfefd7ffee79dde85a9ba8864d0c711ee7d734b699ae985330ac64f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipfromtoheaderbase.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipheaderbase.h",
@@ -55836,7 +56927,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "1c31d78fbd6661e253d312bc43196699109ad2fc2fdccc58cd06d55d16d1794e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipheaderbase.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipparameterheaderbase.h",
@@ -55846,7 +56940,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "127c5a4e2581199d3f67c426a2f9bb07cc48c21aecc97aef8073c9a640395393",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipparameterheaderbase.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sippassociateduriheader.h",
@@ -55856,7 +56953,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "c0b57c85990628d8912fa251a51f68b06d4c09fff58d497aeec83537cef630cf",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sippassociateduriheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipproxyauthenticateheader.h",
@@ -55866,7 +56966,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a566a4b435120d3de05946dfd8ba6c4d703508a880798c226891e8026827da2a",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipproxyauthenticateheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipproxyrequireheader.h",
@@ -55876,7 +56979,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "b4b8a2dde432cb290bb9e2544c452ad91060cbd576864458cf3a114e1125e2c6",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipproxyrequireheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "siprackheader.h",
@@ -55886,7 +56992,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "93f7985f4ec7d48660ed7889fac184d100b533421382acfe854b96c5eb56353e",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/siprackheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "siprefertoheader.h",
@@ -55896,7 +57005,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e56899af32f5be5e0ae21f2958a19f8a29f4af22001f19800a1ca7426ec27a0f",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/siprefertoheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipreplytoheader.h",
@@ -55906,7 +57018,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "9018f805f168964975f33627afc76f72f50a637db029f573d516ddaec4545bb7",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipreplytoheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "siprequireheader.h",
@@ -55916,7 +57031,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "d98133159e8b04dd498dba6770468c8f1e56b76d526b1762fba1c3f137d2bdb1",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/siprequireheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipretryafterheader.h",
@@ -55926,7 +57044,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5d1faabf5e2cc12b28bf4af0cec297925dc7ceff546ef777faa0edffd11d4e7d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipretryafterheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "siprouteheader.h",
@@ -55936,7 +57057,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "542ff5eb289a34ebd74d4f8050a287d36575f5b2a80fa8fb157464ce92f83130",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/siprouteheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "siprouteheaderbase.h",
@@ -55946,7 +57070,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "6dcbabac4f089d0ebcc229aa817484f94956c2b70462f43afe21007e28a38f95",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/siprouteheaderbase.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "siprseqheader.h",
@@ -55956,7 +57083,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a0d5787e8f71ec7424e4dbb0077e8007bcc722411215fb2ded719a4774e33249",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/siprseqheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipsecurityclientheader.h",
@@ -55966,7 +57096,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "152426460f912b5b74cbb09ddb417e85394852dc3cf36b631584509a32fd7c43",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipsecurityclientheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipsecurityheaderbase.h",
@@ -55976,7 +57109,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "94791fe7481f83789578bcf8aee67d01fcfcd1e5bff8cdc363f2e89ebbfbfa12",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipsecurityheaderbase.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipstrings.h",
@@ -55986,7 +57122,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "7865a043bf82f78eb69b86ece53971b0b2b22849f3516826f3eee9b393f1eb59",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipstrings.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipsubscriptionstateheader.h",
@@ -55996,7 +57135,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "04c6c1f55b8836065025433186c3dd71918d6040ec9b99585d607d7649783da2",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipsubscriptionstateheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipsupportedheader.h",
@@ -56006,7 +57148,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "fe14c55f0644b4f7668a5cc4d8fc68e16d36ee9a94ad2196e3502f1c9c2e6b77",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipsupportedheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "siptimestampheader.h",
@@ -56016,7 +57161,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "7f74a2b8e954abda075691616d6b569aff82407cfcfc440c0815aa7256c3b092",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/siptimestampheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "siptoheader.h",
@@ -56026,7 +57174,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "7290d88c6a9f958d91507c69d2e11a717900f21e387ebfc9094bf46183797022",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/siptoheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "siptokenheaderbase.h",
@@ -56036,7 +57187,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "a6fa6a0183f9d10725d6e8237f4f99f76d32293025c7976cce061a7d406b2dc3",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/siptokenheaderbase.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipunsignedintheaderbase.h",
@@ -56046,7 +57200,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "376f4b32f0fd83a9c3902f573cfd75a3086330ac1e6a5f6bb49416011e72f969",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipunsignedintheaderbase.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipunsupportedheader.h",
@@ -56056,7 +57213,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "fb79ba4e2108554d285f945aa7f3ca1669986a412ed1bfda980921733caea318",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipunsupportedheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipwwwauthenticateheader.h",
@@ -56066,7 +57226,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "733aa94128da66fd2723fb4e030fd09d30ab64657dbccf35552170b7e14e8472",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipwwwauthenticateheader.h",
+      "targets": [
+        "SipCodec"
+      ]
     },
     {
       "include": "sipconcreteprofileobserver.h",
@@ -56076,7 +57239,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "e9bb5cee22946ede9f5461f042e0f97166d380b21a1897fc59ccf887e9a8a2bd",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipconcreteprofileobserver.h",
+      "targets": [
+        "SipProfiles"
+      ]
     },
     {
       "include": "sipprofile.h",
@@ -56086,7 +57252,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "2b51b203c90154987403962a842b1b07bef05308386ecca989d58609e843a5ad",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipprofile.h",
+      "targets": [
+        "SipProfiles"
+      ]
     },
     {
       "include": "sipprofileregistry.h",
@@ -56096,7 +57265,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "4824f33f40b9885241c275a37d90332b3d18c769c626f85a137a56f7a8a55b11",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipprofileregistry.h",
+      "targets": [
+        "SipProfiles"
+      ]
     },
     {
       "include": "sipprofileregistrybase.h",
@@ -56106,7 +57278,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "5efda7fd9935c6948ca8de7ea6b6a5fbc4c4f61053bcfe5eeeea9ab5ff7c8fa7",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipprofileregistrybase.h",
+      "targets": [
+        "SipProfiles"
+      ]
     },
     {
       "include": "sipprofileregistryobserver.h",
@@ -56116,7 +57291,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "b2857a4a318840052457b9c2f6d3974e0299485445bc872c1f4d8aa15edb7cc5",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipprofileregistryobserver.h",
+      "targets": [
+        "SipProfiles"
+      ]
     },
     {
       "include": "sipprofiletypeinfo.h",
@@ -56126,7 +57304,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "8ca13a0d5715b2953a48b513f16aa1dc0d522c557141fddf5847082f84ed5dba",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipprofiletypeinfo.h",
+      "targets": [
+        "SipProfiles"
+      ]
     },
     {
       "include": "sipmanagedprofile.h",
@@ -56136,7 +57317,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "2b928f0686f4ebb09073a6336dc5e46ae638273dacacdbede5211e6600ee793d",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipmanagedprofile.h",
+      "targets": [
+        "SipProfiles"
+      ]
     },
     {
       "include": "sipmanagedprofileregistry.h",
@@ -56146,7 +57330,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "60f880fbe253dd6764a3abfbed9a71a450f6e1f3e23bf01ea665fc762fcda015",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipmanagedprofileregistry.h",
+      "targets": [
+        "SipProfiles"
+      ]
     },
     {
       "include": "sipprofilealrcontroller.h",
@@ -56156,7 +57343,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "9bb8698392bf1de7187742cf35b02b3daf8d54b28a93d8f1989a611afcf4dba4",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipprofilealrcontroller.h",
+      "targets": [
+        "SipProfiles"
+      ]
     },
     {
       "include": "sipprofilealrobserver.h",
@@ -56166,7 +57356,10 @@
       "conditions": [],
       "classification": "public_base_platform",
       "sha256": "9dc900d923443b5fd55c68c66af50c6193ddcc42a77bbf395c6752e67cbff98a",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "destination": "include/native/sipprofilealrobserver.h",
+      "targets": [
+        "SipProfiles"
+      ]
     },
     {
       "include": "sipprofileservercrkeys.h",
@@ -56175,8 +57368,19 @@
       "declaration": "../ProfileAgent/Client/Api/sipprofileservercrkeys.h SYMBIAN_MW_LAYER_PUBLIC_EXPORT_PATH(sipprofileservercrkeys.h)",
       "conditions": [],
       "classification": "public_base_platform",
-      "sha256": "3d3409a323824281ce2de9bf7aba3131bd463902e5937611b556d11e22d891a3",
-      "blocked": "Public export inventoried; target ownership has not been reviewed"
+      "sha256": "9c1e775bd83c95054e808bf62dee0a38dc2a8bef66042288bc3d8d06548d5d7b",
+      "source_sha256": "3d3409a323824281ce2de9bf7aba3131bd463902e5937611b556d11e22d891a3",
+      "compatibility_edits": [
+        {
+          "before": "#define PROFILESERVERCRKEYS_H_",
+          "after": "#define PROFILESERVERCRKEYS_H_\n#include <e32std.h>",
+          "reason": "The original public SIP Profile Central Repository key header declares TUid but includes only e32def.h."
+        }
+      ],
+      "destination": "include/native/sipprofileservercrkeys.h",
+      "targets": [
+        "SipProfiles"
+      ]
     },
     {
       "include": "sipresolvedclient.h",
@@ -58162,6 +59366,42 @@
       ]
     },
     {
+      "include": "sdpcodecstringconstants.h",
+      "source": "ipappprotocols/realtimenetprots/sipfw/SDP/strings/SdpCodecStringConstants.st",
+      "input_sha256": "ed6bc21550741ba4e3ed1adc154fe6b5b4d50ce1e0dd83370fa94acb5012b5e3",
+      "sha256": "b41c82c3dd0ed3680c9f21342a19be701b15fd535af833a08d8c4ef8694c5afa",
+      "generator": {
+        "source": "ossrv/lowlevellibsandfws/apputils/stringtools/stringtable.pl",
+        "sha256": "a31efcae3a72470dfb1e8f296acbcbad82c41c3cf7d8a53929f51fae96764aca"
+      },
+      "manifest": "ipappprotocols/realtimenetprots/sipfw/SDP/Group/sdpcodec.mmp",
+      "declaration": "START STRINGTABLE SdpCodecStringConstants.st; EXPORTPATH /epoc32/include",
+      "classification": "public_base_platform",
+      "conditions": [],
+      "destination": "include/native/sdpcodecstringconstants.h",
+      "targets": [
+        "SdpCodec"
+      ]
+    },
+    {
+      "include": "sipstrconsts.h",
+      "source": "ipappprotocols/realtimenetprots/sipfw/SIP/Codec/strings/SipStrConsts.st",
+      "input_sha256": "2e87721b42e0d23ae61b70e246b1b47e35661768a80380026539c5c939aa2537",
+      "sha256": "1f3575f3edc5b0477fda2ef73eccf6632e2e3b160f8d1f87bad34e6a710548cd",
+      "generator": {
+        "source": "ossrv/lowlevellibsandfws/apputils/stringtools/stringtable.pl",
+        "sha256": "a31efcae3a72470dfb1e8f296acbcbad82c41c3cf7d8a53929f51fae96764aca"
+      },
+      "manifest": "ipappprotocols/realtimenetprots/sipfw/SIP/Group/sipcodec.mmp",
+      "declaration": "START STRINGTABLE SipStrConsts.st; EXPORTPATH /epoc32/include",
+      "classification": "public_base_platform",
+      "conditions": [],
+      "destination": "include/native/sipstrconsts.h",
+      "targets": [
+        "SipCodec"
+      ]
+    },
+    {
       "include": "mmf/common/mmfdrmcustomcommands.h",
       "source": "mmaudio/mmlibs/mmfw/inc/mmf/ControllerFramework/mmfdrmcustomcommands.h",
       "manifest": "mmaudio/mmlibs/mmfw/group/bld.inf",
@@ -58762,6 +60002,9 @@
         "HttpNative",
         "Native_downloadmgr",
         "Native_downloadmgruilib",
+        "SdpCodec",
+        "SipClient",
+        "SipCodec",
         "StringPool",
         "Uri",
         "Xml"
@@ -59347,6 +60590,8 @@
         "Native_servicehandler",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -59405,7 +60650,9 @@
         "Native_extendedconnpref",
         "Native_netmeta",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -59551,10 +60798,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -59633,6 +60884,8 @@
         "Native_ptiengine",
         "Native_servicehandler",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -59904,10 +61157,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -60369,10 +61626,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -60676,10 +61937,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -60779,7 +62044,9 @@
         "Native_extendedconnpref",
         "Native_netmeta",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -60801,7 +62068,9 @@
         "Native_eikcdlg",
         "Native_eikctl",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -60823,7 +62092,9 @@
         "Native_eikcdlg",
         "Native_eikctl",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -60845,7 +62116,9 @@
         "Native_eikcdlg",
         "Native_eikctl",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -60867,7 +62140,9 @@
         "Native_eikcdlg",
         "Native_eikctl",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -61305,6 +62580,24 @@
       ]
     },
     {
+      "include": "in_sock_internal.h",
+      "source": "networkingsrv/esockapiextensions/internetsockets/inc/in_sock_internal.h",
+      "manifest": "networkingsrv/esockapiextensions/internetsockets/group/bld.inf",
+      "declaration": "../inc/in_sock_internal.h\tSYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(in_sock_internal.h)",
+      "conditions": [],
+      "classification": "private_internal",
+      "sha256": "024eb08bbe741372f7370d31baaea90d44780347a36f33470614cd8cdef6ea9d",
+      "destination": "include/native/in_sock_internal.h",
+      "targets": [
+        "Native_aknnotify",
+        "Native_commondialogs",
+        "Native_eikcdlg",
+        "Native_eikctl",
+        "SdpCodec",
+        "SipClient"
+      ]
+    },
+    {
       "include": "uikon/eikscchange.h",
       "source": "classicui/commonuisupport/uikon/srvinc/eikscchange.h",
       "manifest": "classicui/commonuisupport/uikon/group_ncp/bld.inf",
@@ -61415,6 +62708,8 @@
         "Native_servicehandler",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -61490,6 +62785,8 @@
         "Native_servicehandler",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -61565,6 +62862,8 @@
         "Native_servicehandler",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -61640,6 +62939,8 @@
         "Native_servicehandler",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -61715,6 +63016,8 @@
         "Native_servicehandler",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -61790,6 +63093,8 @@
         "Native_servicehandler",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -61865,6 +63170,8 @@
         "Native_servicehandler",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -62035,6 +63342,8 @@
         "Native_servicehandler",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -62176,10 +63485,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -62313,10 +63626,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -62450,10 +63767,14 @@
         "PowerNative",
         "RandomNative",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
         "SendAs",
         "SensorCompensator",
         "SensorNative",
+        "SipClient",
+        "SipCodec",
+        "SipProfiles",
         "Sms",
         "SqlNative",
         "StreamsNative",
@@ -62525,7 +63846,9 @@
         "Native_eikcdlg",
         "Native_eikctl",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -62549,7 +63872,9 @@
         "Native_extendedconnpref",
         "Native_netmeta",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -62571,7 +63896,9 @@
         "Native_eikcdlg",
         "Native_eikctl",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -62727,6 +64054,8 @@
         "Native_servicehandler",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -62802,6 +64131,8 @@
         "Native_servicehandler",
         "Native_stereowideningutility",
         "SendAs",
+        "SipClient",
+        "SipCodec",
         "StreamsNative",
         "Text",
         "TextLayout",
@@ -62826,22 +64157,6 @@
       ]
     },
     {
-      "include": "in_sock_internal.h",
-      "source": "networkingsrv/esockapiextensions/internetsockets/inc/in_sock_internal.h",
-      "manifest": "networkingsrv/esockapiextensions/internetsockets/group/bld.inf",
-      "declaration": "../inc/in_sock_internal.h\tSYMBIAN_OS_LAYER_PLATFORM_EXPORT_PATH(in_sock_internal.h)",
-      "conditions": [],
-      "classification": "private_internal",
-      "sha256": "024eb08bbe741372f7370d31baaea90d44780347a36f33470614cd8cdef6ea9d",
-      "destination": "include/native/in_sock_internal.h",
-      "targets": [
-        "Native_aknnotify",
-        "Native_commondialogs",
-        "Native_eikcdlg",
-        "Native_eikctl"
-      ]
-    },
-    {
       "include": "elements/h_tdeallocator.h",
       "source": "commsfw/commsfwsupport/commselements/Helpers/inc/h_tdeallocator.h",
       "manifest": "commsfw/commsfwsupport/commselements/Helpers/group/bld.inf",
@@ -62863,7 +64178,9 @@
         "Native_extendedconnpref",
         "Native_netmeta",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },
@@ -62919,7 +64236,9 @@
         "Native_extendedconnpref",
         "Native_netmeta",
         "SdpAgent",
+        "SdpCodec",
         "SdpDatabase",
+        "SipClient",
         "Sms"
       ]
     },

@@ -760,7 +760,10 @@
       "target": "AppArc",
       "dll": "apgrfx.dll",
       "headers": [
+        "apcaptionfile.rh",
         "apgcli.h",
+        "apgctl.h",
+        "apgdoor.h",
         "apgtask.h",
         "apgwgnam.h"
       ],
@@ -777,8 +780,10 @@
       "dll": "apparc.dll",
       "headers": [
         "apaapp.h",
+        "apadbase.h",
         "apadoc.h",
-        "apaflrec.h"
+        "apaflrec.h",
+        "apamdr.h"
       ],
       "dependencies": [
         "StreamsNative",
@@ -2157,6 +2162,228 @@
       "availability": "unknown_firmware",
       "definition": "ossrv/genericopenlibs/openenvcore/libc/eabi/libcu.def",
       "mmp": "ossrv/genericopenlibs/openenvcore/libc/group/libc.mmp"
+    },
+    {
+      "target": "SdpCodec",
+      "dll": "sdpcodec.dll",
+      "headers": [
+        "sdpattributefield.h",
+        "sdpbandwidthfield.h",
+        "sdpcodecconstants.h",
+        "sdpcodecerr.h",
+        "sdpcodecstringpool.h",
+        "sdpconnectionfield.h",
+        "sdpdocument.h",
+        "sdpfmtattributefield.h",
+        "sdpkeyfield.h",
+        "sdpmediafield.h",
+        "sdporiginfield.h",
+        "sdprepeatfield.h",
+        "sdprtpmapvalue.h",
+        "sdptimefield.h",
+        "sdptypedtime.h",
+        "sdpcodecstringconstants.h"
+      ],
+      "dependencies": [
+        "Uri",
+        "Bafl",
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "ipappprotocols/realtimenetprots/sipfw/SDP/EABI/sdpcodecU.DEF",
+      "mmp": "ipappprotocols/realtimenetprots/sipfw/SDP/Group/sdpcodec.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "insock",
+        "esock",
+        "estor",
+        "bafl",
+        "inetprotutil"
+      ]
+    },
+    {
+      "target": "SipCodec",
+      "dll": "sipcodec.dll",
+      "headers": [
+        "sipacceptcontactheader.h",
+        "sipacceptencodingheader.h",
+        "sipacceptheader.h",
+        "sipacceptlanguageheader.h",
+        "sipaddress.h",
+        "sipaddressheaderbase.h",
+        "sipalloweventsheader.h",
+        "sipallowheader.h",
+        "sipauthenticateheaderbase.h",
+        "sipauthheaderbase.h",
+        "sipauthorizationheader.h",
+        "sipauthorizationheaderbase.h",
+        "sipcallidheader.h",
+        "sipcodecerr.h",
+        "sipcontactheader.h",
+        "sipcontentdispositionheader.h",
+        "sipcontentencodingheader.h",
+        "sipcontenttypeheader.h",
+        "sipcseqheader.h",
+        "sipeventheader.h",
+        "sipexpiresheader.h",
+        "sipextensionheader.h",
+        "sipfromheader.h",
+        "sipfromtoheaderbase.h",
+        "sipheaderbase.h",
+        "sipparameterheaderbase.h",
+        "sippassociateduriheader.h",
+        "sipproxyauthenticateheader.h",
+        "sipproxyauthorizationheader.h",
+        "sipproxyrequireheader.h",
+        "siprackheader.h",
+        "siprefertoheader.h",
+        "sipreplytoheader.h",
+        "siprequireheader.h",
+        "sipretryafterheader.h",
+        "siprouteheader.h",
+        "siprouteheaderbase.h",
+        "siprseqheader.h",
+        "sipsecurityclientheader.h",
+        "sipsecurityheaderbase.h",
+        "sipstrings.h",
+        "sipsubscriptionstateheader.h",
+        "sipsupportedheader.h",
+        "siptimestampheader.h",
+        "siptoheader.h",
+        "siptokenheaderbase.h",
+        "sipunsignedintheaderbase.h",
+        "sipunsupportedheader.h",
+        "sipwwwauthenticateheader.h",
+        "sipstrconsts.h"
+      ],
+      "dependencies": [
+        "Uri",
+        "Bafl",
+        "StreamsNative",
+        "CharConv"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "ipappprotocols/realtimenetprots/sipfw/SIP/EABI/SipCodecU.DEF",
+      "mmp": "ipappprotocols/realtimenetprots/sipfw/SIP/Group/sipcodec.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "bafl",
+        "estor",
+        "charconv",
+        "inetprotutil",
+        "featdiscovery"
+      ]
+    },
+    {
+      "target": "SipClient",
+      "dll": "sipclient.dll",
+      "headers": [
+        "sip.h",
+        "sipclienttransaction.h",
+        "sipconnection.h",
+        "sipconnectionobserver.h",
+        "sipdefs.h",
+        "sipdialog.h",
+        "sipdialogassocbase.h",
+        "siperr.h",
+        "siphttpdigest.h",
+        "siphttpdigestchallengeobserver.h",
+        "siphttpdigestchallengeobserver2.h",
+        "sipinvitedialogassoc.h",
+        "sipmessageelements.h",
+        "sipnotifydialogassoc.h",
+        "sipobserver.h",
+        "sipreferdialogassoc.h",
+        "siprefresh.h",
+        "sipregistrationbinding.h",
+        "sipregistrationcontext.h",
+        "siprequestelements.h",
+        "sipresponseelements.h",
+        "sipsdkcrkeys.h",
+        "sipservertransaction.h",
+        "sipsubscribedialogassoc.h",
+        "siptransactionbase.h"
+      ],
+      "dependencies": [
+        "SipCodec",
+        "Uri",
+        "Bafl",
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "ipappprotocols/realtimenetprots/sipfw/SIP/EABI/sipclientU.DEF",
+      "mmp": "ipappprotocols/realtimenetprots/sipfw/SIP/Group/sipclient.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "estor",
+        "bafl",
+        "inetprotutil",
+        "insock",
+        "sipcodec"
+      ]
+    },
+    {
+      "target": "SipProfileCore",
+      "dll": "sipprofile.dll",
+      "headers": [],
+      "dependencies": [
+        "SipCodec",
+        "Uri",
+        "Bafl",
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "ipappprotocols/realtimenetprots/sipfw/ProfileAgent/EABI/sipprofileU.DEF",
+      "mmp": "ipappprotocols/realtimenetprots/sipfw/ProfileAgent/Group/sipprofile.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "estor",
+        "bafl",
+        "inetprotutil",
+        "random",
+        "commsdat",
+        "charconv",
+        "efsrv"
+      ]
+    },
+    {
+      "target": "SipProfiles",
+      "dll": "sipprofilecli.dll",
+      "headers": [
+        "sipconcreteprofileobserver.h",
+        "sipmanagedprofile.h",
+        "sipmanagedprofileregistry.h",
+        "sipprofile.h",
+        "sipprofilealrcontroller.h",
+        "sipprofilealrobserver.h",
+        "sipprofileregistry.h",
+        "sipprofileregistrybase.h",
+        "sipprofileregistryobserver.h",
+        "sipprofileservercrkeys.h",
+        "sipprofiletypeinfo.h"
+      ],
+      "dependencies": [
+        "SipProfileCore",
+        "SipClient",
+        "Bafl",
+        "StreamsNative"
+      ],
+      "classification": "public_base_platform",
+      "availability": "unknown_firmware",
+      "definition": "ipappprotocols/realtimenetprots/sipfw/ProfileAgent/EABI/sipprofilecliU.DEF",
+      "mmp": "ipappprotocols/realtimenetprots/sipfw/ProfileAgent/Group/sipprofileclient.mmp",
+      "implementation_dependencies": [
+        "euser",
+        "estor",
+        "sipprofile",
+        "sipclient",
+        "bafl",
+        "cmmanager"
+      ]
     }
   ]
 }

@@ -108,6 +108,58 @@ def test_legacy_cstdlib_conflict_remains_explicit():
     )
 
 
+def test_identical_app_architecture_exports_share_reviewed_payload():
+    root = Path(__file__).resolve().parents[2]
+    inventory = json.loads(
+        (root / "research/native-sdk/inventory.json").read_text()
+    )
+    records = [
+        header
+        for header in inventory["headers"]
+        if header["include"] == "apgcli.h"
+        and header.get("classification") == "public_base_platform"
+    ]
+    assert {record["source"].split("/")[0] for record in records} == {
+        "appsupport",
+        "appsupport-sdk",
+    }
+    assert {record["destination"] for record in records} == {
+        "include/native/apgcli.h"
+    }
+    assert all("AppArc" in record["targets"] for record in records)
+
+
+def test_sip_stringtables_and_frozen_public_interfaces_are_inventoried():
+    root = Path(__file__).resolve().parents[2]
+    inventory = json.loads(
+        (root / "research/native-sdk/inventory.json").read_text()
+    )
+    facilities = {item["target"]: item for item in inventory["facilities"]}
+    for target in (
+        "SdpCodec",
+        "SipCodec",
+        "SipClient",
+        "SipProfileCore",
+        "SipProfiles",
+    ):
+        facility = facilities[target]
+        assert not facility.get("blocked")
+        assert facility["definition"]["source"].startswith(
+            "ipappprotocols/realtimenetprots/sipfw/"
+        )
+        assert facility["definition"]["destination"].endswith(".def")
+    for name, target in (
+        ("sdpcodecstringconstants.h", "SdpCodec"),
+        ("sipstrconsts.h", "SipCodec"),
+    ):
+        header = next(
+            item for item in inventory["headers"] if item["include"] == name
+        )
+        assert header["destination"] == "include/native/" + name
+        assert target in header["targets"]
+        assert header["generator"]["source"].endswith("stringtable.pl")
+
+
 def test_qt_mobility_aliases_exclude_private_classes(tmp_path):
     header = tmp_path / "src/contacts/qcontact.h"
     header.parent.mkdir(parents=True)
