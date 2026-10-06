@@ -15,6 +15,7 @@ if(NOT SYMBIAN_WORKSPACE_BUILD)
   include("${SYMBIAN_SDK_PREFIX}/cmake/symbian-arm.cmake")
 endif()
 include(SymbianPlatform)
+include(SymbianGraphics)
 set(SYMBIAN_CA_BUNDLE "" CACHE STRING
     "Project PEM CA bundle; empty means no packaged trust roots")
 if(SYMBIAN_CA_BUNDLE)

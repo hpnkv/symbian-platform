@@ -414,6 +414,9 @@ def _build_mbedtls(
 
 def stage_headers(workspace: Path, output: Path, compiler: Path) -> None:
     """Stages shared platform and SDK headers for exports and source builds."""
+    from symbian.project.graphics import stage_graphics_headers
+
+    stage_graphics_headers(workspace, output)
     source = workspace / "research/upstream"
     libcxx = source / "llvm-project/libcxx"
     openc = source / "ossrv/genericopenlibs/openenvcore"
@@ -555,6 +558,9 @@ def stage_imports(
     workspace: Path, output: Path, compiler: Path, linker: Path
 ) -> None:
     """Builds complete OS and Qt import interfaces once for SDK consumers."""
+    from symbian.project.graphics import stage_graphics_imports
+
+    stage_graphics_imports(workspace, output, compiler, linker)
     source = workspace / "research/upstream"
     # Every original library target owns its complete frozen ordinal ABI.
     for dll, definition in (

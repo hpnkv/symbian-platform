@@ -1,0 +1,12 @@
+#ifndef SYMBIAN_GL_APP_GENERATED_SHADERS_H_
+#define SYMBIAN_GL_APP_GENERATED_SHADERS_H_
+
+// Generated from shaders/*.vert and shaders/*.frag by CMake.
+namespace gl_app::shaders {
+inline constexpr char kCubeVertex[] = R"glsl(@CUBE_VERTEX@)glsl";
+inline constexpr char kCubeFragment[] = R"glsl(@CUBE_FRAGMENT@)glsl";
+inline constexpr char kExitVertex[] = R"glsl(@EXIT_VERTEX@)glsl";
+inline constexpr char kExitFragment[] = R"glsl(@EXIT_FRAGMENT@)glsl";
+}  // namespace gl_app::shaders
+
+#endif  // SYMBIAN_GL_APP_GENERATED_SHADERS_H_

@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Qt App Debug" type="CLion_Remote" factoryName="Remote Debug" version="1" remoteCommand="127.0.0.1:24702" symbolFile="$PROJECT_DIR$/.symbian/workspace-apps/qt_app/qt_app.elf" sysroot="" toolchain="Default">
+    <debugger kind="GDB" isBundled="false">$PROJECT_DIR$/.run/qt_app-debug</debugger>
+    <pathMapping remote=":/symbian-src/qt_app" local="$PROJECT_DIR$/examples/qt_app" />
+    <method v="2" />
+  </configuration>
+</component>

@@ -10,12 +10,15 @@ from pathlib import Path
 CMAKE = """cmake_minimum_required(VERSION 3.28)
 project(hello_time LANGUAGES CXX ASM)
 include(SymbianApp)
-symbian_add_executable(hello_time app.cc model.cc app_bridge.cc)
+symbian_add_executable(hello_time app.cc)
 target_link_libraries(hello_time PRIVATE
   Symbian::AbseilStatusOr Symbian::Stackless
   Symbian::WindowServer Symbian::Gdi)
 target_compile_definitions(hello_time PRIVATE SYMBIAN_ENABLE_ABSEIL_STATUS=1
   SYMBIAN_ENABLE_TIMER_TASKS=1)
+set(modern_cpp "${SYMBIAN_SDK_PREFIX}/cmake/modern_cpp.h")
+target_compile_options(hello_time PRIVATE
+  "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-include \\"${modern_cpp}\\">")
 target_link_options(hello_time PRIVATE --gc-sections)
 symbian_publish_executable(hello_time UID3 0xe0000830)
 """
@@ -50,6 +53,11 @@ target_link_libraries(qt_check PRIVATE Symbian::Runtime Symbian::QtGui)
 symbian_publish_executable(qt_check UID3 0xe0000832)
 """
 
+GL_CMAKE = """
+add_subdirectory(gl_source)
+symbian_publish_executable(gl_app UID3 0xe0000831)
+"""
+
 EKA1_CMAKE = """cmake_minimum_required(VERSION 3.28)
 project(eka1_check LANGUAGES CXX ASM)
 include(SymbianPic)
@@ -75,14 +83,7 @@ int main() {
 def write_example(directory: Path, root: Path) -> None:
     """Includes a complete GUI application's owned source in the archive."""
     directory.mkdir(parents=True)
-    for name in (
-        "app.cc",
-        "model.cc",
-        "model.h",
-        "clock_time.h",
-        "app_bridge.h",
-        "app_bridge.cc",
-    ):
+    for name in ("app.cc",):
         shutil.copy2(
             root / "symbian/project/templates" / name, directory / name
         )
@@ -115,8 +116,9 @@ def check(sdk: Path) -> None:
         shutil.copyfile(
             moved / "examples/qt_app/app.cc", example / "qt_check.cc"
         )
+        shutil.copytree(moved / "examples/gl_app", example / "gl_source")
         with (example / "CMakeLists.txt").open("a") as cmake:
-            cmake.write(STARTUP_CMAKE + QT_CMAKE)
+            cmake.write(STARTUP_CMAKE + QT_CMAKE + GL_CMAKE)
         eka1 = root / "eka1 application"
         eka1.mkdir()
         (eka1 / "CMakeLists.txt").write_text(EKA1_CMAKE)
@@ -167,7 +169,7 @@ def check(sdk: Path) -> None:
                 check=True,
                 timeout=180,
             )
-            for name in ("hello_time", "startup_check", "qt_check"):
+            for name in ("hello_time", "startup_check", "qt_check", "gl_app"):
                 image = (build / "e32" / f"{name}.exe").read_bytes()
                 if image[16:20] != b"EPOC":
                     raise RuntimeError(f"Missing E32 signature in {name}")
@@ -211,7 +213,7 @@ def check(sdk: Path) -> None:
             if result.returncode < 0 or result.returncode in (126, 127):
                 raise RuntimeError(f"Bundled helper cannot run: {tool}")
     print(
-        "Relocated native SDK: ARMv5T and ARMv6 GUI, Qt and shared-startup "
+        "Relocated native SDK: ARMv5T and ARMv6 GUI, Qt, GL and shared-startup "
         "E32 builds, plus ARMv5T EKA1 imports, passed"
     )
 

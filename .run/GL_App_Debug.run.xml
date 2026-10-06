@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="GL App Debug" type="CLion_Remote" factoryName="Remote Debug" version="1" remoteCommand="127.0.0.1:24701" symbolFile="$PROJECT_DIR$/.symbian/workspace-apps/gl_app/gl_app.elf" sysroot="" toolchain="Default">
+    <debugger kind="GDB" isBundled="false">$PROJECT_DIR$/.run/gl_app-debug</debugger>
+    <pathMapping remote=":/symbian-src/gl_app" local="$PROJECT_DIR$/examples/gl_app" />
+    <method v="2" />
+  </configuration>
+</component>

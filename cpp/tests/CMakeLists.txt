@@ -49,16 +49,6 @@ symbian_native_library(symbian_agent_frame_test)
 add_test(NAME symbian_agent_frame_test COMMAND symbian_agent_frame_test)
 set_tests_properties(symbian_agent_frame_test PROPERTIES TIMEOUT 15)
 
-add_executable(symbian_app_starter_test app_starter_test.cc
-  "${CMAKE_SOURCE_DIR}/symbian/project/templates/model.cc"
-  "${CMAKE_SOURCE_DIR}/symbian/project/templates/app_bridge.cc")
-target_include_directories(symbian_app_starter_test PRIVATE
-  "${CMAKE_SOURCE_DIR}/symbian/project/templates")
-target_link_libraries(symbian_app_starter_test PRIVATE GTest::gtest_main)
-symbian_native_library(symbian_app_starter_test)
-add_test(NAME symbian_app_starter_test COMMAND symbian_app_starter_test)
-set_tests_properties(symbian_app_starter_test PROPERTIES TIMEOUT 15)
-
 add_executable(symbian_concurrency_test concurrency_test.cc)
 target_link_libraries(symbian_concurrency_test PRIVATE
   symbian::concurrency GTest::gtest_main)

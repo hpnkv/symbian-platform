@@ -55,3 +55,13 @@ cmake --build build/guest-probes-armv6 --target gui_app qt_app
 
 Each profile writes its own `compile_commands.json`. These builds do not
 establish emulator or physical-device compatibility.
+
+The root `.run/` directory also supplies **GL App Run/Debug** and
+**Qt App Run/Debug**. Run selects the host `debug` profile and the corresponding
+native `gl_app_run` or `qt_app_run` launcher. Both Run and Debug build the ARMv6
+example and libraries from source, then supervise a disposable emulator instance.
+They use each example's firmware settings and ignore installed SDK selectors.
+Debug discovers ARM GDB on PATH or through `SYMBIAN_GDB`; it uses ports 24701
+and 24702 and publishes symbols under `.symbian/workspace-apps/<example>`.
+Opening an example directory separately provides its own **Standalone Run/Debug**
+configurations using the selected installed SDK and `symbian-pic` profile.

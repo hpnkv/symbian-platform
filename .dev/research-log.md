@@ -6922,3 +6922,132 @@ the active debug/guest-probes-armv6 IDE trees. Today's outputs are preserved; th
 user-highlighted application-machinery-native-guest-bootstrap was also removed.
 An independent session is editing the same worktree; its changes are intentionally
 left uncommitted by this session. No release/version bump was attempted.
+
+### 2026-10-06: GLES/EGL SDK contracts, structured GL example and IDE launchers
+
+The SDK stages original Symbian GLES 1.1 Common, GLES 2.0 and EGL 1.4
+headers, retaining their upstream notices, and complete frozen ordinal import
+proxies from the original graphics DEFs. `Symbian::GLES1`, `Symbian::GLES2`
+and `Symbian::EGL` carry the public includes, ABI settings and real DLL imports.
+Deferred CMake graph checks cover missing payloads, declared firmware APIs,
+selected-firmware DLL presence, supported ARM/EKA2 profiles, ABI/CPU/FPU flags,
+legacy EGL/vendor definitions and overlapping GLES1/GLES2 imports. Separate
+DLLs may privately import different APIs. Conditional link expressions whose
+configuration cannot be established are rejected with an explicit CMake `if()`
+alternative. Unknown device GPU/context/extension capabilities remain unknown;
+DLL presence and CPU architecture do not prove them.
+
+`examples/gl_app` separates native application/timer/input, EGL presentation,
+cube geometry, Exit control and shader compilation into purpose-specific
+`.h`/`.cc` pairs. GLSL lives in `shaders/`; configure dependencies embed it in a
+generated header. Its per-fragment Phong shader combines a warm point light
+and a cool directional light against black. Native Window Server input drives
+an outlined silver pixel-lettered Exit button. A shader-edit control changed
+the generated E32 and retained independent ELF/E32 reproducibility.
+
+Experiments exposed and resolved these concrete issues:
+
+* The original GLES1 DEF repeats ABSENT tombstone names. Native parsing now
+  preserves their ordinal slots while requiring unique live symbols and
+  ordinals; lookup prefers the live entry. All seven SDK GTests pass.
+* Float angle conversion needed original compiler-rt ARM `floatsisf.S`;
+  it is now part of the software floating-point runtime.
+* macOS `/var` versus `/private/var` source aliases caused duplicate startup
+  compilation in relocated SDKs. CMake now compares canonical source paths.
+* Clang checks debug prefix mappings in reverse order. A generated shader
+  header in a nested build tree retained random reproduction paths until the
+  more specific build mapping was placed last. The six real project-build
+  tests, including the nested Debug/generated-header regression, pass.
+* The GDB bridge substituted only `/symbian-src/gui_app`. It now uses each
+  application's name; actual GL and Qt source breakpoints resolve local files.
+* A globally guarded source-input include left later host example functions
+  without their local SDK prefix, selecting `/bin/clang++`. Each guest bridge
+  now explicitly selects the same prepared repository inputs.
+* CLion rewrote nested `.run` application configurations for the root project.
+  Standalone GL/Qt shared configurations now live under their respective
+  `.idea/runConfigurations`; root `.run` configurations have distinct names,
+  native host launch targets and ARM debugger wrappers. Source preparation
+  registers their debugger choices in existing root IDE state, preserving
+  unrelated profiles. Generated starters still receive shared App Run/Debug
+  helpers when IDE integration is selected, even before GDB is installed.
+* The owner's actual IDE Run exposed an unset firmware selection. Saved local,
+  ignored GL/Qt settings now point to the already imported RM-807 fixture,
+  content store and installed frontend. Both root launchers were then tested
+  with no arguments, matching the saved Run configuration.
+
+Root Run/Debug rebuild ARMv6 examples and SDK libraries through the source
+CMake graph, independent of installed SDK selectors. Source-example exposure
+remains gated by the existing example option, preserving
+host-only release builds. Source launchers explicitly enable that option when
+running an example. The host examples share one guest configure step and a
+Ninja job pool, so a combined GL/Qt build cannot launch competing Ninja
+processes against the same guest tree; the combined E32 build passes
+(`root-combined-build-r3.log`). Native SDK standalone workflows retain their own
+SDK selectors. Stop/SIGTERM reaps each owned emulator; no detached frontend
+remains. Actual ARM GDB source stops pass for GL `cube.cc:70` and Qt `app.cc:16`
+from both standalone and root wrappers. Full IDE debugger frontend interaction
+has not been independently observed.
+
+Final evidence is retained under `.symbian/ide-example-live/`: 64 relevant
+Pytests passed, 22 optional cases skipped (`tests-r4.log`); all seven native SDK
+cases passed via CTest; Black/Ruff and strict MkDocs passed. Root ARMv5T GL/Qt
+builds passed, as did the source-built ARMv6 Run/Debug paths. Debug GL rendering,
+rotation, black background, warm/cool lighting, outside input and normal Exit
+passed on both Dyncom and Dynarmic (`gl-debug-render-tests.log`, two cases).
+Earlier structured ARMv5T/ARMv6 GL execution passed all four backend cases.
+The actual final native bundle, `.symbian/gl-native-bundle-final`, passes the
+Python-free SDK relocation check in paths with spaces for both ARM profiles,
+GUI/Qt/GL/shared startup and ARMv5T EKA1 imports
+(`native-relocation-final.log`). No firmware/runtime state is bundled.
+
+Execution evidence is restricted to the named preserved RM-807 Belle fixture
+on macOS arm64. Linux GL execution, physical GPU/device operation, broader
+context/extensions and a hosted release remain open. No version bump or
+publication was performed; ARM ELF or import-proxy generation alone is not
+Symbian loader compatibility evidence.
+
+### 2026-10-06: unconditional modern C++ starter
+
+The starter now requires Abseil Status and Stackless Tasks, and forces both
+SYMBIAN_ENABLE_ABSEIL_STATUS and SYMBIAN_ENABLE_TIMER_TASKS on. Its single
+app.cc holds lines, pending tasks and cancellation generation in RunWindow;
+LogTime returns Status directly. Removed AppModel, the opaque C bridge and
+optional feature branches. Old saved project preferences remain loadable;
+new generation rejects the portable profile rather than silently downgrading.
+Init rejects explicitly selected firmware without libpthread.dll.
+
+Experiment: modern <new>/<memory> and original Window Server headers disagree
+on standard placement-new declarations and noexcept. Extracted the existing
+Qt allocator-declaration compatibility header into modern_cpp.h and force
+include it for the starter's C++ translation units. Qt reuses the same header.
+An SDK missing this compatibility header is rejected at CMake configuration.
+The Python-free bundle builds the rewritten starter, Qt, GL and startup for
+ARMv5T and ARMv6 after relocation into paths with spaces, plus ARMv5T EKA1.
+Both flags remain ON after configuring with explicit -D...=OFF overrides.
+
+The reported IDE missing-model.cc error was an obsolete host test of the
+removed C bridge. Removed that target and its test; actual guest tests cover
+clock drawing, timer delivery/cancellation, Status-to-native errors and STL
+allocation failure. Both root Debug trees (build/debug and cmake-build-debug)
+configure; the native build and all 12 remaining CTest suites pass.
+Live template tests passed on both emulator backends and both ISAs, including
+a relocated source breakpoint that reads the local year. Two old assertions
+expected the default runtime archive; updated them to require the modern
+streams archive. The saved IDE launcher also exposed system Python outside
+an activated environment. Generated local SDK selectors now record the
+configured Python interpreter; launcher fallbacks use it. The real saved
+Run configuration subsequently renders and exits normally.
+
+Physical-device validation and interaction with CLion's remote-debug frontend
+remain separate unobserved checks; emulator evidence does not establish them.
+
+Final checks: full Python collection exercised 834 cases (397 passed and 435
+optional skips; two executable-mode checks failed after refreshing bootstrap
+copies). Restored the executable modes; the final focused graphics/project/IDE/
+release suite passes 51 cases with 14 optional skips, including both repaired
+mode checks. Actual template runs comprise 20 initial passes plus the two
+updated archive assertions and the repaired saved Run launcher. Four real
+library-target checks pass. Updated emulator mock builds to inspect the new
+selected-firmware CMake argument; all 18 checks pass with one optional skip.
+Black/Ruff, 17 changed C++ files and strict documentation pass. Source runtime
+and firmware remain local ignored inputs; no release version is changed.

@@ -142,7 +142,7 @@ def test_wrong_architecture_stops_before_guest_state_is_created(
     )
     firmware = SimpleNamespace(device=device, files=files, identity="f" * 64)
     monkeypatch.setattr(launch, "selected", lambda _: (golden, firmware))
-    monkeypatch.setattr(launch.toolchain, "build", lambda *args: {})
+    monkeypatch.setattr(launch.toolchain, "build", lambda *args, **kwargs: {})
     monkeypatch.setattr(
         launch,
         "inspect_image",

@@ -46,7 +46,8 @@ function(_symbian_collect_native_files directory output)
       _symbian_collect_native_files("${entry}" nested)
       list(APPEND found ${nested})
     elseif(entry MATCHES "\\.(c|cc|cpp|cxx|mm|S|s|h|hh|hpp|hxx)$")
-      list(APPEND found "${entry}")
+      file(REAL_PATH "${entry}" native_file)
+      list(APPEND found "${native_file}")
     endif()
   endforeach()
   set(${output} "${found}" PARENT_SCOPE)
@@ -435,8 +436,10 @@ function(symbian_add_executable target)
   # Clang gives main C linkage in hosted mode; prevent host libc builtins.
   target_compile_options(${target} PRIVATE -fhosted -fno-builtin -g -gdwarf-4
     "-fdebug-compilation-dir=/symbian-build/${target}"
-    "-fdebug-prefix-map=${CMAKE_BINARY_DIR}=/symbian-build/${target}"
     "-fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=/symbian-src/${target}"
+    # Clang checks the last prefix first. Build trees often live inside the
+    # source directory, so the more specific generated-header map comes last.
+    "-fdebug-prefix-map=${CMAKE_BINARY_DIR}=/symbian-build/${target}"
     "-fdebug-prefix-map=${SYMBIAN_SDK_PREFIX}/include/platform=/symbian-sdk/include"
     "$<$<CONFIG:Debug>:-O0>")
   target_link_options(${target} PRIVATE --gc-sections)

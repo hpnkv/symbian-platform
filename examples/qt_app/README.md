@@ -3,6 +3,21 @@
 This is a guest Symbian Qt 4.8.1 application, using original QtCore/QtGui
 headers and DLL exports. It displays a button and exits when tapped.
 
+Open the example directory in CLion and choose **App Run** or **App Debug**.
+The shared **qt_app Standalone Run/Debug** configurations live in `.idea/runConfigurations/`,
+use the `symbian-pic` profile and
+launch the selected SDK through `sdk-run` / `sdk-debug`. Set `sdk-location.json`
+to your native SDK directory and select firmware with `symbian emu configure`.
+Debug discovers ARM GDB in the selected SDK or on PATH; `SYMBIAN_GDB` overrides
+the executable. Its endpoint is localhost:24702. Stop closes the owned emulator.
+
+When opening the SDK repository root, use **Qt App Run** or **Qt App Debug**.
+Run uses the host `debug` profile and `qt_app_run` executable; both configurations
+rebuild the example and ARMv6 SDK libraries from repository sources. They ignore
+the example's installed SDK selector. Root Debug uses `.run/qt_app-debug` and
+symbols in `.symbian/workspace-apps/qt_app`. Prepare source dependencies and
+select firmware for the example; supply ARM GDB on PATH or with `SYMBIAN_GDB`.
+
 Install `symbian-platform`, its native SDK and the compatible emulator. The SDK supplies
 the original guest Qt headers and import libraries. Run from the repository root:
 

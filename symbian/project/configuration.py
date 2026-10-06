@@ -17,9 +17,8 @@ class Preferences(BaseModel):
     name: str = Field(pattern=r"^[a-z][a-z0-9_]{0,47}$")
     uid3: int = Field(ge=0xE0000000, le=0xEFFFFFFF)
     architecture: Literal["armv5t", "armv6"] = "armv6"
-    # Projects made before the stackless profile remain on their chosen
-    # portable runtime when their generated configuration is refreshed.
-    timer_tasks: bool = False
+    # Retain the field when loading older projects; new starters require True.
+    timer_tasks: bool = True
     ide: Literal["intellij", "none"] = "intellij"
     port: int = Field(default=24690, ge=1024, le=65535)
 

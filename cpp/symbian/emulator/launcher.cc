@@ -2,15 +2,26 @@
 #include <cerrno>
 #include <cstring>
 #include <iostream>
+#include <iterator>
 #include <vector>
 
 #include <unistd.h>
 
 int main(int argc, char* argv[]) {
-  const char* fixed[] = {SYMBIAN_LAUNCH_PYTHON, "-m", "symbian.emulator.launch",
-                         "--root", SYMBIAN_LAUNCH_ROOT};
+  const char* fixed[] = {
+      SYMBIAN_LAUNCH_PYTHON,
+      "-m",
+      "symbian.emulator.launch",
+      "--root",
+      SYMBIAN_LAUNCH_ROOT,
+#ifdef SYMBIAN_LAUNCH_PROJECT
+      "--project",
+      SYMBIAN_LAUNCH_PROJECT,
+      "--workspace",
+#endif
+  };
   std::vector<char*> arguments;
-  arguments.reserve(6 + static_cast<size_t>(argc));
+  arguments.reserve(std::size(fixed) + static_cast<size_t>(argc));
   for (const char* argument : fixed) {
     arguments.push_back(const_cast<char*>(argument));
   }
@@ -22,7 +33,7 @@ int main(int argc, char* argv[]) {
   // child lifetime. There is no detached emulator or second scheduler.
   execv(SYMBIAN_LAUNCH_PYTHON, arguments.data());
   const int error = errno;
-  std::cerr << "Cannot start GUI supervisor using " << SYMBIAN_LAUNCH_PYTHON
-            << ": " << std::strerror(error) << '\n';
+  std::cerr << "Cannot start application supervisor using "
+            << SYMBIAN_LAUNCH_PYTHON << ": " << std::strerror(error) << '\n';
   return 127;
 }

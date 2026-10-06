@@ -1,0 +1,17 @@
+[project]
+architecture = "armv6"
+name = "gl_app"
+kind = "e32-import-experiment"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000831
+
+[package]
+uid = 0xe0000832
+name = "Symbian GL Cube"
+vendor = "Symbian platform"
+executable_name = "gl_app.exe"
+version = [1, 0, 0]
+
+[application]
+caption = "Symbian GL Cube"
+short_caption = "GL Cube"

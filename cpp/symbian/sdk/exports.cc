@@ -137,7 +137,9 @@ absl::StatusOr<std::vector<Export>> ParseExports(std::string_view text) {
         return absl::UnimplementedError("Unsupported DEF export qualifier");
       }
     }
-    if (!names.insert(item.symbol).second ||
+    // Original Khronos DEFs reuse placeholder names for absent ordinal slots.
+    // Tombstones have no linkable symbol; only their ordinals must be unique.
+    if ((!item.absent && !names.insert(item.symbol).second) ||
         !ordinals.insert(item.ordinal).second) {
       return absl::InvalidArgumentError("Duplicate DEF symbol or ordinal");
     }
@@ -261,7 +263,10 @@ absl::StatusOr<ProxySources> GenerateProxy(
   } else {
     std::map<std::string_view, const Export*> by_name;
     for (const Export& item : *table) {
-      by_name.emplace(item.symbol, &item);
+      const auto match = by_name.find(item.symbol);
+      if (match == by_name.end() || !item.absent) {
+        by_name[item.symbol] = &item;
+      }
     }
     std::set<std::string> selected;
     for (const std::string& symbol : symbols) {

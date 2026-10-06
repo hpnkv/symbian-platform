@@ -1,0 +1,10 @@
+{
+  "preferences": {
+    "name": "qt_app",
+    "uid3": 3758098465,
+    "architecture": "armv6",
+    "timer_tasks": false,
+    "ide": "intellij",
+    "port": 24702
+  }
+}

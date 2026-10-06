@@ -4,7 +4,12 @@
     {
       "name": "symbian-pic",
       "generator": "Ninja",
-      "toolchainFile": "${sourceDir}/../../symbian/toolchain/cmake/symbian-arm.cmake"
+      "toolchainFile": "${sourceDir}/sdk.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      },
+      "binaryDir": "${sourceDir}/.symbian/build/cmake"
     }
   ]
 }

@@ -1,6 +1,12 @@
-#include <w32std.h>
+#include <algorithm>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "app_bridge.h"
+#include <absl/status/status.h>
+#include <symbian/concurrency/event_executor.h>
+#include <symbian/native_status.h>
+#include <w32std.h>
 
 namespace {
 
@@ -20,8 +26,38 @@ void Text(CWindowGc& gc, const char* text, int x, int y) {
   gc.DrawText(TPtrC16(units, length), TPoint(x, y));
 }
 
-void Draw(CWindowGc& gc, CFont* font, TSize size, const void* app,
-          bool focused) {
+void Pair(std::string& text, int position, int value) {
+  text[static_cast<std::size_t>(position)] =
+      static_cast<char>('0' + value / 10);
+  text[static_cast<std::size_t>(position + 1)] =
+      static_cast<char>('0' + value % 10);
+}
+
+absl::Status LogTime(std::vector<std::string>& lines) {
+  TTime now;
+  now.HomeTime();
+  const TDateTime date = now.DateTime();
+  const int year = date.Year();
+  if (year < 0 || year > 9999) {
+    return absl::OutOfRangeError("Year does not fit the displayed date");
+  }
+  std::string text = "0000-00-00 00:00:00";
+  Pair(text, 0, year / 100);
+  Pair(text, 2, year % 100);
+  Pair(text, 5, date.Month() + 1);
+  Pair(text, 8, date.Day() + 1);
+  Pair(text, 11, date.Hour());
+  Pair(text, 14, date.Minute());
+  Pair(text, 17, date.Second());
+  if (lines.size() == 12) {
+    lines.erase(lines.begin());
+  }
+  lines.push_back(std::move(text));
+  return absl::OkStatus();
+}
+
+void Draw(CWindowGc& gc, CFont* font, TSize size,
+          const std::vector<std::string>& lines, bool focused) {
   gc.SetPenStyle(CGraphicsContext::ENullPen);
   gc.SetBrushStyle(CGraphicsContext::ESolidBrush);
   gc.SetBrushColor(TRgb(0x001c2430));
@@ -36,7 +72,7 @@ void Draw(CWindowGc& gc, CFont* font, TSize size, const void* app,
   const int spacing = available / 12 < 28 ? available / 12 : 28;
   const int line_height = spacing < 12 ? 12 : spacing;
   const int capacity = available / line_height + 1;
-  const int count = AppLineCount(app);
+  const int count = static_cast<int>(lines.size());
   const int start = count > capacity ? count - capacity : 0;
   Text(gc, "Hello world!", 16, compact ? 22 : 40);
   Text(gc,
@@ -45,7 +81,8 @@ void Draw(CWindowGc& gc, CFont* font, TSize size, const void* app,
        16, compact ? 42 : 72);
   Text(gc, focused ? "Active" : "Paused", 16, compact ? 60 : 100);
   for (int i = start; i < count; ++i) {
-    Text(gc, AppLine(app, i), 16, first_line + (i - start) * line_height);
+    Text(gc, lines[static_cast<std::size_t>(i)].c_str(), 16,
+         first_line + (i - start) * line_height);
   }
   gc.SetBrushColor(TRgb(0x00406080));
   gc.DrawRect(TRect(0, size.iHeight - footer, size.iWidth, size.iHeight));
@@ -80,23 +117,46 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, CWindowGc& gc) {
     screen.ReleaseFont(font);
     return result;
   }
-  void* app = AppCreate();
-  if (app == nullptr) {
+  std::vector<std::string> lines;
+  symbian::concurrency::EventExecutor executor;
+  std::vector<symbian::concurrency::Task> tasks;
+  absl::Status dispatch_status;
+  int due = 0;
+  unsigned int generation = 0;
+  const absl::Status opened = executor.Open();
+  if (!opened.ok()) {
     window.Close();
     group.Close();
     screen.ReleaseFont(font);
-    return KErrNoMemory;
+    return symbian::NativeErrorFromStatus(opened);
   }
-#ifdef SYMBIAN_ENABLE_TIMER_TASKS
-  result = AppTasksOpen(app);
-  if (result != KErrNone) {
-    AppDestroy(app);
-    window.Close();
-    group.Close();
-    screen.ReleaseFont(font);
-    return result;
-  }
-#endif
+  auto cancel_tasks = [&] {
+    ++generation;
+    due = 0;
+    for (const auto& task : tasks) {
+      task.Cancel();
+    }
+  };
+  auto schedule_time = [&] {
+    auto task = executor.ScheduleAfter(absl::Milliseconds(1500));
+    task.OnReady([&,
+                  scheduled_generation = generation](const auto& completion) {
+      if (completion.ok()) {
+        const absl::Status queued =
+            executor.DispatchToEvent([&, scheduled_generation] {
+              if (scheduled_generation == generation) {
+                ++due;
+              }
+            });
+        if (!queued.ok()) {
+          dispatch_status = queued;
+        }
+      } else if (completion.status().code() != absl::StatusCode::kCancelled) {
+        dispatch_status = completion.status();
+      }
+    });
+    tasks.push_back(std::move(task));
+  };
   bool running = true;
   bool focused = true;
   group.SetOrdinalPosition(0);
@@ -110,9 +170,7 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, CWindowGc& gc) {
   window.Invalidate();
   session.Flush();
   auto log_current_time = [&]() {
-    ClockTime now;
-    AppHomeTime(&now);
-    result = AppLogTime(app, now);
+    result = symbian::NativeErrorFromStatus(LogTime(lines));
     if (result != KErrNone) {
       running = false;
       return false;
@@ -121,15 +179,17 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, CWindowGc& gc) {
     return true;
   };
   while (running) {
-#ifdef SYMBIAN_ENABLE_TIMER_TASKS
     // This is the sole consumer of this thread's request semaphore. Inspect
     // Window Server statuses before parking alongside native timer requests.
-    const int due = AppTasksDispatch(app);
-    if (due < 0) {
-      result = due;
+    const absl::Status dispatched = executor.DispatchReady();
+    if (!dispatched.ok() || !dispatch_status.ok()) {
+      result = symbian::NativeErrorFromStatus(dispatched.ok() ? dispatch_status
+                                                              : dispatched);
       break;
     }
-    for (int i = 0; i < due; ++i) {
+    std::erase_if(tasks, [](const auto& task) { return task.IsReady(); });
+    const int ready = std::exchange(due, 0);
+    for (int i = 0; i < ready; ++i) {
       if (!log_current_time()) {
         break;
       }
@@ -137,12 +197,9 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, CWindowGc& gc) {
     if (!running) {
       break;
     }
-    if (due == 0 && events == KRequestPending && redraws == KRequestPending) {
-      AppTasksPark(app);
+    if (ready == 0 && events == KRequestPending && redraws == KRequestPending) {
+      executor.Park();
     }
-#else
-    User::WaitForRequest(events, redraws);
-#endif
     if (events != KRequestPending) {
       if (events.Int() != KErrNone) {
         result = events.Int();
@@ -168,17 +225,13 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, CWindowGc& gc) {
             running = false;
           } else if (event.Key()->iCode == EKeyBackspace ||
                      event.Key()->iCode == EKeyDevice0) {
-#ifdef SYMBIAN_ENABLE_TIMER_TASKS
-            AppTasksCancel(app);
-#endif
-            AppClear(app);
+            cancel_tasks();
+            lines.clear();
             window.Invalidate();
           } else if (focused && (event.Key()->iCode == EKeyEnter ||
                                  event.Key()->iCode == EKeyDevice3)) {
             if (log_current_time()) {
-#ifdef SYMBIAN_ENABLE_TIMER_TASKS
-              AppTasksSchedule(app);
-#endif
+              schedule_time();
             }
           }
           break;
@@ -190,16 +243,12 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, CWindowGc& gc) {
               if (position.iX >= size.iWidth / 2) {
                 running = false;
               } else {
-#ifdef SYMBIAN_ENABLE_TIMER_TASKS
-                AppTasksCancel(app);
-#endif
-                AppClear(app);
+                cancel_tasks();
+                lines.clear();
               }
             } else {
               if (log_current_time()) {
-#ifdef SYMBIAN_ENABLE_TIMER_TASKS
-                AppTasksSchedule(app);
-#endif
+                schedule_time();
               }
             }
             window.Invalidate();
@@ -222,7 +271,7 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, CWindowGc& gc) {
       if (redraw.Handle() == 2) {
         window.BeginRedraw(redraw.Rect());
         gc.Activate(window);
-        Draw(gc, font, size, app, focused);
+        Draw(gc, font, size, lines, focused);
         gc.Deactivate();
         window.EndRedraw();
       }
@@ -240,7 +289,8 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, CWindowGc& gc) {
   if (redraws == KRequestPending) {
     User::WaitForRequest(redraws);
   }
-  AppDestroy(app);
+  cancel_tasks();
+  executor.Close();
   window.Close();
   group.Close();
   session.Flush();
@@ -249,14 +299,6 @@ TInt RunWindow(RWsSession& session, CWsScreenDevice& screen, CWindowGc& gc) {
 }
 
 }  // namespace
-
-extern "C" void AppHomeTime(ClockTime* result) {
-  TTime now;
-  now.HomeTime();
-  const TDateTime date = now.DateTime();
-  *result = {date.Year(), date.Month() + 1, date.Day() + 1,
-             date.Hour(), date.Minute(),    date.Second()};
-}
 
 int main() {
   RWsSession session;

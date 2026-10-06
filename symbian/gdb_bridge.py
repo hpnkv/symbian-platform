@@ -28,6 +28,8 @@ def register(
         source: Local source root for the GUI example.
         headers: Local staged SDK root.
         base: Link-time code base inspected by the native E32 parser.
+        name: Application target name used in its debug source paths.
+        uid: Application UID3 used to identify its loaded image.
     """
     import gdb
 
@@ -55,7 +57,7 @@ def register(
             slide = int(matches[0], 16) - base
             gdb.execute(f"symbol-file -o {slide:#x} {quote(Path(symbols))}")
             gdb.execute(
-                "set substitute-path /symbian-src/gui_app "
+                f"set substitute-path /symbian-src/{name} "
                 + quote(Path(source))
             )
             gdb.execute(

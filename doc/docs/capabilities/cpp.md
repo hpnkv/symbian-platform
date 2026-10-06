@@ -9,11 +9,12 @@ The modern application runtime requires EKA2 services. EKA1 uses the separate
 
 The ordinary `symbian init` starter uses `Symbian::Stackless`: a tap logs now,
 then a timer Future logs again, and Clear cancels pending work. Authors work
-with Tasks and `absl::StatusOr` in typed code; the SDK bridge owns the native
-`RTimer`, request status, semaphore wait and Window Server cleanup. If an
-explicitly selected firmware has no `libpthread.dll`, init chooses the portable
-profile; `--portable-runtime` makes the same choice without firmware. Run
-checks imported services before starting the emulator. This starter path is
+with Tasks and Abseil Status in typed code. The SDK owns the native timer and
+request machinery; `app.cc` keeps state beside the Window Server event loop.
+New projects always enable the modern C++ runtime, Abseil Status and timer tasks.
+An explicitly selected firmware without `libpthread.dll` is rejected by init;
+select compatible firmware. Run also checks imported services before starting
+the emulator. This starter path is
 stackless. The separate `Symbian::Fibers` profile can park an unresolved
 `Await` inside a guest fiber; outside one it fails clearly.
 

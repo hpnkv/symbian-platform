@@ -107,6 +107,7 @@ nav:
       - Standalone projects: guides/projects.md
       - Build an application: guides/building.md
       - Build a Symbian Qt app: guides/qt-app.md
+      - Build an OpenGL ES app: guides/gl-app.md
       - Build a real GUI app:
           - Overview: guides/from-source.md
           - Prepare tools and source: guides/source-prerequisites.md

@@ -47,6 +47,9 @@ endfunction()
 # The root guest graph builds the same live sources used by guest IDE profiles.
 function(symbian_add_guest_subdirectory directory)
   include("${CMAKE_SOURCE_DIR}/cmake/SymbianWorkspaceInputs.cmake")
+  # The include is globally guarded, but its variables are function-local on
+  # the first call. Each example must select the same prepared source inputs.
+  set(SYMBIAN_SDK_PREFIX "${CMAKE_SOURCE_DIR}/.symbian/workspace-inputs")
   include(ExternalProject)
   if(NOT SYMBIAN_TARGET_ARCH)
     set(SYMBIAN_TARGET_ARCH armv6)
@@ -58,20 +61,29 @@ function(symbian_add_guest_subdirectory directory)
     REGEX "^uid3[ \t]*=[ \t]*0x[0-9A-Fa-f]+[ \t]*$")
   string(REGEX REPLACE "^name[ \t]*=[ \t]*\"([^\"]+)\"[ \t]*$" "\\1" name "${name}")
   string(REGEX REPLACE "^uid3[ \t]*=[ \t]*" "" uid "${uid}")
-  ExternalProject_Add(${name}_guest_build
-    SOURCE_DIR "${CMAKE_SOURCE_DIR}"
-    BINARY_DIR "${guest_binary}"
-    CMAKE_GENERATOR Ninja
-    CMAKE_ARGS
-      "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/symbian/toolchain/cmake/symbian-arm.cmake"
-      "-DSYMBIAN_INDEX_GUEST_PROBES=ON"
-      "-DSYMBIAN_TARGET_ARCH=${SYMBIAN_TARGET_ARCH}"
-      "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-      "-DCMAKE_CXX_COMPILER=${SYMBIAN_SDK_PREFIX}/bin/clang++"
-      "-DCMAKE_C_COMPILER=${SYMBIAN_SDK_PREFIX}/bin/clang"
-      "-DCMAKE_CXX_COMPILER_CLANG_SCAN_DEPS=${SYMBIAN_SDK_PREFIX}/bin/clang-scan-deps"
-    BUILD_COMMAND "${CMAKE_COMMAND}" --build <BINARY_DIR> --target ${name}
-    INSTALL_COMMAND "" BUILD_ALWAYS TRUE EXCLUDE_FROM_ALL TRUE)
+  if(NOT TARGET symbian_guest_configure)
+    ExternalProject_Add(symbian_guest_configure
+      SOURCE_DIR "${CMAKE_SOURCE_DIR}"
+      BINARY_DIR "${guest_binary}"
+      CMAKE_GENERATOR Ninja
+      CMAKE_ARGS
+        "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/symbian/toolchain/cmake/symbian-arm.cmake"
+        "-DSYMBIAN_INDEX_GUEST_PROBES=ON"
+        "-DSYMBIAN_TARGET_ARCH=${SYMBIAN_TARGET_ARCH}"
+        "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+        "-DSYMBIAN_GRAPHICS_FIRMWARE_DIR=${SYMBIAN_GRAPHICS_FIRMWARE_DIR}"
+        "-DCMAKE_CXX_COMPILER=${SYMBIAN_SDK_PREFIX}/bin/clang++"
+        "-DCMAKE_C_COMPILER=${SYMBIAN_SDK_PREFIX}/bin/clang"
+        "-DCMAKE_CXX_COMPILER_CLANG_SCAN_DEPS=${SYMBIAN_SDK_PREFIX}/bin/clang-scan-deps"
+      BUILD_COMMAND "" INSTALL_COMMAND "" EXCLUDE_FROM_ALL TRUE)
+    # Examples share one guest graph. Do not configure it or run two nested
+    # Ninja instances simultaneously when the host builds several examples.
+    set_property(GLOBAL APPEND PROPERTY JOB_POOLS symbian_guest_build=1)
+  endif()
+  add_custom_target(${name}_guest_build
+    COMMAND "${CMAKE_COMMAND}" --build "${guest_binary}" --target ${name}
+    DEPENDS symbian_guest_configure
+    JOB_POOL symbian_guest_build VERBATIM)
   file(GLOB app_sources CONFIGURE_DEPENDS "${directory}/*.cc" "${directory}/*.h")
   add_custom_target(${name} DEPENDS ${name}_guest_build SOURCES ${app_sources})
   set(image "${guest_binary}/${directory}/e32/${name}.exe")

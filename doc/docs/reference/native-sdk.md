@@ -26,6 +26,25 @@ required Abseil status/runtime profile and, where needed, an OS import proxy.
 | `Symbian::WebSocket` | `symbian/api/connectivity/websocket.h` | RFC 8441 WebSocket connections | Shared HTTP/2 transport with bounded messages and stream backpressure. |
 | `Symbian::Tls` | `symbian/api/connectivity/tls_stream.h` | TLS 1.2/1.3 client/server streams | Caller supplies trust roots, peer identity and working guest entropy. Synchronous worker only. |
 | `Symbian::Agent` | `symbian/agent/guest_control.h`, `guest_log.h` | Parse bounded read-only control messages and retain a 32-record service log | Authenticate the peer before parsing; this codec does not own a service or grant permissions. |
+| `Symbian::GLES1` | `GLES/gl.h`, `GLES/glext.h` | GLES 1.1 Common fixed-function rendering | Original `libglesv1_cm.dll` imports; firmware supplies the implementation. |
+| `Symbian::GLES2` | `GLES2/gl2.h`, `GLES2/gl2ext.h` | GLES 2.0 shaders and programmable rendering | Original `libglesv2.dll` imports; firmware supplies the implementation. |
+| `Symbian::EGL` | `EGL/egl.h`, `EGL/eglext.h` | EGL 1.4 contexts and native surfaces | Original `libegl.dll` imports; a window surface retains its native `RWindow` until destroyed. |
+
+Graphics targets supply original platform headers and complete frozen ordinal
+imports when linked. They support EKA2 ARMv5T and ARMv6 with soft-float AAPCS.
+Configuration checks the consumer's transitive graph, SDK files and ABI flags.
+Direct GLES1/GLES2 imports in one binary overlap; use one per binary or obtain
+context-specific entry points through EGL. Separate DLLs can use different APIs.
+Select conditional graphics links with CMake `if()` so the graph is concrete at
+configuration time; unresolved link generator expressions are rejected.
+
+`SYMBIAN_GRAPHICS_AVAILABLE_APIS` selects the APIs known to exist in your
+deployment firmware (default: `EGL;GLES1;GLES2`, the SDK-supported set).
+`SYMBIAN_GRAPHICS_FIRMWARE_DIR` optionally names its Z-drive directory and checks
+required DLL presence during configuration. Unknown firmware and GPU details
+remain unknown. Context configurations, shader limits and extensions still need
+runtime queries. The [GL cube guide](../guides/gl-app.md) demonstrates per-fragment
+Phong shading, animation and pointer input against a black background.
 
 For example, a display query can live in a small adapter:
 

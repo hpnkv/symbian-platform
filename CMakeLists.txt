@@ -333,5 +333,20 @@ if(SYMBIAN_BUILD_GUI_EXAMPLE)
     message(STATUS "GUI target unavailable: prepare the source platform headers")
   endif()
 endif()
+foreach(application IN ITEMS gl_app qt_app)
+  if(SYMBIAN_BUILD_GUI_EXAMPLE)
+    include(symbian/toolchain/cmake/SymbianSdk.cmake)
+    symbian_add_guest_subdirectory(examples/${application})
+  endif()
+  add_executable(${application}_run EXCLUDE_FROM_ALL
+                 cpp/symbian/emulator/launcher.cc)
+  set_target_properties(${application}_run PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/debug")
+  symbian_native_library(${application}_run)
+  target_compile_definitions(${application}_run PRIVATE
+    SYMBIAN_LAUNCH_PYTHON="${CMAKE_SOURCE_DIR}/.venv/bin/python"
+    SYMBIAN_LAUNCH_ROOT="${CMAKE_SOURCE_DIR}"
+    SYMBIAN_LAUNCH_PROJECT="${CMAKE_SOURCE_DIR}/examples/${application}")
+endforeach()
 symbian_index_remaining_native(symbian_index_remaining_host absl::statusor
   cpp)

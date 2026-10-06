@@ -14,7 +14,9 @@ another installation with `sdk-location.json`:
 ```
 
 The path may be absolute or relative to the project. It is ignored by Git, so
-each collaborator can point to a local SDK. Selection order is explicit `--sdk`,
+each collaborator can point to a local SDK. Generated projects also record the
+configured `python` interpreter here so IDE launchers work outside an activated
+shell. Update this local path if that Python environment moves. Selection order is explicit `--sdk`,
 project `sdk-location.json`, then the active SDK. Changing the setting and
 running `symbian app build --project PROJECT` refreshes the CMake cache as
 needed. Native distribution manifests use relative paths and remain usable

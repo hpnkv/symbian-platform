@@ -38,15 +38,15 @@ def test_static_archive_links_with_debug_symbols(tmp_path, architecture, cpu):
     (project / "year.cc").write_text(
         'extern "C" int LibraryYear(int year) { return year; }\n'
     )
-    model = project / "model.cc"
-    model.write_text(
-        model.read_text()
+    source = project / "app.cc"
+    source.write_text(
+        source.read_text()
         .replace(
             "namespace {\n",
             'extern "C" int LibraryYear(int year);\n\nnamespace {\n',
             1,
         )
-        .replace("now.year / 100", "LibraryYear(now.year) / 100", 1)
+        .replace("year / 100", "LibraryYear(year) / 100", 1)
     )
     cmake = project / "CMakeLists.txt"
     cmake.write_text(

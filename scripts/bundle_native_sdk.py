@@ -345,19 +345,62 @@ def bundle(args: argparse.Namespace) -> None:
     (counter / "sdk-location.json").write_text('{"sdk": "../.."}\n')
     qt = output / "examples/qt_app"
     qt.mkdir()
-    for name in ("app.cc", "CMakeLists.txt", "symbian.toml", "README.md"):
+    for name in (
+        "app.cc",
+        "CMakeLists.txt",
+        "symbian.toml",
+        "README.md",
+        "sdk.cmake",
+        "sdk-run",
+        "sdk-debug",
+        "run.sh",
+        "debug.sh",
+        "symbian-project.json",
+    ):
         shutil.copy(root / "examples/qt_app" / name, qt / name)
+    shutil.copytree(
+        root / "examples/qt_app/.idea/runConfigurations",
+        qt / ".idea/runConfigurations",
+    )
     if (root / "examples/qt_app/assets").is_dir():
         shutil.copytree(root / "examples/qt_app/assets", qt / "assets")
     shutil.copy(root / ".clang-format", qt / ".clang-format")
     presets = json.loads(
         (root / "examples/qt_app/CMakePresets.json").read_text()
     )
-    presets["configurePresets"][0][
-        "toolchainFile"
-    ] = "${sourceDir}/../../cmake/symbian-arm.cmake"
+    presets["configurePresets"][0]["toolchainFile"] = "${sourceDir}/sdk.cmake"
     (qt / "CMakePresets.json").write_text(json.dumps(presets, indent=2) + "\n")
     (qt / "sdk-location.json").write_text('{"sdk": "../.."}\n')
+    gl = output / "examples/gl_app"
+    gl.mkdir()
+    for pattern in (
+        "*.cc",
+        "*.h",
+        "*.in",
+        "CMakeLists.txt",
+        "symbian.toml",
+        "README.md",
+        "sdk.cmake",
+        "sdk-run",
+        "sdk-debug",
+        "run.sh",
+        "debug.sh",
+        "symbian-project.json",
+    ):
+        for source in (root / "examples/gl_app").glob(pattern):
+            shutil.copy(source, gl / source.name)
+    shutil.copytree(root / "examples/gl_app/shaders", gl / "shaders")
+    shutil.copytree(
+        root / "examples/gl_app/.idea/runConfigurations",
+        gl / ".idea/runConfigurations",
+    )
+    shutil.copy(root / ".clang-format", gl / ".clang-format")
+    presets = json.loads(
+        (root / "examples/gl_app/CMakePresets.json").read_text()
+    )
+    presets["configurePresets"][0]["toolchainFile"] = "${sourceDir}/sdk.cmake"
+    (gl / "CMakePresets.json").write_text(json.dumps(presets, indent=2) + "\n")
+    (gl / "sdk-location.json").write_text('{"sdk": "../.."}\n')
 
 
 def main() -> None:

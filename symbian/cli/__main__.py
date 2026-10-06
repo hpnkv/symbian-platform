@@ -336,7 +336,7 @@ def _parser() -> argparse.ArgumentParser:
     init.add_argument(
         "--portable-runtime",
         action="store_true",
-        help="Use the GUI/heap profile without the libpthread-backed task APIs",
+        help="Obsolete: new projects require the modern C++ task runtime",
     )
     add_options(init)
     init.add_argument(
@@ -977,7 +977,14 @@ def _execute(args: argparse.Namespace) -> dict:
 
         from symbian.project.generate import wizard
         from symbian.project.sdk import AppSdk, discover_sdk
+        from symbian.status import Code, StatusError
 
+        if args.portable_runtime:
+            raise StatusError(
+                Code.INVALID_ARGUMENT,
+                "New projects require the modern C++ runtime and timer tasks; "
+                "--portable-runtime is no longer supported",
+            )
         sdk_path = discover_sdk(args.sdk)
         selected = AppSdk.load(sdk_path)
         entry = selected.prefix / "bin/symbian"
@@ -1011,7 +1018,6 @@ def _execute(args: argparse.Namespace) -> dict:
             os.execv(str(entry), arguments)
 
         emulator_values = {}
-        timer_tasks = not args.portable_runtime
         if options(args):
             from symbian.emulator.configuration import resolve
             from symbian.emulator.firmware import selected
@@ -1028,7 +1034,11 @@ def _execute(args: argparse.Namespace) -> dict:
                     imported.device.z_drive + "/sys/bin/libpthread.dll"
                     not in imported.files
                 ):
-                    timer_tasks = False
+                    raise StatusError(
+                        Code.FAILED_PRECONDITION,
+                        "The starter requires libpthread.dll; "
+                        "select firmware with the modern C++ task runtime",
+                    )
         result = wizard(
             args.destination,
             sdk_path,
@@ -1036,7 +1046,6 @@ def _execute(args: argparse.Namespace) -> dict:
             ide=args.ide,
             uid3=args.uid3,
             architecture=args.architecture,
-            timer_tasks=timer_tasks,
             non_interactive=args.non_interactive,
         )
         if emulator_values:

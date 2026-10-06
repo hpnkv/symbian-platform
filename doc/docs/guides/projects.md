@@ -30,13 +30,14 @@ is refused. The starter displays a clock and responds to taps and Clear/Exit.
 
 | File | Purpose |
 | --- | --- |
-| `model.h`, `model.cc` | Application behavior and state |
-| `app.cc` | Window Server drawing and input |
+| `app.cc` | Local state, clock formatting, drawing, input and timer tasks |
 | `symbian.toml` | App identity, menu captions and icon |
 | `sdk-location.json` | Local SDK selection; ignored by Git |
 
 Window Server is the Symbian service that owns GUI windows and delivers redraw
 and input events. The SDK's startup bridge handles the lower-level entry path.
+The starter always enables the modern C++ runtime, Abseil Status and timer
+tasks. Its selected firmware must provide `libpthread.dll`.
 For a tour of that path, see the [GUI example](from-source.md).
 
 ## 3. Build and run

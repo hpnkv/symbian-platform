@@ -126,14 +126,22 @@ def test_wizard_choices_and_nonempty_project_preserved(tmp_path, monkeypatch):
     assert result["name"] == "time_notes"
     assert result["uid3"] == 0xE0000830
     assert not (project / ".idea").exists()
-    assert "#include <string>" in (project / "model.h").read_text()
-    assert 'extern "C"' not in (project / "model.cc").read_text()
-    assert "void*" not in (project / "model.cc").read_text()
+    assert "#include <string>" in (project / "app.cc").read_text()
+    assert 'extern "C"' not in (project / "app.cc").read_text()
+    assert "void*" not in (project / "app.cc").read_text()
+    source = (project / "app.cc").read_text()
+    assert "#ifdef" not in source
+    assert "AppModel" not in source
+    assert not (project / "model.h").exists()
+    assert not (project / "app_bridge.cc").exists()
     assert "#include <w32std.h>" in (project / "app.cc").read_text()
     assert (project / ".clang-format").read_bytes() == (
         Path(__file__).resolve().parents[2] / ".clang-format"
     ).read_bytes()
-    assert 'libpthread" ON)' in (project / "CMakeLists.txt").read_text()
+    assert (
+        "set(SYMBIAN_ENABLE_TIMER_TASKS ON"
+        in (project / "CMakeLists.txt").read_text()
+    )
     assert tomllib.loads((project / "symbian.toml").read_text())[
         "application"
     ] == {
@@ -144,7 +152,7 @@ def test_wizard_choices_and_nonempty_project_preserved(tmp_path, monkeypatch):
     assert "<svg" in (project / "icon.svg").read_text()
     assert "project-relative SVG icon" in (project / "README.md").read_text()
     assert (
-        '"Use guest Abseil Status/StatusOr in application logic" ON)'
+        "set(SYMBIAN_ENABLE_ABSEIL_STATUS ON"
         in (project / "CMakeLists.txt").read_text()
     )
     before = {p.name: p.read_bytes() for p in project.iterdir() if p.is_file()}
@@ -175,7 +183,7 @@ def test_invalid_identity_and_missing_sdk_create_no_project(tmp_path):
     assert not project.exists()
 
 
-def test_cli_portable_runtime_choice_is_saved(tmp_path):
+def test_cli_rejects_portable_runtime_for_new_projects(tmp_path):
     sdk = _fake_sdk(tmp_path)
     project = tmp_path / "portable"
     result = subprocess.run(
@@ -197,11 +205,23 @@ def test_cli_portable_runtime_choice_is_saved(tmp_path):
         text=True,
         check=False,
     )
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert 'libpthread" OFF)' in (project / "CMakeLists.txt").read_text()
-    assert not json.loads((project / "symbian-project.json").read_text())[
-        "preferences"
-    ]["timer_tasks"]
+    assert result.returncode != 0
+    assert "modern C++ runtime" in result.stdout + result.stderr
+    assert not project.exists()
+
+
+def test_new_project_requires_timer_tasks(tmp_path):
+    sdk = _fake_sdk(tmp_path)
+    project = tmp_path / "unsupported profile"
+    with pytest.raises(StatusError) as caught:
+        generate(
+            project,
+            Preferences(name="clock", uid3=0xE0000830, timer_tasks=False),
+            sdk,
+        )
+    assert caught.value.code == Code.INVALID_ARGUMENT
+    assert "modern C++ runtime" in caught.value.message
+    assert not project.exists()
 
 
 def test_sdk_discovery_from_unrelated_directory(tmp_path, monkeypatch):
@@ -254,7 +274,7 @@ def test_cli_initial_build_sdk_copy_and_moved_project(tmp_path):
     assert (prefix / "include/symbian/concurrency/timer_pump.h").is_file()
     assert (prefix / "include/config/stdarg_e.h").is_file()
     assert not (prefix / "include/a11").exists()
-    template = prefix / "lib/python/symbian/project/templates/model.cc"
+    template = prefix / "lib/python/symbian/project/templates/app.cc"
     embedded_python = template.exists()
     if embedded_python:
         template.write_text(
@@ -282,18 +302,21 @@ def test_cli_initial_build_sdk_copy_and_moved_project(tmp_path):
     assert (
         project / ".clang-format"
     ).read_bytes() == expected_format.read_bytes()
-    assert 'libpthread" ON)' in (project / "CMakeLists.txt").read_text()
+    assert (
+        "set(SYMBIAN_ENABLE_TIMER_TASKS ON"
+        in (project / "CMakeLists.txt").read_text()
+    )
     if embedded_python:
         assert (
-            (project / "model.cc")
+            (project / "app.cc")
             .read_text()
             .startswith("// Selected SDK template.")
         )
     else:
         assert not (prefix / "lib/python").exists()
-        assert (project / "model.cc").read_bytes() == (
+        assert (project / "app.cc").read_bytes() == (
             files("symbian.project")
-            .joinpath("templates", "model.cc")
+            .joinpath("templates", "app.cc")
             .read_bytes()
         )
     assert (project / ".symbian/build/relocated.elf").is_file()
@@ -313,7 +336,7 @@ def test_cli_initial_build_sdk_copy_and_moved_project(tmp_path):
         row["file"].endswith("/modules/widget/extra.cc") for row in database
     )
     command = next(
-        row["command"] for row in database if row["file"].endswith("/model.cc")
+        row["command"] for row in database if row["file"].endswith("/app.cc")
     )
     assert str(prefix / "bin/clang++") in command
     assert str(prefix / "include/c++") in command
@@ -356,7 +379,7 @@ def test_cli_initial_build_sdk_copy_and_moved_project(tmp_path):
         command = next(
             row["command"]
             for row in database
-            if row["file"].endswith("/model.cc")
+            if row["file"].endswith("/app.cc")
         )
         assert str(selected / "bin/clang++") in command
 
@@ -367,7 +390,7 @@ def app(tmp_path):
     project = tmp_path / "outside project with spaces"
     generate(project, Preferences(name="hello_time", uid3=0xE0000830), sdk)
     # Generation is independent of cwd and carries every required SDK location.
-    run = ET.parse(project / ".idea/runConfigurations/App_Run.xml").getroot()[0]
+    run = ET.parse(project / ".run/App_Run.run.xml").getroot()[0]
     assert run.get("RUN_PATH") == "$PROJECT_DIR$/sdk-run"
     assert run.get("PROGRAM_PARAMS") == ""
     workspace = ET.parse(project / ".idea/workspace.xml").getroot()
@@ -463,7 +486,7 @@ def test_generated_project_native_text_clock_clear_exit(app, tmp_path, backend):
     evidence = json.loads((app / ".symbian/build/report.json").read_text())
     assert evidence["reproducible"] is True
     assert any(
-        path.endswith("libsymbian_guest_runtime.a")
+        path.endswith("libsymbian_guest_runtime_streams.a")
         for path in evidence["inputs"]
     )
 
@@ -471,16 +494,9 @@ def test_generated_project_native_text_clock_clear_exit(app, tmp_path, backend):
 @live
 @pytest.mark.parametrize("backend", ["dynarmic", "dyncom"])
 def test_generated_timer_tasks_share_window_wait(app, tmp_path, backend):
-    cmake = app / "CMakeLists.txt"
-    source = cmake.read_text()
     assert (
-        '"Stackless timer Tasks; requires firmware libpthread" OFF)' in source
-    )
-    cmake.write_text(
-        source.replace(
-            'libpthread" OFF)',
-            'libpthread" ON)',
-        )
+        "set(SYMBIAN_ENABLE_TIMER_TASKS ON"
+        in (app / "CMakeLists.txt").read_text()
     )
     with session(app, project=app, backend=backend) as active:
         control = Control(active.endpoint)
@@ -544,10 +560,8 @@ def test_init_default_runs_stackless_tasks(tmp_path, backend, architecture):
     assert result.returncode == 0, result.stdout + result.stderr
     assert json.loads(result.stdout)["result"]["initial_build"] is True
     cmake = (project / "CMakeLists.txt").read_text()
-    assert 'libpthread" ON)' in cmake
-    assert (
-        '"Use guest Abseil Status/StatusOr in application logic" ON)' in cmake
-    )
+    assert "set(SYMBIAN_ENABLE_TIMER_TASKS ON" in cmake
+    assert "set(SYMBIAN_ENABLE_ABSEIL_STATUS ON" in cmake
     with session(project, project=project, backend=backend) as active:
         control = Control(active.endpoint)
         _capture(control, "init-hello", 0, tmp_path)
@@ -572,59 +586,21 @@ def test_init_default_runs_stackless_tasks(tmp_path, backend, architecture):
 
 
 @live
-@pytest.mark.parametrize("backend", ["dynarmic", "dyncom"])
-def test_generated_abseil_status_and_timer_tasks(app, tmp_path, backend):
-    """Run Status/StatusOr model logic with the same native timer loop."""
-    cmake = app / "CMakeLists.txt"
-    source = cmake.read_text()
-    cmake.write_text(
-        source.replace(
-            '"Use guest Abseil Status/StatusOr in application logic" OFF)',
-            '"Use guest Abseil Status/StatusOr in application logic" ON)',
-        ).replace(
-            '"Stackless timer Tasks; requires firmware libpthread" OFF)',
-            '"Stackless timer Tasks; requires firmware libpthread" ON)',
-        )
-    )
-    with session(app, project=app, backend=backend) as active:
-        control = Control(active.endpoint)
-        _capture(control, "status-hello", 0, tmp_path)
-        _ready(lambda: control.pointer(100, 200, "press"))
-        _ready(lambda: control.pointer(100, 200, "release"))
-        _capture(control, "status-now", 1, tmp_path)
-        _capture(control, "status-timer", 2, tmp_path)
-        _ready(lambda: control.pointer(295, 610, "press"))
-        assert active.process.wait(timeout=15) == 0
-    exits = Control(active.directory / "control.sock").exit_report()[
-        "process_exits"
-    ]
-    assert len(exits) == 1
-    assert exits[0]["reason"] == 0
-
-
-@live
 def test_generated_abseil_error_reaches_native_exit(app, tmp_path):
-    """A model Status failure must leave through the owned GUI cleanup path."""
-    cmake = app / "CMakeLists.txt"
-    cmake.write_text(
-        cmake.read_text().replace(
-            '"Use guest Abseil Status/StatusOr in application logic" OFF)',
-            '"Use guest Abseil Status/StatusOr in application logic" ON)',
-        )
-    )
-    model = app / "model.cc"
+    """A Status failure must leave through the owned GUI cleanup path."""
+    model = app / "app.cc"
     source = model.read_text()
     assert "return absl::OkStatus();" in source
     model.write_text(
         source.replace(
             "return absl::OkStatus();",
-            'return absl::InvalidArgumentError("changed model result");',
+            'return absl::InvalidArgumentError("changed clock result");',
         )
     )
     with session(app, project=app, backend="dynarmic") as active:
         control = Control(active.endpoint)
         _capture(control, "status-error-ready", 0, tmp_path)
-        # The model rejects the press and exits before a release can arrive.
+        # LogTime rejects the press and exits before a release can arrive.
         _ready(lambda: control.pointer(100, 200, "press"))
         assert active.process.wait(timeout=15) == 0
     exits = Control(active.directory / "control.sock").exit_report()[
@@ -636,17 +612,16 @@ def test_generated_abseil_error_reaches_native_exit(app, tmp_path):
 
 @live
 @pytest.mark.parametrize("backend", ["dynarmic", "dyncom"])
-def test_generated_project_model_allocation_failure_closes_resources(
+def test_generated_project_stl_allocation_failure_reports_no_memory(
     app, backend
 ):
-    bridge = app / "app_bridge.cc"
-    text = bridge.read_text()
-    assert "return new (std::nothrow) AppModel;" in text
-    bridge.write_text(
+    source = app / "app.cc"
+    text = source.read_text()
+    assert "std::vector<std::string> lines;" in text
+    source.write_text(
         text.replace(
-            "return new (std::nothrow) AppModel;",
-            # Above the native signed allocation limit for either heap backend.
-            "return ::operator new(0x80000000u, std::nothrow);",
+            "std::vector<std::string> lines;",
+            "std::vector<std::string> lines;\n  lines.reserve(0x10000000u);",
         )
     )
     # Fast guest exit can precede the live endpoint readiness check. In either
@@ -676,11 +651,15 @@ def test_generated_project_debugger_breakpoint_and_clock_values(app, tmp_path):
         pytest.skip("ARM GDB required")
     with session(app, project=app, debug=True) as active:
         script = tmp_path / "commands.gdb"
+        source = (app / "app.cc").read_text().splitlines()
+        year_line = next(
+            i + 1 for i, line in enumerate(source) if "if (year < 0" in line
+        )
         script.write_text(
             f"target remote 127.0.0.1:{active.port}\n"
-            "break AppLogTime\nbreak AppModel::LogTime\ncontinue\n"
-            'printf "CLOCK=%d-%02d-%02d\\n", now.year, now.month, now.day\n'
-            "bt\ncontinue\nbt\nquit\n"
+            f"break app.cc:{year_line}\ncontinue\n"
+            'printf "CLOCK_YEAR=%d\\n", year\n'
+            "bt\nquit\n"
         )
         with (tmp_path / "gdb.log").open("w") as log:
             gdb = subprocess.Popen(
@@ -701,10 +680,9 @@ def test_generated_project_debugger_breakpoint_and_clock_values(app, tmp_path):
             _ready(lambda: control.pointer(100, 200, "press"))
             assert gdb.wait(timeout=20) == 0
             text = (tmp_path / "gdb.log").read_text()
-            assert "Breakpoint 1, AppLogTime" in text, text
-            assert re.search(r"CLOCK=20\d\d-\d\d-\d\d", text), text
-            assert "Breakpoint 2, AppModel::LogTime" in text, text
-            assert "model.cc" in text, text
+            assert "Breakpoint 1," in text and "LogTime" in text, text
+            assert re.search(r"CLOCK_YEAR=20\d\d", text), text
+            assert "app.cc" in text, text
             assert (active.directory / "gdb-mapping.json").is_file()
         finally:
             if gdb.poll() is None:
@@ -717,7 +695,7 @@ def test_saved_generated_run_configuration_executes_and_reaps_emulator(
     app, tmp_path
 ):
     """Runs the actual executable/arguments saved for CLion, from the app."""
-    run = ET.parse(app / ".idea/runConfigurations/App_Run.xml").getroot()[0]
+    run = ET.parse(app / ".run/App_Run.run.xml").getroot()[0]
     log_path = tmp_path / "run.log"
     with log_path.open("w") as log:
         process = subprocess.Popen(

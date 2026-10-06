@@ -57,6 +57,31 @@ TEST(SdkTest, GeneratesStableOrdinalSourceInOrdinalOrder) {
   EXPECT_EQ(first->version_script.substr(0, 9), "euser.dll");
 }
 
+TEST(SdkTest, KhronosAbsentPlaceholdersPreserveOrdinalsWithoutSymbols) {
+  constexpr std::string_view definition =
+      "EXPORTS\nReserved @ 1 NONAME ABSENT\n"
+      "Reserved @ 2 NONAME ABSENT\nglClear @ 10 NONAME\n"
+      "glClear @ 11 NONAME ABSENT\n";
+  const auto table = ParseExports(definition);
+  ASSERT_TRUE(table.ok()) << table.status();
+  EXPECT_EQ(table->size(), 4);
+  const auto full = GenerateProxy(definition, {}, "gles.dso", "gles.dll");
+  ASSERT_TRUE(full.ok()) << full.status();
+  ASSERT_EQ(full->exports.size(), 1);
+  EXPECT_EQ(full->exports[0].ordinal, 10);
+  const auto selected =
+      GenerateProxy(definition, {"glClear"}, "gles.dso", "gles.dll");
+  ASSERT_TRUE(selected.ok()) << selected.status();
+  EXPECT_EQ(selected->exports[0].ordinal, 10);
+  EXPECT_FALSE(ParseExports("EXPORTS\nReserved @ 1 NONAME ABSENT\n"
+                            "Reserved @ 1 NONAME ABSENT\n")
+                   .ok());
+  EXPECT_EQ(GenerateProxy(definition, {"Reserved"}, "gles.dso", "gles.dll")
+                .status()
+                .code(),
+            absl::StatusCode::kFailedPrecondition);
+}
+
 TEST(SdkTest, MissingRemovedDataDuplicateAndUnsafeSelectionsAreRejected) {
   EXPECT_EQ(GenerateProxy(kDefinition, {"Missing"}, "euser.dso", "euser.dll")
                 .status()

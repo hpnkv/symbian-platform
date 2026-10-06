@@ -193,7 +193,10 @@ def test_launch_stages_application_resources(
     monkeypatch.setattr(sdk.AppSdk, "load", lambda _: selected_sdk)
     builds = []
 
-    def build(source, output, compiler, linker):
+    def build(source, output, compiler, linker, *, cmake_variables):
+        assert cmake_variables == {
+            "SYMBIAN_GRAPHICS_FIRMWARE_DIR": str(golden / "data/z")
+        }
         builds.append(source)
         output.mkdir(parents=True, exist_ok=True)
         (output / "demo.exe").write_bytes(b"compiled E32")

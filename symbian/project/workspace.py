@@ -73,6 +73,7 @@ def _prepare(root: Path) -> Path:
     root = root.resolve()
     output = root / ".symbian/workspace-inputs"
     dependencies = [root / "symbian/project/sdk.py", Path(__file__)]
+    dependencies.append(root / "symbian/project/graphics.py")
     dependencies += list((root / "symbian/toolchain/cmake").glob("*"))
     dependencies += list((root / "research/abseil").glob("*.patch"))
     dependencies += list((root / ".symbian/gui-sdk/include").glob("*"))
@@ -177,6 +178,9 @@ def main() -> None:
     parser.add_argument("--root", required=True, type=Path)
     args = parser.parse_args()
     prepare(args.root)
+    from symbian.project.ide import configure_workspace_ide
+
+    configure_workspace_ide(args.root)
 
 
 if __name__ == "__main__":

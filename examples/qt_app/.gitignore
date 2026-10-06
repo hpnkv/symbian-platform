@@ -1,1 +1,6 @@
 sdk-location.json
+emulator.json
+
+!.idea/
+.idea/*
+!.idea/runConfigurations/

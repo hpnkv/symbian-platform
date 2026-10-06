@@ -3307,3 +3307,60 @@ never writes through an old symlink into source files. Pre-today scratch cleanup
 is complete in .symbian/ and build/, including nested diagnostic runs and proxy
 CMake caches, preserving active IDE trees and usable inputs. Another independent
 session has uncommitted changes; this checkpoint does not imply a clean worktree.
+
+### 2026-10-06: graphics SDK and GL/Qt IDE workflows
+
+Original GLES1/GLES2/EGL headers and complete ordinal import proxies are now
+exported through `Symbian::GLES1`, `Symbian::GLES2` and `Symbian::EGL`.
+Configuration checks validate transitive consumers, API/payload/firmware
+availability, architecture/kernel/ABI flags and conflicting GLES imports.
+Unknown physical GPU/context support remains unknown.
+
+The purpose-structured `gl_app` renders a spinning Phong-lit cube on black with
+warm point/cool directional lights and a stylized Exit control. GLSL files are
+separate, embedded and rebuild when edited. SDK bundles include the complete
+example and GL/Qt standalone IDE helpers. Opted-in `symbian init` projects get
+both Run and Debug, including late GDB discovery.
+
+The root project has distinct GL/Qt Run/Debug configurations. Both rebuild
+source SDK libraries and examples, retain guest symbols and own emulator
+shutdown. Actual no-argument launchers pass after saving the existing Belle
+fixture in ignored local example settings; root and standalone ARM GDB wrappers
+stop at source lines with working source relocation. Full CLion remote-debug
+frontend interaction remains unobserved.
+
+Evidence: 64 relevant Pytests passed with 22 optional skips; seven native SDK
+GTests, formatting and strict documentation passed. Root ARMv5T GL/Qt builds,
+source ARMv6 Run/Debug, combined host GL/Qt E32 builds and both-backend
+Debug GL rendering/input/normal Exit
+passed. Earlier structured GL ran on both ISAs and both backends. The final
+Python-free native bundle passes both-ISA GUI/Qt/GL/startup relocation checks
+and ARMv5T EKA1 imports in paths with spaces. Logs are in
+`.symbian/ide-example-live/`; details and resolved failures are in the latest
+research-log entry. Physical-device and Linux GL execution and hosted release
+remain separate gates; no release/version change was made.
+
+### 2026-10-06: modern starter and IDE configuration repair
+
+`symbian init` now enforces modern C++, Abseil Status and timer tasks, with
+both enable flags set unconditionally. The template uses direct typed state
+in its Window Server loop, without AppModel, opaque bridge or conditional
+feature implementations. A shared modern_cpp.h reconciles original platform
+allocation declarations with libc++; SDK compatibility is checked at CMake
+configuration. Explicit portable-profile generation and incompatible selected
+firmware are rejected.
+
+The stale host test referencing deleted model.cc is removed. Both root IDE
+Debug build trees configure, all 12 native suites pass, and the modern starter
+passes actual clock/timer/cancellation/error/OOM tests and a source breakpoint
+on the existing Belle fixture. Both ISAs build after Python-free SDK relocation
+in paths with spaces. Real generated IDE Run succeeds using the configured
+Python interpreter even outside shell environment activation. Logs remain
+under .symbian/ide-example-live. No physical-device compatibility claim follows
+from these results.
+
+Final validation additionally covers 399 passing Python cases across the full
+run and repaired executable-mode reruns (435 optional cases skipped), 51 focused
+SDK/project/IDE checks, four real library-target checks, all 12 native suites,
+formatting and strict docs. All known failures from the final run were resolved
+and their checks rerun successfully; details are in research-log.md.

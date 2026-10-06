@@ -1,0 +1,21 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "symbian-pic",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/.symbian/build/cmake",
+      "toolchainFile": "${sourceDir}/sdk.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "symbian-pic",
+      "configurePreset": "symbian-pic"
+    }
+  ]
+}

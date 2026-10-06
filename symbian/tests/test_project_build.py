@@ -76,6 +76,34 @@ def test_missing_cmake_target_is_structured(tmp_path):
     assert caught.value.code == Code.NOT_FOUND
 
 
+def test_debug_generated_header_inside_source_tree_is_reproducible(tmp_path):
+    """Nested build paths must not escape the generated-header DWARF map."""
+    project = tmp_path / "project"
+    shutil.copytree(PROJECT, project)
+    presets = project / "CMakePresets.json"
+    settings = json.loads(presets.read_text())
+    settings["configurePresets"][0]["cacheVariables"][
+        "CMAKE_BUILD_TYPE"
+    ] = "Debug"
+    presets.write_text(json.dumps(settings))
+    (project / "value.h.in").write_text(
+        "constexpr unsigned int kMultiplier = 17U;\n"
+    )
+    cmake = project / "CMakeLists.txt"
+    cmake.write_text(
+        cmake.read_text()
+        + "\nconfigure_file(value.h.in generated/value.h COPYONLY)\n"
+        "target_include_directories(e32_probe PRIVATE "
+        '"${CMAKE_CURRENT_BINARY_DIR}/generated")\n'
+    )
+    probe = project / "probe.cc"
+    probe.write_text(
+        '#include "value.h"\n' + probe.read_text().replace("17U", "kMultiplier")
+    )
+    report = toolchain.build(project, project / ".symbian/build")
+    assert report["reproducible"]
+
+
 def test_legacy_source_fields_are_not_silently_ignored(tmp_path):
     project = tmp_path / "project"
     shutil.copytree(PROJECT, project)

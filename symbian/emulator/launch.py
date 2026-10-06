@@ -161,6 +161,7 @@ def session(
     overrides: dict | None = None,
     standalone: bool = False,
     sdk: Path | None = None,
+    workspace: bool = False,
 ):
     """Builds and launches one fixture copy, retaining logs and reaping it.
 
@@ -173,6 +174,7 @@ def session(
         overrides: Explicit emulator settings.
         standalone: Open the frontend without automatically running an app.
         sdk: Optional SDK used to resolve standalone emulator settings.
+        workspace: Build the example and SDK libraries from repository sources.
 
     Yields:
         Session with an owned child and private native control endpoint.
@@ -202,7 +204,17 @@ def session(
 
             project = project.resolve()
             generated = (project / "symbian-project.json").is_file()
-            if generated:
+            if workspace:
+                if project.parent != root / "examples":
+                    raise StatusError(
+                        Code.INVALID_ARGUMENT,
+                        "Workspace launch requires a repository example",
+                    )
+                port = json.loads(
+                    (project / "symbian-project.json").read_text()
+                )["preferences"]["port"]
+                app_sdk = None
+            elif generated:
                 configuration = ProjectConfiguration.load(project)
                 app_sdk = configuration.sdk
                 port = configuration.preferences.port
@@ -215,9 +227,15 @@ def session(
                     app_sdk = AppSdk.load(discover_sdk(sdk_path))
                 else:
                     app_sdk = AppSdk.load(discover_sdk())
-            compiler, linker = str(app_sdk.compiler), str(app_sdk.linker)
+            if app_sdk is not None:
+                compiler, linker = str(app_sdk.compiler), str(app_sdk.linker)
             source, build = project, project / ".symbian/build"
-            headers = app_sdk.prefix / "include/platform"
+            if workspace:
+                build = root / ".symbian/workspace-apps" / project.name
+                headers = root / ".symbian/workspace-inputs/include/platform"
+                sdk = root / ".symbian/workspace-inputs"
+            else:
+                headers = app_sdk.prefix / "include/platform"
             project_manifest = tomllib.loads(
                 (project / "symbian.toml").read_text()
             )
@@ -280,7 +298,22 @@ def session(
             raise StatusError(Code.ALREADY_EXISTS, "GDB port busy") from error
     image = {}
     if prepare_application:
-        toolchain.build(source, build, compiler, linker)
+        if workspace:
+            from symbian.emulator.workspace import build_example
+
+            build_example(root, name, build, golden / firmware.device.z_drive)
+        else:
+            toolchain.build(
+                source,
+                build,
+                compiler,
+                linker,
+                cmake_variables={
+                    "SYMBIAN_GRAPHICS_FIRMWARE_DIR": str(
+                        golden / firmware.device.z_drive
+                    )
+                },
+            )
         image = inspect_image(build / f"{name}.exe")
         imported_dlls = {entry["dll"].lower() for entry in image["imports"]}
         pthread_path = firmware.device.z_drive + "/sys/bin/libpthread.dll"
@@ -292,9 +325,8 @@ def session(
                 Code.FAILED_PRECONDITION,
                 f"{firmware.device.model} has no libpthread.dll in drive Z, "
                 "but "
-                f"{name}.exe imports it. Generate with 'symbian init "
-                "--portable-runtime' or set SYMBIAN_ENABLE_TIMER_TASKS=OFF "
-                "and SYMBIAN_ENABLE_ABSEIL_STATUS=OFF, then rebuild.",
+                f"{name}.exe imports it. Select compatible firmware with "
+                "libpthread.dll; the modern C++ starter requires timer tasks.",
             )
         from symbian.toolchain.architecture import (
             require_execution_architecture,
@@ -482,6 +514,7 @@ def main(argv: list[str] | None = None, *, raise_errors: bool = False) -> int:
     parser.add_argument("--project", type=Path)
     parser.add_argument("--sdk", type=Path)
     parser.add_argument("--standalone", action="store_true")
+    parser.add_argument("--workspace", action="store_true")
     parser.add_argument("--gdb", type=Path)
     parser.add_argument("--port", type=int, default=24689)
     add_options(parser)
@@ -507,6 +540,7 @@ def main(argv: list[str] | None = None, *, raise_errors: bool = False) -> int:
             overrides=options(args),
             standalone=args.standalone,
             sdk=args.sdk,
+            workspace=args.workspace,
         ) as active:
             if args.gdb:
                 debugger = subprocess.Popen(
