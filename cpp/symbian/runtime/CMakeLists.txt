@@ -174,19 +174,22 @@ if(SYMBIAN_RUNTIME_LOCAL_C_STRING)
 endif()
 if(SYMBIAN_RUNTIME_LOCAL_C_STDLIB)
   set(local_c_stdlib_sources
-    stdlib/abs.c stdlib/atoi.c stdlib/qsort.c stdlib/strtol.c
-    stdlib/strtoull.c)
+    stdlib/abs.c stdlib/atof.c stdlib/atoi.c stdlib/qsort.c
+    stdlib/strtol.c stdlib/strtoull.c string/strtold.c
+    abort.c gen/assert.c)
   list(TRANSFORM local_c_stdlib_sources PREPEND
     "${SYMBIAN_OPENC_SOURCE}/libc/src/")
   target_sources(symbian_guest_runtime PRIVATE ${local_c_stdlib_sources})
   set_source_files_properties(${local_c_stdlib_sources} PROPERTIES
     COMPILE_OPTIONS "-fdeclspec;-Wno-ignored-attributes;-Wno-deprecated-non-prototype"
     COMPILE_DEFINITIONS "__SOFTFP=")
-  foreach(symbol IN ITEMS abs atoi qsort strtol strtoull)
+  foreach(symbol IN ITEMS abs atof atoi qsort strtol strtoull strtold abort
+                          __assert)
     target_link_options(symbian_guest_runtime INTERFACE "--undefined=${symbol}")
   endforeach()
-  target_sources(symbian_guest_runtime PRIVATE ctype_legacy.cc)
-  target_link_options(symbian_guest_runtime INTERFACE --undefined=isspace)
+  target_sources(symbian_guest_runtime PRIVATE ctype_legacy.cc process_legacy.cc)
+  target_link_options(symbian_guest_runtime INTERFACE
+    --undefined=isspace --undefined=_exit)
 endif()
 if(SYMBIAN_RUNTIME_LOCAL_POSIX_TIME)
   target_sources(symbian_guest_runtime PRIVATE posix_time_legacy.cc)

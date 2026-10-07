@@ -8903,3 +8903,13 @@ stdio, formatting, multibyte conversion, calendar and float conversion. This
 is the remaining named older-firmware loader blocker. The updated guest probe
 also checked unlocked `trylock` and two-waiter broadcast on E71 and 6120c;
 both returned exit reason zero.
+
+The next bounded Open C source selection added its original `atof`,
+`strtold`, `abort` and `__assert` implementations; their notices remain in
+the preserved source checkout. A native `_exit` adapter maps the immediate
+termination ABI to `User::Exit` without finalizers. The ARMv5T software SDL2
+E32 now has 43 distinct `libc.dll` imports, down from 48; no other missing
+library was added. The RM-807 emulator launched that ARMv5T software image,
+accepted UID `0xe0000e20` AppArc close and reported guest exit type 0,
+reason 0 and frontend exit 0. This does not prove older-firmware loading;
+stdio, formatting, allocation, locale and calendar are still unresolved.

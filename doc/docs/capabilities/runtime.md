@@ -130,7 +130,8 @@ still depends on the Open C `__errno` contract, and no older-firmware loader
 run has passed. This remains a source-workspace experiment.
 
 `SYMBIAN_RUNTIME_LOCAL_C_STDLIB=ON` links a bounded original Open C integer
-conversion/sort subset plus ASCII ctype. `SYMBIAN_RUNTIME_NATIVE_PTHREAD=ON`
+conversion/sort subset, simple float wrappers, assertion/abort paths, ASCII
+ctype and a native immediate-exit adapter. `SYMBIAN_RUNTIME_NATIVE_PTHREAD=ON`
 uses EUSER threads, locks, condition variables and bounded TLS tables for the
 reached libc++/SDL calls. Together with the local math/string/time options and
 RHeap allocation, the software SDL2 E32 has no `libpthread.dll`, `libm.dll`,
@@ -148,7 +149,7 @@ creator's process heap; the heap owner must outlive their allocations because
 probe passed on E71/RM-346 and 6120c/RM-243 with guest exit reason zero. The
 profile is not an installed SDK variant; wider pthread semantics and SDL2
 loader compatibility remain open. An ARMv5T software SDL2 E32 using this
-profile still imports 48 distinct `libc.dll` symbols, so it cannot load on
+profile still imports 43 distinct `libc.dll` symbols, so it cannot load on
 those older ROMs yet.
 
 `Symbian::Streams` supports classic locale, C/POSIX locale names and

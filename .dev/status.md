@@ -4229,3 +4229,8 @@ libpthread/libm/EGL/GLES2 imports. That count is target-profile specific;
 the earlier ARMv6 software image has 39. The E71 and 6120c guest probe now
 also passes unlocked `trylock` and two-waiter broadcast. Neither firmware
 has launched the SDL2 app because its libc dependency is unresolved.
+
+Four more bounded original Open C functions and a native immediate-exit
+adapter reduce ARMv5T software SDL2 to 43 distinct libc imports. The revised
+image ran and exited normally on the RM-807 emulator after AppArc close.
+E71/6120c still lack libc, so the application has not loaded there.
