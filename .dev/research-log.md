@@ -8242,3 +8242,14 @@ FreeType consumers to E32 on both ARMv5T and ARMv6; all eight images had EPOC
 signatures. No calls were executed. The disposable build directories were
 removed. Four-host relocated bundle verification and release audit remain
 pending.
+
+### 2026-10-07: complete local relocated-SDK acceptance
+
+I assembled a disposable macOS arm64 native SDK from the successful guest
+artifact and matching host artifact of run `37548067532`, then ran the full
+`scripts/check_native_sdk.py` relocated check. It passed ARMv5T and ARMv6
+GUI, Qt, GL, zlib, PNG, JPEG, FreeType and shared-startup E32 builds, plus
+ARMv5T EKA1 imports. The copied SDK path contained spaces. This establishes
+header/import/link/conversion and relocation acceptance for those consumers;
+it does not establish execution on firmware. The tagged four-host bundle and
+installed-wheel checks remain the publication gates.

@@ -3899,3 +3899,11 @@ WindowServer/GDI links. A local installed SDK built and converted all four
 portable consumers on both ARM profiles; eight E32 signatures were checked.
 This is not execution evidence. Four-host bundle verification, audit and
 publication remain pending.
+
+A disposable macOS arm64 candidate assembled from the successful guest and
+host artifacts of run `37548067532` passed the complete relocated
+`check_native_sdk.py` check. ARMv5T and ARMv6 GUI, Qt, GL, zlib, PNG, JPEG,
+FreeType and shared-startup E32 builds passed, along with ARMv5T EKA1 imports.
+This is compilation, import linking, conversion and relocation evidence, not
+firmware execution. The tagged CI bundle and installed-wheel gates are still
+pending.
