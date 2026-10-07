@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.28)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  project(native_pthread_probe LANGUAGES CXX ASM)
+endif()
+include(SymbianApp)
+symbian_add_executable(native_pthread_probe probe.cc)
+target_link_libraries(native_pthread_probe PRIVATE Symbian::Threads)
+symbian_publish_executable(native_pthread_probe UID3 0xe0000e26)

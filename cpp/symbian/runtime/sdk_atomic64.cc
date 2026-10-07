@@ -1,6 +1,12 @@
 #include <absl/base/nullability.h>
 #include <e32atomics.h>
 #include <e32std.h>
+#ifdef SYMBIAN_RUNTIME_LEGACY_EUSER
+#include "legacy_atomic_ops.h"
+#define __e32_atomic_load_acq32 LegacyAtomicLoad32
+#define __e32_atomic_cas_ord32 LegacyAtomicCas32
+#define __e32_atomic_store_ord32 LegacyAtomicStore32
+#endif
 
 // The default runtime serializes 64-bit compiler ABI operations with one
 // process-owned RFastLock. Some older ROMs lack the native 64-bit exports;

@@ -4,6 +4,21 @@
 
 #include <absl/base/nullability.h>
 #include <e32atomics.h>
+#ifdef SYMBIAN_RUNTIME_LEGACY_EUSER
+#include "legacy_atomic_ops.h"
+#define __e32_atomic_cas_ord8 LegacyAtomicCas8
+#define __e32_atomic_load_acq8 LegacyAtomicLoad8
+#define __e32_atomic_store_ord8 LegacyAtomicStore8
+#define __e32_atomic_swp_ord8 LegacyAtomicExchange8
+#define __e32_atomic_add_ord32 LegacyAtomicAdd32
+#define __e32_atomic_and_ord32 LegacyAtomicAnd32
+#define __e32_atomic_ior_ord32 LegacyAtomicOr32
+#define __e32_atomic_load_acq32 LegacyAtomicLoad32
+#define __e32_atomic_store_ord32 LegacyAtomicStore32
+#define __e32_atomic_cas_ord32 LegacyAtomicCas32
+#define __e32_atomic_swp_ord32 LegacyAtomicExchange32
+#define __e32_memory_barrier LegacyAtomicBarrier
+#endif
 #ifdef SYMBIAN_RUNTIME_MIMALLOC
 #include <cstring>
 #endif

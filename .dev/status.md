@@ -4182,3 +4182,50 @@ Emulator control can now address `task_close` by a 32-bit application UID.
 The tested Arkanoid close reply reported `was_focused: true` even after a menu
 key event, so the attempted script did not establish closing a background
 window group. A real menu-focus transition remains an emulator control gate.
+
+## 2026-10-07: native time compatibility probe
+
+The source-workspace ARMv6 software SDL2 profile gained optional native
+`clock_gettime`, `nanosleep`, `sched_yield`, and processor-count `sysconf`
+adapters. The converted E32 builds, and `llvm-readelf --dyn-syms` now counts
+47 distinct `libc.dll` imports (previously 51) and the same 18
+`libpthread.dll` imports; `libm.dll`, EGL and GLES2 remain absent. The RM-807
+emulator launched and closed this image with frontend exit 0. SDL3 and GL E32
+builds and guest header canaries also passed. This is a bounded bridge, not a
+general POSIX runtime; it still uses Open C errno storage and does not make
+E71/RM-346 or 6120c/RM-243 loader-compatible.
+
+## 2026-10-07: native thread closure checkpoint
+
+The optional source-workspace native pthread bridge and bounded Open C integer
+subset build into ARMv6 SDL2, SDL3 and GL E32 images; guest header canaries
+also build. The ARMv6 software SDL2 image has no `libpthread.dll`, `libm.dll`,
+EGL or GLES2 import, but still has 39 distinct `libc.dll` imports. The ARMv5T
+native thread probe imports only EUSER (47 symbols) and drtaeabi (three).
+Its expanded RM-807 guest run exited normally with reason zero after join,
+detach, recursive/static mutex, timed wait, TLS/key and contention checks.
+That run caught and fixed same-owner normal-mutex `trylock` behavior.
+
+The initial E71/RM-346 frontend failure was a runner argument error; using
+`RM-346` reaches the guest loader. That loader rejects seven EUSER ordinals
+above the older ROM's 2,228 exports, including six atomic helpers and
+`RMutex::Poll`. An experimental ARM SWP adapter removes the atomic imports;
+the current ARMv5T probe imports 39 EUSER and three drtaeabi symbols.
+a minimal ARMv5T `std::thread` join, mutex handoff and isolated timed wait
+then run with guest reason zero on E71. A full two-way condition probe still
+hangs, and the image still imports `RMutex::Poll`. A minimal ARMv5T
+`std::thread` create/join also exited with reason zero on 6120c/RM-243.
+An older-EUSER semaphore-backed mutex/condition implementation then removed
+`RMutex::Poll` and corrected the delayed-notify failure. The full bounded
+ARMv5T pthread probe now imports 34 EUSER and three drtaeabi symbols, with
+no libc/pthread, and exits with guest reason zero on both E71/RM-346 and
+6120c/RM-243. Broader pthread semantics and the software SDL2 app loader
+remain open; its 39 libc imports still block those ROMs. Physical Nokia 808
+testing remains postponed; no installer was staged.
+
+The ARMv5T software SDL2 variant also built as E32 with the older-EUSER
+profile and GPU off. It has 48 distinct `libc.dll` imports and no
+libpthread/libm/EGL/GLES2 imports. That count is target-profile specific;
+the earlier ARMv6 software image has 39. The E71 and 6120c guest probe now
+also passes unlocked `trylock` and two-waiter broadcast. Neither firmware
+has launched the SDL2 app because its libc dependency is unresolved.

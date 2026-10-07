@@ -33,6 +33,14 @@ option(SYMBIAN_RUNTIME_LOCAL_MATH
   "Supply bounded C math primitives without a libm.dll import" OFF)
 option(SYMBIAN_RUNTIME_LOCAL_C_STRING
   "Link a bounded original Open C string subset without libc.dll" OFF)
+option(SYMBIAN_RUNTIME_LOCAL_C_STDLIB
+  "Link bounded original Open C integer conversion and sort routines" OFF)
+option(SYMBIAN_RUNTIME_LOCAL_POSIX_TIME
+  "Provide native clock, sleep, yield, and CPU count adapters" OFF)
+option(SYMBIAN_RUNTIME_NATIVE_PTHREAD
+  "Provide a bounded native thread backend for older firmware" OFF)
+option(SYMBIAN_RUNTIME_LEGACY_EUSER
+  "Use pre-atomic EUSER ordered increments for guest compiler atomics" OFF)
 set(SYMBIAN_MIMALLOC_SOURCE
   "${CMAKE_CURRENT_SOURCE_DIR}/../../../research/upstream/mimalloc" CACHE PATH
   "Pinned mimalloc source checkout used to build the runtime")
@@ -163,6 +171,49 @@ if(SYMBIAN_RUNTIME_LOCAL_C_STRING)
   foreach(symbol IN ITEMS memchr strchr strcmp strcpy strncmp wcslen wmemchr)
     target_link_options(symbian_guest_runtime INTERFACE "--undefined=${symbol}")
   endforeach()
+endif()
+if(SYMBIAN_RUNTIME_LOCAL_C_STDLIB)
+  set(local_c_stdlib_sources
+    stdlib/abs.c stdlib/atoi.c stdlib/qsort.c stdlib/strtol.c
+    stdlib/strtoull.c)
+  list(TRANSFORM local_c_stdlib_sources PREPEND
+    "${SYMBIAN_OPENC_SOURCE}/libc/src/")
+  target_sources(symbian_guest_runtime PRIVATE ${local_c_stdlib_sources})
+  set_source_files_properties(${local_c_stdlib_sources} PROPERTIES
+    COMPILE_OPTIONS "-fdeclspec;-Wno-ignored-attributes;-Wno-deprecated-non-prototype"
+    COMPILE_DEFINITIONS "__SOFTFP=")
+  foreach(symbol IN ITEMS abs atoi qsort strtol strtoull)
+    target_link_options(symbian_guest_runtime INTERFACE "--undefined=${symbol}")
+  endforeach()
+  target_sources(symbian_guest_runtime PRIVATE ctype_legacy.cc)
+  target_link_options(symbian_guest_runtime INTERFACE --undefined=isspace)
+endif()
+if(SYMBIAN_RUNTIME_LOCAL_POSIX_TIME)
+  target_sources(symbian_guest_runtime PRIVATE posix_time_legacy.cc)
+  target_link_options(symbian_guest_runtime INTERFACE --undefined=clock_gettime)
+endif()
+if(SYMBIAN_RUNTIME_NATIVE_PTHREAD)
+  target_sources(symbian_guest_runtime PRIVATE pthread_legacy.cc)
+  set_source_files_properties(pthread_legacy.cc PROPERTIES
+    COMPILE_OPTIONS "-fdeclspec;-fno-pic")
+  target_link_options(symbian_guest_runtime INTERFACE
+    --undefined=pthread_mutex_lock)
+endif()
+if(SYMBIAN_RUNTIME_LEGACY_EUSER)
+  if(NOT SYMBIAN_TARGET_ARCH STREQUAL "armv5t")
+    message(FATAL_ERROR "Legacy SWP atomics are limited to the ARMv5T profile")
+  endif()
+  if(SYMBIAN_RUNTIME_NATIVE_ATOMIC64)
+    message(FATAL_ERROR "Legacy 32-bit atomics require the locked 64-bit profile")
+  endif()
+  if(SYMBIAN_RUNTIME_MIMALLOC)
+    message(FATAL_ERROR "Legacy atomics currently require the shared RHeap profile")
+  endif()
+  target_sources(symbian_guest_runtime PRIVATE legacy_atomic_ops.cc)
+  set_source_files_properties(legacy_atomic_ops.cc PROPERTIES
+    COMPILE_OPTIONS "-fno-pic;-marm")
+  target_compile_definitions(symbian_guest_runtime PRIVATE
+    SYMBIAN_RUNTIME_LEGACY_EUSER=1)
 endif()
 target_sources(symbian_guest_runtime PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/../concurrency/guest/arm_fiber_context.S"

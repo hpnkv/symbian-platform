@@ -42,14 +42,21 @@ extern "C" void* absl_nullable SymbianRuntimeAllocate(unsigned int size) {
   }
   RHeap* absl_nonnull heap = &User::Heap();
   // A worker may finish before another thread destroys an object it made.
-  // Open pins that exact heap until the matching cross-thread free.
+  // Open pins that exact heap until the matching cross-thread free. The
+  // legacy EUSER profile cannot use RHeap::Open on its worker thread; its
+  // pthread adapter shares the creating process heap, whose owner must live
+  // until all worker allocations have been released.
+#ifndef SYMBIAN_RUNTIME_LEGACY_EUSER
   if (heap->Open() != KErrNone) {
     return nullptr;
   }
+#endif
   auto* absl_nullable header = static_cast<AllocationHeader*>(
       heap->Alloc(static_cast<TInt>(size + sizeof(AllocationHeader))));
   if (header == nullptr) {
+#ifndef SYMBIAN_RUNTIME_LEGACY_EUSER
     heap->Close();
+#endif
     return nullptr;
   }
   header->heap = heap;
@@ -72,7 +79,9 @@ extern "C" void SymbianRuntimeFree(void* absl_nullable pointer) {
   RHeap* absl_nullable heap = header->heap;
   header->magic = 0;
   heap->Free(header);
+#ifndef SYMBIAN_RUNTIME_LEGACY_EUSER
   heap->Close();
+#endif
 #endif
 }
 

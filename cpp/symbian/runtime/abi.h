@@ -1,6 +1,8 @@
 #ifndef SYMBIAN_RUNTIME_ABI_H_
 #define SYMBIAN_RUNTIME_ABI_H_
 
+#include <cstdint>
+
 #include <absl/base/nullability.h>
 
 // Keep modern standard-library headers and frozen Symbian C++ headers in
@@ -48,6 +50,7 @@ extern "C" unsigned int SymbianRuntimeNanoTickCount();
 extern "C" int SymbianRuntimeNanoTickPeriodMicros();
 extern "C" unsigned int SymbianRuntimeFastCounter();
 extern "C" int SymbianRuntimeFastCounterFrequency();
+extern "C" std::int64_t SymbianRuntimeSteadyClockNanoseconds();
 
 // Internal narrow bridge for thread-relative RTimer requests. The caller must
 // keep the state alive until cancellation has completed and been drained.

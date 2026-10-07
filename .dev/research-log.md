@@ -8804,3 +8804,102 @@ E71/RM-346 or 6120c/RM-243 launch is meaningful. A control probe sent the
 menu key before UID-targeted close, but the reply still reported
 `was_focused: true`; it validates UID lookup for the focused app, not a
 background app. Investigate the emulator's actual task-switch/menu path.
+
+## 2026-10-07: native clock and wait closure
+
+The next measured import closure was four libc symbols. An optional
+source-workspace bridge maps realtime clock reads to original Symbian UTC
+time (the Open C source's 62168256000000000-microsecond Unix offset),
+monotonic reads to the SDK's wrapping-tick extension, sleeping/yielding to
+`User::After`, and processor count to `EKernelHalNumLogicalCpus` with a
+single-core fallback. It checks invalid clock IDs and sleep arguments, rounds
+positive sleeps up to microseconds, and checks `time_t` overflow. It does
+not implement all POSIX clock IDs or interruptible sleep semantics.
+
+The ARMv6 software SDL2 E32 built with local math, original string sources,
+native time, RHeap and streams. Distinct dynamic imports changed from 51 to
+47 for `libc.dll`; `libpthread.dll` stayed at 18. The RM-807 emulator accepted
+normal close and exited 0 with this image. SDL3 and GL E32 and guest header
+canaries built. The bridge still imports Open C errno storage and has not
+been exercised as an independent clock/sleep behavior probe. Older firmware
+still cannot load the image; a native synchronization backend and the
+remaining libc closure are required.
+
+## 2026-10-07: native pthread and integer C subset
+
+The source-workspace ARMv6 software SDL2 profile now selects bounded original
+Open C integer conversion/sort sources and a local ASCII ctype helper. Its
+converted E32 has 39 distinct `libc.dll` imports and no `libpthread.dll`,
+`libm.dll`, EGL or GLES2 import. Allocation, file I/O, formatting, locale,
+multibyte conversion and calendar functions remain in the libc import set;
+the profile is not loader-compatible with E71 or 6120c yet. Mixing native
+heap allocation with those still-imported Open C calls would risk cross-heap
+ownership, so allocation is deliberately left imported for now.
+
+An optional native pthread ABI adapter now uses EUSER threads, mutexes,
+condition variables and bounded TLS/key tables. The ARMv5T probe E32 imports
+47 EUSER and three drtaeabi symbols, with no libc or pthread imports. Its
+RM-807 guest run returned UID `0xe0000e26`, exit type 0, reason 0. The expanded
+probe covered `std::thread` join/detach, mutex/condition handoff, timed wait,
+recursive and static mutexes, `pthread_once`, TLS destructor/key deletion and
+three-way contention. An earlier probe returned -610: EUSER's recursive poll
+had accepted a same-owner try-lock on a normal pthread mutex. The adapter now
+returns `EBUSY` for that case. Timed waits also reject a deadline that would
+overflow the 64-bit Symbian epoch conversion.
+
+The first E71/RM-346 runner used `E71-1` as `--device`, but the frontend expects
+the firmware code `RM-346`; that caused its exit 255. With the corrected
+argument, the ARMv5T guest reached the loader and panicked on seven invalid
+EUSER ordinals above the firmware's 2228-export limit. Six are later atomic
+helpers; the seventh is `RMutex::Poll` (ordinal 2542). This is real
+firmware-backed evidence that an E32/ELF build did not establish loader
+compatibility.
+
+An explicit experimental ARMv5T profile replaces the six atomic imports with
+an ARM SWP process lock. Its current ARMv5T E32 imports 39 EUSER and three
+drtaeabi symbols; `RMutex::Poll` is the one known EUSER ordinal above the E71
+limit. The first attempt used EUSER `User::LockedInc`, but a
+direct E71 guest check returned an impossible result for a zero-initialized
+integer, so that function was removed from the bridge. ARM SWP passed a
+minimal `std::thread` join and mutex handoff on E71. The same E71 checks
+isolated another boundary: `User::Alloc`/`User::Free` worked on the worker,
+whereas `RHeap::Open` caused KERN-EXEC/3 at a ROM address. The legacy profile
+therefore skips per-allocation heap pinning and requires worker allocations
+to use a heap whose owner outlives them. It remains experimental.
+
+The full two-way condition-variable probe still hung on E71 after this change;
+a one-way condition handoff and a timed wait each returned zero. Its E32 still
+imports the unavailable `RMutex::Poll` ordinal. No E71 support claim is made
+for the pthread bridge or software SDL. The ARMv5T compiler warns generic
+32-bit atomics may use helpers, and this SWP fallback needs performance and
+memory-ordering validation on other relevant ARM cores. A separate minimal
+`std::thread` create/join built with the same ARMv5T profile returned guest
+reason zero on 6120c/RM-243. Its full synchronization probe has not run.
+
+### Older EUSER synchronization resolution
+
+The delayed-notify control proved the E71 `RCondVar` path did not wake a
+thread already waiting. The optional `SYMBIAN_RUNTIME_LEGACY_EUSER` profile
+now implements condition variables with one `RSemaphore` per waiter and a
+protected waiter list. Registration happens before mutex release; signal and
+broadcast mark and wake waiters under the list lock, and timed-out waiters
+remove themselves before closing their semaphore. The same profile uses an
+`RSemaphore` with count one for each mutex. A protected availability/waiter
+count makes `trylock` nonblocking without calling unavailable `RMutex::Poll`
+or the later `RSemaphore::Poll`. A separate contender now tests `EBUSY`
+while another thread owns the mutex. The ARMv5T probe E32 imports 34 EUSER
+and three drtaeabi
+symbols, no libc/pthread, and no known EUSER ordinal beyond the older ROMs.
+The full probe, with bounded waits, returned guest UID `0xe0000e26`, exit
+type 0, reason 0 on both E71/RM-346 and 6120c/RM-243. This covers the tested
+thread, lock, condition, TLS and destructor paths, not all POSIX pthread
+semantics or app loader compatibility.
+
+An ARMv5T software SDL2 E32 then built with the local math, string, integer,
+time, pthread and older-EUSER options, GPU off and RHeap on. Its distinct
+dynamic imports are 48 `libc.dll`, 62 EUSER and 18 drtaeabi symbols; it has
+no libpthread/libm/EGL/GLES2 import. The 48 libc symbols include allocation,
+stdio, formatting, multibyte conversion, calendar and float conversion. This
+is the remaining named older-firmware loader blocker. The updated guest probe
+also checked unlocked `trylock` and two-waiter broadcast on E71 and 6120c;
+both returned exit reason zero.
