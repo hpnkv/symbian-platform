@@ -8213,3 +8213,19 @@ a missing-header negative control reported the absent path. The scripts suite
 passed 71 tests with one skip, native YAML parsed and Black/Ruff passed.
 The successful guest payload cache key remains unchanged. Native assembly,
 audit and publication still require a corrected tagged run.
+
+### 2026-10-07: relocated GL project duplicate publisher
+
+The next tagged run reused the successful guest artifact and passed the
+resource-tool step on all four hosts. The relocated installed-SDK check then
+failed at CMake configure: its temporary `hello_time` project added the real
+`examples/gl_app` subdirectory and also called
+`symbian_publish_executable(gl_app ...)` from the parent. The GL example now
+publishes its own E32 target, so the second call collided on `gl_app_e32`.
+The installed-SDK check now uses the example's own publisher and reads its
+image from `gl_source/e32`. This preserves the actual example project rather
+than editing its GLES/EGL implementation. The script test suite passes 71
+tests with one skip, Black/Ruff and diff checks pass. A locally retained older
+GL bundle could not serve as a valid relocated control because its CMake
+files embed an obsolete absolute SDK path; that scratch copy was removed.
+The corrected tagged bundle check and release audit remain required.

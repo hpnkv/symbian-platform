@@ -55,7 +55,6 @@ symbian_publish_executable(qt_check UID3 0xe0000832)
 
 GL_CMAKE = """
 add_subdirectory(gl_source)
-symbian_publish_executable(gl_app UID3 0xe0000831)
 """
 
 ZLIB_CMAKE = """
@@ -210,7 +209,12 @@ def check(sdk: Path) -> None:
                 "jpeg_check",
                 "freetype_check",
             ):
-                image = (build / "e32" / f"{name}.exe").read_bytes()
+                image_dir = (
+                    build / "gl_source/e32"
+                    if name == "gl_app"
+                    else build / "e32"
+                )
+                image = (image_dir / f"{name}.exe").read_bytes()
                 if image[16:20] != b"EPOC":
                     raise RuntimeError(f"Missing E32 signature in {name}")
         eka1_build = root / "eka1 build"

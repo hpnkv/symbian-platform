@@ -3883,3 +3883,11 @@ resource build and missing-header negative control passed. Seventy-one script
 tests passed with one skip, plus Black/Ruff and workflow YAML parsing.
 Corrected four-host native assembly, release audit and publication remain
 pending. No 0.2.0 release exists yet.
+
+The next tagged run reused the successful guest payload and passed the
+resource-tool step on all four hosts. The relocated installed-SDK check then
+failed configuring a temporary project that published `gl_app_e32` twice:
+the real GL example now owns that target. The check now consumes the example's
+publisher and reads `gl_source/e32/gl_app.exe`. Seventy-one script tests pass
+with one skip; Black/Ruff pass. Four-host bundle verification, release audit
+and publication remain pending. No release exists yet.
