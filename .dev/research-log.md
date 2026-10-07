@@ -8772,7 +8772,8 @@ and resource/capability checks. No such DLL or shim has been shipped yet.
 
 ## 2026-10-07: bounded local C runtime probe after SDL push
 
-Pushed `6c128f1` to `origin/main` before continuing older-runtime work.
+Pushed `6c128f1` to `origin/main` before continuing older-runtime work;
+the validated follow-up was pushed as `1c9507a`.
 The owner then postponed physical Nokia 808 testing; no new SIS was staged.
 The local ARMv6 probe uses `SYMBIAN_ARKANOID_GPU=OFF`,
 `SYMBIAN_RUNTIME_LOCALE_STREAM=ON`, `SYMBIAN_RUNTIME_MIMALLOC=OFF`, and

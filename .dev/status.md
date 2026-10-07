@@ -4159,8 +4159,9 @@ SDL capability guide; no E71/6120 runtime package has been claimed.
 ## 2026-10-07: source-workspace older-runtime experiment and task close
 
 Commit `6c128f1` containing the current SDL2/SDL3 support, Bounce Arkanoid,
-shared SDK APIs, and GL updates was pushed to `origin/main`. Subsequent work
-remains local. The owner postponed Nokia 808 testing, so the rebuilt Arkanoid
+shared SDK APIs, and GL updates was pushed to `origin/main`. Follow-up runtime
+and control work was pushed as `1c9507a`. The owner postponed Nokia 808 testing,
+so the rebuilt Arkanoid
 1.0.4 and GL Cube 1.0.3 SIS packages are not staged or phone-validated.
 
 The software SDL2 ARMv6 source-workspace profile now builds with local math
