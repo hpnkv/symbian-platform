@@ -8264,3 +8264,16 @@ The release audit failed before inspecting assets because it ran the whole
 Twine and Pytest: collection required `tree_sitter_cpp` and FastAPI. The audit
 now runs its release-asset regression test, while the broader scripts suite
 remains a separate development check. No release was published by this run.
+
+### 2026-10-07: SDK 0.2.0 publication
+
+Corrected tagged run `37556769795` completed successfully. Its source build,
+four host matrix jobs, guest payload, four native SDK assemblies, installed
+wheel build/package/sign workflows and release asset audit all passed. The
+annotated `v0.2.0` tag resolves to commit `4d23e12`. The public GitHub
+release has the dedicated `RELEASE_NOTES_0.2.0.md` text and 26 expected
+assets: 16 wheels, a Python sdist, complete source archive, four host SDKs
+and four native SDKs. PyPI's version endpoint returned 16 wheels and one
+sdist. These checks establish distribution and bounded compile/link/package
+acceptance; they do not establish execution of newly inventoried calls on
+Belle or physical-device compatibility.

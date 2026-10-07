@@ -3913,3 +3913,12 @@ checks and installed-wheel build/package/sign workflows. Its audit failed at
 test collection because the audit environment omitted `tree_sitter_cpp` and
 FastAPI while invoking every scripts test. Audit scope is now the focused
 release-asset test; asset inspection and publication require a new tagged run.
+
+SDK 0.2.0 is published from annotated tag `v0.2.0` at `4d23e12`.
+Run `37556769795` passed the four-host matrix, guest staging, four native SDK
+assemblies, full relocated SDK and installed-wheel workflows, release-asset
+audit and publication. The GitHub release has the dedicated 0.2.0 description
+and 26 assets: 16 wheels, one Python sdist, one complete source archive,
+four host archives and four native SDK archives. PyPI's 0.2.0 index lists
+16 wheels and one sdist. The 952 unresolved public export records, blocked
+facilities and untested breadth-call runtime compatibility remain open.
