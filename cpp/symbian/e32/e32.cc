@@ -280,7 +280,8 @@ absl::Status CheckRelocations(std::string_view elf,
               imports->code_function_pointers.find(location);
           if (code_pointer != imports->code_function_pointers.end()) {
             if (symbol_type != 2 || code_pointer->second != *name ||
-                target.name != ".rodata" || target_in_data ||
+                (target.name != ".rodata" && target.name != ".text") ||
+                target_in_data ||
                 Read32(elf, target.offset + location - target.address) != 0) {
               return absl::DataLossError(
                   "Invalid retained imported-function code pointer");

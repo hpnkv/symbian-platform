@@ -23,7 +23,8 @@ class ControlServer {
   ControlServer& operator=(const ControlServer&) = delete;
 
   // Empty socket_path disables control. Enabled sockets require an existing
-  // private directory, and only expose emulator capture, pointer and status.
+  // private directory, and only expose emulator capture, bounded input and
+  // status.
   static absl::StatusOr<std::unique_ptr<ControlServer>> Start(
       eka2l1::desktop::emulator* absl_nullable state,
       const char* absl_nullable socket_path);

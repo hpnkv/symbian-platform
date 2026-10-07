@@ -221,7 +221,14 @@ foreach(component IN ITEMS system connectivity agent power media display sensors
     if(component STREQUAL "display")
       target_link_libraries(${component_target} INTERFACE
         "${SYMBIAN_SDK_PREFIX}/proxies/ws32/ws32.dso"
-        "${SYMBIAN_SDK_PREFIX}/proxies/gdi/gdi.dso")
+        "${SYMBIAN_SDK_PREFIX}/proxies/gdi/gdi.dso"
+        "${SYMBIAN_SDK_PREFIX}/proxies/fbscli/fbscli.dso")
+    endif()
+    if(component STREQUAL "media")
+      target_link_libraries(${component_target} INTERFACE
+        Symbian::Fibers
+        "${SYMBIAN_SDK_PREFIX}/proxies/midiclient/midiclient.dso"
+        "${SYMBIAN_SDK_PREFIX}/proxies/hwrmvibraclient/hwrmvibraclient.dso")
     endif()
     if(component STREQUAL "storage")
       target_link_libraries(${component_target} INTERFACE
@@ -239,6 +246,98 @@ foreach(component IN ITEMS system connectivity agent power media display sensors
     add_library(Symbian::${component_name} ALIAS ${component_target})
   endif()
 endforeach()
+
+set(gles_archive
+  "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_api_gles.a")
+if(EXISTS "${gles_archive}" AND TARGET Symbian::Display AND TARGET Symbian::EGL)
+  add_library(SymbianApiGles STATIC IMPORTED)
+  set_target_properties(SymbianApiGles PROPERTIES
+    IMPORTED_LOCATION "${gles_archive}")
+  target_link_libraries(SymbianApiGles INTERFACE Symbian::Display Symbian::EGL)
+  add_library(Symbian::GlesDisplay ALIAS SymbianApiGles)
+endif()
+
+set(sdl2_manifest
+  "${SYMBIAN_SDK_PREFIX}/share/symbian/portable/sdl2.json")
+if(NOT SYMBIAN_WORKSPACE_BUILD AND EXISTS "${sdl2_manifest}"
+   AND TARGET Symbian::Display)
+  set(sdl2_archive
+    "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_portable_sdl2.a")
+  foreach(required IN ITEMS "${sdl2_archive}"
+      "${SYMBIAN_SDK_PREFIX}/include/portable/sdl2/SDL.h"
+      "${SYMBIAN_SDK_PREFIX}/include/portable/sdl2/SDL_config.h"
+      "${SYMBIAN_SDK_PREFIX}/include/symbian/sdl2/sdl2.h"
+      "${SYMBIAN_SDK_PREFIX}/licenses/portable/SDL2-LICENSE.txt")
+    if(NOT EXISTS "${required}")
+      message(FATAL_ERROR "SDL2 SDK payload missing: ${required}")
+    endif()
+  endforeach()
+  add_library(SymbianPortableSdl2 STATIC IMPORTED)
+  set_target_properties(SymbianPortableSdl2 PROPERTIES
+    IMPORTED_LOCATION "${sdl2_archive}")
+  target_include_directories(SymbianPortableSdl2 SYSTEM INTERFACE
+    "${SYMBIAN_SDK_PREFIX}/include/portable/sdl2")
+  target_compile_definitions(SymbianPortableSdl2 INTERFACE
+    __SOFTFP= SYMBIAN_CAF_V2 __LIBM_ALIASES_H__)
+  target_link_libraries(SymbianPortableSdl2 INTERFACE Symbian::Display)
+  add_library(Symbian::PortableSdl2 ALIAS SymbianPortableSdl2)
+  set(sdl2_gpu_archive
+    "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_portable_sdl2_gpu.a")
+  if(EXISTS "${sdl2_gpu_archive}" AND TARGET Symbian::GlesDisplay
+     AND TARGET Symbian::GLES2)
+    add_library(SymbianPortableSdl2Gpu STATIC IMPORTED)
+    set_target_properties(SymbianPortableSdl2Gpu PROPERTIES
+      IMPORTED_LOCATION "${sdl2_gpu_archive}")
+    target_include_directories(SymbianPortableSdl2Gpu SYSTEM INTERFACE
+      "${SYMBIAN_SDK_PREFIX}/include/portable/sdl2")
+    target_compile_definitions(SymbianPortableSdl2Gpu INTERFACE
+      __SOFTFP= SYMBIAN_CAF_V2 __LIBM_ALIASES_H__)
+    target_link_libraries(SymbianPortableSdl2Gpu INTERFACE
+      Symbian::GlesDisplay Symbian::GLES2)
+    add_library(Symbian::PortableSdl2Gpu ALIAS SymbianPortableSdl2Gpu)
+  endif()
+endif()
+
+set(sdl3_manifest
+  "${SYMBIAN_SDK_PREFIX}/share/symbian/portable/sdl3.json")
+if(NOT SYMBIAN_WORKSPACE_BUILD AND EXISTS "${sdl3_manifest}"
+   AND TARGET Symbian::Display)
+  set(sdl3_archive
+    "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_portable_sdl3.a")
+  foreach(required IN ITEMS "${sdl3_archive}"
+      "${SYMBIAN_SDK_PREFIX}/include/portable/sdl3/SDL3/SDL.h"
+      "${SYMBIAN_SDK_PREFIX}/include/portable/sdl3/SDL3/SDL_build_config.h"
+      "${SYMBIAN_SDK_PREFIX}/include/symbian/sdl3/sdl3.h"
+      "${SYMBIAN_SDK_PREFIX}/licenses/portable/SDL3-LICENSE.txt")
+    if(NOT EXISTS "${required}")
+      message(FATAL_ERROR "SDL3 SDK payload missing: ${required}")
+    endif()
+  endforeach()
+  add_library(SymbianPortableSdl3 STATIC IMPORTED)
+  set_target_properties(SymbianPortableSdl3 PROPERTIES
+    IMPORTED_LOCATION "${sdl3_archive}")
+  target_include_directories(SymbianPortableSdl3 SYSTEM INTERFACE
+    "${SYMBIAN_SDK_PREFIX}/include/portable/sdl3")
+  target_compile_definitions(SymbianPortableSdl3 INTERFACE
+    __SOFTFP= SYMBIAN_CAF_V2)
+  target_link_libraries(SymbianPortableSdl3 INTERFACE Symbian::Display)
+  add_library(Symbian::PortableSdl3 ALIAS SymbianPortableSdl3)
+  set(sdl3_gpu_archive
+    "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_portable_sdl3_gpu.a")
+  if(EXISTS "${sdl3_gpu_archive}" AND TARGET Symbian::GlesDisplay
+     AND TARGET Symbian::GLES2)
+    add_library(SymbianPortableSdl3Gpu STATIC IMPORTED)
+    set_target_properties(SymbianPortableSdl3Gpu PROPERTIES
+      IMPORTED_LOCATION "${sdl3_gpu_archive}")
+    target_include_directories(SymbianPortableSdl3Gpu SYSTEM INTERFACE
+      "${SYMBIAN_SDK_PREFIX}/include/portable/sdl3")
+    target_compile_definitions(SymbianPortableSdl3Gpu INTERFACE
+      __SOFTFP= SYMBIAN_CAF_V2)
+    target_link_libraries(SymbianPortableSdl3Gpu INTERFACE
+      Symbian::GlesDisplay Symbian::GLES2)
+    add_library(Symbian::PortableSdl3Gpu ALIAS SymbianPortableSdl3Gpu)
+  endif()
+endif()
 
 # RFC 8441 WebSocket codec and worker-facing client/server wrappers.
 set(http_archive "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_http.a")

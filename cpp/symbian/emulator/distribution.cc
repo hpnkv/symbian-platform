@@ -18,7 +18,7 @@ bool PrintDistributionIfRequested(int argc,
       "\"version\":\"" SYMBIAN_EMULATOR_VERSION
       "\",\"control_protocol\":\"symbian.emulator-control/v1\","
       "\"capabilities\":[\"isolated-data-root\",\"control-status\","
-      "\"framebuffer-capture\",\"pointer-input\",\"guest-exit-record\","
+      "\"framebuffer-capture\",\"pointer-input\",\"key-input\",\"guest-exit-record\","
       "\"firmware-import\",\"loopback-gdb\",\"dynarmic\",\"dyncom\"]}");
   return true;
 }

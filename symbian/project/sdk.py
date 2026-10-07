@@ -538,6 +538,8 @@ def stage_headers(workspace: Path, output: Path, compiler: Path) -> None:
         stage_freetype_headers,
         stage_jpeg_headers,
         stage_png_headers,
+        stage_sdl2_headers,
+        stage_sdl3_headers,
         stage_zlib_headers,
     )
 
@@ -545,6 +547,8 @@ def stage_headers(workspace: Path, output: Path, compiler: Path) -> None:
     stage_png_headers(workspace, output)
     stage_jpeg_headers(workspace, output)
     stage_freetype_headers(workspace, output)
+    stage_sdl2_headers(workspace, output)
+    stage_sdl3_headers(workspace, output)
     startup = output / "share/symbian/runtime"
     startup.mkdir(parents=True)
     for source_name, target_name in (
@@ -556,7 +560,7 @@ def stage_headers(workspace: Path, output: Path, compiler: Path) -> None:
             workspace / "symbian/toolchain/cmake" / source_name,
             startup / target_name,
         )
-    (output / "include/symbian").mkdir()
+    (output / "include/symbian").mkdir(exist_ok=True)
     shutil.copyfile(
         workspace / "cpp/symbian/runtime/abi.h",
         output / "include/symbian/runtime.h",
@@ -787,8 +791,11 @@ def prepare(
     for name in ("llvm-ar", "llvm-ranlib"):
         archive_tools[name] = llvm_tool(name, sibling=compiler.parent)
     runtimes = {}
+    runtime_build_id = hashlib.sha256(str(output).encode()).hexdigest()[:12]
     for architecture in ("armv5t", "armv6"):
-        runtime = workspace / f".symbian/runtime-probe-{architecture}"
+        runtime = workspace / (
+            f".symbian/runtime-probe-{architecture}-{runtime_build_id}"
+        )
         toolchain.build(
             workspace / "probes/runtime_probe",
             runtime,
@@ -952,10 +959,14 @@ def prepare(
             build_freetype,
             build_jpeg,
             build_png,
+            build_sdl2,
+            build_sdl3,
             build_zlib,
             validate_freetype_payload,
             validate_jpeg_payload,
             validate_png_payload,
+            validate_sdl2_payload,
+            validate_sdl3_payload,
             validate_zlib_payload,
         )
 
@@ -1040,6 +1051,8 @@ def prepare(
                     "agent",
                     "power",
                     "display",
+                    "gles",
+                    "media",
                     "storage",
                     "camera",
                 ):
@@ -1059,7 +1072,7 @@ def prepare(
                         / (
                             "connectivity"
                             if component == "websocket"
-                            else component
+                            else "display" if component == "gles" else component
                         )
                         / f"lib{target}.a",
                         output / "lib" / architecture / f"lib{target}.a",
@@ -1073,6 +1086,10 @@ def prepare(
                         build_tree / component / f"lib{library}.a",
                         output / "lib" / architecture / f"lib{library}.a",
                     )
+        build_sdl2(workspace, output, compiler)
+        validate_sdl2_payload(output)
+        build_sdl3(workspace, output, compiler)
+        validate_sdl3_payload(output)
         if include_host:
             with tempfile.TemporaryDirectory(
                 prefix="symbian-host-concurrency-"

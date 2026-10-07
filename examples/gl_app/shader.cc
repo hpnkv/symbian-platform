@@ -53,6 +53,7 @@ GLuint CreateProgram(std::string_view vertex_source,
       glAttachShader(program, fragment);
       glBindAttribLocation(program, 0, "aPosition");
       glBindAttribLocation(program, 1, "aNormal");
+      glBindAttribLocation(program, 2, "aColor");
       glLinkProgram(program);
       GLint linked = 0;
       glGetProgramiv(program, GL_LINK_STATUS, &linked);

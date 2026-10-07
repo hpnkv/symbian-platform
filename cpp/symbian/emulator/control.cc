@@ -25,6 +25,7 @@
 #include <kernel/process.h>
 #include <nlohmann/json.hpp>
 #include <qt/state.h>
+#include <services/window/classes/wingroup.h>
 #include <services/window/screen.h>
 #include <services/window/window.h>
 #include <sys/stat.h>
@@ -143,7 +144,8 @@ struct ControlServer::Impl {
       }
       return nlohmann::json{{"process_exits", records}};
     }
-    if (operation != "capture" && operation != "pointer") {
+    if (operation != "capture" && operation != "pointer" &&
+        operation != "key" && operation != "task_close") {
       return absl::UnimplementedError("Unknown emulator control operation");
     }
     std::unique_lock state_lock(state->lockdown, std::try_to_lock);
@@ -161,6 +163,63 @@ struct ControlServer::Impl {
     if (!screen) {
       return absl::UnavailableError("No focused emulator screen");
     }
+    if (operation == "task_close") {
+      auto* absl_nullable group = screen->focus;
+      if (group == nullptr) {
+        return absl::UnavailableError("No focused window group");
+      }
+      // TApaTask::EndTask sends EApaSystemEventShutdown in EEventUser data.
+      eka2l1::epoc::event event(group->get_client_handle(),
+                                eka2l1::epoc::event_code::user);
+      event.key_evt_ = {};
+      event.key_evt_.code = 1;
+      group->queue_event(event);
+      return nlohmann::json{{"queued", true}};
+    }
+    if (operation == "key") {
+      const std::string key = StringField(request, "key");
+      const std::string action = StringField(request, "action");
+      int code = -1;
+      if (key == "left") {
+        code = eka2l1::epoc::std_key_left_arrow;
+      }
+      if (key == "right") {
+        code = eka2l1::epoc::std_key_right_arrow;
+      }
+      if (key == "up") {
+        code = eka2l1::epoc::std_key_up_arrow;
+      }
+      if (key == "down") {
+        code = eka2l1::epoc::std_key_down_arrow;
+      }
+      if (key == "select") {
+        code = eka2l1::epoc::std_key_device_3;
+      }
+      if (key == "enter") {
+        code = eka2l1::epoc::std_key_enter;
+      }
+      if (key == "space") {
+        code = eka2l1::epoc::std_key_space;
+      }
+      if (key == "back") {
+        code = eka2l1::epoc::std_key_escape;
+      }
+      if (key == "menu") {
+        code = eka2l1::epoc::std_key_menu;
+      }
+      if (code < 0 || (action != "press" && action != "release")) {
+        return absl::InvalidArgumentError("Unknown key or action");
+      }
+      eka2l1::drivers::input_event event{};
+      event.type_ = eka2l1::drivers::input_event_type::key_raw;
+      event.key_.code_ = code;
+      event.key_.state_ = action == "press"
+                              ? eka2l1::drivers::key_state::pressed
+                              : eka2l1::drivers::key_state::released;
+      kernel_lock.unlock();
+      state->winserv->queue_input_from_driver(event);
+      return nlohmann::json{{"queued", true}};
+    }
     if (operation == "pointer") {
       const auto x_field = request.find("x");
       const auto y_field = request.find("y");
@@ -176,7 +235,7 @@ struct ControlServer::Impl {
           y != std::floor(y) || x < 0 || y < 0 ||
           x >= screen->current_mode().size.x ||
           y >= screen->current_mode().size.y ||
-          (action != "press" && action != "release")) {
+          (action != "press" && action != "release" && action != "move")) {
         return absl::InvalidArgumentError(
             "Invalid logical pointer coordinates");
       }
@@ -186,9 +245,10 @@ struct ControlServer::Impl {
       event.mouse_.pos_x_ = static_cast<int>(x);
       event.mouse_.pos_y_ = static_cast<int>(y);
       event.mouse_.button_ = eka2l1::drivers::mouse_button_left;
-      event.mouse_.action_ = action == "press"
-                                 ? eka2l1::drivers::mouse_action_press
-                                 : eka2l1::drivers::mouse_action_release;
+      event.mouse_.action_ =
+          action == "press"  ? eka2l1::drivers::mouse_action_press
+          : action == "move" ? eka2l1::drivers::mouse_action_repeat
+                             : eka2l1::drivers::mouse_action_release;
       // The existing frontend path acquires the kernel lock internally when
       // delivering to a grabbed window. Do not recursively lock that mutex.
       kernel_lock.unlock();

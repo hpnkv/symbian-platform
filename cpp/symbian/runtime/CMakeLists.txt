@@ -71,6 +71,7 @@ add_library(symbian_guest_runtime STATIC
   "${builtins}/arm/mulsf3.S"
   "${builtins}/arm/addsf3.S" "${builtins}/arm/fixsfsi.S"
   "${builtins}/arm/fixunssfdi.S" "${builtins}/floatundisf.c"
+  "${builtins}/floatdisf.c"
   "${builtins}/divsf3.c" "${builtins}/arm/comparesf2.S"
   "${builtins}/arm/aeabi_fcmp.S"
   # The pinned ARM sources are patched only to avoid ARMv6T2 MOVW.
@@ -92,7 +93,7 @@ add_library(symbian_guest_runtime STATIC
   "${builtins}/muldi3.c" "${builtins}/ashldi3.c"
   "${builtins}/lshrdi3.c"
   "${builtins}/clzsi2.c"
-  heap.cc sdk_heap.cc sdk_pages.cc sdk_clock.cc clock.cc sdk_timer.cc sdk_property.cc atomic_bridge.cc math_c.cc lifecycle.cc sdk_lifecycle.cc
+  heap.cc sdk_heap.cc sdk_pages.cc sdk_clock.cc clock.cc sdk_timer.cc sdk_property.cc atomic_bridge.cc math_c.cc lifecycle.cc sdk_lifecycle.cc pure_virtual.cc
   "${SYMBIAN_LIBCXX_SOURCE}/src/string.cpp"
   "${SYMBIAN_LIBCXX_SOURCE}/src/new_helpers.cpp"
   "${SYMBIAN_LIBCXX_SOURCE}/src/memory.cpp"

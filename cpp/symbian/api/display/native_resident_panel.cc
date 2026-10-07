@@ -5,37 +5,22 @@
 #include "native_resident_panel.h"
 
 #include <atomic>
+#include <string_view>
 
 #include <absl/base/nullability.h>
 #include <e32base.h>
 #include <e32property.h>
 #include <w32std.h>
 
+#include "window_task_identity.h"
+
 namespace symbian::api::display {
 namespace {
 
 TInt NameResidentWindowGroup(RWindowGroup* absl_nonnull group,
                              const NativeResidentPanelOptions& options) {
-  // AppArc uses NUL-separated ready status, UID, and caption fields.
-  TUint16 name_data[96] = {};
-  TInt length = 0;
-  name_data[length++] = '4';
-  name_data[length++] = '0';
-  name_data[length++] = 0;
-  for (int shift = 28; shift >= 0; shift -= 4) {
-    const unsigned digit = (options.app_uid >> shift) & 15;
-    name_data[length++] = digit < 10 ? '0' + digit : 'a' + digit - 10;
-  }
-  name_data[length++] = 0;
-  for (const char* absl_nonnull ch = options.caption; *ch != '\0'; ++ch) {
-    if (length >= 95) {
-      return KErrArgument;
-    }
-    name_data[length++] = static_cast<unsigned char>(*ch);
-  }
-  name_data[length++] = 0;
-  TPtrC16 name(name_data, length);
-  return group->SetName(name);
+  return internal::SetWindowTaskIdentity(group, options.app_uid,
+                                         std::string_view(options.caption));
 }
 
 class RaisePanelProperty {

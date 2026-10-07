@@ -235,7 +235,8 @@ _OPTION_DESCRIPTIONS = {
     "saved": "Read the retained exit report from a stopped emulator session.",
     "x": "Horizontal pointer coordinate in display pixels.",
     "y": "Vertical pointer coordinate in display pixels.",
-    "action": "Pointer button transition to send.",
+    "action": "Input transition to send.",
+    "key": "Named guest key to send.",
     "rom": "Unpacked ROM image input.",
     "vpl": "Firmware VPL manifest input.",
     "instance": "Existing EKA2L1 instance directory to import.",
@@ -634,7 +635,7 @@ def _parser() -> argparse.ArgumentParser:
     )
     ide.add_argument("--root", type=Path, default=Path.cwd())
     ide.add_argument("--gdb", type=Path)
-    for operation in ("status", "screenshot", "pointer"):
+    for operation in ("status", "screenshot", "pointer", "key"):
         command = emulator_commands.add_parser(operation)
         command.add_argument("--endpoint", type=Path, required=True)
         command.add_argument("--timeout", type=float, default=5)
@@ -645,6 +646,22 @@ def _parser() -> argparse.ArgumentParser:
         elif operation == "pointer":
             command.add_argument("x", type=int)
             command.add_argument("y", type=int)
+            command.add_argument("action", choices=("press", "move", "release"))
+        elif operation == "key":
+            command.add_argument(
+                "key",
+                choices=(
+                    "left",
+                    "right",
+                    "up",
+                    "down",
+                    "select",
+                    "enter",
+                    "space",
+                    "back",
+                    "menu",
+                ),
+            )
             command.add_argument("action", choices=("press", "release"))
     build = commands.add_parser(
         "build", help="Build an ARM/E32 application executable"
@@ -1084,6 +1101,29 @@ def _execute(args: argparse.Namespace) -> dict:
         from symbian.project.configuration import ProjectConfiguration
 
         project = args.project.resolve()
+        source_root = Path(__file__).resolve().parents[2]
+        if (
+            args.app_command == "run"
+            and project == source_root / "examples/sdl2_app"
+        ):
+            from symbian.emulator.launch import main as launch
+            from symbian.status import Code, StatusError
+
+            result = launch(
+                [
+                    "--project",
+                    str(project),
+                    "--workspace",
+                    *option_arguments(args),
+                ],
+                raise_errors=True,
+            )
+            if result:
+                raise StatusError(
+                    Code.CANCELLED if result == 130 else Code.INTERNAL,
+                    f"Emulator supervisor exited {result}",
+                )
+            return {"frontend_exit": result}
         if (
             args.app_command == "run"
             and not (project / "symbian-project.json").is_file()
@@ -1332,6 +1372,8 @@ def _execute(args: argparse.Namespace) -> dict:
             return control.capture(args.name)
         if args.emu_command == "pointer":
             return control.pointer(args.x, args.y, args.action)
+        if args.emu_command == "key":
+            return control.key(args.key, args.action)
         return control.exit_report() if args.saved else control.status()
     if args.command == "build":
         if (args.project / "sdk-location.json").is_file():

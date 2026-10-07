@@ -31,7 +31,7 @@ struct ThreadIdentity {
 };
 
 ThreadIdentity CurrentThread() {
-  const TUint64 id = RThread().Id().Id();
+  const std::uint64_t id = RThread().Id().Id();
   const unsigned int low = static_cast<unsigned int>(id);
   const unsigned int high = static_cast<unsigned int>(id >> 32);
   return {low, high, (low ^ high) & (kSlotCount - 1)};

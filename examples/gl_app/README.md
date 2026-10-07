@@ -1,18 +1,27 @@
 # Symbian GL cube
 
-`gl_app` uses original Symbian GLES 2.0 and EGL 1.4 headers and DLL imports.
-It spins a cube against pure black, with per-fragment Phong shading from a
-warm diffuse point light and a cool directional light. Tap the silver pixel
-**EXIT** button to quit; Escape also exits. The event loop uses one native
-request wait for Window Server input, redraws and a 30 Hz frame timer.
+`gl_app` uses the SDK `WindowSurface`, `GlesWindowContext`, and `FramePacer`
+APIs. Cube and button drawing call GLES 2.0 through direct firmware DLL
+imports. The EGL owner requests RGB888 color and a 16-bit depth buffer.
+It spins a red, green and blue faced cube against pure black, with per-fragment
+Phong shading from a warm point light and a cool directional light. Drag the
+cube to turn it; automatic rotation pauses while the pointer is held and resumes
+from the released position. The small top-edge readout reports measured FPS.
+Tap the silver pixel **EXIT** button to quit. Escape opens the pause panel;
+Resume and Exit work by touch, and Escape or Return resumes. Leaving for the
+system menu also opens the panel on return. The window stays in the
+running-applications menu, and its cube orientation stays fixed while resident.
+Frame deadlines follow the display driver's reported refresh rate (60 Hz
+fallback when unavailable).
 
 The source layout follows those responsibilities:
 
 - `app.cc`: standard application entry point.
-- `application.h` / `application.cc`: native windows, input and frame timer.
-- `renderer.h` / `renderer.cc`: EGL context/surface ownership and frame presentation.
+- `application.h` / `application.cc`: SDK window input and frame pacing.
+- `renderer.h` / `renderer.cc`: SDK EGL context and frame presentation.
 - `cube.h` / `cube.cc`: cube geometry, transforms and shaded rendering.
 - `exit_button.h` / `exit_button.cc`: layout, pointer gestures and button rendering.
+- `pause_panel.h` / `pause_panel.cc`: resident pause controls and FPS readout.
 - `shader.h` / `shader.cc`: shader compilation/linking and diagnostics.
 - `shaders/`: cube and button vertex/fragment GLSL files. CMake embeds them
   through `shaders.h.in` and rebuilds when a shader changes. No loose shader
@@ -75,9 +84,10 @@ Set `SYMBIAN_GRAPHICS_FIRMWARE_DIR` to a deployment Z-drive directory to check
 required DLL presence during configuration as well. DLL presence establishes
 availability of the library, rather than GPU/configuration or extension support.
 Context/config creation, shader compilation and swap failures still require
-runtime checks;
-the example logs diagnostics and exits with an error instead of showing an
-unlit fallback. Physical GPU/device behavior requires separate validation.
+runtime checks. The SDK EGL owner reports the failed setup stage; the example
+exits if the required GPU context cannot be opened. Its current GPU build has
+rendered and exited in the RM-807 emulator; physical GPU/device behavior needs
+separate validation.
 
 Original headers retain Nokia/EPL and Khronos/SGI notices. See
 [native SDK reference](../../doc/docs/reference/native-sdk.md).

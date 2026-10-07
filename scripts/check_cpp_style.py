@@ -22,6 +22,8 @@ EXTERNAL = (
     "research/",
     "doc/cpp/",
     "cpp/symbian/concurrency/upstream/",
+    # Verbatim EPL Symbian tactile feedback ABI headers.
+    "cpp/symbian/api/media/compat/original/",
 )
 # These implement standard C/libc++ signatures and must remain usable without
 # Abseil (in particular while bootstrapping the guest runtime).

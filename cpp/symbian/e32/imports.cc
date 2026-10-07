@@ -232,8 +232,9 @@ absl::StatusOr<ResolvedImports> ResolveImports(
           std::any_of(
               sections.begin(), sections.end(),
               [&](const Section& section) {
-                return section.name == ".rodata" && section.type == 1 &&
-                       (section.flags & 7) == 2 &&
+                return (section.name == ".rodata" ||
+                        section.name == ".text") &&
+                       section.type == 1 && (section.flags & 2) != 0 &&
                        location >= section.address &&
                        Within(section.size, location - section.address, 4);
               })) {
@@ -389,8 +390,10 @@ absl::StatusOr<ResolvedImports> ResolveImports(
       if (type == 2 && function) {
         const auto owner = std::find_if(
             sections.begin(), sections.end(), [&](const Section& section) {
-              return section.name == ".rodata" && section.type == 1 &&
-                     (section.flags & 7) == 2 && location >= section.address &&
+              return (section.name == ".rodata" ||
+                      section.name == ".text") &&
+                     section.type == 1 && (section.flags & 2) != 0 &&
+                     location >= section.address &&
                      Within(section.size, location - section.address, 4);
             });
         if (owner == sections.end()) {
@@ -469,8 +472,10 @@ absl::StatusOr<ResolvedImports> ResolveImports(
       } else {
         const auto owner = std::find_if(
             sections.begin(), sections.end(), [&](const Section& section) {
-              return section.name == ".rodata" && section.type == 1 &&
-                     (section.flags & 7) == 2 && location >= section.address &&
+              return (section.name == ".rodata" ||
+                      section.name == ".text") &&
+                     section.type == 1 && (section.flags & 2) != 0 &&
+                     location >= section.address &&
                      Within(section.size, location - section.address, 4);
             });
         if (owner == sections.end()) {
@@ -506,6 +511,12 @@ absl::StatusOr<ResolvedImports> ResolveImports(
     const bool weak_object = info == 0x21;
     const uint32_t address =
         Read32(elf, p + 4) & (function ? ~uint32_t{1} : ~uint32_t{0});
+    // LLD may retain an unused proxy symbol in dynsym after section GC.
+    // All executable/data relocations above have already been resolved, so
+    // an undefined symbol absent from symbol_indices has no loader use.
+    if (index == 0 && size == 0) {
+      continue;
+    }
     if (index == 0 || index >= sections.size() || (!function && !weak_object) ||
         elf[p + 13] != 0 || Read16(elf, versions.offset + symbol * 2) != 1 ||
         size == 0 || (sections[index].flags & 2) == 0 ||
@@ -556,8 +567,9 @@ absl::StatusOr<ResolvedImports> ResolveImports(
       if (plt_function == result.plt_functions.end() ||
           !result.data_function_pointers.emplace(location, plt_function->second)
                .second) {
-        return absl::UnimplementedError(
-            "Imported data pointer lacks a unique function PLT slot");
+        return absl::UnimplementedError(absl::StrCat(
+            "Imported data pointer lacks a unique function PLT slot: ",
+            *name));
       }
     }
   }

@@ -1,0 +1,16 @@
+diff --git a/src/emu/services/src/audio/mmf/dev.cpp b/src/emu/services/src/audio/mmf/dev.cpp
+index 6b26b4b12..d8dc30f36 100644
+--- a/src/emu/services/src/audio/mmf/dev.cpp
++++ b/src/emu/services/src/audio/mmf/dev.cpp
+@@ -664,7 +664,10 @@ namespace eka2l1 {
+     }
+ 
+     void mmf_dev_server_session::stop() {
+-        stream_->stop();
++        // A client may close after opening DevSound but before initializing a
++        // stream. Stopping such a session must still complete successfully.
++        if (stream_)
++            stream_->stop();
+         stream_state_ = epoc::mmf_state_idle;
+ 
+         mmf_dev_server *serv = server<mmf_dev_server>();

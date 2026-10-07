@@ -1,92 +1,48 @@
 #include "renderer.h"
 
 #include <absl/base/nullability.h>
-#include <e32debug.h>
 
 namespace gl_app {
-namespace {
-TInt EglFailure() {
-  RDebug::Print(_L("gl_app EGL error: %x"), eglGetError());
-  return KErrNotSupported;
-}
-}  // namespace
-
 Renderer::~Renderer() {
-  if (display_ != EGL_NO_DISPLAY) {
-    if (current_) {
-      cube_.Close();
-      exit_button_.Close();
-    }
-    eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-    if (context_ != EGL_NO_CONTEXT) {
-      eglDestroyContext(display_, context_);
-    }
-    if (surface_ != EGL_NO_SURFACE) {
-      eglDestroySurface(display_, surface_);
-    }
-    eglTerminate(display_);
+  if (objects_open_) {
+    cube_.Close();
+    ui_batch_.Close();
   }
 }
 
-TInt Renderer::Open(RWindow* absl_nonnull window) {
-  display_ = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-  EGLint major = 0, minor = 0;
-  if (display_ == EGL_NO_DISPLAY || !eglInitialize(display_, &major, &minor)) {
-    return EglFailure();
+absl::Status Renderer::Open(
+    symbian::api::display::WindowSurface* absl_nonnull window) {
+  const absl::Status opened = context_.Open(
+      window, 2,
+      {.red_bits = 8, .green_bits = 8, .blue_bits = 8, .depth_bits = 16});
+  if (!opened.ok()) {
+    return opened;
   }
-  if (!eglBindAPI(EGL_OPENGL_ES_API)) {
-    return EglFailure();
+  if (!cube_.Open() || !ui_batch_.Open().ok()) {
+    cube_.Close();
+    ui_batch_.Close();
+    return absl::UnavailableError("cube shader setup failed");
   }
-  const EGLint attributes[] = {EGL_SURFACE_TYPE,
-                               EGL_WINDOW_BIT,
-                               EGL_RENDERABLE_TYPE,
-                               EGL_OPENGL_ES2_BIT,
-                               EGL_RED_SIZE,
-                               8,
-                               EGL_GREEN_SIZE,
-                               8,
-                               EGL_BLUE_SIZE,
-                               8,
-                               EGL_DEPTH_SIZE,
-                               16,
-                               EGL_NONE};
-  EGLConfig config;
-  EGLint count = 0;
-  if (!eglChooseConfig(display_, attributes, &config, 1, &count) || !count) {
-    return EglFailure();
-  }
-  // Symbian EGLNativeWindowType is a pointer to the actual RWindow object,
-  // not its integer handle, and must remain alive through surface teardown.
-  surface_ = eglCreateWindowSurface(display_, config, window, nullptr);
-  const EGLint context_attributes[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
-  context_ =
-      eglCreateContext(display_, config, EGL_NO_CONTEXT, context_attributes);
-  if (surface_ == EGL_NO_SURFACE || context_ == EGL_NO_CONTEXT ||
-      !eglMakeCurrent(display_, surface_, surface_, context_)) {
-    return EglFailure();
-  }
-  current_ = true;
-  if (!cube_.Open() || !exit_button_.Open()) {
-    return KErrNotSupported;
-  }
-  return KErrNone;
+  objects_open_ = true;
+  context_.SetSwapInterval(1).IgnoreError();
+  return absl::OkStatus();
 }
 
-TInt Renderer::Draw(float angle) {
+absl::Status Renderer::Draw(float yaw, float pitch, bool paused,
+                            std::uint32_t frames_per_second) {
   glViewport(0, 0, size_.iWidth, size_.iHeight);
   glClearColor(0, 0, 0, 1);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  cube_.Draw(size_, angle);
-  exit_button_.Draw(size_);
-  const GLenum error = glGetError();
-  if (error != GL_NO_ERROR) {
-    RDebug::Print(_L("gl_app GL error: %x"), error);
-    return KErrGeneral;
+  cube_.Draw(size_, yaw, pitch);
+  ui_batch_.Begin(size_.iWidth, size_.iHeight);
+  if (paused) {
+    pause_panel_.Draw(size_, &ui_batch_);
+  } else {
+    exit_button_.Draw(size_, &ui_batch_);
   }
-  if (!eglSwapBuffers(display_, surface_)) {
-    return EglFailure();
-  }
-  return KErrNone;
+  pause_panel_.DrawFrameRate(size_, frames_per_second, &ui_batch_);
+  ui_batch_.Draw();
+  return context_.Swap();
 }
 
 }  // namespace gl_app

@@ -12,12 +12,17 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
   shaders/exit_button.vert shaders/exit_button.frag)
 configure_file(shaders.h.in generated/shaders.h @ONLY)
 symbian_add_executable(gl_app app.cc application.cc renderer.cc cube.cc
-  exit_button.cc shader.cc)
+  exit_button.cc pause_panel.cc shader.cc)
 target_include_directories(gl_app PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 set(shader_files shaders/cube.vert shaders/cube.frag
   shaders/exit_button.vert shaders/exit_button.frag)
 set_source_files_properties(${shader_files} PROPERTIES HEADER_FILE_ONLY TRUE)
 target_sources(gl_app PRIVATE ${shader_files} shaders.h.in)
+if(TARGET symbian_api_gles)
+  target_link_libraries(gl_app PRIVATE symbian_api_gles)
+else()
+  target_link_libraries(gl_app PRIVATE Symbian::GlesDisplay)
+endif()
 target_link_libraries(gl_app PRIVATE
   Symbian::GLES2 Symbian::EGL Symbian::WindowServer Symbian::Gdi
   Symbian::Math Symbian::Hal)

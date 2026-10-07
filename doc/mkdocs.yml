@@ -143,6 +143,7 @@ nav:
       - Guest runtime: capabilities/runtime.md
       - Concurrency: capabilities/concurrency.md
       - Device APIs: capabilities/device-apis.md
+      - SDL2 and SDL3: capabilities/sdl.md
       - API families:
           - Overview: capabilities/apis/index.md
           - System: capabilities/apis/system.md

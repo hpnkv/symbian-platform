@@ -1,0 +1,18 @@
+[project]
+architecture = "armv6"
+name = "sdl2_app"
+kind = "e32-import-experiment"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000e20
+
+[package]
+uid = 0xe0000e21
+name = "Bounce Style Arkanoid"
+vendor = "Symbian platform"
+executable_name = "sdl2_app.exe"
+version = [1, 0, 3]
+
+[application]
+caption = "Bounce Style Arkanoid"
+short_caption = "Arkanoid"
+icon = "assets/icon.svg"

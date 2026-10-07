@@ -2,6 +2,7 @@
 precision mediump float;
 varying vec3 vPosition;
 varying vec3 vNormal;
+varying vec3 vColor;
 void main() {
   vec3 normal = normalize(vNormal);
   vec3 view = normalize(-vPosition);
@@ -13,7 +14,7 @@ void main() {
     pow(max(dot(reflect(-pointLight, normal), view), 0.0), 32.0) : 0.0;
   float directedSpecular = directedDiffuse > 0.0 ?
     pow(max(dot(reflect(-directedLight, normal), view), 0.0), 32.0) : 0.0;
-  vec3 material = vec3(0.58, 0.53, 0.45);
+  vec3 material = vColor;
   vec3 color = material * (vec3(0.09) +
     vec3(1.0, 0.77, 0.48) * pointDiffuse +
     vec3(0.37, 0.62, 1.0) * directedDiffuse) +

@@ -53,6 +53,7 @@ PATCHES = (
     "distribution-tcp-close",
     "distribution-control-start",
     "alf-plugin-unload",
+    "mmf-stop-before-init",
     "property-wipeout-notifications",
 )
 LIBRARIES = ("avformat", "avcodec", "swscale", "avutil", "swresample")

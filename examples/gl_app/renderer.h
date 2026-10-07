@@ -1,40 +1,49 @@
 #ifndef SYMBIAN_GL_APP_RENDERER_H_
 #define SYMBIAN_GL_APP_RENDERER_H_
 
-#include <EGL/egl.h>
-#include <absl/base/nullability.h>
+#include <cstdint>
+
+#include <absl/status/status.h>
 #include <w32std.h>
 
 #include "cube.h"
 #include "exit_button.h"
+#include "pause_panel.h"
+#include "symbian/api/display/gles_rect_batch.h"
+#include "symbian/api/display/gles_window_context.h"
 
 namespace gl_app {
-// Owns EGL and destroys GL objects before detaching the context. The caller
-// keeps the Window Server session and RWindow alive through destruction.
+// Destroys GL objects before the SDK-owned context and window are closed.
 class Renderer {
  public:
   Renderer() = default;
   ~Renderer();
   Renderer(const Renderer&) = delete;
   Renderer& operator=(const Renderer&) = delete;
-  TInt Open(RWindow* absl_nonnull window);
+  absl::Status Open(symbian::api::display::WindowSurface* absl_nonnull window);
 
   void Resize(TSize size) { size_ = size; }
 
-  bool HandlePointer(const TPointerEvent& pointer) {
+  bool HandlePointer(const symbian::api::display::WindowInput& pointer) {
     return exit_button_.HandlePointer(pointer, size_);
   }
 
-  TInt Draw(float angle);
+  PausePanel::Action HandlePausePointer(
+      const symbian::api::display::WindowInput& pointer) {
+    return pause_panel_.HandlePointer(pointer, size_);
+  }
+
+  absl::Status Draw(float yaw, float pitch, bool paused,
+                    std::uint32_t frames_per_second);
 
  private:
-  EGLDisplay display_ = EGL_NO_DISPLAY;
-  EGLSurface surface_ = EGL_NO_SURFACE;
-  EGLContext context_ = EGL_NO_CONTEXT;
-  bool current_ = false;
+  symbian::api::display::GlesWindowContext context_;
+  bool objects_open_ = false;
   TSize size_;
   Cube cube_;
+  symbian::api::display::GlesRectBatch ui_batch_;
   ExitButton exit_button_;
+  PausePanel pause_panel_;
 };
 }  // namespace gl_app
 

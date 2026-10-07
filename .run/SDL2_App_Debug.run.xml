@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="SDL2 App Debug" type="CLion_Remote" factoryName="Remote Debug" version="1" remoteCommand="127.0.0.1:24703" symbolFile="$PROJECT_DIR$/.symbian/workspace-apps/sdl2_app/sdl2_app.elf" sysroot="" toolchain="Default">
+    <debugger kind="GDB" isBundled="false">$PROJECT_DIR$/.run/sdl2_app-debug</debugger>
+    <pathMapping remote=":/symbian-src/sdl2_app" local="$PROJECT_DIR$/examples/sdl2_app" />
+    <method v="2" />
+  </configuration>
+</component>

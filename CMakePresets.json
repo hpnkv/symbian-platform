@@ -49,6 +49,22 @@
       "cacheVariables": {
         "SYMBIAN_TARGET_ARCH": "armv5t"
       }
+    },
+    {
+      "name": "guest-probes-armv6-release",
+      "inherits": "guest-probes-armv6",
+      "binaryDir": "${sourceDir}/build/guest-probes-armv6-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "guest-probes-armv6-release-gpu",
+      "inherits": "guest-probes-armv6-release",
+      "binaryDir": "${sourceDir}/build/guest-probes-armv6-release-gpu",
+      "cacheVariables": {
+        "SYMBIAN_ARKANOID_GPU": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -68,6 +84,16 @@
     {
       "name": "guest-probes-armv5t",
       "configurePreset": "guest-probes-armv5t",
+      "targets": ["symbian_probe_index"]
+    },
+    {
+      "name": "guest-probes-armv6-release",
+      "configurePreset": "guest-probes-armv6-release",
+      "targets": ["symbian_probe_index"]
+    },
+    {
+      "name": "guest-probes-armv6-release-gpu",
+      "configurePreset": "guest-probes-armv6-release-gpu",
       "targets": ["symbian_probe_index"]
     }
   ],

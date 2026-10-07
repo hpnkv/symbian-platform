@@ -13,11 +13,18 @@ function(symbian_guest_runtime_header_canaries root)
 endfunction()
 
 function(symbian_guest_api_header_canaries root)
-  foreach(component IN ITEMS system connectivity storage agent power display camera)
+  symbian_header_canary(symbian_api_time_header_canary
+    HEADERS
+      "${root}/cpp/symbian/api/include/symbian/api/time/monotonic_clock.h"
+    LIBRARIES Symbian::Runtime)
+  foreach(component IN ITEMS system connectivity storage agent power display media camera)
     # Public API consumers receive the source include root, as installed SDK
     # consumers receive include/symbian/api; internals use the same owner's ABI.
     file(GLOB_RECURSE public_headers CONFIGURE_DEPENDS
       "${root}/cpp/symbian/api/include/symbian/api/${component}/*.h")
+    if(component STREQUAL "display")
+      list(FILTER public_headers EXCLUDE REGEX "gles_window_context\\.h$")
+    endif()
     if(public_headers)
       symbian_header_canary(symbian_api_${component}_public_header_canary
         HEADERS ${public_headers} LIBRARIES symbian_api_${component})
@@ -29,11 +36,26 @@ function(symbian_guest_api_header_canaries root)
         HEADERS ${internal_headers} LIBRARIES symbian_api_${component})
     endif()
   endforeach()
+  symbian_header_canary(symbian_api_gles_public_header_canary
+    HEADERS
+      "${root}/cpp/symbian/api/include/symbian/api/display/gles_window_context.h"
+    LIBRARIES symbian_api_gles)
   symbian_header_canary(symbian_guest_agent_header_canary
     HEADERS "${root}/cpp/symbian/agent/guest_control.h"
       "${root}/cpp/symbian/agent/guest_log.h"
       "${root}/cpp/symbian/agent/guest_files.h"
     LIBRARIES symbian_api_agent)
+endfunction()
+
+function(symbian_guest_sdl_header_canaries root)
+  symbian_header_canary(symbian_guest_sdl2_cpp_header_canary
+    HEADERS
+      "${root}/cpp/symbian/portable/sdl2/include/symbian/sdl2/sdl2.h"
+    LIBRARIES symbian_portable_sdl2)
+  symbian_header_canary(symbian_guest_sdl3_cpp_header_canary
+    HEADERS
+      "${root}/cpp/symbian/portable/sdl3/include/symbian/sdl3/sdl3.h"
+    LIBRARIES symbian_portable_sdl3)
 endfunction()
 
 function(symbian_guest_concurrency_header_canaries root)

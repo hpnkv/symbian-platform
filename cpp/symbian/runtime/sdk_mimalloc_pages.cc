@@ -260,7 +260,7 @@ extern "C" unsigned int SymbianRuntimeMimallocAddressBudget() {
 }
 
 extern "C" uintptr_t SymbianRuntimeMimallocThreadId() {
-  const TUint64 id = RThread().Id().Id();
+  const std::uint64_t id = RThread().Id().Id();
   return static_cast<uintptr_t>((id ^ (id >> 30)) << 2);
 }
 

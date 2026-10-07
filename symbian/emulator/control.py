@@ -10,7 +10,7 @@ from symbian.status import Code, StatusError
 
 
 class Control:
-    """Accesses captures, logical pointer input and guest exit records.
+    """Accesses captures, bounded input and guest exit records.
 
     The endpoint belongs to an explicitly started emulator. No hardware
     transport or arbitrary guest/host command execution is exposed.
@@ -56,10 +56,18 @@ class Control:
         return self._request({"operation": "capture", "name": name})
 
     def pointer(self, x: int, y: int, action: str) -> dict:
-        """Queues a press or release at logical guest screen coordinates."""
+        """Queues a press, move or release at logical screen coordinates."""
         return self._request(
             {"operation": "pointer", "x": x, "y": y, "action": action}
         )
+
+    def key(self, key: str, action: str) -> dict:
+        """Queues a named guest key press or release."""
+        return self._request({"operation": "key", "key": key, "action": action})
+
+    def close_focused_task(self) -> dict:
+        """Request normal AppArc shutdown of the focused window group."""
+        return self._request({"operation": "task_close"})
 
     def _request(self, request: dict) -> dict:
         data = json.dumps(request, separators=(",", ":")).encode() + b"\n"

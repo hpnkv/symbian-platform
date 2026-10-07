@@ -4,6 +4,8 @@ import argparse
 import hashlib
 import json
 import subprocess
+import tarfile
+import urllib.request
 from pathlib import Path
 
 EXTRA = {
@@ -99,6 +101,64 @@ def checkout(directory: Path, repository: str, revision: str) -> None:
         )
 
 
+def prepare_sdl2(root: Path) -> None:
+    """Acquires and verifies the pinned upstream SDL2 release tarball."""
+    record = json.loads((root / "research/portable/sdl2.json").read_text())
+    directory = root / "research/upstream/sdl2"
+    archive = directory / "SDL2-2.30.11.tar.gz"
+    source = root / "research/upstream" / record["source"]
+    directory.mkdir(parents=True, exist_ok=True)
+    if not archive.exists():
+        url = (
+            "https://github.com/libsdl-org/SDL/releases/download/"
+            "release-2.30.11/SDL2-2.30.11.tar.gz"
+        )
+        with urllib.request.urlopen(url, timeout=60) as response:
+            archive.write_bytes(response.read())
+    if hashlib.sha256(archive.read_bytes()).hexdigest() != (
+        record["archive_sha256"]
+    ):
+        raise RuntimeError("Pinned SDL2 archive digest mismatch")
+    if not source.exists():
+        with tarfile.open(archive, "r:gz") as package:
+            package.extractall(directory, filter="data")
+    for name, digest in record["headers"].items():
+        if (
+            hashlib.sha256((source / "include" / name).read_bytes()).hexdigest()
+            != digest
+        ):
+            raise RuntimeError(f"Pinned SDL2 header changed: {name}")
+
+
+def prepare_sdl3(root: Path) -> None:
+    """Acquires and verifies the pinned upstream SDL3 release tarball."""
+    record = json.loads((root / "research/portable/sdl3.json").read_text())
+    directory = root / "research/upstream/sdl3"
+    archive = directory / "SDL3-3.2.22.tar.gz"
+    source = root / "research/upstream" / record["source"]
+    directory.mkdir(parents=True, exist_ok=True)
+    if not archive.exists():
+        url = (
+            "https://github.com/libsdl-org/SDL/releases/download/"
+            "release-3.2.22/SDL3-3.2.22.tar.gz"
+        )
+        with urllib.request.urlopen(url, timeout=60) as response:
+            archive.write_bytes(response.read())
+    if hashlib.sha256(archive.read_bytes()).hexdigest() != (
+        record["archive_sha256"]
+    ):
+        raise RuntimeError("Pinned SDL3 archive digest mismatch")
+    if not source.exists():
+        with tarfile.open(archive, "r:gz") as package:
+            package.extractall(directory, filter="data")
+    for name, digest in record["headers"].items():
+        if (
+            hashlib.sha256((source / "include" / name).read_bytes()).hexdigest()
+            != digest
+        ):
+            raise RuntimeError(f"Pinned SDL3 header changed: {name}")
+
+
 def main() -> None:
     """Prepares the exact source inputs consumed by native export."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -124,6 +184,8 @@ def main() -> None:
         )
     for name, (repository, revision) in EXTRA.items():
         checkout(root / "research/upstream" / name, repository, revision)
+    prepare_sdl2(root)
+    prepare_sdl3(root)
     native_sources = json.loads(
         (root / "research/native-sdk/sources.json").read_text()
     )

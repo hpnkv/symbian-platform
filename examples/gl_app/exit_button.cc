@@ -1,37 +1,19 @@
 #include "exit_button.h"
 
-#include "shader.h"
-#include "shaders.h"
-
 namespace gl_app {
-
-bool ExitButton::Open() {
-  program_ = CreateProgram(shaders::kExitVertex, shaders::kExitFragment);
-  if (!program_) {
-    return false;
-  }
-  color_ = glGetUniformLocation(program_, "uColor");
-  return true;
-}
-
-void ExitButton::Close() {
-  if (program_) {
-    glDeleteProgram(program_);
-  }
-  program_ = 0;
-}
 
 TRect ExitButton::Bounds(TSize size) {
   return TRect(size.iWidth / 8, size.iHeight - 100, size.iWidth * 7 / 8,
                size.iHeight - 36);
 }
 
-bool ExitButton::HandlePointer(const TPointerEvent& pointer, TSize size) {
-  const bool inside = Bounds(size).Contains(pointer.iPosition);
-  if (pointer.iType == TPointerEvent::EButton1Down) {
+bool ExitButton::HandlePointer(
+    const symbian::api::display::WindowInput& pointer, TSize size) {
+  const bool inside = Bounds(size).Contains(TPoint(pointer.x, pointer.y));
+  if (pointer.kind == symbian::api::display::WindowInputKind::kPointerDown) {
     pressed_ = inside;
   }
-  if (pointer.iType != TPointerEvent::EButton1Up) {
+  if (pointer.kind != symbian::api::display::WindowInputKind::kPointerUp) {
     return false;
   }
   const bool exit = pressed_ && inside;
@@ -40,23 +22,13 @@ bool ExitButton::HandlePointer(const TPointerEvent& pointer, TSize size) {
 }
 
 void ExitButton::Rect(int x, int y, int width, int height, float shade) {
-  const float left = 2.0f * x / size_.iWidth - 1.0f;
-  const float right = 2.0f * (x + width) / size_.iWidth - 1.0f;
-  const float top = 1.0f - 2.0f * y / size_.iHeight;
-  const float bottom = 1.0f - 2.0f * (y + height) / size_.iHeight;
-  const GLfloat points[] = {left,  top, 0, left,  bottom, 0,
-                            right, top, 0, right, bottom, 0};
-  glUniform4f(color_, shade, shade, shade, 1);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, points);
-  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  batch_->AddRect(x, y, width, height, shade, shade, shade);
 }
 
-void ExitButton::Draw(TSize size) {
+void ExitButton::Draw(
+    TSize size, symbian::api::display::GlesRectBatch* absl_nonnull batch) {
+  batch_ = batch;
   size_ = size;
-  glDisable(GL_DEPTH_TEST);
-  glDisable(GL_CULL_FACE);
-  glUseProgram(program_);
-  glEnableVertexAttribArray(0);
   const TRect bounds = Bounds(size);
   const int x = bounds.iTl.iX, y = bounds.iTl.iY;
   const int w = bounds.Width(), h = bounds.Height();
@@ -95,7 +67,7 @@ void ExitButton::Draw(TSize size) {
       }
     }
   }
-  glDisableVertexAttribArray(0);
+  batch_ = nullptr;
 }
 
 }  // namespace gl_app

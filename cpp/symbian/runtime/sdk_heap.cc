@@ -1,3 +1,5 @@
+#include <cstdint>
+
 #include <absl/base/nullability.h>
 #include <e32std.h>
 
@@ -16,11 +18,11 @@ extern "C" void SymbianRuntimeMimallocLeaveThread();
 namespace {
 struct AllocationHeader {
   RHeap* absl_nonnull heap;
-  TUint32 magic;
+  std::uint32_t magic;
 };
 
 static_assert(sizeof(AllocationHeader) == 8);
-constexpr TUint32 kAllocationMagic = 0x53484D45;  // SHME.
+constexpr std::uint32_t kAllocationMagic = 0x53484D45;  // SHME.
 }  // namespace
 #endif
 

@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from symbian.project.sdk import AppSdk
+from symbian.project.sdk import AppSdk, project_sdk
 from symbian.status import Code, StatusError
 
 
@@ -50,6 +50,8 @@ class ProjectConfiguration(BaseModel):
                 prefix = Path(json.loads(location.read_text())["sdk"])
             elif isinstance(settings.get("sdk"), dict):
                 prefix = Path(settings["sdk"]["prefix"])
+            elif "sdk" not in settings:
+                prefix = project_sdk(project).prefix
             else:
                 prefix = Path(settings["sdk"])
             if not prefix.is_absolute():

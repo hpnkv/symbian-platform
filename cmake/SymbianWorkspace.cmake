@@ -12,7 +12,7 @@ function(symbian_workspace_archive public_target source_target)
 endfunction()
 
 function(symbian_workspace_components)
-  foreach(component IN ITEMS System Connectivity Agent Power Display Camera Storage)
+  foreach(component IN ITEMS System Connectivity Agent Power Media Display Camera Storage)
     string(TOLOWER "${component}" component_lower)
     symbian_workspace_archive(SymbianApi${component}
       symbian_api_${component_lower})

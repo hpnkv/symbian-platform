@@ -73,12 +73,18 @@ function(_symbian_graphics_walk target mode)
       if(item MATCHES "^\\$<(LINK_ONLY|BUILD_INTERFACE):([^<>]+)>$")
         set(item "${CMAKE_MATCH_2}")
       elseif(item MATCHES "\\$<")
-        set_property(GLOBAL APPEND PROPERTY SYMBIAN_GRAPHICS_CONDITIONAL "${item}")
-        # Discover targets hidden inside an expression, then reject only if
-        # this graph actually uses graphics. No silent skipped validation.
+        # Unrelated platform link options (for example Abseil's conditional
+        # librt or Apple framework) do not select a graphics API.
+        # Conditional graphics targets still need an explicit configure-time
+        # selection so firmware and ABI checks see the resulting graph.
         string(REGEX MATCHALL "[A-Za-z_][A-Za-z0-9_:.-]*" candidates "${item}")
         foreach(candidate IN LISTS candidates)
           if(TARGET "${candidate}")
+            get_target_property(candidate_api "${candidate}" SYMBIAN_GRAPHICS_API)
+            if(candidate_api)
+              set_property(GLOBAL APPEND PROPERTY
+                SYMBIAN_GRAPHICS_CONDITIONAL "${item}")
+            endif()
             _symbian_graphics_walk("${candidate}" CHILD)
           endif()
         endforeach()

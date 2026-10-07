@@ -3937,3 +3937,221 @@ for `RequestStop()`; a fresh Dynarmic run still panicked with reason 46.
 The example fixes passed owned C++ style, strict documentation and the
 scripts suite (71 passed, one skipped). Disposable SDK/runtime build products
 were removed after recording the fixture, archive digest and exit results.
+
+SDL2/SDL3 source-workspace checkpoint (2026-10-07): the shared Bounce-inspired
+Arkanoid builds as separate SDL2 and SDL3 ARMv6 E32 targets. Nokia 808, C7 and
+E6 Dynarmic emulator runs display gameplay and react to taps for both builds.
+The root ARMv6 guest preset configures and its 696-step probe index passes.
+A staged scratch SDK also builds and converts both C and C++ SDL consumers to
+E32; a clean full SDK export failed on a missing destination ARMv5T SDL2
+archive. Its archives have not yet been
+accepted as a release artifact. `WindowSurface` owns the RGB565 display/input
+boundary and optional presentation counters; `GameFeedback` owns native MIDI
+and optional vibration, whose physical effects remain unverified. SDL audio
+still uses dummy drivers. EGL/GLES acceleration, gameplay win-screen replay,
+older ARMv5T firmware loader checks and physical-device checks remain open.
+
+Arkanoid control update (2026-10-07): SDL2 and SDL3 source ARMv6 targets
+compile, link and convert to E32 with a pause menu that has Resume, Sound
+On/Off and Exit. Escape/Back toggles pause, focus loss pauses, touch selects
+menu items, and directional/select keys drive the paddle and menu. The game
+uses screen-scaled keypad speed and pointer-following paddle placement.
+`GameFeedback` gates MIDI notes while paused or muted. The workspace Media
+archive now points at the source target, and the guest runtime supplies the
+pure-virtual ABI trap required by SDL vtables. `uv run symbian app run
+--project examples/sdl2_app` reached a live RM-807/Dynarmic EKA2L1 session
+without a project SDK selector; the test session was stopped. Owned C++ style,
+Ruff, Black, guest header canaries and diff checks passed. Keyboard and focus
+input remain untested in a live session because the emulator control endpoint
+injects pointer only.
+
+EKA2L1 arrow-key follow-up (2026-10-07): `WindowSurface` now reads
+`TKeyEvent::iScanCode` for down/up events and exposes semantic `WindowKey`
+values; SDL2 and SDL3 map those SDK keys. Both ARMv6 E32 examples built and converted. Live
+RM-807/Dynarmic runs of each example accepted host macOS Left/Right arrows
+through EKA2L1's default Qt bindings and moved the paddle in both directions.
+Injected Back and menu selection also changed the visible pause and sound-menu
+states. This is emulator input evidence; physical-device keyboard behavior
+and menu Exit remain unverified.
+
+Arkanoid source-layout update (2026-10-07): application, game, renderer, drawing
+primitives, blocks, ball, platform, indexed 95-character printable ASCII font
+and text rendering now live in separate `.h`/`.cc` units. Non-ASCII bytes use a
+distinct default glyph. Both SDL2 and SDL3 ARMv6 E32 targets build and convert;
+both live RM-807/Dynarmic runs rendered, accepted host Left/Right arrows and
+displayed the pause/sound menu after the split. A host glyph check covered all
+printable ASCII positions and fallback behavior. The asset bitmap source is a
+public-domain Qt 4 research font, attributed in the owned source.
+
+Physical staging (2026-10-07): the source ARMv6 SDL2 E32 target built and a
+reproducible unsigned SIS was packaged. The connected Nokia 808 initially
+blocked MTP interface claiming; the user switched it to Mass storage. The SDK
+matched the same USB serial identity, staged the SIS in `Installs/`, verified
+the readback SHA-256 and safely ejected the volume. State is
+`awaiting-on-device-install`; installation, loader compatibility and execution
+on the handset remain unverified.
+
+Physical white-screen follow-up (2026-10-07): the owner reported that the
+first installed SDL2 Arkanoid SIS displayed white for over ten seconds, then
+exited without an error message. The SDK display owner had held the FBS shared
+heap lock across Window Server blits; it now writes into an owned local chunk
+and releases the FBS lock before each blit. Media callback dispatch is bounded
+per frame, and the game presents once before starting synchronous media
+services. This addresses observed blocking risks but has not yet been proven
+to resolve the physical exit. SDL2 and SDL3 ARMv6 E32 targets built; a live
+RM-807/Dynarmic SDL2 run stayed active beyond 18 seconds and showed a full
+Arkanoid frame. A new Bounce-inspired SVG icon was bundled as a MIF. The final
+four-file unsigned SIS, SHA-256
+`3b7f4b066e010dfb1911f3db193e3c7acf069608f89121d60a6333369741558e`,
+was staged on the same serial-anchored phone at
+`Installs/sdl2_app-3b7f4b066e01.sis`; readback matched and the volume was
+safely ejected. Handset installation and runtime retest remain pending.
+
+Brick-hit follow-up (2026-10-07): the owner reports a held-finger tracking
+failure and a silent freeze/exit about 10–15 seconds after a brick hit on the
+previously staged Nokia 808 build. The game now retains pointer coordinates
+and moves the paddle as input arrives. SDK `GameFeedback` sends short HWRM
+vibration requests on a bounded A11-derived worker with native trap cleanup
+and an active scheduler. An error or 250 ms pending request disables later
+pulses. The original HWRM header says this API blocks its caller, while
+EKA2L1 completes vibration IPC immediately. Nokia email-agent and Qt 4
+clients use the default-intensity overload, matching this implementation.
+This is a plausible fix to a device-only blocking path, not a confirmed root
+cause without a phone panic trace and retest.
+
+The ARMv6 release SDL2/SDL3 E32 targets built. Constant divisions in the
+arithmetic-heavy ARM-state units use shifts or multiply/shift; variable
+division uses the existing compiler-rt helpers without assuming hardware
+divide or VFP. A fresh RM-807/Dynarmic release-image run stayed alive for
+18 seconds after touch launch and logged one 35 ms vibration. The final
+unsigned SIS SHA-256 is
+`3886b94ed219f7e61e9dcabc446d84bb69fcb98b08fc52b2441339dfb45d25b8`.
+The connected 808 responded to PC Suite OBEX Connect/Disconnect, but macOS
+rejected MTP staging with `LIBUSB_ERROR_ACCESS`. After the owner switched to
+Mass storage, the SDK staged `Installs/sdl2_app-3886b94ed219.sis` on the same
+serial-anchored phone. Host and volume SHA-256 matched and `diskutil eject
+disk4` succeeded. The handset installer and physical runtime are unverified.
+
+Arkanoid follow-up (2026-10-07): The shared SDL2/SDL3 display owner now enables
+Window Server drag and move events and names its window group with the
+application UID and caption. The game pauses on focus loss, requests GLES2 by
+default with a software renderer fallback, displays measured FPS plus a `GPU`
+marker only when accelerated rendering is selected, and paces presentation to
+the reported refresh rate (60 Hz fallback if unknown). The bundled icon now
+matches the game's block, ball and paddle geometry. Both ARMv6 GPU targets
+compiled and converted to E32. Fresh RM-807/Dynarmic SDL2 and SDL3 captures
+showed complete frames and `060 FPS GPU` / `059 FPS GPU` with no exit record
+at capture time. The installed emulator
+control distribution lacks pointer move and key injection, so continuous drag
+and OS task-menu restoration are source-supported but physically unverified.
+The SDL2 GPU SIS was staged and readback verified on the serial-matched 808:
+`Installs/sdl2_app-1be13c3d99b8.sis`, SHA-256
+`1be13c3d99b86708672ffa52007914c51603d4da1dc30ad9f36294b678a1b107`;
+`diskutil eject disk4` succeeded. The phone has not yet installed or run it.
+The GPU binary imports `libegl.dll`, so software-only builds are needed on
+firmware lacking that library. SDK export rules for GLES context and SDL2/SDL3
+GPU archives were added; a clean installed-SDK acceptance build remains open.
+
+The owner then ran the staged GPU-linked build on the Nokia 808. The resident
+app, FPS readout and held-finger tracking work; `GPU` was absent and the readout
+was about 21 FPS. No game vibration was felt, although system-menu tactile
+feedback works. This supersedes the prior unknown physical behavior for those
+specific features. SDL2/SDL3 GPU archives now directly import core GLES2
+functions instead of relying on `eglGetProcAddress` for them. Both direct-link
+ARMv6 E32 targets build, and both render with the GPU marker in fresh RM-807
+emulator runs. The SDK EGL owner and game pause menu now retain the precise
+GPU fallback error. Original HWRM server policy does not require an extra
+capability for ordinary vibration; profile mode and the worker call result
+remain possible causes. A 100 ms pulse and pause-menu error readout are in the
+next build. Physical GPU and vibration behavior of that build remain unverified.
+
+The revised 1.0.1 SIS was staged on the same serial-anchored Nokia 808 as
+`Installs/sdl2_app-c282a7aac200.sis`. Host and volume SHA-256 matched
+`c282a7aac200c7bb9cd0d61e4b7b48df3b427bad3baec438cb21f8facc19ec1b`;
+`diskutil eject disk4` succeeded. It awaits installation and physical GPU/HWRM
+readout. The MkDocs strict build, C++ style checker and both direct-link ARMv6
+E32 builds passed. SDL2/SDL3 direct-link RM-807 emulator frames showed GPU at
+60 FPS without an exit record.
+
+## 2026-10-07: gl_app shared display API and staged build
+
+`gl_app` now uses SDK window/task, EGL context and refresh pacing APIs. The
+shared EGL owner supports its RGB888/depth16 request, and the SDK display
+archive exports its WS32/GDI/FBSCLI/HAL dependencies. Direct GLES2 imports are
+retained. The ARMv6 E32 and guest header canaries built; a fresh RM-807
+emulator run rendered and animated the cube, then exited normally through its
+touch button. C++ style and formatting checks passed. Physical rendering is
+still untested.
+
+The resulting SIS was staged as `Installs/gl_app-8976c73d452c.sis` on the
+Nokia 808 Mass storage volume. Its SHA-256 is
+`8976c73d452c35863a23bd19ba483a542d7905dbe943ef46d40b72d8fd8ee5ed`;
+host and device-volume readback matched, and the volume was safely ejected.
+The package awaits installation on the phone.
+
+## 2026-10-07: Arkanoid pacing and tactile revision
+
+On the Nokia 808, the prior Arkanoid package selected GPU rendering but ran
+at about 54 FPS and timed out in HWRM vibration. The SDK frame pacer now skips
+an extra full-frame sleep on missed deadlines. SDL2/SDL3 request display sync,
+and the game reuses one small block texture atlas. `GameFeedback` requests the
+system's light tactile cue on a worker, with a short HWRM fallback; the worker
+timeout reports its stalled stage. The touch library is loaded dynamically so
+it does not become a loader requirement on older firmware.
+
+SDL2/SDL3 ARMv6 E32 builds and the GL Cube rebuild passed. Fresh RM-807
+emulator checks rendered both SDL GPU targets; an SDL2 game hit removed a brick
+and reached score 10 without a guest exit. Its log showed HWRM fallback, so
+physical tactile behavior remains open. GL Cube rendered, animated and exited
+normally after the shared pacer fix. Arkanoid 1.0.2 and GL Cube 1.0.1 SIS
+packages are built; staging awaits the phone's Mass storage volume.
+
+Arkanoid 1.0.2 and GL Cube 1.0.1 SIS files were staged on the Nokia 808 as
+`Installs/sdl2_app-f75ac15b725c.sis` and
+`Installs/gl_app-3d0e2dd56410.sis`. Host and phone-volume SHA-256 readback
+matched. Older Arkanoid and GL Cube installers were removed from `Installs` at
+the owner's request; unrelated packages remain. The volume was safely ejected.
+Phone installation and the revised FPS/tactile behavior are pending.
+
+## 2026-10-07: tactile resolver and GL cube interaction follow-up
+
+After the owner's Nokia 808 `touch feedback open timed out` report, Arkanoid's
+SDK GameFeedback stopped constructing the UI-dependent touch client on its
+worker. It now dynamically calls the original tactile resolver's session API
+for a light vibration-only cue, retaining the bounded worker and HWRM fallback.
+The new route is source and ARM-build checked; physical tactile behavior remains
+unverified. Arkanoid also has a pause button occupying the first top-border
+cell, with a larger hit target.
+
+GL Cube now supports held-pointer rotation, resumes automatic rotation from its
+current angle, uses red/green/blue face materials with its existing Phong
+lights, shows measured FPS, and presents a task-listed resident pause panel on
+focus return. The cube holds its exact angle while paused. The overlay's
+`PAUSED` glyph set was completed after the owner noticed missing letters.
+A source-built RM-807 control frontend observed stable frames while dragging or
+paused, changed frames after release or Resume, and normal EXIT. The installed
+SDK frontend had stale control operations, so its rejected move/key probes do
+not indicate a GL guest freeze. Phone validation and package staging are
+pending.
+
+The final Arkanoid 1.0.3 and GL Cube 1.0.2 SIS packages were staged on the
+serial-matched Nokia 808 (`usb:0421:05d0:eb1690d24a50d5eb`) as
+`Installs/sdl2_app-aa6ec828de80.sis` and
+`Installs/gl_app-887ae9ca44cf.sis`. SHA-256 readback matched the host files:
+`aa6ec828de8022369079ce410eb48e10c5e90c8cbf4fbe2b17faca19ba2742fc`
+and `887ae9ca44cfdf16fd8a5ad017902194f1e270dc8582d70e53fbb7e8a5905d3e`.
+The two old app installers were removed and `diskutil eject disk4` succeeded.
+Phone installation and tactile behavior remain unverified.
+
+C7/RM-675 and E6/RM-609 emulator runs rendered current SDL2, SDL3 and GL
+images. E71/RM-346 and 6120c/RM-243 cannot load these images because their
+firmware lacks `libc`, `libm`, `libpthread`, EGL and GLES2 imports. The missing
+`libpthread` is a real dependency of this selected libc++/mimalloc runtime;
+shipping it alone would leave four direct missing imports and its own backend
+requirements. No older-firmware runtime support is claimed.
+
+A GPU-disabled SDL2 build confirms EGL/GLES2 can be removed for older devices,
+but it still imports 82 `libc`, seven `libm`, and 19 `libpthread` slots. The
+current runtime therefore cannot simply omit the pthread proxy or ship that
+DLL alone. The dependency closure and firmware matrix are documented in the
+SDL capability guide; no E71/6120 runtime package has been claimed.

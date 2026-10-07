@@ -21,6 +21,7 @@ add_subdirectory(storage)
 add_subdirectory(agent)
 add_subdirectory(power)
 add_subdirectory(display)
+add_subdirectory(media)
 add_subdirectory(camera)
 
 get_filename_component(canary_root "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)

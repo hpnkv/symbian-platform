@@ -11,8 +11,8 @@ def main() -> None:
     """Resolves ARM GDB and delegates its lifetime to the supervisor."""
     root = Path(__file__).resolve().parents[1]
     name = sys.argv[1]
-    if name not in ("gl_app", "qt_app_classic"):
-        sys.exit("Expected gl_app or qt_app_classic")
+    if name not in ("gl_app", "qt_app_classic", "sdl2_app"):
+        sys.exit("Expected gl_app, qt_app_classic or sdl2_app")
     debugger = (
         os.environ.get("SYMBIAN_GDB")
         or shutil.which("arm-none-eabi-gdb")

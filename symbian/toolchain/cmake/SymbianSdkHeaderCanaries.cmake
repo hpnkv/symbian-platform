@@ -16,13 +16,33 @@ function(symbian_sdk_header_canaries)
   symbian_header_canary(symbian_sdk_runtime_header_canary
     HEADERS "${SYMBIAN_SDK_PREFIX}/include/symbian/runtime.h"
     LIBRARIES Symbian::Runtime)
-  foreach(component IN ITEMS System Connectivity Storage Power Display Camera)
+  symbian_header_canary(symbian_sdk_time_header_canary
+    HEADERS
+      "${SYMBIAN_SDK_PREFIX}/include/symbian/api/time/monotonic_clock.h"
+    LIBRARIES Symbian::Runtime)
+  foreach(component IN ITEMS System Connectivity Storage Power Display Media Camera)
     string(TOLOWER "${component}" directory)
     file(GLOB_RECURSE headers CONFIGURE_DEPENDS
       "${SYMBIAN_SDK_PREFIX}/include/symbian/api/${directory}/*.h")
     symbian_header_canary(symbian_sdk_${directory}_header_canary
       HEADERS ${headers} LIBRARIES Symbian::${component})
   endforeach()
+  if(TARGET Symbian::PortableSdl2)
+    symbian_header_canary(symbian_sdk_sdl2_c_header_canary C
+      HEADERS "${SYMBIAN_SDK_PREFIX}/include/portable/sdl2/SDL.h"
+      LIBRARIES Symbian::PortableSdl2)
+    symbian_header_canary(symbian_sdk_sdl2_cpp_header_canary
+      HEADERS "${SYMBIAN_SDK_PREFIX}/include/symbian/sdl2/sdl2.h"
+      LIBRARIES Symbian::PortableSdl2)
+  endif()
+  if(TARGET Symbian::PortableSdl3)
+    symbian_header_canary(symbian_sdk_sdl3_c_header_canary C
+      HEADERS "${SYMBIAN_SDK_PREFIX}/include/portable/sdl3/SDL3/SDL.h"
+      LIBRARIES Symbian::PortableSdl3)
+    symbian_header_canary(symbian_sdk_sdl3_cpp_header_canary
+      HEADERS "${SYMBIAN_SDK_PREFIX}/include/symbian/sdl3/sdl3.h"
+      LIBRARIES Symbian::PortableSdl3)
+  endif()
   foreach(component IN ITEMS Http WebSocket Agent)
     string(TOLOWER "${component}" directory)
     file(GLOB headers CONFIGURE_DEPENDS

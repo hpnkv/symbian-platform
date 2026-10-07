@@ -10,7 +10,7 @@ uid = 0xe0000832
 name = "Symbian GL Cube"
 vendor = "Symbian platform"
 executable_name = "gl_app.exe"
-version = [1, 0, 0]
+version = [1, 0, 2]
 
 [application]
 caption = "Symbian GL Cube"
