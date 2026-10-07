@@ -8277,3 +8277,43 @@ and four native SDKs. PyPI's version endpoint returned 16 wheels and one
 sdist. These checks establish distribution and bounded compile/link/package
 acceptance; they do not establish execution of newly inventoried calls on
 Belle or physical-device compatibility.
+
+### 2026-10-07: published 0.2.0 native API runtime spot checks
+
+Downloaded the published `symbian-sdk-0.2.0-macos-arm64.tar.gz` (SHA-256
+`a796ad624a62a2d93f0f11356e4af0c043eeb52506f49cf1f2c492ccd76fc0a4`)
+and built disposable copies of the classic examples. The selected fixture was
+the preserved RM-807/808 Belle import
+`sha256:e4502051aee69bb1b7060f47c4e5d5dbf63db3277f8ea918a81076b43ab47e8d`,
+profile `rm807-113.010.1508`, in managed EKA2L1 0.1.0. The emulator control
+socket supplied pointer events, screenshots and native guest-exit records.
+No physical hardware was operated.
+
+* `bitmap_app_classic` displayed its generated RGB bitmap after Run; Close
+  produced guest exit type 0/reason 0 on Dynarmic.
+* `image_app_classic` decoded its embedded PNG and displayed a red pixel area;
+  Close produced type 0/reason 0 on Dynarmic.
+* `freetype_app_classic` rasterized the embedded BDF letter A and displayed
+  the glyph; Close produced type 0/reason 0 on Dynarmic.
+* The 0.2.0 `vibra_app_classic` displayed its GUI, then panicked with category
+  `E32USER-CBase`, reason 44 on Run. Pinned EUSER identifies reason 44 as
+  `EReqManagerDoesNotExist`. Its Run handler lacked an active scheduler.
+  Installing a local `CActiveScheduler` around the HWRM call in the source
+  example removed the panic: the API returned success and Close exited
+  type 0/reason 0. This source fix is after the 0.2.0 tag. An emulator cannot
+  establish whether a physical motor moved.
+* `audio_app_classic` displayed its GUI, but Run panicked with category
+  `E32USER-CBase`, reason 46 on both Dynarmic and Dyncom. Pinned EUSER calls
+  reason 46 a stray active-scheduler event. The public MDA header and original
+  implementation showed that this example also missed the required successful
+  `KeepOpenAtEnd()` call before `RequestStop()`. I added that contract check
+  to the source example and reran Dynarmic; it still panicked with reason 46.
+  The remaining cause is unknown; no playback success or firmware/device
+  compatibility is claimed.
+
+These are bounded named-firmware emulator observations for specific example
+paths, not a compatibility assessment of all 213 inventoried facilities.
+The post-release example changes passed `scripts/check_cpp_style.py`, the
+strict documentation build and `scripts/tests` (71 passed, one skipped).
+The disposable published-SDK extraction and emulator runs were removed after
+their archive digest and outcomes were recorded.

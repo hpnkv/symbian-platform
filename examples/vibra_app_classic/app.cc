@@ -17,7 +17,10 @@ void VibrateL() {
 }  // namespace
 
 int RunFeature(void* absl_nullable) {
+  CActiveScheduler scheduler;
+  CActiveScheduler::Install(&scheduler);
   TRAPD(error, VibrateL());
+  CActiveScheduler::Install(nullptr);
   return error;
 }
 

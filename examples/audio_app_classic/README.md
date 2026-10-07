@@ -13,3 +13,5 @@ cmake --build .symbian/build/cmake
 
 The root SDK project exposes this target and its ARM compile commands.
 Build and E32 validation are distinct from execution on a selected firmware.
+`RequestStop()` requires a successful `KeepOpenAtEnd()` call first; this
+example checks that contract after constructing the MDA stream.

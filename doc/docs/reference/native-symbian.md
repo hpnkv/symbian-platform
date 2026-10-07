@@ -48,6 +48,16 @@ image, PNG, JPEG and FreeType examples also show pixels produced by their
 respective features. The Qt GUI example uses Qt buttons for its QByteArray
 check and Close action.
 
+Post-release RM-807/Dynarmic checks using the published 0.2.0 macOS arm64 SDK
+ran the bitmap, embedded-PNG image-conversion and portable FreeType examples:
+each displayed its feature output and exited with guest type/reason `0/0`
+after Close. The vibration example also returned success and exited normally
+after an active scheduler was installed in its source on `main`; the 0.2.0
+archive predates that example fix and panics with `E32USER-CBase` reason 44
+when Run is pressed. Emulator success does not demonstrate a physical motor
+pulse. The 0.2.0 audio-stream example panics with `E32USER-CBase` reason 46
+after Run on both Dynarmic and Dyncom; its root cause remains open.
+
 | Include | CMake target | Notes |
 | --- | --- | --- |
 | `mdaaudiosampleplayer.h` | `Symbian::Audio` | MDA playback and recording clients. |

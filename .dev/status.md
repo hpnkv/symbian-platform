@@ -3922,3 +3922,18 @@ and 26 assets: 16 wheels, one Python sdist, one complete source archive,
 four host archives and four native SDK archives. PyPI's 0.2.0 index lists
 16 wheels and one sdist. The 952 unresolved public export records, blocked
 facilities and untested breadth-call runtime compatibility remain open.
+
+Post-release RM-807/Dynarmic checks used the published 0.2.0 macOS arm64 SDK.
+Bitmap drawing, embedded-PNG image conversion and FreeType glyph rendering
+displayed their output and exited with guest type/reason `0/0` after Close.
+The 0.2.0 vibration example panicked with `E32USER-CBase` reason 44 because
+it lacked an active scheduler. Installing one in the source example on `main`
+allowed the HWRM call and normal exit; no physical vibration is inferred.
+MDA audio streaming displayed its GUI but panicked with `E32USER-CBase`
+reason 46 when Run was pressed on both Dynarmic and Dyncom. Its root cause
+and firmware/device execution remain open.
+The source audio example now follows the public `KeepOpenAtEnd()` prerequisite
+for `RequestStop()`; a fresh Dynarmic run still panicked with reason 46.
+The example fixes passed owned C++ style, strict documentation and the
+scripts suite (71 passed, one skipped). Disposable SDK/runtime build products
+were removed after recording the fixture, archive digest and exit results.

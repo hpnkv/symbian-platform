@@ -19,6 +19,7 @@ class Audio final : public MMdaAudioOutputStreamCallback {
       samples_.Append(static_cast<TUint8>((value >> 8) & 255));
     }
     stream_ = CMdaAudioOutputStream::NewL(*this);
+    User::LeaveIfError(stream_->KeepOpenAtEnd());
     settings_.iSampleRate = TMdaAudioDataSettings::ESampleRate8000Hz;
     settings_.iChannels = TMdaAudioDataSettings::EChannelsMono;
     stream_->Open(&settings_);
