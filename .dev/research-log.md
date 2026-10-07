@@ -8253,3 +8253,14 @@ ARMv5T EKA1 imports. The copied SDK path contained spaces. This establishes
 header/import/link/conversion and relocation acceptance for those consumers;
 it does not establish execution on firmware. The tagged four-host bundle and
 installed-wheel checks remain the publication gates.
+
+### 2026-10-07: four native archives pass; audit dependency error
+
+Tagged run `37554698945` passed its source package, four host builds, guest
+payload and four native SDK assemblies. Each native assembly passed the full
+relocated SDK check and installed-wheel application build/package/sign path.
+The release audit failed before inspecting assets because it ran the whole
+`scripts/tests` suite in a Python environment containing only packaging,
+Twine and Pytest: collection required `tree_sitter_cpp` and FastAPI. The audit
+now runs its release-asset regression test, while the broader scripts suite
+remains a separate development check. No release was published by this run.

@@ -170,7 +170,7 @@ jobs:
           RELEASE_VERSION: ${{ needs.validate.outputs.version }}
         run: |
           python -m pip install 'packaging>=24' 'twine>=6,<7' 'pytest>=9,<10'
-          python -m pytest scripts/tests -q
+          python -m pytest scripts/tests/test_release_assets.py -q
           python scripts/check_release_assets.py --version "$RELEASE_VERSION"
           python -m twine check dist/*
   publish:

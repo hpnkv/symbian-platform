@@ -3907,3 +3907,9 @@ FreeType and shared-startup E32 builds passed, along with ARMv5T EKA1 imports.
 This is compilation, import linking, conversion and relocation evidence, not
 firmware execution. The tagged CI bundle and installed-wheel gates are still
 pending.
+
+Tagged run `37554698945` passed all four native assemblies, relocated SDK
+checks and installed-wheel build/package/sign workflows. Its audit failed at
+test collection because the audit environment omitted `tree_sitter_cpp` and
+FastAPI while invoking every scripts test. Audit scope is now the focused
+release-asset test; asset inspection and publication require a new tagged run.
