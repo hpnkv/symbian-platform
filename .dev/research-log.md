@@ -8198,3 +8198,18 @@ the real installed SDK `_native` and `pybind11_abseil.status` binaries from a
 separate path. The source workspace entry point then ran with those binaries
 and cached inputs. The Linux tagged run must be repeated; no bundle was
 published by this failure.
+
+### 2026-10-07: standalone resource-tool include closure
+
+The next tagged run passed the four-host matrix and Linux guest payload plus
+source-workspace check. All four native assembly jobs failed in the separate
+resource-tool step: `uidcrc_main.cc` includes Abseil nullability annotations,
+but standalone `resources/include/abseil` was empty. The tested host SDK
+archive already ships `host/include/absl/base/nullability.h`; the assembly
+script now requires that host include directory and supplies it to the
+standalone compiler through `CPATH`, leaving the SDK's normal install path
+unchanged. A local resource-tool build against an installed host SDK passed;
+a missing-header negative control reported the absent path. The scripts suite
+passed 71 tests with one skip, native YAML parsed and Black/Ruff passed.
+The successful guest payload cache key remains unchanged. Native assembly,
+audit and publication still require a corrected tagged run.

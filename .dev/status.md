@@ -3874,3 +3874,12 @@ now extends its path too. The regression test covers both native extensions;
 an isolated `-S` import loaded real installed SDK binaries and entered source
 workspace preparation. The corrected Linux bundle, audit and publication are
 pending. No release exists yet.
+
+The next tagged run passed the full host matrix, Linux guest payload and
+source-workspace check. All four native assembly jobs then failed compiling
+`uidcrc` because the standalone resource output lacked Abseil headers. The
+resource builder now uses the tested host SDK's include directory; a local
+resource build and missing-header negative control passed. Seventy-one script
+tests passed with one skip, plus Black/Ruff and workflow YAML parsing.
+Corrected four-host native assembly, release audit and publication remain
+pending. No 0.2.0 release exists yet.

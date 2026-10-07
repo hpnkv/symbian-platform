@@ -149,7 +149,7 @@ jobs:
         if: steps.assembled.outputs.cache-hit != 'true'
         run: |
           python scripts/prepare_native_sources.py --workspace "$PWD" --resources-only
-          python scripts/build_native_resources.py --workspace "$PWD" --output resources
+          python scripts/build_native_resources.py --workspace "$PWD" --output resources --host-include host/include
       - name: Assemble native SDK with complete tool dependency closure
         if: steps.assembled.outputs.cache-hit != 'true'
         shell: bash
