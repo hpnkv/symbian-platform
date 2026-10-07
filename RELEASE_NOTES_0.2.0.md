@@ -38,3 +38,12 @@ Portable SDL is not included. Header compilation, import linking and E32
 conversion do not establish that an API executes on Belle or another firmware.
 New breadth-pass calls, firmware ordinal equivalence and physical-device
 compatibility remain unverified; no physical hardware was operated.
+
+**Post-publication findings (2026-10-07).** On the preserved RM-807 emulator
+fixture, the shipped bitmap, image-conversion and FreeType examples displayed
+their output and exited normally. The shipped vibration example panics with
+`E32USER-CBase` reason 44 when Run is pressed because its calling thread lacks
+an active scheduler; the fix is on `main` after this tag. The audio-stream
+example panics with reason 46 on both tested emulator CPU backends. A separate
+MDA `KeepOpenAtEnd()` contract fix is on `main`, but the audio panic persists.
+These findings do not establish behavior on physical devices.
