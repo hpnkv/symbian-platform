@@ -86,14 +86,22 @@ target_include_directories(SymbianRuntime SYSTEM INTERFACE
   "${SYMBIAN_SDK_PREFIX}/include/posix4")
 target_compile_definitions(SymbianRuntime INTERFACE
   _UNICODE __GCC32__ __GCCV3__ __EABI__ __EPOC32__ __MARM__ __MARM_ARMV5__
-  __SYMBIAN32__ __LONG_LONG_SUPPORTED _POSIX_C_SOURCE=200112L
-  SYMBIAN_RUNTIME_MIMALLOC=1)
+  __SYMBIAN32__ __LONG_LONG_SUPPORTED _POSIX_C_SOURCE=200112L)
+if(NOT SYMBIAN_WORKSPACE_INPUTS OR SYMBIAN_RUNTIME_MIMALLOC)
+  target_compile_definitions(SymbianRuntime INTERFACE
+    SYMBIAN_RUNTIME_MIMALLOC=1)
+endif()
 target_compile_options(SymbianRuntime INTERFACE
   -fno-pic -fshort-wchar -fvisibility=hidden -fno-exceptions
   $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
   "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-include \"${SYMBIAN_SDK_PREFIX}/cmake/native_cpp_compat.h\">"
   -ffunction-sections -fdata-sections)
 add_library(Symbian::Runtime ALIAS SymbianRuntime)
+if(SYMBIAN_RUNTIME_LOCAL_MATH AND SYMBIAN_WORKSPACE_INPUTS)
+  # EUSER's C memory primitives are available on the older ROMs.
+  target_link_libraries(SymbianRuntime INTERFACE
+    "${SYMBIAN_SDK_PREFIX}/proxies/euser/euser.dso")
+endif()
 set(math_proxy "${SYMBIAN_SDK_PREFIX}/proxies/libm/libm.dso")
 set(libc_proxy "${SYMBIAN_SDK_PREFIX}/proxies/libc/libc.dso")
 # libc++ hash tables and clocks use these selected services. Ordinary apps
@@ -161,12 +169,20 @@ if((SYMBIAN_WORKSPACE_INPUTS OR EXISTS "${stream_archive}") AND EXISTS "${stream
   target_compile_definitions(SymbianStreams INTERFACE
     _UNICODE __GCC32__ __GCCV3__ __EABI__ __EPOC32__ __MARM__ __MARM_ARMV5__
     __SYMBIAN32__ __LONG_LONG_SUPPORTED _POSIX_C_SOURCE=200112L
-    _LIBCPP_PROVIDES_DEFAULT_RUNE_TABLE SYMBIAN_RUNTIME_MIMALLOC=1)
+    _LIBCPP_PROVIDES_DEFAULT_RUNE_TABLE)
+  if(NOT SYMBIAN_WORKSPACE_INPUTS OR SYMBIAN_RUNTIME_MIMALLOC)
+    target_compile_definitions(SymbianStreams INTERFACE
+      SYMBIAN_RUNTIME_MIMALLOC=1)
+  endif()
   target_compile_options(SymbianStreams INTERFACE
     -fno-pic -fshort-wchar -fvisibility=hidden -fno-exceptions
     $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
     "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-include \"${SYMBIAN_SDK_PREFIX}/cmake/native_cpp_compat.h\">"
     -ffunction-sections -fdata-sections)
+  if(SYMBIAN_RUNTIME_LOCAL_MATH AND SYMBIAN_WORKSPACE_INPUTS)
+    target_link_libraries(SymbianStreams INTERFACE
+      "${SYMBIAN_SDK_PREFIX}/proxies/euser/euser.dso")
+  endif()
   target_link_libraries(SymbianStreams INTERFACE
     "${math_proxy}"
     "${stream_libc_proxy}"
@@ -185,6 +201,16 @@ if(SYMBIAN_WORKSPACE_INPUTS)
     # The workspace builds one streams-capable runtime, shared by all consumers.
     set_property(TARGET ${runtime} PROPERTY SYMBIAN_RUNTIME_PROFILE streams)
   endforeach()
+  if(SYMBIAN_RUNTIME_LOCAL_MATH)
+    target_link_options(SymbianRuntime INTERFACE --undefined=ceilf)
+    target_link_options(SymbianStreams INTERFACE --undefined=ceilf)
+  endif()
+  if(SYMBIAN_RUNTIME_LOCAL_C_STRING)
+    foreach(symbol IN ITEMS memchr strchr strcmp strcpy strncmp wcslen wmemchr)
+      target_link_options(SymbianRuntime INTERFACE "--undefined=${symbol}")
+      target_link_options(SymbianStreams INTERFACE "--undefined=${symbol}")
+    endforeach()
+  endif()
 endif()
 
 # The guest Abseil Status/StatusOr closure is an alternate runtime profile.

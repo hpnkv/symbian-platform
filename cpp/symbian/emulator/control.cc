@@ -165,16 +165,37 @@ struct ControlServer::Impl {
     }
     if (operation == "task_close") {
       auto* absl_nullable group = screen->focus;
-      if (group == nullptr) {
-        return absl::UnavailableError("No focused window group");
+      const auto uid_field = request.find("uid");
+      if (uid_field != request.end()) {
+        if (!uid_field->is_number_unsigned() ||
+            uid_field->get<std::uint64_t>() > 0xffffffffULL) {
+          return absl::InvalidArgumentError("Invalid task UID");
+        }
+        const std::uint32_t uid = uid_field->get<std::uint32_t>();
+        group = nullptr;
+        for (eka2l1::epoc::window_group* absl_nullable candidate =
+                 screen->get_group_chain();
+             candidate != nullptr;
+             candidate =
+                 static_cast<eka2l1::epoc::window_group*>(candidate->sibling)) {
+          if (candidate->uid_owner_change_process != nullptr &&
+              candidate->uid_owner_change_process->get_uid() == uid) {
+            group = candidate;
+            break;
+          }
+        }
       }
+      if (group == nullptr) {
+        return absl::NotFoundError("Application window group not found");
+      }
+      const bool was_focused = group == screen->focus;
       // TApaTask::EndTask sends EApaSystemEventShutdown in EEventUser data.
       eka2l1::epoc::event event(group->get_client_handle(),
                                 eka2l1::epoc::event_code::user);
       event.key_evt_ = {};
       event.key_evt_.code = 1;
       group->queue_event(event);
-      return nlohmann::json{{"queued", true}};
+      return nlohmann::json{{"queued", true}, {"was_focused", was_focused}};
     }
     if (operation == "key") {
       const std::string key = StringField(request, "key");

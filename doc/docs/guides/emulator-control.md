@@ -98,7 +98,7 @@ there. See [QLocalServer](https://doc.qt.io/qt-6/qlocalserver.html).
 
 One compact JSON object plus newline is accepted per connection, at most 4096
 bytes. There are at most 16 active clients with a five-second idle bound. The
-only operations are `status`, `capture`, `pointer` and `key`; all others return
+operations are `status`, `capture`, `pointer`, `key` and `task_close`; all others return
 UNIMPLEMENTED. There is no hardware transport, guest command runner or arbitrary
 filesystem path argument. Responses use `symbian.emulator-control/v1` and
 canonical Abseil status codes. Status retains at most 256 process exit records.
@@ -108,6 +108,12 @@ screen. `key` accepts `left`, `right`, `up`, `down`, `select`, `enter`, `space`,
 `back` and `menu`, each with `press` or `release`. These are named guest scan
 codes sent through the Window Server input queue. A queued reply confirms
 submission; inspect a capture or guest event to verify delivery.
+
+`task_close` queues AppArc's normal shutdown user event. Without a UID it
+targets the focused window group; with a 32-bit application UID it finds that
+application's group even when the system menu has focus. Python exposes these
+as `Control.close_focused_task()` and `Control.close_task(uid)`. A queued reply
+does not prove the app exited; read the saved process exit report afterward.
 
 Captures accept only 1–64 ASCII letters, digits, hyphens or underscores as a
 basename, refuse existing files/symlinks, and write into the private socket

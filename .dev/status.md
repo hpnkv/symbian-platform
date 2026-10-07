@@ -4155,3 +4155,29 @@ but it still imports 82 `libc`, seven `libm`, and 19 `libpthread` slots. The
 current runtime therefore cannot simply omit the pthread proxy or ship that
 DLL alone. The dependency closure and firmware matrix are documented in the
 SDL capability guide; no E71/6120 runtime package has been claimed.
+
+## 2026-10-07: source-workspace older-runtime experiment and task close
+
+Commit `6c128f1` containing the current SDL2/SDL3 support, Bounce Arkanoid,
+shared SDK APIs, and GL updates was pushed to `origin/main`. Subsequent work
+remains local. The owner postponed Nokia 808 testing, so the rebuilt Arkanoid
+1.0.4 and GL Cube 1.0.3 SIS packages are not staged or phone-validated.
+
+The software SDL2 ARMv6 source-workspace profile now builds with local math
+and a bounded static subset of seven original Open C string routines. With
+RHeap allocation and streams enabled, `llvm-readelf --dyn-syms` reports 51
+distinct `libc.dll` and 18 `libpthread.dll` imports, down from 58 and 18
+before the string subset. There are no `libm.dll`, EGL or GLES2 imports.
+The E32 and guest header canaries build. The RM-807 emulator launched that
+software image, accepted an AppArc close event and exited with frontend code
+zero. This does not make the image loadable on E71/RM-346 or 6120c/RM-243:
+their ROMs still lack the remaining C and pthread libraries. The local math
+host GTest passed 100,000 randomized common-case samples and subnormal ties;
+`scripts/check_cpp_style.py` and `git diff --check` passed.
+The shared runtime also rebuilt SDL3 and GL E32 images successfully. Those
+builds do not establish a measured FPS change or older-firmware execution.
+
+Emulator control can now address `task_close` by a 32-bit application UID.
+The tested Arkanoid close reply reported `was_focused: true` even after a menu
+key event, so the attempted script did not establish closing a background
+window group. A real menu-focus transition remains an emulator control gate.

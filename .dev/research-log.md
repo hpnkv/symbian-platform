@@ -8769,3 +8769,37 @@ while a different native-backed runtime could avoid it. Bundling an original
 EPL `libpthread.dll` would need a compatible `libc`/`backend` closure, preserved
 licenses, matching EABI ordinals, guest loader validation on each firmware,
 and resource/capability checks. No such DLL or shim has been shipped yet.
+
+## 2026-10-07: bounded local C runtime probe after SDL push
+
+Pushed `6c128f1` to `origin/main` before continuing older-runtime work.
+The owner then postponed physical Nokia 808 testing; no new SIS was staged.
+The local ARMv6 probe uses `SYMBIAN_ARKANOID_GPU=OFF`,
+`SYMBIAN_RUNTIME_LOCALE_STREAM=ON`, `SYMBIAN_RUNTIME_MIMALLOC=OFF`, and
+`SYMBIAN_RUNTIME_LOCAL_MATH=ON`. Seven locally implemented C math entry points
+remove `libm.dll` from its dynamic import set. A host GTest checks 100,000
+common finite inputs plus subnormal tie cases. Two extreme `ldexp` samples
+disagree with macOS libc; independently check their correct rounding before
+using this as a general replacement. Floating exception flags and `errno`
+are not implemented by the local math shim.
+
+The preserved Open C checkout now contains the original libc source tree.
+`SYMBIAN_RUNTIME_LOCAL_C_STRING=ON` compiles seven stateless BSD/Nokia string
+routines from that checkout into the source-workspace archive. Their original
+license notices stay in the original source files. The old headers required
+source-only `-fdeclspec` and an empty `__SOFTFP` macro for the target Clang
+compile; two obsolete-warning categories are suppressed only for these files.
+The ARMv6 SDL2 ELF dynamic-symbol count fell from 58 to 51 distinct
+`libc.dll` imports; `libpthread.dll` remained 18, while libm/EGL/GLES2
+remained absent. The E32 publisher and guest header canaries built. A
+source-built RM-807 emulator run using this image accepted normal AppArc
+shutdown and returned frontend exit 0. Neither this build nor ARM ELF
+conversion establishes older-firmware loader compatibility.
+
+The remaining dynamic symbols include `fopen`/`fread`/`fclose`, formatting,
+locale and time functions, allocation, and 18 pthread functions. These need
+bounded native adapters or a compatible dependency closure before a real
+E71/RM-346 or 6120c/RM-243 launch is meaningful. A control probe sent the
+menu key before UID-targeted close, but the reply still reported
+`was_focused: true`; it validates UID lookup for the focused app, not a
+background app. Investigate the emulator's actual task-switch/menu path.

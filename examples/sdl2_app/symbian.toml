@@ -10,7 +10,7 @@ uid = 0xe0000e21
 name = "Bounce Style Arkanoid"
 vendor = "Symbian platform"
 executable_name = "sdl2_app.exe"
-version = [1, 0, 3]
+version = [1, 0, 4]
 
 [application]
 caption = "Bounce Style Arkanoid"

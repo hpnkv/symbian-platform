@@ -29,6 +29,10 @@ option(SYMBIAN_RUNTIME_NATIVE_ATOMIC64
   "Use original EUSER lock-free 64-bit operations (verified ROM required)" OFF)
 option(SYMBIAN_RUNTIME_MIMALLOC
   "Build the RChunk-backed mimalloc allocation profile" ON)
+option(SYMBIAN_RUNTIME_LOCAL_MATH
+  "Supply bounded C math primitives without a libm.dll import" OFF)
+option(SYMBIAN_RUNTIME_LOCAL_C_STRING
+  "Link a bounded original Open C string subset without libc.dll" OFF)
 set(SYMBIAN_MIMALLOC_SOURCE
   "${CMAKE_CURRENT_SOURCE_DIR}/../../../research/upstream/mimalloc" CACHE PATH
   "Pinned mimalloc source checkout used to build the runtime")
@@ -136,6 +140,29 @@ if(SYMBIAN_RUNTIME_MIMALLOC)
   target_compile_definitions(symbian_guest_runtime PRIVATE
     SYMBIAN_RUNTIME_MIMALLOC=1 MI_DEFAULT_ARENA_RESERVE=8192
     SYMBIAN_MIMALLOC_ADDRESS_BUDGET_BYTES=${mimalloc_address_budget})
+endif()
+if(SYMBIAN_RUNTIME_LOCAL_MATH)
+  target_sources(symbian_guest_runtime PRIVATE math_legacy.cc)
+  # The optional libm proxy can satisfy weakly ordered references before the
+  # runtime archive is scanned. Root one local definition so the complete
+  # fixed math object is selected ahead of the proxy.
+  target_link_options(symbian_guest_runtime INTERFACE --undefined=ceilf)
+endif()
+if(SYMBIAN_RUNTIME_LOCAL_C_STRING)
+  # These routines have no Open C state or server dependencies. Keep their
+  # original BSD/Nokia notices in the preserved source checkout.
+  set(local_c_string_sources
+    string/memchr.c string/strchr.c string/strcmp.c string/strcpy.c
+    string/strncmp.c string/wcslen.c string/wmemchr.c)
+  list(TRANSFORM local_c_string_sources PREPEND
+    "${SYMBIAN_OPENC_SOURCE}/libc/src/")
+  target_sources(symbian_guest_runtime PRIVATE ${local_c_string_sources})
+  set_source_files_properties(${local_c_string_sources} PROPERTIES
+    COMPILE_OPTIONS "-fdeclspec;-Wno-ignored-attributes;-Wno-deprecated-non-prototype"
+    COMPILE_DEFINITIONS "__SOFTFP=")
+  foreach(symbol IN ITEMS memchr strchr strcmp strcpy strncmp wcslen wmemchr)
+    target_link_options(symbian_guest_runtime INTERFACE "--undefined=${symbol}")
+  endforeach()
 endif()
 target_sources(symbian_guest_runtime PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/../concurrency/guest/arm_fiber_context.S"

@@ -69,6 +69,12 @@ class Control:
         """Request normal AppArc shutdown of the focused window group."""
         return self._request({"operation": "task_close"})
 
+    def close_task(self, uid: int) -> dict:
+        """Request normal AppArc shutdown for an application by UID."""
+        if type(uid) is not int or not 0 < uid <= 0xFFFFFFFF:
+            raise StatusError(Code.INVALID_ARGUMENT, "Invalid task UID")
+        return self._request({"operation": "task_close", "uid": uid})
+
     def _request(self, request: dict) -> dict:
         data = json.dumps(request, separators=(",", ":")).encode() + b"\n"
         if len(data) > 4096:

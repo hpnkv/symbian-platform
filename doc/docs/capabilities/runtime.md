@@ -99,6 +99,26 @@ firmware C/POSIX libraries: hash-table growth can import `ceilf` from
 thread yield uses `sched_yield`. The SDK's `stdarg_e.h` preserves Clang's ARM
 variadic-call convention; use it ahead of the historical OpenC header.
 
+The source workspace has an experimental `SYMBIAN_RUNTIME_LOCAL_MATH=ON`
+profile for older firmware. It supplies the seven reached C math functions
+locally and selects EUSER's C memory primitives before Open C. A software
+SDL2 ARMv6 image built with this profile and
+`SYMBIAN_ARKANOID_GPU=OFF` has no `libm.dll`, EGL or GLES2 imports. It still
+has 66 `libc.dll` and 19 `libpthread.dll` import slots with mimalloc enabled;
+an RHeap build has 65 and 18 respectively. Neither image can load on the
+tested E71 or 6120c firmware yet. The local math functions cover IEEE binary32
+and binary64 values, including subnormal ties; they do not promise C `errno`
+or floating-point exception flags. The profile is currently a source-workspace
+experiment, not an installed SDK runtime variant.
+
+The source workspace also offers `SYMBIAN_RUNTIME_LOCAL_C_STRING=ON`. It links
+seven original BSD/Nokia Open C string and wide-string routines from the
+preserved source checkout. On the same RHeap software SDL2 build, this reduces
+`libc.dll` imports from 65 to 58 slots (58 to 51 distinct dynamic symbols).
+The original notices remain with those sources. File I/O, formatting, locale,
+clock and pthread imports remain, so the image still cannot load on E71 or
+6120c. This option is experimental and is not in the installed SDK.
+
 `Symbian::Streams` supports classic locale, C/POSIX locale names and
 `std::ostringstream`. It does not provide arbitrary named locales, file
 streams, general wide I/O, filesystem, random-device or timezone services.

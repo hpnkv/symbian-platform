@@ -36,6 +36,14 @@ symbian_native_library(symbian_gui_model_test)
 add_test(NAME symbian_gui_model_test COMMAND symbian_gui_model_test)
 set_tests_properties(symbian_gui_model_test PROPERTIES TIMEOUT 15)
 
+add_executable(symbian_runtime_math_test runtime_math_test.cc)
+target_include_directories(symbian_runtime_math_test PRIVATE
+  "${CMAKE_SOURCE_DIR}/cpp")
+target_link_libraries(symbian_runtime_math_test PRIVATE GTest::gtest_main)
+symbian_native_library(symbian_runtime_math_test)
+add_test(NAME symbian_runtime_math_test COMMAND symbian_runtime_math_test)
+set_tests_properties(symbian_runtime_math_test PROPERTIES TIMEOUT 15)
+
 add_executable(symbian_status_test status_test.cc)
 target_link_libraries(symbian_status_test PRIVATE symbian::status GTest::gtest_main)
 symbian_native_library(symbian_status_test)
