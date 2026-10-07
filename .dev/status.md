@@ -3891,3 +3891,11 @@ the real GL example now owns that target. The check now consumes the example's
 publisher and reads `gl_source/e32/gl_app.exe`. Seventy-one script tests pass
 with one skip; Black/Ruff pass. Four-host bundle verification, release audit
 and publication remain pending. No release exists yet.
+
+The subsequent relocated check configured, then failed compiling portable
+classic sources because it copied their `main.cc` without shared UI support.
+The temporary targets now include the delivered `ui.h`/`ui.cc` and their
+WindowServer/GDI links. A local installed SDK built and converted all four
+portable consumers on both ARM profiles; eight E32 signatures were checked.
+This is not execution evidence. Four-host bundle verification, audit and
+publication remain pending.

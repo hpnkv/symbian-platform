@@ -58,17 +58,21 @@ add_subdirectory(gl_source)
 """
 
 ZLIB_CMAKE = """
-symbian_add_executable(zlib_check zlib_check.cc)
-target_link_libraries(zlib_check PRIVATE Symbian::PortableZlib)
+symbian_add_executable(zlib_check zlib_check.cc ui.cc)
+target_link_libraries(zlib_check PRIVATE Symbian::PortableZlib
+  Symbian::WindowServer Symbian::Gdi)
 symbian_publish_executable(zlib_check UID3 0xe0000834)
-symbian_add_executable(png_check png_check.cc)
-target_link_libraries(png_check PRIVATE Symbian::PortablePng)
+symbian_add_executable(png_check png_check.cc ui.cc)
+target_link_libraries(png_check PRIVATE Symbian::PortablePng
+  Symbian::WindowServer Symbian::Gdi)
 symbian_publish_executable(png_check UID3 0xe0000835)
-symbian_add_executable(jpeg_check jpeg_check.cc)
-target_link_libraries(jpeg_check PRIVATE Symbian::PortableJpeg)
+symbian_add_executable(jpeg_check jpeg_check.cc ui.cc)
+target_link_libraries(jpeg_check PRIVATE Symbian::PortableJpeg
+  Symbian::WindowServer Symbian::Gdi)
 symbian_publish_executable(jpeg_check UID3 0xe0000836)
-symbian_add_executable(freetype_check freetype_check.cc)
-target_link_libraries(freetype_check PRIVATE Symbian::PortableFreeType)
+symbian_add_executable(freetype_check freetype_check.cc ui.cc)
+target_link_libraries(freetype_check PRIVATE Symbian::PortableFreeType
+  Symbian::WindowServer Symbian::Gdi)
 symbian_publish_executable(freetype_check UID3 0xe0000837)
 """
 
@@ -135,6 +139,11 @@ def check(sdk: Path) -> None:
             moved / "examples/zlib_app_classic/main.cc",
             example / "zlib_check.cc",
         )
+        for name in ("ui.h", "ui.cc"):
+            shutil.copyfile(
+                moved / "examples/zlib_app_classic" / name,
+                example / name,
+            )
         shutil.copyfile(
             moved / "examples/png_app_classic/main.cc",
             example / "png_check.cc",

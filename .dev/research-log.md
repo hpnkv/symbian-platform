@@ -8229,3 +8229,16 @@ tests with one skip, Black/Ruff and diff checks pass. A locally retained older
 GL bundle could not serve as a valid relocated control because its CMake
 files embed an obsolete absolute SDK path; that scratch copy was removed.
 The corrected tagged bundle check and release audit remain required.
+
+### 2026-10-07: portable example support in relocated SDK check
+
+The next tagged run got past relocated SDK CMake generation, then failed
+compiling `zlib_check.cc`: the test copied each portable classic example's
+`main.cc` but omitted its shared `ui.h`/`ui.cc` and WindowServer/GDI links.
+The check now copies the delivered UI support and gives all four portable
+targets the same framework link closure as their original examples. A local
+installed-SDK control configured, linked and converted zlib, PNG, JPEG and
+FreeType consumers to E32 on both ARMv5T and ARMv6; all eight images had EPOC
+signatures. No calls were executed. The disposable build directories were
+removed. Four-host relocated bundle verification and release audit remain
+pending.
