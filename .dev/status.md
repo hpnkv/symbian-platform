@@ -22,11 +22,14 @@ passed 15/15 CTests, installed and passed its relocated consumer; the full
 Python suite passed 481 tests with 488 skipped. The macOS arm64 host archive,
 native SDK archive, CPython 3.12 wheel and source distribution were built
 locally; the wheel audit and Twine source metadata check passed. The four-host
-CI Host SDK run 37772104490 passed all four hosts and produced the 16-wheel
-matrix. The first Native SDK run 37773342553 stopped at the default 30-second
-subprocess timeout during its required ARMv5T header-canary build; a bounded
-five-minute allowance is now applied to that build. Native CI assembly and the
-full release-asset check remain release review gates.
+CI Host SDK run 37775784921 passed all four hosts and produced the 16-wheel
+matrix. Native SDK run 37776526091 passed the ARMv5T/ARMv6 guest export and
+all four installed SDK assembly checks. An earlier native attempt exposed a
+30-second subprocess timeout during the required ARMv5T header-canary build;
+the export now gives that build a bounded five-minute allowance without
+removing the canary. The branch-only Release workflow run 37781052900 passed
+its source, host, native and complete 16-wheel/10-archive audit; its publish
+job was skipped. No release was published or installed on physical hardware.
 
 2026-10-06 URI/MIME/HTTP header slice: five independent original public
 headers compiled with their owning SDK targets. The direct

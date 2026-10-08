@@ -9269,5 +9269,16 @@ default 30-second subprocess timeout; no compiler error was reported. The
 guest job failed before archive upload, so all four assembly jobs were skipped.
 The corresponding local ARMv5T and ARMv6 canary builds had already passed.
 The export now allows this particular canary build 300 seconds, as other
-large SDK export builds do. The header canary remains mandatory; the CI rerun
-must still pass it and the downstream installed-SDK checks.
+large SDK export builds do. The header canary remains mandatory.
+
+The corrected exact-source Host SDK run 37775784921 passed all four hosts.
+Native SDK run 37776526091 passed the ARM guest export, including both
+installed header-canary profiles, and all four host archive assembly and
+installed-wheel checks. Branch-only Release workflow run 37781052900 then
+passed version validation, source packaging, host/native reuse and its audit
+of 16 wheels plus 10 archives. Its publish job was skipped. Downloading the
+release-run artifacts and repeating `check_release_assets.py` and Twine checks
+locally also passed; SHA-256 digests for all 26 release-run files are in the
+ignored `.symbian/release-030-final-artifact-hashes.txt`. The release-run sdist
+differs bytewise from a separately built local sdist, so the manifest records
+the workflow-produced sdist. No physical device was used.
