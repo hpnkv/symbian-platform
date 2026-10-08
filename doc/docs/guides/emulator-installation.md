@@ -42,17 +42,17 @@ bundle directly. This route also works without a GitHub account:
 === "macOS"
 
     ```sh
-    emulator_asset="symbian-emulator-0.1.0-macos-$(uname -m).tar.gz"
+    emulator_asset="symbian-emulator-0.1.1-macos-$(uname -m).tar.gz"
     ```
 
 === "Linux"
 
     ```sh
-    emulator_asset="symbian-emulator-0.1.0-linux-$(uname -m).tar.gz"
+    emulator_asset="symbian-emulator-0.1.1-linux-$(uname -m).tar.gz"
     ```
 
 ```sh
-curl -fL "https://github.com/hpnkv/symbian-platform/releases/download/emulator-v0.1.0/$emulator_asset" \
+curl -fL "https://github.com/hpnkv/symbian-platform/releases/download/emulator-v0.1.1/$emulator_asset" \
   -o "$emulator_asset"
 symbian emulator install --archive "$emulator_asset"
 symbian emulator doctor
@@ -62,8 +62,8 @@ Add `--sha256 HEX_DIGEST` to verify a digest obtained separately. Explicit
 versions let you upgrade or return to a retained installation:
 
 ```sh
-symbian emulator install --version 0.1.0
-symbian emulator select 0.1.0
+symbian emulator install --version 0.1.1
+symbian emulator select 0.1.1
 ```
 
 Installation uses `~/.symbian/emulators`; selection is saved under

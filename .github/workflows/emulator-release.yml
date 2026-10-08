@@ -85,4 +85,4 @@ jobs:
         run: |
           gh release create "$RELEASE_TAG" release-assets/* \
             --verify-tag --title "Symbian emulator ${{ needs.validate.outputs.version }}" \
-            --notes 'Native EKA2L1 bundles with Qt for macOS and Linux on x86_64 and arm64. Install with symbian emulator install. Firmware and guest Symbian Qt are supplied separately. macOS bundles use ad hoc signatures; Linux requires glibc 2.39 and host graphics drivers. Corresponding emulator, Qt and per-host runtime sources are included.'
+            --notes 'Native EKA2L1 bundles with Qt for macOS and Linux on x86_64 and arm64. Version 0.1.1 fits SDK-launched guest displays to their active screen size and handles a DevSound stop before stream initialization. Install with symbian emulator install. Firmware and guest Symbian Qt are supplied separately. macOS bundles use ad hoc signatures; Linux requires glibc 2.39 and host graphics drivers. Corresponding emulator, Qt and per-host runtime sources are included.'

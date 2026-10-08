@@ -9282,3 +9282,25 @@ locally also passed; SHA-256 digests for all 26 release-run files are in the
 ignored `.symbian/release-030-final-artifact-hashes.txt`. The release-run sdist
 differs bytewise from a separately built local sdist, so the manifest records
 the workflow-produced sdist. No physical device was used.
+
+### 2026-10-08: emulator 0.1.1 release candidate
+
+The independent emulator release remains at 0.1.0 while the SDK has advanced
+to 0.3.0. Since `emulator-v0.1.0`, the maintained EKA2L1 source gained two
+patches: `display-fit.patch` fits an SDK-launched Qt window to the active guest
+screen on the GUI thread, and `mmf-stop-before-init.patch` guards a DevSound
+stop before stream initialization. The latter is a bounded host-side null
+stream fix, not a claim of complete Symbian audio support. The SDK's launch
+adapter opts in to fit mode; ordinary emulator launches retain their previous
+window policy. Version 0.1.1 is the next independent patch release.
+
+Four-host emulator workflow 37767138881 passed at `ed1c64e`, including source
+assembly, upstream native tests, relocated bundle startup and capability query.
+The later run 37786540163 failed only on macOS x86_64 while downloading Qt
+notices from GitHub Actions: five `ListArtifacts` requests timed out after
+its source replay, build, two upstream tests and capability query passed.
+The other three hosts passed. This is an artifact-service failure, not evidence
+that the Intel binary failed. The versioned 0.1.1 payload still requires its
+own four-host audit and publication run. Named-firmware, desktop GPU/audio and
+physical-device results must be reported separately; an emulator release
+cannot establish physical compatibility.
