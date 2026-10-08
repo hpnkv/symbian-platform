@@ -9258,3 +9258,16 @@ exit and frontend zero. Every record has `physical_device_tested: false`.
 The CPython 3.12 macOS arm64 wheel passed its installed-wheel audit, and the
 source distribution passed Twine metadata validation. Other host wheel/SDK
 targets still need the CI release matrix.
+
+### 2026-10-08: release CI header-canary timeout
+
+The exact-source Host SDK workflow run 37772104490 passed all four host jobs
+and produced 16 wheels plus four host SDK archives. Native SDK run 37773342553
+then acquired pinned sources and reached the installed ARMv5T public-header
+canary build. Its 170-step Ninja build exceeded `symbian.process.run`'s
+default 30-second subprocess timeout; no compiler error was reported. The
+guest job failed before archive upload, so all four assembly jobs were skipped.
+The corresponding local ARMv5T and ARMv6 canary builds had already passed.
+The export now allows this particular canary build 300 seconds, as other
+large SDK export builds do. The header canary remains mandatory; the CI rerun
+must still pass it and the downstream installed-SDK checks.

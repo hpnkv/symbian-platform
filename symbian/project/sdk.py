@@ -1239,6 +1239,7 @@ def prepare(
                 run(
                     [cmake_tool, "--build", str(build_tree), "-j", "6"],
                     cwd=workspace,
+                    timeout=300,
                 )
         licenses = output / "licenses"
         licenses.mkdir(exist_ok=True)
