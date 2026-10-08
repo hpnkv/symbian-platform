@@ -239,6 +239,10 @@ function(symbian_add_dynamic_library target)
   # E32 relocates code and writable storage independently. Absolute local
   # references carry typed fixups; ELF PIC code-to-data deltas cannot survive.
   target_compile_options(${target} PRIVATE -fno-pic -g -gdwarf-4
+    "-fdebug-compilation-dir=/symbian-build/${target}"
+    "-fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=/symbian-src/${target}"
+    "-fdebug-prefix-map=${CMAKE_BINARY_DIR}=/symbian-build/${target}"
+    "-fdebug-prefix-map=${SYMBIAN_SDK_PREFIX}/include/platform=/symbian-sdk/include"
     "$<$<CONFIG:Debug>:-O0>")
   set_target_properties(${target} PROPERTIES PREFIX "" SUFFIX ".dso"
     NO_SONAME TRUE LINK_DEPENDS "${script}" SYMBIAN_ORDINAL_LIBRARY TRUE)
@@ -375,7 +379,11 @@ function(_symbian_link_default_runtime target)
     # A static dependency can propagate LINK_ONLY runtime requirements. Each
     # target also needs that profile's headers and compiler ABI settings.
     set(runtime Symbian::Runtime)
-    if(profiles STREQUAL "streams")
+    if(profiles STREQUAL "legacy_eka2" OR
+       (NOT profiles AND SYMBIAN_RUNTIME_LEGACY_EKA2 AND
+        TARGET Symbian::LegacyEka2))
+      set(runtime Symbian::LegacyEka2)
+    elseif(profiles STREQUAL "streams")
       set(runtime Symbian::Streams)
     elseif(profiles STREQUAL "atomic64")
       set(runtime Symbian::NativeAtomics64)

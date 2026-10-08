@@ -16,11 +16,15 @@ if(EXISTS "${_symbian_abseil_root}/libabsl_statusor.a" AND
     "${_symbian_abseil_root}/libabsl_*.a")
   list(SORT _symbian_abseil_archives)
   add_library(SymbianAbseilStatusOr INTERFACE)
+  set(symbian_abseil_runtime Symbian::Streams)
+  if(SYMBIAN_RUNTIME_LEGACY_EKA2 AND TARGET Symbian::LegacyEka2)
+    set(symbian_abseil_runtime Symbian::LegacyEka2)
+  endif()
   target_include_directories(SymbianAbseilStatusOr SYSTEM INTERFACE
     "${SYMBIAN_SDK_PREFIX}/include/abseil")
   target_link_libraries(SymbianAbseilStatusOr INTERFACE
     --start-group ${_symbian_abseil_archives} --end-group
-    Symbian::Streams
+    ${symbian_abseil_runtime}
     "${SYMBIAN_SDK_PREFIX}/proxies/euser/euser.dso")
   add_library(Symbian::AbseilStatusOr ALIAS SymbianAbseilStatusOr)
 endif()

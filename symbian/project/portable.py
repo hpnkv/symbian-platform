@@ -81,11 +81,16 @@ def build_sdl3(workspace: Path, output: Path, compiler: Path) -> None:
                     "-G",
                     "Ninja",
                     f"-DSYMBIAN_SDL3_SOURCE={source}",
+                    "-DSYMBIAN_SDK_BUILDING_SDL3=ON",
+                    "-DSYMBIAN_SDK_BUILDING_SDL2=ON",
                     f"-DSYMBIAN_SDK_PREFIX={output}",
                     f"-DSYMBIAN_TARGET_ARCH={architecture}",
                     "-DCMAKE_TOOLCHAIN_FILE="
                     f"{output / 'cmake/symbian-arm.cmake'}",
+                    f"-DCMAKE_C_COMPILER={compiler.parent / 'clang'}",
                     f"-DCMAKE_CXX_COMPILER={compiler}",
+                    f"-DCMAKE_AR={compiler.parent / 'llvm-ar'}",
+                    f"-DCMAKE_RANLIB={compiler.parent / 'llvm-ranlib'}",
                     "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
                 ],
                 cwd=workspace,
@@ -114,6 +119,18 @@ def build_sdl3(workspace: Path, output: Path, compiler: Path) -> None:
                 build / "libsymbian_portable_sdl3_gpu.a",
                 destination.with_name("libsymbian_portable_sdl3_gpu.a"),
             )
+            for archive in (
+                destination,
+                destination.with_name("libsymbian_portable_sdl3_gpu.a"),
+            ):
+                members = run(
+                    [str(compiler.parent / "llvm-ar"), "t", str(archive)],
+                    cwd=workspace,
+                ).splitlines()
+                if "SDL.c.obj" not in members:
+                    raise ValueError(
+                        f"SDL3 archive lacks its core object: {archive}"
+                    )
 
 
 def validate_sdl3_payload(prefix: Path) -> None:
@@ -145,10 +162,10 @@ def validate_sdl3_payload(prefix: Path) -> None:
             raise ValueError(f"Installed SDL3 API missing: {path}")
     for architecture in ("armv5t", "armv6"):
         archive = prefix / record["archive"].format(architecture=architecture)
-        if not archive.is_file() or archive.stat().st_size == 0:
+        if not archive.is_file() or archive.stat().st_size < 1024:
             raise ValueError(f"Installed SDL3 archive missing: {archive}")
         gpu_archive = archive.with_name("libsymbian_portable_sdl3_gpu.a")
-        if not gpu_archive.is_file() or gpu_archive.stat().st_size == 0:
+        if not gpu_archive.is_file() or gpu_archive.stat().st_size < 1024:
             raise ValueError(
                 f"Installed SDL3 GPU archive missing: {gpu_archive}"
             )
@@ -224,11 +241,16 @@ def build_sdl2(workspace: Path, output: Path, compiler: Path) -> None:
                     "-G",
                     "Ninja",
                     f"-DSYMBIAN_SDL2_SOURCE={source}",
+                    "-DSYMBIAN_SDK_BUILDING_SDL2=ON",
+                    "-DSYMBIAN_SDK_BUILDING_SDL3=ON",
                     f"-DSYMBIAN_SDK_PREFIX={output}",
                     f"-DSYMBIAN_TARGET_ARCH={architecture}",
                     "-DCMAKE_TOOLCHAIN_FILE="
                     f"{output / 'cmake/symbian-arm.cmake'}",
+                    f"-DCMAKE_C_COMPILER={compiler.parent / 'clang'}",
                     f"-DCMAKE_CXX_COMPILER={compiler}",
+                    f"-DCMAKE_AR={compiler.parent / 'llvm-ar'}",
+                    f"-DCMAKE_RANLIB={compiler.parent / 'llvm-ranlib'}",
                     "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
                 ],
                 cwd=workspace,
@@ -257,6 +279,18 @@ def build_sdl2(workspace: Path, output: Path, compiler: Path) -> None:
                 build / "libsymbian_portable_sdl2_gpu.a",
                 destination.with_name("libsymbian_portable_sdl2_gpu.a"),
             )
+            for archive in (
+                destination,
+                destination.with_name("libsymbian_portable_sdl2_gpu.a"),
+            ):
+                members = run(
+                    [str(compiler.parent / "llvm-ar"), "t", str(archive)],
+                    cwd=workspace,
+                ).splitlines()
+                if "SDL.c.obj" not in members:
+                    raise ValueError(
+                        f"SDL2 archive lacks its core object: {archive}"
+                    )
 
 
 def validate_sdl2_payload(prefix: Path) -> None:

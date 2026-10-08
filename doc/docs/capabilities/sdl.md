@@ -42,18 +42,19 @@ The current RM-807, C7/RM-675 and E6/RM-609 emulator fixtures rendered both
 SDL2 and SDL3 GPU targets. The Nokia 808 ran the earlier GPU build at about
 54 FPS and reported an HWRM vibration timeout. The new tactile path requires
 a physical check. The source-built emulator control frontend injected held
-pointer motion and system-menu keys; the currently installed SDK frontend has
-an older control protocol. The API table describes implemented adapters and
+pointer motion and system-menu keys. The separately installed emulator 0.1.0
+lacks the task-close control used by the executable matrix. The API table
+describes implemented adapters and
 should not be read as an exhaustive claim of upstream SDL feature parity.
 
-E71/RM-346 and 6120c/RM-243 cannot load the current GPU images: their firmware
-has no `libc.dll`, `libm.dll`, `libpthread.dll`, `libegl.dll`, or
-`libglesv2.dll`. A software SDL build removes the EGL/GLES2 imports, but still
-imports `libc`, `libm`, and `libpthread`. The latter supplies 19 mutex,
-condition-variable, thread-local-key and thread-ID imports to the current
-runtime. It is a selected implementation dependency, not an SDL or C++
-language requirement. Nokia's EPL pthread implementation itself depends on
-`libc` and `backend`, so bundling only `libpthread.dll` is insufficient.
-Older firmware support needs a native synchronization/TLS backend and bounded
-C/maths runtime, or a separately built and packaged Open C dependency closure.
+E71/RM-346 and 6120c/RM-243 lack the Open C and EGL/GLES2 DLLs required
+by the default GPU profile. ARMv5T software builds using the older-EKA2
+runtime have no `libc.dll`, `libpthread.dll`, `libm.dll`, `libegl.dll` or
+`libglesv2.dll` imports. Source-built SDL2 and SDL3 apps loaded, rendered,
+accepted input and exited with guest reason zero on both named EKA2L1 ROM
+fixtures. For an installed SDK, configure `SYMBIAN_TARGET_ARCH=armv5t`,
+`SYMBIAN_RUNTIME_LEGACY_EKA2=ON` and `SYMBIAN_ARKANOID_GPU=OFF` before
+linking `Symbian::PortableSdl2` or `Symbian::PortableSdl3`. Each additional
+firmware needs its own ordinal and guest-execution check. No physical older
+device run has been recorded.
 GL Cube also needs a renderer suitable for the graphics API available there.

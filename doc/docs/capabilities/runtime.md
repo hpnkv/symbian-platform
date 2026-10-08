@@ -12,6 +12,7 @@ runtime dependencies.
 | --- | --- |
 | `Symbian::Runtime` | Core libc++ containers, ownership, clocks, allocation and compiler helpers |
 | `Symbian::Streams` | Core runtime plus classic C/POSIX locale and string-stream formatting |
+| `Symbian::LegacyEka2` | ARMv5T older-ROM streams runtime with SDK C, threading, math, UTF-8, file, formatting and time adapters; select `SYMBIAN_RUNTIME_LEGACY_EKA2=ON` for SDK component targets |
 | `Symbian::Threads` | Threaded runtime profile; firmware must provide the selected `libpthread.dll` imports |
 | `Symbian::AbseilStatusOr` | Status, StatusOr, Cord, time and flat hash maps with the matching streams runtime |
 | `Symbian::NativeAtomics64` | Alternative runtime using native EUSER 64-bit atomics; requires matching firmware exports |
@@ -99,71 +100,57 @@ firmware C/POSIX libraries: hash-table growth can import `ceilf` from
 thread yield uses `sched_yield`. The SDK's `stdarg_e.h` preserves Clang's ARM
 variadic-call convention; use it ahead of the historical OpenC header.
 
-The source workspace has an experimental `SYMBIAN_RUNTIME_LOCAL_MATH=ON`
-profile for older firmware. It supplies the seven reached C math functions
-locally and selects EUSER's C memory primitives before Open C. A software
-SDL2 ARMv6 image built with this profile and
-`SYMBIAN_ARKANOID_GPU=OFF` has no `libm.dll`, EGL or GLES2 imports. It still
-has 66 `libc.dll` and 19 `libpthread.dll` import slots with mimalloc enabled;
-an RHeap build has 65 and 18 respectively. Neither image can load on the
-tested E71 or 6120c firmware yet. The local math functions cover IEEE binary32
-and binary64 values, including subnormal ties; they do not promise C `errno`
-or floating-point exception flags. The profile is currently a source-workspace
-experiment, not an installed SDK runtime variant.
+The installed ARMv5T `Symbian::LegacyEka2` archive combines the source
+options `SYMBIAN_RUNTIME_LOCAL_MATH`, `LOCAL_C_STRING`, `LOCAL_C_STDLIB`,
+`LOCAL_POSIX_TIME`, `NATIVE_PTHREAD`, `LEGACY_EUSER` and the streams locale.
+Set `SYMBIAN_RUNTIME_LEGACY_EKA2=ON` when configuring an installed-SDK
+application so Abseil and component targets select that same archive. Use the
+software SDL targets on firmware without EGL/GLES2. The older firmware
+checks covered E71/RM-346 and 6120c/RM-243 in EKA2L1; other ROM export
+tables need their own check.
 
-The source workspace also offers `SYMBIAN_RUNTIME_LOCAL_C_STRING=ON`. It links
-ten original BSD/Nokia Open C string and wide-string routines from the
-preserved source checkout. The initial seven reduced the RHeap software SDL2
-build's `libc.dll` imports from 65 to 58 slots (58 to 51 distinct symbols);
-`strlcpy` and `strlcat` now support local error text formatting, and `strstr`
-also removes SDL3's extra libc string import.
-The original notices remain with those sources. File I/O, formatting, locale,
-clock and pthread imports remain, so the image still cannot load on E71 or
-6120c. This option is experimental and is not in the installed SDK.
+The C adapter provides reached integer conversion, sort, float conversion,
+ASCII ctype, error text, allocation, bounded formatting and UTF-8 functions.
+The C allocation family and C++ allocation share the RHeap backend; `realloc`
+preserves the original block on failure. The profile has no inherited C
+environment, so `getenv` returns null. File and stream calls use checked
+`estlib.dll` ordinals, not Open C. The local math functions cover binary32 and
+binary64 values, including subnormal ties, without promising C `errno` or
+floating-point exception flags. The POSIX clock adapter accepts realtime and
+monotonic clocks, and `sysconf` accepts the processor-count form. Unsupported
+forms return `EINVAL`; sleeps round up to microseconds and use `RTimer`.
 
-`SYMBIAN_RUNTIME_LOCAL_POSIX_TIME=ON` adds a narrow native compatibility
-layer for `clock_gettime` (realtime and monotonic), `nanosleep`, `sched_yield`
-and the processor-count form of `sysconf`. It uses the SDK's extended steady
-clock, original Symbian UTC time, and native waits. Unsupported clock IDs and
-`sysconf` names return `EINVAL`; sleep requests are rounded up to whole
-microseconds. On the software SDL2 probe, this removes four more distinct
-`libc.dll` imports, leaving 47 libc and 18 pthread symbols. Error reporting
-still depends on the Open C `__errno` contract, and no older-firmware loader
-run has passed. This remains a source-workspace experiment.
+Native pthread adapters cover the reached libc++ and SDL calls, including
+EUSER threads, semaphore-based locks/conditions and bounded per-thread key
+state with exit destructors. ARM SWP avoids newer EUSER atomic imports absent
+from the older ROMs. Worker threads share their creator's process heap; the
+heap owner must outlive worker allocations. This is not a complete POSIX
+thread or `errno` implementation. Incremental UTF-8 decoding, invalid input
+and thread isolation passed the older-ROM probe. A 16-bit `wchar_t` cannot
+hold a supplementary scalar: `mbrtowc` returns `EILSEQ` for it, while
+`wcrtomb` accepts a surrogate pair across calls.
 
-`SYMBIAN_RUNTIME_LOCAL_C_STDLIB=ON` links a bounded original Open C integer
-conversion/sort subset, simple float wrappers, assertion/abort paths, ASCII
-ctype, error text, and native process, allocation and environment adapters.
-The C `malloc` family and C++ allocation share the selected runtime heap;
-`realloc` preserves contents and the original allocation on failure. The
-older no-Open-C profile has no inherited C environment, so `getenv` returns
-null. These adapters do not provide a complete POSIX `errno` contract.
-`SYMBIAN_RUNTIME_NATIVE_PTHREAD=ON`
-uses EUSER threads, locks, condition variables and bounded TLS tables for the
-reached libc++/SDL calls. Together with the local math/string/time options and
-RHeap allocation, the software SDL2 E32 has no `libpthread.dll`, `libm.dll`,
-EGL or GLES2 import. A bounded UTF-8 compatibility layer now handles the
-reached multibyte and UTF-16 conversions with per-thread implicit state and
-no conversion heap allocation. Incremental decoding, invalid input and
-thread isolation passed on E71 and 6120c. A single 16-bit `wchar_t` cannot
-represent a supplementary Unicode scalar, so `mbrtowc` returns `EILSEQ` for
-that case; `wcrtomb` accepts a UTF-16 surrogate pair across two calls. The
-current ARMv5T software SDL2 and SDL3 images each retain 30 distinct
-`libc.dll` imports covering file I/O, formatting, calendar and float
-conversion.
+The file and time migration path uses public SDK owners and helpers:
 
-`SYMBIAN_RUNTIME_LEGACY_EUSER=ON` is a separate experimental ARMv5T
-compatibility path. It uses ARM SWP to avoid six 32-bit atomic EUSER imports
-missing from the E71 ROM. It uses older semaphore exports for mutexes and
-condition variables, avoiding unavailable `RMutex::Poll` and an observed
-delayed-notify failure through `RCondVar`. Its worker threads share the
-creator's process heap; the heap owner must outlive their allocations because
-`RHeap::Open` failed in an E71 worker guest test. The bounded native-thread
-probe passed on E71/RM-346 and 6120c/RM-243 with guest exit reason zero. The
-profile is not an installed SDK variant; wider pthread semantics and SDL2
-loader compatibility remain open. An ARMv5T software SDL2 E32 using this
-profile still imports 30 distinct `libc.dll` symbols, so it cannot load on
-those older ROMs yet.
+| Existing boundary code | Application-facing API |
+| --- | --- |
+| `RFs`/`RFile`/`RDir` session and descriptor management | `Symbian::Storage`: `ReadOnlyFile`, `WritableFile`, `DirectoryReader`, `FileCopy` |
+| C `mbstate_t` loops or hand-written descriptor conversion | `<symbian/api/text/utf8.h>` `Utf8ToUtf16` and `Utf16ToUtf8` |
+| `User::After` frame wait | `<symbian/api/time/sleep.h>` `SleepFor`, or `FramePacer` for a presentation loop |
+| Native counters and HAL period | `Symbian::System` counter readings and the SDK monotonic clock |
+| `sprintf` into an unbounded buffer | `absl::StrFormat` from `Symbian::AbseilStatusOr`, or bounded `snprintf`/`std::ostringstream` from `Symbian::Streams`/`Symbian::LegacyEka2` |
+
+The public text helpers validate complete UTF-8/UTF-16 input and retain
+embedded NULs and supplementary scalars. They return `InvalidArgument` for
+malformed input. The older C multibyte adapter remains available for
+incremental work; keep an explicit `mbstate_t` and check `EILSEQ`. Its
+`mbrtowc` path is limited to BMP values. `SleepFor` currently returns no error and
+returns immediately if native timer creation fails; use a fallible timer owner
+when a missed wait must be reported.
+The installed ARMv5T runtime consumer exercises `absl::StrFormat`, stream
+formatting and the public strict UTF-8 conversion on E71 and 6120c emulator
+fixtures. Formatting allocates a `std::string` and follows the ordinary fatal
+allocation-failure policy; it is not a fallible `StatusOr` operation.
 
 `Symbian::Streams` supports classic locale, C/POSIX locale names and
 `std::ostringstream`. It does not provide arbitrary named locales, file
@@ -198,8 +185,11 @@ EXE code and writable data relocate independently. The converter supports
 initialized `.data`, zero-initialized `.bss` and typed pointers to either
 mapping, with a combined data/BSS limit of 1 MiB. Startup runs `.init_array`
 after heap setup and finalizers before exit. DLL startup runs process-attach
-constructors; dynamic load and close use `RLibrary`. Thread-safe local-static
-guards, TLS and general DLL teardown ordering are unsupported.
+constructors; dynamic load and close use `RLibrary`. A bounded two-worker
+local-static initialization test passed on E71/RM-346 and 6120c/RM-243 using
+the ROM's `__cxa_guard_acquire`/`release` imports. Recursive initialization,
+guard abort after a failed initializer, ELF TLS and general DLL teardown
+ordering remain unsupported or unverified.
 
 The local GOT is word-aligned, limited to 1,024 words, and requires retained
 `R_ARM_GOT_PREL` symbol coverage. Imported function pointers resolve through

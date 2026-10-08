@@ -9139,3 +9139,122 @@ pen support, making a feature query insufficient as an independent oracle.
 This is an emulator capability-model defect; the game's right-softkey/Back
 pause mapping works, but visual hiding remains to be verified after a
 capability-source fix. No physical E71 result is claimed.
+
+### 2026-10-08: older-EKA2 installed profile and release experiments
+
+The release-style isolated ARMv5T runtime build initially failed because
+`c_format_legacy.cc` looked for stb_sprintf under the probe's top-level CMake
+source directory. Resolving the include from the runtime component made the
+archive and guest header canaries build. The installed SDK export now builds
+the combined older-EKA2 runtime twice and compares both archive and libc++
+configuration bytes. It retains the RHeap, ESTLIB, native-pthread, local C,
+math, UTF-8, format, calendar and timer adapters used by the source probes.
+
+A second export attempt reached the SDL bootstrap and failed: SDL metadata
+was staged before its archive, while the installed CMake template required
+the archive merely because metadata existed. The SDL2/SDL3 source builds now
+declare their bootstrap phase explicitly; the template skips importing these
+two archives only during that phase. A fresh complete export is in progress.
+
+`scripts/check_firmware_compatibility.py` copied imported fixture baselines
+and recorded conversion, direct DLL/ordinal imports, loader acceptance,
+frame digest and exit separately. The ARMv5T software SDL2 and SDL3 images
+each exited with guest type/reason 0/0 and frontend exit 0 on E71/RM-346
+and 6120c/RM-243. The ARMv6 GPU SDL2 and SDL3 images did likewise on
+C7/RM-675, E6/RM-609 and Nokia 808/RM-807. E71/6120c direct imports were
+ESTLIB, EUSER, DRTAEABI and selected UI/media services; they contained no
+Open C, EGL or GLES2 DLL. These runs were source-built and emulator-only.
+The first E71 SDL3 AppArc close returned a transient `Emulator kernel busy`;
+a bounded retry produced a normal exit, and the matrix runner now records
+that behavior instead of treating its first control attempt as definitive.
+
+The public UTF-8/UTF-16 helper now validates complete strings independently
+of the older C multibyte adapter. A host GTest covers BMP, supplementary
+scalars, embedded NUL and malformed sequences. General ELF `thread_local`,
+DLL TLS teardown, complete POSIX semantics and arbitrary locale remain open.
+The observed E71 `User::After` stall still needs a smaller native timing
+experiment to separate firmware behavior from emulator scheduling.
+
+The expanded ARMv5T native pthread probe launched two workers against one
+function-local static and checked that its initializer ran exactly once. It
+imports `__cxa_guard_acquire` and `__cxa_guard_release` from DRTAEABI and
+exited with guest type/reason 0/0 and frontend zero on both E71/RM-346 and
+6120c/RM-243. This establishes the bounded non-throwing concurrent
+initialization case on those ROMs. Recursive local-static initialization,
+initializer failure/guard abort and DLL-local guard lifetime remain open.
+
+The full Python suite first reported a DLL reproducibility failure. Comparing
+the two ELF files showed unnormalized DWARF compilation directories and
+absolute probe source names in `symbian_add_dynamic_library`, even though
+EXE targets already map those paths. Adding the same compilation-directory
+and prefix maps to DLL targets made the focused DLL suite pass. Two other
+failures were stale expectations: the Console catalog omitted the now-public
+emulator key command, and an E32 import test rejected a nonzero addend that
+the converter now intentionally supports for imported function pointers.
+The focused tests were corrected to cover the current contracts; a full
+suite rerun remains the gate.
+
+### 2026-10-08: installed SDL archive and release dependency controls
+
+The fresh SDK export initially produced 96-byte SDL2/SDL3 archives on both
+ARM profiles. A copied application outside the source workspace compiled but
+failed to link every SDL entry point. The standalone portable builds had
+selected macOS `/usr/bin/ar` because the staging SDK had no bundled tool
+directory yet; that archiver silently wrote an empty archive for ARM ELF
+objects. The exporter now passes the selected LLVM C compiler, `llvm-ar`,
+and `llvm-ranlib` explicitly and rejects archives without `SDL.c.obj`.
+Rebuilding both SDL versions yielded multi-megabyte ARM archives; the copied
+installed-SDK ARMv5T SDL2/SDL3 application then linked and converted both E32
+images. The installed-SDK release check now compiles minimal SDL2/SDL3 clients
+so an empty archive cannot pass as a nonzero-size file. The native bundle
+assembler now validates both SDL payloads before packaging them.
+
+The first installed E71 emulator attempt used an older installed frontend
+without the task-close control operation and could not establish normal app
+exit. The current source-built frontend then accepted the same installed SDK
+SDL2 image, recorded a frame and normal guest exit. This is an emulator
+frontend capability difference, not evidence of a firmware import failure.
+The matrix runner now emits JSON on this control failure: its negative run
+recorded `loader_accepted: true`, `guest_executed: true`,
+`normal_guest_exit: false`, `frontend_exit: -9`, and the specific
+`UNIMPLEMENTED` task-close error, then returned failure. A current-frontend
+normal control still passed.
+
+The release host installation failed with an empty `SYMBIAN_DEPS_PREFIX`:
+the CMake installation expected the isolated OpenSSL license path and found
+`/share/symbian-OpenSSL-LICENSE` instead. The repository bootstrap script is
+building the isolated release dependency prefix; the host install and archive
+must use that prefix. A fresh Release build with that prefix configured, passed
+15/15 CTests, installed and passed the relocated host SDK consumer.
+
+The first direct installed legacy C++ consumer exposed a missing Abseil header
+include directory on `Symbian::Streams`, which the legacy target copied. The
+shared startup translation unit requires `<absl/base/nullability.h>` even when
+an application otherwise uses only runtime and thread targets. Adding the
+exported Abseil include root to Streams repaired the dependency contract.
+The installed consumer now builds `std::thread`, one local static,
+`std::ostringstream`, `absl::StrFormat`, strict UTF-8 conversion, and SDL2/3.
+The legacy image and both full SDL applications exited normally on E71 and
+6120c using the source-built emulator frontend. The minimal SDL consumers
+also convert to E32; only the full application images were run.
+
+The completed full Python rerun passed 481 tests with
+488 skipped and one upstream Starlette deprecation warning. The release host
+CTest passed 15/15; ARMv6 guest header canaries also compiled.
+
+A second clean guest export completed with SDL2/SDL3 archives containing
+`SDL.c.obj` for ARMv5T and ARMv6. The 0.3.0 macOS arm64 native bundle used the
+fresh host core and rebuilt rcomp/uidcrc. Its relocation check compiled GUI,
+Qt, GL, portable image libraries, the older-EKA2 runtime, and minimal SDL2/3
+consumers with only bundled tools. The installed SDK's ARMv5T and ARMv6
+170-step public-header canary builds passed, including the new UTF-8 and time
+headers. A clean virtual environment installed the local 0.3.0 wheel and SDK
+archive, built hello_time and gui_app, packaged and signed them; this verified
+the installed workflow without running those packages on firmware or hardware.
+Two full SDL applications and the local-static/thread/format/UTF-8 consumer
+built again using only the final bundled SDK, then all six E71/6120c firmware
+matrix runs recorded no missing direct DLLs, loader acceptance, normal guest
+exit and frontend zero. Every record has `physical_device_tested: false`.
+The CPython 3.12 macOS arm64 wheel passed its installed-wheel audit, and the
+source distribution passed Twine metadata validation. Other host wheel/SDK
+targets still need the CI release matrix.

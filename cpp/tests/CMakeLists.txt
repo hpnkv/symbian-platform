@@ -44,6 +44,15 @@ symbian_native_library(symbian_runtime_math_test)
 add_test(NAME symbian_runtime_math_test COMMAND symbian_runtime_math_test)
 set_tests_properties(symbian_runtime_math_test PROPERTIES TIMEOUT 15)
 
+add_executable(symbian_utf8_text_test utf8_text_test.cc)
+target_include_directories(symbian_utf8_text_test PRIVATE
+  "${CMAKE_SOURCE_DIR}/cpp/symbian/api/include")
+target_link_libraries(symbian_utf8_text_test PRIVATE
+  absl::statusor absl::status GTest::gtest_main)
+symbian_native_library(symbian_utf8_text_test)
+add_test(NAME symbian_utf8_text_test COMMAND symbian_utf8_text_test)
+set_tests_properties(symbian_utf8_text_test PROPERTIES TIMEOUT 15)
+
 add_executable(symbian_status_test status_test.cc)
 target_link_libraries(symbian_status_test PRIVATE symbian::status GTest::gtest_main)
 symbian_native_library(symbian_status_test)

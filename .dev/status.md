@@ -1,5 +1,29 @@
 # Status
 
+2026-10-08 0.3.0 cross-device runtime milestone: the ARMv5T older-EKA2
+`Symbian::LegacyEka2` archive and ESTLIB proxy are exported with the SDK.
+The installed SDK's software SDL2/SDL3 applications and a C++ local-static,
+thread, stream-formatting, Abseil formatting and strict UTF-8 consumer built
+and converted to E32 outside the source workspace. The full installed SDL2/3
+applications and the smaller runtime consumer each had no missing direct
+DLLs and exited normally on named E71/RM-346 and 6120c/RM-243 EKA2L1
+fixtures. SDL imports are EUSER, ESTLIB, DRTAEABI and the selected UI/media
+services; the runtime consumer imports only EUSER, ESTLIB and DRTAEABI. The
+source-built SDL2/3 images also exited normally on C7/RM-675, E6/RM-609 and
+Nokia 808/RM-807. The final bundled SDK built the ARMv5T consumers, and its
+clean wheel/archive installation built, packaged and signed hello_time and
+gui_app. Both installed ARM profiles passed the 170-step public-header
+canary build, including the new text and time headers. These are emulator loader
+and guest-execution results; no
+physical 0.3.0 deployment occurred. General ELF TLS, failed local-static
+initialization, broad DLL teardown, arbitrary locale and all-device SDL
+backend parity remain open. The release host's isolated-dependency build
+passed 15/15 CTests, installed and passed its relocated consumer; the full
+Python suite passed 481 tests with 488 skipped. The macOS arm64 host archive,
+native SDK archive, CPython 3.12 wheel and source distribution were built
+locally; the wheel audit and Twine source metadata check passed. The four-host
+CI release matrix remains a release review gate.
+
 2026-10-06 URI/MIME/HTTP header slice: five independent original public
 headers compiled with their owning SDK targets. The direct
 `uri_app_classic` parser example built and packaged from a relocated SDK for

@@ -255,6 +255,8 @@ def bundle(args: argparse.Namespace) -> None:
         validate_freetype_payload,
         validate_jpeg_payload,
         validate_png_payload,
+        validate_sdl2_payload,
+        validate_sdl3_payload,
         validate_zlib_payload,
     )
     from symbian.project.qt import validate_qt_payload
@@ -265,6 +267,8 @@ def bundle(args: argparse.Namespace) -> None:
     validate_qt_mobility(output)
     validate_zlib_payload(output)
     validate_png_payload(output)
+    validate_sdl2_payload(output)
+    validate_sdl3_payload(output)
     validate_jpeg_payload(output)
     validate_freetype_payload(output)
     # An installed development SDK can also contain Python/host wrappers;

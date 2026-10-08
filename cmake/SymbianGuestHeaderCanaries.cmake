@@ -13,6 +13,10 @@ function(symbian_guest_runtime_header_canaries root)
 endfunction()
 
 function(symbian_guest_api_header_canaries root)
+  symbian_header_canary(symbian_api_text_header_canary
+    HEADERS
+      "${root}/cpp/symbian/api/include/symbian/api/text/utf8.h"
+    LIBRARIES Symbian::AbseilStatusOr)
   symbian_header_canary(symbian_api_time_header_canary
     HEADERS
       "${root}/cpp/symbian/api/include/symbian/api/time/monotonic_clock.h"

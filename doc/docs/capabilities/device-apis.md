@@ -20,8 +20,23 @@ SDK's C++20 standard library.
 | `Symbian::Display` | Query primary pixel geometry and optional physical twips | Snapshot only; no multiple-screen or orientation subscription |
 | `Symbian::Camera` | Discover the available camera count | No camera opening, preview or capture |
 | `Symbian::Connectivity` | Resolve hosts, connect, accept and exchange IPv4 TCP data | Worker-owned blocking operations; active accepts require an active scheduler |
+| `Symbian::Media` | Optional MIDI playback and tactile/HWRM feedback for a game | Service availability is queried at runtime; SDL audio and haptic devices remain dummy |
 
-Sensors and media are planned components with no public headers or archives.
+Sensors have no general public component yet. Display/window APIs additionally
+expose task identity, focus events, pointer input and an optional GLES2
+context. `Symbian::PortableSdl2Gpu` and `Symbian::PortableSdl3Gpu` choose a
+software renderer if context creation fails, but their direct EGL/GLES2 imports
+still require those DLLs at loader time. Older ROMs need the software archives.
+The HAL digitiser result is unreliable in the current E71 emulator fixture:
+its non-touch screen reports a digitiser, so the right softkey/Back remains the
+reliable menu input there. Window Server focus and AppArc close were exercised
+in the named emulator fixtures; arbitrary orientation transitions and physical
+task-menu restoration remain open.
+
+IPv4 TCP, camera count and optional MIDI/tactile services are separate
+capabilities. A successful SDL render or DLL import does not establish that a
+network bearer, camera capture, audio device or haptic server works on that
+firmware. Keep each operation fallible and retain the reported native error.
 The [component guides](apis/index.md) describe each available API's ownership,
 threading and error handling.
 

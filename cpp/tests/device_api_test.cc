@@ -28,6 +28,8 @@ int fast_frequency = 32768;
 std::uint32_t fast_count = 123;
 symbian::api::power::NativePowerReading power_reading;
 symbian::api::display::NativeDisplayReading display_reading;
+int touch_result = 0;
+int touch_present = 0;
 alignas(16) unsigned char file_token[16];
 alignas(16) unsigned char directory_token[16];
 int file_close_count = 0;
@@ -161,6 +163,11 @@ extern "C" void SymbianDeviceReadPrimaryDisplay(
     NativeDisplayReading* absl_nullable reading) {
   *reading = display_reading;
 }
+extern "C" int SymbianDeviceReadTouchscreenPresence(
+    int* absl_nonnull present) {
+  *present = touch_present;
+  return touch_result;
+}
 }  // namespace symbian::api::display
 
 extern "C" int SymbianRuntimeTickPeriodMicros() {
@@ -247,6 +254,16 @@ TEST(DeviceApiTest, DisplayRequiresPixelsAndKeepsOptionalTwips) {
   display_reading.width_pixels = 0;
   EXPECT_EQ(symbian::api::display::ReadPrimaryDisplayGeometry().status().code(),
             absl::StatusCode::kFailedPrecondition);
+}
+
+TEST(DeviceApiTest, TouchscreenPresenceKeepsUnknownAsError) {
+  touch_result = 0;
+  touch_present = 1;
+  EXPECT_EQ(symbian::api::display::ReadTouchscreenPresence().value(), true);
+  touch_present = 0;
+  EXPECT_EQ(symbian::api::display::ReadTouchscreenPresence().value(), false);
+  touch_result = -5;
+  EXPECT_FALSE(symbian::api::display::ReadTouchscreenPresence().ok());
 }
 
 TEST(DeviceApiTest, StorageOwnsHandlesAndStreamsBoundedResults) {

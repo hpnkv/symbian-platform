@@ -47,6 +47,66 @@ int main() {
 }
 """
 
+LEGACY_CMAKE = """cmake_minimum_required(VERSION 3.28)
+project(older_eka2 LANGUAGES CXX ASM)
+include(SymbianApp)
+symbian_add_executable(older_eka2 main.cc)
+target_link_libraries(older_eka2 PRIVATE Symbian::LegacyEka2 Symbian::Threads
+  Symbian::AbseilStatusOr)
+symbian_publish_executable(older_eka2 UID3 0xe0000839)
+symbian_add_executable(older_sdl2 sdl2.cc)
+target_link_libraries(older_sdl2 PRIVATE Symbian::PortableSdl2)
+symbian_publish_executable(older_sdl2 UID3 0xe000083a)
+symbian_add_executable(older_sdl3 sdl3.cc)
+target_link_libraries(older_sdl3 PRIVATE Symbian::PortableSdl3)
+symbian_publish_executable(older_sdl3 UID3 0xe000083b)
+"""
+
+LEGACY_SOURCE = """#include <atomic>
+#include <sstream>
+#include <thread>
+#include "absl/strings/str_format.h"
+#include "symbian/api/text/utf8.h"
+
+std::atomic<int> initialized{0};
+int Local() {
+  static int value = [] { initialized.fetch_add(1); return 7; }();
+  return value;
+}
+int main() {
+  int worker = 0;
+  std::thread thread([&] { worker = Local(); });
+  int main_value = Local();
+  thread.join();
+  std::ostringstream text;
+  text << worker + main_value;
+  auto wide = symbian::api::text::Utf8ToUtf16("\\xC3\\xA9");
+  return initialized.load() == 1 && text.str() == "14" &&
+         absl::StrFormat("%s %d", "n", 14) == "n 14" && wide.ok() &&
+         *wide == u"\\xE9" ? 0 : 1;
+}
+"""
+
+SDL2_SOURCE = """#include "SDL.h"
+int main() {
+  if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+    return 1;
+  }
+  SDL_Quit();
+  return 0;
+}
+"""
+
+SDL3_SOURCE = """#include "SDL3/SDL.h"
+int main() {
+  if (!SDL_Init(SDL_INIT_VIDEO)) {
+    return 1;
+  }
+  SDL_Quit();
+  return 0;
+}
+"""
+
 QT_CMAKE = """
 symbian_add_executable(qt_check qt_check.cc)
 target_link_libraries(qt_check PRIVATE Symbian::Runtime Symbian::QtGui)
@@ -165,6 +225,12 @@ def check(sdk: Path) -> None:
         (eka1 / "symbian.toml").write_text(
             '[project]\nkind = "e32-eka1-import"\n'
         )
+        legacy = root / "older EKA2 application"
+        legacy.mkdir()
+        (legacy / "CMakeLists.txt").write_text(LEGACY_CMAKE)
+        (legacy / "main.cc").write_text(LEGACY_SOURCE)
+        (legacy / "sdl2.cc").write_text(SDL2_SOURCE)
+        (legacy / "sdl3.cc").write_text(SDL3_SOURCE)
         env = {
             key: value
             for key, value in os.environ.items()
@@ -226,6 +292,37 @@ def check(sdk: Path) -> None:
                 image = (image_dir / f"{name}.exe").read_bytes()
                 if image[16:20] != b"EPOC":
                     raise RuntimeError(f"Missing E32 signature in {name}")
+        legacy_build = root / "older EKA2 build"
+        subprocess.run(
+            [
+                str(moved / "bin/cmake"),
+                "-S",
+                str(legacy),
+                "-B",
+                str(legacy_build),
+                "-G",
+                "Ninja",
+                f"-DCMAKE_TOOLCHAIN_FILE={moved}/cmake/symbian-arm.cmake",
+                f"-DSYMBIAN_SDK_PREFIX={moved}",
+                "-DSYMBIAN_TARGET_ARCH=armv5t",
+                "-DSYMBIAN_RUNTIME_LEGACY_EKA2=ON",
+                f"-DCMAKE_MAKE_PROGRAM={moved}/bin/ninja",
+            ],
+            env=env,
+            check=True,
+            timeout=120,
+        )
+        subprocess.run(
+            [str(moved / "bin/cmake"), "--build", str(legacy_build)],
+            env=env,
+            check=True,
+            timeout=180,
+        )
+        for name in ("older_eka2", "older_sdl2", "older_sdl3"):
+            if (legacy_build / "e32" / f"{name}.exe").read_bytes()[
+                16:20
+            ] != b"EPOC":
+                raise RuntimeError(f"Missing E32 signature in {name}")
         eka1_build = root / "eka1 build"
         subprocess.run(
             [
@@ -267,8 +364,8 @@ def check(sdk: Path) -> None:
                 raise RuntimeError(f"Bundled helper cannot run: {tool}")
     print(
         "Relocated native SDK: ARMv5T and ARMv6 GUI, Qt, GL, zlib, PNG and "
-        "shared-startup "
-        "E32 builds, plus ARMv5T EKA1 imports, passed"
+        "shared-startup E32 builds, ARMv5T legacy runtime and SDL2/SDL3 "
+        "builds, plus ARMv5T EKA1 imports, passed"
     )
 
 

@@ -74,24 +74,27 @@ def test_imported_image_truncations_and_readonly_slots(imported):
         inspect_e32(image).imports[0].slots[0].ordinal = 1
 
 
-def test_imported_image_rejects_code_offsets_addends_and_padding(imported):
+def test_imported_image_rejects_offsets_and_preserves_addends(imported):
     report, _, _ = imported
     image = Path(report["artifact"]).read_bytes()
     info = inspect_e32(image)
-    section = 156 + info.code_size
-    slot = 156 + info.imports[0].slots[0].code_offset
+    section = info.header_size + info.code_size
+    slot = info.header_size + info.imports[0].slots[0].code_offset
     for offset, value in (
         (section, 0),
         (section + 4, 4),
         (section + 8, 0xFFFFFFFF),
         (section + 12, 12),
         (slot, 0),
-        (slot, 0x10007),
     ):
         changed = bytearray(image)
         changed[offset : offset + 4] = value.to_bytes(4, "little")
         with pytest.raises(StatusError):
             inspect_e32(bytes(changed))
+    changed = bytearray(image)
+    changed[slot : slot + 4] = (0x10007).to_bytes(4, "little")
+    imported_slot = inspect_e32(bytes(changed)).imports[0].slots[0]
+    assert (imported_slot.ordinal, imported_slot.addend) == (7, 1)
     changed = bytearray(image)
     changed[-1] = 1
     with pytest.raises(StatusError):

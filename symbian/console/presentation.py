@@ -255,6 +255,12 @@ _TASKS = (
         "Send a pointer transition to an owned emulator.",
     ),
     (
+        "emu key",
+        "Emulator",
+        "Send key input",
+        "Send a named key transition to an owned emulator.",
+    ),
+    (
         "inspect",
         "Inspection",
         "Inspect a binary or package",

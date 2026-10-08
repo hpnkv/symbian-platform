@@ -104,7 +104,7 @@ def _build_runtime_variant(
     compiler: Path,
     linker: Path,
     *,
-    profile: Literal["default", "streams", "native_atomic64"],
+    profile: Literal["default", "streams", "native_atomic64", "legacy_eka2"],
 ) -> tuple[bytes, bytes]:
     """Builds a complete alternate runtime twice in isolated CMake trees."""
     cmake = shutil.which("cmake")
@@ -114,6 +114,7 @@ def _build_runtime_variant(
     project = workspace / "probes/runtime_probe"
     toolchain_file = workspace / "symbian/toolchain/cmake/symbian-arm.cmake"
     outputs = []
+    legacy = "ON" if profile == "legacy_eka2" else "OFF"
     with tempfile.TemporaryDirectory(
         prefix=f"{profile}-{architecture}-", dir=workspace / ".symbian"
     ) as temporary:
@@ -139,11 +140,23 @@ def _build_runtime_variant(
                     f"-DCMAKE_RANLIB={compiler.parent / 'llvm-ranlib'}",
                     f"-DCMAKE_MAKE_PROGRAM={ninja}",
                     "-DSYMBIAN_RUNTIME_LOCALE_STREAM="
-                    + ("ON" if profile == "streams" else "OFF"),
+                    + (
+                        "ON" if profile in ("streams", "legacy_eka2") else "OFF"
+                    ),
                     "-DSYMBIAN_RUNTIME_NATIVE_ATOMIC64="
                     + ("ON" if profile == "native_atomic64" else "OFF"),
                     "-DSYMBIAN_RUNTIME_MIMALLOC="
-                    + ("OFF" if profile == "native_atomic64" else "ON"),
+                    + (
+                        "OFF"
+                        if profile in ("native_atomic64", "legacy_eka2")
+                        else "ON"
+                    ),
+                    f"-DSYMBIAN_RUNTIME_LOCAL_MATH={legacy}",
+                    f"-DSYMBIAN_RUNTIME_LOCAL_C_STRING={legacy}",
+                    f"-DSYMBIAN_RUNTIME_LOCAL_C_STDLIB={legacy}",
+                    f"-DSYMBIAN_RUNTIME_LOCAL_POSIX_TIME={legacy}",
+                    f"-DSYMBIAN_RUNTIME_NATIVE_PTHREAD={legacy}",
+                    f"-DSYMBIAN_RUNTIME_LEGACY_EUSER={legacy}",
                     "-DSYMBIAN_IMPORT_PROXIES="
                     + str(workspace / ".symbian/runtime-sdk/euser/euser.dso"),
                     "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
@@ -843,6 +856,9 @@ def prepare(
         )
         for architecture in ("armv5t", "armv6")
     }
+    legacy_eka2_runtime = _build_runtime_variant(
+        workspace, "armv5t", compiler, linker, profile="legacy_eka2"
+    )
     runtime = runtimes[
         "armv5t"
     ]  # Compatibility archive for older project files.
@@ -893,6 +909,11 @@ def prepare(
         stream_config.joinpath("__config_site").write_bytes(
             stream_runtimes["armv6"][1]
         )
+        if legacy_eka2_runtime[1] != stream_runtimes["armv5t"][1]:
+            raise StatusError(
+                Code.DATA_LOSS,
+                "Legacy EKA2 runtime configuration differs from streams",
+            )
         (output / "include/config/stdapis").symlink_to(
             "../openc", target_is_directory=True
         )
@@ -940,6 +961,9 @@ def prepare(
         (output / "lib/libsymbian_guest_runtime.a").write_bytes(
             default_runtimes["armv5t"][0]
         )
+        (
+            output / "lib/armv5t/libsymbian_guest_runtime_legacy_eka2.a"
+        ).write_bytes(legacy_eka2_runtime[0])
         stage_imports(workspace, output, compiler, linker)
         cmake = output / "cmake"
         shutil.copytree(workspace / "symbian/toolchain/cmake", cmake)

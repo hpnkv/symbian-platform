@@ -21,6 +21,8 @@ include(SymbianPortable)
 include(SymbianQtMobility)
 set(SYMBIAN_CA_BUNDLE "" CACHE STRING
     "Project PEM CA bundle; empty means no packaged trust roots")
+option(SYMBIAN_RUNTIME_LEGACY_EKA2
+  "Use the installed ARMv5T older-EKA2 runtime for SDK components" OFF)
 if(SYMBIAN_CA_BUNDLE)
   if(IS_ABSOLUTE "${SYMBIAN_CA_BUNDLE}")
     set(symbian_ca_candidate "${SYMBIAN_CA_BUNDLE}")
@@ -160,6 +162,7 @@ if((SYMBIAN_WORKSPACE_INPUTS OR EXISTS "${stream_archive}") AND EXISTS "${stream
   set_target_properties(SymbianStreams PROPERTIES
     IMPORTED_LOCATION "${stream_archive}" SYMBIAN_RUNTIME_PROFILE streams)
   target_include_directories(SymbianStreams SYSTEM INTERFACE
+    "${SYMBIAN_SDK_PREFIX}/include/abseil"
     "${SYMBIAN_SDK_PREFIX}/include/stream-config"
     "${SYMBIAN_SDK_PREFIX}/include"
     "${SYMBIAN_SDK_PREFIX}/include/config"
@@ -198,6 +201,54 @@ if((SYMBIAN_WORKSPACE_INPUTS OR EXISTS "${stream_archive}") AND EXISTS "${stream
     "${SYMBIAN_SDK_PREFIX}/proxies/libpthread/libpthread.dso"
     "${SYMBIAN_SDK_PREFIX}/proxies/drtaeabi/drtaeabi.dso")
   add_library(Symbian::Streams ALIAS SymbianStreams)
+endif()
+
+# Complete ARMv5T older-EKA2 runtime. It uses the ROM's ESTLIB file service
+# and SDK-owned C, pthread, math, text, formatting and time adapters. Keep
+# this archive separate from both standard runtime configurations.
+set(legacy_eka2_archive
+  "${SYMBIAN_SDK_PREFIX}/lib/armv5t/libsymbian_guest_runtime_legacy_eka2.a")
+if(SYMBIAN_TARGET_ARCH STREQUAL "armv5t" AND
+   EXISTS "${legacy_eka2_archive}" AND TARGET SymbianStreams)
+  if(NOT EXISTS "${legacy_estlib_proxy}")
+    message(FATAL_ERROR "Legacy EKA2 runtime needs the ESTLIB import proxy")
+  endif()
+  add_library(SymbianLegacyEka2 STATIC IMPORTED)
+  set_target_properties(SymbianLegacyEka2 PROPERTIES
+    IMPORTED_LOCATION "${legacy_eka2_archive}"
+    SYMBIAN_RUNTIME_PROFILE legacy_eka2)
+  foreach(property IN ITEMS INTERFACE_INCLUDE_DIRECTORIES
+      INTERFACE_COMPILE_DEFINITIONS INTERFACE_COMPILE_OPTIONS)
+    get_target_property(value SymbianStreams ${property})
+    if(property STREQUAL "INTERFACE_COMPILE_DEFINITIONS")
+      list(REMOVE_ITEM value SYMBIAN_RUNTIME_MIMALLOC=1)
+      list(APPEND value SYMBIAN_RUNTIME_LEGACY_EUSER=1)
+    endif()
+    set_target_properties(SymbianLegacyEka2 PROPERTIES ${property} "${value}")
+  endforeach()
+  target_link_libraries(SymbianLegacyEka2 INTERFACE
+    "${SYMBIAN_SDK_PREFIX}/proxies/euser/euser.dso"
+    "${legacy_estlib_proxy}"
+    "${SYMBIAN_SDK_PREFIX}/proxies/drtaeabi/drtaeabi.dso")
+  foreach(symbol IN ITEMS ceilf memchr strchr strcmp strcpy strncmp strlcat
+      strlcpy strstr wcslen wmemchr malloc calloc realloc free getenv
+      strerror_r isspace _exit asprintf snprintf vsnprintf strtod strtof
+      fputwc getwc ungetwc gmtime_r localtime_r mktime strftime
+      clock_gettime pthread_mutex_lock mbrlen mbrtowc mbsnrtowcs mbsrtowcs
+      mbtowc wcrtomb wcsnrtombs wcsrtombs mbsinit)
+    target_link_options(SymbianLegacyEka2 INTERFACE "--undefined=${symbol}")
+  endforeach()
+  foreach(symbol IN ITEMS abs atof atoi qsort strtol strtoull strtold abort
+      __assert)
+    target_link_options(SymbianLegacyEka2 INTERFACE
+      "$<$<NOT:$<BOOL:$<TARGET_PROPERTY:SYMBIAN_RUNTIME_MINIMAL_C_LINK>>>:--undefined=${symbol}>")
+  endforeach()
+  add_library(Symbian::LegacyEka2 ALIAS SymbianLegacyEka2)
+endif()
+if(SYMBIAN_RUNTIME_LEGACY_EKA2 AND NOT SYMBIAN_WORKSPACE_INPUTS AND
+   NOT TARGET Symbian::LegacyEka2)
+  message(FATAL_ERROR
+    "The selected SDK lacks the ARMv5T older-EKA2 runtime profile")
 endif()
 
 if(SYMBIAN_WORKSPACE_INPUTS)
@@ -332,7 +383,8 @@ endif()
 
 set(sdl2_manifest
   "${SYMBIAN_SDK_PREFIX}/share/symbian/portable/sdl2.json")
-if(NOT SYMBIAN_WORKSPACE_BUILD AND EXISTS "${sdl2_manifest}"
+if(NOT SYMBIAN_WORKSPACE_BUILD AND NOT SYMBIAN_SDK_BUILDING_SDL2
+   AND EXISTS "${sdl2_manifest}"
    AND TARGET Symbian::Display)
   set(sdl2_archive
     "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_portable_sdl2.a")
@@ -373,7 +425,8 @@ endif()
 
 set(sdl3_manifest
   "${SYMBIAN_SDK_PREFIX}/share/symbian/portable/sdl3.json")
-if(NOT SYMBIAN_WORKSPACE_BUILD AND EXISTS "${sdl3_manifest}"
+if(NOT SYMBIAN_WORKSPACE_BUILD AND NOT SYMBIAN_SDK_BUILDING_SDL3
+   AND EXISTS "${sdl3_manifest}"
    AND TARGET Symbian::Display)
   set(sdl3_archive
     "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_portable_sdl3.a")
@@ -466,8 +519,13 @@ set(thread_proxy "${SYMBIAN_SDK_PREFIX}/proxies/libpthread/libpthread.dso")
 set(cxxabi_proxy "${SYMBIAN_SDK_PREFIX}/proxies/drtaeabi/drtaeabi.dso")
 if(EXISTS "${thread_proxy}" AND EXISTS "${cxxabi_proxy}")
   add_library(SymbianThreads INTERFACE)
-  target_link_libraries(SymbianThreads INTERFACE
-    Symbian::Runtime "${thread_proxy}" "${cxxabi_proxy}")
+  if(SYMBIAN_RUNTIME_LEGACY_EKA2 AND TARGET Symbian::LegacyEka2)
+    target_link_libraries(SymbianThreads INTERFACE
+      Symbian::LegacyEka2 "${cxxabi_proxy}")
+  else()
+    target_link_libraries(SymbianThreads INTERFACE
+      Symbian::Runtime "${thread_proxy}" "${cxxabi_proxy}")
+  endif()
   add_library(Symbian::Threads ALIAS SymbianThreads)
   if(TARGET Symbian::AbseilStatusOr)
     # A11-derived Promise/Future/Task carry original guest StatusOr results.

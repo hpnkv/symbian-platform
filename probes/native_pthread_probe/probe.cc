@@ -33,9 +33,47 @@ void InitializeOnce() {
   initialized.fetch_add(1, std::memory_order_relaxed);
 }
 
+std::atomic<int> local_static_constructions{0};
+
+struct LocalStatic {
+  LocalStatic() { local_static_constructions.fetch_add(1); }
+  int value = 47;
+};
+
+int ReadLocalStatic() {
+  static LocalStatic value;
+  return value.value;
+}
+
 }  // namespace
 
 int main() {
+#ifdef SYMBIAN_PROBE_LOCAL_STATIC
+  std::atomic<int> ready{0};
+  std::atomic<bool> start{false};
+  std::atomic<int> local_result{0};
+  auto check_local = [&] {
+    ready.fetch_add(1);
+    while (!start.load(std::memory_order_acquire)) {
+      std::this_thread::yield();
+    }
+    if (ReadLocalStatic() != 47) {
+      local_result.store(-660);
+    }
+  };
+  std::thread first_local_thread(check_local);
+  std::thread second_local_thread(check_local);
+  while (ready.load(std::memory_order_acquire) != 2) {
+    std::this_thread::yield();
+  }
+  start.store(true, std::memory_order_release);
+  first_local_thread.join();
+  second_local_thread.join();
+  if (local_result.load() != 0 || local_static_constructions.load() != 1 ||
+      ReadLocalStatic() != 47) {
+    return -661;
+  }
+#endif
 #ifdef SYMBIAN_PROBE_LOCAL_C_ALLOC
   if (std::getenv("TZ") != nullptr) {
     return -628;

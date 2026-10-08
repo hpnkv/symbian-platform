@@ -84,6 +84,14 @@ class ReleaseAssetsTest(unittest.TestCase):
                     "cmake/eka1_startup.S",
                     "cmake/eka1_import_image.ld",
                     "proxies/euser-eka1/euser.dso",
+                    "proxies/estlib-legacy/estlib.dso",
+                    "lib/armv5t/libsymbian_guest_runtime_legacy_eka2.a",
+                    "include/symbian/api/text/utf8.h",
+                    *(
+                        f"lib/{target}/libsymbian_portable_{sdl}.a"
+                        for target in ("armv5t", "armv6")
+                        for sdl in ("sdl2", "sdl3")
+                    ),
                     "proxies/qtcore/qtcore.dso",
                     "proxies/qtgui/qtgui.dso",
                     "include/qt4/QtCore/qglobal.h",

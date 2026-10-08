@@ -20,4 +20,9 @@ if(SYMBIAN_RUNTIME_LOCAL_C_STDLIB)
       SYMBIAN_PROBE_LEGACY_C=1)
   endif()
 endif()
+if(SYMBIAN_RUNTIME_LEGACY_EKA2)
+  target_compile_definitions(native_pthread_probe PRIVATE
+    SYMBIAN_PROBE_LOCAL_STATIC=1 SYMBIAN_PROBE_LOCAL_C_ALLOC=1
+    SYMBIAN_PROBE_LOCAL_C_UTF8=1 SYMBIAN_PROBE_LEGACY_C=1)
+endif()
 symbian_publish_executable(native_pthread_probe UID3 0xe0000e26)

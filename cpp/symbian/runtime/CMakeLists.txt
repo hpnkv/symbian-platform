@@ -213,7 +213,7 @@ if(SYMBIAN_RUNTIME_LOCAL_C_STDLIB)
       c_calendar_legacy.cc c_float_legacy.cc c_format_legacy.cc
       c_wide_stdio_legacy.cc PROPERTIES COMPILE_OPTIONS -fno-pic)
     target_include_directories(symbian_guest_runtime PRIVATE
-      "${CMAKE_SOURCE_DIR}/third_party/stb_sprintf")
+      "${CMAKE_CURRENT_SOURCE_DIR}/../../../third_party/stb_sprintf")
     target_link_options(symbian_guest_runtime INTERFACE
       --undefined=snprintf --undefined=vsnprintf --undefined=asprintf
       --undefined=strtod --undefined=strtof

@@ -19,7 +19,12 @@ function(symbian_sdk_header_canaries)
   symbian_header_canary(symbian_sdk_time_header_canary
     HEADERS
       "${SYMBIAN_SDK_PREFIX}/include/symbian/api/time/monotonic_clock.h"
+      "${SYMBIAN_SDK_PREFIX}/include/symbian/api/time/frame_pacer.h"
+      "${SYMBIAN_SDK_PREFIX}/include/symbian/api/time/sleep.h"
     LIBRARIES Symbian::Runtime)
+  symbian_header_canary(symbian_sdk_text_header_canary
+    HEADERS "${SYMBIAN_SDK_PREFIX}/include/symbian/api/text/utf8.h"
+    LIBRARIES Symbian::AbseilStatusOr)
   foreach(component IN ITEMS System Connectivity Storage Power Display Media Camera)
     string(TOLOWER "${component}" directory)
     file(GLOB_RECURSE headers CONFIGURE_DEPENDS
