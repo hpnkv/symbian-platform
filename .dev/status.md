@@ -1,5 +1,15 @@
 # Status
 
+2026-10-08 0.3.0 publication: annotated tag `v0.3.0` targets
+`b105f752f84d1b5640052f64c4a703017810d7b8`, the validated runtime and
+SDK commit merged into `main`. Tag-triggered Release run 37786628699 passed
+source packaging, four host jobs, ARM guest export, four installed SDK checks,
+the complete release audit and publication. GitHub Release has 26 assets;
+PyPI has 16 wheels and one sdist, with SHA-256 digests matching the GitHub
+copies. The published digests are recorded outside version control in
+`.symbian/release-030-published-hashes.txt`. The separate review branch was
+deleted. No physical device was used.
+
 2026-10-08 0.3.0 cross-device runtime milestone: the ARMv5T older-EKA2
 `Symbian::LegacyEka2` archive and ESTLIB proxy are exported with the SDK.
 The installed SDK's software SDL2/SDL3 applications and a C++ local-static,
@@ -29,7 +39,7 @@ all four installed SDK assembly checks. An earlier native attempt exposed a
 the export now gives that build a bounded five-minute allowance without
 removing the canary. The branch-only Release workflow run 37781052900 passed
 its source, host, native and complete 16-wheel/10-archive audit; its publish
-job was skipped. No release was published or installed on physical hardware.
+job was skipped in that pre-publication run. No physical hardware was used.
 
 2026-10-06 URI/MIME/HTTP header slice: five independent original public
 headers compiled with their owning SDK targets. The direct
