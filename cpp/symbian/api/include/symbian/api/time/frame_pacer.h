@@ -5,6 +5,7 @@
 #define SYMBIAN_API_TIME_FRAME_PACER_H_
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 
 #include "symbian/api/time/monotonic_clock.h"
@@ -30,14 +31,20 @@ class FramePacer final {
    * and starts a new period instead of adding another full-period wait.
    */
   std::uint32_t NextDelayMilliseconds() {
+    const std::int64_t remaining = NextDelayNanoseconds().count();
+    return static_cast<std::uint32_t>((remaining + 999999) / 1000000);
+  }
+
+  /** @brief Precise remaining time to the next presentation deadline. */
+  std::chrono::nanoseconds NextDelayNanoseconds() {
     const std::int64_t now = MonotonicClock::NowNanoseconds();
     if (now >= deadline_ns_) {
       deadline_ns_ = now + period_ns_;
-      return 0;
+      return std::chrono::nanoseconds::zero();
     }
     const std::int64_t remaining = deadline_ns_ - now;
     deadline_ns_ += period_ns_;
-    return static_cast<std::uint32_t>((remaining + 999999) / 1000000);
+    return std::chrono::nanoseconds(remaining);
   }
 
  private:

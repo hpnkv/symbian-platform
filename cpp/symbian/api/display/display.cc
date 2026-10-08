@@ -35,4 +35,13 @@ absl::StatusOr<DisplayGeometry> ReadPrimaryDisplayGeometry() {
   return geometry;
 }
 
+absl::StatusOr<bool> ReadTouchscreenPresence() {
+  int present = 0;
+  const int result = SymbianDeviceReadTouchscreenPresence(&present);
+  if (result != 0) {
+    return symbian::StatusFromNativeError(result, "HAL touchscreen presence");
+  }
+  return present != 0;
+}
+
 }  // namespace symbian::api::display

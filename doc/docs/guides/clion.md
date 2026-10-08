@@ -64,12 +64,19 @@ cmake --build build/guest-probes-armv6 --target gui_app qt_app_classic
 Each profile writes its own `compile_commands.json`. These builds do not
 establish emulator or physical-device compatibility.
 
-The root `.run/` directory also supplies **GL App Run/Debug** and
-**Qt App Run/Debug**. Run selects the host `debug` profile and the corresponding
-native `gl_app_run` or `qt_app_classic_run` launcher. Both Run and Debug build the ARMv6
-example and libraries from source, then supervise a disposable emulator instance.
-They use each example's firmware settings and ignore installed SDK selectors.
-Debug discovers ARM GDB on PATH or through `SYMBIAN_GDB`; it uses ports 24701
-and 24702 and publishes symbols under `.symbian/workspace-apps/<example>`.
+The root `.run/` directory also supplies **GL App Run/Debug**,
+**Qt App Run/Debug**, and **SDL2 App Run/Debug**. Run selects the host `debug`
+profile and the corresponding `.run/gl_app-run`, `.run/qt_app_classic-run`, or
+`.run/sdl2_app-run` launcher. These checked-in wrappers work before the optional
+host CMake executables have been built. Both Run and Debug build the ARMv6
+example and libraries from source, then supervise a disposable emulator
+instance. They use each example's firmware settings and ignore installed SDK
+selectors. Debug discovers
+ARM GDB on PATH or through `SYMBIAN_GDB`; it uses ports 24701, 24702, and
+24703 respectively and publishes symbols under
+`.symbian/workspace-apps/<example>`.
+SDK-owned emulator sessions fit the displayed guest screen mode without a
+surrounding layout margin. The native title, menu, and status areas remain
+available. Windowed size follows screen mode changes, including rotation.
 Opening an example directory separately provides its own **Standalone Run/Debug**
 configurations using the selected installed SDK and `symbian-pic` profile.

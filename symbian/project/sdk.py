@@ -690,6 +690,14 @@ def stage_imports(
             str(compiler),
             str(linker),
         )
+    build_import_proxy(
+        workspace / "symbian/toolchain/cmake/estlib_legacy.def",
+        [],
+        "estlib.dll",
+        output / "proxies/estlib-legacy",
+        str(compiler),
+        str(linker),
+    )
     shutil.copytree(output / "proxies/euser", output / "proxies/euser-native64")
     from symbian.project.qt import prepare_qt
 

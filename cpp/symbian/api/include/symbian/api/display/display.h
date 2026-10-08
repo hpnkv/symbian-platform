@@ -34,6 +34,9 @@ struct DisplayGeometry {
  */
 absl::StatusOr<DisplayGeometry> ReadPrimaryDisplayGeometry();
 
+/** @brief Whether the native HAL reports a direct screen digitiser. */
+absl::StatusOr<bool> ReadTouchscreenPresence();
+
 }  // namespace symbian::api::display
 
 #endif  // SYMBIAN_API_DISPLAY_DISPLAY_H_

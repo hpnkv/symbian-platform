@@ -1,0 +1,3 @@
+#!/bin/sh
+root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+exec "$root/.venv/bin/python" -m symbian.emulator.launch --root "$root" --project "$root/examples/qt_app_classic" --workspace "$@"

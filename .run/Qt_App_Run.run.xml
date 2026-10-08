@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Qt App Run" type="CMakeRunConfiguration" factoryName="Application" PROJECT_NAME="symbian_platform" TARGET_NAME="qt_app_classic_run" CONFIG_NAME="debug" RUN_PATH="$PROJECT_DIR$/build/debug/qt_app_classic_run" PROGRAM_PARAMS="" WORKING_DIR="$PROJECT_DIR$" PASS_PARENT_ENVS_2="true">
+  <configuration default="false" name="Qt App Run" type="CMakeRunConfiguration" factoryName="Application" PROJECT_NAME="symbian_platform" TARGET_NAME="qt_app_classic_run" CONFIG_NAME="debug" RUN_PATH="$PROJECT_DIR$/.run/qt_app_classic-run" PROGRAM_PARAMS="" WORKING_DIR="$PROJECT_DIR$" PASS_PARENT_ENVS_2="true">
     <method v="2" />
   </configuration>
 </component>

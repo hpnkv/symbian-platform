@@ -1,0 +1,27 @@
+; C ABI ordinals available on both preserved RM-346 and RM-243 ESTLIB ROMs.
+; Selected from SymbianSource oss.FCL.sf.os.ossrv cstdlib/eabi/estlib3u.def.
+; Calendar entries use aliases because ESTLIB's tm has nine fields while
+; Open C's tm has eleven. The runtime translates at that boundary.
+EXPORTS
+  __stderr @ 18 NONAME
+  __stdin @ 19 NONAME
+  __stdout @ 20 NONAME
+  close @ 121 NONAME
+  fclose @ 131 NONAME
+  ferror @ 134 NONAME
+  fflush @ 135 NONAME
+  fgets @ 138 NONAME
+  fopen @ 140 NONAME
+  fprintf @ 141 NONAME
+  fread @ 144 NONAME
+  fseek @ 148 NONAME
+  fwrite @ 153 NONAME
+  getc @ 154 NONAME
+  symbian_estlib_gmtime_r @ 168 NONAME
+  symbian_estlib_localtime_r @ 195 NONAME
+  symbian_estlib_mktime @ 205 NONAME
+  open @ 206 NONAME
+  read @ 216 NONAME
+  sscanf @ 242 NONAME
+  symbian_estlib_strftime @ 253 NONAME
+  ungetc @ 275 NONAME

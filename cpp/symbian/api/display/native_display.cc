@@ -23,4 +23,8 @@ extern "C" void SymbianDeviceReadPrimaryDisplay(
       HAL::Get(HALData::EDisplayYTwips, reading->height_twips);
 }
 
+extern "C" int SymbianDeviceReadTouchscreenPresence(int* absl_nonnull present) {
+  return HAL::Get(HALData::EPen, *present);
+}
+
 }  // namespace symbian::api::display

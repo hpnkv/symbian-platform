@@ -7,9 +7,11 @@
 
 namespace arkanoid {
 
-Game::Game(int width, int height)
+Game::Game(int width, int height, bool touchscreen)
     : width_(width),
       height_(height),
+      touchscreen_(touchscreen),
+      layout_(width, height),
       cell_width_((width - 24) / kColumns),
       brick_height_(std::max(13, height / 24)) {
   ResetLevel();
@@ -68,9 +70,11 @@ void Game::Handle(const SDL_Event& event) {
     }
     return;
   }
-  if (arkanoid::MouseDown(event) && arkanoid::ButtonX(event) >= 0 &&
-      arkanoid::ButtonX(event) < cell_width_ && arkanoid::ButtonY(event) >= 0 &&
-      arkanoid::ButtonY(event) < std::max(brick_height_, 36)) {
+  if (touchscreen_ && arkanoid::MouseDown(event) &&
+      arkanoid::ButtonX(event) >= 0 &&
+      arkanoid::ButtonX(event) < layout_.pause_hit_size() &&
+      arkanoid::ButtonY(event) >= 0 &&
+      arkanoid::ButtonY(event) < layout_.pause_hit_size()) {
     Pause();
     return;
   }
@@ -109,25 +113,47 @@ void Game::Step() {
     }
     return;
   }
+  const float previous_x = ball_x_;
   const float previous_y = ball_y_;
   ball_x_ += velocity_x_;
   ball_y_ += velocity_y_;
-  if (ball_x_ < 7 || ball_x_ > width_ - 7) {
-    velocity_x_ = -velocity_x_;
+  constexpr float kBallRadius = 7.0f;
+  if (ball_x_ <= kBallRadius) {
+    ball_x_ = kBallRadius;
+    velocity_x_ = std::max(velocity_x_, 1.0f);
+  } else if (ball_x_ >= width_ - kBallRadius) {
+    ball_x_ = width_ - kBallRadius;
+    velocity_x_ = std::min(velocity_x_, -1.0f);
   }
-  if (ball_y_ < 30) {
-    velocity_y_ = -velocity_y_;
+  const float ceiling_y = static_cast<float>(brick_height_) + kBallRadius;
+  if (ball_y_ <= ceiling_y) {
+    ball_y_ = ceiling_y;
+    velocity_y_ = std::max(velocity_y_, 1.0f);
   }
-  const float paddle_y = height_ - 100.0f;
-  if (velocity_y_ > 0 && previous_y + 6 <= paddle_y &&
-      ball_y_ + 6 >= paddle_y && ball_x_ >= paddle_x_ - paddle_width_ / 2 - 5 &&
-      ball_x_ <= paddle_x_ + paddle_width_ / 2 + 5) {
-    ball_y_ = paddle_y - 7;
+  const float paddle_y = static_cast<float>(layout_.paddle_y());
+  const float paddle_left = paddle_x_ - paddle_width_ / 2.0f;
+  const float paddle_right = paddle_x_ + paddle_width_ / 2.0f;
+  const bool reaches_paddle =
+      previous_y - kBallRadius <= paddle_y &&
+      ball_y_ + kBallRadius >= paddle_y &&
+      ball_y_ - kBallRadius <= paddle_y;
+  const float travel_y = ball_y_ - previous_y;
+  const float contact_fraction =
+      travel_y > 0
+          ? std::clamp((paddle_y - kBallRadius - previous_y) / travel_y,
+                       0.0f, 1.0f)
+          : 1.0f;
+  const float contact_x =
+      previous_x + (ball_x_ - previous_x) * contact_fraction;
+  if (velocity_y_ > 0 && reaches_paddle &&
+      contact_x + kBallRadius >= paddle_left &&
+      contact_x - kBallRadius <= paddle_right) {
+    ball_y_ = paddle_y - kBallRadius;
     velocity_y_ = -velocity_y_;
     velocity_x_ = std::clamp((ball_x_ - paddle_x_) * 0.085f, -5.0f, 5.0f);
     ++hits_;
   }
-  const int top = 58;
+  const int top = layout_.brick_top();
   for (int row = 0; row < kRows; ++row) {
     for (int col = 0; col < kColumns; ++col) {
       if (!bricks_[row * kColumns + col]) {
@@ -148,13 +174,13 @@ void Game::Step() {
       }
     }
   }
-  if (ball_y_ > height_ - 64) {
+  if (ball_y_ > layout_.miss_y()) {
     if (--lives_ == 0) {
       phase_ = Phase::kLost;
     } else {
       phase_ = Phase::kReady;
       ball_x_ = paddle_x_;
-      ball_y_ = height_ - 112.0f;
+      ball_y_ = static_cast<float>(layout_.ready_ball_y());
     }
   }
 }
@@ -257,9 +283,9 @@ void Game::ResetLevel() {
     }
   }
   paddle_x_ = width_ / 2.0f;
-  paddle_width_ = std::max(52, width_ / 7);
+  paddle_width_ = std::clamp(width_ / 4, 64, 96);
   ball_x_ = paddle_x_;
-  ball_y_ = height_ - 112.0f;
+  ball_y_ = static_cast<float>(layout_.ready_ball_y());
   velocity_x_ = 2.7f + level_ * 0.4f;
   velocity_y_ = -(3.7f + level_ * 0.4f);
   phase_ = Phase::kReady;

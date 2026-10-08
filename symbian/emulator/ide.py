@@ -154,6 +154,24 @@ def configure(root: Path, gdb: Path | None, python: Path | None = None) -> dict:
         + ' "$@"\n'
     )
     wrapper.chmod(0o755)
+    run_wrapper = root / ".run/gui_app-run"
+    if not run_wrapper.exists():
+        run_wrapper.parent.mkdir(parents=True, exist_ok=True)
+        run_wrapper.write_text(
+            "#!/bin/sh\nexec "
+            + " ".join(
+                shlex.quote(str(a))
+                for a in (
+                    python,
+                    "-m",
+                    "symbian.emulator.launch",
+                    "--root",
+                    root,
+                )
+            )
+            + ' "$@"\n'
+        )
+    run_wrapper.chmod(0o755)
     profile_id = str(uuid.uuid5(uuid.NAMESPACE_URL, str(root) + "/gui-gdb"))
     host_debugger_path = (
         "/usr/bin/lldb"
@@ -207,10 +225,10 @@ def configure(root: Path, gdb: Path | None, python: Path | None = None) -> dict:
             EMULATE_TERMINAL="false",
         )
         if project == root:
-            # CLion keeps an empty executable on a formerly custom target.
-            # Use the tested host artifact explicitly rather than depending
-            # on its cached target-kind/executable inference.
-            run.set("RUN_PATH", str(root / "build/debug/gui_app_run"))
+            # The optional host target may not have been built when Run is
+            # pressed. This wrapper is present in the source checkout and
+            # builds the guest before starting its owned emulator session.
+            run.set("RUN_PATH", str(run_wrapper))
             run.set("PROGRAM_PARAMS", "")
         envs = ET.SubElement(run, "envs")
         ET.SubElement(

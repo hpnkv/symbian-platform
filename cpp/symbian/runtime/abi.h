@@ -9,6 +9,8 @@
 // separate translation units. In particular their placement-new declarations
 // have conflicting exception specifications and inline definitions.
 extern "C" void* absl_nullable SymbianRuntimeAllocate(unsigned int size);
+extern "C" void* absl_nullable SymbianRuntimeReallocate(
+    void* absl_nullable pointer, unsigned int size);
 extern "C" void SymbianRuntimeFree(void* absl_nullable pointer);
 // Opaque identity for verifying distinct native thread heaps in guest tests.
 extern "C" void* absl_nonnull SymbianRuntimeHeapIdentity();
@@ -26,6 +28,9 @@ extern "C" void SymbianRuntimeCollectAllocations();
 // mimalloc uses this scope for a fast thread-local cache and explicit teardown.
 extern "C" void SymbianRuntimeThreadCacheEnter();
 extern "C" void SymbianRuntimeThreadCacheLeave();
+// Per-thread implicit conversion state for the bounded UTF-8 C compatibility
+// surface. Each C function owns a separate eight-byte slot.
+extern "C" void* absl_nonnull SymbianRuntimeMbState(int slot);
 // Process-owned, page-aligned backing for low-level allocators. The opaque
 // owner must outlive every access to the returned pages and be closed once.
 struct SymbianRuntimePageOwner;
@@ -51,6 +56,7 @@ extern "C" int SymbianRuntimeNanoTickPeriodMicros();
 extern "C" unsigned int SymbianRuntimeFastCounter();
 extern "C" int SymbianRuntimeFastCounterFrequency();
 extern "C" std::int64_t SymbianRuntimeSteadyClockNanoseconds();
+extern "C" int SymbianRuntimeSleepMicroseconds(std::uint64_t microseconds);
 
 // Internal narrow bridge for thread-relative RTimer requests. The caller must
 // keep the state alive until cancellation has completed and been drained.

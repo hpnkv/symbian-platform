@@ -439,6 +439,7 @@ def session(
             env.update(
                 EKA2L1_DATA_ROOT=str(instance),
                 EKA2L1_RESEARCH_CONTROL_SOCKET=str(endpoint),
+                EKA2L1_RESEARCH_FIT_DISPLAY="1",
             )
             if env.get("SYMBIAN_CONSOLE_FOREGROUND_EMULATOR") == "1":
                 env.pop("EKA2L1_RESEARCH_BACKGROUND_WINDOW", None)

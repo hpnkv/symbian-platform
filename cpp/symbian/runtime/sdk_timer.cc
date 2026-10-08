@@ -1,7 +1,37 @@
+#include <cstdint>
+
 #include <absl/base/nullability.h>
 #include <e32std.h>
 
 #include "abi.h"
+
+extern "C" int SymbianRuntimeSleepMicroseconds(
+    std::uint64_t microseconds) {
+  if (microseconds == 0) {
+    return KErrNone;
+  }
+  RTimer timer;
+  const TInt opened = timer.CreateLocal();
+  if (opened != KErrNone) {
+    return opened;
+  }
+  TInt result = KErrNone;
+  while (microseconds != 0) {
+    const std::uint64_t slice =
+        microseconds > 1000000 ? 1000000 : microseconds;
+    TRequestStatus status;
+    timer.HighRes(status,
+                  TTimeIntervalMicroSeconds32(static_cast<TInt>(slice)));
+    User::WaitForRequest(status);
+    result = status.Int();
+    if (result != KErrNone) {
+      break;
+    }
+    microseconds -= slice;
+  }
+  timer.Close();
+  return result;
+}
 
 struct SymbianRuntimeTimerState {
   RTimer timer;

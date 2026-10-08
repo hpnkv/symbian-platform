@@ -39,7 +39,9 @@ def test_init_ide_choice_controls_both_run_and_debug_helpers(tmp_path, ide):
         )
 
 
-@pytest.mark.parametrize("name,port", [("gl_app", 24701), ("qt_app_classic", 24702)])
+@pytest.mark.parametrize(
+    "name,port", [("gl_app", 24701), ("qt_app_classic", 24702)]
+)
 def test_examples_share_portable_run_and_debug_settings(name, port):
     project = Path(__file__).parents[2] / "examples" / name
     settings = json.loads((project / "symbian-project.json").read_text())
@@ -60,7 +62,12 @@ def test_examples_share_portable_run_and_debug_settings(name, port):
 
 
 @pytest.mark.parametrize(
-    "name,label,port", [("gl_app", "GL", 24701), ("qt_app_classic", "Qt", 24702)]
+    "name,label,port",
+    [
+        ("gl_app", "GL", 24701),
+        ("qt_app_classic", "Qt", 24702),
+        ("sdl2_app", "SDL2", 24703),
+    ],
 )
 def test_sdk_root_has_distinct_example_run_and_debug_settings(
     name, label, port
@@ -71,7 +78,8 @@ def test_sdk_root_has_distinct_example_run_and_debug_settings(
     assert run.get("PROJECT_NAME") == "symbian_platform"
     assert run.get("TARGET_NAME") == f"{name}_run"
     assert run.get("CONFIG_NAME") == "debug"
-    assert run.get("RUN_PATH") == f"$PROJECT_DIR$/build/debug/{name}_run"
+    assert run.get("RUN_PATH") == f"$PROJECT_DIR$/.run/{name}-run"
+    assert os.access(root / ".run" / f"{name}-run", os.X_OK)
     assert debug.get("remoteCommand") == f"127.0.0.1:{port}"
     assert debug.get("symbolFile") == (
         f"$PROJECT_DIR$/.symbian/workspace-apps/{name}/{name}.elf"
@@ -91,7 +99,7 @@ def test_workspace_debugger_profiles_preserve_existing_choices(tmp_path):
     )
     configure_workspace_ide(tmp_path)
     profiles = ET.parse(idea / "debug-profiles.xml").getroot()
-    assert len(profiles.findall(".//debug-profile")) == 3
+    assert len(profiles.findall(".//debug-profile")) == 4
     choices = (
         ET.parse(idea / "workspace.xml")
         .getroot()
@@ -101,7 +109,11 @@ def test_workspace_debugger_profiles_preserve_existing_choices(tmp_path):
     assert {
         entry["first"]["##RUN_CONFIGURATION##"]
         for entry in saved["profileIdByStamp"]
-    } == {"Remote Debug.GL App Debug", "Remote Debug.Qt App Debug"}
+    } == {
+        "Remote Debug.GL App Debug",
+        "Remote Debug.Qt App Debug",
+        "Remote Debug.SDL2 App Debug",
+    }
     before = {p: p.read_bytes() for p in idea.iterdir()}
     configure_workspace_ide(tmp_path)
     assert before == {p: p.read_bytes() for p in idea.iterdir()}

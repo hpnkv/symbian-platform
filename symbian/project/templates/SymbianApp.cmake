@@ -104,12 +104,17 @@ if(SYMBIAN_RUNTIME_LOCAL_MATH AND SYMBIAN_WORKSPACE_INPUTS)
 endif()
 set(math_proxy "${SYMBIAN_SDK_PREFIX}/proxies/libm/libm.dso")
 set(libc_proxy "${SYMBIAN_SDK_PREFIX}/proxies/libc/libc.dso")
+set(legacy_estlib_proxy
+  "${SYMBIAN_SDK_PREFIX}/proxies/estlib-legacy/estlib.dso")
 # libc++ hash tables and clocks use these selected services. Ordinary apps
 # must not acquire a new ROM dependency merely by linking Symbian::Runtime.
 # Executable and DLL helpers apply --as-needed to the complete target graph.
 # Nested dependency targets must not restore --no-as-needed and introduce
 # unused OS services into the published image.
 set(optional_runtime_proxies)
+if(SYMBIAN_RUNTIME_LEGACY_EUSER AND EXISTS "${legacy_estlib_proxy}")
+  list(APPEND optional_runtime_proxies "${legacy_estlib_proxy}")
+endif()
 if(EXISTS "${math_proxy}")
   list(APPEND optional_runtime_proxies "${math_proxy}")
 endif()
@@ -183,6 +188,10 @@ if((SYMBIAN_WORKSPACE_INPUTS OR EXISTS "${stream_archive}") AND EXISTS "${stream
     target_link_libraries(SymbianStreams INTERFACE
       "${SYMBIAN_SDK_PREFIX}/proxies/euser/euser.dso")
   endif()
+  if(SYMBIAN_RUNTIME_LEGACY_EUSER AND EXISTS "${legacy_estlib_proxy}")
+    target_link_libraries(SymbianStreams INTERFACE
+      "${legacy_estlib_proxy}")
+  endif()
   target_link_libraries(SymbianStreams INTERFACE
     "${math_proxy}"
     "${stream_libc_proxy}"
@@ -206,17 +215,33 @@ if(SYMBIAN_WORKSPACE_INPUTS)
     target_link_options(SymbianStreams INTERFACE --undefined=ceilf)
   endif()
   if(SYMBIAN_RUNTIME_LOCAL_C_STRING)
-    foreach(symbol IN ITEMS memchr strchr strcmp strcpy strncmp wcslen wmemchr)
+    foreach(symbol IN ITEMS memchr strchr strcmp strcpy strncmp strlcat
+                            strlcpy strstr wcslen wmemchr)
       target_link_options(SymbianRuntime INTERFACE "--undefined=${symbol}")
       target_link_options(SymbianStreams INTERFACE "--undefined=${symbol}")
     endforeach()
   endif()
   if(SYMBIAN_RUNTIME_LOCAL_C_STDLIB)
     foreach(symbol IN ITEMS abs atof atoi qsort strtol strtoull strtold abort
-                            __assert isspace _exit)
+                            __assert)
+      set(root_symbol
+        "$<$<NOT:$<BOOL:$<TARGET_PROPERTY:SYMBIAN_RUNTIME_MINIMAL_C_LINK>>>:--undefined=${symbol}>")
+      target_link_options(SymbianRuntime INTERFACE "${root_symbol}")
+      target_link_options(SymbianStreams INTERFACE "${root_symbol}")
+    endforeach()
+    foreach(symbol IN ITEMS malloc calloc realloc free getenv strerror_r
+                            isspace _exit)
       target_link_options(SymbianRuntime INTERFACE "--undefined=${symbol}")
       target_link_options(SymbianStreams INTERFACE "--undefined=${symbol}")
     endforeach()
+    if(SYMBIAN_RUNTIME_LEGACY_EUSER)
+      foreach(symbol IN ITEMS asprintf snprintf vsnprintf strtod strtof
+                              fputwc getwc ungetwc gmtime_r localtime_r
+                              mktime strftime)
+        target_link_options(SymbianRuntime INTERFACE "--undefined=${symbol}")
+        target_link_options(SymbianStreams INTERFACE "--undefined=${symbol}")
+      endforeach()
+    endif()
   endif()
   if(SYMBIAN_RUNTIME_LOCAL_POSIX_TIME)
     target_link_options(SymbianRuntime INTERFACE --undefined=clock_gettime)
@@ -225,6 +250,13 @@ if(SYMBIAN_WORKSPACE_INPUTS)
   if(SYMBIAN_RUNTIME_NATIVE_PTHREAD)
     target_link_options(SymbianRuntime INTERFACE --undefined=pthread_mutex_lock)
     target_link_options(SymbianStreams INTERFACE --undefined=pthread_mutex_lock)
+    if(SYMBIAN_RUNTIME_LOCAL_C_STDLIB)
+      foreach(symbol IN ITEMS mbrlen mbrtowc mbsnrtowcs mbsrtowcs mbtowc
+                              wcrtomb wcsnrtombs wcsrtombs mbsinit)
+        target_link_options(SymbianRuntime INTERFACE "--undefined=${symbol}")
+        target_link_options(SymbianStreams INTERFACE "--undefined=${symbol}")
+      endforeach()
+    endif()
   endif()
 endif()
 

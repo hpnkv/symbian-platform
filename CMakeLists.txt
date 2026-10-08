@@ -330,6 +330,8 @@ install(FILES "${SYMBIAN_NGHTTP2_SOURCE}/COPYING"
         DESTINATION symbian/licenses RENAME nghttp2-LICENSE)
 install(FILES third_party/boost/LICENSE_1_0.txt
         DESTINATION symbian/licenses RENAME Boost-LICENSE)
+install(FILES third_party/stb_sprintf/LICENSE
+        DESTINATION symbian/licenses RENAME stb_sprintf-LICENSE)
 install(FILES "${abseil_SOURCE_DIR}/LICENSE"
         DESTINATION symbian/licenses RENAME Abseil-LICENSE)
 install(FILES "${nlohmann_json_SOURCE_DIR}/LICENSE.MIT"
@@ -375,9 +377,6 @@ foreach(application IN ITEMS gl_app qt_app_classic sdl2_app)
     SYMBIAN_LAUNCH_ROOT="${CMAKE_SOURCE_DIR}"
     SYMBIAN_LAUNCH_PROJECT="${CMAKE_SOURCE_DIR}/examples/${application}")
 endforeach()
-if(SYMBIAN_BUILD_GUI_EXAMPLE)
-  symbian_add_guest_subdirectory(probes/native_pthread_probe)
-endif()
 include(cmake/SymbianNativeExamples.cmake)
 option(SYMBIAN_BUILD_NATIVE_EXAMPLES "Expose original native API and library examples" ON)
 if(SYMBIAN_BUILD_NATIVE_EXAMPLES)

@@ -33,6 +33,7 @@ WindowKey KeyFromScanCode(int scan_code) {
     case EStdKeyEscape:
       return WindowKey::kEscape;
     case EStdKeyBackspace:
+    case EStdKeyDevice1:
       return WindowKey::kBackspace;
     case EStdKeyLeftArrow:
       return WindowKey::kLeft;

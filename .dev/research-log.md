@@ -8913,3 +8913,229 @@ library was added. The RM-807 emulator launched that ARMv5T software image,
 accepted UID `0xe0000e20` AppArc close and reported guest exit type 0,
 reason 0 and frontend exit 0. This does not prove older-firmware loading;
 stdio, formatting, allocation, locale and calendar are still unresolved.
+
+The host `debug` CMake configure failed when it registered
+`probes/native_pthread_probe` through `symbian_add_guest_subdirectory`: that
+application helper reads `symbian.toml`, which the stand-alone probe does not
+have. The root guest graph already adds the probe directly. Removing the
+redundant host registration restored host configuration; the ARMv6 guest graph
+configured and linked `native_pthread_probe.elf`.
+
+### 2026-10-08: older-firmware C allocation and error text
+
+The ARMv5T software SDL2 E32 imported 43 distinct `libc.dll` symbols before
+this slice. Its `memcpy`, `memmove`, `memset` and `memclr` already resolve to
+EUSER, so moving those functions would not address the loader blocker. A
+source-workspace C allocator bridge now routes `malloc`, `calloc`, `realloc`
+and `free` through the same heap as C++ allocation. The RHeap adapter tracks
+the requested size in a 16-byte, eight-aligned header; reallocation copies
+the smaller byte count and leaves the old cell intact on failure. The mimalloc
+profile uses `mi_realloc`. C requests smaller than `max_align_t` alignment
+allocate enough bytes to preserve the C allocation contract. The older
+no-Open-C profile reports no inherited C environment. Original Open C
+`strerror_r`, error strings, `strlcpy` and `strlcat` now provide error text.
+These additions do not establish general POSIX errno or environment support.
+
+The workspace application target's local-symbol roots were updated alongside
+the source runtime. A minimal-link setting omits unrelated float/assert roots
+from the pthread probe, which otherwise pulled three accidental libc imports.
+The final ARMv5T pthread E32 imports 35 EUSER and three drtaeabi symbols and
+no libc/pthread/libm. Its allocation, cross-thread free, zero-fill,
+reallocation, null environment and error text checks returned guest exit type
+0, reason 0 on both E71/RM-346 and 6120c/RM-243. The ARMv5T software SDL2
+E32 now imports 37 distinct `libc.dll` symbols, down from 43, with no new
+library dependency. On the RM-807 emulator it launched and closed through
+AppArc with guest exit type 0, reason 0 and frontend exit 0. E71 and 6120c
+still reject the SDL2 image before launch because they lack `libc.dll`; file
+I/O, formatting, multibyte, calendar and float conversion remain unresolved.
+
+The matching SDL3 software E32 also imports 37 distinct libc symbols after
+adding the original stateless `strstr` source, and it launched and closed
+normally on the RM-807 emulator with guest reason zero. Its older-firmware
+loader gate is the same unresolved libc dependency.
+The 37 remaining symbols divide into 24 descriptor/stdio/formatting entries,
+seven multibyte conversion entries, four calendar entries and two float
+parsers. The next significant loader step requires a native file/stream owner
+with compatible `FILE` behavior; substituting individual stubs would not
+preserve ownership or error semantics. Open questions are the target C locale
+and UTF-8 state contract, calendar/time-zone policy without Open C, and the
+exact file/format call sites that can use existing SDK storage facilities.
+
+### 2026-10-08: root IDE launchers
+
+The installed IntelliJ IDEA 2026.2 log records `SDL2 App Run` failing at
+11:33:42 with `File not found: .../build/debug/sdl2_app_run`. The saved CMake
+Run configuration pointed at an optional host target output that was absent
+before its first build. A direct build made the binary work, but could not
+make first Run reliable. Root SDL2, GL and Qt saved Run configurations now
+point to executable source-controlled `.run/*-run` wrappers. The local GUI Run
+configuration and its generator use an analogous wrapper. These invoke the
+existing source-building supervisor, so a host launcher binary is not a
+prerequisite. Debug wrappers and their ports remain distinct.
+
+Before changing Run paths, all four host binaries launched a live RM-807
+Dynarmic session and IDE-style Stop reaped it with code 130. After the change,
+all four checked-in Run wrappers did the same. SDL2, GL, Qt and GUI Debug
+wrappers each connected ARM GDB to their configured guest port, read
+`pc = 0x70000000 <_E32Startup>` and exited cleanly after disconnect. The
+workspace file contains the SDL2 Run and Debug entries and an enabled `debug`
+CMake profile. The SDL2 Debug wrapper also passed a direct
+`--interpreter=mi2` session with the configured symbol file and port. Six
+focused IDE configuration tests pass. These checks exercise
+the exact saved executables and debugger routes, but do not prove the IDE's
+visual frontend or breakpoint UI after a fresh reload.
+
+### 2026-10-08: emulator guest window fit
+
+The Qt frontend's device-mode callback only set a minimum display-widget size;
+its main window restored a generic 900x600 geometry, leaving blank space for
+smaller guest screens. A replayable `display-fit.patch` now enables an SDK-owned
+fit mode: the active screen size fixes the display widget, outer layout margins
+are zeroed, and Qt adjusts the host window after each mode change. Geometry
+changes are queued to the GUI thread and the Qt context cancels them on widget
+destruction. The SDK launch supervisor sets the opt-in environment variable.
+The original emulator UI retains its prior sizing behavior outside SDK runs.
+
+The patch replayed successfully across all 34 maintained emulator patches.
+An incremental frontend build passed. A live RM-807 SDL2 session on macOS
+reported a 360x732 outer window; a live RM-609 E6 GUI session reported
+640x572. Both match their 360x640 and 640x480 guest modes plus 92 pixels of
+native title/menu/status chrome, rather than a generic 900-pixel width. These
+were window-bound observations, not a visual pixel-difference assertion.
+E71/RM-346 could not enter the GUI display with the current `gui_app` because
+that image imports `libpthread.dll`, which the older firmware lacks.
+
+The local patched build is selected in the global emulator setting for this
+host. Stale emulator path overrides in the local GL and Qt project settings
+and GL candidate SDK setting were removed; SDL2, GL and Qt now resolve the
+same patched executable. A distributed emulator installer containing this
+patch has not been published, and other hosts still need a rebuilt frontend.
+
+The saved maximized-window state was a remaining way to show empty space
+around the fixed display on a later launch. Fit mode now restores a normal
+window before applying the active screen dimensions. The patch passes a reverse
+application check against the local patched source snapshot; an incremental
+`EKA2L1` frontend build completed successfully. The source snapshot lacks its
+own Git metadata, so the checkout-based `build_emulator.py acquire` validation
+cannot run against that snapshot.
+The rebuilt frontend's RM-807 SDL2 window measured 360x732 in the macOS
+window list for a 360x640 guest screen; a desktop capture showed no blank
+margin around the game content. The launcher stopped with supervisor code 130.
+
+### 2026-10-08: older-firmware UTF-8 conversion
+
+The rebuilt ARMv5T software SDL2 and SDL3 E32 images both had 37 distinct
+`libc.dll` imports. Seven were `mbrlen`, `mbrtowc`, `mbsnrtowcs`,
+`mbsrtowcs`, `mbtowc`, `wcrtomb`, and `wcsnrtombs`. A small no-heap UTF-8
+compatibility owner now supplies those and `wcsrtombs`/`mbsinit`. The 8-byte
+Symbian `mbstate_t` stores partial UTF-8 input or a pending UTF-16 high
+surrogate. The existing native pthread per-thread record owns separate
+implicit states for each conversion entry point. `mbrtowc` rejects
+supplementary scalars with `EILSEQ` because this target's single `wchar_t` is
+16-bit; `wcrtomb` can combine UTF-16 surrogate pairs. This is a deliberate
+bounded contract, not general Unicode locale support.
+
+The native pthread probe checks partial Euro-sign input, invalid overlong
+input, UTF-8 output, bounded string conversion, and isolation of implicit
+state across threads. The first E71 run returned -643 because the probe
+incorrectly expected a non-null source pointer after consuming the NUL within
+its five-byte limit; correcting that expectation gave guest exit type 0,
+reason 0 on both E71/RM-346 and 6120c/RM-243. A later E71 rerun with the
+thread-isolation check also returned zero. Both rebuilt ARMv5T software apps
+now have 30 distinct libc imports. RM-807/Dynarmic loaded both, accepted
+AppArc close, and reported guest exit type 0, reason 0 and frontend exit 0.
+The 30 remaining imports are file/stdio/formatting (24), calendar (four),
+and float parsing (two); they still block older-firmware loading.
+
+Archive undefined-symbol inspection of the ARMv5T SDL2 link identifies
+several independent callers. SDL's `SDL_assert`, `SDL_log`, and `SDL_rwops`
+objects request C streams and file I/O. The guest libc++ `iostream`,
+`locale`, `string`, and `system_error` objects request streams, formatting,
+and float conversion. Abseil's `time_zone_info`, `time_zone_libc`,
+`time_zone_format`, `str_format_internal`, `numbers`, `raw_logging`, and
+`sysinfo` objects request file, calendar, formatting, or float facilities.
+The SDK already has a move-only native File Server owner in
+`symbian_api_storage`; a future C stream compatibility surface should adapt
+that owner and account for SDL and libc++ stream semantics rather than add
+file stubs. Archive undefined symbols overapproximate linked use, so the
+next check should inspect the final link map before assigning ownership to
+each import.
+
+### 2026-10-08: ARMv5T older-ROM SDL load and frame-blocking diagnosis
+
+The remaining 30 ARMv5T software SDL imports were traced to older C file,
+stream, formatting, calendar and float functions. E71/RM-346 and
+6120c/RM-243 both contain `estlib.dll`. A direct guest probe resolved its
+frozen file ordinals, read a C-drive test file, and exited with type/reason
+0/0 on both ROMs. The owned `estlib-legacy` import proxy and bounded local
+formatting, float, calendar and wide-stream adapters remove the final
+`libc.dll` imports. The rebuilt SDL2 ELF has no `libc.dll`, `libpthread.dll`
+or `libm.dll` dependency; its E32 loads and renders on both older ROMs.
+The native conversion/thread probe, including `snprintf`, float parsing,
+calendar formatting and a five-millisecond POSIX sleep, exited 0/0 on both.
+This verifies reached cases only; it is not a general ESTLIB/Open C ABI claim.
+
+The first SDL2 image presented one complete frame and then stayed at `000 FPS`.
+Separately removing the initial media start did not restore progress. Removing
+the frame delay advanced execution; a later ball hit then revealed an unrelated
+null worker dereference in the temporary no-media build. Replacing the SDL2
+`User::After` delay with an owned `RTimer::After` plus request completion made
+FPS update, pointer taps change score, and AppArc close exit normally on E71.
+The same timer primitive now belongs to SDK time API and backs SDL2/SDL3
+pacing and the media worker's delay. The legacy POSIX `nanosleep` also uses
+it, because its previous positive `User::After` path could repeat the wait
+problem. A timer-open failure lets frame pacing return immediately. `RTimer`
+creation per sleep is correct but could be measured and optimized later.
+
+A separate hit-feedback isolation showed that repeated identical captures
+were not sufficient to diagnose deadlock: the game enters its ready phase
+after a missed ball, and its FPS often rounds to the same value for several
+samples. A second tap resumed scoring, and the top-left pause control opened
+a responsive menu. Removing hit dispatch did not eliminate such repeated
+ready-phase captures. The old tactile resolver is removed from this path;
+HWRM makes short 60 ms calls on its independent worker. E71 emulator logs
+confirm a vibration request, but physical haptic behavior is not inferred.
+The original `GameFeedback::Hit` also had a null worker dereference if worker
+allocation or startup failed; that guard is now explicit.
+
+Final software SDL2 on E71 and 6120c and SDL3 on 6120c rendered changing
+frames after input and closed with guest type/reason 0/0 and frontend exit 0.
+SDL2 on 6120c showed the pause menu after its upper-left control. These
+runs use the preserved firmware fixtures and Dynarmic frontend; Nokia 808
+physical testing remains postponed, and no older physical handset was tested.
+The `User::After` versus `RTimer::After` difference is observed in this guest
+configuration, but whether the cause is old EUSER or emulator request
+scheduling still needs a small native-only timing probe on hardware.
+
+### 2026-10-08: paddle crossing, wall recovery, and emulator FPS
+
+After the screen-layout change, the paddle collision was vulnerable to
+single-step overlap at its new vertical position. The revised collision uses
+the ball's previous and current positions to find its crossing of the paddle
+top, checks horizontal overlap at that crossing, then places the ball above
+the paddle and sends it upward. Side and top guards also clamp penetrated
+coordinates and restore at least one pixel per step of inward velocity, so a
+ball already past a wall cannot remain there. The death line remains below
+the paddle; missing it is still a lost life, not a floor bounce.
+
+The rebuilt ARMv6 SDL2 app was copied into the RM-807 emulator fixture. A
+20-second tracked-ball run captured repeated descents to screenshot y=1112
+followed by ascent to y=1022, then exited 0/0. An independent run accepted
+touch launch and the enlarged pause target, displayed `059 FPS`, and exited
+0/0. This closes the observed ~54 FPS emulator regression for this fixture:
+the old frame pacer rounded every remaining wait up to a whole millisecond,
+whereas the current path uses nanosecond deadlines and `RTimer::HighRes`.
+GPU or physical-device speed is not established by this software emulator
+capture. The ARMv5T and ARMv6 SDL2/SDL3 E32 builds, guest header canaries,
+style check, and diff whitespace check passed. An E71 SDL2 run after the
+collision change rendered and exited normally.
+The FPS display now rounds its one-second sample to the nearest whole frame
+per second; this does not change the actual presentation pacing.
+
+The non-touch E71 profile still shows the pause button. EKA2L1's digitiser
+HAL returns successful XY information whenever a screen is present, so HAL
+`EPen` reports true. Its feature-manager emulator also unconditionally adds
+pen support, making a feature query insufficient as an independent oracle.
+This is an emulator capability-model defect; the game's right-softkey/Back
+pause mapping works, but visual hiding remains to be verified after a
+capability-source fix. No physical E71 result is claimed.

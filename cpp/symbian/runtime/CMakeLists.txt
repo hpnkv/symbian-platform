@@ -105,7 +105,9 @@ add_library(symbian_guest_runtime STATIC
   "${builtins}/muldi3.c" "${builtins}/ashldi3.c"
   "${builtins}/lshrdi3.c"
   "${builtins}/clzsi2.c"
-  heap.cc sdk_heap.cc sdk_pages.cc sdk_clock.cc clock.cc sdk_timer.cc sdk_property.cc atomic_bridge.cc math_c.cc lifecycle.cc sdk_lifecycle.cc pure_virtual.cc
+  heap.cc sdk_heap.cc sdk_pages.cc sdk_clock.cc clock.cc sdk_timer.cc
+  ../api/time/sleep.cc sdk_property.cc atomic_bridge.cc math_c.cc
+  lifecycle.cc sdk_lifecycle.cc pure_virtual.cc
   "${SYMBIAN_LIBCXX_SOURCE}/src/string.cpp"
   "${SYMBIAN_LIBCXX_SOURCE}/src/new_helpers.cpp"
   "${SYMBIAN_LIBCXX_SOURCE}/src/memory.cpp"
@@ -161,14 +163,16 @@ if(SYMBIAN_RUNTIME_LOCAL_C_STRING)
   # original BSD/Nokia notices in the preserved source checkout.
   set(local_c_string_sources
     string/memchr.c string/strchr.c string/strcmp.c string/strcpy.c
-    string/strncmp.c string/wcslen.c string/wmemchr.c)
+    string/strncmp.c string/strlcat.c string/strlcpy.c string/strstr.c string/wcslen.c
+    string/wmemchr.c)
   list(TRANSFORM local_c_string_sources PREPEND
     "${SYMBIAN_OPENC_SOURCE}/libc/src/")
   target_sources(symbian_guest_runtime PRIVATE ${local_c_string_sources})
   set_source_files_properties(${local_c_string_sources} PROPERTIES
     COMPILE_OPTIONS "-fdeclspec;-Wno-ignored-attributes;-Wno-deprecated-non-prototype"
     COMPILE_DEFINITIONS "__SOFTFP=")
-  foreach(symbol IN ITEMS memchr strchr strcmp strcpy strncmp wcslen wmemchr)
+  foreach(symbol IN ITEMS memchr strchr strcmp strcpy strncmp strlcat
+                          strlcpy strstr wcslen wmemchr)
     target_link_options(symbian_guest_runtime INTERFACE "--undefined=${symbol}")
   endforeach()
 endif()
@@ -185,11 +189,38 @@ if(SYMBIAN_RUNTIME_LOCAL_C_STDLIB)
     COMPILE_DEFINITIONS "__SOFTFP=")
   foreach(symbol IN ITEMS abs atof atoi qsort strtol strtoull strtold abort
                           __assert)
-    target_link_options(symbian_guest_runtime INTERFACE "--undefined=${symbol}")
+    target_link_options(symbian_guest_runtime INTERFACE
+      "$<$<NOT:$<BOOL:$<TARGET_PROPERTY:SYMBIAN_RUNTIME_MINIMAL_C_LINK>>>:--undefined=${symbol}>")
   endforeach()
-  target_sources(symbian_guest_runtime PRIVATE ctype_legacy.cc process_legacy.cc)
+  target_sources(symbian_guest_runtime PRIVATE
+    c_alloc_legacy.cc c_env_legacy.cc ctype_legacy.cc process_legacy.cc)
+  set(local_c_error_sources
+    "${SYMBIAN_OPENC_SOURCE}/libc/src/gen/errlst.c"
+    "${SYMBIAN_OPENC_SOURCE}/libc/src/string/strerror.c")
+  target_sources(symbian_guest_runtime PRIVATE ${local_c_error_sources})
+  set_source_files_properties(${local_c_error_sources} PROPERTIES
+    COMPILE_OPTIONS "-fdeclspec;-Wno-ignored-attributes;-Wno-deprecated-non-prototype"
+    COMPILE_DEFINITIONS "__SOFTFP=;NL_TEXTMAX=2048")
   target_link_options(symbian_guest_runtime INTERFACE
+    --undefined=malloc --undefined=calloc --undefined=realloc
+    --undefined=free --undefined=getenv --undefined=strerror_r
     --undefined=isspace --undefined=_exit)
+  if(SYMBIAN_RUNTIME_LEGACY_EUSER)
+    target_sources(symbian_guest_runtime PRIVATE
+      c_calendar_legacy.cc c_float_legacy.cc c_format_legacy.cc
+      c_wide_stdio_legacy.cc)
+    set_source_files_properties(
+      c_calendar_legacy.cc c_float_legacy.cc c_format_legacy.cc
+      c_wide_stdio_legacy.cc PROPERTIES COMPILE_OPTIONS -fno-pic)
+    target_include_directories(symbian_guest_runtime PRIVATE
+      "${CMAKE_SOURCE_DIR}/third_party/stb_sprintf")
+    target_link_options(symbian_guest_runtime INTERFACE
+      --undefined=snprintf --undefined=vsnprintf --undefined=asprintf
+      --undefined=strtod --undefined=strtof
+      --undefined=fputwc --undefined=getwc --undefined=ungetwc
+      --undefined=gmtime_r --undefined=localtime_r --undefined=mktime
+      --undefined=strftime)
+  endif()
 endif()
 if(SYMBIAN_RUNTIME_LOCAL_POSIX_TIME)
   target_sources(symbian_guest_runtime PRIVATE posix_time_legacy.cc)
@@ -201,6 +232,14 @@ if(SYMBIAN_RUNTIME_NATIVE_PTHREAD)
     COMPILE_OPTIONS "-fdeclspec;-fno-pic")
   target_link_options(symbian_guest_runtime INTERFACE
     --undefined=pthread_mutex_lock)
+  if(SYMBIAN_RUNTIME_LOCAL_C_STDLIB)
+    target_sources(symbian_guest_runtime PRIVATE c_utf8_legacy.cc)
+    foreach(symbol IN ITEMS mbrlen mbrtowc mbsnrtowcs mbsrtowcs mbtowc
+                            wcrtomb wcsnrtombs wcsrtombs mbsinit)
+      target_link_options(symbian_guest_runtime INTERFACE
+        "--undefined=${symbol}")
+    endforeach()
+  endif()
 endif()
 if(SYMBIAN_RUNTIME_LEGACY_EUSER)
   if(NOT SYMBIAN_TARGET_ARCH STREQUAL "armv5t")
@@ -297,6 +336,8 @@ target_include_directories(symbian_guest_runtime SYSTEM BEFORE PUBLIC
   "${SYMBIAN_OPENC_SOURCE}/include/posix4")
 
 target_include_directories(symbian_guest_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(symbian_guest_runtime PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/../api/include")
 # Pointer contracts also apply while bootstrapping, before Abseil archives exist.
 if(SYMBIAN_WORKSPACE_INPUTS)
   set(symbian_nullability_include "${SYMBIAN_SDK_PREFIX}/abseil")

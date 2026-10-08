@@ -4234,3 +4234,90 @@ Four more bounded original Open C functions and a native immediate-exit
 adapter reduce ARMv5T software SDL2 to 43 distinct libc imports. The revised
 image ran and exited normally on the RM-807 emulator after AppArc close.
 E71/6120c still lack libc, so the application has not loaded there.
+
+Host CMake configuration now succeeds after removing the probe's erroneous
+application registration. `cmake --preset debug` and
+`cmake --preset guest-probes-armv6` passed; the guest
+`native_pthread_probe` target linked. `.venv/bin/python
+scripts/check_cpp_style.py` reported zero violations. This is a build-graph
+repair, not a new firmware execution result.
+
+The ARMv5T no-Open-C runtime now supplies a shared C/C++ allocator,
+`getenv`'s absent-environment result, and original Open C error text. Its
+software SDL2 E32 has 37 distinct `libc.dll` imports, down from 43, and no
+libpthread/libm/EGL/GLES2 import. The allocator/error probe imports no libc
+and exited with reason zero on E71/RM-346 and 6120c/RM-243; the rebuilt SDL2
+app launched and closed normally on the RM-807 emulator. This does not enable
+SDL2 on the older ROMs yet: the remaining 37 libc imports prevent loading.
+Physical Nokia 808 testing remains postponed.
+
+The matching ARMv5T software SDL3 image also has 37 distinct libc imports;
+its RM-807 emulator launch and AppArc close exited with guest reason zero.
+
+Root IDE Run launchers now use executable checked-in wrappers. This fixes an
+actual IDEA 2026.2 `SDL2 App Run` failure caused by an absent optional
+`build/debug/sdl2_app_run` binary. SDL2, GL, Qt and GUI Run wrappers each
+started an RM-807 Dynarmic session and Stop reaped the supervisor with exit
+130. Their four Debug routes each connected ARM GDB, read the guest startup PC
+and disconnected. Six focused IDE configuration tests, C++ style, Ruff and
+Black checks pass. SDL2's wrapper also passed a GDB/MI2 session. The IDE GUI
+itself was not driven after the fix.
+
+The SDK-owned emulator frontend now sizes its display to the active guest
+mode, without Qt layout margins. The replayed 34-patch source set and
+incremental macOS build pass. Live window bounds were 360x732 for RM-807
+SDL2 and 640x572 for RM-609 E6 GUI, each with 92 pixels of native window
+chrome over the guest screen size. Local SDL2, GL and Qt resolution now selects
+the patched build. E71 GUI validation is blocked by that app's existing
+`libpthread.dll` import; no physical-device or other-host window result is
+claimed.
+
+Fit mode now also leaves a saved maximized state before sizing the display,
+so a previous emulator window preference cannot surround the guest screen
+with blank content. The updated patch reverse-applies cleanly to the local
+source snapshot and the macOS `EKA2L1` frontend rebuilt successfully.
+An RM-807 SDL2 session with the rebuilt frontend again measured 360x732
+outer bounds for its 360x640 guest mode plus native chrome; its desktop
+capture showed the guest image flush with the content area.
+
+The ARMv5T no-Open-C UTF-8 compatibility layer removed seven more libc
+imports from both software SDL images: 30 distinct `libc.dll` symbols remain.
+The native conversion/thread probe exited with guest reason zero on E71 and
+6120c, and the revised SDL2/SDL3 apps launched and closed with guest reason
+zero on RM-807. E71/6120c still cannot load those apps until file/format,
+calendar, and float imports are reconciled.
+
+The ARMv5T software SDL2 and SDL3 images now link without `libc.dll`,
+`libpthread.dll` or `libm.dll` imports by using the ROM's ordinal-checked
+`estlib.dll` file interface and bounded local C compatibility. SDL2 loads,
+renders, responds to taps and exits normally on E71/RM-346 and
+6120c/RM-243. SDL3 does the same on 6120c/RM-243 and E71/RM-346. The
+native runtime probe, including a short POSIX sleep,
+exits 0/0 on both older ROMs. These are real preserved-firmware emulator
+results, not physical-device claims.
+
+An observed first-frame `000 FPS` stall was isolated to the SDL frame delay's
+`User::After` call. SDK time API now uses a thread-relative `RTimer` request;
+SDL2/SDL3 and the media loop use it, and legacy `nanosleep` uses the same
+bridge. The app's hit path now checks for an absent worker. Repeated identical
+frames after a tap were resolved as the game's ready state by a second tap
+and responsive pause-menu input, so they are not counted as a second proven
+deadlock. The cause of the older guest `User::After` behavior remains open.
+A clean installed-SDK export and physical older-device run remain open.
+
+Arkanoid's paddle collision now uses the ball's swept crossing of the paddle
+top, and side/top wall penetration clamps the ball inside while restoring an
+inward velocity. A rebuilt RM-807 SDL2 emulator run tracked repeated descents
+to y=1112 in its 720x1280 capture followed by ascent to y=1022, and closed
+normally. The RM-807 screen capture reports 59 FPS after replacing the old
+millisecond-rounded frame wait with SDK nanosecond deadlines and `RTimer`
+HighRes. This resolves the observed ~54 FPS emulator result in this fixture;
+physical frame rate remains unmeasured. ARMv5T/ARMv6 SDL2 and SDL3 E32 builds,
+header canaries, and C++ style pass. E71 SDL2 again rendered, accepted input,
+and exited normally after the collision change.
+
+EKA2L1 currently reports a digitiser for E71 even though the device is not
+touch-enabled; its digitiser HAL answers success whenever a screen exists.
+The SDK app uses HAL `EPen`, which therefore leaves the visual pause button
+visible in that emulator profile. The right softkey/Back opens the menu.
+Correct non-touch visual detection in this profile remains open.

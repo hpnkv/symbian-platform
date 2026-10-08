@@ -16,6 +16,7 @@ function(symbian_guest_api_header_canaries root)
   symbian_header_canary(symbian_api_time_header_canary
     HEADERS
       "${root}/cpp/symbian/api/include/symbian/api/time/monotonic_clock.h"
+      "${root}/cpp/symbian/api/include/symbian/api/time/sleep.h"
     LIBRARIES Symbian::Runtime)
   foreach(component IN ITEMS system connectivity storage agent power display media camera)
     # Public API consumers receive the source include root, as installed SDK

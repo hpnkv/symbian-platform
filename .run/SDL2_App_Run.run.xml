@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="SDL2 App Run" type="CMakeRunConfiguration" factoryName="Application" PROJECT_NAME="symbian_platform" TARGET_NAME="sdl2_app_run" CONFIG_NAME="debug" RUN_PATH="$PROJECT_DIR$/build/debug/sdl2_app_run" PROGRAM_PARAMS="" WORKING_DIR="$PROJECT_DIR$" PASS_PARENT_ENVS_2="true">
+  <configuration default="false" name="SDL2 App Run" type="CMakeRunConfiguration" factoryName="Application" PROJECT_NAME="symbian_platform" TARGET_NAME="sdl2_app_run" CONFIG_NAME="debug" RUN_PATH="$PROJECT_DIR$/.run/sdl2_app-run" PROGRAM_PARAMS="" WORKING_DIR="$PROJECT_DIR$" PASS_PARENT_ENVS_2="true">
     <method v="2" />
   </configuration>
 </component>

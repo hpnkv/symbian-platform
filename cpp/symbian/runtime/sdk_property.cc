@@ -16,7 +16,7 @@ struct SymbianRuntimePropertyState {
 
 extern "C" int SymbianRuntimePropertyCreate(
     int category, unsigned int key,
-    SymbianRuntimePropertyState* absl_nullable* absl_nullable output) {
+    SymbianRuntimePropertyState* absl_nullable* absl_nonnull output) {
   if (output == nullptr) {
     return KErrArgument;
   }

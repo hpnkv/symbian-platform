@@ -19,7 +19,7 @@ if(NOT TARGET symbian_portable_sdl2 AND NOT TARGET Symbian::PortableSdl2)
     "${CMAKE_CURRENT_BINARY_DIR}/sdl2")
 endif()
 set(arkanoid_sources
-  main.cc application.cc game.cc renderer.cc
+  main.cc application.cc game.cc layout.cc renderer.cc
   assets/primitives.cc assets/block.cc assets/block_atlas.cc assets/ball.cc
   assets/platform.cc assets/glyphs.cc assets/text.cc)
 # ARMv6 Thumb lacks the wide multiply used for constant-division strength

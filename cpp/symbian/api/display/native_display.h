@@ -22,6 +22,8 @@ struct NativeDisplayReading {
 
 extern "C" void SymbianDeviceReadPrimaryDisplay(
     NativeDisplayReading* absl_nullable reading);
+extern "C" int SymbianDeviceReadTouchscreenPresence(
+    int* absl_nonnull present);
 
 }  // namespace symbian::api::display
 

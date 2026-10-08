@@ -50,6 +50,11 @@ void* absl_nullable SymbianRuntimeMimallocAllocate(unsigned int size) {
   return mi_malloc((size_t)size);
 }
 
+void* absl_nullable SymbianRuntimeMimallocReallocate(
+    void* absl_nullable pointer, unsigned int size) {
+  return mi_realloc(pointer, (size_t)size);
+}
+
 void SymbianRuntimeMimallocFree(void* absl_nullable pointer) {
   mi_free(pointer);
 }

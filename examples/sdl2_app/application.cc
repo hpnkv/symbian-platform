@@ -4,6 +4,7 @@
 #include "sdl2_app/application.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -11,8 +12,10 @@
 #include "sdl2_app/arkanoid_adapter.h"
 #include "sdl2_app/game.h"
 #include "sdl2_app/renderer.h"
+#include "symbian/api/display/display.h"
 #include "symbian/api/media/game_feedback.h"
 #include "symbian/api/time/frame_pacer.h"
+#include "symbian/api/time/sleep.h"
 
 namespace arkanoid {
 namespace {
@@ -90,7 +93,12 @@ int Run() {
   if (width < 240 || height < 200) {
     return 4;
   }
-  Game game(width, height);
+  const auto touchscreen_presence =
+      symbian::api::display::ReadTouchscreenPresence();
+  // An unknown HAL result keeps the on-screen control available.
+  const bool touchscreen =
+      !touchscreen_presence.ok() || *touchscreen_presence;
+  Game game(width, height, touchscreen);
   symbian::api::media::GameFeedback feedback;
   std::string vibration_error;
   arkanoid::GameRenderer game_renderer;
@@ -99,7 +107,6 @@ int Run() {
   // initial window white while the request is in flight.
   game_renderer.Draw(game, renderer->get(), 0, gpu_active, gpu_fallback_reason,
                      vibration_error);
-  SDL_Delay(kStepMs);
   feedback.Start();
   std::uint32_t last_hits = 0;
   bool running = true;
@@ -134,7 +141,7 @@ int Run() {
     }
     if (!foreground) {
       feedback.SetMusicEnabled(false);
-      SDL_Delay(80);
+      symbian::api::time::SleepFor(std::chrono::milliseconds(80));
       previous = arkanoid::Ticks();
       lag = 0;
       frame_pacer.Reset();
@@ -168,15 +175,13 @@ int Run() {
     const std::uint64_t sample_elapsed = arkanoid::Ticks() - fps_sample_start;
     if (sample_elapsed >= 1000) {
       frames_per_second = static_cast<std::uint32_t>(
-          (static_cast<std::uint64_t>(frames_in_sample) * 1000) /
+          (static_cast<std::uint64_t>(frames_in_sample) * 1000 +
+           sample_elapsed / 2) /
           sample_elapsed);
       fps_sample_start = arkanoid::Ticks();
       frames_in_sample = 0;
     }
-    const std::uint32_t delay = frame_pacer.NextDelayMilliseconds();
-    if (delay != 0) {
-      SDL_Delay(delay);
-    }
+    symbian::api::time::SleepFor(frame_pacer.NextDelayNanoseconds());
   }
   return 0;
 }

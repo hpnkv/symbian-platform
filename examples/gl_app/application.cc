@@ -1,6 +1,7 @@
 #include "application.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 
 #include <e32std.h>
@@ -9,6 +10,7 @@
 #include "symbian/api/display/window_surface.h"
 #include "symbian/api/time/frame_pacer.h"
 #include "symbian/api/time/monotonic_clock.h"
+#include "symbian/api/time/sleep.h"
 
 namespace gl_app {
 namespace {
@@ -124,7 +126,7 @@ int RunWindow(symbian::api::display::WindowSurface* absl_nonnull window) {
       break;
     }
     if (!foreground) {
-      User::After(80000);
+      symbian::api::time::SleepFor(std::chrono::milliseconds(80));
       continue;
     }
     const std::int64_t now =
@@ -147,11 +149,7 @@ int RunWindow(symbian::api::display::WindowSurface* absl_nonnull window) {
     if (!renderer.Draw(yaw, pitch, paused, frames_per_second).ok()) {
       return KErrGeneral;
     }
-    const std::uint32_t delay = frame_pacer.NextDelayMilliseconds();
-    if (delay != 0) {
-      User::After(static_cast<TTimeIntervalMicroSeconds32>(
-          std::min<std::uint32_t>(delay, 1000) * 1000));
-    }
+    symbian::api::time::SleepFor(frame_pacer.NextDelayNanoseconds());
   }
   return KErrNone;
 }

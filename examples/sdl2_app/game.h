@@ -8,6 +8,7 @@
 #include <cstdint>
 
 #include "sdl2_app/arkanoid_adapter.h"
+#include "sdl2_app/layout.h"
 
 namespace arkanoid {
 
@@ -15,7 +16,7 @@ enum class Phase { kReady, kPlaying, kPaused, kLevelClear, kWon, kLost };
 
 class Game final {
  public:
-  Game(int width, int height);
+  Game(int width, int height, bool touchscreen);
 
   void Handle(const SDL_Event& event);
   void Step();
@@ -43,6 +44,8 @@ class Game final {
   static constexpr char kDigits[] = "0123456789";
   const int width_;
   const int height_;
+  const bool touchscreen_;
+  const GameLayout layout_;
   const int cell_width_;
   const int brick_height_;
   std::array<bool, kRows * kColumns> bricks_{};

@@ -69,6 +69,7 @@ struct KeyRecord {
 struct ThreadLocal {
   pthread_t id = 0;
   int error_value = 0;
+  std::uint64_t mb_states[8] = {};
   void* absl_nullable values[kMaxKeys] = {};
 };
 
@@ -815,6 +816,21 @@ extern "C" int* absl_nonnull __errno() {
   }
   UnlockTable();
   return &local->error_value;
+}
+
+extern "C" void* absl_nonnull SymbianRuntimeMbState(int slot) {
+  if (slot < 0 || slot >= 8) {
+    SymbianRuntimeExit(SymbianRuntimeExitReason::kRuntimeContractFailure);
+  }
+  LockTable();
+  ThreadLocal* absl_nullable local = EnsureLocal(pthread_self());
+  if (local == nullptr) {
+    UnlockTable();
+    SymbianRuntimeExit(SymbianRuntimeExitReason::kOutOfMemory);
+  }
+  void* absl_nonnull state = &local->mb_states[slot];
+  UnlockTable();
+  return state;
 }
 
 extern "C" int pthread_once(pthread_once_t* absl_nullable once,

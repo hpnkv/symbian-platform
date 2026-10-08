@@ -73,13 +73,19 @@ extern "C" int nanosleep(const timespec* absl_nullable request,
   std::int64_t seconds = request->tv_sec;
   while (seconds > 0) {
     const std::int64_t chunk = seconds > 2000 ? 2000 : seconds;
-    User::After(static_cast<TTimeIntervalMicroSeconds32>(
-        chunk * kMicrosecondsPerSecond));
+    if (SymbianRuntimeSleepMicroseconds(
+            static_cast<std::uint64_t>(chunk * kMicrosecondsPerSecond)) != 0) {
+      errno = EAGAIN;
+      return -1;
+    }
     seconds -= chunk;
   }
   if (request->tv_nsec > 0) {
-    User::After(static_cast<TTimeIntervalMicroSeconds32>(
-        (request->tv_nsec + 999) / 1000));
+    if (SymbianRuntimeSleepMicroseconds(
+            static_cast<std::uint64_t>((request->tv_nsec + 999) / 1000)) != 0) {
+      errno = EAGAIN;
+      return -1;
+    }
   }
   if (remaining != nullptr) {
     remaining->tv_sec = 0;

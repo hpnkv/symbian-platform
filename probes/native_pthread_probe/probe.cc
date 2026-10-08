@@ -5,11 +5,19 @@
 #include <cerrno>
 #include <chrono>
 #include <condition_variable>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <limits>
 #include <mutex>
 #include <thread>
 
 #include <absl/base/nullability.h>
 #include <pthread.h>
+#include <string.h>
+#include <wchar.h>
 
 namespace {
 
@@ -28,6 +36,156 @@ void InitializeOnce() {
 }  // namespace
 
 int main() {
+#ifdef SYMBIAN_PROBE_LOCAL_C_ALLOC
+  if (std::getenv("TZ") != nullptr) {
+    return -628;
+  }
+  void* absl_nullable tiny = std::malloc(1);
+  if (tiny == nullptr || reinterpret_cast<std::uintptr_t>(tiny) % 8 != 0) {
+    return -630;
+  }
+  tiny = std::realloc(tiny, 1);
+  if (tiny == nullptr || reinterpret_cast<std::uintptr_t>(tiny) % 8 != 0) {
+    return -631;
+  }
+  std::free(tiny);
+  char error_text[32] = {};
+  if (::strerror_r(EINVAL, error_text, sizeof(error_text)) != 0 ||
+      error_text[0] != 'I' || error_text[1] != 'n') {
+    return -629;
+  }
+  auto* absl_nullable bytes = static_cast<std::uint8_t*>(std::malloc(16));
+  if (bytes == nullptr || reinterpret_cast<std::uintptr_t>(bytes) % 8 != 0) {
+    return -620;
+  }
+  for (int index = 0; index < 16; ++index) {
+    bytes[index] = static_cast<std::uint8_t>(index + 1);
+  }
+  auto* absl_nullable grown =
+      static_cast<std::uint8_t*>(std::realloc(bytes, 48));
+  if (grown == nullptr) {
+    std::free(bytes);
+    return -621;
+  }
+  for (int index = 0; index < 16; ++index) {
+    if (grown[index] != index + 1) {
+      return -622;
+    }
+  }
+  auto* absl_nullable shrunk =
+      static_cast<std::uint8_t*>(std::realloc(grown, 8));
+  if (shrunk == nullptr) {
+    std::free(grown);
+    return -623;
+  }
+  for (int index = 0; index < 8; ++index) {
+    if (shrunk[index] != index + 1) {
+      return -624;
+    }
+  }
+  if (std::realloc(shrunk, std::numeric_limits<std::size_t>::max()) !=
+          nullptr ||
+      shrunk[0] != 1) {
+    return -632;
+  }
+  std::free(shrunk);
+  auto* absl_nullable zeroed = static_cast<std::uint8_t*>(std::calloc(16, 3));
+  if (zeroed == nullptr) {
+    return -625;
+  }
+  for (int index = 0; index < 48; ++index) {
+    if (zeroed[index] != 0) {
+      return -626;
+    }
+  }
+  std::thread cross_thread_free([zeroed] { std::free(zeroed); });
+  cross_thread_free.join();
+  if (std::calloc(std::numeric_limits<std::size_t>::max(), 2) != nullptr) {
+    return -627;
+  }
+#endif
+#ifdef SYMBIAN_PROBE_LEGACY_C
+  const timespec sleep_request{0, 5000000};
+  if (::nanosleep(&sleep_request, nullptr) != 0) {
+    return -656;
+  }
+  char formatted[32] = {};
+  if (std::snprintf(formatted, sizeof(formatted), "%04d %.1f", 7, 1.5) !=
+          8 ||
+      std::strcmp(formatted, "0007 1.5") != 0) {
+    return -650;
+  }
+  char* absl_nullable allocated = nullptr;
+  if (::asprintf(&allocated, "ok %d", 9) != 4 || allocated == nullptr ||
+      std::strcmp(allocated, "ok 9") != 0) {
+    std::free(allocated);
+    return -651;
+  }
+  std::free(allocated);
+  char* absl_nullable parsed_end = nullptr;
+  if (std::strtod(" -12.5e2tail", &parsed_end) != -1250.0 ||
+      parsed_end == nullptr || std::strcmp(parsed_end, "tail") != 0) {
+    return -652;
+  }
+  if (std::strtof("0x1.8p+1", &parsed_end) != 3.0f ||
+      parsed_end == nullptr || *parsed_end != '\0') {
+    return -653;
+  }
+  const std::time_t epoch = 0;
+  std::tm utc = {};
+  if (::gmtime_r(&epoch, &utc) == nullptr || utc.tm_year != 70 ||
+      utc.tm_mon != 0 || utc.tm_mday != 1 || utc.tm_gmtoff != 0 ||
+      utc.tm_zone == nullptr) {
+    return -654;
+  }
+  char date[20] = {};
+  if (::strftime(date, sizeof(date), "%Y-%m-%d", &utc) != 10 ||
+      std::strcmp(date, "1970-01-01") != 0) {
+    return -655;
+  }
+#endif
+#ifdef SYMBIAN_PROBE_LOCAL_C_UTF8
+  mbstate_t decode_state = {};
+  wchar_t wide = 0;
+  if (mbrtowc(&wide, "\xE2", 1, &decode_state) !=
+          static_cast<std::size_t>(-2) ||
+      mbrtowc(&wide, "\x82\xAC", 2, &decode_state) != 2 || wide != 0x20AC ||
+      !mbsinit(&decode_state)) {
+    return -640;
+  }
+  if (mbrtowc(&wide, "\xC0\xAF", 2, &decode_state) !=
+          static_cast<std::size_t>(-1) ||
+      errno != EILSEQ || !mbsinit(&decode_state)) {
+    return -641;
+  }
+  char encoded[8] = {};
+  mbstate_t encode_state = {};
+  if (wcrtomb(encoded, static_cast<wchar_t>(0x20AC), &encode_state) != 3 ||
+      std::memcmp(encoded, "\xE2\x82\xAC", 3) != 0) {
+    return -642;
+  }
+  const char* absl_nullable narrow_source = "A\xE2\x82\xAC";
+  wchar_t wide_text[4] = {};
+  mbstate_t sequence_state = {};
+  if (mbsnrtowcs(wide_text, &narrow_source, 5, 4, &sequence_state) != 2 ||
+      narrow_source != nullptr || wide_text[0] != L'A' ||
+      wide_text[1] != 0x20AC) {
+    return -643;
+  }
+  const wchar_t wide_source[] = {L'A', static_cast<wchar_t>(0x20AC), 0};
+  const wchar_t* absl_nullable wide_cursor = wide_source;
+  mbstate_t output_state = {};
+  if (wcsnrtombs(encoded, &wide_cursor, 3, sizeof(encoded), &output_state) !=
+          4 ||
+      wide_cursor != nullptr || std::memcmp(encoded, "A\xE2\x82\xAC", 4) != 0) {
+    return -644;
+  }
+  std::thread partial_worker([] { mbrtowc(nullptr, "\xE2", 1, nullptr); });
+  partial_worker.join();
+  if (mbrtowc(&wide, "Q", 1, nullptr) != 1 || wide != L'Q') {
+    return -645;
+  }
+#endif
   pthread_key_t key = 0;
   pthread_once_t once = PTHREAD_ONCE_INIT;
   if (pthread_key_create(&key, DestroyKey) != 0) {

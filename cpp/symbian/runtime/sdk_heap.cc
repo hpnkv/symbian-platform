@@ -8,6 +8,8 @@
 #ifdef SYMBIAN_RUNTIME_MIMALLOC
 extern "C" void* absl_nullable SymbianRuntimeMimallocAllocate(
     unsigned int size);
+extern "C" void* absl_nullable SymbianRuntimeMimallocReallocate(
+    void* absl_nullable pointer, unsigned int size);
 extern "C" void SymbianRuntimeMimallocFree(void* absl_nullable pointer);
 extern "C" void SymbianRuntimeMimallocCollect();
 extern "C" void SymbianRuntimeMimallocEnterThread();
@@ -16,12 +18,13 @@ extern "C" void SymbianRuntimeMimallocLeaveThread();
 
 #ifndef SYMBIAN_RUNTIME_MIMALLOC
 namespace {
-struct AllocationHeader {
+struct alignas(8) AllocationHeader {
   RHeap* absl_nonnull heap;
   std::uint32_t magic;
+  std::uint32_t size;
 };
 
-static_assert(sizeof(AllocationHeader) == 8);
+static_assert(sizeof(AllocationHeader) == 16);
 constexpr std::uint32_t kAllocationMagic = 0x53484D45;  // SHME.
 }  // namespace
 #endif
@@ -61,7 +64,35 @@ extern "C" void* absl_nullable SymbianRuntimeAllocate(unsigned int size) {
   }
   header->heap = heap;
   header->magic = kAllocationMagic;
+  header->size = size;
   return header + 1;
+#endif
+}
+
+extern "C" void* absl_nullable SymbianRuntimeReallocate(
+    void* absl_nullable pointer, unsigned int size) {
+  if (pointer == nullptr) {
+    return SymbianRuntimeAllocate(size);
+  }
+  if (size == 0) {
+    SymbianRuntimeFree(pointer);
+    return nullptr;
+  }
+#ifdef SYMBIAN_RUNTIME_MIMALLOC
+  return SymbianRuntimeMimallocReallocate(pointer, size);
+#else
+  auto* absl_nonnull header = static_cast<AllocationHeader*>(pointer) - 1;
+  if (header->magic != kAllocationMagic || header->heap == nullptr) {
+    SymbianRuntimeExit(SymbianRuntimeExitReason::kRuntimeContractFailure);
+  }
+  void* absl_nullable replacement = SymbianRuntimeAllocate(size);
+  if (replacement == nullptr) {
+    return nullptr;
+  }
+  const unsigned int copied = size < header->size ? size : header->size;
+  Mem::Copy(replacement, pointer, static_cast<TInt>(copied));
+  SymbianRuntimeFree(pointer);
+  return replacement;
 #endif
 }
 

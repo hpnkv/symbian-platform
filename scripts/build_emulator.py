@@ -33,6 +33,7 @@ PATCHES = (
     "firmware-import-bounds",
     "fbs-unsupported-request",
     "background-window",
+    "display-fit",
     "dll-wsd-dyncom-exit",
     "belle-library-entry-start",
     "belle-library-load-prepare",

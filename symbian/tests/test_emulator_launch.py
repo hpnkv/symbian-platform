@@ -163,9 +163,8 @@ def test_ide_configuration_preserves_profiles_and_quotes_launcher_paths(
     host_run = (host / "runConfigurations/GUI_Run.xml").read_text()
     assert 'TARGET_NAME="gui_app_run"' in host_run
     assert 'CONFIG_NAME="Debug"' in host_run
-    assert (
-        str(root / "build/debug/gui_app_run").replace('"', "&quot;") in host_run
-    )
+    assert str(root / ".run/gui_app-run").replace('"', "&quot;") in host_run
+    assert os.access(root / ".run/gui_app-run", os.X_OK)
     # Version discovery must work without a fixture or emulator process.
     probe = subprocess.run(
         [result["wrapper"], "--version"],

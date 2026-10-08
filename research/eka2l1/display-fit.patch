@@ -1,0 +1,43 @@
+diff --git a/src/emu/qt/src/mainwindow.cpp b/src/emu/qt/src/mainwindow.cpp
+--- a/src/emu/qt/src/mainwindow.cpp
++++ b/src/emu/qt/src/mainwindow.cpp
+@@ -150,6 +150,25 @@
+     QVariant allow_true_size_variant = settings.value(TRUE_SIZE_RESIZE_SETTING_NAME, false);
+ 
+     display_widget *widget = static_cast<display_widget *>(state_ptr->window);
++    if (qEnvironmentVariable("EKA2L1_RESEARCH_FIT_DISPLAY") == "1") {
++        // Screen callbacks may arrive from the emulation thread. Qt geometry
++        // belongs to the GUI thread, and mode changes can race window teardown.
++        QMetaObject::invokeMethod(widget, [widget, new_minsize]() {
++            if (!widget->isVisible()) {
++                return;
++            }
++            QWidget *host_window = widget->window();
++            if (!host_window || host_window->isFullScreen()) {
++                return;
++            }
++            if (host_window->isMaximized()) {
++                host_window->showNormal();
++            }
++            widget->setFixedSize(new_minsize);
++            host_window->adjustSize();
++        }, Qt::QueuedConnection);
++        return;
++    }
+     if (allow_true_size_variant.toBool()) {
+         new_minsize /= widget->devicePixelRatioF();
+     }
+@@ -1089,6 +1108,13 @@
+ 
+     before_margins_ = ui_->layout_centralwidget->contentsMargins();
+     on_fullscreen_toogled(ui_->action_fullscreen->isChecked());
++    if (qEnvironmentVariable("EKA2L1_RESEARCH_FIT_DISPLAY") == "1") {
++        ui_->layout_centralwidget->setContentsMargins(0, 0, 0, 0);
++        ui_->layout_main->setContentsMargins(0, 0, 0, 0);
++        if (eka2l1::epoc::screen *screen = get_current_active_screen()) {
++            mode_change_screen(&emulator_state_, screen, 0);
++        }
++    }
+ }
+ 
+ void main_window::on_app_exited(const int exit_type, const int exit_reason, const QString exit_category) {

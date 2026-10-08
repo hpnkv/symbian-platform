@@ -28,21 +28,24 @@ The glyph bitmaps are derived from the public-domain `5x7.bdf` included with
 the checked-out Qt 4 research source. `glyphs.cc` records its copyright field.
 
 Move the platform with EKA2L1 host Left/Right arrows or by dragging on a touch
-screen. The first blue cell in the top border is a pause button with a generous
-touch target. Tap or press Return to launch the ball. Escape/Back also opens the pause menu;
-arrows and Return, or touch, choose Resume, Sound On/Off or Exit. Losing window
+screen. On touch devices, the compact top-left pause button has a generous
+invisible touch target. On non-touch devices it is hidden; the right softkey
+opens the pause menu. Tap or press Return to launch the ball. Escape/Back also
+opens the pause menu; arrows and Return, or touch, choose Resume, Sound On/Off
+or Exit. Losing window
 focus also pauses play.
+EKA2L1 currently reports a digitiser on the non-touch E71 profile, so its
+pause button remains visible there; the right softkey still works.
 
 The simulation uses fixed 16 ms steps. Presentation uses monotonic deadlines
 capped to the display's reported refresh rate, or 60 Hz if the driver reports
 none. The small top-right counter shows measured FPS and `GPU` only when SDL
 selected an accelerated renderer. Pointer events move the paddle immediately,
 including drag events while the finger remains down. MIDI callbacks are pumped
-in a bounded batch. A brick or paddle hit requests the system's light tactile
-feedback cue with audio off. The SDK loads `tactilefeedbackresolver.dll`
-dynamically when its service is already running; devices without that service
-use a 60 ms default-intensity HWRM pulse. Both paths run
-on the SDK worker because each makes a synchronous server transaction. The
+in a bounded batch. The ball bounces at its crossing of the paddle's top and
+is pushed back inside the side and top walls if it penetrates them. A brick or
+paddle hit requests a short, light HWRM pulse on the SDK worker because the
+native server transaction is synchronous. The
 worker is started before play; a two-second deadline stops further requests if
 it stalls, and the pause menu identifies the stalled stage. EKA2L1 cannot
 validate the physical motor or server latency. Its menu feedback can remain
