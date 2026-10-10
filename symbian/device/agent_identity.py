@@ -1,9 +1,8 @@
-"""Private per-phone credentials and packages for the resident agent.
+"""Generic agent packages and separately paired per-device credentials.
 
-USB establishes a stable local identity anchor, not a network connection.
-The secret remains in user-local storage and is embedded only in that phone's
-agent executable. An authenticated network reply still needs owner pairing to
-associate a Wi-Fi endpoint with the phone seen over USB.
+The installed agent creates its secret in its private phone storage. A host
+record can hold that secret only after a verified pairing exchange. Legacy
+phone-bound records remain readable for already installed agents.
 """
 
 from __future__ import annotations
@@ -83,33 +82,32 @@ def pairing_code(device: ConnectedDevice) -> str:
 
 
 def read_identity(device: ConnectedDevice, project: Path) -> dict | None:
-    """Describe an existing phone identity without creating credentials."""
-    if not (identity_dir(device) / "agent.key").exists():
-        return None
-    try:
-        code = pairing_code(device)
-    except (OSError, StatusError):
-        return None
-    output = project / ".symbian/phone-agents" / _anchor(device)
-    package_path = output / "package/agent_service.sis"
-    metadata_path = output / "profile.json"
+    """Describe the generic package and any established phone pairing."""
+    package_path = project / ".symbian/agent-package/package/agent_service.sis"
+    metadata_path = project / ".symbian/agent-package/profile.json"
     package = None
     try:
         if metadata_path.stat().st_size > 4096:
-            raise ValueError("Agent profile record is too large")
+            raise ValueError("Agent package record is too large")
         if package_path.stat().st_size > 16 * 1024 * 1024:
             raise ValueError("Agent package is too large")
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
         if (
-            metadata["schema"] == "symbian.agent-profile/v2"
-            and metadata["key_sha256"]
-            == hashlib.sha256(key_file(device).read_bytes()).hexdigest()
+            metadata["schema"] == "symbian.agent-package/v3"
             and metadata["package_sha256"]
             == hashlib.sha256(package_path.read_bytes()).hexdigest()
         ):
             package = str(package_path)
     except (OSError, ValueError, KeyError, TypeError):
         pass
+    code = None
+    if (identity_dir(device) / "agent.key").exists():
+        try:
+            code = pairing_code(device)
+        except (OSError, StatusError):
+            pass
+    if package is None and code is None:
+        return None
     return {
         "package": package,
         "pairing_code": code,
@@ -120,30 +118,22 @@ def read_identity(device: ConnectedDevice, project: Path) -> dict | None:
 def build_package(
     device: ConnectedDevice, sdk_manifest: Path, project: Path
 ) -> dict:
-    """Build a phone-specific SIS using the selected SDK and private key."""
+    """Build one reusable SIS with no phone secret or selected-phone setting."""
     sdk = AppSdk.load(sdk_manifest)
-    key = key_file(device, create=True)
-    output = project / ".symbian/phone-agents" / _anchor(device)
+    output = project / ".symbian/agent-package"
     output.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    output.parent.chmod(0o700)
     output.mkdir(parents=True, exist_ok=True, mode=0o700)
-    output.chmod(0o700)
     built = toolchain.build(
         project,
         output / "build",
         str(sdk.compiler),
         str(sdk.linker),
         architecture="armv6",
-        cmake_variables={
-            "SYMBIAN_AGENT_PRIVATE_KEY_FILE": str(key),
-            "SYMBIAN_AGENT_KEY_SHA256": hashlib.sha256(
-                key.read_bytes()
-            ).hexdigest(),
-            "SYMBIAN_AGENT_PAIRING_CODE": pairing_code(device),
-        },
+        cmake_variables={"SYMBIAN_EMULATOR_RM807_AGENT": "OFF"},
     )
     certificate, private_key = create_self_signed_identity(
-        identity_dir(device), "Symbian Development Agent"
+        asset_directory("data") / "agent-signing",
+        "Symbian Development Agent",
     )
     packaged = packaging.package(
         project,
@@ -153,8 +143,7 @@ def build_package(
         signing_key=private_key,
     )
     profile = {
-        "schema": "symbian.agent-profile/v2",
-        "key_sha256": hashlib.sha256(key.read_bytes()).hexdigest(),
+        "schema": "symbian.agent-package/v3",
         "package_sha256": packaged["sha256"],
     }
     profile_path = output / "profile.json"
@@ -164,7 +153,7 @@ def build_package(
     profile_path.chmod(0o600)
     return {
         "package": packaged["artifact"],
-        "pairing_code": pairing_code(device),
-        "profile": "phone-specific-unverified",
+        "pairing_code": None,
+        "profile": "generic-unpaired",
         "anchor": _anchor(device),
     }

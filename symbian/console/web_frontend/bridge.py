@@ -152,7 +152,7 @@ class ConsoleWebBridge:
         return device
 
     def build_phone_agent(self, selector: str) -> dict[str, Any]:
-        """Create one phone-bound agent package with a private pairing key."""
+        """Build the reusable agent package for the selected SDK."""
         device = self._connected_phone(selector)
         with self._lock:
             sdk_manifest = self._context.sdk_manifest if self._context else None

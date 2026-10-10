@@ -24,7 +24,7 @@ uid = 0xe0000a32
 name = "Symbian Development Agent"
 vendor = "Symbian SDK"
 executable_name = "agent_service.exe"
-version = [1, 2, 7]
+version = [1, 2, 8]
 
 [application]
 caption = "Development Agent"

@@ -17,9 +17,11 @@
 #include <vector>
 
 #include <absl/base/nullability.h>
+#include <absl/status/status_macros.h>
 
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "agent_identity.h"
 #include "agent_key.h"
 #include "agent_signals.h"
 #include "mbedtls/entropy.h"
@@ -35,14 +37,13 @@
 #include "symbian/api/connectivity/websocket.h"
 #include "symbian/api/display/display.h"
 #include "symbian/api/display/screen_control.h"
-#include "symbian/api/display/window_surface.h"
 #include "symbian/api/storage/storage.h"
 #include "symbian/api/system/active_service.h"
 #include "symbian/api/system/application_management.h"
 #include "symbian/api/system/counters.h"
 #include "symbian/api/system/debug_log.h"
+#include "symbian/api/system/failure_handler.h"
 #include "symbian/api/system/serial_ports.h"
-#include "symbian/api/time/sleep.h"
 #include "symbian/concurrency/mutex.h"
 #include "symbian/concurrency/worker_executor.h"
 #include "symbian/native_status.h"
@@ -164,21 +165,8 @@ bool WriteExactly(WebSocketStream* absl_nonnull client,
          client->Send(input, deadline).ok();
 }
 
-std::array<std::uint8_t, 32> AgentKey() {
-  constexpr char hex[] = SYMBIAN_AGENT_KEY_HEX;
-  auto nibble = [](char digit) -> std::uint8_t {
-    return digit >= 'a' ? static_cast<std::uint8_t>(digit - 'a' + 10)
-                        : static_cast<std::uint8_t>(digit - '0');
-  };
-  std::array<std::uint8_t, 32> key{};
-  for (std::size_t index = 0; index < key.size(); ++index) {
-    key[index] = static_cast<std::uint8_t>((nibble(hex[2 * index]) << 4) |
-                                           nibble(hex[2 * index + 1]));
-  }
-  return key;
-}
-
-absl::StatusOr<std::array<std::uint8_t, 4>> DiscoverHost() {
+absl::StatusOr<std::array<std::uint8_t, 4>> DiscoverHost(
+    const agent_service::AgentIdentity::Key& key) {
   std::array<std::uint8_t, 8> nonce{};
   mbedtls_entropy_context entropy;
   mbedtls_entropy_init(&entropy);
@@ -188,7 +176,6 @@ absl::StatusOr<std::array<std::uint8_t, 4>> DiscoverHost() {
   if (random_result != 0) {
     return absl::UnavailableError("Agent discovery entropy unavailable");
   }
-  const auto key = AgentKey();
   const mbedtls_md_info_t* absl_nullable md =
       mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
   if (md == nullptr) {
@@ -220,7 +207,8 @@ absl::StatusOr<std::array<std::uint8_t, 4>> DiscoverHost() {
       kDiscoveryPort, request, response, absl::Now() + absl::Seconds(3));
 }
 
-bool Authenticate(WebSocketStream* absl_nonnull client) {
+bool Authenticate(WebSocketStream* absl_nonnull client,
+                  const agent_service::AgentIdentity::Key& key) {
   constexpr std::string_view kClientLabel = "symbian-agent-client-v1";
   constexpr std::string_view kServerLabel = "symbian-agent-server-v1";
   std::array<std::uint8_t, 32> nonce{};
@@ -251,7 +239,6 @@ bool Authenticate(WebSocketStream* absl_nonnull client) {
   if (md == nullptr) {
     return false;
   }
-  const auto key = AgentKey();
   auto digest = [&](std::string_view label,
                     std::array<std::uint8_t, 32>* absl_nonnull result) {
     std::array<std::uint8_t, 96> message{};
@@ -408,14 +395,14 @@ absl::StatusOr<AgentResponse> Dispatch(
   } else {
     response = symbian::agent::PackGuestResult(*request, ReadStatusSnapshot());
   }
-  if (!response.ok()) {
-    return response.status();
-  }
+  ABSL_RETURN_IF_ERROR(response.status());
   return AgentResponse{.control = std::move(*response),
                        .data = std::move(output_data)};
 }
 
-void Serve(TcpClient raw, symbian::agent::AgentLogRing* absl_nonnull log) {
+void Serve(TcpClient raw,
+           std::shared_ptr<const agent_service::AgentIdentity> identity,
+           symbian::agent::AgentLogRing* absl_nonnull log) {
   symbian::websocket::Options options;
   options.mask_provider = []() -> absl::StatusOr<std::array<std::uint8_t, 4>> {
     std::array<std::uint8_t, 4> mask{};
@@ -440,7 +427,7 @@ void Serve(TcpClient raw, symbian::agent::AgentLogRing* absl_nonnull log) {
     return;
   }
   auto client = std::move(*opened);
-  if (!Authenticate(&client)) {
+  if (!Authenticate(&client, identity->key())) {
     return;
   }
   log->Append(symbian::agent::AgentLogCode::kAuthenticated);
@@ -532,24 +519,37 @@ void Serve(TcpClient raw, symbian::agent::AgentLogRing* absl_nonnull log) {
 
 class AgentService final {
  public:
-  AgentService()
-      : listener_([this](absl::StatusOr<TcpClient> result) {
+  explicit AgentService(
+      std::shared_ptr<const agent_service::AgentIdentity> identity)
+      : identity_(std::move(identity)),
+        listener_([this](absl::StatusOr<TcpClient> result) {
           OnAccept(std::move(result));
         }) {}
 
   absl::Status Start() {
     if (SYMBIAN_AGENT_PRIVATE_PROFILE) {
-      worker_.PostFiber([] { TraceSerialPorts(); }, kWorkerStackBytes);
+      TraceStartup("C32 inventory queued");
+      auto inventory = worker_.PostFiber(
+          [] {
+            TraceStartup("C32 inventory worker entered");
+            TraceSerialPorts();
+          },
+          kWorkerStackBytes);
+      if (auto result = inventory.ResultIfReady(); result.has_value()) {
+        return result->status();
+      }
+#if SYMBIAN_AGENT_WIFI_PAIRED
       auto task = worker_.PostFiber(
-          [stop = stopping_, log = log_] {
+          [stop = stopping_, log = log_, identity = identity_] {
             while (!stop->load()) {
-              if (auto host = DiscoverHost(); host.ok() && !stop->load()) {
+              if (auto host = DiscoverHost(identity->key());
+                  host.ok() && !stop->load()) {
                 link_phase.store(LinkPhase::kDialing);
                 if (auto client = TcpClient::ConnectIpv4(
                         *host, kHostPort, absl::Now() + absl::Seconds(3));
                     client.ok() && !stop->load()) {
                   link_phase.store(LinkPhase::kAuthenticating);
-                  Serve(std::move(*client), log.get());
+                  Serve(std::move(*client), identity, log.get());
                 } else if (!stop->load()) {
                   link_phase.store(LinkPhase::kDialError);
                 }
@@ -567,10 +567,11 @@ class AgentService final {
           kWorkerStackBytes);
       auto result = task.ResultIfReady();
       return result ? result->status() : absl::OkStatus();
+#else
+      return absl::OkStatus();
+#endif
     }
-    if (absl::Status status = listener_.EnableWorkerSharing(); !status.ok()) {
-      return status;
-    }
+    ABSL_RETURN_IF_ERROR(listener_.EnableWorkerSharing());
     return listener_.ListenIpv4({127, 0, 0, 1}, kAgentPort);
   }
 
@@ -581,8 +582,9 @@ class AgentService final {
     if (result.ok()) {
       // The bounded queue closes a rejected client through its captured owner.
       worker_.PostFiber(
-          [client = std::move(*result), log = log_]() mutable {
-            Serve(std::move(client), log.get());
+          [client = std::move(*result), log = log_,
+           identity = identity_]() mutable {
+            Serve(std::move(client), identity, log.get());
           },
           kWorkerStackBytes);
     }
@@ -606,6 +608,7 @@ class AgentService final {
   }
 
  private:
+  std::shared_ptr<const agent_service::AgentIdentity> identity_;
   std::shared_ptr<symbian::agent::AgentLogRing> log_ =
       std::make_shared<symbian::agent::AgentLogRing>();
   symbian::concurrency::WorkerExecutor worker_{4};
@@ -624,15 +627,23 @@ const agent_service::ResidentPanelOptions kPanel{
     .state = SYMBIAN_AGENT_PANEL_STATE,
     .back_label = "BACK",
     .stop_label = "STOP",
-    .heading_provider = SYMBIAN_AGENT_PRIVATE_PROFILE ? AgentHeading : nullptr,
+    .heading_provider = SYMBIAN_AGENT_WIFI_PAIRED ? AgentHeading : nullptr,
 };
 
 }  // namespace
 
 absl::Status RunAgentService() {
   TraceStartup("RunAgentService entered");
-  AgentService service;
+  ABSL_ASSIGN_OR_RETURN(auto identity,
+                        agent_service::AgentIdentity::OpenOrCreate());
+  TraceStartup("Agent identity ready");
+  AgentService service(identity);
   TraceStartup("AgentService constructed");
+  std::string panel_state = "PAIR " + identity->pairing_code();
+  agent_service::ResidentPanelOptions panel = kPanel;
+  if (SYMBIAN_AGENT_PRIVATE_PROFILE) {
+    panel.state = panel_state.c_str();
+  }
   std::atomic<bool> stop_requested{false};
   std::thread ui_thread;
   absl::Status panel_status = absl::OkStatus();
@@ -651,7 +662,7 @@ absl::Status RunAgentService() {
         ui_thread = std::thread([&] {
           TraceStartup("panel thread entered");
           panel_status =
-              agent_service::RunResidentPanel(kPanel, &stop_requested);
+              agent_service::RunResidentPanel(panel, &stop_requested);
           TraceStartup(panel_status.ok() ? "panel returned normally"
                                          : panel_status.ToString());
           if (!panel_status.ok()) {
@@ -672,82 +683,27 @@ absl::Status RunAgentService() {
   if (ui_thread.joinable()) {
     ui_thread.join();
   }
-  if (!result.ok()) {
-    // A second menu launch raises the panel of the resident instance.
-    if (symbian::NativeErrorFromStatus(result) ==
-        symbian::native_error::kInUse) {
-      return agent_service::RequestResidentPanelForeground(
-          agent_service::kPropertyCategory, agent_service::kRaisePanelKey);
-    }
-    return result;
+  // A second menu launch raises the panel of the resident instance.
+  if (symbian::NativeErrorFromStatus(result) == symbian::native_error::kInUse) {
+    return agent_service::RequestResidentPanelForeground(
+        agent_service::kPropertyCategory, agent_service::kRaisePanelKey);
   }
+  ABSL_RETURN_IF_ERROR(result);
   return panel_status;
 }
 
 extern "C" int RuntimeMain() {
   TraceStartup("RuntimeMain entered");
   symbian::api::system::DebugLog("agent: entering RuntimeMain");
-  absl::Status result = RunAgentService();
-  if (result.ok()) {
-    return 0;
-  }
-  symbian::api::system::DebugLog(result.ToString());
-  TraceStartup(result.ToString());
-  symbian::api::display::WindowSurface window;
-  if (!window.Open("Agent startup error").ok()) {
-    return symbian::NativeErrorFromStatus(result);
-  }
-  std::u16string message = u"AGENT STARTUP ERROR\n";
-  for (unsigned char character : result.ToString()) {
-    message.push_back(character >= 32 && character < 127 ? character : u'?');
-  }
-  message += u"\n\nTap to close";
-  bool redraw = true;
-  for (;;) {
-    if (redraw) {
-      if (absl::Status drawn = window.UpdateRgb565Frame(
-              {.write =
-                   [](symbian::api::display::Rgb565Frame frame) {
-                     std::fill(frame.pixels.begin(), frame.pixels.end(),
-                               std::byte{0});
-                     return absl::OkStatus();
-                   }});
-          !drawn.ok() || !window.Present().ok()) {
-        break;
-      }
-      auto wrapped = window.WrapTextLines(message, window.size().width - 32);
-      if (!wrapped.ok()) {
-        break;
-      }
-      std::vector<symbian::api::display::WindowTextLine> lines;
-      int y = 32;
-      for (const auto& line : *wrapped) {
-        lines.push_back(
-            {.text = line, .x = 16, .baseline_y = y, .rgb = 0xffffff});
-        y += 26;
-      }
-      if (!window.DrawTextLines(lines).ok()) {
-        break;
-      }
-      redraw = false;
-    }
-    auto input = window.PollInput();
-    if (!input.ok()) {
-      break;
-    }
-    if (input->has_value()) {
-      if ((**input).kind ==
-              symbian::api::display::WindowInputKind::kPointerDown ||
-          (**input).kind ==
-              symbian::api::display::WindowInputKind::kCloseRequested) {
-        break;
-      }
-      if ((**input).kind ==
-          symbian::api::display::WindowInputKind::kDisplayChanged) {
-        redraw = true;
-      }
-    }
-    symbian::api::time::SleepFor(std::chrono::milliseconds(25));
-  }
-  return symbian::NativeErrorFromStatus(result);
+  constexpr std::array<std::u16string_view, 1> logs{
+      u"E:\\Others\\agent_startup.txt"};
+  return symbian::api::system::RunWithFailureHandler(
+      []() -> absl::Status {
+        const absl::Status result = RunAgentService();
+        if (!result.ok()) {
+          TraceStartup(result.ToString());
+        }
+        return result;
+      },
+      {.caption = "Agent startup error", .log_paths = logs});
 }

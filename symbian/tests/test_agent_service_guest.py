@@ -19,10 +19,17 @@ from symbian.emulator.background import (
     background_environment,
     executable_for_session,
 )
-from symbian.emulator.firmware import EUSER_808, ROM_808
+from symbian.emulator.firmware import (
+    EUSER_808,
+    ROM_808,
+    locate,
+    validate_manifest,
+)
 from symbian.emulator.launch import _digest, _stop
+from symbian.paths import asset_directory
 from symbian.project.sdk import AppSdk
 from symbian.status import Code, StatusError
+from symbian.tests.test_guest_gui import _ready
 
 ROOT = Path(__file__).parents[2]
 TEST_KEY = ROOT / "agent_service/test-agent.key"
@@ -33,6 +40,15 @@ pytestmark = pytest.mark.skipif(
     not os.environ.get("SYMBIAN_AGENT_SERVICE_GUEST"),
     reason="Set SYMBIAN_AGENT_SERVICE_GUEST for the pinned emulator experiment",
 )
+
+
+@pytest.fixture(scope="module")
+def firmware_source():
+    """Copy a validated baseline and verify its source again at teardown."""
+    source = locate(asset_directory("data") / "firmware", "nokia808")
+    manifest = validate_manifest(source)
+    yield source / "instance"
+    assert validate_manifest(source) == manifest
 
 
 @pytest.fixture(scope="module")
@@ -89,9 +105,9 @@ def _connect(timeout=10.0):
     not os.environ.get("SYMBIAN_AGENT_PRIVATE_GUEST_KEY_FILE"),
     reason="Requires an ephemeral private guest key",
 )
-def test_private_agent_discovers_host(service_image, tmp_path):
+def test_private_agent_discovers_host(service_image, firmware_source, tmp_path):
     """A private guest connects outward after keyed local discovery."""
-    golden = ROOT / ".symbian/instances/delight-import-01"
+    golden = firmware_source
     instance = tmp_path / "instance"
     shutil.copytree(golden, instance)
     guest_bin = instance / "data/drives/rm-807/c/sys/bin"
@@ -139,9 +155,11 @@ def test_private_agent_discovers_host(service_image, tmp_path):
 
 
 @pytest.mark.parametrize("action", ["stop", "background"])
-def test_local_window_controls(service_image, tmp_path, action):
+def test_local_window_controls(
+    service_image, firmware_source, tmp_path, action
+):
     """The guest panel stops locally or leaves the service running."""
-    golden = ROOT / ".symbian/instances/delight-import-01"
+    golden = firmware_source
     instance = tmp_path / "instance"
     shutil.copytree(golden, instance)
     guest_bin = instance / "data/drives/rm-807/c/sys/bin"
@@ -217,7 +235,7 @@ def test_local_window_controls(service_image, tmp_path, action):
                     assert screen.image().size == (screen.width, screen.height)
                     agent.pointer_event("move", 180, 300)
                 if action == "stop":
-                    control.pointer(180, 520, "press")
+                    _ready(lambda: control.pointer(180, 520, "press"))
                     process.wait(timeout=15)
                     assert process.returncode == 0
                     exits = control.exit_report()["process_exits"]
@@ -226,7 +244,7 @@ def test_local_window_controls(service_image, tmp_path, action):
                         for item in exits
                     )
                 else:
-                    control.pointer(180, 420, "press")
+                    _ready(lambda: control.pointer(180, 420, "press"))
                     time.sleep(0.3)
                     with _connect() as agent:
                         assert agent.status().state == "ready"
@@ -253,9 +271,11 @@ def test_local_window_controls(service_image, tmp_path, action):
 
 
 @pytest.mark.parametrize("backend", ["dynarmic", "dyncom"])
-def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
+def test_resident_agent_status_and_recovery(
+    service_image, firmware_source, tmp_path, backend
+):
     """Status survives another request, a bad frame, and a new connection."""
-    golden = ROOT / ".symbian/instances/delight-import-01"
+    golden = firmware_source
     pinned = {
         golden / "data/roms/rm-807/SYM.ROM": ROM_808,
         golden / "data/drives/z/rm-807/sys/bin/euser.dll": EUSER_808,

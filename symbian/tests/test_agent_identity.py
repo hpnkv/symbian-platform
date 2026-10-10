@@ -1,4 +1,4 @@
-"""Phone-bound agent key storage and pairing boundaries."""
+"""Generic agent packaging and legacy pairing-record boundaries."""
 
 import hashlib
 import json
@@ -60,22 +60,19 @@ def test_broad_key_permissions_are_rejected(monkeypatch, tmp_path):
     assert error.value.code == Code.FAILED_PRECONDITION
 
 
-def test_rotated_key_hides_package_built_for_previous_key(
-    monkeypatch, tmp_path
-):
+def test_generic_package_is_independent_of_phone_key(monkeypatch, tmp_path):
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     phone = _phone()
     key = key_file(phone, create=True)
     project = tmp_path / "project"
-    output = project / ".symbian/phone-agents" / phone.identity_anchor
+    output = project / ".symbian/agent-package"
     package = output / "package/agent_service.sis"
     package.parent.mkdir(parents=True)
     package.write_bytes(b"example package")
     (output / "profile.json").write_text(
         json.dumps(
             {
-                "schema": "symbian.agent-profile/v2",
-                "key_sha256": hashlib.sha256(key.read_bytes()).hexdigest(),
+                "schema": "symbian.agent-package/v3",
                 "package_sha256": hashlib.sha256(
                     package.read_bytes()
                 ).hexdigest(),
@@ -84,4 +81,9 @@ def test_rotated_key_hides_package_built_for_previous_key(
     )
     assert read_identity(phone, project)["package"] == str(package)
     key.write_bytes(bytes(32))
+    assert read_identity(phone, project)["package"] == str(package)
+    assert read_identity(_phone(identity_anchor="b" * 24), project)[
+        "package"
+    ] == str(package)
+    package.write_bytes(b"changed")
     assert read_identity(phone, project)["package"] is None
