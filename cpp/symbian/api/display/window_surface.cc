@@ -3,11 +3,14 @@
 
 #include "symbian/api/display/window_surface.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <new>
+#include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include <absl/base/nullability.h>
 #include <e32keys.h>
@@ -23,6 +26,12 @@ namespace {
 // AppArc's EApaSystemEventShutdown is 1. Keep this wire value at the
 // Window Server boundary; apgtask.h is not part of the staged SDK headers.
 constexpr std::int32_t kAppArcShutdownEvent = 1;
+// Avkon broadcasts this when a hardware layout switch does not cause a
+// Window Server screen-device event.
+constexpr std::int32_t kHardwareLayoutSwitchEvent = 0x10202672;
+// Avkon's normal task-switcher Close action sends this direct window-group
+// event. Its Shift+Close path sends the AppArc shutdown event below instead.
+constexpr std::int32_t kShutOrHideAppEvent = 0x10285a1d;
 
 absl::Status NativeError(int error, const char* absl_nonnull context) {
   return symbian::StatusFromNativeError(error, context);
@@ -49,6 +58,24 @@ WindowKey KeyFromScanCode(int scan_code) {
       return WindowKey::kSelect;
     default:
       return WindowKey::kUnknown;
+  }
+}
+
+void AppendWrappedLines(std::u16string_view paragraph, CFont* absl_nonnull font,
+                        int max_width_pixels,
+                        std::vector<std::u16string>* absl_nonnull output) {
+  if (paragraph.empty()) {
+    output->emplace_back();
+    return;
+  }
+  while (!paragraph.empty()) {
+    const TPtrC descriptor(reinterpret_cast<const TUint16*>(paragraph.data()),
+                           static_cast<TInt>(paragraph.size()));
+    const TInt fitted = font->TextCount(descriptor, max_width_pixels);
+    const std::size_t count = static_cast<std::size_t>(
+        std::clamp(fitted, 1, static_cast<TInt>(paragraph.size())));
+    output->emplace_back(paragraph.substr(0, count));
+    paragraph.remove_prefix(count);
   }
 }
 
@@ -88,6 +115,13 @@ class DisplayRefreshChannel final : public RBusLogicalChannel {
 }  // namespace
 
 struct WindowSurface::Impl {
+  struct TextLine {
+    std::u16string text;
+    int x;
+    int baseline_y;
+    std::uint32_t rgb;
+  };
+
   RWsSession session;
   RWindowGroup* absl_nullable group = nullptr;
   RWindow* absl_nullable window = nullptr;
@@ -108,6 +142,51 @@ struct WindowSurface::Impl {
   bool requests_open = false;
   bool frame_chunk_open = false;
   bool measure_frames = false;
+  int screen_mode = -1;
+  DisplayRotation rotation = DisplayRotation::k0;
+  unsigned int geometry_poll_count = 0;
+  std::vector<TextLine> text_lines;
+  int text_font_height = 20;
+
+  bool RefreshDisplayGeometry() {
+    if (screen == nullptr || window == nullptr || !window_open) {
+      return false;
+    }
+    const TInt current_mode = screen->CurrentScreenMode();
+    if (current_mode != screen_mode) {
+      screen->SetAppScreenMode(current_mode);
+      screen_mode = current_mode;
+    }
+    TPixelsAndRotation mode_geometry;
+    screen->GetScreenModeSizeAndRotation(current_mode, mode_geometry);
+    switch (mode_geometry.iRotation) {
+      case CFbsBitGc::EGraphicsOrientationRotated90:
+        rotation = DisplayRotation::k90;
+        break;
+      case CFbsBitGc::EGraphicsOrientationRotated180:
+        rotation = DisplayRotation::k180;
+        break;
+      case CFbsBitGc::EGraphicsOrientationRotated270:
+        rotation = DisplayRotation::k270;
+        break;
+      default:
+        rotation = DisplayRotation::k0;
+        break;
+    }
+    TSize native = mode_geometry.iPixelSize;
+    if (native.iWidth <= 0 || native.iHeight <= 0) {
+      native = screen->SizeInPixels();
+    }
+    if (native.iWidth <= 0 || native.iHeight <= 0 ||
+        (native.iWidth == size.width && native.iHeight == size.height)) {
+      return false;
+    }
+    window->SetExtent(TPoint(0, 0), native);
+    size = {.width = native.iWidth, .height = native.iHeight};
+    DestroyFrame();
+    session.Flush();
+    return true;
+  }
 
   void DestroyFrame() {
     frame_pixels = nullptr;
@@ -158,6 +237,10 @@ struct WindowSurface::Impl {
     session_open = false;
     fbs_open = false;
     size = {};
+    screen_mode = -1;
+    rotation = DisplayRotation::k0;
+    geometry_poll_count = 0;
+    text_lines.clear();
   }
 
   absl::Status Present() {
@@ -165,14 +248,16 @@ struct WindowSurface::Impl {
       return absl::FailedPreconditionError("RGB565 frame is not ready");
     }
     const std::uint32_t before = measure_frames ? User::NTickCount() : 0;
-    bitmap->LockHeap();
-    void* absl_nullable destination = bitmap->DataAddress();
-    if (destination == nullptr) {
+    if (frame_pixels != nullptr) {
+      bitmap->LockHeap();
+      void* absl_nullable destination = bitmap->DataAddress();
+      if (destination == nullptr) {
+        bitmap->UnlockHeap();
+        return absl::InternalError("bitmap has no writable data");
+      }
+      std::memcpy(destination, frame_pixels, frame_bytes);
       bitmap->UnlockHeap();
-      return absl::InternalError("bitmap has no writable data");
     }
-    std::memcpy(destination, frame_pixels, frame_bytes);
-    bitmap->UnlockHeap();
     gc->Activate(*window);
     gc->BitBlt(TPoint(0, 0), bitmap);
     gc->Deactivate();
@@ -185,6 +270,35 @@ struct WindowSurface::Impl {
         metrics.max_native_ticks = elapsed;
       }
     }
+    return absl::OkStatus();
+  }
+
+  absl::Status DrawTextOverlay() {
+    if (text_lines.empty()) {
+      return absl::OkStatus();
+    }
+    CFont* absl_nullable font = nullptr;
+    const TFontSpec specification(_L("Series 60 Sans"), text_font_height);
+    const TInt result = screen->GetNearestFontInPixels(font, specification);
+    if (result != KErrNone) {
+      return NativeError(result, "device font");
+    }
+    gc->Activate(*window);
+    gc->UseFont(font);
+    gc->SetPenStyle(CGraphicsContext::ESolidPen);
+    for (const TextLine& line : text_lines) {
+      if (line.text.empty()) {
+        continue;
+      }
+      gc->SetPenColor(TRgb((line.rgb >> 16) & 0xff, (line.rgb >> 8) & 0xff,
+                           line.rgb & 0xff));
+      const TPtrC text(reinterpret_cast<const TUint16*>(line.text.data()),
+                       static_cast<TInt>(line.text.size()));
+      gc->DrawText(text, TPoint(line.x, line.baseline_y));
+    }
+    gc->DiscardFont();
+    gc->Deactivate();
+    screen->ReleaseFont(font);
     return absl::OkStatus();
   }
 };
@@ -332,6 +446,86 @@ absl::Status WindowSurface::Open(std::string_view task_caption) {
   return absl::OkStatus();
 }
 
+absl::Status WindowSurface::SetAutomaticOrientation(bool enabled) {
+  if (impl_ == nullptr || !impl_->session_open) {
+    return absl::FailedPreconditionError("window is closed");
+  }
+  impl_->session.IndicateAppOrientation(enabled ? EDisplayOrientationAuto
+                                                : EDisplayOrientationNormal);
+  if (impl_->screen != nullptr) {
+    impl_->RefreshDisplayGeometry();
+  }
+  impl_->session.Flush();
+  return absl::OkStatus();
+}
+
+absl::Status WindowSurface::DrawTextLines(std::span<const WindowTextLine> lines,
+                                          int font_height_pixels) {
+  if (impl_ == nullptr || !impl_->window_open || impl_->screen == nullptr ||
+      impl_->gc == nullptr) {
+    return absl::FailedPreconditionError("window is closed");
+  }
+  if (font_height_pixels < 8 || font_height_pixels > 96 || lines.size() > 128) {
+    return absl::InvalidArgumentError("invalid text batch");
+  }
+  for (const WindowTextLine& line : lines) {
+    if (line.text.size() > 4096) {
+      return absl::InvalidArgumentError("text line is too long");
+    }
+  }
+  impl_->text_lines.clear();
+  impl_->text_lines.reserve(lines.size());
+  impl_->text_font_height = font_height_pixels;
+  for (const WindowTextLine& line : lines) {
+    impl_->text_lines.push_back(
+        {std::u16string(line.text), line.x, line.baseline_y, line.rgb});
+  }
+  absl::Status drawn = impl_->DrawTextOverlay();
+  if (!drawn.ok()) {
+    return drawn;
+  }
+  impl_->window->Invalidate();
+  impl_->session.Flush();
+  return absl::OkStatus();
+}
+
+absl::StatusOr<std::vector<std::u16string>> WindowSurface::WrapTextLines(
+    std::u16string_view text, int max_width_pixels,
+    int font_height_pixels) const {
+  if (impl_ == nullptr || !impl_->window_open || impl_->screen == nullptr) {
+    return absl::FailedPreconditionError("window is closed");
+  }
+  if (max_width_pixels <= 0 || max_width_pixels > 4096 ||
+      font_height_pixels < 8 || font_height_pixels > 96) {
+    return absl::InvalidArgumentError("invalid text wrap geometry");
+  }
+  CFont* absl_nullable font = nullptr;
+  const TFontSpec specification(_L("Series 60 Sans"), font_height_pixels);
+  const TInt result =
+      impl_->screen->GetNearestFontInPixels(font, specification);
+  if (result != KErrNone) {
+    return NativeError(result, "device font");
+  }
+  std::vector<std::u16string> lines;
+  std::u16string paragraph;
+  for (char16_t character : text) {
+    if (character == u'\r') {
+      continue;
+    }
+    if (character == u'\n') {
+      AppendWrappedLines(paragraph, font, max_width_pixels, &lines);
+      paragraph.clear();
+    } else {
+      paragraph.push_back(character == u'\t' ? u' ' : character);
+    }
+  }
+  if (!paragraph.empty() || lines.empty()) {
+    AppendWrappedLines(paragraph, font, max_width_pixels, &lines);
+  }
+  impl_->screen->ReleaseFont(font);
+  return lines;
+}
+
 absl::StatusOr<Rgb565Frame> WindowSurface::CreateRgb565Frame() {
   if (impl_ == nullptr || !impl_->window_open) {
     return absl::FailedPreconditionError("window is closed");
@@ -369,10 +563,54 @@ absl::StatusOr<Rgb565Frame> WindowSurface::CreateRgb565Frame() {
   };
 }
 
+absl::Status WindowSurface::UpdateRgb565Frame(Rgb565FrameWriter writer) {
+  if (!writer.write) {
+    return absl::InvalidArgumentError("RGB565 frame writer is empty");
+  }
+  if (impl_ == nullptr || !impl_->window_open) {
+    return absl::FailedPreconditionError("window is closed");
+  }
+  if (impl_->frame_chunk_open) {
+    return absl::FailedPreconditionError("frame chunk is already active");
+  }
+  if (impl_->bitmap == nullptr) {
+    impl_->bitmap = new CFbsBitmap;
+    if (impl_->bitmap == nullptr) {
+      return absl::ResourceExhaustedError("RGB565 bitmap allocation failed");
+    }
+    const TInt created = impl_->bitmap->Create(
+        TSize(impl_->size.width, impl_->size.height), EColor64K);
+    if (created != KErrNone) {
+      delete impl_->bitmap;
+      impl_->bitmap = nullptr;
+      return NativeError(created, "RGB565 bitmap");
+    }
+  }
+  const int pitch = CFbsBitmap::ScanLineLength(impl_->size.width, EColor64K);
+  if (pitch < impl_->size.width * 2) {
+    return absl::InternalError("bitmap has invalid stride");
+  }
+  impl_->bitmap->LockHeap();
+  auto* absl_nullable pixels =
+      reinterpret_cast<std::byte*>(impl_->bitmap->DataAddress());
+  absl::Status result =
+      pixels == nullptr
+          ? absl::InternalError("bitmap has no writable data")
+          : writer.write(
+                         {.pixels = std::span<std::byte>(
+                              pixels, static_cast<std::size_t>(pitch) *
+                                          impl_->size.height),
+                          .pitch_bytes = pitch,
+                          .size = impl_->size});
+  impl_->bitmap->UnlockHeap();
+  return result;
+}
+
 absl::Status WindowSurface::Present() {
   if (impl_ == nullptr) {
     return absl::FailedPreconditionError("window owner unavailable");
   }
+  impl_->text_lines.clear();
   return impl_->Present();
 }
 
@@ -381,6 +619,15 @@ absl::StatusOr<std::optional<WindowInput>> WindowSurface::PollInput() {
     return absl::FailedPreconditionError("window is closed");
   }
   std::optional<WindowInput> input;
+  // Some Belle layouts change the screen mode without delivering a screen or
+  // Avkon layout event to a bare Window Server client.
+  if (++impl_->geometry_poll_count >= 8) {
+    impl_->geometry_poll_count = 0;
+    if (impl_->RefreshDisplayGeometry()) {
+      return std::optional<WindowInput>(
+          WindowInput{.kind = WindowInputKind::kDisplayChanged});
+    }
+  }
   if (impl_->event != KRequestPending) {
     const TInt result = impl_->event.Int();
     if (result != KErrNone) {
@@ -404,23 +651,27 @@ absl::StatusOr<std::optional<WindowInput>> WindowSurface::PollInput() {
                                                 : WindowInputKind::kKeyUp,
           .key = KeyFromScanCode(static_cast<int>(event.Key()->iScanCode)),
       };
+    } else if (event.Type() == kHardwareLayoutSwitchEvent) {
+      impl_->RefreshDisplayGeometry();
+      input = WindowInput{.kind = WindowInputKind::kDisplayChanged};
     } else if (event.Type() == EEventFocusGained ||
                event.Type() == EEventFocusLost) {
+      if (event.Type() == EEventFocusGained) {
+        impl_->RefreshDisplayGeometry();
+      }
       input = WindowInput{
           .kind = event.Type() == EEventFocusGained
                       ? WindowInputKind::kFocusGained
                       : WindowInputKind::kFocusLost,
       };
+    } else if (event.Type() == kShutOrHideAppEvent) {
+      input = WindowInput{.kind = WindowInputKind::kCloseRequested};
     } else if (event.Type() == EEventUser &&
                *reinterpret_cast<const TInt*>(event.EventData()) ==
                    kAppArcShutdownEvent) {
       input = WindowInput{.kind = WindowInputKind::kCloseRequested};
     } else if (event.Type() == EEventScreenDeviceChanged) {
-      const TSize native = impl_->screen->SizeInPixels();
-      if (native.iWidth > 0 && native.iHeight > 0) {
-        impl_->window->SetExtent(TPoint(0, 0), native);
-        impl_->size = {.width = native.iWidth, .height = native.iHeight};
-      }
+      impl_->RefreshDisplayGeometry();
       input = WindowInput{.kind = WindowInputKind::kDisplayChanged};
     }
     impl_->session.EventReady(&impl_->event);
@@ -437,7 +688,11 @@ absl::StatusOr<std::optional<WindowInput>> WindowSurface::PollInput() {
       if (impl_->bitmap != nullptr) {
         impl_->Present().IgnoreError();
       }
+      absl::Status text_result = impl_->DrawTextOverlay();
       impl_->window->EndRedraw();
+      if (!text_result.ok()) {
+        return text_result;
+      }
     }
     impl_->session.RedrawReady(&impl_->redraw);
   }
@@ -459,6 +714,10 @@ void WindowSurface::Close() {
 
 WindowSize WindowSurface::size() const {
   return impl_ == nullptr ? WindowSize{} : impl_->size;
+}
+
+DisplayRotation WindowSurface::rotation() const {
+  return impl_ == nullptr ? DisplayRotation::k0 : impl_->rotation;
 }
 
 void* absl_nullable WindowSurface::NativeWindowHandle() const {

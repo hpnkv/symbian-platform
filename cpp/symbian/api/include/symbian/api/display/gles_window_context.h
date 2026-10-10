@@ -9,6 +9,7 @@
 
 #include "absl/base/nullability.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "symbian/api/display/window_surface.h"
 
 namespace symbian::api::display {
@@ -48,6 +49,12 @@ class GlesWindowContext final {
                     GlesContextFormat format = {});
   absl::Status MakeCurrent();
   absl::Status ClearCurrent();
+  // Recreate the native EGL surface after the window changes geometry while
+  // retaining the GL context and its textures.
+  absl::Status RefreshSurface();
+  // Actual drawable size reported by EGL. This may lag a native window resize
+  // until RefreshSurface recreates the surface.
+  absl::StatusOr<WindowSize> SurfaceSize() const;
   absl::Status Swap();
   absl::Status SetSwapInterval(int interval);
   int swap_interval() const;

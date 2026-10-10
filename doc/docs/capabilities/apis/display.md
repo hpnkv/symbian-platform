@@ -1,8 +1,10 @@
 # Display component
 
 **Implemented:** `Symbian::Display` exports
-`ReadPrimaryDisplayGeometry()` in `<symbian/api/display/display.h>` and a
-resident control panel in `<symbian/api/display/resident_panel.h>`.
+`ReadPrimaryDisplayGeometry()` in `<symbian/api/display/display.h>` and
+Window Server surface helpers. The development agent's fixed control panel
+lives in `agent_service/` because its BACK/STOP actions and labels belong to
+that application.
 
 ## Motivation and modernization
 
@@ -43,22 +45,30 @@ absl::StatusOr<int> InitialThumbnailColumns() {
 
 This uses pixel geometry rather than inventing a DPI from missing twip fields.
 
-## Resident control panel
+## Window text overlay
 
-`RunResidentPanel` creates a minimal Window Server view for a manually started
-background service. The app supplies a UID, caption, short uppercase labels,
-and a property identity; the SDK owns the window session, rendering, and
-foreground signal. BACK lowers the panel while the service keeps running. STOP
-sets the shared atomic stop flag; the service then signals its active loop.
-A second app launch may call `RequestResidentPanelForeground` to bring the
-existing view back. Run the panel on a separate guest thread so the service
-thread can continue accepting connections. This is a small built-in UI, with a
-limited bitmap alphabet and fixed layout, rather than a general widget kit.
-An optional `heading_provider` supplies a static label for changing service
-state. The panel calls it on the Window Server thread and checks for a new
-label on its existing wake timer, redrawing only after a change. Return
-immutable strings that remain valid until the panel closes; share the state
-with a worker through an atomic value.
+`WindowSurface::DrawTextLines` accepts bounded UTF-16 labels after `Present()`.
+It copies the labels and replays them during Window Server redraws, so callers
+do not need native redraw events or font handles. The next `Present()` replaces
+the overlay; call `DrawTextLines` again for the next frame.
+`WrapTextLines` fits UTF-16 report text using the same device font's measured
+glyph widths, preserving explicit line breaks.
+`UpdateRgb565Frame` maps the SDK-owned Window Server bitmap only for the
+duration of a writer callback. The caller can transform into that bitmap and
+then call `Present()` without an intermediate application frame buffer.
+`SetAutomaticOrientation` requests the device's automatic orientation policy
+and updates the application screen mode on screen changes.
+
+## GLES2 texture presentation
+
+`Symbian::GlesDisplay` provides `GlesWindowContext`, `Gles2Texture`, and
+`Gles2TexturePresenter` for an exclusive GLES2 context. A texture owns its
+allocation and reports an opaque handle for interoperation with frame
+backends. The presenter clears the current framebuffer and draws any RGBA8888
+texture into a viewport; the caller chooses when to swap. Optional sampling
+flags handle blue-first bytes and top-down rows in the fragment shader. These utilities
+manage GL objects and presentation without exposing Window Server or EGL
+handles to the application. Destroy them while their context is current.
 
 ## Restrictions
 

@@ -60,6 +60,8 @@ struct GlesWindowContext::Impl {
   EGLDisplay display = EGL_NO_DISPLAY;
   EGLSurface surface = EGL_NO_SURFACE;
   EGLContext context = EGL_NO_CONTEXT;
+  EGLConfig config = 0;
+  void* absl_nullable native_window = nullptr;
   bool initialized = false;
   bool current = false;
   bool measure_frames = false;
@@ -84,6 +86,8 @@ struct GlesWindowContext::Impl {
     display = EGL_NO_DISPLAY;
     surface = EGL_NO_SURFACE;
     context = EGL_NO_CONTEXT;
+    config = 0;
+    native_window = nullptr;
     initialized = false;
     current = false;
     swap_interval = 0;
@@ -171,7 +175,50 @@ absl::Status GlesWindowContext::Open(WindowSurface* absl_nonnull window,
     return error;
   }
   impl_->current = true;
+  impl_->config = config;
+  impl_->native_window = native_window;
   return absl::OkStatus();
+}
+
+absl::Status GlesWindowContext::RefreshSurface() {
+  if (!is_open() || impl_->config == 0 ||
+      impl_->native_window == nullptr) {
+    return absl::FailedPreconditionError("EGL window is closed");
+  }
+  if (!eglMakeCurrent(impl_->display, EGL_NO_SURFACE, EGL_NO_SURFACE,
+                      EGL_NO_CONTEXT)) {
+    return EglFailure("EGL detach before window resize");
+  }
+  impl_->current = false;
+  if (impl_->surface != EGL_NO_SURFACE) {
+    eglDestroySurface(impl_->display, impl_->surface);
+    impl_->surface = EGL_NO_SURFACE;
+  }
+  impl_->surface = eglCreateWindowSurface(
+      impl_->display, impl_->config, impl_->native_window, nullptr);
+  if (impl_->surface == EGL_NO_SURFACE) {
+    return EglFailure("EGL recreate resized window surface");
+  }
+  if (!eglMakeCurrent(impl_->display, impl_->surface, impl_->surface,
+                      impl_->context)) {
+    return EglFailure("EGL current after window resize");
+  }
+  impl_->current = true;
+  return absl::OkStatus();
+}
+
+absl::StatusOr<WindowSize> GlesWindowContext::SurfaceSize() const {
+  if (!is_open() || impl_->surface == EGL_NO_SURFACE) {
+    return absl::FailedPreconditionError("EGL surface is closed");
+  }
+  EGLint width = 0;
+  EGLint height = 0;
+  if (!eglQuerySurface(impl_->display, impl_->surface, EGL_WIDTH, &width) ||
+      !eglQuerySurface(impl_->display, impl_->surface, EGL_HEIGHT, &height) ||
+      width <= 0 || height <= 0) {
+    return EglFailure("EGL surface size");
+  }
+  return WindowSize{.width = width, .height = height};
 }
 
 absl::Status GlesWindowContext::MakeCurrent() {

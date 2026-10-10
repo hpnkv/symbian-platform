@@ -53,6 +53,16 @@ symbian_native_library(symbian_utf8_text_test)
 add_test(NAME symbian_utf8_text_test COMMAND symbian_utf8_text_test)
 set_tests_properties(symbian_utf8_text_test PROPERTIES TIMEOUT 15)
 
+add_executable(symbian_camera_frame_test camera_frame_test.cc
+  ../symbian/api/camera/frame.cc)
+target_include_directories(symbian_camera_frame_test PRIVATE
+  "${CMAKE_SOURCE_DIR}/cpp/symbian/api/include")
+target_link_libraries(symbian_camera_frame_test PRIVATE
+  absl::statusor absl::status GTest::gtest_main)
+symbian_native_library(symbian_camera_frame_test)
+add_test(NAME symbian_camera_frame_test COMMAND symbian_camera_frame_test)
+set_tests_properties(symbian_camera_frame_test PROPERTIES TIMEOUT 15)
+
 add_executable(symbian_status_test status_test.cc)
 target_link_libraries(symbian_status_test PRIVATE symbian::status GTest::gtest_main)
 symbian_native_library(symbian_status_test)

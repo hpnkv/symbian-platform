@@ -1,0 +1,17 @@
+[project]
+architecture = "armv6"
+name = "condition_display"
+kind = "e32-import-experiment"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000a70
+
+[package]
+uid = 0xe0000a71
+name = "Condition Display"
+vendor = "Symbian platform"
+executable_name = "condition_display.exe"
+version = [1, 0, 2]
+
+[application]
+caption = "Condition Display"
+short_caption = "Display"
