@@ -18,6 +18,61 @@ from symbian.status import StatusError
 ROOT = Path(__file__).resolve().parents[2]
 
 
+@pytest.mark.parametrize("conditional_target", [False, True])
+def test_packaging_distinguishes_conditional_flags_from_targets(
+    tmp_path, conditional_target
+):
+    """Native dependency flags do not obscure the project DLL graph."""
+    module = ROOT / "symbian/toolchain/cmake/SymbianPic.cmake"
+    conditional = (
+        '"$<$<BOOL:ON>:dynamic>"'
+        if conditional_target
+        else """
+        "$<$<BOOL:LIBRT-NOTFOUND>:-lrt>"
+        "$<$<BOOL:>:-ladvapi32>"
+        "$<LINK_ONLY:$<$<BOOL:LIBRT-NOTFOUND>:-lrt>>"
+        "$<LINK_ONLY:$<$<BOOL:>:-ladvapi32>>"
+        "$<$<PLATFORM_ID:Darwin,iOS,tvOS,visionOS,watchOS>:-Wl,-framework,CoreFoundation>"
+        "$<$<BOOL:EXECINFO_LIBRARY-NOTFOUND>:EXECINFO_LIBRARY-NOTFOUND>"
+        "$<LINK_ONLY:$<$<BOOL:EXECINFO_LIBRARY-NOTFOUND>:EXECINFO_LIBRARY-NOTFOUND>>"
+        "$<$<BOOL:>:-ldbghelp>"
+        "$<LINK_ONLY:$<$<BOOL:>:-ldbghelp>>"
+        """
+    )
+    (tmp_path / "CMakeLists.txt").write_text(
+        "cmake_minimum_required(VERSION 3.28)\n"
+        "project(packaging_graph LANGUAGES NONE)\n"
+        f'include("{module}")\n'
+        "add_library(dynamic INTERFACE)\n"
+        "set_property(TARGET dynamic PROPERTY SYMBIAN_DLL_IMAGE "
+        '"/built/dynamic.dll")\n'
+        "add_library(dependency INTERFACE)\n"
+        f"target_link_libraries(dependency INTERFACE {conditional})\n"
+        "add_library(application INTERFACE)\n"
+        "target_link_libraries(application INTERFACE dynamic dependency)\n"
+        "set_property(TARGET application PROPERTY "
+        "SYMBIAN_PROJECT_DLLS BUNDLE)\n"
+        "_symbian_write_application_libraries(application)\n"
+    )
+    build = tmp_path / "build"
+    result = subprocess.run(
+        ["cmake", "-S", str(tmp_path), "-B", str(build), "-G", "Ninja"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if conditional_target:
+        assert result.returncode != 0
+        assert "application DLL packaging cannot resolve" in (
+            result.stdout + result.stderr
+        )
+    else:
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert json.loads((build / "application.libraries.json").read_text())[
+            "libraries"
+        ] == ["/built/dynamic.dll"]
+
+
 @pytest.fixture(params=["armv5t", "armv6"])
 def linking(tmp_path, request):
     """Builds the actual example twice from a disposable project."""
@@ -110,7 +165,7 @@ def test_project_dll_packaging_choice_is_required(
     cmake_file.write_text(contents)
     result = subprocess.run(
         [
-            str(sdk.prefix / "bin/cmake"),
+            "cmake",
             "-G",
             "Ninja",
             "-S",

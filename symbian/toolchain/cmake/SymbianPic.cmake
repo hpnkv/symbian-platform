@@ -367,6 +367,13 @@ function(_symbian_publish_library target)
 endfunction()
 
 function(_symbian_runtime_profiles target visited output)
+  # A project DLL contributes imports to its consumer, not the static runtime
+  # linked into the DLL image. Check each published image's own closure.
+  get_target_property(ordinal_library ${target} SYMBIAN_ORDINAL_LIBRARY)
+  if(visited AND ordinal_library)
+    set(${output} "" PARENT_SCOPE)
+    return()
+  endif()
   if(NOT visited)
     set_property(GLOBAL PROPERTY SYMBIAN_RUNTIME_WALK "")
   endif()
@@ -414,7 +421,11 @@ function(_symbian_link_default_runtime target)
        (NOT profiles AND SYMBIAN_RUNTIME_LEGACY_EKA2 AND
         TARGET Symbian::LegacyEka2))
       set(runtime Symbian::LegacyEka2)
-    elseif(profiles STREQUAL "streams")
+    elseif(profiles STREQUAL "streams" OR
+           (NOT profiles AND TARGET Symbian::FailureHandler AND
+            TARGET Symbian::Streams))
+      # Standard applications acquire this profile through the automatically
+      # linked failure handler. Unspecified library profiles must match them.
       set(runtime Symbian::Streams)
     elseif(profiles STREQUAL "atomic64")
       set(runtime Symbian::NativeAtomics64)
@@ -529,13 +540,23 @@ function(_symbian_application_libraries target output)
   foreach(property LINK_LIBRARIES INTERFACE_LINK_LIBRARIES)
     get_target_property(items ${target} ${property})
     foreach(item IN LISTS items)
-      if(item MATCHES "^\\$<LINK_ONLY:([^>]+)>$")
+      if(item MATCHES "^\\$<LINK_ONLY:(.*)>$")
         set(item "${CMAKE_MATCH_1}")
       endif()
       if(TARGET "${item}")
         _symbian_application_libraries("${item}" nested)
         list(APPEND result ${nested})
       elseif(item MATCHES "\\$<")
+        # Third-party interfaces commonly select native linker flags with
+        # these expressions. A scalar flag/path cannot select a project DLL;
+        # leave its evaluation to CMake's linker generator. Conditional CMake
+        # targets still need an explicit packaging decision below.
+        if(item MATCHES "^\\$<\\$<(BOOL|PLATFORM_ID):[^<>]*>:([^<>]*)>$")
+          set(selected_item "${CMAKE_MATCH_2}")
+          if(NOT TARGET "${selected_item}")
+            continue()
+          endif()
+        endif()
         set_property(GLOBAL APPEND PROPERTY SYMBIAN_APPLICATION_LIBRARY_CONDITIONAL "${item}")
       endif()
     endforeach()
@@ -555,7 +576,7 @@ function(_symbian_write_application_libraries target)
       "symbian_publish_executable(${target} ... PROJECT_DLLS BUNDLE|RUNTIME)")
   endif()
   get_property(conditional GLOBAL PROPERTY SYMBIAN_APPLICATION_LIBRARY_CONDITIONAL)
-  if(images AND conditional AND mode STREQUAL "BUNDLE")
+  if(conditional AND mode STREQUAL "BUNDLE")
     message(FATAL_ERROR "${target}: application DLL packaging cannot resolve ${conditional}; select libraries with CMake if()")
   endif()
   if(mode STREQUAL "RUNTIME")
