@@ -1,0 +1,21 @@
+--- a/src/emu/services/src/window/window.cpp
++++ b/src/emu/services/src/window/window.cpp
+@@ -790,7 +790,8 @@
+     void window_server_client::get_focus_window_group(service::ipc_context &ctx, ws_cmd &cmd) {
+         // TODO: Epoc < 9
+         if (cmd.header.cmd_len == 0) {
+-            ctx.complete(get_ws().get_current_focus_screen()->focus->id);
++            epoc::screen *scr = get_ws().get_current_focus_screen();
++            ctx.complete(scr && scr->focus ? scr->focus->id : 0);
+             return;
+         }
+ 
+@@ -803,7 +804,7 @@
+             return;
+         }
+ 
+-        ctx.complete(scr->focus->id);
++        ctx.complete(scr->focus ? scr->focus->id : 0);
+     }
+ 
+     void window_server_client::get_default_owning_window(service::ipc_context &ctx, ws_cmd &cmd) {

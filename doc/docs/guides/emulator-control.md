@@ -122,3 +122,28 @@ parent. Native image dimensions are bounded at 4096 per axis. Publication uses
 prevent reusing an endpoint name. These are local accidental-overwrite bounds,
 not an immutable archive against the owning user. A timed-out client cannot
 interrupt a stalled graphics driver; the launcher must enforce a process deadline if graphics stops responding.
+
+
+## Host trackpad scrolling
+
+The Qt display forwards high-resolution trackpad pixel deltas as emulated touch
+drags, including host-provided momentum. Ordinary mouse wheels use a scaled
+angle delta with fractional movement retained between events. Gestures release
+on scroll end, focus loss or resize; wheels without gesture phases use a
+single-shot idle deadline. Long gestures re-anchor before reaching the device
+edge. The guest application controls its scrolling response; applications that
+only handle keys will still need key input.
+
+The maintained `trackpad-scroll.patch` is included by `scripts/build_emulator.py`.
+Its Qt event tests can run without firmware:
+
+```sh
+cmake -S research/eka2l1/tests -B build/trackpad-tests -G Ninja \
+  -DEKA2L1_SOURCE="$PWD/.symbian/emulator-control-input-source" \
+  -DEKA2L1_BUILD="$PWD/build/eka2l1"
+cmake --build build/trackpad-tests
+ctest --test-dir build/trackpad-tests --output-on-failure
+```
+
+This checks event delivery and cleanup, not physical trackpad latency or a
+specific guest application's frame rate.

@@ -1,0 +1,167 @@
+--- a/src/emu/qt/include/qt/displaywidget.h
++++ b/src/emu/qt/include/qt/displaywidget.h
+@@ -22,6 +22,8 @@
+ 
+ #include <QOpenGLContext>
+ #include <QWidget>
++#include <QPointF>
++#include <QTimer>
+ 
+ #include <drivers/graphics/emu_window.h>
+ 
+@@ -34,6 +36,12 @@
+     std::array<int, eka2l1::MAX_SYMBIAN_SUPPORTED_POINTERS> active_pointers_;
+     void *userdata_;
+ 
++    QTimer wheel_release_timer_;
++    QPointF wheel_position_;
++    bool wheel_active_ = false;
++    bool mouse_drag_active_ = false;
++
++    void finish_wheel_gesture();
+     void reset_active_pointers();
+ 
+ public:
+@@ -73,6 +81,7 @@
+     void mousePressEvent(QMouseEvent *event) override;
+     void mouseReleaseEvent(QMouseEvent *event) override;
+     void mouseMoveEvent(QMouseEvent *event) override;
++    void wheelEvent(QWheelEvent *event) override;
+     void resizeEvent(QResizeEvent *event) override;
+     bool event(QEvent *event) override;
+ };
+--- a/src/emu/qt/src/displaywidget.cpp
++++ b/src/emu/qt/src/displaywidget.cpp
+@@ -20,6 +20,8 @@
+ #include <QWindow>
+ #include <QKeyEvent>
+ #include <QMouseEvent>
++#include <QWheelEvent>
++#include <cmath>
+ #include <QMessageBox>
+ #include <QGuiApplication>
+ 
+@@ -62,6 +64,8 @@
+     windowHandle()->setSurfaceType(QWindow::OpenGLSurface);
+     windowHandle()->create();
+ 
++    wheel_release_timer_.setSingleShot(true);
++    connect(&wheel_release_timer_, &QTimer::timeout, this, &display_widget::finish_wheel_gesture);
+     reset_active_pointers();
+ }
+ 
+@@ -101,6 +105,7 @@
+ }
+ 
+ void display_widget::resizeEvent(QResizeEvent *event) {
++    finish_wheel_gesture();
+     if (resize_hook) {
+         QWindow *window = windowHandle();
+ 
+@@ -205,6 +210,8 @@
+ }
+ 
+ void display_widget::mousePressEvent(QMouseEvent *event) {
++    finish_wheel_gesture();
++    mouse_drag_active_ = true;
+     const qreal pixel_ratio = devicePixelRatioF();
+ 
+     if (raw_mouse_event) {
+@@ -214,6 +221,7 @@
+ }
+ 
+ void display_widget::mouseReleaseEvent(QMouseEvent *event) {
++    mouse_drag_active_ = false;
+     if (raw_mouse_event) {
+         const qreal pixel_ratio = devicePixelRatioF();
+ 
+@@ -232,13 +240,89 @@
+     }
+ }
+ 
++void display_widget::finish_wheel_gesture() {
++    wheel_release_timer_.stop();
++    if (wheel_active_) {
++        if (raw_mouse_event) {
++            const qreal scale = devicePixelRatioF();
++            raw_mouse_event(userdata_, eka2l1::vec3(std::lround(wheel_position_.x() * scale),
++                std::lround(wheel_position_.y() * scale), 0), 0, 2, 0);
++        }
++        wheel_active_ = false;
++    }
++}
++
++void display_widget::wheelEvent(QWheelEvent *event) {
++    // Symbian applications consume touch drags, not host wheel notches. Keep
++    // high-resolution pixel deltas (including host momentum) without rounding
++    // each individual event. Qt has already applied the user's scroll direction.
++    if (width() < 8 || height() < 8 || !raw_mouse_event || mouse_drag_active_
++        || std::any_of(active_pointers_.begin(), active_pointers_.end(), [](int id) { return id != 0; })) {
++        event->ignore();
++        return;
++    }
++    QPointF delta = event->pixelDelta();
++    if (delta.isNull()) {
++        delta = QPointF(event->angleDelta()) * (40.0 / 120.0);
++    }
++    if (!delta.isNull()) {
++        const QPointF anchor(width() * 0.5, height() * 0.5);
++        const qreal scale = devicePixelRatioF();
++        const auto deliver = [&](int action) {
++            raw_mouse_event(userdata_, eka2l1::vec3(std::lround(wheel_position_.x() * scale),
++                std::lround(wheel_position_.y() * scale), 0), 0, action, 0);
++        };
++        if (!wheel_active_) {
++            wheel_position_ = anchor;
++            wheel_active_ = true;
++            deliver(0);
++        }
++        // Long gestures need another drag before reaching the device edge.
++        // Release/re-anchor without emitting a backwards motion or dropping delta.
++        while (!delta.isNull()) {
++            qreal fraction = 1.0;
++            const auto limit = [&](qreal position, qreal distance, qreal extent) {
++                if (distance > 0) return (extent - 2.0 - position) / distance;
++                if (distance < 0) return (1.0 - position) / distance;
++                return 1.0;
++            };
++            fraction = std::clamp(std::min({fraction,
++                limit(wheel_position_.x(), delta.x(), width()),
++                limit(wheel_position_.y(), delta.y(), height())}), 0.0, 1.0);
++            wheel_position_ += delta * fraction;
++            deliver(1);
++            delta *= 1.0 - fraction;
++            if (fraction < 1.0) {
++                deliver(2);
++                wheel_position_ = anchor;
++                deliver(0);
++            }
++        }
++    }
++    if (event->phase() == Qt::ScrollEnd) {
++        finish_wheel_gesture();
++    } else if (wheel_active_) {
++        // Wheels without phases need an idle release. This is a single-shot
++        // deadline, not a polling timer; phased trackpads retain their gesture.
++        if (event->phase() == Qt::NoScrollPhase) wheel_release_timer_.start(120);
++        else wheel_release_timer_.stop();
++    }
++    event->accept();
++}
++
+ void display_widget::reset_active_pointers() {
+     std::fill(active_pointers_.begin(), active_pointers_.end(), 0);
+ }
+ 
+ bool display_widget::event(QEvent *event) {
+     switch (event->type()) {
++    case QEvent::FocusOut:
++    case QEvent::Hide:
++        mouse_drag_active_ = false;
++        finish_wheel_gesture();
++        break;
+     case QEvent::TouchBegin: {
++        finish_wheel_gesture();
+         QTouchEvent *touch_event = reinterpret_cast<QTouchEvent*>(event);
+         const QList<QTouchEvent::TouchPoint> &points = touch_event->touchPoints();
+ 
