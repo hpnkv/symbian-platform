@@ -7,6 +7,14 @@ extern "C" int isspace(int character) {
   return character == ' ' || (character >= '\t' && character <= '\r');
 }
 
+extern "C" int isdigit(int character) {
+  return character >= '0' && character <= '9';
+}
+
+extern "C" int isupper(int character) {
+  return character >= 'A' && character <= 'Z';
+}
+
 extern "C" int tolower(int character) {
   return character >= 'A' && character <= 'Z' ? character + ('a' - 'A')
                                               : character;

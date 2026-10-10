@@ -6,3 +6,6 @@
 extern "C" [[noreturn]] void __cxa_pure_virtual() {
   __builtin_trap();
 }
+
+// Pull this TU even if an earlier firmware import satisfies the ABI symbol.
+extern "C" void symbian_runtime_pure_virtual_anchor() {}

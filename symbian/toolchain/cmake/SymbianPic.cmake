@@ -582,6 +582,23 @@ function(symbian_add_executable target)
   else()
     symbian_add_import_executable(${target} SOURCES ${ARGN})
   endif()
+  # E32 moves code and writable data independently. Abseil's rate-limited
+  # logging counters (and other local statics) must use absolute data fixups.
+  target_compile_options(${target} PRIVATE "SHELL:-fno-pic")
+  if(TARGET Symbian::FailureHandler AND EXISTS
+     "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_api_failure_handler.a")
+    target_link_libraries(${target} PRIVATE Symbian::FailureHandler)
+    target_link_options(${target} PRIVATE
+      --undefined=symbian_sdk_failure_handler_link_anchor)
+    target_compile_definitions(${target} PRIVATE
+      SYMBIAN_SDK_LOGGING_INITIALIZED=1)
+  elseif(TARGET symbian_api_failure_handler)
+    target_link_libraries(${target} PRIVATE symbian_api_failure_handler)
+    target_link_options(${target} PRIVATE
+      --undefined=symbian_sdk_failure_handler_link_anchor)
+    target_compile_definitions(${target} PRIVATE
+      SYMBIAN_SDK_LOGGING_INITIALIZED=1)
+  endif()
   # Wait for sibling/subdirectory DLL publishers to finish declaring images.
   cmake_language(EVAL CODE
     "cmake_language(DEFER DIRECTORY \"${CMAKE_SOURCE_DIR}\" CALL _symbian_write_application_libraries ${target})")

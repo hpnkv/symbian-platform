@@ -5,12 +5,22 @@
 #include <cstdarg>
 #include <cstddef>
 #include <cstdlib>
+#include <cstdio>
+#include <cstring>
 #include <limits>
 
 #include <absl/base/nullability.h>
 
 #define STB_SPRINTF_IMPLEMENTATION
 #include "stb_sprintf.h"
+
+extern "C" void perror(const char* absl_nullable prefix) {
+  const int saved_errno = errno;
+  std::fprintf(stderr, "%s%s%s\n", prefix == nullptr ? "" : prefix,
+               prefix != nullptr && *prefix != '\0' ? ": " : "",
+               std::strerror(saved_errno));
+  errno = saved_errno;
+}
 
 extern "C" int vsnprintf(char* absl_nullable output, std::size_t capacity,
                           const char* absl_nonnull format, va_list arguments) {

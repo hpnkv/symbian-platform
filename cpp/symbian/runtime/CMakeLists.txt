@@ -163,6 +163,7 @@ if(SYMBIAN_RUNTIME_LOCAL_C_STRING)
   # original BSD/Nokia notices in the preserved source checkout.
   set(local_c_string_sources
     string/memchr.c string/strchr.c string/strcmp.c string/strcpy.c
+    string/strcasecmp.c string/strncpy.c
     string/strncmp.c string/strlcat.c string/strlcpy.c string/strstr.c string/wcslen.c
     string/wmemchr.c)
   list(TRANSFORM local_c_string_sources PREPEND
@@ -171,7 +172,8 @@ if(SYMBIAN_RUNTIME_LOCAL_C_STRING)
   set_source_files_properties(${local_c_string_sources} PROPERTIES
     COMPILE_OPTIONS "-fdeclspec;-Wno-ignored-attributes;-Wno-deprecated-non-prototype"
     COMPILE_DEFINITIONS "__SOFTFP=")
-  foreach(symbol IN ITEMS memchr strchr strcmp strcpy strncmp strlcat
+  foreach(symbol IN ITEMS memchr strchr strcmp strcpy strncmp strcasecmp
+                          strncasecmp strncpy strlcat
                           strlcpy strstr wcslen wmemchr)
     target_link_options(symbian_guest_runtime INTERFACE "--undefined=${symbol}")
   endforeach()
@@ -199,7 +201,7 @@ if(SYMBIAN_RUNTIME_LOCAL_C_STDLIB)
     "${SYMBIAN_OPENC_SOURCE}/libc/src/string/strerror.c")
   target_sources(symbian_guest_runtime PRIVATE ${local_c_error_sources})
   set_source_files_properties(${local_c_error_sources} PROPERTIES
-    COMPILE_OPTIONS "-fdeclspec;-Wno-ignored-attributes;-Wno-deprecated-non-prototype"
+    COMPILE_OPTIONS "-fdeclspec;-fno-pic;-Wno-ignored-attributes;-Wno-deprecated-non-prototype"
     COMPILE_DEFINITIONS "__SOFTFP=;NL_TEXTMAX=2048")
   target_link_options(symbian_guest_runtime INTERFACE
     --undefined=malloc --undefined=calloc --undefined=realloc
@@ -208,10 +210,18 @@ if(SYMBIAN_RUNTIME_LOCAL_C_STDLIB)
   if(SYMBIAN_RUNTIME_LEGACY_EUSER)
     target_sources(symbian_guest_runtime PRIVATE
       c_calendar_legacy.cc c_float_legacy.cc c_format_legacy.cc
-      c_wide_stdio_legacy.cc)
+      c_wide_stdio_legacy.cc c_time_locale_legacy.cc)
+    set(local_strptime "${SYMBIAN_OPENC_SOURCE}/libc/src/stdtime/strptime.c")
+    target_sources(symbian_guest_runtime PRIVATE "${local_strptime}")
+    set_source_files_properties("${local_strptime}" PROPERTIES
+      COMPILE_OPTIONS "-fdeclspec;-fno-pic;-Wno-ignored-attributes;-Wno-deprecated-non-prototype"
+      COMPILE_DEFINITIONS "__SOFTFP=")
+    target_include_directories(symbian_guest_runtime PRIVATE
+      "${SYMBIAN_OPENC_SOURCE}/libc/src")
     set_source_files_properties(
       c_calendar_legacy.cc c_float_legacy.cc c_format_legacy.cc
-      c_wide_stdio_legacy.cc PROPERTIES COMPILE_OPTIONS -fno-pic)
+      c_wide_stdio_legacy.cc c_time_locale_legacy.cc
+      PROPERTIES COMPILE_OPTIONS -fno-pic)
     target_include_directories(symbian_guest_runtime PRIVATE
       "${CMAKE_CURRENT_SOURCE_DIR}/../../../third_party/stb_sprintf")
     target_link_options(symbian_guest_runtime INTERFACE
@@ -219,7 +229,7 @@ if(SYMBIAN_RUNTIME_LOCAL_C_STDLIB)
       --undefined=strtod --undefined=strtof
       --undefined=fputwc --undefined=getwc --undefined=ungetwc
       --undefined=gmtime_r --undefined=localtime_r --undefined=mktime
-      --undefined=strftime)
+      --undefined=strftime --undefined=strptime --undefined=perror)
   endif()
 endif()
 if(SYMBIAN_RUNTIME_LOCAL_POSIX_TIME)
@@ -361,3 +371,6 @@ endif()
 get_filename_component(canary_root "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
 include("${canary_root}/cmake/SymbianGuestHeaderCanaries.cmake")
 symbian_guest_runtime_header_canaries("${canary_root}")
+
+# Vtables need a local address even when no direct call creates a PLT slot.
+target_link_options(symbian_guest_runtime INTERFACE --undefined=symbian_runtime_pure_virtual_anchor)

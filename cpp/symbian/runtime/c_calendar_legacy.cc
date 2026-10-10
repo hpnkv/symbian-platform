@@ -3,7 +3,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cerrno>
+#include <cstring>
 #include <ctime>
+#include <limits>
 
 #include <absl/base/nullability.h>
 
@@ -76,7 +79,8 @@ std::int64_t CivilSeconds(const LegacyTm& input) {
       DaysFromCivil(static_cast<std::int64_t>(input.year) + 1900,
                     static_cast<unsigned int>(input.month + 1),
                     static_cast<unsigned int>(input.month_day));
-  return days * 86400 + input.hours * 3600 + input.minutes * 60 + input.seconds;
+  return days * 86400 + static_cast<std::int64_t>(input.hours) * 3600 +
+         static_cast<std::int64_t>(input.minutes) * 60 + input.seconds;
 }
 
 void SetLocalFields(const LegacyTm& input, std::time_t epoch,
@@ -124,4 +128,37 @@ extern "C" std::size_t strftime(char* absl_nonnull output, std::size_t capacity,
                                 const std::tm* absl_nonnull input) {
   const LegacyTm legacy = ToLegacy(*input);
   return symbian_estlib_strftime(output, capacity, format, &legacy);
+}
+
+extern "C" std::time_t timegm(std::tm* absl_nonnull input) {
+  // Normalize the month before the civil calculation, including negative years.
+  std::int64_t year = static_cast<std::int64_t>(input->tm_year) + 1900;
+  int month = input->tm_mon % 12;
+  year += input->tm_mon / 12;
+  if (month < 0) {
+    --year;
+    month += 12;
+  }
+  const std::int64_t seconds =
+      (DaysFromCivil(year, static_cast<unsigned int>(month + 1), 1) +
+       static_cast<std::int64_t>(input->tm_mday) - 1) * 86400 +
+      static_cast<std::int64_t>(input->tm_hour) * 3600 +
+      static_cast<std::int64_t>(input->tm_min) * 60 + input->tm_sec;
+  if (seconds < std::numeric_limits<std::time_t>::min() ||
+      seconds > std::numeric_limits<std::time_t>::max()) {
+    errno = EOVERFLOW;
+    return static_cast<std::time_t>(-1);
+  }
+  const auto result = static_cast<std::time_t>(seconds);
+  if (gmtime_r(&result, input) == nullptr) {
+    return static_cast<std::time_t>(-1);
+  }
+  return result;
+}
+
+// Original Open C's strptime uses this private helper for %Z. These names
+// match the local calendar adapter above; arbitrary named zones are unsupported.
+extern "C" char* absl_nonnull getz(char* absl_nonnull output, int daylight) {
+  std::strcpy(output, daylight != 0 ? kDaylightZone : kStandardZone);
+  return output;
 }

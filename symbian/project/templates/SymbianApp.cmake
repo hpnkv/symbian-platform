@@ -230,10 +230,11 @@ if(SYMBIAN_TARGET_ARCH STREQUAL "armv5t" AND
     "${SYMBIAN_SDK_PREFIX}/proxies/euser/euser.dso"
     "${legacy_estlib_proxy}"
     "${SYMBIAN_SDK_PREFIX}/proxies/drtaeabi/drtaeabi.dso")
-  foreach(symbol IN ITEMS ceilf memchr strchr strcmp strcpy strncmp strlcat
+  foreach(symbol IN ITEMS ceilf memchr strchr strcmp strcpy strncmp strcasecmp
+      strncasecmp strncpy strlcat
       strlcpy strstr wcslen wmemchr malloc calloc realloc free getenv
       strerror_r isspace _exit asprintf snprintf vsnprintf strtod strtof
-      fputwc getwc ungetwc gmtime_r localtime_r mktime strftime
+      fputwc getwc ungetwc gmtime_r localtime_r mktime strftime strptime perror
       clock_gettime pthread_mutex_lock mbrlen mbrtowc mbsnrtowcs mbsrtowcs
       mbtowc wcrtomb wcsnrtombs wcsrtombs mbsinit)
     target_link_options(SymbianLegacyEka2 INTERFACE "--undefined=${symbol}")
@@ -680,3 +681,12 @@ if(EXISTS "${SYMBIAN_SDK_PREFIX}/include/qt4/QtCore/qglobal.h")
       Symbian::QtScript)
   endif()
 endif()
+
+# Resolve abstract vtable slots to the SDK trap, not a firmware data relocation.
+foreach(runtime_target IN ITEMS SymbianRuntime SymbianStreams
+    SymbianNativeAtomics64 SymbianLegacyEka2)
+  if(TARGET ${runtime_target})
+    target_link_options(${runtime_target} INTERFACE
+      --undefined=symbian_runtime_pure_virtual_anchor)
+  endif()
+endforeach()

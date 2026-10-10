@@ -234,7 +234,7 @@ def _build_native_converter(
 def _build_abseil(
     workspace: Path, output: Path, compiler: Path, linker: Path
 ) -> None:
-    """Builds the pinned, patched StatusOr closure for both ARM targets."""
+    """Builds the pinned StatusOr and logging closure for both ARM targets."""
     source = workspace / "research/upstream/abseil-cpp"
     revision = "5650e9cf76d3be4318d5fa3af38ee483ddfd5e4a"
     if not (source / "absl/status/statusor.h").is_file():
@@ -253,6 +253,7 @@ def _build_abseil(
         workspace / "research/abseil/symbian-platform.patch",
         workspace / "research/abseil/symbian-low-level-alloc.patch",
         workspace / "research/abseil/symbian-container-no-elf-tls.patch",
+        workspace / "research/abseil/symbian-log-no-weak-gcov.patch",
     ]
     project = workspace / "probes/abseil_status_probe"
     archives_by_architecture = {}
@@ -325,6 +326,24 @@ def _build_abseil(
                     Code.DATA_LOSS,
                     f"Abseil StatusOr archive missing for {architecture}",
                 )
+            if not any(
+                path.name == "libabsl_status_builder.a" for path in artifacts
+            ):
+                raise StatusError(
+                    Code.DATA_LOSS,
+                    f"Abseil status macro support missing for {architecture}",
+                )
+            for required in (
+                "libabsl_log_internal_message.a",
+                "libabsl_log_internal_log_sink_set.a",
+                "libabsl_log_initialize.a",
+            ):
+                if not any(path.name == required for path in artifacts):
+                    raise StatusError(
+                        Code.DATA_LOSS,
+                        f"Abseil logging archive missing for {architecture}: "
+                        f"{required}",
+                    )
             destination = output / "lib" / architecture / "abseil"
             destination.mkdir(parents=True)
             names = set()
@@ -1151,6 +1170,16 @@ def prepare(
                         build_tree / component / f"lib{library}.a",
                         output / "lib" / architecture / f"lib{library}.a",
                     )
+                run(
+                    [
+                        cmake_tool,
+                        "--build",
+                        str(build_tree),
+                        "--target",
+                        "symbian_header_canaries",
+                    ],
+                    cwd=workspace,
+                )
         build_sdl2(workspace, output, compiler)
         validate_sdl2_payload(output)
         build_sdl3(workspace, output, compiler)
