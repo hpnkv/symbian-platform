@@ -50,7 +50,7 @@ extern "C" int __cxa_atexit(void (*absl_nonnull function)(void* absl_nullable),
     SymbianRuntimeExit(SymbianRuntimeExitReason::kOutOfMemory);
   }
   SymbianRuntimeDestructors[SymbianRuntimeDestructorCount++] = {
-      function, argument, module};
+      .function = function, .argument = argument, .module = module};
   return 0;
 }
 

@@ -5,20 +5,17 @@
 
 #include "abi.h"
 
-extern "C" int SymbianRuntimeSleepMicroseconds(
-    std::uint64_t microseconds) {
+extern "C" int SymbianRuntimeSleepMicroseconds(std::uint64_t microseconds) {
   if (microseconds == 0) {
     return KErrNone;
   }
   RTimer timer;
-  const TInt opened = timer.CreateLocal();
-  if (opened != KErrNone) {
+  if (const TInt opened = timer.CreateLocal(); opened != KErrNone) {
     return opened;
   }
   TInt result = KErrNone;
   while (microseconds != 0) {
-    const std::uint64_t slice =
-        microseconds > 1000000 ? 1000000 : microseconds;
+    const std::uint64_t slice = microseconds > 1000000 ? 1000000 : microseconds;
     TRequestStatus status;
     timer.HighRes(status,
                   TTimeIntervalMicroSeconds32(static_cast<TInt>(slice)));
@@ -50,8 +47,8 @@ extern "C" int SymbianRuntimeTimerCreate(
     return KErrNoMemory;
   }
   auto* absl_nonnull timer_state = new (memory) SymbianRuntimeTimerState;
-  const TInt result = timer_state->timer.CreateLocal();
-  if (result != KErrNone) {
+  if (const TInt result = timer_state->timer.CreateLocal();
+      result != KErrNone) {
     timer_state->~SymbianRuntimeTimerState();
     User::Free(memory);
     return result;
@@ -127,8 +124,8 @@ extern "C" int SymbianRuntimeWakeCreate(
     return KErrNoMemory;
   }
   auto* absl_nonnull wake = new (memory) SymbianRuntimeWakeState;
-  const TInt result = wake->thread.Open(RThread().Id());
-  if (result != KErrNone) {
+  if (const TInt result = wake->thread.Open(RThread().Id());
+      result != KErrNone) {
     wake->~SymbianRuntimeWakeState();
     User::Free(memory);
     return result;

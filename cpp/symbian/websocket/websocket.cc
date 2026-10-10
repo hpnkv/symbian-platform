@@ -40,8 +40,8 @@ struct WebSocket::State {
       }
       mask = *random;
     }
-    const std::size_t overhead = role == Role::kClient ? 8 : 4;
-    if (payload.size() + overhead >
+    if (const std::size_t overhead = role == Role::kClient ? 8 : 4;
+        payload.size() + overhead >
         options.maximum_buffered_bytes - http->buffered_amount()) {
       return absl::ResourceExhaustedError("WebSocket send queue full");
     }
@@ -102,8 +102,7 @@ struct WebSocket::State {
       request.authority = options.authority;
       request.path = options.path;
       request.headers = {{"sec-websocket-version", "13"}};
-      auto status = http->SendRequest(std::move(request));
-      if (!status.ok()) {
+      if (auto status = http->SendRequest(std::move(request)); !status.ok()) {
         Fail(status);
         return error;
       }
@@ -122,8 +121,8 @@ struct WebSocket::State {
           Fail(absl::InvalidArgumentError("Invalid WebSocket CONNECT"));
           return error;
         }
-        auto status = http->SendHeaders({200, {}});
-        if (!status.ok()) {
+        if (auto status = http->SendHeaders({.status = 200, .headers = {}});
+            !status.ok()) {
           Fail(status);
           return error;
         }
@@ -154,8 +153,7 @@ struct WebSocket::State {
       }
     }
     if (closing) {
-      auto status = http->Finish();
-      if (!status.ok()) {
+      if (auto status = http->Finish(); !status.ok()) {
         Fail(status);
       }
     }
@@ -200,8 +198,7 @@ absl::Status WebSocket::Feed(std::string_view bytes) {
   if (!state_->error.ok()) {
     return state_->error;
   }
-  auto status = state_->http->Feed(bytes);
-  if (!status.ok()) {
+  if (auto status = state_->http->Feed(bytes); !status.ok()) {
     state_->Fail(status);
     return status;
   }

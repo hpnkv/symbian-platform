@@ -27,9 +27,9 @@ class VideoOwner final {
     if (window_ != nullptr) {
       return SDL_SetError("Only one window is supported");
     }
-    const absl::Status status =
-        surface_.Open(window->title == nullptr ? "" : window->title);
-    if (!status.ok()) {
+    if (const absl::Status status =
+            surface_.Open(window->title == nullptr ? "" : window->title);
+        !status.ok()) {
       surface_.Close();
       return SDL_SetError("Window open: %s", status.message().data());
     }
@@ -62,8 +62,7 @@ class VideoOwner final {
   }
 
   bool Present() {
-    const absl::Status status = surface_.Present();
-    if (!status.ok()) {
+    if (const absl::Status status = surface_.Present(); !status.ok()) {
       return SDL_SetError("Present: %s", status.message().data());
     }
     return true;
@@ -168,8 +167,7 @@ class VideoOwner final {
       SDL_OutOfMemory();
       return nullptr;
     }
-    const absl::Status status = context->Open(&surface_, 2);
-    if (!status.ok()) {
+    if (const absl::Status status = context->Open(&surface_, 2); !status.ok()) {
       SDL_SetError("OpenGL ES: %s", status.message().data());
       delete context;
       return nullptr;
@@ -390,5 +388,8 @@ SDL_VideoDevice* absl_nullable CreateDevice() {
 
 }  // namespace
 
-extern "C" VideoBootStrap SYMBIAN_bootstrap = {
-    "symbian", "Symbian Window Server", CreateDevice, nullptr, false};
+extern "C" VideoBootStrap SYMBIAN_bootstrap = {.name = "symbian",
+                                               .desc = "Symbian Window Server",
+                                               .create = CreateDevice,
+                                               .ShowMessageBox = nullptr,
+                                               .is_preferred = false};

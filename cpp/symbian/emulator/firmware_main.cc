@@ -25,9 +25,9 @@ int main(int argc, char* absl_nullable* absl_nonnull argv) {
   }
   if (argc == 5) {
     const std::string value = argv[4];
-    const auto parsed =
-        std::from_chars(value.data(), value.data() + value.size(), variant);
-    if (parsed.ec != std::errc() || parsed.ptr != value.data() + value.size()) {
+    if (const auto parsed =
+            std::from_chars(value.data(), value.data() + value.size(), variant);
+        parsed.ec != std::errc() || parsed.ptr != value.data() + value.size()) {
       return 2;
     }
   }

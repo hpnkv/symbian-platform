@@ -11,8 +11,8 @@ int RunFeature(void* absl_nullable) {
     return 1;
   }
   TEntry entry;
-  const TInt entry_error = files.Entry(KPublicFile, entry);
-  if (entry_error != KErrNone) {
+  if (const TInt entry_error = files.Entry(KPublicFile, entry);
+      entry_error != KErrNone) {
     files.Close();
     return 4;
   }

@@ -69,10 +69,11 @@ absl::Status WebSocketStream::Flush(absl::Time deadline) {
   std::string_view bytes = *output;
   while (!bytes.empty()) {
     const auto count = std::min<std::size_t>(bytes.size(), 32768);
-    auto status = transport_.Write(
-        std::span(reinterpret_cast<const std::uint8_t*>(bytes.data()), count),
-        deadline);
-    if (!status.ok()) {
+    if (auto status = transport_.Write(
+            std::span(reinterpret_cast<const std::uint8_t*>(bytes.data()),
+                      count),
+            deadline);
+        !status.ok()) {
       Abort();
       return status;
     }
@@ -92,9 +93,9 @@ absl::Status WebSocketStream::Pump(absl::Time deadline) {
     Abort();
     return absl::UnavailableError("WebSocket EOF");
   }
-  auto status = codec_->Feed(
-      std::string_view(reinterpret_cast<const char*>(input.data()), *count));
-  if (!status.ok()) {
+  if (auto status = codec_->Feed(std::string_view(
+          reinterpret_cast<const char*>(input.data()), *count));
+      !status.ok()) {
     Abort();
     return status;
   }
@@ -145,8 +146,7 @@ absl::StatusOr<std::size_t> WebSocketStream::Receive(
     if (codec_->closed()) {
       return absl::UnavailableError("WebSocket closed");
     }
-    auto status = Pump(deadline);
-    if (!status.ok()) {
+    if (auto status = Pump(deadline); !status.ok()) {
       return status;
     }
   }
@@ -183,9 +183,9 @@ void WebSocketStream::Abort() {
 absl::StatusOr<WebSocketServer> WebSocketServer::ListenIpv4(
     std::array<std::uint8_t, 4> address, std::uint16_t port,
     websocket::Options options) {
-  auto validation =
-      websocket::WebSocket::Create(websocket::Role::kServer, options);
-  if (!validation.ok()) {
+  if (auto validation =
+          websocket::WebSocket::Create(websocket::Role::kServer, options);
+      !validation.ok()) {
     return validation.status();
   }
   auto listener = TcpListener::ListenIpv4(address, port);

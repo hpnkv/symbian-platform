@@ -18,8 +18,8 @@ void DrawL(TUint32* absl_nonnull preview) {
   User::LeaveIfError(
       device->GetNearestFontInTwips(font, TFontSpec(_L("Arial"), 180)));
   CFbsBitGc* absl_nullable context = nullptr;
-  const TInt created = device->CreateContext(context);
-  if (created != KErrNone) {
+  if (const TInt created = device->CreateContext(context);
+      created != KErrNone) {
     device->ReleaseFont(font);
     User::Leave(created);
   }
@@ -54,8 +54,7 @@ void DrawL(TUint32* absl_nonnull preview) {
 }  // namespace
 
 int RunFeature(TUint32* absl_nonnull preview) {
-  const TInt connected = RFbsSession::Connect();
-  if (connected != KErrNone) {
+  if (const TInt connected = RFbsSession::Connect(); connected != KErrNone) {
     return connected;
   }
   TRAPD(error, DrawL(preview));

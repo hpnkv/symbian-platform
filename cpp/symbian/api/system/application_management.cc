@@ -29,8 +29,8 @@ using SessionConnect = TInt(RApaLsSession* absl_nonnull);
 using SessionClose = void(RApaLsSession* absl_nonnull);
 using StartDocumentFunction = TInt(RApaLsSession* absl_nonnull, const TDesC&,
                                    TThreadId&, RApaLsSession::TLaunchType);
-using GetAppInfoFunction =
-    TInt(const RApaLsSession* absl_nonnull, TApaAppInfo&, TUid);
+using GetAppInfoFunction = TInt(const RApaLsSession* absl_nonnull, TApaAppInfo&,
+                                TUid);
 using AppInfoConstructor = void(TApaAppInfo* absl_nonnull);
 
 class LoadedLibrary {
@@ -91,8 +91,7 @@ class AppArcSession {
         std::unique_ptr<AppArcSession>(new AppArcSession(std::move(*close)));
     (*constructor)(session->native());
     session->constructed_ = true;
-    const TInt result = (*connect)(session->native());
-    if (result != KErrNone) {
+    if (const TInt result = (*connect)(session->native()); result != KErrNone) {
       return symbian::StatusFromNativeError(result, "AppArc session");
     }
     return session;

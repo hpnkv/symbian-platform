@@ -55,9 +55,9 @@ bool FileName(std::string_view name, std::string_view suffix) {
 
 absl::StatusOr<uint32_t> Number(std::string_view text) {
   uint32_t value = 0;
-  const auto result =
-      std::from_chars(text.data(), text.data() + text.size(), value);
-  if (result.ec != std::errc{} || result.ptr != text.data() + text.size() ||
+  if (const auto result =
+          std::from_chars(text.data(), text.data() + text.size(), value);
+      result.ec != std::errc{} || result.ptr != text.data() + text.size() ||
       value == 0 || value > 65535) {
     return absl::InvalidArgumentError(
         "DEF requires positive decimal numbers in 1..65535");
@@ -93,8 +93,8 @@ absl::StatusOr<std::vector<Export>> ParseExports(std::string_view text) {
     return absl::ResourceExhaustedError("DEF input exceeds 8 MiB");
   }
   for (char c : text) {
-    const auto byte = static_cast<uint8_t>(c);
-    if ((byte < 32 && c != '\r' && c != '\n' && c != '\t') || byte > 126) {
+    if (const auto byte = static_cast<uint8_t>(c);
+        (byte < 32 && c != '\r' && c != '\n' && c != '\t') || byte > 126) {
       return absl::InvalidArgumentError("DEF requires ASCII text");
     }
   }
@@ -133,14 +133,13 @@ absl::StatusOr<std::vector<Export>> ParseExports(std::string_view text) {
     if (!ordinal.ok()) {
       return ordinal.status();
     }
-    Export item{std::string(words[0]), *ordinal};
+    Export item{.symbol = std::string(words[0]), .ordinal = *ordinal};
     item.absent = unnamed_tombstone;
     for (size_t i = 4; i < words.size(); ++i) {
       if (words[i] == "ABSENT" && !item.absent) {
         item.absent = true;
       } else if (words[i] == "DATA" && !item.data && i + 1 < words.size()) {
-        const auto size = Number(words[++i]);
-        if (!size.ok()) {
+        if (const auto size = Number(words[++i]); !size.ok()) {
           return size.status();
         }
         item.data = true;
@@ -281,8 +280,8 @@ absl::StatusOr<ProxySources> GenerateProxy(
   } else {
     std::map<std::string_view, const Export* absl_nonnull> by_name;
     for (const Export& item : *table) {
-      const auto match = by_name.find(item.symbol);
-      if (match == by_name.end() || !item.absent) {
+      if (const auto match = by_name.find(item.symbol);
+          match == by_name.end() || !item.absent) {
         by_name[item.symbol] = &item;
       }
     }
@@ -547,8 +546,9 @@ absl::StatusOr<ProxyInfo> InspectProxy(std::string_view bytes) {
         !names.insert(*name).second || !ordinals.insert(ordinal).second) {
       return absl::DataLossError("Invalid proxy name or ordinal");
     }
-    info.exports.push_back(
-        Export{*name, ordinal, symbols.bytes[p + 12] == 0x11});
+    info.exports.push_back(Export{.symbol = *name,
+                                  .ordinal = ordinal,
+                                  .data = symbols.bytes[p + 12] == 0x11});
   }
   std::sort(
       info.exports.begin(), info.exports.end(),

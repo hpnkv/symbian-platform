@@ -199,8 +199,9 @@ class CameraState final : public MCameraObserver2, public MCameraObserver {
                    : 1);
     const std::int64_t row_bytes =
         static_cast<std::int64_t>(size_.iWidth) * pixel_bytes;
-    const std::int64_t minimum = row_bytes * size_.iHeight * (yuv ? 3 : 2) / 2;
-    if (size_.iWidth <= 0 || size_.iHeight <= 0 || size_.iWidth > 8192 ||
+    if (const std::int64_t minimum =
+            row_bytes * size_.iHeight * (yuv ? 3 : 2) / 2;
+        size_.iWidth <= 0 || size_.iHeight <= 0 || size_.iWidth > 8192 ||
         size_.iHeight > 8192 || pixels == nullptr || frame_bytes < minimum ||
         (yuv ? frame_bytes != minimum : frame_bytes % size_.iHeight != 0)) {
       return FailFrame(KErrCorrupt);
@@ -448,12 +449,12 @@ class CameraState final : public MCameraObserver2, public MCameraObserver {
       error_ = KErrCorrupt;
       return;
     }
-    const TDisplayMode mode = bitmap.DisplayMode();
-    if (scoped_consumer_.has_value() &&
+    if (const TDisplayMode mode = bitmap.DisplayMode();
+        scoped_consumer_.has_value() &&
         (mode == EColor16MU || mode == EColor64K)) {
       const TInt stride = CFbsBitmap::ScanLineLength(size.iWidth, mode);
-      const TInt pixel_bytes = mode == EColor16MU ? 4 : 2;
-      if (stride < size.iWidth * pixel_bytes ||
+      if (const TInt pixel_bytes = mode == EColor16MU ? 4 : 2;
+          stride < size.iWidth * pixel_bytes ||
           static_cast<std::int64_t>(stride) * size.iHeight > 64 * 1024 * 1024) {
         error_ = KErrCorrupt;
         return;
@@ -605,8 +606,7 @@ class CameraState final : public MCameraObserver2, public MCameraObserver {
     camera_ = nullptr;
     powered_ = false;
     reserved_ = false;
-    const TInt connected = RFbsSession::Connect();
-    if (connected != KErrNone) {
+    if (const TInt connected = RFbsSession::Connect(); connected != KErrNone) {
       return connected;
     }
     fbs_connected_ = true;
@@ -683,10 +683,11 @@ class CameraState final : public MCameraObserver2, public MCameraObserver {
             camera_->StartViewFinderL(EcamFormat(request.format), selected));
       NativeTrace("start: StartViewFinder returned");
       if (start_error == KErrNone) {
-        const bool yuv =
-            request.format ==
-            static_cast<int>(symbian::api::camera::PixelFormat::kYuv420Planar);
-        if (selected.iWidth <= 0 || selected.iHeight <= 0 ||
+        if (const bool yuv =
+                request.format ==
+                static_cast<int>(
+                    symbian::api::camera::PixelFormat::kYuv420Planar);
+            selected.iWidth <= 0 || selected.iHeight <= 0 ||
             selected.iWidth > 8192 || selected.iHeight > 8192 ||
             (yuv &&
              ((selected.iWidth & 1) != 0 || (selected.iHeight & 1) != 0))) {
@@ -854,8 +855,7 @@ extern "C" int SymbianDeviceCameraStreamCreate(
   if (camera == nullptr) {
     return KErrNoMemory;
   }
-  const TInt result = camera->Open(index);
-  if (result != KErrNone) {
+  if (const TInt result = camera->Open(index); result != KErrNone) {
     camera->Finalize();
     delete camera;
     return result;

@@ -164,8 +164,8 @@ absl::StatusOr<nlohmann::json> ImportFirmware(const std::string& form,
       while (!path.empty() && path.back() == '/') {
         path.pop_back();
       }
-      const auto marker = path.find("drives/z/");
-      if ((marker == path.npos && (fs::path(path).extension() == ".rom" ||
+      if (const auto marker = path.find("drives/z/");
+          (marker == path.npos && (fs::path(path).extension() == ".rom" ||
                                    fs::path(path).extension() == ".rpkg")) ||
           (entry.is_directory && marker != path.npos &&
            path.find('/', marker + 9) == path.npos)) {
@@ -198,8 +198,7 @@ absl::StatusOr<nlohmann::json> ImportFirmware(const std::string& form,
     if (!eka2l1::common::list_archive(source, entries)) {
       return absl::InvalidArgumentError("Cannot read firmware archive");
     }
-    auto status = ValidateArchive(entries);
-    if (!status.ok()) {
+    if (auto status = ValidateArchive(entries); !status.ok()) {
       return status;
     }
     result = eka2l1::loader::install_archive(&manager, source, "data/roms/",
@@ -214,8 +213,7 @@ absl::StatusOr<nlohmann::json> ImportFirmware(const std::string& form,
     if (!stream.valid() || !eka2l1::loader::load_rom(&stream)) {
       return absl::InvalidArgumentError("Invalid ROM image");
     }
-    auto status = CopyZ(companion, "data/drive-z-staging");
-    if (!status.ok()) {
+    if (auto status = CopyZ(companion, "data/drive-z-staging"); !status.ok()) {
       return status;
     }
     std::string manufacturer, code, model;
@@ -271,8 +269,7 @@ absl::StatusOr<nlohmann::json> ImportFirmware(const std::string& form,
   } else {
     return absl::InvalidArgumentError("Unknown import form");
   }
-  auto status = InstallationStatus(result);
-  if (!status.ok()) {
+  if (auto status = InstallationStatus(result); !status.ok()) {
     return status;
   }
   if (manager.total() != 1) {

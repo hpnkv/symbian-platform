@@ -31,8 +31,8 @@ unsigned int g_committed_bytes = 0;
 
 ChunkSlot* absl_nullable ReserveSlot() {
   for (auto& slot : g_chunks) {
-    unsigned int expected = 0;
-    if (__atomic_compare_exchange_n(&slot.state, &expected, 1, false,
+    if (unsigned int expected = 0;
+        __atomic_compare_exchange_n(&slot.state, &expected, 1, false,
                                     __ATOMIC_ACQ_REL, __ATOMIC_RELAXED)) {
       return &slot;
     }
@@ -101,9 +101,9 @@ extern "C" void* absl_nullable SymbianRuntimeMimallocReserve(size_t bytes,
     return nullptr;
   }
   RChunk chunk;
-  const TInt create_result =
-      chunk.CreateDisconnectedLocal(0, 0, capacity, EOwnerProcess);
-  if (create_result != KErrNone) {
+  if (const TInt create_result =
+          chunk.CreateDisconnectedLocal(0, 0, capacity, EOwnerProcess);
+      create_result != KErrNone) {
     __atomic_fetch_sub(&g_reserved_bytes, static_cast<unsigned int>(capacity),
                        __ATOMIC_RELAXED);
     __atomic_store_n(&slot->state, 0, __ATOMIC_RELEASE);
@@ -119,11 +119,11 @@ extern "C" void* absl_nullable SymbianRuntimeMimallocReserve(size_t bytes,
     __atomic_store_n(&slot->state, 0, __ATOMIC_RELEASE);
     return nullptr;
   }
-  const TInt commit_result =
-      commit ? chunk.Commit(static_cast<TInt>(aligned - base),
-                            static_cast<TInt>(bytes))
-             : KErrNone;
-  if (commit_result != KErrNone) {
+  if (const TInt commit_result =
+          commit ? chunk.Commit(static_cast<TInt>(aligned - base),
+                                static_cast<TInt>(bytes))
+                 : KErrNone;
+      commit_result != KErrNone) {
     chunk.Close();
     __atomic_fetch_sub(&g_reserved_bytes, static_cast<unsigned int>(capacity),
                        __ATOMIC_RELAXED);
@@ -163,9 +163,9 @@ extern "C" int SymbianRuntimeMimallocCommit(void* absl_nonnull address,
   if (result == KErrAlreadyExists) {
     result = KErrNone;
     for (size_t page = 0; page < bytes; page += page_size) {
-      const TInt page_result =
-          chunk.Commit(offset + static_cast<TInt>(page), page_size);
-      if (page_result == KErrNone) {
+      if (const TInt page_result =
+              chunk.Commit(offset + static_cast<TInt>(page), page_size);
+          page_result == KErrNone) {
         newly_committed += page_size;
       } else if (page_result != KErrAlreadyExists) {
         result = page_result;
@@ -186,8 +186,8 @@ extern "C" int SymbianRuntimeMimallocCommit(void* absl_nonnull address,
 
 extern "C" int SymbianRuntimeMimallocDecommit(void* absl_nonnull address,
                                               size_t bytes) {
-  const int page_size = SymbianRuntimePageSize();
-  if (page_size <= 0 || !PageMultiple(bytes, page_size)) {
+  if (const int page_size = SymbianRuntimePageSize();
+      page_size <= 0 || !PageMultiple(bytes, page_size)) {
     return KErrArgument;
   }
   ChunkSlot* absl_nullable slot = FindRange(address, bytes);
@@ -214,8 +214,8 @@ extern "C" int SymbianRuntimeMimallocRelease(void* absl_nonnull address) {
   for (auto& candidate : g_chunks) {
     if (__atomic_load_n(&candidate.state, __ATOMIC_ACQUIRE) == 2 &&
         candidate.address == reinterpret_cast<uintptr_t>(address)) {
-      unsigned int expected = 2;
-      if (__atomic_compare_exchange_n(&candidate.state, &expected, 3, false,
+      if (unsigned int expected = 2;
+          __atomic_compare_exchange_n(&candidate.state, &expected, 3, false,
                                       __ATOMIC_ACQ_REL, __ATOMIC_RELAXED)) {
         slot = &candidate;
         break;

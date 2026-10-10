@@ -116,8 +116,8 @@ absl::StatusOr<uint32_t> ExceptionDescriptorOffset(
       }
       const size_t p = symbols.offset + symbol * 16;
       const uint32_t address = Read32(elf, p + 4);
-      const uint16_t owner = Read16(elf, p + 14);
-      if (descriptor || exidx == nullptr || owner == 0 ||
+      if (const uint16_t owner = Read16(elf, p + 14);
+          descriptor || exidx == nullptr || owner == 0 ||
           owner >= sections.size() || !(sections[owner].flags & 2) ||
           (static_cast<uint8_t>(elf[p + 12]) & 15) != 1 ||
           Read32(elf, p + 8) != 16 || address % 4 || address < code.address ||
@@ -127,8 +127,8 @@ absl::StatusOr<uint32_t> ExceptionDescriptorOffset(
                   16)) {
         return absl::DataLossError("Invalid Symbian exception descriptor");
       }
-      const size_t source = code.offset + address - code.address;
-      if (Read32(elf, source) != exidx->address ||
+      if (const size_t source = code.offset + address - code.address;
+          Read32(elf, source) != exidx->address ||
           Read32(elf, source + 4) != exidx->address + exidx->size ||
           (Read32(elf, source + 8) & ~uint32_t{1}) != code.address ||
           Read32(elf, source + 12) != code.address + code.size) {
@@ -246,10 +246,10 @@ absl::Status CheckRelocations(std::string_view elf,
         if (!name.ok()) {
           return name.status();
         }
-        const auto object = imports->objects.find(*name);
-        if (object != imports->objects.end()) {
-          const auto pointer = imports->code_object_pointers.find(location);
-          if (type == 2 && pointer != imports->code_object_pointers.end()) {
+        if (const auto object = imports->objects.find(*name);
+            object != imports->objects.end()) {
+          if (const auto pointer = imports->code_object_pointers.find(location);
+              type == 2 && pointer != imports->code_object_pointers.end()) {
             if (symbol_type != 1 || target_in_data || target.type == 8 ||
                 location % 4 ||
                 Read32(elf, target.offset + location - target.address) !=
@@ -278,9 +278,9 @@ absl::Status CheckRelocations(std::string_view elf,
           return absl::UnimplementedError("Unresolved external reference");
         }
         if (type == 2) {
-          const auto code_pointer =
-              imports->code_function_pointers.find(location);
-          if (code_pointer != imports->code_function_pointers.end()) {
+          if (const auto code_pointer =
+                  imports->code_function_pointers.find(location);
+              code_pointer != imports->code_function_pointers.end()) {
             if (symbol_type != 2 || code_pointer->second != *name ||
                 (target.name != ".rodata" && target.name != ".text") ||
                 target_in_data ||
@@ -290,11 +290,11 @@ absl::Status CheckRelocations(std::string_view elf,
             }
             continue;
           }
-          const auto data_pointer =
-              imports->data_function_pointers.find(location);
-          if (data_pointer != imports->data_function_pointers.end()) {
-            const auto plt = imports->plt_functions.find(*name);
-            if (plt == imports->plt_functions.end() ||
+          if (const auto data_pointer =
+                  imports->data_function_pointers.find(location);
+              data_pointer != imports->data_function_pointers.end()) {
+            if (const auto plt = imports->plt_functions.find(*name);
+                plt == imports->plt_functions.end() ||
                 plt->second != data_pointer->second || !target_in_data ||
                 target.type == 8 || location % 4 ||
                 Read32(elf, target.offset + location - target.address) != 0 ||
@@ -304,8 +304,8 @@ absl::Status CheckRelocations(std::string_view elf,
             }
             continue;
           }
-          const auto plt = imports->plt_functions.find(*name);
-          if (plt == imports->plt_functions.end() ||
+          if (const auto plt = imports->plt_functions.find(*name);
+              plt == imports->plt_functions.end() ||
               value_address != plt->second || location % 4 ||
               (section.info == imports->got_index ||
                section.info == imports->dynamic_index) ||
@@ -327,9 +327,9 @@ absl::Status CheckRelocations(std::string_view elf,
               location - (target_in_data ? data.file.address : code.address));
           continue;
         }
-        const auto status = internal::CheckImportCall(elf, code, location, type,
-                                                      function->second);
-        if (!status.ok()) {
+        if (const auto status = internal::CheckImportCall(
+                elf, code, location, type, function->second);
+            !status.ok()) {
           return status;
         }
         continue;
@@ -369,9 +369,10 @@ absl::Status CheckRelocations(std::string_view elf,
           // Clang EHABI uses TARGET2 with LLD's GOT-relative semantics.
           // Other TARGET2 modes and uses remain unsupported.
           const Section& got = sections[local_got_index];
-          const uint32_t slot =
-              location + Read32(elf, target.offset + location - target.address);
-          if (target.name != ".ARM.extab" || slot % 4 || slot < got.address ||
+          if (const uint32_t slot =
+                  location +
+                  Read32(elf, target.offset + location - target.address);
+              target.name != ".ARM.extab" || slot % 4 || slot < got.address ||
               !Within(got.size, slot - got.address, 4) ||
               Read32(elf, got.offset + slot - got.address) != value) {
             return absl::UnimplementedError(
@@ -488,13 +489,13 @@ absl::Status CheckRelocations(std::string_view elf,
             "Interworking thunk outside executable text");
       }
       const size_t file = code.offset + address - code.address;
-      const uint32_t target = Read32(elf, file + 4) & ~uint32_t{1};
-      if (Read32(elf, file) != 0xe51ff004 || target < code.address ||
+      if (const uint32_t target = Read32(elf, file + 4) & ~uint32_t{1};
+          Read32(elf, file) != 0xe51ff004 || target < code.address ||
           !Within(code.size, target - code.address, 1)) {
         return absl::DataLossError("Unsupported ARM interworking thunk target");
       }
-      const uint32_t offset = address + 4 - code.address;
-      if (std::find(pointers->code.begin(), pointers->code.end(), offset) ==
+      if (const uint32_t offset = address + 4 - code.address;
+          std::find(pointers->code.begin(), pointers->code.end(), offset) ==
           pointers->code.end()) {
         pointers->code.push_back(offset);
       }
@@ -520,8 +521,8 @@ absl::Status CheckRelocations(std::string_view elf,
     const Section& got = sections[local_got_index];
     std::set<uint32_t> resolved;
     for (uint32_t i = 0; i < got.size; i += 4) {
-      const uint32_t slot = got.address - code.address + i;
-      if (imports != nullptr && imports->object_slots.contains(slot)) {
+      if (const uint32_t slot = got.address - code.address + i;
+          imports != nullptr && imports->object_slots.contains(slot)) {
         continue;  // Eager imported object, not a local pointer relocation.
       }
       const uint32_t value = Read32(elf, got.offset + i);
@@ -587,8 +588,9 @@ absl::StatusOr<Segment> ExtractCode(
       continue;  // ARM unwind index, GNU stack; no dynamic loader contract.
     }
     if (type == 1 && Read32(elf, p + 24) == 6) {
-      const Segment file{Read32(elf, p + 4), Read32(elf, p + 8),
-                         Read32(elf, p + 16)};
+      const Segment file{.offset = Read32(elf, p + 4),
+                         .address = Read32(elf, p + 8),
+                         .size = Read32(elf, p + 16)};
       const uint32_t memory = Read32(elf, p + 20),
                      alignment = Read32(elf, p + 28);
       if (memory == 0 && file.size == 0) {
@@ -603,7 +605,7 @@ absl::StatusOr<Segment> ExtractCode(
             file.offset % alignment != file.address % alignment))) {
         return absl::DataLossError("Invalid/duplicate bounded RW data segment");
       }
-      *data = {file, memory - file.size};
+      *data = {.file = file, .bss_size = memory - file.size};
       continue;
     }
     if (type != 1 || found || Read32(elf, p + 24) != 5 ||
@@ -612,9 +614,11 @@ absl::StatusOr<Segment> ExtractCode(
           "Requires one RX and at most one non-executable RW load segment");
     }
     found = true;
-    code = {Read32(elf, p + 4), Read32(elf, p + 8), Read32(elf, p + 16)};
-    const uint32_t alignment = Read32(elf, p + 28);
-    if (!Within(elf.size(), code.offset, code.size) || code.address % 4 ||
+    code = {.offset = Read32(elf, p + 4),
+            .address = Read32(elf, p + 8),
+            .size = Read32(elf, p + 16)};
+    if (const uint32_t alignment = Read32(elf, p + 28);
+        !Within(elf.size(), code.offset, code.size) || code.address % 4 ||
         code.size < 16 || code.size > kMaxImageSize - kHeaderSize ||
         code.size > UINT32_MAX - code.address ||
         (alignment > 1 &&
@@ -643,10 +647,14 @@ absl::StatusOr<Segment> ExtractCode(
   size_t local_got_index = 0;
   for (size_t i = 0; i < header.section_count; ++i) {
     const size_t s = Read32(elf, 32) + i * Read16(elf, 46);
-    Section section{Read32(elf, s + 4),  Read32(elf, s + 8),
-                    Read32(elf, s + 12), Read32(elf, s + 16),
-                    Read32(elf, s + 20), Read32(elf, s + 24),
-                    Read32(elf, s + 28), Read32(elf, s + 36)};
+    Section section{.type = Read32(elf, s + 4),
+                    .flags = Read32(elf, s + 8),
+                    .address = Read32(elf, s + 12),
+                    .offset = Read32(elf, s + 16),
+                    .size = Read32(elf, s + 20),
+                    .link = Read32(elf, s + 24),
+                    .info = Read32(elf, s + 28),
+                    .entry_size = Read32(elf, s + 36)};
     if (section.flags & 2) {
       const auto name = SectionName(elf, header, s);
       if (!name.ok()) {
@@ -745,8 +753,8 @@ absl::StatusOr<Segment> ExtractCode(
     const Section& dynamic = sections[imports->dynamic_index];
     size_t dynamic_segments = 0;
     for (size_t i = 0; i < header.program_count; ++i) {
-      const size_t p = Read32(elf, 28) + i * Read16(elf, 42);
-      if (Read32(elf, p) == 2) {
+      if (const size_t p = Read32(elf, 28) + i * Read16(elf, 42);
+          Read32(elf, p) == 2) {
         ++dynamic_segments;
         if (Read32(elf, p + 4) != dynamic.offset ||
             Read32(elf, p + 8) != dynamic.address ||
@@ -759,17 +767,17 @@ absl::StatusOr<Segment> ExtractCode(
       return absl::DataLossError("Requires one ELF dynamic segment");
     }
   }
-  const absl::Status status = CheckRelocations(
-      elf, sections, code, *data, proxies == nullptr ? nullptr : imports,
-      local_got_index, pointers);
-  if (!status.ok()) {
+  if (const absl::Status status = CheckRelocations(
+          elf, sections, code, *data, proxies == nullptr ? nullptr : imports,
+          local_got_index, pointers);
+      !status.ok()) {
     return status;
   }
   for (size_t index : lifecycle_arrays) {
     const Section& array = sections[index];
     for (uint32_t i = 0; i < array.size; i += 4) {
-      const uint32_t offset = array.address - code.address + i;
-      if (!std::binary_search(pointers->code.begin(), pointers->code.end(),
+      if (const uint32_t offset = array.address - code.address + i;
+          !std::binary_search(pointers->code.begin(), pointers->code.end(),
                               offset) ||
           pointers->code_to_data.contains(offset)) {
         return absl::DataLossError(
@@ -1200,8 +1208,8 @@ absl::StatusOr<ImageInfo> InspectImage(std::string_view bytes) {
     }
     const size_t p = header_size + offset;
     const uint32_t exidx_base = Read32(bytes, p);
-    const uint32_t exidx_limit = Read32(bytes, p + 4);
-    if ((Read32(bytes, p + 8) & ~uint32_t{1}) != base ||
+    if (const uint32_t exidx_limit = Read32(bytes, p + 4);
+        (Read32(bytes, p + 8) & ~uint32_t{1}) != base ||
         Read32(bytes, p + 12) != base + size || exidx_base < base ||
         exidx_base % 4 || exidx_limit <= exidx_base ||
         (exidx_limit - exidx_base) % 8 || exidx_limit > base + size) {
@@ -1267,13 +1275,14 @@ absl::StatusOr<ImageInfo> InspectImage(std::string_view bytes) {
                        address == base + Read32(bytes, 72)))) {
         return absl::DataLossError("Invalid E32 export address/absence marker");
       }
-      exports.push_back({ordinal, address, absent});
+      exports.push_back(
+          {.ordinal = ordinal, .address = address, .absent = absent});
       expected_relocations.push_back(p - header_size);
     }
-    const bool holes =
-        std::any_of(exports.begin(), exports.end(),
-                    [](const ExportSlot& slot) { return slot.absent; });
-    if (holes != (description_type == 1) ||
+    if (const bool holes =
+            std::any_of(exports.begin(), exports.end(),
+                        [](const ExportSlot& slot) { return slot.absent; });
+        holes != (description_type == 1) ||
         (holes && internal::ExportBitmap(exports) !=
                       bytes.substr(155, description_size))) {
       return absl::DataLossError("Noncanonical E32 export bitmap");
@@ -1345,10 +1354,10 @@ absl::StatusOr<ImageInfo> InspectImage(std::string_view bytes) {
       const bool table = std::binary_search(expected_relocations.begin(),
                                             expected_relocations.end(), offset);
       const uint32_t value = Read32(bytes, header_size + offset);
-      const bool descriptor_limit =
-          descriptor != 0 && offset == (descriptor & ~uint32_t{1}) + 12 &&
-          value == base + size;
-      if (import_slots.contains(offset) ||
+      if (const bool descriptor_limit =
+              descriptor != 0 && offset == (descriptor & ~uint32_t{1}) + 12 &&
+              value == base + size;
+          import_slots.contains(offset) ||
           (!Within(application_size, offset, 4) && !table) ||
           (table && code_to_data.contains(offset)) ||
           (!descriptor_limit &&

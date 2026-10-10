@@ -30,8 +30,8 @@ void GameRenderer::Draw(const Game& game, SDL_Renderer* absl_nonnull renderer,
                           game.layout_.hud_height());
   for (int x = 0, column = 0; x < game.width_;
        x += game.cell_width_, ++column) {
-    const int width = std::min(game.cell_width_, game.width_ - x);
-    if (!block_atlas_.Draw(renderer, x, 0, width, game.brick_height_, column)) {
+    if (const int width = std::min(game.cell_width_, game.width_ - x);
+        !block_atlas_.Draw(renderer, x, 0, width, game.brick_height_, column)) {
       arkanoid::art::DrawBlock(renderer, x, 0, width, game.brick_height_,
                                column);
     }
@@ -60,8 +60,8 @@ void GameRenderer::Draw(const Game& game, SDL_Renderer* absl_nonnull renderer,
       }
       const int x = 12 + col * game.cell_width_;
       const int y = game.layout_.brick_top() + row * game.brick_height_;
-      const int variation = row * Game::kColumns + col;
-      if (!block_atlas_.Draw(renderer, x, y, game.cell_width_,
+      if (const int variation = row * Game::kColumns + col;
+          !block_atlas_.Draw(renderer, x, y, game.cell_width_,
                              game.brick_height_, variation)) {
         arkanoid::art::DrawBlock(renderer, x, y, game.cell_width_,
                                  game.brick_height_, variation);
@@ -89,12 +89,11 @@ void GameRenderer::Draw(const Game& game, SDL_Renderer* absl_nonnull renderer,
   }
   arkanoid::art::SetColor(renderer, 247, 249, 255);
   const int score_scale = game.layout_.hud_height() >= 40 ? 4 : 3;
-  arkanoid::art::DrawText(
-      renderer, std::string_view(digits, 5),
-      game.width_ - 5 * 6 * score_scale - 12,
-      game.layout_.hud_top() +
-          (game.layout_.hud_height() - 7 * score_scale) / 2,
-      score_scale);
+  arkanoid::art::DrawText(renderer, std::string_view(digits, 5),
+                          game.width_ - 5 * 6 * score_scale - 12,
+                          game.layout_.hud_top() +
+                              (game.layout_.hud_height() - 7 * score_scale) / 2,
+                          score_scale);
   char frame_rate[] = "000 FPS";
   const std::uint32_t shown_rate =
       std::min<std::uint32_t>(frames_per_second, 999);

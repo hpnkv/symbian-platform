@@ -246,8 +246,8 @@ absl::StatusOr<Http1RequestHead> ParseRequestHead(std::string_view head_block) {
 
   head.target = std::string(parts[1]);
   head.version = std::string(parts[2]);
-  auto header_status = ParseHeaderLines(lines, 1, &head.headers);
-  if (!header_status.ok()) {
+  if (auto header_status = ParseHeaderLines(lines, 1, &head.headers);
+      !header_status.ok()) {
     return header_status;
   }
   return std::move(head);
@@ -278,8 +278,8 @@ absl::StatusOr<Http1ResponseHead> ParseResponseHead(
   head.version = std::string(parts[0]);
   head.status = status;
   head.reason = parts.size() == 3 ? std::string(parts[2]) : std::string();
-  auto header_status = ParseHeaderLines(lines, 1, &head.headers);
-  if (!header_status.ok()) {
+  if (auto header_status = ParseHeaderLines(lines, 1, &head.headers);
+      !header_status.ok()) {
     return header_status;
   }
   return std::move(head);
@@ -289,8 +289,7 @@ namespace {
 
 absl::StatusOr<BodyPlan> PlanBody(const Headers& headers,
                                   bool allow_until_close) {
-  auto valid = ValidateHeaders(headers, Limits{});
-  if (!valid.ok()) {
+  if (auto valid = ValidateHeaders(headers, Limits{}); !valid.ok()) {
     return valid;
   }
   std::optional<std::size_t> length;
@@ -376,8 +375,8 @@ absl::Status ChunkedDecoder::Feed(std::string_view data,
         }
         if (state_ == State::kSize) {
           // Strip any chunk extensions after ';'.
-          const size_t semicolon = line.find(';');
-          if (semicolon != std::string_view::npos) {
+          if (const size_t semicolon = line.find(';');
+              semicolon != std::string_view::npos) {
             line = line.substr(0, semicolon);
           }
           line = Trim(line);
@@ -409,8 +408,7 @@ absl::Status ChunkedDecoder::Feed(std::string_view data,
             return absl::InvalidArgumentError("Malformed HTTP trailer");
           }
           pending_.clear();
-          auto valid = ValidateHeaders(trailers_, Limits{});
-          if (!valid.ok()) {
+          if (auto valid = ValidateHeaders(trailers_, Limits{}); !valid.ok()) {
             return valid;
           }
         }

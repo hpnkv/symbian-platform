@@ -31,7 +31,9 @@ absl::StatusOr<std::vector<ExportSlot>> ResolveExports(
   std::vector<ExportSlot> exports(table->back().ordinal);
   const uint32_t absent = code.address + entry;
   for (size_t i = 0; i < exports.size(); ++i) {
-    exports[i] = {static_cast<uint32_t>(i + 1), absent, true};
+    exports[i] = {.ordinal = static_cast<uint32_t>(i + 1),
+                  .address = absent,
+                  .absent = true};
   }
   std::map<std::string, uint32_t> wanted;
   for (const auto& item : *table) {
@@ -72,8 +74,8 @@ absl::StatusOr<std::vector<ExportSlot>> ResolveExports(
     const uint16_t index = Read16(elf, p + 14);
     const uint32_t address = Read32(elf, p + 4);
     const uint32_t normalized = address & ~uint32_t{1};
-    const uint32_t size = Read32(elf, p + 8);
-    if ((info & 15) != 2 || elf[p + 13] != 0 || index == 0 ||
+    if (const uint32_t size = Read32(elf, p + 8);
+        (info & 15) != 2 || elf[p + 13] != 0 || index == 0 ||
         index >= sections.size() || (sections[index].flags & 6) != 6 ||
         normalized < code.address || normalized < sections[index].address ||
         size == 0 || !Within(code.size, normalized - code.address, size) ||
@@ -195,8 +197,8 @@ absl::StatusOr<std::vector<uint32_t>> DecodeCodeRelocations(
   if (offsets.size() != Read32(bytes, 4)) {
     return absl::DataLossError("E32 relocation count mismatch");
   }
-  const auto encoded = EncodeCodeRelocations(offsets, data);
-  if (!encoded.ok() || *encoded != bytes) {
+  if (const auto encoded = EncodeCodeRelocations(offsets, data);
+      !encoded.ok() || *encoded != bytes) {
     return absl::DataLossError("Noncanonical E32 code relocations");
   }
   if (data_targets != nullptr) {

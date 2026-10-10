@@ -23,8 +23,7 @@ int WaitForRequest(Owner* absl_nonnull socket,
     return request->Int();
   }
   RTimer timer;
-  const TInt opened = timer.CreateLocal();
-  if (opened != KErrNone) {
+  if (const TInt opened = timer.CreateLocal(); opened != KErrNone) {
     (socket->*cancel)();
     User::WaitForRequest(*request);
     return opened;

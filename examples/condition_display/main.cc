@@ -41,8 +41,7 @@ struct FillColor {
     const auto color = rgb565;
     for (int y = 0; y < frame.size.height; ++y) {
       std::byte* absl_nonnull row =
-          frame.pixels.data() +
-          static_cast<std::size_t>(y) * frame.pitch_bytes;
+          frame.pixels.data() + static_cast<std::size_t>(y) * frame.pitch_bytes;
       for (int x = 0; x < frame.size.width; ++x) {
         row[x * 2] = static_cast<std::byte>(color & 0xff);
         row[x * 2 + 1] = static_cast<std::byte>(color >> 8);
@@ -114,9 +113,9 @@ absl::Status Run() {
       symbian::api::power::ResetInactivityTimer();
       last_awake_pulse = now;
     }
-    const std::size_t color = static_cast<std::size_t>(
-        active_time / kPhaseNanoseconds % kColors.size());
-    if (color != current_color) {
+    if (const std::size_t color = static_cast<std::size_t>(
+            active_time / kPhaseNanoseconds % kColors.size());
+        color != current_color) {
       current_color = color;
       redraw = true;
     }
@@ -124,8 +123,8 @@ absl::Status Run() {
       FillColor fill{kColors[current_color]};
       status = window.UpdateRgb565Frame(
           {.write = [&fill](display::Rgb565Frame frame) {
-             return fill.Write(frame);
-           }});
+            return fill.Write(frame);
+          }});
       if (!status.ok()) {
         return status;
       }
@@ -143,8 +142,7 @@ absl::Status Run() {
 }  // namespace
 
 int main() {
-  absl::Status result = Run();
-  if (!result.ok()) {
+  if (absl::Status result = Run(); !result.ok()) {
     symbian::api::system::DebugLog(result.ToString());
     return 1;
   }

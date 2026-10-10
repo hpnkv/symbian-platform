@@ -34,7 +34,7 @@ ThreadIdentity CurrentThread() {
   const std::uint64_t id = RThread().Id().Id();
   const unsigned int low = static_cast<unsigned int>(id);
   const unsigned int high = static_cast<unsigned int>(id >> 32);
-  return {low, high, (low ^ high) & (kSlotCount - 1)};
+  return {.low = low, .high = high, .index = (low ^ high) & (kSlotCount - 1)};
 }
 
 Slot* absl_nullable Find(ThreadIdentity thread) {
@@ -52,9 +52,8 @@ Slot* absl_nullable FindOrClaim(ThreadIdentity thread) {
     return slot;
   }
   Slot* absl_nonnull slot = &g_slots[thread.index];
-  unsigned int empty = 0;
-  if (!__atomic_compare_exchange_n(&slot->state, &empty, 1, false,
-                                   __ATOMIC_ACQ_REL, __ATOMIC_RELAXED)) {
+  if (unsigned int empty = 0; !__atomic_compare_exchange_n(
+          &slot->state, &empty, 1, false, __ATOMIC_ACQ_REL, __ATOMIC_RELAXED)) {
     return nullptr;
   }
   __atomic_store_n(&slot->id_low, thread.low, __ATOMIC_RELAXED);
@@ -121,9 +120,8 @@ extern "C" void SymbianMimallocForgetThread() {
   if (slot == nullptr) {
     return;
   }
-  unsigned int live = 2;
-  if (!__atomic_compare_exchange_n(&slot->state, &live, 3, false,
-                                   __ATOMIC_ACQ_REL, __ATOMIC_RELAXED)) {
+  if (unsigned int live = 2; !__atomic_compare_exchange_n(
+          &slot->state, &live, 3, false, __ATOMIC_ACQ_REL, __ATOMIC_RELAXED)) {
     return;
   }
   slot->values[0] = nullptr;

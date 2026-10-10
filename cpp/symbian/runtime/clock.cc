@@ -25,10 +25,9 @@ extern "C" std::int64_t SymbianRuntimeSteadyClockNanoseconds() {
       }
       proposed = -fallback;
     }
-    int empty = 0;
-    if (tick_mode_period.compare_exchange_strong(empty, proposed,
-                                                 std::memory_order_acq_rel,
-                                                 std::memory_order_acquire)) {
+    if (int empty = 0; tick_mode_period.compare_exchange_strong(
+            empty, proposed, std::memory_order_acq_rel,
+            std::memory_order_acquire)) {
       mode = proposed;
     } else {
       mode = empty;
@@ -44,9 +43,9 @@ extern "C" std::int64_t SymbianRuntimeSteadyClockNanoseconds() {
     if (previous == std::numeric_limits<std::uint64_t>::max()) {
       next = raw;
     } else {
-      const std::int32_t difference =
-          static_cast<std::int32_t>(raw - static_cast<std::uint32_t>(previous));
-      if (difference <= 0) {
+      if (const std::int32_t difference = static_cast<std::int32_t>(
+              raw - static_cast<std::uint32_t>(previous));
+          difference <= 0) {
         next = previous;
       } else {
         next = previous + static_cast<std::uint32_t>(difference);

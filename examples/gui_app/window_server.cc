@@ -171,8 +171,8 @@ TInt RunWindow(RWsSession* absl_nonnull session, const CWsScreenDevice& screen,
       session->GetEvent(event);
       if (event.Handle() == 2 && event.Type() == EEventPointer &&
           event.Pointer()->iType == TPointerEvent::EButton1Down) {
-        const TPoint position = event.Pointer()->iPosition;
-        if (model.Tap(layout, position.iX, position.iY)) {
+        if (const TPoint position = event.Pointer()->iPosition;
+            model.Tap(layout, position.iX, position.iY)) {
           if (layout.increment.Contains(position.iX, position.iY)) {
             pulse = false;
             GuiAsyncSchedule(async);

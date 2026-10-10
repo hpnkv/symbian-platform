@@ -37,14 +37,16 @@ void OpenTrace() {
   trace_offset = 0;
   failure = absl::OkStatus();
   storage::CreateDirectories(kTraceDirectory).IgnoreError();
-  auto opened = storage::WritableFile::Open(
-      kTracePath, storage::WriteMode::kReplaceExisting);
-  if (opened.ok()) {
+  if (auto opened = storage::WritableFile::Open(
+          kTracePath, storage::WriteMode::kReplaceExisting);
+      opened.ok()) {
     trace_file.emplace(std::move(*opened));
   }
 }
 
-void CloseTrace() { trace_file.reset(); }
+void CloseTrace() {
+  trace_file.reset();
+}
 
 bool TraceReady() {
   return trace_file.has_value();
@@ -80,6 +82,8 @@ void RecordFailure(absl::Status error) {
   Trace(failure.ToString());
 }
 
-absl::Status FailureStatus() { return failure; }
+absl::Status FailureStatus() {
+  return failure;
+}
 
 }  // namespace camera_app

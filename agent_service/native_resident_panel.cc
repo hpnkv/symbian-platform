@@ -147,10 +147,10 @@ void DrawLabel(CWindowGc* absl_nonnull gc, const char* absl_nonnull label,
 }
 
 const char* absl_nonnull Heading(const NativeResidentPanelOptions& options) {
-  const char* absl_nullable dynamic = options.heading_provider == nullptr
-                                          ? nullptr
-                                          : options.heading_provider(
-                                                options.heading_context);
+  const char* absl_nullable dynamic =
+      options.heading_provider == nullptr
+          ? nullptr
+          : options.heading_provider(options.heading_context);
   return dynamic == nullptr ? options.heading : dynamic;
 }
 
@@ -190,8 +190,8 @@ TInt RunWindow(const NativeResidentPanelOptions& options,
       CWindowGc gc(&screen);
       result = gc.Construct();
       if (result == KErrNone) {
-        const TSize size = screen.SizeInPixels();
-        if (size.iWidth < 160 || size.iHeight < 240 || size.iWidth > 8192 ||
+        if (const TSize size = screen.SizeInPixels();
+            size.iWidth < 160 || size.iHeight < 240 || size.iWidth > 8192 ||
             size.iHeight > 8192) {
           result = KErrNotSupported;
         } else {
@@ -244,8 +244,8 @@ TInt RunWindow(const NativeResidentPanelOptions& options,
                           event.Type() == EEventPointer &&
                           event.Pointer()->iType ==
                               TPointerEvent::EButton1Down) {
-                        const TPoint point = event.Pointer()->iPosition;
-                        if (point.iX >= 24 && point.iX < size.iWidth - 24 &&
+                        if (const TPoint point = event.Pointer()->iPosition;
+                            point.iX >= 24 && point.iX < size.iWidth - 24 &&
                             point.iY >= size.iHeight - 160 &&
                             point.iY < size.iHeight - 80) {
                           stop_requested->store(true);

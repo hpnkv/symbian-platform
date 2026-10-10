@@ -51,8 +51,9 @@ int RunWindow(symbian::api::display::WindowSurface* absl_nonnull window) {
           input.kind == symbian::api::display::WindowInputKind::kPointerMove ||
           input.kind == symbian::api::display::WindowInputKind::kPointerUp) {
         if (paused) {
-          const PausePanel::Action action = renderer.HandlePausePointer(input);
-          if (action == PausePanel::Action::kResume) {
+          if (const PausePanel::Action action =
+                  renderer.HandlePausePointer(input);
+              action == PausePanel::Action::kResume) {
             paused = false;
             previous_frame =
                 symbian::api::time::MonotonicClock::NowNanoseconds();

@@ -117,10 +117,10 @@ class GpuFrameConsumer final {
       Trace(bounds);
 #if defined(SYMBIAN_CAMERA_DIAGNOSTIC_FRAME)
       if (!frame.planes[0].empty()) {
-        auto dump = symbian::api::storage::WritableFile::Open(
-            u"E:\\Others\\camera_gl_first_frame.raw",
-            symbian::api::storage::WriteMode::kReplaceExisting);
-        if (dump.ok()) {
+        if (auto dump = symbian::api::storage::WritableFile::Open(
+                u"E:\\Others\\camera_gl_first_frame.raw",
+                symbian::api::storage::WriteMode::kReplaceExisting);
+            dump.ok()) {
           absl::Status saved = dump->WriteAt(0, frame.planes[0]);
           if (saved.ok()) {
             saved = dump->Flush();
@@ -135,9 +135,9 @@ class GpuFrameConsumer final {
     }
     if (texture_->width() != frame.layout.width ||
         texture_->height() != frame.layout.height) {
-      absl::Status resized =
-          texture_->Resize(frame.layout.width, frame.layout.height);
-      if (!resized.ok()) {
+      if (absl::Status resized =
+              texture_->Resize(frame.layout.width, frame.layout.height);
+          !resized.ok()) {
         return resized;
       }
     }
@@ -189,14 +189,14 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
   const bool present = inventory.ok() && inventory->available_count > 0;
   camera::CameraStream stream;
   const display::DisplayRotation opening_rotation = window->rotation();
-  const auto preferences = CapturePreferences(
-      window->size().height >= window->size().width);
+  const auto preferences =
+      CapturePreferences(window->size().height >= window->size().width);
   if (present) {
     Trace("GPU: stream open begin");
   }
-  absl::Status opened =
-      present ? stream.Open(0, preferences) : absl::OkStatus();
-  if (!opened.ok()) {
+  if (absl::Status opened =
+          present ? stream.Open(0, preferences) : absl::OkStatus();
+      !opened.ok()) {
     RecordFailure(opened);
     return 1;
   }
@@ -209,10 +209,10 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
   bool capturing = live;
 
   display::GlesWindowContext context;
-  absl::Status context_opened = context.Open(
-      window, 2,
-      {.red_bits = 8, .green_bits = 8, .blue_bits = 8, .depth_bits = 0});
-  if (!context_opened.ok()) {
+  if (absl::Status context_opened = context.Open(
+          window, 2,
+          {.red_bits = 8, .green_bits = 8, .blue_bits = 8, .depth_bits = 0});
+      !context_opened.ok()) {
     Trace("GPU: context open error");
     RecordFailure(context_opened);
     return 1;
@@ -300,8 +300,8 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
           break;
         case display::WindowInputKind::kDisplayChanged: {
           Trace("GPU: display changed");
-          const display::WindowSize updated = window->size();
-          if (updated.width != window_size.width ||
+          if (const display::WindowSize updated = window->size();
+              updated.width != window_size.width ||
               updated.height != window_size.height) {
             window_size = updated;
             surface_refresh_pending = true;
@@ -330,8 +330,7 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
     }
     if (surface_refresh_pending) {
       Trace("GPU: surface refresh begin");
-      absl::Status refreshed = context.RefreshSurface();
-      if (!refreshed.ok()) {
+      if (absl::Status refreshed = context.RefreshSurface(); !refreshed.ok()) {
         RecordFailure(refreshed);
         return 1;
       }
@@ -348,8 +347,7 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
     }
     if (live && !capturing) {
       Trace("GPU: capture resume begin");
-      absl::Status resumed = stream.Open(0, preferences);
-      if (!resumed.ok()) {
+      if (absl::Status resumed = stream.Open(0, preferences); !resumed.ok()) {
         RecordFailure(resumed);
         return 1;
       }
@@ -428,7 +426,9 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
                        .height = 2,
                        .format = camera::PixelFormat::kBgr565,
                        .stride_bytes = {4, 0, 0}};
-      memory.identity = {sequence, now, camera::ClockDomain::kMonotonic};
+      memory.identity = {.sequence = sequence,
+                         .capture_time_ns = now,
+                         .clock = camera::ClockDomain::kMonotonic};
       memory.planes[0] = kPixels;
       camera::MutableFrameView upload;
       upload.layout = {
@@ -490,36 +490,31 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
         live ? consumer.content()
              : camera::FrameRect{0, 0, output_texture.width(),
                                  output_texture.height()};
-    const int image_width =
-        quarter_turn ? content.height : content.width;
-    const int image_height =
-        quarter_turn ? content.width : content.height;
+    const int image_width = quarter_turn ? content.height : content.width;
+    const int image_height = quarter_turn ? content.width : content.height;
     auto viewport = display::AspectFitViewport(size.width, size.height,
                                                image_width, image_height);
     if (!viewport.ok()) {
       RecordFailure(viewport.status());
       return 1;
     }
-    const bool drawn = presenter
-                           .Draw(output_texture, *viewport,
-                                 {.blue_first = consumer.raw_bgrx(),
-                                  .top_down = consumer.raw_bgrx(),
-                                  .rotation = image_rotation,
-                                  .source_left =
-                                      static_cast<float>(content.x) /
-                                      output_texture.width(),
-                                  .source_top =
-                                      static_cast<float>(content.y) /
-                                      output_texture.height(),
-                                  .source_right =
-                                      static_cast<float>(content.x +
-                                                         content.width) /
-                                      output_texture.width(),
-                                  .source_bottom =
-                                      static_cast<float>(content.y +
-                                                         content.height) /
-                                      output_texture.height()})
-                           .ok();
+    const bool drawn =
+        presenter
+            .Draw(
+                output_texture, *viewport,
+                {.blue_first = consumer.raw_bgrx(),
+                 .top_down = consumer.raw_bgrx(),
+                 .rotation = image_rotation,
+                 .source_left =
+                     static_cast<float>(content.x) / output_texture.width(),
+                 .source_top =
+                     static_cast<float>(content.y) / output_texture.height(),
+                 .source_right = static_cast<float>(content.x + content.width) /
+                                 output_texture.width(),
+                 .source_bottom =
+                     static_cast<float>(content.y + content.height) /
+                     output_texture.height()})
+            .ok();
     if (first_frame) {
       symbian::api::system::DebugLog(drawn ? "camera GPU draw done"
                                            : "camera GPU draw failed");

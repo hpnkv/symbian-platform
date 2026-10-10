@@ -23,7 +23,7 @@ constexpr std::u16string_view kSharedApps = u"C:\\Data\\SymbianAgent\\apps\\";
 constexpr std::uint64_t kMaximumResourceBytes = 16 * 1024 * 1024;
 
 absl::StatusOr<std::u16string> ResourceDirectory(std::uint8_t scope,
-                                                  std::uint32_t uid) {
+                                                 std::uint32_t uid) {
   if (scope == 0 && uid == 0) {
     return std::u16string(kWorkspace);
   }
@@ -40,8 +40,8 @@ absl::StatusOr<std::u16string> ResourceDirectory(std::uint8_t scope,
 }
 
 absl::StatusOr<std::u16string> ResourcePath(std::uint8_t scope,
-                                             std::uint32_t uid,
-                                             std::string_view name) {
+                                            std::uint32_t uid,
+                                            std::string_view name) {
   if (name.empty() || name.size() > 64 || name == "." || name == "..") {
     return absl::InvalidArgumentError("Invalid resource name");
   }
@@ -147,9 +147,11 @@ absl::StatusOr<GuestFilePage> ReadWorkspacePage(std::uint16_t after,
   return page;
 }
 
-absl::StatusOr<GuestResourceChunk> ReadResourceChunk(
-    std::uint8_t scope, std::uint32_t uid, std::string_view name,
-    std::uint64_t offset, std::uint32_t length) {
+absl::StatusOr<GuestResourceChunk> ReadResourceChunk(std::uint8_t scope,
+                                                     std::uint32_t uid,
+                                                     std::string_view name,
+                                                     std::uint64_t offset,
+                                                     std::uint32_t length) {
   if (length == 0 || length > 32768 || offset > kMaximumResourceBytes) {
     return absl::InvalidArgumentError("Invalid resource read bounds");
   }
@@ -202,13 +204,13 @@ absl::Status WriteResourceChunk(std::uint8_t scope, std::uint32_t uid,
     return directory.status();
   }
   if (mode != 1) {
-    absl::Status created = api::storage::CreateDirectories(*directory);
-    if (!created.ok()) {
+    if (absl::Status created = api::storage::CreateDirectories(*directory);
+        !created.ok()) {
       return created;
     }
   }
   const api::storage::WriteMode write_mode =
-      mode == 0 ? api::storage::WriteMode::kCreateNew
+      mode == 0   ? api::storage::WriteMode::kCreateNew
       : mode == 1 ? api::storage::WriteMode::kOpenExisting
                   : api::storage::WriteMode::kReplaceExisting;
   auto file = api::storage::WritableFile::Open(*path, write_mode);

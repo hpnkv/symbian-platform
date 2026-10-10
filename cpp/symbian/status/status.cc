@@ -161,8 +161,7 @@ std::uint16_t StatusCodeToWebSocket(absl::StatusCode code) {
   if (code == absl::StatusCode::kOk) {
     return 1000;
   }
-  const int raw = static_cast<int>(code);
-  if (raw >= 1 && raw <= 15) {
+  if (const int raw = static_cast<int>(code); raw >= 1 && raw <= 15) {
     return static_cast<std::uint16_t>(3999 + raw);
   }
   if (code == absl::StatusCode::kUnauthenticated) {
@@ -212,8 +211,8 @@ absl::StatusOr<nlohmann::json> StatusToJson(const absl::Status& status) {
 }
 
 nlohmann::json StatusToJsonOrEmptyDetails(const absl::Status& status) {
-  absl::StatusOr<nlohmann::json> encoded = StatusToJson(status);
-  if (encoded.ok()) {
+  if (absl::StatusOr<nlohmann::json> encoded = StatusToJson(status);
+      encoded.ok()) {
     return std::move(*encoded);
   }
   // Only the details payload can fail to encode, so drop just that.

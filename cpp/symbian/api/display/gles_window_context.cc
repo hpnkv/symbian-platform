@@ -117,9 +117,8 @@ absl::Status GlesWindowContext::Open(WindowSurface* absl_nonnull window,
   }
   impl_->display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   EGLint major = 0;
-  EGLint minor = 0;
-  if (impl_->display == EGL_NO_DISPLAY ||
-      !eglInitialize(impl_->display, &major, &minor)) {
+  if (EGLint minor = 0; impl_->display == EGL_NO_DISPLAY ||
+                        !eglInitialize(impl_->display, &major, &minor)) {
     const absl::Status error = EglFailure("EGL display");
     impl_->Close();
     return error;
@@ -144,8 +143,8 @@ absl::Status GlesWindowContext::Open(WindowSurface* absl_nonnull window,
                                format.depth_bits,
                                EGL_NONE};
   EGLConfig config = 0;
-  EGLint count = 0;
-  if (!eglChooseConfig(impl_->display, attributes, &config, 1, &count) ||
+  if (EGLint count = 0;
+      !eglChooseConfig(impl_->display, attributes, &config, 1, &count) ||
       count == 0) {
     const absl::Status error =
         count == 0 ? absl::UnavailableError("EGL config: no ES2 window format")
@@ -181,8 +180,7 @@ absl::Status GlesWindowContext::Open(WindowSurface* absl_nonnull window,
 }
 
 absl::Status GlesWindowContext::RefreshSurface() {
-  if (!is_open() || impl_->config == 0 ||
-      impl_->native_window == nullptr) {
+  if (!is_open() || impl_->config == 0 || impl_->native_window == nullptr) {
     return absl::FailedPreconditionError("EGL window is closed");
   }
   if (!eglMakeCurrent(impl_->display, EGL_NO_SURFACE, EGL_NO_SURFACE,
@@ -194,8 +192,8 @@ absl::Status GlesWindowContext::RefreshSurface() {
     eglDestroySurface(impl_->display, impl_->surface);
     impl_->surface = EGL_NO_SURFACE;
   }
-  impl_->surface = eglCreateWindowSurface(
-      impl_->display, impl_->config, impl_->native_window, nullptr);
+  impl_->surface = eglCreateWindowSurface(impl_->display, impl_->config,
+                                          impl_->native_window, nullptr);
   if (impl_->surface == EGL_NO_SURFACE) {
     return EglFailure("EGL recreate resized window surface");
   }

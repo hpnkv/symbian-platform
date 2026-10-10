@@ -36,19 +36,17 @@ void CopyTextL(RFs* absl_nonnull session, const TDesC& text) {
   CleanupStack::PopAndDestroy(2, clipboard);
 }
 
-void ReadTextL(RFs* absl_nonnull session,
-               std::u16string* absl_nonnull output) {
+void ReadTextL(RFs* absl_nonnull session, std::u16string* absl_nonnull output) {
   CClipboard* absl_nonnull clipboard = CClipboard::NewForReadingLC(*session);
   CPlainText* absl_nonnull plain = CPlainText::NewL();
   CleanupStack::PushL(plain);
-  const TInt length = plain->PasteFromStoreL(
-      clipboard->Store(), clipboard->StreamDictionary(), 0);
+  const TInt length = plain->PasteFromStoreL(clipboard->Store(),
+                                             clipboard->StreamDictionary(), 0);
   if (length > 64 * 1024) {
     User::Leave(KErrTooBig);
   }
   HBufC* absl_nonnull buffer = HBufC::NewLC(length);
-  TPtr content = buffer->Des();
-  if (length > 0) {
+  if (TPtr content = buffer->Des(); length > 0) {
     plain->Extract(content, 0, length);
     output->assign(reinterpret_cast<const char16_t*>(content.Ptr()),
                    static_cast<std::size_t>(content.Length()));
@@ -63,8 +61,7 @@ absl::Status CopyTextToClipboard(std::u16string_view text) {
     return absl::InvalidArgumentError("clipboard text exceeds 64 KiB");
   }
   RFs session;
-  const TInt connected = session.Connect();
-  if (connected != KErrNone) {
+  if (const TInt connected = session.Connect(); connected != KErrNone) {
     return symbian::StatusFromNativeError(connected, "clipboard file server");
   }
   const TPtrC descriptor(reinterpret_cast<const TUint16*>(text.data()),
@@ -76,8 +73,7 @@ absl::Status CopyTextToClipboard(std::u16string_view text) {
 
 absl::StatusOr<std::u16string> ReadTextFromClipboard() {
   RFs session;
-  const TInt connected = session.Connect();
-  if (connected != KErrNone) {
+  if (const TInt connected = session.Connect(); connected != KErrNone) {
     return symbian::StatusFromNativeError(connected, "clipboard file server");
   }
   std::u16string text;

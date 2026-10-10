@@ -279,8 +279,8 @@ struct WindowSurface::Impl {
     }
     CFont* absl_nullable font = nullptr;
     const TFontSpec specification(_L("Series 60 Sans"), text_font_height);
-    const TInt result = screen->GetNearestFontInPixels(font, specification);
-    if (result != KErrNone) {
+    if (const TInt result = screen->GetNearestFontInPixels(font, specification);
+        result != KErrNone) {
       return NativeError(result, "device font");
     }
     gc->Activate(*window);
@@ -324,8 +324,7 @@ WindowSurface::~WindowSurface() {
 
 absl::StatusOr<WindowSize> WindowSurface::PrimarySize() {
   RWsSession session;
-  const TInt connected = session.Connect();
-  if (connected != KErrNone) {
+  if (const TInt connected = session.Connect(); connected != KErrNone) {
     return NativeError(connected, "Window Server");
   }
   auto* absl_nullable screen = new CWsScreenDevice(session);
@@ -477,11 +476,12 @@ absl::Status WindowSurface::DrawTextLines(std::span<const WindowTextLine> lines,
   impl_->text_lines.reserve(lines.size());
   impl_->text_font_height = font_height_pixels;
   for (const WindowTextLine& line : lines) {
-    impl_->text_lines.push_back(
-        {std::u16string(line.text), line.x, line.baseline_y, line.rgb});
+    impl_->text_lines.push_back({.text = std::u16string(line.text),
+                                 .x = line.x,
+                                 .baseline_y = line.baseline_y,
+                                 .rgb = line.rgb});
   }
-  absl::Status drawn = impl_->DrawTextOverlay();
-  if (!drawn.ok()) {
+  if (absl::Status drawn = impl_->DrawTextOverlay(); !drawn.ok()) {
     return drawn;
   }
   impl_->window->Invalidate();
@@ -501,9 +501,9 @@ absl::StatusOr<std::vector<std::u16string>> WindowSurface::WrapTextLines(
   }
   CFont* absl_nullable font = nullptr;
   const TFontSpec specification(_L("Series 60 Sans"), font_height_pixels);
-  const TInt result =
-      impl_->screen->GetNearestFontInPixels(font, specification);
-  if (result != KErrNone) {
+  if (const TInt result =
+          impl_->screen->GetNearestFontInPixels(font, specification);
+      result != KErrNone) {
     return NativeError(result, "device font");
   }
   std::vector<std::u16string> lines;
@@ -537,9 +537,9 @@ absl::StatusOr<Rgb565Frame> WindowSurface::CreateRgb565Frame() {
   if (impl_->bitmap == nullptr) {
     return absl::ResourceExhaustedError("bitmap allocation failed");
   }
-  const TInt result = impl_->bitmap->Create(
-      TSize(impl_->size.width, impl_->size.height), EColor64K);
-  if (result != KErrNone) {
+  if (const TInt result = impl_->bitmap->Create(
+          TSize(impl_->size.width, impl_->size.height), EColor64K);
+      result != KErrNone) {
     return NativeError(result, "RGB565 bitmap");
   }
   const int pitch = CFbsBitmap::ScanLineLength(impl_->size.width, EColor64K);
@@ -547,10 +547,10 @@ absl::StatusOr<Rgb565Frame> WindowSurface::CreateRgb565Frame() {
     return absl::InternalError("bitmap has invalid stride");
   }
   impl_->frame_bytes = static_cast<std::size_t>(pitch) * impl_->size.height;
-  const TInt allocated =
-      impl_->frame_chunk.CreateLocal(static_cast<TInt>(impl_->frame_bytes),
-                                     static_cast<TInt>(impl_->frame_bytes));
-  if (allocated != KErrNone) {
+  if (const TInt allocated =
+          impl_->frame_chunk.CreateLocal(static_cast<TInt>(impl_->frame_bytes),
+                                         static_cast<TInt>(impl_->frame_bytes));
+      allocated != KErrNone) {
     impl_->frame_bytes = 0;
     return NativeError(allocated, "frame allocation");
   }
@@ -578,9 +578,9 @@ absl::Status WindowSurface::UpdateRgb565Frame(Rgb565FrameWriter writer) {
     if (impl_->bitmap == nullptr) {
       return absl::ResourceExhaustedError("RGB565 bitmap allocation failed");
     }
-    const TInt created = impl_->bitmap->Create(
-        TSize(impl_->size.width, impl_->size.height), EColor64K);
-    if (created != KErrNone) {
+    if (const TInt created = impl_->bitmap->Create(
+            TSize(impl_->size.width, impl_->size.height), EColor64K);
+        created != KErrNone) {
       delete impl_->bitmap;
       impl_->bitmap = nullptr;
       return NativeError(created, "RGB565 bitmap");
@@ -596,8 +596,7 @@ absl::Status WindowSurface::UpdateRgb565Frame(Rgb565FrameWriter writer) {
   absl::Status result =
       pixels == nullptr
           ? absl::InternalError("bitmap has no writable data")
-          : writer.write(
-                         {.pixels = std::span<std::byte>(
+          : writer.write({.pixels = std::span<std::byte>(
                               pixels, static_cast<std::size_t>(pitch) *
                                           impl_->size.height),
                           .pitch_bytes = pitch,
@@ -629,8 +628,7 @@ absl::StatusOr<std::optional<WindowInput>> WindowSurface::PollInput() {
     }
   }
   if (impl_->event != KRequestPending) {
-    const TInt result = impl_->event.Int();
-    if (result != KErrNone) {
+    if (const TInt result = impl_->event.Int(); result != KErrNone) {
       return NativeError(result, "window event");
     }
     TWsEvent event;
@@ -677,8 +675,7 @@ absl::StatusOr<std::optional<WindowInput>> WindowSurface::PollInput() {
     impl_->session.EventReady(&impl_->event);
   }
   if (impl_->redraw != KRequestPending) {
-    const TInt result = impl_->redraw.Int();
-    if (result != KErrNone) {
+    if (const TInt result = impl_->redraw.Int(); result != KErrNone) {
       return NativeError(result, "window redraw");
     }
     TWsRedrawEvent redraw;

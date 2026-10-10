@@ -68,8 +68,7 @@ void LoadL(TUint32* absl_nonnull preview) {
 }  // namespace
 
 int RunFeature(TUint32* absl_nonnull preview) {
-  const TInt connected = RFbsSession::Connect();
-  if (connected != KErrNone) {
+  if (const TInt connected = RFbsSession::Connect(); connected != KErrNone) {
     return connected;
   }
   CActiveScheduler scheduler;

@@ -14,8 +14,8 @@ namespace symbian::entropy {
 inline std::uintptr_t SecureRandomVeneer(std::uintptr_t address,
                                          std::span<const std::uint16_t> code,
                                          bool leaving) {
-  const std::size_t words = leaving ? 6 : 4;
-  if ((address & 1) == 0 || code.size() != words || code[0] != 0xb510 ||
+  if (const std::size_t words = leaving ? 6 : 4;
+      (address & 1) == 0 || code.size() != words || code[0] != 0xb510 ||
       (code[1] & 0xf800) != 0xf000 || (code[2] & 0xf801) != 0xe800 ||
       code[words - 1] != 0xbd10) {
     return 0;

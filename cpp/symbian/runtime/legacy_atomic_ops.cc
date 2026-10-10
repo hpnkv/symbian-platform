@@ -62,8 +62,7 @@ TBool LegacyAtomicCas8(volatile TAny* absl_nonnull pointer,
                        TUint8* absl_nonnull expected, TUint8 desired) {
   Guard guard;
   auto* absl_nonnull typed = static_cast<volatile TUint8*>(pointer);
-  const TUint8 old = *typed;
-  if (old != *expected) {
+  if (const TUint8 old = *typed; old != *expected) {
     *expected = old;
     return EFalse;
   }
@@ -96,8 +95,7 @@ TBool LegacyAtomicCas32(volatile TAny* absl_nonnull pointer,
                         TUint32* absl_nonnull expected, TUint32 desired) {
   Guard guard;
   auto* absl_nonnull typed = static_cast<volatile TUint32*>(pointer);
-  const TUint32 old = *typed;
-  if (old != *expected) {
+  if (const TUint32 old = *typed; old != *expected) {
     *expected = old;
     return EFalse;
   }

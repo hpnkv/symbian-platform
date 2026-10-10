@@ -95,8 +95,8 @@ inline int NativeErrorFromStatus(const absl::Status& status) {
     const std::string text(payload->Flatten());
     char* absl_nullable end = nullptr;
     errno = 0;
-    const long value = std::strtol(text.c_str(), &end, 10);
-    if (errno == 0 && end != text.c_str() && *end == '\0' && value >= INT_MIN &&
+    if (const long value = std::strtol(text.c_str(), &end, 10);
+        errno == 0 && end != text.c_str() && *end == '\0' && value >= INT_MIN &&
         value <= INT_MAX && value < 0) {
       return static_cast<int>(value);
     }

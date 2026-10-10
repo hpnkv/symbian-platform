@@ -28,13 +28,13 @@ void GuiAsyncSchedule(GuiAsync* absl_nonnull async) {
   auto task = async->executor.ScheduleAfter(absl::Milliseconds(300));
   task.OnReady([async, generation](const auto& result) {
     if (result.ok()) {
-      const absl::Status queued =
-          async->executor.DispatchToEvent([async, generation] {
-            if (generation == async->generation) {
-              ++async->due;
-            }
-          });
-      if (!queued.ok()) {
+      if (const absl::Status queued =
+              async->executor.DispatchToEvent([async, generation] {
+                if (generation == async->generation) {
+                  ++async->due;
+                }
+              });
+          !queued.ok()) {
         async->dispatch_status = queued;
       }
     } else if (result.status().code() != absl::StatusCode::kCancelled) {
@@ -53,8 +53,8 @@ void GuiAsyncCancel(GuiAsync* absl_nonnull async) {
 }
 
 int GuiAsyncDispatch(GuiAsync* absl_nullable async) {
-  const absl::Status dispatched = async->executor.DispatchReady();
-  if (!dispatched.ok()) {
+  if (const absl::Status dispatched = async->executor.DispatchReady();
+      !dispatched.ok()) {
     return symbian::NativeErrorFromStatus(dispatched);
   }
   for (auto it = async->tasks.begin(); it != async->tasks.end();) {

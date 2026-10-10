@@ -97,17 +97,17 @@ auto ThenOn(const Future<T>& future, WorkerExecutor* absl_nonnull worker,
   future.OnReady([promise = std::move(promise),
                   transform = std::move(transform), handle,
                   future](const absl::StatusOr<T>&) mutable {
-    absl::Status posted = handle.Post(
-        [promise, transform = std::move(transform), future]() mutable {
-          auto result = future.ResultIfReady();
-          if (!result) {
-            promise->SetError(absl::InternalError(
-                "Ready Future lost its result before worker dispatch"));
-            return;
-          }
-          promise->SetResult(transform(*result));
-        });
-    if (!posted.ok()) {
+    if (absl::Status posted = handle.Post(
+            [promise, transform = std::move(transform), future]() mutable {
+              auto result = future.ResultIfReady();
+              if (!result) {
+                promise->SetError(absl::InternalError(
+                    "Ready Future lost its result before worker dispatch"));
+                return;
+              }
+              promise->SetResult(transform(*result));
+            });
+        !posted.ok()) {
       promise->SetError(std::move(posted));
     }
   });

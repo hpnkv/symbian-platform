@@ -176,15 +176,15 @@ absl::StatusOr<TlsStream> TlsStream::Initialize(bool server,
   if (psa_crypto_init() != PSA_SUCCESS) {
     return absl::UnavailableError("PSA crypto initialization failed");
   }
-  const int seed = mbedtls_ctr_drbg_seed(&impl->random, mbedtls_entropy_func,
-                                         &impl->entropy, nullptr, 0);
-  if (seed != 0) {
+  if (const int seed = mbedtls_ctr_drbg_seed(
+          &impl->random, mbedtls_entropy_func, &impl->entropy, nullptr, 0);
+      seed != 0) {
     return TlsError("TLS entropy seed failed", seed);
   }
-  int status = mbedtls_ssl_config_defaults(
-      &impl->config, server ? MBEDTLS_SSL_IS_SERVER : MBEDTLS_SSL_IS_CLIENT,
-      MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
-  if (status != 0) {
+  if (int status = mbedtls_ssl_config_defaults(
+          &impl->config, server ? MBEDTLS_SSL_IS_SERVER : MBEDTLS_SSL_IS_CLIENT,
+          MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
+      status != 0) {
     return TlsError("TLS server configuration failed", status);
   }
   mbedtls_ssl_conf_rng(&impl->config, mbedtls_ctr_drbg_random, &impl->random);
@@ -237,8 +237,7 @@ absl::StatusOr<TlsStream> TlsStream::Connect(
   }
   impl->client.emplace(std::move(client));
   mbedtls_ssl_set_bio(&impl->ssl, impl, &Impl::Send, &Impl::Receive, nullptr);
-  auto status = result.Handshake(deadline);
-  if (!status.ok()) {
+  if (auto status = result.Handshake(deadline); !status.ok()) {
     return status;
   }
   const char* absl_nullable selected =
@@ -306,8 +305,8 @@ absl::Status TlsStream::Accept(TcpClient&& client, absl::Time deadline) {
   impl_->client.emplace(std::move(client));
   impl_->deadline = deadline;
   impl_->io_status = absl::OkStatus();
-  int status = mbedtls_ssl_setup(&impl_->ssl, &impl_->config);
-  if (status != 0) {
+  if (int status = mbedtls_ssl_setup(&impl_->ssl, &impl_->config);
+      status != 0) {
     CloseSession();
     return TlsError("TLS setup failed", status);
   }

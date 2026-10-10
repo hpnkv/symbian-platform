@@ -12,10 +12,10 @@ Renderer::~Renderer() {
 
 absl::Status Renderer::Open(
     symbian::api::display::WindowSurface* absl_nonnull window) {
-  const absl::Status opened = context_.Open(
-      window, 2,
-      {.red_bits = 8, .green_bits = 8, .blue_bits = 8, .depth_bits = 16});
-  if (!opened.ok()) {
+  if (const absl::Status opened = context_.Open(
+          window, 2,
+          {.red_bits = 8, .green_bits = 8, .blue_bits = 8, .depth_bits = 16});
+      !opened.ok()) {
     return opened;
   }
   if (!cube_.Open() || !ui_batch_.Open().ok()) {

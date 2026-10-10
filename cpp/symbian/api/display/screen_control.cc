@@ -93,16 +93,15 @@ absl::Status SendPrimaryPointerEvent(PointerAction action, int x, int y) {
     session.Close();
     return symbian::StatusFromNativeError(result, "pointer screen");
   }
-  const TSize size = screen.SizeInPixels();
-  if (x < 0 || y < 0 || x >= size.iWidth || y >= size.iHeight) {
+  if (const TSize size = screen.SizeInPixels();
+      x < 0 || y < 0 || x >= size.iWidth || y >= size.iHeight) {
     session.Close();
     return absl::InvalidArgumentError("pointer outside primary screen");
   }
   TRawEvent event;
-  event.Set(action == PointerAction::kDown
-                ? TRawEvent::EButton1Down
-                : action == PointerAction::kUp ? TRawEvent::EButton1Up
-                                               : TRawEvent::EPointerMove,
+  event.Set(action == PointerAction::kDown ? TRawEvent::EButton1Down
+            : action == PointerAction::kUp ? TRawEvent::EButton1Up
+                                           : TRawEvent::EPointerMove,
             x, y);
   session.SimulateRawEvent(event);
   session.Flush();

@@ -16,8 +16,8 @@ bool InRom(std::uintptr_t address, std::size_t length) {
   // Check every byte before dereferencing native code. IsRomAddress uses the
   // OS's main/extension ROM bounds; unsupported/RAM wrappers fail closed.
   for (std::size_t i = 0; i < length; ++i) {
-    TBool in_rom = EFalse;
-    if (User::IsRomAddress(in_rom, reinterpret_cast<TAny*>(address + i)) !=
+    if (TBool in_rom = EFalse;
+        User::IsRomAddress(in_rom, reinterpret_cast<TAny*>(address + i)) !=
             KErrNone ||
         !in_rom) {
       return false;
@@ -58,8 +58,8 @@ extern "C" int mbedtls_hardware_poll(void* absl_nullable data,
     // EABI exports 2503/2504 are Math::RandomL/Random(TDes8&). Random itself
     // discards KErrNotReady; calling its validated non-leaving veneer preserves
     // that error without requiring an unverified C++ leave/unwind boundary.
-    const auto target = ResolveVeneer(library.Lookup(2504), false);
-    if (target != 0 && target == ResolveVeneer(library.Lookup(2503), true) &&
+    if (const auto target = ResolveVeneer(library.Lookup(2504), false);
+        target != 0 && target == ResolveVeneer(library.Lookup(2503), true) &&
         InRom(target, 2 * sizeof(std::uint32_t)) &&
         symbian::entropy::IsSecureRandomVeneer(
             {reinterpret_cast<const std::uint32_t*>(target), 2})) {

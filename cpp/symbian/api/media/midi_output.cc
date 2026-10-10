@@ -91,8 +91,8 @@ struct MidiState final : MMidiClientUtilityObserver {
           }
         }
         Note note;
-        auto received = notes.TryRead(&note);
-        if (received.ok() && *received && error.load() == KErrNone) {
+        if (auto received = notes.TryRead(&note);
+            received.ok() && *received && error.load() == KErrNone) {
           TRAPD(play_error, midi->PlayNoteL(0, note.pitch,
                                             TTimeIntervalMicroSeconds(
                                                 note.duration_ms * 1000),
@@ -161,11 +161,11 @@ absl::Status MidiOutput::PlayNote(int note, int duration_ms, int velocity) {
     return absl::InvalidArgumentError(
         "Invalid MIDI note, duration or velocity");
   }
-  const absl::Status ready = status();
-  if (!ready.ok()) {
+  if (const absl::Status ready = status(); !ready.ok()) {
     return ready;
   }
-  return impl_->state->notes.TryWrite(Note{note, duration_ms, velocity});
+  return impl_->state->notes.TryWrite(
+      Note{.pitch = note, .duration_ms = duration_ms, .velocity = velocity});
 }
 
 bool MidiOutput::available() const {
@@ -179,8 +179,7 @@ absl::Status MidiOutput::status() const {
   if (!impl_->startup.ok()) {
     return impl_->startup;
   }
-  const int error = impl_->state->error.load();
-  if (error != KErrNone) {
+  if (const int error = impl_->state->error.load(); error != KErrNone) {
     return symbian::StatusFromNativeError(error, "MIDI service");
   }
   return available() ? absl::OkStatus()

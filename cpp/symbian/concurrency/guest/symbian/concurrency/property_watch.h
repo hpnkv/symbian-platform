@@ -62,8 +62,8 @@ class PropertyWatch {
           }
         });
     current_ = entry;  // Own state before Subscribe can complete inline.
-    const int submitted = SymbianRuntimePropertySubscribe(native_);
-    if (submitted != symbian::native_error::kNone) {
+    if (const int submitted = SymbianRuntimePropertySubscribe(native_);
+        submitted != symbian::native_error::kNone) {
       current_.reset();
       entry->promise.SetError(
           symbian::StatusFromNativeError(submitted, "RProperty subscribe"));
@@ -111,8 +111,7 @@ class PropertyWatch {
       SymbianRuntimePropertyClose(native_);  // Cancels and drains first.
       native_ = nullptr;
     }
-    auto entry = std::move(current_);
-    if (entry != nullptr) {
+    if (auto entry = std::move(current_); entry != nullptr) {
       entry->promise.SetError(absl::CancelledError("Property owner closed"));
     }
   }

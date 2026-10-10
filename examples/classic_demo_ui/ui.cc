@@ -22,9 +22,9 @@ TInt Draw(CWsScreenDevice* absl_nonnull screen, CWindowGc* absl_nonnull gc,
           TInt preview_width, TInt preview_height, const TRect& run_button,
           const TRect& close_button) {
   CFont* absl_nullable font = nullptr;
-  TFontSpec font_spec(_L("Series 60 Sans"), 20);
-  TInt result = screen->GetNearestFontInPixels(font, font_spec);
-  if (result != KErrNone) {
+  if (TFontSpec font_spec(_L("Series 60 Sans"), 20);
+      TInt result = screen->GetNearestFontInPixels(font, font_spec);
+      result != KErrNone) {
     return result;
   }
   gc->UseFont(font);
@@ -129,8 +129,8 @@ TInt Display(RWsSession* absl_nonnull session,
       session->GetEvent(event);
       if (event.Handle() == 2 && event.Type() == EEventPointer &&
           event.Pointer()->iType == TPointerEvent::EButton1Down) {
-        const TPoint position = event.Pointer()->iPosition;
-        if (close_button.Contains(position)) {
+        if (const TPoint position = event.Pointer()->iPosition;
+            close_button.Contains(position)) {
           running = false;
         } else if (run_button.Contains(position)) {
           attempted = true;

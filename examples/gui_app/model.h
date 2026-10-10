@@ -13,8 +13,7 @@ struct QuotientRemainder {
 constexpr QuotientRemainder Divide(unsigned int value, unsigned int divisor) {
   unsigned int quotient = 0;
   for (unsigned int bit = 32; bit != 0; --bit) {
-    const unsigned int shift = bit - 1;
-    if ((value >> shift) >= divisor) {
+    if (const unsigned int shift = bit - 1; (value >> shift) >= divisor) {
       value -= divisor << shift;
       quotient |= 1U << shift;
     }

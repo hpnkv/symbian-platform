@@ -47,9 +47,9 @@ extern "C" int SymbianRuntimePageCreate(
   }
   auto* absl_nonnull created = new (storage) SymbianRuntimePageOwner;
   created->heap = heap;
-  const TInt result = created->chunk.CreateLocal(
-      static_cast<TInt>(bytes), static_cast<TInt>(bytes), EOwnerProcess);
-  if (result != KErrNone) {
+  if (const TInt result = created->chunk.CreateLocal(
+          static_cast<TInt>(bytes), static_cast<TInt>(bytes), EOwnerProcess);
+      result != KErrNone) {
     created->~SymbianRuntimePageOwner();
     heap->Free(storage);
     heap->Close();

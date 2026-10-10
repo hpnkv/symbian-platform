@@ -90,9 +90,9 @@ class WorkQueue {
       // A cell is free for position P exactly when its sequence is P. Anything
       // less means the ring has come all the way round and this cell still
       // holds an item nobody has taken.
-      const auto lag = static_cast<std::intptr_t>(sequence) -
-                       static_cast<std::intptr_t>(position);
-      if (lag == 0) {
+      if (const auto lag = static_cast<std::intptr_t>(sequence) -
+                           static_cast<std::intptr_t>(position);
+          lag == 0) {
         if (tail_.compare_exchange_weak(position, position + 1,
                                         std::memory_order_relaxed)) {
           break;
@@ -117,9 +117,9 @@ class WorkQueue {
       cell = &cells_[position & (Capacity - 1)];
       const size_t sequence = cell->sequence.load(std::memory_order_acquire);
       // Filled for position P means sequence P + 1: see the store above.
-      const auto lag = static_cast<std::intptr_t>(sequence) -
-                       static_cast<std::intptr_t>(position + 1);
-      if (lag == 0) {
+      if (const auto lag = static_cast<std::intptr_t>(sequence) -
+                           static_cast<std::intptr_t>(position + 1);
+          lag == 0) {
         if (head_.compare_exchange_weak(position, position + 1,
                                         std::memory_order_relaxed)) {
           break;

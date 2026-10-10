@@ -125,27 +125,26 @@ void Game::Step() {
     ball_x_ = width_ - kBallRadius;
     velocity_x_ = std::min(velocity_x_, -1.0f);
   }
-  const float ceiling_y = static_cast<float>(brick_height_) + kBallRadius;
-  if (ball_y_ <= ceiling_y) {
+  if (const float ceiling_y = static_cast<float>(brick_height_) + kBallRadius;
+      ball_y_ <= ceiling_y) {
     ball_y_ = ceiling_y;
     velocity_y_ = std::max(velocity_y_, 1.0f);
   }
   const float paddle_y = static_cast<float>(layout_.paddle_y());
   const float paddle_left = paddle_x_ - paddle_width_ / 2.0f;
   const float paddle_right = paddle_x_ + paddle_width_ / 2.0f;
-  const bool reaches_paddle =
-      previous_y - kBallRadius <= paddle_y &&
-      ball_y_ + kBallRadius >= paddle_y &&
-      ball_y_ - kBallRadius <= paddle_y;
+  const bool reaches_paddle = previous_y - kBallRadius <= paddle_y &&
+                              ball_y_ + kBallRadius >= paddle_y &&
+                              ball_y_ - kBallRadius <= paddle_y;
   const float travel_y = ball_y_ - previous_y;
   const float contact_fraction =
       travel_y > 0
-          ? std::clamp((paddle_y - kBallRadius - previous_y) / travel_y,
-                       0.0f, 1.0f)
+          ? std::clamp((paddle_y - kBallRadius - previous_y) / travel_y, 0.0f,
+                       1.0f)
           : 1.0f;
-  const float contact_x =
-      previous_x + (ball_x_ - previous_x) * contact_fraction;
-  if (velocity_y_ > 0 && reaches_paddle &&
+  if (const float contact_x =
+          previous_x + (ball_x_ - previous_x) * contact_fraction;
+      velocity_y_ > 0 && reaches_paddle &&
       contact_x + kBallRadius >= paddle_left &&
       contact_x - kBallRadius <= paddle_right) {
     ball_y_ = paddle_y - kBallRadius;
@@ -160,8 +159,8 @@ void Game::Step() {
         continue;
       }
       const int x = 12 + col * cell_width_;
-      const int y = top + row * brick_height_;
-      if (ball_x_ + 6 >= x && ball_x_ - 6 <= x + cell_width_ &&
+      if (const int y = top + row * brick_height_;
+          ball_x_ + 6 >= x && ball_x_ - 6 <= x + cell_width_ &&
           ball_y_ + 6 >= y && ball_y_ - 6 <= y + brick_height_) {
         bricks_[row * kColumns + col] = false;
         velocity_y_ = -velocity_y_;
@@ -206,13 +205,13 @@ int Game::MenuWidth() const {
 }
 
 void Game::SelectMenuAt(int x, int y, bool activate) {
-  const int left = (width_ - MenuWidth()) / 2 + 8;
-  if (x < left || x >= left + MenuWidth() - 16) {
+  if (const int left = (width_ - MenuWidth()) / 2 + 8;
+      x < left || x >= left + MenuWidth() - 16) {
     return;
   }
   for (int choice = 0; choice < 3; ++choice) {
-    const int top = MenuTop() + 34 + choice * 47;
-    if (y < top || y >= top + 40) {
+    if (const int top = MenuTop() + 34 + choice * 47;
+        y < top || y >= top + 40) {
       continue;
     }
     menu_selection_ = choice;

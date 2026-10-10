@@ -4,8 +4,7 @@
 
 int RunFeature(void* absl_nullable) {
   RApaLsSession session;
-  const TInt result = session.Connect();
-  if (result != KErrNone) {
+  if (const TInt result = session.Connect(); result != KErrNone) {
     return 1;
   }
   session.Close();

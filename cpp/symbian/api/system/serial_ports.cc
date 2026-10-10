@@ -43,8 +43,7 @@ std::u16string CopyText(const TDesC16& source) {
 
 absl::StatusOr<std::vector<SerialPortRange>> ListSerialPortRanges() {
   RLibrary library;
-  const TInt loaded = library.Load(_L("c32.dll"));
-  if (loaded != KErrNone) {
+  if (const TInt loaded = library.Load(_L("c32.dll")); loaded != KErrNone) {
     return symbian::StatusFromNativeError(loaded, "C32 library");
   }
 
@@ -79,8 +78,7 @@ absl::StatusOr<std::vector<SerialPortRange>> ListSerialPortRanges() {
   alignas(RCommServ) std::byte storage[sizeof(RCommServ)]{};
   auto* absl_nonnull session = reinterpret_cast<RCommServ*>(storage);
   (*constructor)(session);
-  const TInt connected = (*connect)(session);
-  if (connected != KErrNone) {
+  if (const TInt connected = (*connect)(session); connected != KErrNone) {
     return symbian::StatusFromNativeError(connected, "C32 connect");
   }
 
@@ -91,8 +89,8 @@ absl::StatusOr<std::vector<SerialPortRange>> ListSerialPortRanges() {
   } session_closer{session};
 
   TInt count = 0;
-  const TInt counted = (*count_ports)(session, &count);
-  if (counted != KErrNone) {
+  if (const TInt counted = (*count_ports)(session, &count);
+      counted != KErrNone) {
     return symbian::StatusFromNativeError(counted, "C32 port count");
   }
   if (count < 0 || count > 128) {
@@ -103,8 +101,8 @@ absl::StatusOr<std::vector<SerialPortRange>> ListSerialPortRanges() {
   for (TInt index = 0; index < count; ++index) {
     TBuf<64> module;
     TSerialInfo info{};
-    const TInt fetched = (*port_info)(session, index, &module, &info);
-    if (fetched != KErrNone) {
+    if (const TInt fetched = (*port_info)(session, index, &module, &info);
+        fetched != KErrNone) {
       return symbian::StatusFromNativeError(fetched, "C32 port info");
     }
     result.push_back({CopyText(module), CopyText(info.iName),

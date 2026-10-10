@@ -75,9 +75,10 @@ struct WorkerExecutor::State : std::enable_shared_from_this<State> {
     } cache_scope;
 
     thread::SchedulerPolicy policy{
-        .pick_next = [](std::span<thread::Fiber* absl_nonnull const>) {
-          return std::size_t{0};
-        },
+        .pick_next =
+            [](std::span<thread::Fiber* absl_nonnull const>) {
+              return std::size_t{0};
+            },
         .notify_ready = [this] { Wake(); }};
     thread::Scheduler scheduler(&policy);
     std::vector<std::unique_ptr<thread::Fiber>> fibers;
@@ -115,9 +116,9 @@ struct WorkerExecutor::State : std::enable_shared_from_this<State> {
           std::abort();
         }
       }
-      const auto reaped = std::erase_if(
-          fibers, [](const auto& fiber) { return fiber->Finished(); });
-      if (reaped != 0) {
+      if (const auto reaped = std::erase_if(
+              fibers, [](const auto& fiber) { return fiber->Finished(); });
+          reaped != 0) {
         std::lock_guard lock(mu);
         outstanding -= reaped;
       }
@@ -170,7 +171,7 @@ absl::Status WorkerExecutor::DispatchHandle::Post(Work work) const {
   if (!state) {
     return absl::FailedPreconditionError("Worker executor is gone");
   }
-  return state->Enqueue(State::Job{std::move(work), {}});
+  return state->Enqueue(State::Job{.work = std::move(work), .done = {}});
 }
 
 Task WorkerExecutor::PostFiber(Work work, std::size_t stack_bytes) {
@@ -180,9 +181,11 @@ Task WorkerExecutor::PostFiber(Work work, std::size_t stack_bytes) {
   }
   auto promise = std::make_shared<Promise<Unit>>();
   Task task = promise->future();
-  absl::Status status = state_->Enqueue(
-      State::Job{std::move(work), std::move(promise), stack_bytes});
-  if (!status.ok()) {
+  if (absl::Status status =
+          state_->Enqueue(State::Job{.work = std::move(work),
+                                     .done = std::move(promise),
+                                     .stack_bytes = stack_bytes});
+      !status.ok()) {
     return FailedTask(std::move(status));
   }
   return task;

@@ -106,8 +106,7 @@ class BoundedChannel {
       const T& item) requires std::is_copy_constructible_v<T> {
     {
       thread::MutexLock lock(&mu_);
-      absl::Status ready = CheckWritable();
-      if (!ready.ok()) {
+      if (absl::Status ready = CheckWritable(); !ready.ok()) {
         return ready;
       }
       queue_.push_back(item);
@@ -217,8 +216,7 @@ class BoundedChannel {
   absl::Status TryWriteMoved(T* absl_nonnull item) {
     {
       thread::MutexLock lock(&mu_);
-      absl::Status ready = CheckWritable();
-      if (!ready.ok()) {
+      if (absl::Status ready = CheckWritable(); !ready.ok()) {
         return ready;
       }
       queue_.push_back(std::move(*item));

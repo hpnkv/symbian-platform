@@ -36,8 +36,8 @@ void* absl_nullable AllocateAligned(size_t size, size_t alignment) noexcept {
   if (alignment <= alignof(std::max_align_t)) {
     return Allocate(size);
   }
-  const size_t maximum = std::numeric_limits<int>::max();
-  if (alignment > maximum - sizeof(void* absl_nullable) ||
+  if (const size_t maximum = std::numeric_limits<int>::max();
+      alignment > maximum - sizeof(void* absl_nullable) ||
       size > maximum - alignment - sizeof(void* absl_nullable)) {
     return nullptr;
   }

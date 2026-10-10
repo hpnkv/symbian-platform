@@ -28,15 +28,15 @@ extern "C" int SymbianRuntimePropertyCreate(
   auto* absl_nonnull state = new (memory) SymbianRuntimePropertyState;
   state->category = TUid::Uid(category);
   state->key = key;
-  const TInt defined =
-      RProperty::Define(state->category, state->key, RProperty::EInt);
-  if (defined != KErrNone) {
+  if (const TInt defined =
+          RProperty::Define(state->category, state->key, RProperty::EInt);
+      defined != KErrNone) {
     state->~SymbianRuntimePropertyState();
     User::Free(memory);
     return defined;
   }
-  const TInt attached = state->property.Attach(state->category, state->key);
-  if (attached != KErrNone) {
+  if (const TInt attached = state->property.Attach(state->category, state->key);
+      attached != KErrNone) {
     RProperty::Delete(state->category, state->key);
     state->~SymbianRuntimePropertyState();
     User::Free(memory);
@@ -81,8 +81,7 @@ extern "C" int SymbianRuntimePropertyResult(
   if (!state->pending || state->status == KRequestPending) {
     return KErrNotReady;
   }
-  const TInt completed = state->status.Int();
-  if (completed != KErrNone) {
+  if (const TInt completed = state->status.Int(); completed != KErrNone) {
     return completed;
   }
   TInt current = 0;

@@ -116,8 +116,7 @@ class TimerPump {
     auto entry = std::make_shared<Entry>();
     entry->remaining = delay;
     if (delay != absl::InfiniteDuration()) {
-      const int opened = entry->timer.Open();
-      if (opened != 0) {
+      if (const int opened = entry->timer.Open(); opened != 0) {
         return FailedTask(
             symbian::StatusFromNativeError(opened, "RTimer create"));
       }
@@ -137,8 +136,7 @@ class TimerPump {
     // completion can occur. OnReady never runs until the entry is removed.
     entries_.push_back(entry);
     if (delay != absl::InfiniteDuration()) {
-      const int started = ArmNext(entry.get());
-      if (started != 0) {
+      if (const int started = ArmNext(entry.get()); started != 0) {
         entries_.pop_back();
         entry->timer.Close();
         entry->promise.SetError(

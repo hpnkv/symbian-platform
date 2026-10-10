@@ -39,7 +39,10 @@ absl::Status RunActiveService(std::int32_t category, std::uint32_t stop_key,
   if (category == 0 || stop_key == 0 || !start || !on_stop || !on_ready) {
     return absl::InvalidArgumentError("Invalid active service configuration");
   }
-  Callbacks callbacks{start, on_stop, on_ready, absl::OkStatus()};
+  Callbacks callbacks{.start = start,
+                      .on_stop = on_stop,
+                      .on_ready = on_ready,
+                      .start_status = absl::OkStatus()};
   const int result = SymbianDeviceRunActiveService(
       category, stop_key, &Start, &OnStop, &OnReady, &callbacks);
   if (!callbacks.start_status.ok()) {

@@ -39,8 +39,7 @@ class EventExecutor {
     if (opened_ || closed_) {
       return absl::FailedPreconditionError("Event executor already opened");
     }
-    const int result = timers_.Open();
-    if (result != 0) {
+    if (const int result = timers_.Open(); result != 0) {
       return symbian::StatusFromNativeError(result, "Event executor wake");
     }
     auto wake = timers_.WakeCallback();
@@ -130,8 +129,7 @@ class EventExecutor {
     }
     timers_.DispatchReady(budget);
     mailbox_->DispatchReady(budget);
-    absl::Status status = scheduler_.RunReady(budget);
-    if (!status.ok()) {
+    if (absl::Status status = scheduler_.RunReady(budget); !status.ok()) {
       return status;
     }
     return RearmFiberDeadline();

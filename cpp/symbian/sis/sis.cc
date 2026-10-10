@@ -108,8 +108,7 @@ absl::Status CheckOptions(const PackageOptions& options) {
           "SIS name/vendor must contain 1..128 printable ASCII characters");
     }
     for (char value : text) {
-      const auto c = static_cast<uint8_t>(value);
-      if (c < 32 || c > 126) {
+      if (const auto c = static_cast<uint8_t>(value); c < 32 || c > 126) {
         return absl::InvalidArgumentError(
             "SIS metadata requires printable ASCII");
       }
@@ -177,7 +176,7 @@ class Reader {
       }
     }
     position_ += padded;
-    return {payload, bytes_.substr(start, position_ - start)};
+    return {.payload = payload, .raw = bytes_.substr(start, position_ - start)};
   }
 
   uint32_t WordValue() {
@@ -338,8 +337,7 @@ absl::StatusOr<std::string> BuildFiles(
   if (!assets.empty() && (assets.size() < 2 || assets.size() > 40)) {
     return absl::InvalidArgumentError("Expected 2..40 application assets");
   }
-  const bool registered = !assets.empty();
-  if (registered) {
+  if (const bool registered = !assets.empty(); registered) {
     const std::string stem =
         options.executable_name.substr(0, options.executable_name.size() - 4);
     const std::string registration_target =
@@ -446,7 +444,8 @@ absl::StatusOr<std::string> BuildFiles(
       if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
             (c >= '0' && c <= '9') || c == '_' || c == '-')) {
         return absl::InvalidArgumentError(
-            "DLL filename requires ASCII letters, digits, hyphens or underscores");
+            "DLL filename requires ASCII letters, digits, hyphens or "
+            "underscores");
       }
     }
     const auto dll = e32::InspectImage(library.bytes);

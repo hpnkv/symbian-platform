@@ -56,8 +56,7 @@ void ExitButton::Draw(
         for (int column = 0; column < 5; ++column) {
           if (glyphs[letter][row] & (1 << (4 - column))) {
             const int px = left + (letter * 6 + column) * scale;
-            const int py = top + row * scale;
-            if (pass == 0) {
+            if (const int py = top + row * scale; pass == 0) {
               Rect(px - 1, py - 1, scale + 2, scale + 2, 0.0f);
             } else {
               Rect(px, py, scale, scale, 0.94f);

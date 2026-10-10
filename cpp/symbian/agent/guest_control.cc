@@ -278,8 +278,7 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
       return absl::InvalidArgumentError("Invalid agent control key");
     }
     unsigned bit = 0;
-    std::uint64_t value = 0;
-    if (key == "v") {
+    if (std::uint64_t value = 0; key == "v") {
       bit = 1;
       if (!cursor.Unsigned(&value)) {
         return absl::InvalidArgumentError("Invalid control version");
@@ -321,8 +320,7 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
             return absl::InvalidArgumentError("Invalid resource name");
           }
           for (char ch : name) {
-            if (!((ch >= 'a' && ch <= 'z') ||
-                  (ch >= 'A' && ch <= 'Z') ||
+            if (!((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
                   (ch >= '0' && ch <= '9') || ch == '.' || ch == '_' ||
                   ch == '-')) {
               return absl::InvalidArgumentError("Invalid resource name");
@@ -357,8 +355,7 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
         } else if (body_key == "y" && body_value <= 4095) {
           body_bit = 2;
           result.pointer_y = static_cast<std::uint32_t>(body_value);
-        } else if (body_key == "action" && body_value >= 1 &&
-                   body_value <= 3) {
+        } else if (body_key == "action" && body_value >= 1 && body_value <= 3) {
           body_bit = 4;
           result.pointer_action = static_cast<std::uint8_t>(body_value);
         } else if (body_key == "after") {
@@ -370,14 +367,14 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
         } else {
           return absl::InvalidArgumentError("Unsupported page request field");
         }
-        const bool pointer = body_key == "x" || body_key == "y" ||
-                             body_key == "action";
+        const bool pointer =
+            body_key == "x" || body_key == "y" || body_key == "action";
         const bool resource = body_key == "scope" || body_key == "uid" ||
                               body_key == "offset" || body_key == "length" ||
                               body_key == "mode";
-        unsigned* absl_nonnull fields = resource ? &resource_fields
-                                                : pointer ? &pointer_fields
-                                                          : &page_fields;
+        unsigned* absl_nonnull fields = resource  ? &resource_fields
+                                        : pointer ? &pointer_fields
+                                                  : &page_fields;
         if ((*fields & body_bit) != 0) {
           return absl::InvalidArgumentError("Duplicate page request field");
         }
@@ -413,8 +410,8 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
       ((result.kind == 6 || result.kind == 7) &&
        (page_fields != 3 || pointer_fields != 0 || resource_fields != 0 ||
         result.page_limit == 0)) ||
-      (result.kind == 9 && (pointer_fields != 7 || page_fields != 0 ||
-                            resource_fields != 0)) ||
+      (result.kind == 9 &&
+       (pointer_fields != 7 || page_fields != 0 || resource_fields != 0)) ||
       (result.kind == 10 &&
        (resource_fields != 31 || page_fields != 0 || pointer_fields != 0 ||
         result.resource_length == 0)) ||
@@ -422,14 +419,12 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
        (resource_fields != 63 || page_fields != 0 || pointer_fields != 0 ||
         result.resource_length == 0)) ||
       (result.kind == 12 &&
-       (resource_fields != 6 || result.resource_uid == 0 ||
-        page_fields != 0 || pointer_fields != 0 ||
-        result.resource_name.size() < 5 ||
+       (resource_fields != 6 || result.resource_uid == 0 || page_fields != 0 ||
+        pointer_fields != 0 || result.resource_name.size() < 5 ||
         result.resource_name.substr(result.resource_name.size() - 4) !=
             ".sis")) ||
-      (result.kind == 13 &&
-       (resource_fields != 2 || result.resource_uid == 0 ||
-        page_fields != 0 || pointer_fields != 0)) ||
+      (result.kind == 13 && (resource_fields != 2 || result.resource_uid == 0 ||
+                             page_fields != 0 || pointer_fields != 0)) ||
       ((result.kind == 10 || result.kind == 11) &&
        ((result.resource_scope == 0 && result.resource_uid != 0) ||
         (result.resource_scope == 1 && result.resource_uid == 0))) ||
@@ -817,10 +812,9 @@ absl::StatusOr<std::string> PackGuestAppRegisteredResult(
   return result;
 }
 
-absl::StatusOr<std::string> PackGuestError(
-    const GuestControlRequest& request, const absl::Status& status) {
-  if (request.request_id == 0 || status.ok() ||
-      request.extension_count > 8) {
+absl::StatusOr<std::string> PackGuestError(const GuestControlRequest& request,
+                                           const absl::Status& status) {
+  if (request.request_id == 0 || status.ok() || request.extension_count > 8) {
     return absl::InvalidArgumentError("Invalid agent error result");
   }
   std::string result;

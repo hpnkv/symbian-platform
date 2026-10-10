@@ -18,12 +18,13 @@ absl::StatusOr<std::array<std::uint8_t, 4>> BroadcastProbe(
     return absl::InvalidArgumentError("Invalid UDP broadcast probe");
   }
   unsigned address = 0;
-  const int result = SymbianDeviceBroadcastProbe(
-      port, request.data(), static_cast<int>(request.size()),
-      expected_reply.data(), static_cast<int>(expected_reply.size()), &address,
-      deadline == absl::InfiniteFuture() ? INT64_MAX
-                                         : absl::ToUnixMicros(deadline));
-  if (result != 0) {
+  if (const int result = SymbianDeviceBroadcastProbe(
+          port, request.data(), static_cast<int>(request.size()),
+          expected_reply.data(), static_cast<int>(expected_reply.size()),
+          &address,
+          deadline == absl::InfiniteFuture() ? INT64_MAX
+                                             : absl::ToUnixMicros(deadline));
+      result != 0) {
     return symbian::StatusFromNativeError(result, "Discover UDP peer");
   }
   return std::array<std::uint8_t, 4>{static_cast<std::uint8_t>(address >> 24),

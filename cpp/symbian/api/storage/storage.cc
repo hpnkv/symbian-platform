@@ -34,14 +34,13 @@ absl::Status ValidatePath(std::u16string_view path,
 }  // namespace
 
 absl::StatusOr<ReadOnlyFile> ReadOnlyFile::Open(std::u16string_view path) {
-  const absl::Status valid = ValidatePath(path, 255);
-  if (!valid.ok()) {
+  if (const absl::Status valid = ValidatePath(path, 255); !valid.ok()) {
     return valid;
   }
   NativeFile* absl_nullable native = nullptr;
-  const int result = SymbianDeviceFileOpen(
-      path.data(), static_cast<int>(path.size()), &native);
-  if (result != 0) {
+  if (const int result = SymbianDeviceFileOpen(
+          path.data(), static_cast<int>(path.size()), &native);
+      result != 0) {
     return symbian::StatusFromNativeError(result, "Open read-only file");
   }
   return ReadOnlyFile(native);
@@ -64,8 +63,7 @@ ReadOnlyFile::~ReadOnlyFile() {
 
 absl::StatusOr<WritableFile> WritableFile::Open(std::u16string_view path,
                                                 WriteMode mode) {
-  const absl::Status valid = ValidatePath(path, 255);
-  if (!valid.ok()) {
+  if (const absl::Status valid = ValidatePath(path, 255); !valid.ok()) {
     return valid;
   }
   if (mode != WriteMode::kCreateNew && mode != WriteMode::kOpenExisting &&
@@ -73,10 +71,10 @@ absl::StatusOr<WritableFile> WritableFile::Open(std::u16string_view path,
     return absl::InvalidArgumentError("Unknown file write mode");
   }
   NativeFile* absl_nullable native = nullptr;
-  const int result =
-      SymbianDeviceWritableFileOpen(path.data(), static_cast<int>(path.size()),
-                                    static_cast<int>(mode), &native);
-  if (result != 0) {
+  if (const int result = SymbianDeviceWritableFileOpen(
+          path.data(), static_cast<int>(path.size()), static_cast<int>(mode),
+          &native);
+      result != 0) {
     return symbian::StatusFromNativeError(result, "Open writable file");
   }
   return WritableFile(native);
@@ -102,9 +100,9 @@ absl::Status WritableFile::WriteAt(std::uint64_t offset,
   if (native_ == nullptr) {
     return absl::FailedPreconditionError("File is closed");
   }
-  constexpr auto kMaximumOffset =
-      static_cast<std::uint64_t>(std::numeric_limits<int>::max());
-  if (offset > kMaximumOffset ||
+  if (constexpr auto kMaximumOffset =
+          static_cast<std::uint64_t>(std::numeric_limits<int>::max());
+      offset > kMaximumOffset ||
       source.size() > static_cast<std::size_t>(kMaximumOffset - offset)) {
     return absl::UnimplementedError("Write exceeds 2 GiB profile");
   }
@@ -129,8 +127,7 @@ absl::Status WritableFile::Flush() {
 }
 
 absl::Status CreateDirectories(std::u16string_view path) {
-  const absl::Status valid = ValidatePath(path, 255);
-  if (!valid.ok()) {
+  if (const absl::Status valid = ValidatePath(path, 255); !valid.ok()) {
     return valid;
   }
   const int result = SymbianDeviceCreateDirectories(
@@ -210,7 +207,9 @@ CopyProgress FileCopy::progress() const noexcept {
   if (state_ == nullptr) {
     return {};
   }
-  return {state_->bytes_copied, state_->total_bytes, state_->complete};
+  return {.bytes_copied = state_->bytes_copied,
+          .total_bytes = state_->total_bytes,
+          .complete = state_->complete};
 }
 
 absl::StatusOr<CopyProgress> FileCopy::Step() {
@@ -239,10 +238,10 @@ absl::StatusOr<CopyProgress> FileCopy::Step() {
     if (state_->cancel_requested.load(std::memory_order_acquire)) {
       return absl::CancelledError("File copy cancelled");
     }
-    const auto written = state_->destination.WriteAt(
-        state_->bytes_copied,
-        std::span<const std::byte>(state_->buffer.data(), *read));
-    if (!written.ok()) {
+    if (const auto written = state_->destination.WriteAt(
+            state_->bytes_copied,
+            std::span<const std::byte>(state_->buffer.data(), *read));
+        !written.ok()) {
       return written;
     }
     state_->bytes_copied += *read;
@@ -251,8 +250,7 @@ absl::StatusOr<CopyProgress> FileCopy::Step() {
     return absl::CancelledError("File copy cancelled");
   }
   if (state_->bytes_copied == state_->total_bytes) {
-    const auto flushed = state_->destination.Flush();
-    if (!flushed.ok()) {
+    if (const auto flushed = state_->destination.Flush(); !flushed.ok()) {
       return flushed;
     }
     state_->complete = true;
@@ -265,8 +263,7 @@ absl::StatusOr<std::uint64_t> ReadOnlyFile::Size() const {
     return absl::FailedPreconditionError("File is closed");
   }
   int size = 0;
-  const int result = SymbianDeviceFileSize(native_, &size);
-  if (result != 0) {
+  if (const int result = SymbianDeviceFileSize(native_, &size); result != 0) {
     return symbian::StatusFromNativeError(result, "Read file size");
   }
   if (size < 0) {
@@ -280,9 +277,9 @@ absl::StatusOr<std::size_t> ReadOnlyFile::ReadAt(
   if (native_ == nullptr) {
     return absl::FailedPreconditionError("File is closed");
   }
-  constexpr auto kMaximumOffset =
-      static_cast<std::uint64_t>(std::numeric_limits<int>::max());
-  if (offset > kMaximumOffset ||
+  if (constexpr auto kMaximumOffset =
+          static_cast<std::uint64_t>(std::numeric_limits<int>::max());
+      offset > kMaximumOffset ||
       destination.size() > static_cast<std::size_t>(kMaximumOffset - offset)) {
     return absl::UnimplementedError("Read exceeds 2 GiB profile");
   }
@@ -290,11 +287,11 @@ absl::StatusOr<std::size_t> ReadOnlyFile::ReadAt(
     return std::size_t{0};
   }
   int bytes_read = 0;
-  const int result = SymbianDeviceFileReadAt(
-      native_, static_cast<int>(offset),
-      reinterpret_cast<unsigned char*>(destination.data()),
-      static_cast<int>(destination.size()), &bytes_read);
-  if (result != 0) {
+  if (const int result = SymbianDeviceFileReadAt(
+          native_, static_cast<int>(offset),
+          reinterpret_cast<unsigned char*>(destination.data()),
+          static_cast<int>(destination.size()), &bytes_read);
+      result != 0) {
     return symbian::StatusFromNativeError(result, "Read file");
   }
   if (bytes_read < 0 ||
@@ -306,14 +303,13 @@ absl::StatusOr<std::size_t> ReadOnlyFile::ReadAt(
 
 absl::StatusOr<DirectoryReader> DirectoryReader::Open(
     std::u16string_view path) {
-  const absl::Status valid = ValidatePath(path, 253);
-  if (!valid.ok()) {
+  if (const absl::Status valid = ValidatePath(path, 253); !valid.ok()) {
     return valid;
   }
   NativeDirectory* absl_nullable native = nullptr;
-  const int result = SymbianDeviceDirectoryOpen(
-      path.data(), static_cast<int>(path.size()), &native);
-  if (result != 0) {
+  if (const int result = SymbianDeviceDirectoryOpen(
+          path.data(), static_cast<int>(path.size()), &native);
+      result != 0) {
     return symbian::StatusFromNativeError(result, "Open directory");
   }
   return DirectoryReader(native);

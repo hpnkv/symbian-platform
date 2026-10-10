@@ -98,9 +98,9 @@ absl::StatusOr<uint32_t> Number(std::string_view value) {
     base = 16;
   }
   uint32_t result = 0;
-  const auto parsed =
-      std::from_chars(value.data(), value.data() + value.size(), result, base);
-  if (value.empty() || parsed.ec != std::errc{} ||
+  if (const auto parsed = std::from_chars(
+          value.data(), value.data() + value.size(), result, base);
+      value.empty() || parsed.ec != std::errc{} ||
       parsed.ptr != value.data() + value.size()) {
     return absl::InvalidArgumentError("Expected an unsigned 32-bit number");
   }
@@ -124,11 +124,11 @@ absl::Status Run(int argc, char* absl_nullable* absl_nonnull argv) {
     const std::string key = argv[i];
     const bool proxy_option = key == "--output" || key == "--definition" ||
                               key == "--symbol" || key == "--target-dll";
-    const bool conversion_option =
-        key == "--input" || key == "--output" || key == "--import-proxy" ||
-        key == "--uid3" || key == "--capabilities" || key == "--kernel" ||
-        (command == "convert-dll" && key == "--definition");
-    if (!(command == "proxy-sources" ? proxy_option : conversion_option)) {
+    if (const bool conversion_option =
+            key == "--input" || key == "--output" || key == "--import-proxy" ||
+            key == "--uid3" || key == "--capabilities" || key == "--kernel" ||
+            (command == "convert-dll" && key == "--definition");
+        !(command == "proxy-sources" ? proxy_option : conversion_option)) {
       return absl::InvalidArgumentError("Unknown option for " + command + ": " +
                                         key);
     }

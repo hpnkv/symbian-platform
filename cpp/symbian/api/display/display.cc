@@ -37,8 +37,8 @@ absl::StatusOr<DisplayGeometry> ReadPrimaryDisplayGeometry() {
 
 absl::StatusOr<bool> ReadTouchscreenPresence() {
   int present = 0;
-  const int result = SymbianDeviceReadTouchscreenPresence(&present);
-  if (result != 0) {
+  if (const int result = SymbianDeviceReadTouchscreenPresence(&present);
+      result != 0) {
     return symbian::StatusFromNativeError(result, "HAL touchscreen presence");
   }
   return present != 0;

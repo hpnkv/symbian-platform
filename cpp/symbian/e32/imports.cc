@@ -159,8 +159,8 @@ absl::StatusOr<ResolvedImports> ResolveImports(
       return dll.status();
     }
     const auto library = libraries.find(*soname);
-    const uint16_t version = Read16(elf, aux + 6);
-    if (library == libraries.end() || library->second.target_dll != *dll ||
+    if (const uint16_t version = Read16(elf, aux + 6);
+        library == libraries.end() || library->second.target_dll != *dll ||
         !used.insert(*soname).second || version < 2 || version > 0x7fff ||
         !version_libraries.emplace(version, *soname).second) {
       return absl::FailedPreconditionError("Proxy/version identity mismatch");
@@ -229,13 +229,12 @@ absl::StatusOr<ResolvedImports> ResolveImports(
     for (size_t i = 0; i < data_relocs.size; i += 8) {
       const uint32_t info = Read32(elf, data_relocs.offset + i + 4);
       const uint32_t symbol = info >> 8;
-      const uint32_t location = Read32(elf, data_relocs.offset + i);
-      if ((info & 255) == 2 && symbol > 0 && symbol < symbols.size / 16 &&
+      if (const uint32_t location = Read32(elf, data_relocs.offset + i);
+          (info & 255) == 2 && symbol > 0 && symbol < symbols.size / 16 &&
           std::any_of(
               sections.begin(), sections.end(),
               [&](const Section& section) {
-                return (section.name == ".rodata" ||
-                        section.name == ".text") &&
+                return (section.name == ".rodata" || section.name == ".text") &&
                        section.type == 1 && (section.flags & 2) != 0 &&
                        location >= section.address &&
                        Within(section.size, location - section.address, 4);
@@ -364,7 +363,7 @@ absl::StatusOr<ResolvedImports> ResolveImports(
       result.plt_functions.emplace(*name, plt_value);
     }
     blocks[library.target_dll].push_back(
-        {location - code.address, function->ordinal});
+        {.code_offset = location - code.address, .ordinal = function->ordinal});
   }
   // Imported objects use an eager GOT word, just like a function PLT slot.
   // Never copy proxy ordinal bytes into application data (R_ARM_COPY).
@@ -388,12 +387,11 @@ absl::StatusOr<ResolvedImports> ResolveImports(
         return absl::DataLossError("Invalid imported object symbol");
       }
       const size_t p = symbols.offset + symbol * 16;
-      const bool function = static_cast<uint8_t>(elf[p + 12]) == 0x12;
-      if (type == 2 && function) {
+      if (const bool function = static_cast<uint8_t>(elf[p + 12]) == 0x12;
+          type == 2 && function) {
         const auto owner = std::find_if(
             sections.begin(), sections.end(), [&](const Section& section) {
-              return (section.name == ".rodata" ||
-                      section.name == ".text") &&
+              return (section.name == ".rodata" || section.name == ".text") &&
                      section.type == 1 && (section.flags & 2) != 0 &&
                      location >= section.address &&
                      Within(section.size, location - section.address, 4);
@@ -430,7 +428,7 @@ absl::StatusOr<ResolvedImports> ResolveImports(
         result.code_function_pointers.emplace(location, *name);
         symbol_indices.insert(symbol);
         blocks[library.target_dll].push_back(
-            {location - code.address, item->ordinal});
+            {.code_offset = location - code.address, .ordinal = item->ordinal});
         continue;
       }
       if (Read32(elf, p + 4) != 0 ||
@@ -474,8 +472,7 @@ absl::StatusOr<ResolvedImports> ResolveImports(
       } else {
         const auto owner = std::find_if(
             sections.begin(), sections.end(), [&](const Section& section) {
-              return (section.name == ".rodata" ||
-                      section.name == ".text") &&
+              return (section.name == ".rodata" || section.name == ".text") &&
                      section.type == 1 && (section.flags & 2) != 0 &&
                      location >= section.address &&
                      Within(section.size, location - section.address, 4);
@@ -494,7 +491,9 @@ absl::StatusOr<ResolvedImports> ResolveImports(
       result.objects.try_emplace(*name, location - code.address);
       symbol_indices.insert(symbol);
       blocks[library.target_dll].push_back(
-          {location - code.address, item->ordinal, addend});
+          {.code_offset = location - code.address,
+           .ordinal = item->ordinal,
+           .addend = addend});
     }
   }
   // A complete import library can name a function also provided by a static
@@ -565,13 +564,12 @@ absl::StatusOr<ResolvedImports> ResolveImports(
       if (!name.ok()) {
         return name.status();
       }
-      const auto plt_function = result.plt_functions.find(*name);
-      if (plt_function == result.plt_functions.end() ||
+      if (const auto plt_function = result.plt_functions.find(*name);
+          plt_function == result.plt_functions.end() ||
           !result.data_function_pointers.emplace(location, plt_function->second)
                .second) {
         return absl::UnimplementedError(absl::StrCat(
-            "Imported data pointer lacks a unique function PLT slot: ",
-            *name));
+            "Imported data pointer lacks a unique function PLT slot: ", *name));
       }
     }
   }
@@ -579,7 +577,7 @@ absl::StatusOr<ResolvedImports> ResolveImports(
     std::sort(slots.begin(), slots.end(), [](const auto& a, const auto& b) {
       return a.code_offset < b.code_offset;
     });
-    result.blocks.push_back({dll, std::move(slots)});
+    result.blocks.push_back({.dll = dll, .slots = std::move(slots)});
   }
   return result;
 }
@@ -640,9 +638,9 @@ absl::Status CheckImportCall(std::string_view elf, const Segment& code,
     return rotation == 0 ? value
                          : (value >> rotation) | (value << (32 - rotation));
   };
-  const uint64_t slot = static_cast<uint64_t>(target) + 8 +
-                        uint64_t{immediate(a)} + immediate(b) + (c & 0xfff);
-  if (slot != uint64_t{code.address} + slot_offset) {
+  if (const uint64_t slot = static_cast<uint64_t>(target) + 8 +
+                            uint64_t{immediate(a)} + immediate(b) + (c & 0xfff);
+      slot != uint64_t{code.address} + slot_offset) {
     return absl::DataLossError("Import call veneer targets the wrong slot");
   }
   return absl::OkStatus();
@@ -696,7 +694,7 @@ absl::StatusOr<std::vector<ImportBlock>> DecodeImports(std::string_view section,
         !Within(section.size(), p, static_cast<size_t>(slots) * 4)) {
       return absl::DataLossError("Invalid E32 import block name/count");
     }
-    ImportBlock block{*dll, {}};
+    ImportBlock block{.dll = *dll, .slots = {}};
     for (size_t j = 0; j < slots; ++j, p += 4) {
       const uint32_t offset = Read32(section, p);
       if (offset < 16 || offset % 4 || !Within(code.size(), offset, 4) ||
@@ -710,7 +708,8 @@ absl::StatusOr<std::vector<ImportBlock>> DecodeImports(std::string_view section,
         return absl::UnimplementedError(
             "Requires a nonzero E32 import ordinal");
       }
-      block.slots.push_back({offset, ordinal, word >> 16});
+      block.slots.push_back(
+          {.code_offset = offset, .ordinal = ordinal, .addend = word >> 16});
     }
     blocks.push_back(std::move(block));
   }
@@ -758,13 +757,13 @@ absl::StatusOr<std::vector<ImportBlock>> DecodePeImports(
         !Within(code.size(), iat, uint64_t{slots} * 4 + 4)) {
       return absl::DataLossError("Invalid PE DLL/ordinal count");
     }
-    ImportBlock block{*dll, {}};
+    ImportBlock block{.dll = *dll, .slots = {}};
     for (uint32_t j = 0; j < slots; ++j, p += 4, iat += 4) {
       const uint32_t ordinal = Read32(section, p);
       if (ordinal == 0 || ordinal > 65535 || ordinal != Read32(code, iat)) {
         return absl::DataLossError("PE ordinal/IAT mismatch");
       }
-      block.slots.push_back({iat, ordinal});
+      block.slots.push_back({.code_offset = iat, .ordinal = ordinal});
     }
     blocks.push_back(std::move(block));
   }

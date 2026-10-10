@@ -79,8 +79,9 @@ absl::Status CameraStream::Open(int index,
          preferred.format != PixelFormat::kYuv420Planar)) {
       return absl::InvalidArgumentError("Unsupported ECam viewfinder request");
     }
-    native_requests[i] = {preferred.width, preferred.height,
-                          static_cast<int>(preferred.format)};
+    native_requests[i] = {.width = preferred.width,
+                          .height = preferred.height,
+                          .format = static_cast<int>(preferred.format)};
   }
   const int error = SymbianDeviceCameraStreamCreate(
       index, native_requests.data(), static_cast<int>(preferences.size()),
@@ -97,8 +98,8 @@ absl::StatusOr<std::optional<FrameLease>> CameraStream::Poll() {
     return absl::FailedPreconditionError("Camera stream is closed");
   }
   NativeCameraFrame native;
-  const int error = SymbianDeviceCameraStreamPoll(state_, &native);
-  if (error != 0) {
+  if (const int error = SymbianDeviceCameraStreamPoll(state_, &native);
+      error != 0) {
     return symbian::StatusFromNativeError(
         error, error == symbian::native_error::kInUse ? "Camera is in use"
                                                       : "Poll ECam stream");
@@ -106,9 +107,10 @@ absl::StatusOr<std::optional<FrameLease>> CameraStream::Poll() {
   if (native.data == nullptr) {
     return std::nullopt;
   }
-  return std::optional<FrameLease>(
-      std::in_place, NativeFrameView(native),
-      [owner = native.release_owner] { SymbianDeviceCameraFrameRelease(owner); });
+  return std::optional<FrameLease>(std::in_place, NativeFrameView(native),
+                                   [owner = native.release_owner] {
+                                     SymbianDeviceCameraFrameRelease(owner);
+                                   });
 }
 
 absl::StatusOr<bool> CameraStream::PollScoped(FrameConsumer consumer) {
@@ -118,11 +120,11 @@ absl::StatusOr<bool> CameraStream::PollScoped(FrameConsumer consumer) {
   if (!consumer.consume) {
     return absl::InvalidArgumentError("Camera frame consumer is empty");
   }
-  ScopedConsume scoped{std::move(consumer)};
+  ScopedConsume scoped{.consumer = std::move(consumer)};
   bool delivered = false;
-  const int error = SymbianDeviceCameraStreamPollScoped(
-      state_, ConsumeNativeFrame, &scoped, &delivered);
-  if (error != 0) {
+  if (const int error = SymbianDeviceCameraStreamPollScoped(
+          state_, ConsumeNativeFrame, &scoped, &delivered);
+      error != 0) {
     return symbian::StatusFromNativeError(
         error, error == symbian::native_error::kInUse ? "Camera is in use"
                                                       : "Poll ECam stream");
@@ -134,15 +136,16 @@ absl::StatusOr<bool> CameraStream::PollScoped(FrameConsumer consumer) {
 }
 
 CameraSource CameraStream::Borrow() {
-  return {
-      .open = [this](int index, std::span<const FrameLayout> preferences) {
-        return Open(index, preferences);
-      },
-      .poll = [this] { return Poll(); },
-      .poll_scoped = [this](FrameConsumer consumer) {
-        return PollScoped(std::move(consumer));
-      },
-      .close = [this] { Close(); }};
+  return {.open =
+              [this](int index, std::span<const FrameLayout> preferences) {
+                return Open(index, preferences);
+              },
+          .poll = [this] { return Poll(); },
+          .poll_scoped =
+              [this](FrameConsumer consumer) {
+                return PollScoped(std::move(consumer));
+              },
+          .close = [this] { Close(); }};
 }
 
 void CameraStream::Close() {

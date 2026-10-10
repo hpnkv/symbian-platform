@@ -151,8 +151,8 @@ class Framing {
         return absl::OutOfRangeError(
             "WebSocket frame exceeds max_message_size");
       }
-      const bool control = opcode >= kClose;
-      if (control && (!final || payload_size > 125)) {
+      if (const bool control = opcode >= kClose;
+          control && (!final || payload_size > 125)) {
         return absl::InvalidArgumentError(
             "WebSocket control frame must be final and at most 125 bytes");
       }
@@ -248,8 +248,8 @@ class Framing {
     std::string frame;
     frame.reserve(payload.size() + 14);
     frame.push_back(static_cast<char>(0x80U | opcode));
-    const std::uint8_t mask_flag = masked ? 0x80U : 0;
-    if (payload.size() <= 125) {
+    if (const std::uint8_t mask_flag = masked ? 0x80U : 0;
+        payload.size() <= 125) {
       frame.push_back(static_cast<char>(mask_flag | payload.size()));
     } else if (payload.size() <= std::numeric_limits<std::uint16_t>::max()) {
       frame.push_back(static_cast<char>(mask_flag | 126U));

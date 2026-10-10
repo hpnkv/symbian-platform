@@ -210,7 +210,7 @@ Endpoints FindEndpoints(const libusb_config_descriptor& config, int cls,
           (wanted_number >= 0 && alt.bInterfaceNumber != wanted_number)) {
         continue;
       }
-      Endpoints candidate{alt.bInterfaceNumber, 0, 0};
+      Endpoints candidate{.number = alt.bInterfaceNumber, .in = 0, .out = 0};
       int ins = 0, outs = 0;
       for (int k = 0; k < alt.bNumEndpoints; ++k) {
         const auto& endpoints = alt.endpoint[k];
@@ -303,10 +303,10 @@ absl::Status WriteBulk(libusb_device_handle* absl_nonnull handle,
     int length =
         static_cast<int>(std::min<size_t>(16384, bytes.size() - offset));
     int sent = 0;
-    int code = libusb_bulk_transfer(
-        handle, endpoint, const_cast<unsigned char*>(bytes.data()) + offset,
-        length, &sent, kTimeoutMs);
-    if (code != 0 || sent <= 0) {
+    if (int code = libusb_bulk_transfer(
+            handle, endpoint, const_cast<unsigned char*>(bytes.data()) + offset,
+            length, &sent, kTimeoutMs);
+        code != 0 || sent <= 0) {
       return absl::UnavailableError("USB PTP write: " + UsbError(code));
     }
     offset += static_cast<size_t>(sent);
@@ -338,9 +338,8 @@ absl::StatusOr<Reply> PtpResponse(libusb_device_handle* absl_nonnull handle,
   // A previous session may have timed out waiting for CloseSession even though
   // the handset later completed it. Only a fresh GetDeviceInfo can discard a
   // bounded number of those late response containers before its own reply.
-  for (int stale = 0;
-       opcode == 0x1001 && transaction_id == 0 && stale < 8 &&
-       Read32(*first, 8) != 0 && Read16(*first, 4) == 3;
+  for (int stale = 0; opcode == 0x1001 && transaction_id == 0 && stale < 8 &&
+                      Read32(*first, 8) != 0 && Read16(*first, 4) == 3;
        ++stale) {
     LOG(WARNING) << "Discarding late MTP response for transaction "
                  << Read32(*first, 8);
@@ -350,12 +349,11 @@ absl::StatusOr<Reply> PtpResponse(libusb_device_handle* absl_nonnull handle,
     }
   }
   if (Read32(*first, 8) != transaction_id) {
-    return absl::DataLossError(
-        "PTP transaction mismatch: expected " +
-        std::to_string(transaction_id) + ", received " +
-        std::to_string(Read32(*first, 8)) + ", type " +
-        std::to_string(Read16(*first, 4)) + ", code " +
-        std::to_string(Read16(*first, 6)));
+    return absl::DataLossError("PTP transaction mismatch: expected " +
+                               std::to_string(transaction_id) + ", received " +
+                               std::to_string(Read32(*first, 8)) + ", type " +
+                               std::to_string(Read16(*first, 4)) + ", code " +
+                               std::to_string(Read16(*first, 6)));
   }
   std::vector<unsigned char> response = std::move(*first);
   Reply result;
@@ -371,9 +369,8 @@ absl::StatusOr<Reply> PtpResponse(libusb_device_handle* absl_nonnull handle,
     response = std::move(*second);
     if (Read32(response, 8) != transaction_id) {
       return absl::DataLossError(
-          "PTP response mismatch: expected " +
-          std::to_string(transaction_id) + ", received " +
-          std::to_string(Read32(response, 8)));
+          "PTP response mismatch: expected " + std::to_string(transaction_id) +
+          ", received " + std::to_string(Read32(response, 8)));
     }
   }
   if (Read16(response, 4) != 3 || (response.size() - 12) % 4 != 0) {
@@ -391,9 +388,9 @@ absl::StatusOr<Reply> Ptp(libusb_device_handle* absl_nonnull handle,
                           uint32_t transaction_id,
                           const std::vector<uint32_t>& params = {},
                           uint32_t max_data = kMaxContainer) {
-  auto written = WriteBulk(handle, endpoints.out,
-                           PtpCommand(opcode, transaction_id, params));
-  if (!written.ok()) {
+  if (auto written = WriteBulk(handle, endpoints.out,
+                               PtpCommand(opcode, transaction_id, params));
+      !written.ok()) {
     return written;
   }
   return PtpResponse(handle, endpoints, opcode, transaction_id, max_data);
@@ -491,8 +488,8 @@ class Cursor {
       }
       uint32_t codepoint = value;
       if (value >= 0xd800 && value <= 0xdbff && i + 1 < count) {
-        uint16_t low = Read16(bytes_, offset_ + 2 * (i + 1));
-        if (low >= 0xdc00 && low <= 0xdfff) {
+        if (uint16_t low = Read16(bytes_, offset_ + 2 * (i + 1));
+            low >= 0xdc00 && low <= 0xdfff) {
           codepoint = 0x10000u + ((uint32_t(value) - 0xd800u) << 10) +
                       (uint32_t(low) - 0xdc00u);
           ++i;
@@ -576,8 +573,7 @@ absl::StatusOr<MtpDeviceInfo> DeviceInfo(
     return operations.status();
   }
   for (int i = 0; i < 4; ++i) {
-    auto skipped = c.Array(2);
-    if (!skipped.ok()) {
+    if (auto skipped = c.Array(2); !skipped.ok()) {
       return skipped.status();
     }
   }
@@ -593,8 +589,7 @@ absl::StatusOr<MtpDeviceInfo> DeviceInfo(
   if (!device_version.ok()) {
     return device_version.status();
   }
-  auto serial = c.String();
-  if (!serial.ok()) {
+  if (auto serial = c.String(); !serial.ok()) {
     return serial.status();
   }
   operations->resize(std::min<size_t>(operations->size(), 128));
@@ -659,9 +654,9 @@ UsbProbe Mtp(libusb_device_handle* absl_nonnull handle,
     result.state = "imaging-interface-unavailable";
     return result;
   }
-  Claim claim{handle};
-  int result_code = libusb_claim_interface(handle, endpoints.number);
-  if (result_code != 0) {
+  Claim claim{.handle = handle};
+  if (int result_code = libusb_claim_interface(handle, endpoints.number);
+      result_code != 0) {
     result.state = "claim-failed";
     result.detail = UsbError(result_code);
     return result;
@@ -701,8 +696,8 @@ UsbProbe Mtp(libusb_device_handle* absl_nonnull handle,
   result.transport = "mtp-usb";
   result.interface_number = endpoints.number;
   result.scope = "read-only metadata";
-  auto ids_reply = Ptp(handle, endpoints, 0x1004, transaction_id++);
-  if (!ids_reply.ok()) {
+  if (auto ids_reply = Ptp(handle, endpoints, 0x1004, transaction_id++);
+      !ids_reply.ok()) {
     result.state = "storage-list-error";
     result.detail = ids_reply.status().ToString();
   } else if (ids_reply->response != 0x2001) {
@@ -710,8 +705,7 @@ UsbProbe Mtp(libusb_device_handle* absl_nonnull handle,
     result.response_code = ids_reply->response;
   } else {
     Cursor c(ids_reply->data);
-    auto ids = c.Array(4);
-    if (!ids.ok()) {
+    if (auto ids = c.Array(4); !ids.ok()) {
       result.state = "decode-error";
       result.detail = ids.status().ToString();
     } else {
@@ -742,16 +736,15 @@ UsbProbe Mtp(libusb_device_handle* absl_nonnull handle,
           record.error = storage.status().ToString();
         }
         if (limit > 0) {
-          auto handles = Ptp(handle, endpoints, 0x1007, transaction_id++,
-                             {id, 0, 0xffffffff});
-          if (!handles.ok()) {
+          if (auto handles = Ptp(handle, endpoints, 0x1007, transaction_id++,
+                                 {id, 0, 0xffffffff});
+              !handles.ok()) {
             record.root_listing_error = handles.status().ToString();
           } else if (handles->response != 0x2001) {
             record.root_listing_response_code = handles->response;
           } else {
             Cursor hc(handles->data);
-            auto values = hc.Array(4);
-            if (!values.ok()) {
+            if (auto values = hc.Array(4); !values.ok()) {
               record.root_listing_error = values.status().ToString();
             } else {
               record.root_object_count = values->size();
@@ -772,12 +765,10 @@ UsbProbe Mtp(libusb_device_handle* absl_nonnull handle,
                   entry.format_code = Read16(object->data, 4);
                   entry.size_bytes = Read32(object->data, 8);
                   Cursor oc(object->data);
-                  auto skipped = oc.Skip(52);
-                  if (!skipped.ok()) {
+                  if (auto skipped = oc.Skip(52); !skipped.ok()) {
                     entry.error = skipped.ToString();
                   } else {
-                    auto name = oc.String();
-                    if (name.ok()) {
+                    if (auto name = oc.String(); name.ok()) {
                       entry.name = *name;
                     } else {
                       entry.error = name.status().ToString();
@@ -842,8 +833,7 @@ absl::StatusOr<Reply> CheckedPtp(libusb_device_handle* absl_nonnull handle,
   char operation[64];
   std::snprintf(operation, sizeof(operation), "MTP %s (0x%04x)",
                 PtpOperationName(opcode), opcode);
-  auto status = RequireSuccess(*reply, operation);
-  if (!status.ok()) {
+  if (auto status = RequireSuccess(*reply, operation); !status.ok()) {
     LOG(WARNING) << status;
     return status;
   }
@@ -876,8 +866,7 @@ absl::StatusOr<MtpObjectInfo> ReadObjectInfo(
   object.format_code = Read16(reply->data, 4);
   object.size_bytes = Read32(reply->data, 8);
   Cursor cursor(reply->data);
-  auto skipped = cursor.Skip(52);
-  if (!skipped.ok()) {
+  if (auto skipped = cursor.Skip(52); !skipped.ok()) {
     return skipped;
   }
   auto name = cursor.String();
@@ -953,7 +942,7 @@ absl::StatusOr<MtpStageResult> StageOnHandle(
   if (endpoints.number < 0) {
     return absl::FailedPreconditionError("No unique MTP USB interface");
   }
-  Claim claim{handle};
+  Claim claim{.handle = handle};
   int code = libusb_claim_interface(handle, endpoints.number);
   if (code != 0) {
     return absl::UnavailableError("MTP interface claim: " + UsbError(code));
@@ -976,8 +965,8 @@ absl::StatusOr<MtpStageResult> StageOnHandle(
           "Device lacks required MTP transfer operation");
     }
   }
-  auto opened = CheckedPtp(handle, endpoints, 0x1002, 0, {1});
-  if (!opened.ok()) {
+  if (auto opened = CheckedPtp(handle, endpoints, 0x1002, 0, {1});
+      !opened.ok()) {
     return opened.status();
   }
   uint32_t transaction_id = 1;
@@ -991,7 +980,8 @@ absl::StatusOr<MtpStageResult> StageOnHandle(
     ~Session() {
       Ptp(handle, endpoints, 0x1003, (*next_id)++).status().IgnoreError();
     }
-  } session{handle, endpoints, &transaction_id};
+  } session{
+      .handle = handle, .endpoints = endpoints, .next_id = &transaction_id};
 
   auto stores = CheckedPtp(handle, endpoints, 0x1004, transaction_id++);
   if (!stores.ok()) {
@@ -1094,13 +1084,13 @@ absl::StatusOr<MtpStageResult> StageOnHandle(
           "Different file occupies MTP package path");
     }
     if (std::find(device_info->supported_operation_codes.begin(),
-                  device_info->supported_operation_codes.end(), 0x100b) ==
-        device_info->supported_operation_codes.end()) {
+                  device_info->supported_operation_codes.end(),
+                  0x100b) == device_info->supported_operation_codes.end()) {
       return absl::FailedPreconditionError("MTP DeleteObject unavailable");
     }
-    auto deleted = CheckedPtp(handle, endpoints, 0x100b, transaction_id++,
-                              {object_id});
-    if (!deleted.ok()) {
+    if (auto deleted = CheckedPtp(handle, endpoints, 0x100b, transaction_id++,
+                                  {object_id});
+        !deleted.ok()) {
       return deleted.status();
     }
   }
@@ -1149,8 +1139,11 @@ absl::StatusOr<MtpStageResult> StageOnHandle(
   }
   LOG(INFO) << "MTP SIS upload verified by readback: " << filename
             << ", object handle " << created;
-  return MtpStageResult{selected_storage, created, filename, true,
-                        unreadable_children};
+  return MtpStageResult{.storage_id = selected_storage,
+                        .object_handle = created,
+                        .name = filename,
+                        .copied = true,
+                        .unreadable_children = unreadable_children};
 }
 
 absl::StatusOr<std::vector<unsigned char>> ReadPathOnHandle(
@@ -1175,8 +1168,8 @@ absl::StatusOr<std::vector<unsigned char>> ReadPathOnHandle(
   if (!device_info.ok()) {
     return device_info.status();
   }
-  for (uint32_t opcode : std::array<uint32_t, 5>{0x1003, 0x1005, 0x1007,
-                                                 0x1008, 0x1009}) {
+  for (uint32_t opcode :
+       std::array<uint32_t, 5>{0x1003, 0x1005, 0x1007, 0x1008, 0x1009}) {
     if (std::find(device_info->supported_operation_codes.begin(),
                   device_info->supported_operation_codes.end(),
                   opcode) == device_info->supported_operation_codes.end()) {
@@ -1184,30 +1177,33 @@ absl::StatusOr<std::vector<unsigned char>> ReadPathOnHandle(
           "Device lacks required MTP file-read operation");
     }
   }
-  auto opened = CheckedPtp(handle, endpoints, 0x1002, 0, {1});
-  if (!opened.ok()) {
+  if (auto opened = CheckedPtp(handle, endpoints, 0x1002, 0, {1});
+      !opened.ok()) {
     return opened.status();
   }
   uint32_t transaction_id = 1;
+
   struct Session {
     libusb_device_handle* absl_nonnull handle;
     Endpoints endpoints;
     uint32_t* absl_nonnull next_id;
+
     ~Session() {
       Ptp(handle, endpoints, 0x1003, (*next_id)++).status().IgnoreError();
     }
   } session{handle, endpoints, &transaction_id};
-  auto storage = CheckedPtp(handle, endpoints, 0x1005, transaction_id++,
-                            {storage_id});
-  if (!storage.ok()) {
+
+  if (auto storage =
+          CheckedPtp(handle, endpoints, 0x1005, transaction_id++, {storage_id});
+      !storage.ok()) {
     return storage.status();
   }
   uint32_t parent = 0xffffffff;
   while (!relative_path.empty()) {
     const size_t slash = relative_path.find('/');
     const std::string_view component = relative_path.substr(0, slash);
-    auto children = ObjectHandles(handle, endpoints, transaction_id++,
-                                  storage_id, parent);
+    auto children =
+        ObjectHandles(handle, endpoints, transaction_id++, storage_id, parent);
     if (!children.ok()) {
       return children.status();
     }
@@ -1236,7 +1232,8 @@ absl::StatusOr<std::vector<unsigned char>> ReadPathOnHandle(
     }
     if (slash != std::string_view::npos) {
       if (selected->format_code != 0x3001) {
-        return absl::FailedPreconditionError("MTP path component is not a folder");
+        return absl::FailedPreconditionError(
+            "MTP path component is not a folder");
       }
       parent = selected->handle;
       relative_path.remove_prefix(slash + 1);
@@ -1290,7 +1287,7 @@ UsbProbe Obex(libusb_device_handle* absl_nonnull handle,
     result.state = "pc-suite-data-unavailable";
     return result;
   }
-  Claim claim{handle};
+  Claim claim{.handle = handle};
   int result_code = libusb_claim_interface(handle, endpoints.number);
   if (result_code != 0) {
     result.state = "claim-failed";
@@ -1441,9 +1438,9 @@ absl::StatusOr<UsbProbe> InspectUsb(uint16_t vendor, uint16_t product,
       continue;
     }
     unsigned char serial[256];
-    int size = libusb_get_string_descriptor_ascii(
-        handle.value, descriptor.iSerialNumber, serial, sizeof(serial));
-    if (size <= 0 || Anchor(vendor, serial, size) != anchor) {
+    if (int size = libusb_get_string_descriptor_ascii(
+            handle.value, descriptor.iSerialNumber, serial, sizeof(serial));
+        size <= 0 || Anchor(vendor, serial, size) != anchor) {
       continue;
     }
     ++matches;
@@ -1534,9 +1531,9 @@ absl::StatusOr<MtpStageResult> StageMtpSis(uint16_t vendor, uint16_t product,
       continue;
     }
     unsigned char serial[256];
-    int length = libusb_get_string_descriptor_ascii(
-        candidate.value, descriptor.iSerialNumber, serial, sizeof(serial));
-    if (length <= 0 || Anchor(vendor, serial, length) != anchor) {
+    if (int length = libusb_get_string_descriptor_ascii(
+            candidate.value, descriptor.iSerialNumber, serial, sizeof(serial));
+        length <= 0 || Anchor(vendor, serial, length) != anchor) {
       continue;
     }
     if (selected != nullptr) {
@@ -1573,11 +1570,10 @@ absl::StatusOr<std::vector<unsigned char>> ReadMtpFile(
   std::string_view rest = relative_path;
   while (!rest.empty()) {
     const size_t slash = rest.find('/');
-    const std::string_view part = rest.substr(0, slash);
-    if (part.empty() || part == "." || part == ".." ||
+    if (const std::string_view part = rest.substr(0, slash);
+        part.empty() || part == "." || part == ".." ||
         part.find_first_of("\\:") != std::string_view::npos ||
-        part.find('\0') != std::string_view::npos ||
-        ++components > 8) {
+        part.find('\0') != std::string_view::npos || ++components > 8) {
       return absl::InvalidArgumentError("Unsafe MTP relative path");
     }
     if (slash == std::string_view::npos) {
@@ -1612,9 +1608,9 @@ absl::StatusOr<std::vector<unsigned char>> ReadMtpFile(
       continue;
     }
     unsigned char serial[256];
-    const int length = libusb_get_string_descriptor_ascii(
-        candidate.value, descriptor.iSerialNumber, serial, sizeof(serial));
-    if (length <= 0 || Anchor(vendor, serial, length) != anchor) {
+    if (const int length = libusb_get_string_descriptor_ascii(
+            candidate.value, descriptor.iSerialNumber, serial, sizeof(serial));
+        length <= 0 || Anchor(vendor, serial, length) != anchor) {
       continue;
     }
     if (selected != nullptr) {
@@ -1638,7 +1634,6 @@ absl::StatusOr<std::vector<unsigned char>> ReadMtpFile(
   return ReadPathOnHandle(handle.value, *config.value, storage_id,
                           relative_path, max_bytes);
 }
-
 
 }  // namespace symbian::device
 
@@ -1747,9 +1742,9 @@ struct UsbSession::Impl {
     completion.id = value->id;
     completion.status = CompletionStatus(transfer->status);
     completion.actual_length = transfer->actual_length;
-    size_t expected_out =
-        value->bytes.size() - (value->control ? LIBUSB_CONTROL_SETUP_SIZE : 0);
-    if (!value->inbound && completion.status == "completed" &&
+    if (size_t expected_out = value->bytes.size() -
+                              (value->control ? LIBUSB_CONTROL_SETUP_SIZE : 0);
+        !value->inbound && completion.status == "completed" &&
         static_cast<size_t>(transfer->actual_length) != expected_out) {
       completion.status = "short-transfer";
     }
@@ -1833,9 +1828,9 @@ absl::StatusOr<std::shared_ptr<UsbSession>> UsbSession::Open(
       continue;
     }
     unsigned char serial[256];
-    int size = libusb_get_string_descriptor_ascii(
-        candidate, descriptor.iSerialNumber, serial, sizeof(serial));
-    if (size > 0 && Anchor(vendor, serial, size) == serial_anchor) {
+    if (int size = libusb_get_string_descriptor_ascii(
+            candidate, descriptor.iSerialNumber, serial, sizeof(serial));
+        size > 0 && Anchor(vendor, serial, size) == serial_anchor) {
       ++matches;
       if (matches == 1) {
         impl->handle = candidate;
@@ -1889,8 +1884,8 @@ absl::Status UsbSession::Claim(int number) {
   if (impl_->claimed.contains(number)) {
     return absl::AlreadyExistsError("Interface already claimed");
   }
-  int result_code = libusb_claim_interface(impl_->handle, number);
-  if (result_code != 0) {
+  if (int result_code = libusb_claim_interface(impl_->handle, number);
+      result_code != 0) {
     return TransferStatus(result_code, "claim interface");
   }
   impl_->claimed[number] = 0;
@@ -1908,9 +1903,9 @@ absl::Status UsbSession::SetAlternate(int number, int alternate) {
   if (!impl_->claimed.contains(number)) {
     return absl::FailedPreconditionError("Claim interface first");
   }
-  int result_code =
-      libusb_set_interface_alt_setting(impl_->handle, number, alternate);
-  if (result_code != 0) {
+  if (int result_code =
+          libusb_set_interface_alt_setting(impl_->handle, number, alternate);
+      result_code != 0) {
     return TransferStatus(result_code, "set alternate setting");
   }
   impl_->claimed[number] = alternate;
@@ -1934,14 +1929,14 @@ absl::Status UsbSession::Release(int number) {
     }
   }
   if (it->second != 0) {
-    int result_code =
-        libusb_set_interface_alt_setting(impl_->handle, number, 0);
-    if (result_code != 0) {
+    if (int result_code =
+            libusb_set_interface_alt_setting(impl_->handle, number, 0);
+        result_code != 0) {
       return TransferStatus(result_code, "restore alternate setting");
     }
   }
-  int result_code = libusb_release_interface(impl_->handle, number);
-  if (result_code != 0) {
+  if (int result_code = libusb_release_interface(impl_->handle, number);
+      result_code != 0) {
     return TransferStatus(result_code, "release interface");
   }
   impl_->claimed.erase(it);
@@ -1967,16 +1962,16 @@ absl::StatusOr<std::string> UsbSession::SyncIn(uint8_t endpoint, int length,
   }
   std::string data(static_cast<size_t>(length), '\0');
   int received = 0;
-  int result_code =
-      interrupt ? libusb_interrupt_transfer(
-                      impl_->handle, endpoint,
-                      reinterpret_cast<unsigned char*>(data.data()), length,
-                      &received, static_cast<unsigned int>(timeout_ms))
-                : libusb_bulk_transfer(
-                      impl_->handle, endpoint,
-                      reinterpret_cast<unsigned char*>(data.data()), length,
-                      &received, static_cast<unsigned int>(timeout_ms));
-  if (result_code != 0) {
+  if (int result_code =
+          interrupt ? libusb_interrupt_transfer(
+                          impl_->handle, endpoint,
+                          reinterpret_cast<unsigned char*>(data.data()), length,
+                          &received, static_cast<unsigned int>(timeout_ms))
+                    : libusb_bulk_transfer(
+                          impl_->handle, endpoint,
+                          reinterpret_cast<unsigned char*>(data.data()), length,
+                          &received, static_cast<unsigned int>(timeout_ms));
+      result_code != 0) {
     return TransferStatus(result_code, "USB IN transfer");
   }
   data.resize(static_cast<size_t>(received));
@@ -2001,19 +1996,19 @@ absl::Status UsbSession::SyncOut(uint8_t endpoint, const std::string& data,
     return absl::FailedPreconditionError("USB session closed");
   }
   int sent = 0;
-  int result_code =
-      interrupt
-          ? libusb_interrupt_transfer(impl_->handle, endpoint,
-                                      reinterpret_cast<unsigned char*>(
-                                          const_cast<char*>(data.data())),
-                                      static_cast<int>(data.size()), &sent,
-                                      static_cast<unsigned int>(timeout_ms))
-          : libusb_bulk_transfer(impl_->handle, endpoint,
-                                 reinterpret_cast<unsigned char*>(
-                                     const_cast<char*>(data.data())),
-                                 static_cast<int>(data.size()), &sent,
-                                 static_cast<unsigned int>(timeout_ms));
-  if (result_code != 0) {
+  if (int result_code =
+          interrupt
+              ? libusb_interrupt_transfer(impl_->handle, endpoint,
+                                          reinterpret_cast<unsigned char*>(
+                                              const_cast<char*>(data.data())),
+                                          static_cast<int>(data.size()), &sent,
+                                          static_cast<unsigned int>(timeout_ms))
+              : libusb_bulk_transfer(impl_->handle, endpoint,
+                                     reinterpret_cast<unsigned char*>(
+                                         const_cast<char*>(data.data())),
+                                     static_cast<int>(data.size()), &sent,
+                                     static_cast<unsigned int>(timeout_ms));
+      result_code != 0) {
     return TransferStatus(result_code, "USB OUT transfer");
   }
   if (sent != static_cast<int>(data.size())) {
@@ -2083,8 +2078,7 @@ absl::Status UsbSession::ControlOut(uint8_t request_type, uint8_t request,
   if (data.size() > 65535) {
     return absl::InvalidArgumentError("Control payload too large");
   }
-  auto status = CheckTimeout(timeout_ms);
-  if (!status.ok()) {
+  if (auto status = CheckTimeout(timeout_ms); !status.ok()) {
     return status;
   }
   if ((request_type & 0x80) != 0) {
@@ -2170,8 +2164,8 @@ absl::StatusOr<uint64_t> UsbSession::Submit(
   {
     std::lock_guard<std::mutex> state_lock(impl_->state_mutex);
     impl_->pending[id] = std::move(pending);
-    int result_code = libusb_submit_transfer(impl_->pending[id]->transfer);
-    if (result_code != 0) {
+    if (int result_code = libusb_submit_transfer(impl_->pending[id]->transfer);
+        result_code != 0) {
       impl_->pending.erase(id);
       return TransferStatus(result_code, "submit USB transfer");
     }
@@ -2251,8 +2245,8 @@ absl::StatusOr<uint64_t> UsbSession::SubmitControl(
   {
     std::lock_guard<std::mutex> state_lock(impl_->state_mutex);
     impl_->pending[id] = std::move(pending);
-    int result_code = libusb_submit_transfer(impl_->pending[id]->transfer);
-    if (result_code != 0) {
+    if (int result_code = libusb_submit_transfer(impl_->pending[id]->transfer);
+        result_code != 0) {
       impl_->pending.erase(id);
       return TransferStatus(result_code, "submit USB control");
     }
@@ -2357,10 +2351,11 @@ absl::StatusOr<std::vector<UsbCompletion>> UsbSession::HandleEvents(
   if (future_settled) {
     return std::vector<UsbCompletion>{};
   }
-  timeval wait{timeout_ms / 1000, (timeout_ms % 1000) * 1000};
-  int result_code =
-      libusb_handle_events_timeout_completed(impl_->context, &wait, nullptr);
-  if (result_code != 0 && result_code != LIBUSB_ERROR_INTERRUPTED) {
+  timeval wait{.tv_sec = timeout_ms / 1000,
+               .tv_usec = (timeout_ms % 1000) * 1000};
+  if (int result_code = libusb_handle_events_timeout_completed(impl_->context,
+                                                               &wait, nullptr);
+      result_code != 0 && result_code != LIBUSB_ERROR_INTERRUPTED) {
     return TransferStatus(result_code, "handle USB events");
   }
   impl_->SettleReadyFutures();
@@ -2423,7 +2418,7 @@ absl::Status UsbSession::Close() {
         break;
       }
     }
-    timeval wait{0, 50000};
+    timeval wait{.tv_sec = 0, .tv_usec = 50000};
     libusb_handle_events_timeout_completed(impl_->context, &wait, nullptr);
   }
   {
@@ -2453,8 +2448,7 @@ absl::Status UsbSession::Close() {
 
 absl::StatusOr<std::vector<UsbDeviceDescriptor>> ListUsbDevices() {
   Context context;
-  int result_code = libusb_init(&context.value);
-  if (result_code != 0) {
+  if (int result_code = libusb_init(&context.value); result_code != 0) {
     return TransferStatus(result_code, "libusb init");
   }
   DeviceList list;

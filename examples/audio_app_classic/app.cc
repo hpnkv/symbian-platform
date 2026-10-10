@@ -44,8 +44,7 @@ class Audio final : public MMdaAudioOutputStreamCallback {
       error_ = error;
       CActiveScheduler::Stop();
     } else {
-      const TInt stopped = stream_->RequestStop();
-      if (stopped != KErrNone) {
+      if (const TInt stopped = stream_->RequestStop(); stopped != KErrNone) {
         error_ = stopped;
         CActiveScheduler::Stop();
       }

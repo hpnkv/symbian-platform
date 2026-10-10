@@ -108,8 +108,7 @@ absl::StatusOr<ArmAttributes> InspectArmAttributes(std::string_view bytes) {
         }
         if (*attribute == 4 || *attribute == 5 || *attribute == 67 ||
             (*attribute > 32 && (*attribute & 1))) {
-          const auto text = String(attributes, &sub);
-          if (!text.ok()) {
+          if (const auto text = String(attributes, &sub); !text.ok()) {
             return text.status();
           }
           continue;
@@ -122,8 +121,7 @@ absl::StatusOr<ArmAttributes> InspectArmAttributes(std::string_view bytes) {
           return value.status();
         }
         if (*attribute == 32) {  // Compatibility: integer followed by NTBS.
-          const auto text = String(attributes, &sub);
-          if (!text.ok()) {
+          if (const auto text = String(attributes, &sub); !text.ok()) {
             return text.status();
           }
         }

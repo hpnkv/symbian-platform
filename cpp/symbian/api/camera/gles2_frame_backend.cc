@@ -229,8 +229,7 @@ absl::Status DownloadRows(const MutableFrameView& destination) {
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
   glReadPixels(0, 0, destination.layout.width, destination.layout.height,
                GL_RGBA, GL_UNSIGNED_BYTE, staging.get());
-  absl::Status result = GlStatus("GLES2 camera readback");
-  if (!result.ok()) {
+  if (absl::Status result = GlStatus("GLES2 camera readback"); !result.ok()) {
     return result;
   }
   for (int row = 0; row < destination.layout.height; ++row) {
@@ -417,8 +416,8 @@ absl::Status Gles2FrameBackend::Transform(const FrameView& source,
   std::optional<GlStateGuard> guard;
   if (context_use_ == Gles2ContextUse::kPreserveState) {
     guard.emplace();
-    absl::Status state = GlStatus("GLES2 camera state query");
-    if (!state.ok()) {
+    if (absl::Status state = GlStatus("GLES2 camera state query");
+        !state.ok()) {
       return state;
     }
   }
@@ -428,8 +427,7 @@ absl::Status Gles2FrameBackend::Transform(const FrameView& source,
     if (impl_ == nullptr) {
       return absl::ResourceExhaustedError("GLES2 camera backend allocation");
     }
-    absl::Status opened = impl_->Open();
-    if (!opened.ok()) {
+    if (absl::Status opened = impl_->Open(); !opened.ok()) {
       return opened;
     }
     result = GlStatus("GLES2 camera setup");

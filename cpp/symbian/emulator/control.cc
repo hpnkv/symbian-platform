@@ -165,8 +165,8 @@ struct ControlServer::Impl {
     }
     if (operation == "task_close") {
       auto* absl_nullable group = screen->focus;
-      const auto uid_field = request.find("uid");
-      if (uid_field != request.end()) {
+      if (const auto uid_field = request.find("uid");
+          uid_field != request.end()) {
         if (!uid_field->is_number_unsigned() ||
             uid_field->get<std::uint64_t>() > 0xffffffffULL) {
           return absl::InvalidArgumentError("Invalid task UID");
@@ -362,9 +362,9 @@ struct ControlServer::Impl {
         const std::string data = socket->readLine(4097).toStdString();
         absl::StatusOr<nlohmann::json> result =
             absl::InvalidArgumentError("Invalid bounded JSON request");
-        const auto document =
-            nlohmann::json::parse(data, nullptr, /*allow_exceptions=*/false);
-        if (data.ends_with('\n') && data.size() <= 4096 &&
+        if (const auto document = nlohmann::json::parse(
+                data, nullptr, /*allow_exceptions=*/false);
+            data.ends_with('\n') && data.size() <= 4096 &&
             !document.is_discarded() && document.is_object()) {
           result = Handle(document);
         }
@@ -396,8 +396,8 @@ absl::StatusOr<std::unique_ptr<ControlServer>> ControlServer::Start(
   const std::string path(socket_path);
   QFileInfo info(QString::fromStdString(path));
   const std::string parent = info.dir().canonicalPath().toStdString();
-  struct stat metadata{};
-  if (!info.isAbsolute() || parent.empty() || path.size() > 100 ||
+  if (struct stat metadata{};
+      !info.isAbsolute() || parent.empty() || path.size() > 100 ||
       ::stat(parent.c_str(), &metadata) != 0 || metadata.st_uid != ::getuid() ||
       (metadata.st_mode & 077) != 0) {
     return absl::InvalidArgumentError(

@@ -34,9 +34,9 @@ absl::StatusOr<TcpClient> TcpClient::ConnectIpv4(
                           (static_cast<unsigned>(address[2]) << 8) |
                           static_cast<unsigned>(address[3]);
   NativeTcpClient* absl_nullable native = nullptr;
-  const int result =
-      SymbianDeviceTcpConnect(packed, port, &native, NativeDeadline(deadline));
-  if (result != 0) {
+  if (const int result = SymbianDeviceTcpConnect(packed, port, &native,
+                                                 NativeDeadline(deadline));
+      result != 0) {
     return symbian::StatusFromNativeError(result, "Connect TCP socket");
   }
   return TcpClient(native);
@@ -55,10 +55,10 @@ absl::StatusOr<TcpClient> TcpClient::ConnectHost(std::string_view hostname,
     }
   }
   unsigned address = 0;
-  const int result = SymbianDeviceResolveIpv4(
-      hostname.data(), static_cast<int>(hostname.size()), &address,
-      NativeDeadline(deadline));
-  if (result != 0) {
+  if (const int result = SymbianDeviceResolveIpv4(
+          hostname.data(), static_cast<int>(hostname.size()), &address,
+          NativeDeadline(deadline));
+      result != 0) {
     return StatusFromNativeError(result, "Resolve TCP hostname");
   }
   return ConnectIpv4({static_cast<std::uint8_t>(address >> 24),
@@ -125,10 +125,10 @@ absl::StatusOr<std::size_t> TcpClient::Receive(std::span<std::uint8_t> bytes,
     return std::size_t{0};
   }
   int received = 0;
-  const int result = SymbianDeviceTcpReceive(
-      native_, bytes.data(), static_cast<int>(bytes.size()), &received,
-      NativeDeadline(deadline));
-  if (result != 0) {
+  if (const int result = SymbianDeviceTcpReceive(
+          native_, bytes.data(), static_cast<int>(bytes.size()), &received,
+          NativeDeadline(deadline));
+      result != 0) {
     return symbian::StatusFromNativeError(result, "Receive TCP data");
   }
   return static_cast<std::size_t>(received);

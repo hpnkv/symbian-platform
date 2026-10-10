@@ -144,8 +144,8 @@ absl::Duration Remaining(absl::Time deadline) {
 bool ReadExactly(WebSocketStream* absl_nonnull client,
                  std::span<std::uint8_t> output, absl::Time deadline) {
   while (!output.empty()) {
-    const auto remaining = Remaining(deadline);
-    if (remaining == absl::ZeroDuration()) {
+    if (const auto remaining = Remaining(deadline);
+        remaining == absl::ZeroDuration()) {
       return false;
     }
     auto received = client->Receive(output, deadline);
@@ -283,17 +283,18 @@ symbian::agent::GuestStatusSnapshot ReadStatusSnapshot() {
   symbian::agent::GuestStatusSnapshot snapshot;
   snapshot.logs_available = true;
   snapshot.workspace_available = true;
-  auto tick = symbian::api::system::ReadTickCounter();
-  if (tick.ok() && tick->period > absl::ZeroDuration()) {
+  if (auto tick = symbian::api::system::ReadTickCounter();
+      tick.ok() && tick->period > absl::ZeroDuration()) {
     snapshot.tick = symbian::agent::GuestTickSnapshot{
-        tick->count,
-        static_cast<std::uint64_t>(absl::ToInt64Microseconds(tick->period))};
+        .count = tick->count,
+        .period_microseconds = static_cast<std::uint64_t>(
+            absl::ToInt64Microseconds(tick->period))};
   }
-  auto display = symbian::api::display::ReadPrimaryDisplayGeometry();
-  if (display.ok() && display->width_pixels > 0 && display->height_pixels > 0) {
+  if (auto display = symbian::api::display::ReadPrimaryDisplayGeometry();
+      display.ok() && display->width_pixels > 0 && display->height_pixels > 0) {
     snapshot.display = symbian::agent::GuestDisplaySnapshot{
-        static_cast<std::uint32_t>(display->width_pixels),
-        static_cast<std::uint32_t>(display->height_pixels)};
+        .width_pixels = static_cast<std::uint32_t>(display->width_pixels),
+        .height_pixels = static_cast<std::uint32_t>(display->height_pixels)};
   }
   return snapshot;
 }
@@ -314,8 +315,8 @@ absl::StatusOr<AgentResponse> Dispatch(
     response = symbian::agent::PackGuestHelloResult(
         *request, true, kMaximumRequestsPerConnection, true);
   } else if (request->kind == 6) {
-    auto page = log->ReadAfter(request->page_after, request->page_limit);
-    if (!page.ok()) {
+    if (auto page = log->ReadAfter(request->page_after, request->page_limit);
+        !page.ok()) {
       response = symbian::agent::PackGuestError(*request, page.status());
     } else {
       response = symbian::agent::PackGuestLogResult(*request, *page);
@@ -332,8 +333,8 @@ absl::StatusOr<AgentResponse> Dispatch(
                      : symbian::agent::PackGuestError(*request, page.status());
     }
   } else if (request->kind == 8) {
-    auto capture = symbian::api::display::CapturePrimaryScreen();
-    if (!capture.ok()) {
+    if (auto capture = symbian::api::display::CapturePrimaryScreen();
+        !capture.ok()) {
       response = symbian::agent::PackGuestError(*request, capture.status());
     } else {
       response = symbian::agent::PackGuestScreenResult(
@@ -353,10 +354,11 @@ absl::StatusOr<AgentResponse> Dispatch(
                    ? symbian::agent::PackGuestPointerResult(*request)
                    : symbian::agent::PackGuestError(*request, submitted);
   } else if (request->kind == 10) {
-    auto chunk = symbian::agent::ReadResourceChunk(
-        request->resource_scope, request->resource_uid, request->resource_name,
-        request->resource_offset, request->resource_length);
-    if (!chunk.ok()) {
+    if (auto chunk = symbian::agent::ReadResourceChunk(
+            request->resource_scope, request->resource_uid,
+            request->resource_name, request->resource_offset,
+            request->resource_length);
+        !chunk.ok()) {
       response = symbian::agent::PackGuestError(*request, chunk.status());
     } else {
       response = symbian::agent::PackGuestResourceReadResult(
@@ -367,20 +369,21 @@ absl::StatusOr<AgentResponse> Dispatch(
     if (input_data.size() != request->resource_length) {
       return absl::InvalidArgumentError("Agent write payload length differs");
     }
-    absl::Status written = symbian::agent::WriteResourceChunk(
-        request->resource_scope, request->resource_uid, request->resource_name,
-        request->resource_offset, request->resource_mode,
-        std::span(reinterpret_cast<const std::byte*>(input_data.data()),
-                  input_data.size()));
-    if (!written.ok()) {
+    if (absl::Status written = symbian::agent::WriteResourceChunk(
+            request->resource_scope, request->resource_uid,
+            request->resource_name, request->resource_offset,
+            request->resource_mode,
+            std::span(reinterpret_cast<const std::byte*>(input_data.data()),
+                      input_data.size()));
+        !written.ok()) {
       response = symbian::agent::PackGuestError(*request, written);
     } else {
       response = symbian::agent::PackGuestResourceWriteResult(*request);
     }
   } else if (request->kind == 12) {
-    auto registered =
-        symbian::api::system::IsApplicationRegistered(request->resource_uid);
-    if (!registered.ok()) {
+    if (auto registered = symbian::api::system::IsApplicationRegistered(
+            request->resource_uid);
+        !registered.ok()) {
       response = symbian::agent::PackGuestError(*request, registered.status());
     } else {
       std::u16string path = u"C:\\private\\e0000a31\\workspace\\";
@@ -394,9 +397,9 @@ absl::StatusOr<AgentResponse> Dispatch(
                      : symbian::agent::PackGuestError(*request, launched);
     }
   } else if (request->kind == 13) {
-    auto registered =
-        symbian::api::system::IsApplicationRegistered(request->resource_uid);
-    if (!registered.ok()) {
+    if (auto registered = symbian::api::system::IsApplicationRegistered(
+            request->resource_uid);
+        !registered.ok()) {
       response = symbian::agent::PackGuestError(*request, registered.status());
     } else {
       response =
@@ -408,7 +411,8 @@ absl::StatusOr<AgentResponse> Dispatch(
   if (!response.ok()) {
     return response.status();
   }
-  return AgentResponse{std::move(*response), std::move(output_data)};
+  return AgentResponse{.control = std::move(*response),
+                       .data = std::move(output_data)};
 }
 
 void Serve(TcpClient raw, symbian::agent::AgentLogRing* absl_nonnull log) {
@@ -510,9 +514,9 @@ void Serve(TcpClient raw, symbian::agent::AgentLogRing* absl_nonnull log) {
     }
     const absl::Time screen_deadline = absl::Now() + absl::Seconds(15);
     for (std::size_t offset = 0; offset < output_data.size(); offset += 4096) {
-      const std::size_t count =
-          std::min<std::size_t>(4096, output_data.size() - offset);
-      if (!WriteExactly(&client, std::span(output_data.data() + offset, count),
+      if (const std::size_t count =
+              std::min<std::size_t>(4096, output_data.size() - offset);
+          !WriteExactly(&client, std::span(output_data.data() + offset, count),
                         screen_deadline)) {
         return;
       }
@@ -539,12 +543,11 @@ class AgentService final {
       auto task = worker_.PostFiber(
           [stop = stopping_, log = log_] {
             while (!stop->load()) {
-              auto host = DiscoverHost();
-              if (host.ok() && !stop->load()) {
+              if (auto host = DiscoverHost(); host.ok() && !stop->load()) {
                 link_phase.store(LinkPhase::kDialing);
-                auto client = TcpClient::ConnectIpv4(
-                    *host, kHostPort, absl::Now() + absl::Seconds(3));
-                if (client.ok() && !stop->load()) {
+                if (auto client = TcpClient::ConnectIpv4(
+                        *host, kHostPort, absl::Now() + absl::Seconds(3));
+                    client.ok() && !stop->load()) {
                   link_phase.store(LinkPhase::kAuthenticating);
                   Serve(std::move(*client), log.get());
                 } else if (!stop->load()) {
@@ -565,8 +568,7 @@ class AgentService final {
       auto result = task.ResultIfReady();
       return result ? result->status() : absl::OkStatus();
     }
-    absl::Status status = listener_.EnableWorkerSharing();
-    if (!status.ok()) {
+    if (absl::Status status = listener_.EnableWorkerSharing(); !status.ok()) {
       return status;
     }
     return listener_.ListenIpv4({127, 0, 0, 1}, kAgentPort);
@@ -703,12 +705,14 @@ extern "C" int RuntimeMain() {
   bool redraw = true;
   for (;;) {
     if (redraw) {
-      absl::Status drawn = window.UpdateRgb565Frame(
-          {.write = [](symbian::api::display::Rgb565Frame frame) {
-            std::fill(frame.pixels.begin(), frame.pixels.end(), std::byte{0});
-            return absl::OkStatus();
-          }});
-      if (!drawn.ok() || !window.Present().ok()) {
+      if (absl::Status drawn = window.UpdateRgb565Frame(
+              {.write =
+                   [](symbian::api::display::Rgb565Frame frame) {
+                     std::fill(frame.pixels.begin(), frame.pixels.end(),
+                               std::byte{0});
+                     return absl::OkStatus();
+                   }});
+          !drawn.ok() || !window.Present().ok()) {
         break;
       }
       auto wrapped = window.WrapTextLines(message, window.size().width - 32);
@@ -718,7 +722,8 @@ extern "C" int RuntimeMain() {
       std::vector<symbian::api::display::WindowTextLine> lines;
       int y = 32;
       for (const auto& line : *wrapped) {
-        lines.push_back({line, 16, y, 0xffffff});
+        lines.push_back(
+            {.text = line, .x = 16, .baseline_y = y, .rgb = 0xffffff});
         y += 26;
       }
       if (!window.DrawTextLines(lines).ok()) {

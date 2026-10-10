@@ -30,8 +30,8 @@ class TcpByteStream final {
   absl::Status Write(std::span<const std::uint8_t> bytes, absl::Time deadline) {
     while (!bytes.empty()) {
       auto count = std::min<std::size_t>(bytes.size(), 32768);
-      auto status = client_.Send(bytes.first(count), deadline);
-      if (!status.ok()) {
+      if (auto status = client_.Send(bytes.first(count), deadline);
+          !status.ok()) {
         return status;
       }
       bytes = bytes.subspan(count);

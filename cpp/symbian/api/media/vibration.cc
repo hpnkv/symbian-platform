@@ -130,10 +130,11 @@ absl::Status Vibration::Pulse(int duration_ms) {
   impl_->stage->store(kQueued);
   const std::shared_ptr<std::atomic<int>> result = impl_->result;
   const std::shared_ptr<std::atomic<int>> stage = impl_->stage;
-  const absl::Status posted = impl_->worker->Post([result, stage, duration_ms] {
-    result->store(RunPulse(duration_ms, stage.get()));
-  });
-  if (!posted.ok()) {
+  if (const absl::Status posted =
+          impl_->worker->Post([result, stage, duration_ms] {
+            result->store(RunPulse(duration_ms, stage.get()));
+          });
+      !posted.ok()) {
     impl_->result->store(KErrGeneral);
     impl_->failure = posted;
     return posted;
@@ -152,8 +153,8 @@ absl::Status Vibration::status() {
   if (impl_->worker == nullptr) {
     return absl::FailedPreconditionError("vibration worker not started");
   }
-  const int result = impl_->result->load();
-  if (result != KErrNone && result != kPending) {
+  if (const int result = impl_->result->load();
+      result != KErrNone && result != kPending) {
     impl_->failure = symbian::StatusFromNativeError(result, "HWRM vibration");
     impl_->worker->Close();
   } else if (result == kPending &&

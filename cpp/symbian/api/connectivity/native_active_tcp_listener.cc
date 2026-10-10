@@ -73,16 +73,15 @@ extern "C" int SymbianDeviceActiveTcpListen(
   }
   auto* absl_nonnull active =
       new (memory) NativeActiveTcpListener(context, callback);
-  const int result = SymbianDeviceTcpListen(address, port, share_with_workers,
-                                            &active->listener);
-  if (result != KErrNone) {
+  if (const int result = SymbianDeviceTcpListen(
+          address, port, share_with_workers, &active->listener);
+      result != KErrNone) {
     active->~NativeActiveTcpListener();
     User::Free(active);
     return result;
   }
   CActiveScheduler::Add(active);
-  const int armed = active->Arm();
-  if (armed != KErrNone) {
+  if (const int armed = active->Arm(); armed != KErrNone) {
     active->~NativeActiveTcpListener();
     User::Free(active);
     return armed;

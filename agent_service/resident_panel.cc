@@ -19,18 +19,22 @@ absl::Status RunResidentPanel(const ResidentPanelOptions& options,
     return absl::InvalidArgumentError("Invalid resident panel options");
   }
   const NativeResidentPanelOptions native{
-      options.app_uid,    options.property_category, options.foreground_key,
-      options.caption,    options.heading,           options.state,
-      options.back_label,
-      options.stop_label,
-      options.heading_provider ? &options.heading_provider : nullptr,
-      options.heading_provider
-          ? +[](const void* absl_nonnull context) -> const char* absl_nullable {
-              return (*static_cast<
-                      const std::function<const char* absl_nullable()>*>(
-                  context))();
-            }
-          : nullptr};
+      .app_uid = options.app_uid,
+      .property_category = options.property_category,
+      .foreground_key = options.foreground_key,
+      .caption = options.caption,
+      .heading = options.heading,
+      .state = options.state,
+      .back_label = options.back_label,
+      .stop_label = options.stop_label,
+      .heading_context =
+          options.heading_provider ? &options.heading_provider : nullptr,
+      .heading_provider = options.heading_provider
+      ? +[](const void* absl_nonnull context) -> const char* absl_nullable {
+        return (*static_cast<const std::function<const char* absl_nullable()>*>(
+            context))();
+      }
+      : nullptr};
   return symbian::StatusFromNativeError(
       SymbianDeviceRunResidentPanel(&native, stop_requested), "Resident panel");
 }

@@ -85,8 +85,7 @@ class SoftwareFrameConsumer final {
   SoftwareFrameConsumer(display::WindowSurface* absl_nonnull window,
                         camera::ResampleFilter* absl_nonnull filter,
                         display::DisplayRotation opening_rotation)
-      : window_(window), filter_(filter),
-        opening_rotation_(opening_rotation) {}
+      : window_(window), filter_(filter), opening_rotation_(opening_rotation) {}
 
   camera::FrameConsumer Borrow() {
     return {.consume = [this](const camera::FrameView& source) {
@@ -144,14 +143,14 @@ int RunWindow(display::WindowSurface* absl_nonnull window) {
   const bool camera_present = inventory.ok() && inventory->available_count > 0;
   camera::CameraStream stream;
   const display::DisplayRotation opening_rotation = window->rotation();
-  const auto preferences = CapturePreferences(
-      window->size().height >= window->size().width);
+  const auto preferences =
+      CapturePreferences(window->size().height >= window->size().width);
   if (camera_present) {
     Trace("software: stream open begin");
   }
-  absl::Status opened =
-      camera_present ? stream.Open(0, preferences) : absl::OkStatus();
-  if (!opened.ok()) {
+  if (absl::Status opened =
+          camera_present ? stream.Open(0, preferences) : absl::OkStatus();
+      !opened.ok()) {
     RecordFailure(opened);
     return 1;
   }
@@ -261,8 +260,7 @@ int RunWindow(display::WindowSurface* absl_nonnull window) {
     }
     if (live && !capturing) {
       Trace("software: capture resume begin");
-      absl::Status resumed = stream.Open(0, preferences);
-      if (!resumed.ok()) {
+      if (absl::Status resumed = stream.Open(0, preferences); !resumed.ok()) {
         RecordFailure(resumed);
         return 1;
       }
@@ -308,7 +306,9 @@ int RunWindow(display::WindowSurface* absl_nonnull window) {
                        .height = kSourceHeight,
                        .format = camera::PixelFormat::kRgba8888,
                        .stride_bytes = {kSourceWidth * 4, 0, 0}};
-      source.identity = {sequence, now, camera::ClockDomain::kMonotonic};
+      source.identity = {.sequence = sequence,
+                         .capture_time_ns = now,
+                         .clock = camera::ClockDomain::kMonotonic};
       source.planes[0] = source_pixels;
       camera::MutableFrameView output;
       output.layout = {.width = frame->size.width,
@@ -316,8 +316,9 @@ int RunWindow(display::WindowSurface* absl_nonnull window) {
                        .format = camera::PixelFormat::kRgb565,
                        .stride_bytes = {frame->pitch_bytes, 0, 0}};
       output.planes[0] = frame->pixels;
-      absl::Status transformed = camera::TransformFrame(source, output, filter);
-      if (!transformed.ok()) {
+      if (absl::Status transformed =
+              camera::TransformFrame(source, output, filter);
+          !transformed.ok()) {
         Trace("software: transform error");
         RecordFailure(transformed);
         return 1;
@@ -328,8 +329,7 @@ int RunWindow(display::WindowSurface* absl_nonnull window) {
                  filter == camera::ResampleFilter::kNearest ? 0x001f : 0x07ff);
       DrawStripe(*frame, third * 2, frame->size.width, 0x7bef);
     }
-    absl::Status presented = window->Present();
-    if (!presented.ok()) {
+    if (absl::Status presented = window->Present(); !presented.ok()) {
       Trace("software: present error");
       RecordFailure(presented);
       return 1;
@@ -354,16 +354,15 @@ int Run() {
   Trace("software: start");
 #endif
   display::WindowSurface window;
-  absl::Status opened = window.Open("Camera capture");
-  if (!opened.ok()) {
+  if (absl::Status opened = window.Open("Camera capture"); !opened.ok()) {
     Trace("software: window open error");
     RecordFailure(opened);
     CloseTrace();
     return 1;
   }
   Trace("software: window open done");
-  absl::Status orientation = window.SetAutomaticOrientation(true);
-  if (!orientation.ok()) {
+  if (absl::Status orientation = window.SetAutomaticOrientation(true);
+      !orientation.ok()) {
     RecordFailure(orientation);
     CloseTrace();
     return 1;

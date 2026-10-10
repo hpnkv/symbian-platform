@@ -46,17 +46,16 @@ extern "C" int SymbianDeviceFileOpen(
     return KErrNoMemory;
   }
   auto* absl_nonnull file = new (memory) NativeFile;
-  const TInt connected = file->session.Connect();
-  if (connected != KErrNone) {
+  if (const TInt connected = file->session.Connect(); connected != KErrNone) {
     file->~NativeFile();
     User::Free(file);
     return connected;
   }
   const TPtrC16 native_path(reinterpret_cast<const TText* absl_nonnull>(path),
                             length);
-  const TInt opened = file->file.Open(file->session, native_path,
-                                      EFileRead | EFileShareReadersOnly);
-  if (opened != KErrNone) {
+  if (const TInt opened = file->file.Open(file->session, native_path,
+                                          EFileRead | EFileShareReadersOnly);
+      opened != KErrNone) {
     SymbianDeviceFileClose(file);
     return opened;
   }
@@ -78,8 +77,7 @@ extern "C" int SymbianDeviceWritableFileOpen(
     return KErrNoMemory;
   }
   auto* absl_nonnull file = new (memory) NativeFile;
-  const TInt connected = file->session.Connect();
-  if (connected != KErrNone) {
+  if (const TInt connected = file->session.Connect(); connected != KErrNone) {
     file->~NativeFile();
     User::Free(file);
     return connected;
@@ -135,8 +133,7 @@ extern "C" int SymbianDeviceCreateDirectories(
     return KErrArgument;
   }
   RFs session;
-  const TInt connected = session.Connect();
-  if (connected != KErrNone) {
+  if (const TInt connected = session.Connect(); connected != KErrNone) {
     return connected;
   }
   const TPtrC16 native_path(reinterpret_cast<const TText* absl_nonnull>(path),
@@ -202,8 +199,8 @@ extern "C" int SymbianDeviceDirectoryOpen(
     return KErrNoMemory;
   }
   auto* absl_nonnull directory = new (memory) NativeDirectory;
-  const TInt connected = directory->session.Connect();
-  if (connected != KErrNone) {
+  if (const TInt connected = directory->session.Connect();
+      connected != KErrNone) {
     directory->~NativeDirectory();
     User::Free(directory);
     return connected;
@@ -218,10 +215,10 @@ extern "C" int SymbianDeviceDirectoryOpen(
   }
   pattern[pattern_length++] = '*';
   const TPtrC16 native_pattern(pattern, pattern_length);
-  const TInt opened = directory->directory.Open(
-      directory->session, native_pattern,
-      KEntryAttDir | KEntryAttHidden | KEntryAttSystem);
-  if (opened != KErrNone) {
+  if (const TInt opened = directory->directory.Open(
+          directory->session, native_pattern,
+          KEntryAttDir | KEntryAttHidden | KEntryAttSystem);
+      opened != KErrNone) {
     SymbianDeviceDirectoryClose(directory);
     return opened;
   }

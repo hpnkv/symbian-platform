@@ -34,7 +34,10 @@ void AgentLogRing::Append(AgentLogCode code) {
       microseconds > 0 ? static_cast<std::uint64_t>(microseconds) : 0;
   last_elapsed_microseconds_ = std::max(last_elapsed_microseconds_, elapsed_us);
   records_[(next_sequence_ - 1) % kCapacity] = {
-      next_sequence_, code, SeverityFor(code), last_elapsed_microseconds_};
+      .sequence = next_sequence_,
+      .code = code,
+      .severity = SeverityFor(code),
+      .elapsed_microseconds = last_elapsed_microseconds_};
   ++next_sequence_;
 }
 

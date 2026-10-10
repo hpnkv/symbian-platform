@@ -56,10 +56,11 @@ absl::Status Connection::Send(std::string_view bytes, absl::Time deadline) {
   }
   while (!bytes.empty()) {
     auto size = std::min<std::size_t>(32768, bytes.size());
-    auto status = transport_.Write(
-        std::span(reinterpret_cast<const std::uint8_t*>(bytes.data()), size),
-        deadline);
-    if (!status.ok()) {
+    if (auto status = transport_.Write(
+            std::span(reinterpret_cast<const std::uint8_t*>(bytes.data()),
+                      size),
+            deadline);
+        !status.ok()) {
       return Fail(status);
     }
     bytes.remove_prefix(size);
@@ -110,8 +111,7 @@ absl::Status Connection::Pump(absl::Time deadline) {
 absl::Status Connection::PrepareOutput(Headers* absl_nonnull headers,
                                        std::optional<std::size_t> length,
                                        bool no_body) {
-  auto status = ValidateHeaders(*headers, limits_);
-  if (!status.ok()) {
+  if (auto status = ValidateHeaders(*headers, limits_); !status.ok()) {
     return status;
   }
   for (const auto& name :
@@ -273,9 +273,10 @@ absl::Status Connection::ReadHead(absl::Time deadline) {
           input_.erase(0, *end);
           continue;
         }
-        response_ = {head->status, std::move(head->headers)};
-        auto valid = ValidateHeaders(response_.headers, limits_);
-        if (!valid.ok()) {
+        response_ = {.status = head->status,
+                     .headers = std::move(head->headers)};
+        if (auto valid = ValidateHeaders(response_.headers, limits_);
+            !valid.ok()) {
           return Fail(valid);
         }
         auto plan = internal::PlanResponseBody(
@@ -297,8 +298,7 @@ absl::Status Connection::ReadHead(absl::Time deadline) {
     if (eof_) {
       return Fail(absl::DataLossError("Truncated HTTP head"));
     }
-    auto status = Pump(deadline);
-    if (!status.ok()) {
+    if (auto status = Pump(deadline); !status.ok()) {
       return status;
     }
   }
@@ -468,11 +468,11 @@ absl::Status Connection::Finish(absl::Time deadline) {
   if (!no_write_body_ && write_length_ && written_bytes_ != *write_length_) {
     return Fail(absl::DataLossError("HTTP body shorter than declared length"));
   }
-  auto status = h2_ ? h2_->Finish()
-                    : (!write_length_ && !no_write_body_
-                           ? Send(internal::EncodeLastChunk(), deadline)
-                           : absl::OkStatus());
-  if (!status.ok()) {
+  if (auto status = h2_ ? h2_->Finish()
+                        : (!write_length_ && !no_write_body_
+                               ? Send(internal::EncodeLastChunk(), deadline)
+                               : absl::OkStatus());
+      !status.ok()) {
     return Fail(status);
   }
   write_end_ = true;

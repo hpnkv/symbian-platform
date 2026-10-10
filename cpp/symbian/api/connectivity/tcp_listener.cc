@@ -23,8 +23,8 @@ absl::StatusOr<TcpListener> TcpListener::ListenIpv4(
                           (static_cast<unsigned>(address[2]) << 8) |
                           static_cast<unsigned>(address[3]);
   NativeTcpListener* absl_nullable native = nullptr;
-  const int result = SymbianDeviceTcpListen(packed, port, false, &native);
-  if (result != 0) {
+  if (const int result = SymbianDeviceTcpListen(packed, port, false, &native);
+      result != 0) {
     return symbian::StatusFromNativeError(result, "Listen on TCP socket");
   }
   return TcpListener(native);
@@ -50,11 +50,11 @@ absl::StatusOr<TcpClient> TcpListener::Accept(absl::Time deadline) {
     return absl::FailedPreconditionError("TCP listener is closed");
   }
   NativeTcpClient* absl_nullable client = nullptr;
-  const int result = SymbianDeviceTcpAccept(native_, &client,
-                                            deadline == absl::InfiniteFuture()
-                                                ? INT64_MAX
-                                                : absl::ToUnixMicros(deadline));
-  if (result != 0) {
+  if (const int result = SymbianDeviceTcpAccept(
+          native_, &client,
+          deadline == absl::InfiniteFuture() ? INT64_MAX
+                                             : absl::ToUnixMicros(deadline));
+      result != 0) {
     return symbian::StatusFromNativeError(result, "Accept TCP stream");
   }
   return TcpClient(client);

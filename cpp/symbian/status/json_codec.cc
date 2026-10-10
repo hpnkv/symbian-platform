@@ -342,10 +342,10 @@ absl::StatusOr<Json> ParseJson(std::string_view encoded,
                                std::string_view what) {
   // nlohmann's own non-throwing overload: `allow_exceptions = false` hands back
   // a discarded value instead of raising.
-  Json value = Json::parse(encoded.begin(), encoded.end(), nullptr,
-                           /*allow_exceptions=*/false,
-                           /*ignore_comments=*/false);
-  if (!value.is_discarded()) {
+  if (Json value = Json::parse(encoded.begin(), encoded.end(), nullptr,
+                               /*allow_exceptions=*/false,
+                               /*ignore_comments=*/false);
+      !value.is_discarded()) {
     return value;
   }
   return absl::InvalidArgumentError(

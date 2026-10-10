@@ -50,8 +50,7 @@ int OpenSession(NativeTcpSession* absl_nullable* absl_nonnull output) {
     return KErrNoMemory;
   }
   auto* absl_nonnull session = new (memory) NativeTcpSession;
-  const TInt result = session->server.Connect();
-  if (result != KErrNone) {
+  if (const TInt result = session->server.Connect(); result != KErrNone) {
     session->~NativeTcpSession();
     User::Free(session);
     return result;
@@ -217,8 +216,8 @@ extern "C" int SymbianDeviceTcpBeginAccept(
   auto* absl_nonnull client = new (memory) NativeTcpClient;
   client->session = listener->session;
   RetainSession(client->session);
-  const TInt result = client->socket.Open(client->session->server);
-  if (result != KErrNone) {
+  if (const TInt result = client->socket.Open(client->session->server);
+      result != KErrNone) {
     SymbianDeviceTcpClose(client);
     return result;
   }
@@ -292,9 +291,9 @@ extern "C" int SymbianDeviceTcpReceive(NativeTcpClient* absl_nullable client,
   TPtr8 data(bytes, 0, capacity);
   TRequestStatus request;
   client->socket.RecvOneOrMore(data, 0, request);
-  const TInt result = WaitForSocketRequest(&(client->socket), &request,
-                                           deadline, &RSocket::CancelRecv);
-  if (result != KErrNone) {
+  if (const TInt result = WaitForSocketRequest(&(client->socket), &request,
+                                               deadline, &RSocket::CancelRecv);
+      result != KErrNone) {
     return result;
   }
   *received = data.Length();

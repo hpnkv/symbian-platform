@@ -346,8 +346,8 @@ int WaitCondLegacy(pthread_cond_t* absl_nullable condition,
     while (remaining > 0) {
       const TInt timeout =
           static_cast<TInt>(remaining > KMaxTInt ? KMaxTInt : remaining);
-      const TInt result = node.semaphore.Wait(timeout);
-      if (result != KErrTimedOut) {
+      if (const TInt result = node.semaphore.Wait(timeout);
+          result != KErrTimedOut) {
         break;
       }
       now.UniversalTime();
@@ -666,9 +666,9 @@ extern "C" int pthread_create(pthread_t* absl_nullable output,
       __atomic_add_fetch(&g_name_counter, 1, __ATOMIC_RELAXED);
   TBuf<32> name;
   name.Format(_L("SDKThread%08x"), number);
-  const TInt created = record->handle.Create(
-      name, ThreadEntry, 16384, static_cast<RAllocator*>(nullptr), record);
-  if (created != KErrNone) {
+  if (const TInt created = record->handle.Create(
+          name, ThreadEntry, 16384, static_cast<RAllocator*>(nullptr), record);
+      created != KErrNone) {
     FreeThread(record);
     return created == KErrNoMemory ? ENOMEM : EAGAIN;
   }
@@ -838,8 +838,8 @@ extern "C" int pthread_once(pthread_once_t* absl_nullable once,
   if (once == nullptr || initialize == nullptr) {
     return EINVAL;
   }
-  int expected = _ENotDone;
-  if (__atomic_compare_exchange_n(once, &expected, _EDoing, false,
+  if (int expected = _ENotDone;
+      __atomic_compare_exchange_n(once, &expected, _EDoing, false,
                                   __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
     initialize();
     __atomic_store_n(once, _EDone, __ATOMIC_RELEASE);

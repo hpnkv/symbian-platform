@@ -81,8 +81,8 @@ std::string BuildReport(const absl::Status& error,
                         const FailureHandlerOptions& options) {
   std::string report = "ERROR\n" + error.ToString() + "\n\nRECENT LOGS\n";
   std::string recent(kRecentLogBytes, '\0');
-  recent.resize(CopyRecentDebugLogs(std::span<char>(recent.data(),
-                                                  recent.size())));
+  recent.resize(
+      CopyRecentDebugLogs(std::span<char>(recent.data(), recent.size())));
   report += recent.empty() ? "[no recent DebugLog messages]\n" : recent;
   for (std::u16string_view path : options.log_paths) {
     report += "\nFILE: ";
@@ -95,8 +95,7 @@ std::string BuildReport(const absl::Status& error,
 }
 
 std::u16string DisplayText(std::string_view source) {
-  auto converted = text::Utf8ToUtf16(source);
-  if (converted.ok()) {
+  if (auto converted = text::Utf8ToUtf16(source); converted.ok()) {
     return std::move(*converted);
   }
   std::u16string fallback;
@@ -115,8 +114,8 @@ int FontHeight(display::WindowSize size) {
 }
 
 int VisibleRows(display::WindowSize size, int line_height) {
-  return std::max(1, (size.height - kHeaderHeight - kFooterHeight - 20) /
-                         line_height);
+  return std::max(
+      1, (size.height - kHeaderHeight - kFooterHeight - 20) / line_height);
 }
 
 int MaxScroll(std::size_t lines, int rows) {
@@ -136,8 +135,8 @@ absl::Status Render(display::WindowSurface* absl_nonnull window,
   const int middle = size.width / 2;
   Fill(frame, 0, 0, size.width, size.height, kBackground);
   Fill(frame, 0, 0, size.width, kHeaderHeight, kExitButton);
-  Fill(frame, kMargin, kHeaderHeight + 8, size.width - kMargin,
-       footer_top - 8, kPanel);
+  Fill(frame, kMargin, kHeaderHeight + 8, size.width - kMargin, footer_top - 8,
+       kPanel);
   Fill(frame, kMargin, footer_top + 8, middle - 5, size.height - 10,
        kExitButton);
   Fill(frame, middle + 5, footer_top + 8, size.width - kMargin,
@@ -147,31 +146,37 @@ absl::Status Render(display::WindowSurface* absl_nonnull window,
     const int track_height = std::max(1, footer_top - track_top - 24);
     const int thumb_height =
         std::max(12, track_height * visible / static_cast<int>(lines.size()));
-    const int thumb_top =
-        track_top + (track_height - thumb_height) * scroll /
-                        MaxScroll(lines.size(), visible);
+    const int thumb_top = track_top + (track_height - thumb_height) * scroll /
+                                          MaxScroll(lines.size(), visible);
     Fill(frame, size.width - kMargin - 5, track_top, size.width - kMargin - 2,
          track_top + track_height, 0x8410);
     Fill(frame, size.width - kMargin - 7, thumb_top, size.width - kMargin,
          thumb_top + thumb_height, 0xffff);
   }
-  absl::Status presented = window->Present();
-  if (!presented.ok()) {
+  if (absl::Status presented = window->Present(); !presented.ok()) {
     return presented;
   }
   std::vector<display::WindowTextLine> text_lines;
   text_lines.reserve(static_cast<std::size_t>(visible) + 4);
-  text_lines.push_back({caption, kMargin + 8, 42, 0xffffff});
+  text_lines.push_back(
+      {.text = caption, .x = kMargin + 8, .baseline_y = 42, .rgb = 0xffffff});
   for (int row = 0;
        row < visible && scroll + row < static_cast<int>(lines.size()); ++row) {
-    text_lines.push_back({lines[scroll + row], kMargin + 8,
-                          kHeaderHeight + 18 + (row + 1) * line_height,
-                          0xf7f7f7});
+    text_lines.push_back(
+        {.text = lines[scroll + row],
+         .x = kMargin + 8,
+         .baseline_y = kHeaderHeight + 18 + (row + 1) * line_height,
+         .rgb = 0xf7f7f7});
   }
-  text_lines.push_back({u"EXIT", kMargin + 18, footer_top + 46, 0xffffff});
+  text_lines.push_back({.text = u"EXIT",
+                        .x = kMargin + 18,
+                        .baseline_y = footer_top + 46,
+                        .rgb = 0xffffff});
   text_lines.push_back(
-      {copy_feedback.empty() ? u"COPY LOGS" : copy_feedback, middle + 18,
-       footer_top + 46, 0xffffff});
+      {.text = copy_feedback.empty() ? u"COPY LOGS" : copy_feedback,
+       .x = middle + 18,
+       .baseline_y = footer_top + 46,
+       .rgb = 0xffffff});
   return window->DrawTextLines(text_lines, font_height);
 }
 
@@ -189,8 +194,7 @@ absl::Status ShowFailureReport(const absl::Status& error,
     caption = u"Application failure";
   }
   display::WindowSurface window;
-  absl::Status opened = window.Open(options.caption);
-  if (!opened.ok()) {
+  if (absl::Status opened = window.Open(options.caption); !opened.ok()) {
     return opened;
   }
   auto created = window.CreateRgb565Frame();
@@ -216,9 +220,9 @@ absl::Status ShowFailureReport(const absl::Status& error,
   std::u16string feedback;
   for (;;) {
     if (redraw) {
-      absl::Status result = Render(&window, &frame, caption, lines, scroll,
-                                   feedback);
-      if (!result.ok()) {
+      if (absl::Status result =
+              Render(&window, &frame, caption, lines, scroll, feedback);
+          !result.ok()) {
         return result;
       }
       redraw = false;
@@ -246,8 +250,8 @@ absl::Status ShowFailureReport(const absl::Status& error,
         case display::WindowInputKind::kPointerMove:
           if (dragging) {
             const int next_scroll = std::clamp(
-                touch_start_scroll + (touch_start_y - input.y) / line_height,
-                0, maximum);
+                touch_start_scroll + (touch_start_y - input.y) / line_height, 0,
+                maximum);
             redraw |= next_scroll != scroll;
             scroll = next_scroll;
           }
@@ -297,8 +301,7 @@ absl::Status ShowFailureReport(const absl::Status& error,
           frame = *created;
           scroll = 0;
           wrapped = window.WrapTextLines(
-              report_text,
-              std::max(1, frame.size.width - 2 * kMargin - 26),
+              report_text, std::max(1, frame.size.width - 2 * kMargin - 26),
               FontHeight(frame.size));
           if (!wrapped.ok()) {
             return wrapped.status();

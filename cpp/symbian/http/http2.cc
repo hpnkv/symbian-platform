@@ -20,9 +20,11 @@ absl::Status Error(int code) {
 std::vector<nghttp2_nv> Fields(Headers* absl_nonnull headers) {
   std::vector<nghttp2_nv> fields;
   for (auto& [name, value] : (*headers)) {
-    fields.push_back({reinterpret_cast<std::uint8_t*>(name.data()),
-                      reinterpret_cast<std::uint8_t*>(value.data()),
-                      name.size(), value.size(), NGHTTP2_NV_FLAG_NONE});
+    fields.push_back({.name = reinterpret_cast<std::uint8_t*>(name.data()),
+                      .value = reinterpret_cast<std::uint8_t*>(value.data()),
+                      .namelen = name.size(),
+                      .valuelen = value.size(),
+                      .flags = NGHTTP2_NV_FLAG_NONE});
   }
   return fields;
 }
@@ -133,8 +135,7 @@ struct Http2::State {
               absl::InvalidArgumentError("HTTP/2 trailers without END_STREAM"));
         }
         s.trailers = std::move(s.block);
-        auto status = ValidateHeaders(s.trailers, s.limits);
-        if (!status.ok()) {
+        if (auto status = ValidateHeaders(s.trailers, s.limits); !status.ok()) {
           return s.Fail(status);
         }
       } else {
@@ -175,10 +176,10 @@ struct Http2::State {
           s.response.headers.clear();
         } else {
           s.head_received = true;
-          auto status = s.role == Role::kServer
-                            ? ValidateRequest(s.request, s.limits)
-                            : ValidateHeaders(s.response.headers, s.limits);
-          if (!status.ok()) {
+          if (auto status = s.role == Role::kServer
+                                ? ValidateRequest(s.request, s.limits)
+                                : ValidateHeaders(s.response.headers, s.limits);
+              !status.ok()) {
             return s.Fail(status);
           }
         }
@@ -277,15 +278,15 @@ absl::StatusOr<std::unique_ptr<Http2>> Http2::Create(Role role, Limits limits) {
     return Error(code);
   }
   nghttp2_settings_entry settings[] = {
-      {NGHTTP2_SETTINGS_ENABLE_CONNECT_PROTOCOL, 1},
-      {NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, 1},
-      {NGHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
-       static_cast<std::uint32_t>(limits.maximum_header_bytes)},
-      {NGHTTP2_SETTINGS_HEADER_TABLE_SIZE, 0},
-      {NGHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
-       static_cast<std::uint32_t>(
+      {.settings_id = NGHTTP2_SETTINGS_ENABLE_CONNECT_PROTOCOL, .value = 1},
+      {.settings_id = NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, .value = 1},
+      {.settings_id = NGHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
+       .value = static_cast<std::uint32_t>(limits.maximum_header_bytes)},
+      {.settings_id = NGHTTP2_SETTINGS_HEADER_TABLE_SIZE, .value = 0},
+      {.settings_id = NGHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
+       .value = static_cast<std::uint32_t>(
            std::min<std::size_t>(65535, limits.maximum_buffered_bytes))},
-      {NGHTTP2_SETTINGS_ENABLE_PUSH, 0}};
+      {.settings_id = NGHTTP2_SETTINGS_ENABLE_PUSH, .value = 0}};
   code = nghttp2_submit_settings(s->session, 0, settings,
                                  role == Role::kClient ? 6 : 5);
   if (code) {
@@ -299,10 +300,10 @@ absl::Status Http2::Feed(std::string_view bytes) {
   if (!s.error.ok()) {
     return s.error;
   }
-  auto count = nghttp2_session_mem_recv(
-      s.session, reinterpret_cast<const std::uint8_t*>(bytes.data()),
-      bytes.size());
-  if (s.error.ok() &&
+  if (auto count = nghttp2_session_mem_recv(
+          s.session, reinterpret_cast<const std::uint8_t*>(bytes.data()),
+          bytes.size());
+      s.error.ok() &&
       (count < 0 || static_cast<std::size_t>(count) != bytes.size())) {
     s.Fail(count < 0 ? Error(static_cast<int>(count))
                      : absl::DataLossError("Incomplete HTTP/2 input"));
@@ -346,8 +347,7 @@ absl::Status Http2::SendRequest(RequestHead head) {
   if (s.role != Role::kClient || s.sent) {
     return absl::FailedPreconditionError("HTTP/2 request already sent");
   }
-  auto status = ValidateRequest(head, s.limits);
-  if (!status.ok()) {
+  if (auto status = ValidateRequest(head, s.limits); !status.ok()) {
     return status;
   }
   if (!head.protocol.empty() && !peer_connect_enabled()) {
@@ -396,9 +396,9 @@ absl::Status Http2::SendHeaders(ResponseHead head) {
   headers.insert(headers.end(), head.headers.begin(), head.headers.end());
   auto fields = Fields(&headers);
   auto provider = s.Provider();
-  int code = nghttp2_submit_response(s.session, s.stream, fields.data(),
-                                     fields.size(), &provider);
-  if (code) {
+  if (int code = nghttp2_submit_response(s.session, s.stream, fields.data(),
+                                         fields.size(), &provider);
+      code) {
     return Error(code);
   }
   s.sent = true;
@@ -451,9 +451,9 @@ absl::StatusOr<std::optional<std::string>> Http2::Read() {
   std::string result;
   result.swap(s.rx);
   s.queued_bytes -= result.size();
-  auto status =
-      Error(nghttp2_session_consume(s.session, s.stream, result.size()));
-  if (!status.ok()) {
+  if (auto status =
+          Error(nghttp2_session_consume(s.session, s.stream, result.size()));
+      !status.ok()) {
     return status;
   }
   return std::optional<std::string>(std::move(result));

@@ -94,10 +94,11 @@ absl::Status ValidateLayout(const FrameLayout& layout, MemoryKind memory) {
     return absl::InvalidArgumentError("YUV420 dimensions must be even");
   }
   for (int plane = 0; plane < PlaneCount(layout.format); ++plane) {
-    const int row_bytes = PlaneWidth(layout, plane) *
-                          (plane == 0 ? PixelBytes(layout.format)
-                                      : (IsHighDepth(layout.format) ? 2 : 1));
-    if (IsMemory(memory) && layout.stride_bytes[plane] < row_bytes) {
+    if (const int row_bytes =
+            PlaneWidth(layout, plane) *
+            (plane == 0 ? PixelBytes(layout.format)
+                        : (IsHighDepth(layout.format) ? 2 : 1));
+        IsMemory(memory) && layout.stride_bytes[plane] < row_bytes) {
       return absl::InvalidArgumentError("Frame stride is too small");
     }
   }
@@ -130,10 +131,10 @@ absl::Status ValidateStorage(const FrameLayout& layout, MemoryKind memory,
         static_cast<std::size_t>(PlaneWidth(layout, plane)) *
         (plane == 0 ? PixelBytes(layout.format)
                     : (IsHighDepth(layout.format) ? 2 : 1));
-    const std::size_t needed =
-        (rows - 1) * static_cast<std::size_t>(layout.stride_bytes[plane]) +
-        row_bytes;
-    if (planes[plane].size() < needed) {
+    if (const std::size_t needed =
+            (rows - 1) * static_cast<std::size_t>(layout.stride_bytes[plane]) +
+            row_bytes;
+        planes[plane].size() < needed) {
       return absl::InvalidArgumentError(
           "Frame plane is shorter than its layout");
     }
@@ -158,13 +159,13 @@ AxisSample Position(int destination, int source_extent, int destination_extent,
     const int coordinate =
         static_cast<int>(static_cast<std::uint64_t>(destination) *
                          source_extent / destination_extent);
-    return {coordinate, coordinate, 0};
+    return {.first = coordinate, .second = coordinate, .fraction = 0};
   }
   const std::uint64_t centered =
       (static_cast<std::uint64_t>(destination) * 2 + 1) * source_extent * 128 /
       destination_extent;
   if (centered <= 128) {
-    return {0, 0, 0};
+    return {.first = 0, .second = 0, .fraction = 0};
   }
   const std::uint64_t coordinate = centered - 128;
   const int first =
@@ -195,9 +196,9 @@ class AxisStepper {
     AxisSample sample;
     if (filter_ == ResampleFilter::kNearest) {
       const int coordinate = static_cast<int>(whole_);
-      sample = {coordinate, coordinate, 0};
+      sample = {.first = coordinate, .second = coordinate, .fraction = 0};
     } else if (whole_ <= 128) {
-      sample = {0, 0, 0};
+      sample = {.first = 0, .second = 0, .fraction = 0};
     } else {
       const std::uint64_t coordinate = whole_ - 128;
       const int first =
@@ -433,17 +434,17 @@ RgbBytes SampleYuv420(const FrameView& source, AxisSample luma_x,
       static_cast<int>(SampleByte(source, 2, chroma_x, chroma_y)) - 128;
   if (source.layout.yuv == YuvEncoding::kBt601Full) {
     const int full_y = luminance + 16;
-    return {ClampByte((256 * full_y + 359 * v + 128) >> 8),
-            ClampByte((256 * full_y - 88 * u - 183 * v + 128) >> 8),
-            ClampByte((256 * full_y + 454 * u + 128) >> 8)};
+    return {.red = ClampByte((256 * full_y + 359 * v + 128) >> 8),
+            .green = ClampByte((256 * full_y - 88 * u - 183 * v + 128) >> 8),
+            .blue = ClampByte((256 * full_y + 454 * u + 128) >> 8)};
   }
   const int scaled = 298 * std::max(luminance, 0);
   const bool bt709 = source.layout.yuv == YuvEncoding::kBt709Limited;
-  return {ClampByte((scaled + (bt709 ? 459 : 409) * v + 128) >> 8),
-          ClampByte((scaled - (bt709 ? 55 : 100) * u - (bt709 ? 136 : 208) * v +
-                     128) >>
-                    8),
-          ClampByte((scaled + (bt709 ? 541 : 516) * u + 128) >> 8)};
+  return {.red = ClampByte((scaled + (bt709 ? 459 : 409) * v + 128) >> 8),
+          .green = ClampByte((scaled - (bt709 ? 55 : 100) * u -
+                              (bt709 ? 136 : 208) * v + 128) >>
+                             8),
+          .blue = ClampByte((scaled + (bt709 ? 541 : 516) * u + 128) >> 8)};
 }
 
 struct OrientedSample {
@@ -468,8 +469,8 @@ OrientedSample SamplePosition(int x, int y, int source_width, int source_height,
   const AxisSample vertical =
       Position(reverse_vertical ? destination_height - 1 - y : y,
                vertical_source, destination_height, filter);
-  return quarter_turn ? OrientedSample{vertical, horizontal}
-                      : OrientedSample{horizontal, vertical};
+  return quarter_turn ? OrientedSample{.x = vertical, .y = horizontal}
+                      : OrientedSample{.x = horizontal, .y = vertical};
 }
 
 void ConvertToRgb565(const FrameView& source,
@@ -598,7 +599,7 @@ void ConvertToRgba(const FrameView& source, const MutableFrameView& destination,
         source.layout.format == PixelFormat::kYuv420Planar
             ? Position(y, source.layout.height / 2, destination.layout.height,
                        filter)
-            : AxisSample{0, 0, 0};
+            : AxisSample{.first = 0, .second = 0, .fraction = 0};
     AxisStepper horizontal(source.layout.width, destination.layout.width,
                            filter);
     AxisStepper chroma_horizontal(source.layout.width / 2,
@@ -661,8 +662,7 @@ FrameLease::FrameLease(FrameView view, Release release)
     : view_(std::move(view)), release_(std::move(release)) {}
 
 FrameLease::FrameLease(FrameLease&& other) noexcept
-    : view_(std::move(other.view_)),
-      release_(std::move(other.release_)) {
+    : view_(std::move(other.view_)), release_(std::move(other.release_)) {
   other.release_ = nullptr;
 }
 
@@ -691,13 +691,12 @@ void FrameLease::Reset() {
 FrameRect DetectSolidSideMargins(const FrameView& source) {
   const int width = source.layout.width;
   const int height = source.layout.height;
-  const FrameRect complete{0, 0, width, height};
+  const FrameRect complete{.x = 0, .y = 0, .width = width, .height = height};
   if (!IsMemory(source.memory) || width < 48 || height < 16) {
     return complete;
   }
   const PixelFormat format = source.layout.format;
-  if (format != PixelFormat::kBgrx8888 &&
-      format != PixelFormat::kRgbx8888 &&
+  if (format != PixelFormat::kBgrx8888 && format != PixelFormat::kRgbx8888 &&
       format != PixelFormat::kRgba8888 && format != PixelFormat::kRgb565 &&
       format != PixelFormat::kBgr565 && format != PixelFormat::kGray8) {
     return complete;
@@ -714,9 +713,9 @@ FrameRect DetectSolidSideMargins(const FrameView& source) {
     int bright_samples = 0;
     for (int sample = 1; sample <= 8; ++sample) {
       const int y = height * sample / 9;
-      const std::byte* absl_nonnull pixel = source.planes[0].data() +
-                               static_cast<std::size_t>(y) * stride +
-                               static_cast<std::size_t>(x) * pixel_bytes;
+      const std::byte* absl_nonnull pixel =
+          source.planes[0].data() + static_cast<std::size_t>(y) * stride +
+          static_cast<std::size_t>(x) * pixel_bytes;
       const unsigned int first = std::to_integer<unsigned int>(pixel[0]);
       bool bright = first > 16;
       if (pixel_bytes == 4) {
@@ -752,7 +751,8 @@ FrameRect DetectSolidSideMargins(const FrameView& source) {
   if (width - 2 * margin < width / 3) {
     return complete;
   }
-  return FrameRect{margin, 0, width - 2 * margin, height};
+  return FrameRect{
+      .x = margin, .y = 0, .width = width - 2 * margin, .height = height};
 }
 
 absl::StatusOr<FrameRect> CenteredAspectCrop(int source_width,
@@ -776,12 +776,13 @@ absl::StatusOr<FrameRect> CenteredAspectCrop(int source_width,
   if (width == 0 || height == 0) {
     return absl::InvalidArgumentError("Aspect crop is smaller than one pixel");
   }
-  return FrameRect{(source_width - width) / 2, (source_height - height) / 2,
-                   width, height};
+  return FrameRect{.x = (source_width - width) / 2,
+                   .y = (source_height - height) / 2,
+                   .width = width,
+                   .height = height};
 }
 
-absl::StatusOr<FrameRect> CenteredAspectFit(int source_width,
-                                            int source_height,
+absl::StatusOr<FrameRect> CenteredAspectFit(int source_width, int source_height,
                                             int destination_width,
                                             int destination_height) {
   if (source_width <= 0 || source_height <= 0 || destination_width <= 0 ||
@@ -801,8 +802,10 @@ absl::StatusOr<FrameRect> CenteredAspectFit(int source_width,
   if (width <= 0 || height <= 0) {
     return absl::InvalidArgumentError("Aspect fit is smaller than one pixel");
   }
-  return FrameRect{(destination_width - width) / 2,
-                   (destination_height - height) / 2, width, height};
+  return FrameRect{.x = (destination_width - width) / 2,
+                   .y = (destination_height - height) / 2,
+                   .width = width,
+                   .height = height};
 }
 
 absl::StatusOr<FrameView> CropFrameView(const FrameView& source,
@@ -937,9 +940,9 @@ absl::Status TransformFrame(const FrameView& source,
          destination_plane < PlaneCount(destination.layout.format);
          ++destination_plane) {
       const std::span<std::byte> output = destination.planes[destination_plane];
-      const std::uintptr_t output_begin =
-          reinterpret_cast<std::uintptr_t>(output.data());
-      if (input_begin < output_begin + output.size() &&
+      if (const std::uintptr_t output_begin =
+              reinterpret_cast<std::uintptr_t>(output.data());
+          input_begin < output_begin + output.size() &&
           output_begin < input_begin + input.size()) {
         return absl::InvalidArgumentError("Overlapping frame planes");
       }
@@ -965,9 +968,10 @@ absl::Status TransformFrame(const FrameView& source,
     const int height = PlaneHeight(source.layout, plane);
     const int output_width = PlaneWidth(destination.layout, plane);
     const int output_height = PlaneHeight(destination.layout, plane);
-    const int bytes = plane == 0 ? PixelBytes(source.layout.format)
-                                 : (IsHighDepth(source.layout.format) ? 2 : 1);
-    if (width == output_width && height == output_height) {
+    if (const int bytes = plane == 0
+                              ? PixelBytes(source.layout.format)
+                              : (IsHighDepth(source.layout.format) ? 2 : 1);
+        width == output_width && height == output_height) {
       for (int row = 0; row < height; ++row) {
         std::memcpy(destination.planes[plane].data() +
                         row * destination.layout.stride_bytes[plane],

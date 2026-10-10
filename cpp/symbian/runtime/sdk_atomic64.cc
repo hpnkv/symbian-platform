@@ -28,8 +28,7 @@ struct Atomic64State {
 Atomic64State state;
 
 void EnsureLock() {
-  TUint32 empty = 0;
-  if (__e32_atomic_cas_ord32(&state.phase, &empty, 1)) {
+  if (TUint32 empty = 0; __e32_atomic_cas_ord32(&state.phase, &empty, 1)) {
     if (state.lock.CreateLocal() != KErrNone) {
       __e32_atomic_store_ord32(&state.phase, 3);
       User::Invariant();
@@ -101,8 +100,7 @@ extern "C" TBool SymbianRuntimeAtomic64CompareExchange(
     volatile void* absl_nonnull pointer, TUint64* absl_nonnull expected,
     TUint64 desired) {
   Guard guard;
-  const TUint64 old = Read(pointer);
-  if (old != *expected) {
+  if (const TUint64 old = Read(pointer); old != *expected) {
     *expected = old;
     return EFalse;
   }

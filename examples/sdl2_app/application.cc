@@ -98,8 +98,7 @@ int Run() {
   const auto touchscreen_presence =
       symbian::api::display::ReadTouchscreenPresence();
   // An unknown HAL result keeps the on-screen control available.
-  const bool touchscreen =
-      !touchscreen_presence.ok() || *touchscreen_presence;
+  const bool touchscreen = !touchscreen_presence.ok() || *touchscreen_presence;
   Game game(width, height, touchscreen);
   symbian::api::media::MidiOutput midi;
   symbian::api::media::Vibration vibration;
@@ -177,8 +176,8 @@ int Run() {
       next_note_ms = 0;
     }
     if (vibration_error.empty()) {
-      const absl::Status vibration_status = vibration.status();
-      if (!vibration_status.ok()) {
+      if (const absl::Status vibration_status = vibration.status();
+          !vibration_status.ok()) {
         vibration_error.assign(vibration_status.message().data(),
                                vibration_status.message().size());
       }
@@ -186,8 +185,9 @@ int Run() {
     game_renderer.Draw(game, renderer->get(), frames_per_second, gpu_active,
                        gpu_fallback_reason, vibration_error);
     ++frames_in_sample;
-    const std::uint64_t sample_elapsed = arkanoid::Ticks() - fps_sample_start;
-    if (sample_elapsed >= 1000) {
+    if (const std::uint64_t sample_elapsed =
+            arkanoid::Ticks() - fps_sample_start;
+        sample_elapsed >= 1000) {
       frames_per_second = static_cast<std::uint32_t>(
           (static_cast<std::uint64_t>(frames_in_sample) * 1000 +
            sample_elapsed / 2) /

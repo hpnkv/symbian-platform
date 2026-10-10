@@ -29,8 +29,8 @@ class EventMailbox {
   ~EventMailbox() { Close(); }
 
   absl::Status Enqueue(std::function<void()> callback) {
-    absl::Status status = queue_.TryWrite(std::move(callback));
-    if (!status.ok()) {
+    if (absl::Status status = queue_.TryWrite(std::move(callback));
+        !status.ok()) {
       return status;
     }
     wake_();
@@ -49,8 +49,8 @@ class EventMailbox {
     ready.reserve(count);
     for (std::size_t i = 0; i < count; ++i) {
       std::function<void()> callback;
-      absl::StatusOr<bool> read = queue_.TryRead(&callback);
-      if (!read.ok() || !read.value()) {
+      if (absl::StatusOr<bool> read = queue_.TryRead(&callback);
+          !read.ok() || !read.value()) {
         break;
       }
       ready.push_back(std::move(callback));

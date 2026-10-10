@@ -34,10 +34,10 @@ absl::Status ActiveTcpListener::ListenIpv4(std::array<std::uint8_t, 4> address,
                           (static_cast<unsigned>(address[1]) << 16) |
                           (static_cast<unsigned>(address[2]) << 8) |
                           static_cast<unsigned>(address[3]);
-  const int result = SymbianDeviceActiveTcpListen(
-      packed, port, share_with_workers_, this,
-      &ActiveTcpListener::OnNativeAccept, &native_);
-  if (result != 0) {
+  if (const int result = SymbianDeviceActiveTcpListen(
+          packed, port, share_with_workers_, this,
+          &ActiveTcpListener::OnNativeAccept, &native_);
+      result != 0) {
     return symbian::StatusFromNativeError(result,
                                           "Listen on active TCP socket");
   }
@@ -49,8 +49,8 @@ absl::Status ActiveTcpListener::AcceptNext() {
   if (native_ == nullptr) {
     return absl::FailedPreconditionError("Active TCP listener is closed");
   }
-  const int result = SymbianDeviceActiveTcpAcceptNext(native_);
-  if (result != 0) {
+  if (const int result = SymbianDeviceActiveTcpAcceptNext(native_);
+      result != 0) {
     return symbian::StatusFromNativeError(result, "Begin active TCP accept");
   }
   return absl::OkStatus();

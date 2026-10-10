@@ -63,9 +63,9 @@ class WorkerPool {
     if (deadline != absl::InfiniteFuture()) {
       const absl::Duration remaining = deadline - absl::Now();
       const auto limit = Clock::time_point::max() - Clock::now();
-      const auto duration =
-          std::chrono::nanoseconds(absl::ToInt64Nanoseconds(remaining));
-      if (duration < limit) {
+      if (const auto duration =
+              std::chrono::nanoseconds(absl::ToInt64Nanoseconds(remaining));
+          duration < limit) {
         monotonic_deadline = Clock::now() + duration;
       }
     }

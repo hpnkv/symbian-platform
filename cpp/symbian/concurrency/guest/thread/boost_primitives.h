@@ -61,8 +61,8 @@ class ABSL_LOCKABLE Mutex {
       }
       fiber->scheduler_.Suspend(fiber);
       std::lock_guard guard(waiters_mu_);
-      auto it = std::find(waiters_.begin(), waiters_.end(), fiber);
-      if (it != waiters_.end()) {
+      if (auto it = std::find(waiters_.begin(), waiters_.end(), fiber);
+          it != waiters_.end()) {
         waiters_.erase(it);
       }
     }
@@ -151,7 +151,7 @@ class CondVar {
           deadline =
               start + std::chrono::nanoseconds(absl::ToInt64Nanoseconds(safe));
         }
-        Waiter waiter{fiber, false};
+        Waiter waiter{.fiber = fiber, .signalled = false};
         {
           std::lock_guard guard(waiters_mu_);
           fiber->scheduler_.PreparePark(fiber, deadline);
@@ -162,8 +162,8 @@ class CondVar {
         bool signalled = false;
         {
           std::lock_guard guard(waiters_mu_);
-          auto it = std::find(waiters_.begin(), waiters_.end(), &waiter);
-          if (it != waiters_.end()) {
+          if (auto it = std::find(waiters_.begin(), waiters_.end(), &waiter);
+              it != waiters_.end()) {
             waiters_.erase(it);
           }
           signalled = waiter.signalled;

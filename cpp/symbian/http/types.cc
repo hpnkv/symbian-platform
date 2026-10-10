@@ -26,10 +26,11 @@ bool Equal(std::string_view a, std::string_view b) {
     return false;
   }
   for (std::size_t i = 0; i < a.size(); ++i) {
-    auto lower = [](char c) {
-      return c >= 'A' && c <= 'Z' ? c + 32 : c;
-    };
-    if (lower(a[i]) != lower(b[i])) {
+    if (auto lower =
+            [](char c) {
+              return c >= 'A' && c <= 'Z' ? c + 32 : c;
+            };
+        lower(a[i]) != lower(b[i])) {
       return false;
     }
   }

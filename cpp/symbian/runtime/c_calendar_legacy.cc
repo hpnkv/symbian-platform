@@ -36,9 +36,15 @@ char kStandardZone[] = "STD";
 char kDaylightZone[] = "DST";
 
 LegacyTm ToLegacy(const std::tm& input) {
-  return {input.tm_sec, input.tm_min, input.tm_hour,
-          input.tm_mday, input.tm_mon, input.tm_year,
-          input.tm_wday, input.tm_yday, input.tm_isdst};
+  return {.seconds = input.tm_sec,
+          .minutes = input.tm_min,
+          .hours = input.tm_hour,
+          .month_day = input.tm_mday,
+          .month = input.tm_mon,
+          .year = input.tm_year,
+          .week_day = input.tm_wday,
+          .year_day = input.tm_yday,
+          .daylight_saving = input.tm_isdst};
 }
 
 void CopyFields(const LegacyTm& input, std::tm* absl_nonnull output) {
@@ -70,8 +76,7 @@ std::int64_t CivilSeconds(const LegacyTm& input) {
       DaysFromCivil(static_cast<std::int64_t>(input.year) + 1900,
                     static_cast<unsigned int>(input.month + 1),
                     static_cast<unsigned int>(input.month_day));
-  return days * 86400 + input.hours * 3600 + input.minutes * 60 +
-         input.seconds;
+  return days * 86400 + input.hours * 3600 + input.minutes * 60 + input.seconds;
 }
 
 void SetLocalFields(const LegacyTm& input, std::time_t epoch,
@@ -114,10 +119,9 @@ extern "C" std::time_t mktime(std::tm* absl_nonnull input) {
   return result;
 }
 
-extern "C" std::size_t strftime(char* absl_nonnull output,
-                                 std::size_t capacity,
-                                 const char* absl_nonnull format,
-                                 const std::tm* absl_nonnull input) {
+extern "C" std::size_t strftime(char* absl_nonnull output, std::size_t capacity,
+                                const char* absl_nonnull format,
+                                const std::tm* absl_nonnull input) {
   const LegacyTm legacy = ToLegacy(*input);
   return symbian_estlib_strftime(output, capacity, format, &legacy);
 }
