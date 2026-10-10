@@ -312,6 +312,41 @@ def _exercise_failure_view(control, process, output):
         assert time.monotonic() < deadline, "Failure text or labels missing"
         time.sleep(0.05)
     first.save(output / "failure.png")
+    # Sample during sustained scrolling, including between move events. Static
+    # chrome must survive every sampled frame, not merely the settled result:
+    # separate background/text submissions used to expose blank labels here.
+    chrome = (0, height - 76, width, height)
+    expected_chrome = first.crop(chrome)
+    _ready(lambda: control.pointer(width // 2, height // 2, "press"))
+    for step in range(24):
+        y = height // 2 - (step + 1) * 2
+        _ready(lambda y=y: control.pointer(width // 2, y, "move"))
+        for sample in range(2):
+            frame = capture(f"scroll-stability-{step}-{sample}")
+            assert (
+                ImageChops.difference(
+                    expected_chrome, frame.crop(chrome)
+                ).getbbox()
+                is None
+            ), "Failure-view buttons flickered during scroll"
+            assert (
+                sum(ink(frame.crop(body)).histogram()[1:]) > 30
+            ), "Failure-view text disappeared during scroll"
+    _ready(lambda: control.pointer(width // 2, y, "release"))
+    # Return to the beginning for the independent three-pixel movement check.
+    _ready(lambda: control.pointer(width // 2, height // 2 - 48, "press"))
+    _ready(lambda: control.pointer(width // 2, height // 2, "move"))
+    _ready(lambda: control.pointer(width // 2, height // 2, "release"))
+    deadline = time.monotonic() + 5
+    while True:
+        restored = capture(f"scroll-restored-{attempt}")
+        attempt += 1
+        if ImageChops.difference(first, restored).getbbox() is None:
+            break
+        assert (
+            time.monotonic() < deadline
+        ), "Failure report did not return to top"
+        time.sleep(0.01)
     # A movement smaller than any font row must still move the text. This
     # catches whole-line quantization independently of a large swipe.
     _ready(lambda: control.pointer(width // 2, height // 2, "press"))
@@ -329,6 +364,28 @@ def _exercise_failure_view(control, process, output):
         ), "Sub-row scrolling did not move text"
         time.sleep(0.05)
     shifted.save(output / "failure-pixel-scrolled.png")
+    # Measure translation away from the clipping edges. Some native fonts
+    # dither RGB565 antialiasing by pixel position, so compare alignment errors
+    # rather than requiring identical glyph intensities after an odd-pixel move.
+    alignment_errors = []
+    for distance in range(7):
+        difference = ImageChops.difference(
+            first.crop(
+                (24, 100 + distance, width - 40, height - 104 + distance)
+            ),
+            shifted.crop((24, 100, width - 40, height - 104)),
+        )
+        alignment_errors.append(
+            sum(
+                intensity * count
+                for intensity, count in enumerate(
+                    difference.convert("L").histogram()
+                )
+            )
+        )
+    assert (
+        min(range(7), key=alignment_errors.__getitem__) == 3
+    ), "Drag distance and content movement are not 1:1"
 
     _ready(lambda: control.pointer(width // 2, height // 2, "press"))
     _ready(lambda: control.pointer(width // 2, 85, "move"))

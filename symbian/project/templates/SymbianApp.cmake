@@ -361,6 +361,7 @@ foreach(component IN ITEMS system connectivity agent power midi_output vibration
     if(component STREQUAL "display")
       target_link_libraries(${component_target} INTERFACE
         "${SYMBIAN_SDK_PREFIX}/proxies/ws32/ws32.dso"
+        "${SYMBIAN_SDK_PREFIX}/proxies/bitgdi/bitgdi.dso"
         "${SYMBIAN_SDK_PREFIX}/proxies/gdi/gdi.dso"
         "${SYMBIAN_SDK_PREFIX}/proxies/fbscli/fbscli.dso")
     endif()
@@ -391,7 +392,8 @@ foreach(component IN ITEMS system connectivity agent power midi_output vibration
         "${SYMBIAN_SDK_PREFIX}/proxies/fbscli/fbscli.dso")
     endif()
     if(component STREQUAL "camera" OR component STREQUAL "midi_output" OR
-        component STREQUAL "vibration" OR component STREQUAL "clipboard")
+        component STREQUAL "vibration" OR component STREQUAL "clipboard" OR
+        component STREQUAL "display")
       target_link_libraries(${component_target} INTERFACE Symbian::CxxAbi)
       target_compile_definitions(${component_target} INTERFACE
         SYMBIAN_NATIVE_LEAVES=1)

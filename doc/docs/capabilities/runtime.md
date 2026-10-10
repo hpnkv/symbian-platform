@@ -103,12 +103,19 @@ SDK executables link the failure handler automatically. A failed `CHECK` or
 report with Copy Logs and Exit controls; a background failure only writes the
 file. The failure view is also available explicitly through
 `symbian::api::system::ShowFailureReport` and `RunWithFailureHandler`.
-Dragging scrolls by pixels rather than whole rows, paced to the reported display
-refresh rate. Clipped native text and the background are submitted together;
-font handles are reused until the size changes. Rendering uses Window Server,
+Dragging moves the content by the pointer's distance in screen pixels, paced to
+the reported display refresh rate. Pending input is applied before painting;
+host trackpad momentum retains its original deltas. Clipped native text is
+composed into the background bitmap before
+one window blit, so scrolling cannot present a background-only update. Redraws
+reuse that complete bitmap without a second text pass or self-invalidation.
+Bitmap writes wait for outstanding Window Server reads; font and bitmap graphics
+contexts are cached. Rendering uses Window Server,
 so the platform can use its accelerated compositor without requiring EGL or
 GLES support in the failing process. Acceleration depends on the device and
 Window Server implementation; the same path works on older software renderers.
+`examples/failure_handler_app` logs varied messages and deliberately fails a
+`CHECK_EQ` for quick on-device testing of scrolling, copying and exit.
 
 ```cpp
 absl::Status Main();

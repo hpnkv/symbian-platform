@@ -1,4 +1,8 @@
 add_library(symbian_api_display STATIC display.cc native_display.cc window_surface.cc window_task_identity.cc screen_control.cc)
+# Bitmap-device construction leaves on native allocation failures. Keep that
+# translation boundary explicit; the other display sources disable exceptions.
+symbian_enable_native_leaves(symbian_api_display SOURCES window_surface.cc)
+set_property(SOURCE window_surface.cc APPEND PROPERTY COMPILE_OPTIONS -fno-rtti)
 target_compile_features(symbian_api_display PUBLIC cxx_std_20)
 target_compile_options(symbian_api_display PRIVATE -fno-pic -fno-exceptions)
 target_include_directories(symbian_api_display PRIVATE
@@ -7,6 +11,7 @@ target_include_directories(symbian_api_display PRIVATE
 target_link_libraries(symbian_api_display PUBLIC Symbian::AbseilStatusOr
   "${SYMBIAN_SDK_PREFIX}/proxies/ws32/ws32.dso"
   "${SYMBIAN_SDK_PREFIX}/proxies/gdi/gdi.dso"
+  "${SYMBIAN_SDK_PREFIX}/proxies/bitgdi/bitgdi.dso"
   "${SYMBIAN_SDK_PREFIX}/proxies/fbscli/fbscli.dso"
   "${SYMBIAN_SDK_PREFIX}/proxies/hal/hal.dso")
 

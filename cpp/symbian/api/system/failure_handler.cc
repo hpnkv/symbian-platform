@@ -313,10 +313,8 @@ absl::Status ShowFailureReport(const absl::Status& error,
   time::FramePacer pacer(
       display::WindowSurface::PrimaryRefreshRateHz().value_or(60));
   for (;;) {
-    if (redraw) {
-      ABSL_RETURN_IF_ERROR(Render(&window, caption, lines, scroll, feedback));
-      redraw = false;
-    }
+    // Consume input before painting, so a drag is visible in this frame rather
+    // than waiting through another display-pacing interval.
     for (int count = 0; count < 64; ++count) {
       ABSL_ASSIGN_OR_RETURN(auto next, window.PollInput());
       if (!next.has_value()) {
@@ -335,6 +333,8 @@ absl::Status ShowFailureReport(const absl::Status& error,
           break;
         case display::WindowInputKind::kPointerMove:
           if (dragging) {
+            // Pointer coordinates and scroll are both screen pixels. Preserve
+            // their distance directly, without a row threshold or gain curve.
             const int next_scroll = std::clamp(
                 touch_start_scroll + (touch_start_y - input.y), 0, maximum);
             redraw |= next_scroll != scroll;
@@ -401,6 +401,10 @@ absl::Status ShowFailureReport(const absl::Status& error,
         default:
           break;
       }
+    }
+    if (redraw) {
+      ABSL_RETURN_IF_ERROR(Render(&window, caption, lines, scroll, feedback));
+      redraw = false;
     }
     symbian::api::time::SleepFor(pacer.NextDelayNanoseconds());
   }

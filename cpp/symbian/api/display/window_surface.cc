@@ -16,6 +16,15 @@
 
 #include <absl/base/nullability.h>
 #include <absl/status/status_macros.h>
+
+namespace std {
+bool uncaught_exception();
+}
+
+#define __EXCEPTION__
+#include <e32base.h>
+#undef __EXCEPTION__
+#include <bitdev.h>
 #include <e32keys.h>
 #include <fbs.h>
 #include <w32std.h>
@@ -122,20 +131,15 @@ class DisplayRefreshChannel final : public RBusLogicalChannel {
 }  // namespace
 
 struct WindowSurface::Impl {
-  struct TextLine {
-    std::u16string text;
-    int x;
-    int baseline_y;
-    std::uint32_t rgb;
-    std::optional<WindowRect> clip;
-  };
-
   RWsSession session;
   RWindowGroup* absl_nullable group = nullptr;
   RWindow* absl_nullable window = nullptr;
   CWsScreenDevice* absl_nullable screen = nullptr;
   CWindowGc* absl_nullable gc = nullptr;
   CFbsBitmap* absl_nullable bitmap = nullptr;
+  std::unique_ptr<CFbsBitmapDevice> bitmap_device;
+  std::unique_ptr<CFbsBitGc> bitmap_gc;
+  bool bitmap_in_flight = false;
   RChunk frame_chunk;
   std::byte* absl_nullable frame_pixels = nullptr;
   std::size_t frame_bytes = 0;
@@ -154,8 +158,6 @@ struct WindowSurface::Impl {
   int screen_mode = -1;
   DisplayRotation rotation = DisplayRotation::k0;
   unsigned int geometry_poll_count = 0;
-  std::vector<TextLine> text_lines;
-  int text_font_height = 20;
   CFont* absl_nullable text_font = nullptr;
   int cached_font_height = 0;
 
@@ -199,13 +201,27 @@ struct WindowSurface::Impl {
     return true;
   }
 
+  void WaitForBitmap() {
+    // Follow the flush with a synchronous query on the same session, so the
+    // server consumes preceding bitmap commands before its pixels change.
+    // RWsSession::Finish's newer ordinal is absent from older Window Servers.
+    if (bitmap_in_flight) {
+      session.Flush();
+      session.GetFocusWindowGroup();
+      bitmap_in_flight = false;
+    }
+  }
+
   void DestroyFrame() {
+    WaitForBitmap();
     frame_pixels = nullptr;
     frame_bytes = 0;
     if (frame_chunk_open) {
       frame_chunk.Close();
       frame_chunk_open = false;
     }
+    bitmap_gc.reset();
+    bitmap_device.reset();
     delete bitmap;
     bitmap = nullptr;
   }
@@ -265,15 +281,14 @@ struct WindowSurface::Impl {
     screen_mode = -1;
     rotation = DisplayRotation::k0;
     geometry_poll_count = 0;
-    text_lines.clear();
   }
 
-  absl::Status Present(bool flush = true) {
+  absl::Status CopyFrame() {
     if (bitmap == nullptr || !window_open) {
       return absl::FailedPreconditionError("RGB565 frame is not ready");
     }
-    const std::uint32_t before = measure_frames ? User::NTickCount() : 0;
     if (frame_pixels != nullptr) {
+      WaitForBitmap();
       bitmap->LockHeap();
       void* absl_nullable destination = bitmap->DataAddress();
       if (destination == nullptr) {
@@ -283,9 +298,18 @@ struct WindowSurface::Impl {
       std::memcpy(destination, frame_pixels, frame_bytes);
       bitmap->UnlockHeap();
     }
+    return absl::OkStatus();
+  }
+
+  absl::Status Present(bool flush = true) {
+    if (bitmap == nullptr || !window_open) {
+      return absl::FailedPreconditionError("RGB565 frame is not ready");
+    }
+    const std::uint32_t before = measure_frames ? User::NTickCount() : 0;
     gc->Activate(*window);
     gc->BitBlt(TPoint(0, 0), bitmap);
     gc->Deactivate();
+    bitmap_in_flight = true;
     if (flush) {
       session.Flush();
     }
@@ -300,46 +324,63 @@ struct WindowSurface::Impl {
     return absl::OkStatus();
   }
 
-  absl::Status DrawTextOverlay() {
-    if (text_lines.empty()) {
+  absl::Status DrawTextOverlay(std::span<const WindowTextLine> lines,
+                               int font_height) {
+    if (lines.empty()) {
       return absl::OkStatus();
     }
-    if (text_font != nullptr && cached_font_height != text_font_height) {
+    if (bitmap == nullptr) {
+      return absl::FailedPreconditionError("text needs an RGB565 frame");
+    }
+    WaitForBitmap();
+    if (bitmap_device == nullptr) {
+      // Translate the native leaving factory at this implementation boundary.
+      CFbsBitmapDevice* absl_nullable device = nullptr;
+      TRAPD(error, device = CFbsBitmapDevice::NewL(bitmap));
+      bitmap_device.reset(device);
+      ABSL_RETURN_IF_ERROR(NativeError(error, "bitmap graphics device"));
+    }
+    if (bitmap_gc == nullptr) {
+      CFbsBitGc* absl_nullable context = nullptr;
+      const TInt error = bitmap_device->CreateContext(context);
+      bitmap_gc.reset(context);
+      ABSL_RETURN_IF_ERROR(NativeError(error, "bitmap graphics context"));
+    }
+    if (text_font != nullptr && cached_font_height != font_height) {
       screen->ReleaseFont(text_font);
       text_font = nullptr;
     }
     if (text_font == nullptr) {
-      const TFontSpec specification(_L("Series 60 Sans"), text_font_height);
+      const TFontSpec specification(_L("Series 60 Sans"), font_height);
       if (const TInt result =
               screen->GetNearestFontInPixels(text_font, specification);
           result != KErrNone) {
         return NativeError(result, "device font");
       }
-      cached_font_height = text_font_height;
+      cached_font_height = font_height;
     }
-    gc->Activate(*window);
-    gc->UseFont(text_font);
-    gc->SetPenStyle(CGraphicsContext::ESolidPen);
-    for (const TextLine& line : text_lines) {
+    bitmap_gc->UseFont(text_font);
+    bitmap_gc->SetPenStyle(CGraphicsContext::ESolidPen);
+    bitmap_gc->SetBrushStyle(CGraphicsContext::ENullBrush);
+    for (const WindowTextLine& line : lines) {
       if (line.text.empty()) {
         continue;
       }
-      gc->SetPenColor(TRgb((line.rgb >> 16) & 0xff, (line.rgb >> 8) & 0xff,
-                           line.rgb & 0xff));
+      bitmap_gc->SetPenColor(TRgb((line.rgb >> 16) & 0xff,
+                                  (line.rgb >> 8) & 0xff, line.rgb & 0xff));
       const TPtrC text(reinterpret_cast<const TUint16*>(line.text.data()),
                        static_cast<TInt>(line.text.size()));
       if (line.clip.has_value()) {
         const WindowRect& clip = *line.clip;
-        gc->SetClippingRect(
+        bitmap_gc->SetClippingRect(
             TRect(TPoint(clip.x, clip.y), TSize(clip.width, clip.height)));
       }
-      gc->DrawText(text, TPoint(line.x, line.baseline_y));
+      bitmap_gc->DrawText(text, TPoint(line.x, line.baseline_y));
       if (line.clip.has_value()) {
-        gc->CancelClippingRect();
+        bitmap_gc->CancelClippingRect();
       }
     }
-    gc->DiscardFont();
-    gc->Deactivate();
+    bitmap_gc->DiscardFont();
     return absl::OkStatus();
   }
 };
@@ -527,8 +568,8 @@ absl::Status WindowSurface::SetAutomaticOrientation(bool enabled) {
   return absl::OkStatus();
 }
 
-absl::Status WindowSurface::SetTextLines(std::span<const WindowTextLine> lines,
-                                         int font_height_pixels) {
+absl::Status WindowSurface::ValidateTextLines(
+    std::span<const WindowTextLine> lines, int font_height_pixels) const {
   if (impl_ == nullptr || !impl_->window_open || impl_->screen == nullptr ||
       impl_->gc == nullptr) {
     return absl::FailedPreconditionError("window is closed");
@@ -549,26 +590,12 @@ absl::Status WindowSurface::SetTextLines(std::span<const WindowTextLine> lines,
       return absl::InvalidArgumentError("text line is too long");
     }
   }
-  impl_->text_lines.clear();
-  impl_->text_lines.reserve(lines.size());
-  impl_->text_font_height = font_height_pixels;
-  for (const WindowTextLine& line : lines) {
-    impl_->text_lines.push_back({.text = std::u16string(line.text),
-                                 .x = line.x,
-                                 .baseline_y = line.baseline_y,
-                                 .rgb = line.rgb,
-                                 .clip = line.clip});
-  }
   return absl::OkStatus();
 }
 
 absl::Status WindowSurface::DrawTextLines(std::span<const WindowTextLine> lines,
                                           int font_height_pixels) {
-  ABSL_RETURN_IF_ERROR(SetTextLines(lines, font_height_pixels));
-  ABSL_RETURN_IF_ERROR(impl_->DrawTextOverlay());
-  impl_->window->Invalidate();
-  impl_->session.Flush();
-  return absl::OkStatus();
+  return Present(lines, font_height_pixels);
 }
 
 absl::StatusOr<std::vector<std::u16string>> WindowSurface::WrapTextLines(
@@ -672,6 +699,7 @@ absl::Status WindowSurface::UpdateRgb565Frame(Rgb565FrameWriter writer) {
   if (pitch < impl_->size.width * 2) {
     return absl::InternalError("bitmap has invalid stride");
   }
+  impl_->WaitForBitmap();
   impl_->bitmap->LockHeap();
   auto* absl_nullable pixels =
       reinterpret_cast<std::byte*>(impl_->bitmap->DataAddress());
@@ -691,18 +719,16 @@ absl::Status WindowSurface::Present() {
   if (impl_ == nullptr) {
     return absl::FailedPreconditionError("window owner unavailable");
   }
-  impl_->text_lines.clear();
+  ABSL_RETURN_IF_ERROR(impl_->CopyFrame());
   return impl_->Present();
 }
 
 absl::Status WindowSurface::Present(std::span<const WindowTextLine> lines,
                                     int font_height_pixels) {
-  ABSL_RETURN_IF_ERROR(SetTextLines(lines, font_height_pixels));
-  ABSL_RETURN_IF_ERROR(impl_->Present(false));
-  ABSL_RETURN_IF_ERROR(impl_->DrawTextOverlay());
-  impl_->window->Invalidate();
-  impl_->session.Flush();
-  return absl::OkStatus();
+  ABSL_RETURN_IF_ERROR(ValidateTextLines(lines, font_height_pixels));
+  ABSL_RETURN_IF_ERROR(impl_->CopyFrame());
+  ABSL_RETURN_IF_ERROR(impl_->DrawTextOverlay(lines, font_height_pixels));
+  return impl_->Present();
 }
 
 absl::StatusOr<std::optional<WindowInput>> WindowSurface::PollInput() {
@@ -777,9 +803,7 @@ absl::StatusOr<std::optional<WindowInput>> WindowSurface::PollInput() {
       if (impl_->bitmap != nullptr) {
         impl_->Present(false).IgnoreError();
       }
-      absl::Status text_result = impl_->DrawTextOverlay();
       impl_->window->EndRedraw();
-      ABSL_RETURN_IF_ERROR(text_result);
     }
     impl_->session.RedrawReady(&impl_->redraw);
   }

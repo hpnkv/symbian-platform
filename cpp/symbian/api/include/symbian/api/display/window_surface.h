@@ -123,14 +123,14 @@ class WindowSurface final {
   absl::StatusOr<Rgb565Frame> CreateRgb565Frame();
   absl::Status UpdateRgb565Frame(Rgb565FrameWriter writer);
   absl::Status Present();
-  // Submits bitmap and clipped native text together, without flushing the
-  // bitmap separately. Window Server chooses the platform rendering backend;
-  // this needs neither EGL nor a GPU on older devices.
+  // Composes clipped native text into the bitmap before a single window blit.
+  // Window Server chooses the platform rendering backend; this needs neither
+  // EGL nor a GPU on older devices.
   absl::Status Present(std::span<const WindowTextLine> lines,
                        int font_height_pixels = 20);
-  // Draws a bounded batch using the device font. Call after Present; the next
-  // Present replaces these labels. The window replays labels during native
-  // redraws. The caller owns text until this returns.
+  // Composes labels into the current RGB565 bitmap and presents it. Replace
+  // the frame's pixels before replacing labels. Redraws replay the composed
+  // bitmap; the caller owns text until this returns.
   absl::Status DrawTextLines(std::span<const WindowTextLine> lines,
                              int font_height_pixels = 20);
   // Wraps UTF-16 text to the actual device font metrics, preserving newlines.
@@ -151,8 +151,8 @@ class WindowSurface final {
  private:
   WindowSurface();
   absl::Status Open(std::string_view task_caption);
-  absl::Status SetTextLines(std::span<const WindowTextLine> lines,
-                            int font_height_pixels);
+  absl::Status ValidateTextLines(std::span<const WindowTextLine> lines,
+                                 int font_height_pixels) const;
   struct Impl;
   Impl* absl_nullable impl_ = nullptr;
 };
