@@ -10,7 +10,7 @@ uid = 0xe0000a73
 name = "Failure Handler Demo"
 vendor = "Symbian platform"
 executable_name = "failure_handler_app.exe"
-version = [1, 0, 0]
+version = [1, 0, 2]
 
 [application]
 caption = "Failure Handler Demo"
