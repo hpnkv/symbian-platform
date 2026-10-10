@@ -6,7 +6,10 @@
 
 namespace classic_demo_ui {
 
-using FeatureAction = TInt (* absl_nonnull)(void* absl_nullable context);
+// This legacy native-leave example runs with Symbian's exception headers.
+// Their std::terminate declaration conflicts with Abseil AnyInvocable, while
+// std::function emits imported RTTI objects unsupported by the E32 converter.
+using FeatureAction = TInt (*absl_nonnull)(void* absl_nullable context);
 
 // Keeps a native window open while its Run and Close buttons handle input.
 // The action runs only when the user presses Run; preview pixels are then shown.

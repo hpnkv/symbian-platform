@@ -1078,15 +1078,19 @@ def prepare(
                 )
                 for component in (
                     "system",
+                    "clipboard",
+                    "failure_handler",
                     "connectivity",
                     "websocket",
                     "agent",
                     "power",
                     "display",
                     "gles",
-                    "media",
+                    "midi_output",
+                    "vibration",
                     "storage",
                     "camera",
+                    "camera_gles2",
                 ):
                     target = f"symbian_api_{component}"
                     run(
@@ -1104,7 +1108,27 @@ def prepare(
                         / (
                             "connectivity"
                             if component == "websocket"
-                            else "display" if component == "gles" else component
+                            else (
+                                "display"
+                                if component == "gles"
+                                else (
+                                    "media"
+                                    if component in ("midi_output", "vibration")
+                                    else (
+                                        "system"
+                                        if component
+                                        in (
+                                            "clipboard",
+                                            "failure_handler",
+                                        )
+                                        else (
+                                            "camera"
+                                            if component == "camera_gles2"
+                                            else component
+                                        )
+                                    )
+                                )
+                            )
                         )
                         / f"lib{target}.a",
                         output / "lib" / architecture / f"lib{target}.a",
@@ -1369,7 +1393,7 @@ def _install_resource_tools(
         raise StatusError(
             Code.NOT_FOUND,
             "Prepared EPL rcomp checkout is required for SDK export; "
-            "see .dev/research/rcomp.md",
+            "see archived ~/.symbian-dev/research/rcomp.md",
         )
     revision = run(
         ["git", "-C", str(source), "rev-parse", "HEAD"], cwd=workspace

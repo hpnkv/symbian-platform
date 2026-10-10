@@ -41,12 +41,14 @@ The simulation uses fixed 16 ms steps. Presentation uses monotonic deadlines
 capped to the display's reported refresh rate, or 60 Hz if the driver reports
 none. The small top-right counter shows measured FPS and `GPU` only when SDL
 selected an accelerated renderer. Pointer events move the paddle immediately,
-including drag events while the finger remains down. MIDI callbacks are pumped
-in a bounded batch. The ball bounces at its crossing of the paddle's top and
+including drag events while the finger remains down. The game chooses MIDI
+notes and schedules them on its frame clock; the SDK owns the MIDI service
+thread and a bounded note queue. The ball bounces at its crossing of the paddle's top and
 is pushed back inside the side and top walls if it penetrates them. A brick or
-paddle hit requests a short, light HWRM pulse on the SDK worker because the
+paddle hit requests a short HWRM pulse through the SDK worker because the
 native server transaction is synchronous. The
-worker is started before play; a two-second deadline stops further requests if
+worker is started before play; the game rate-limits hits and the SDK's
+two-second service deadline stops further requests if
 it stalls, and the pause menu identifies the stalled stage. EKA2L1 cannot
 validate the physical motor or server latency. Its menu feedback can remain
 enabled even when HWRM's normal vibration profile is off.

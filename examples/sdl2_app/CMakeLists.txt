@@ -31,14 +31,14 @@ target_include_directories(sdl2_app PRIVATE "${sdl2_repository}/examples")
 target_link_options(sdl2_app PRIVATE
   "SHELL:-z nocopyreloc" "SHELL:-z notext"
   "--undefined=symbian_native_leave_personalities")
-if(NOT TARGET symbian_api_media AND NOT TARGET Symbian::Media)
+if(NOT TARGET symbian_api_midi_output AND NOT TARGET Symbian::MidiOutput)
   add_subdirectory("${sdl2_repository}/cpp/symbian/api/media"
     "${CMAKE_CURRENT_BINARY_DIR}/sdk_media")
 endif()
-if(TARGET Symbian::Media)
-  target_link_libraries(sdl2_app PRIVATE Symbian::Media)
+if(TARGET Symbian::MidiOutput)
+  target_link_libraries(sdl2_app PRIVATE Symbian::MidiOutput Symbian::Vibration)
 else()
-  target_link_libraries(sdl2_app PRIVATE symbian_api_media)
+  target_link_libraries(sdl2_app PRIVATE symbian_api_midi_output symbian_api_vibration)
 endif()
 if(SYMBIAN_ARKANOID_GPU)
   target_compile_definitions(sdl2_app PRIVATE SYMBIAN_ARKANOID_GPU=1)
@@ -67,10 +67,10 @@ symbian_add_executable(sdl3_app ${arkanoid_sources} c_api_probe_sdl3.c)
 target_include_directories(sdl3_app PRIVATE "${sdl2_repository}/examples")
 target_compile_definitions(sdl3_app PRIVATE
   SYMBIAN_ARKANOID_SDL3=1 SYMBIAN_CAF_V2 __SOFTFP=)
-if(TARGET Symbian::Media)
-  target_link_libraries(sdl3_app PRIVATE Symbian::Media)
+if(TARGET Symbian::MidiOutput)
+  target_link_libraries(sdl3_app PRIVATE Symbian::MidiOutput Symbian::Vibration)
 else()
-  target_link_libraries(sdl3_app PRIVATE symbian_api_media)
+  target_link_libraries(sdl3_app PRIVATE symbian_api_midi_output symbian_api_vibration)
 endif()
 target_link_options(sdl3_app PRIVATE
   "SHELL:-z nocopyreloc" "SHELL:-z notext"

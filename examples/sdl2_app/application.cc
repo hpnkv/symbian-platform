@@ -13,7 +13,8 @@
 #include "sdl2_app/game.h"
 #include "sdl2_app/renderer.h"
 #include "symbian/api/display/display.h"
-#include "symbian/api/media/game_feedback.h"
+#include "symbian/api/media/midi_output.h"
+#include "symbian/api/media/vibration.h"
 #include "symbian/api/time/frame_pacer.h"
 #include "symbian/api/time/sleep.h"
 
@@ -21,6 +22,7 @@ namespace arkanoid {
 namespace {
 extern "C" int symbian_sdl2_c_api_probe(void);
 constexpr int kStepMs = 16;
+constexpr int kMelodyNotes[] = {60, 64, 67, 72, 67, 64, 62, 67};
 }  // namespace
 
 int Run() {
@@ -99,7 +101,8 @@ int Run() {
   const bool touchscreen =
       !touchscreen_presence.ok() || *touchscreen_presence;
   Game game(width, height, touchscreen);
-  symbian::api::media::GameFeedback feedback;
+  symbian::api::media::MidiOutput midi;
+  symbian::api::media::Vibration vibration;
   std::string vibration_error;
   arkanoid::GameRenderer game_renderer;
   // Present a complete frame before opening device media services. Some
@@ -107,8 +110,12 @@ int Run() {
   // initial window white while the request is in flight.
   game_renderer.Draw(game, renderer->get(), 0, gpu_active, gpu_fallback_reason,
                      vibration_error);
-  feedback.Start();
+  midi.Start().IgnoreError();
+  vibration.Start().IgnoreError();
   std::uint32_t last_hits = 0;
+  std::uint64_t last_vibration_ms = 0;
+  std::uint64_t next_note_ms = 0;
+  std::size_t note_index = 0;
   bool running = true;
   bool foreground = true;
   const std::uint32_t reported_rate = arkanoid::RefreshRateHz();
@@ -140,7 +147,7 @@ int Run() {
       break;
     }
     if (!foreground) {
-      feedback.SetMusicEnabled(false);
+      next_note_ms = 0;
       symbian::api::time::SleepFor(std::chrono::milliseconds(80));
       previous = arkanoid::Ticks();
       lag = 0;
@@ -157,13 +164,20 @@ int Run() {
       lag -= kStepMs;
     }
     if (game.hits() != last_hits) {
-      feedback.Hit(now);
+      if (now - last_vibration_ms >= 120 && vibration.Pulse(60).ok()) {
+        last_vibration_ms = now;
+      }
       last_hits = game.hits();
     }
-    feedback.SetMusicEnabled(game.music_enabled());
-    feedback.Pump(now);
+    if (game.music_enabled() && midi.available() && now >= next_note_ms) {
+      midi.PlayNote(kMelodyNotes[note_index++ % 8], 170, 52).IgnoreError();
+      next_note_ms = now + 220;
+    }
+    if (!game.music_enabled()) {
+      next_note_ms = 0;
+    }
     if (vibration_error.empty()) {
-      const absl::Status vibration_status = feedback.vibration_status();
+      const absl::Status vibration_status = vibration.status();
       if (!vibration_status.ok()) {
         vibration_error.assign(vibration_status.message().data(),
                                vibration_status.message().size());

@@ -33,6 +33,30 @@ def _unchanged(inputs: dict[Path, bytes]) -> None:
         raise StatusError(Code.ABORTED, "Project inputs changed during build")
 
 
+_PROCESS_CAPABILITY_BITS = {
+    "SwEvent": 12,
+    "NetworkServices": 13,
+    "ReadUserData": 15,
+    "WriteUserData": 16,
+}
+
+
+def _process_capabilities(names: object) -> int:
+    """Encode the bounded process capabilities supported by app builds."""
+    if (
+        not isinstance(names, list)
+        or any(
+            not isinstance(name, str) or name not in _PROCESS_CAPABILITY_BITS
+            for name in names
+        )
+        or len(names) != len(set(names))
+    ):
+        raise StatusError(
+            Code.INVALID_ARGUMENT, "Unsupported process capability"
+        )
+    return sum(1 << _PROCESS_CAPABILITY_BITS[name] for name in names)
+
+
 def build_executable(
     project: Path, output: Path, options: dict, compiler: str, linker: str
 ) -> dict:
@@ -61,17 +85,7 @@ def build_executable(
     uid3 = options.get("uid3")
     if type(uid3) is not int or not 0xE0000000 <= uid3 <= 0xEFFFFFFF:
         raise StatusError(Code.INVALID_ARGUMENT, "Experimental UID3 required")
-    capability_names = options.get("capabilities", [])
-    if (
-        not isinstance(capability_names, list)
-        or any(name != "NetworkServices" for name in capability_names)
-        or len(capability_names) != len(set(capability_names))
-    ):
-        raise StatusError(
-            Code.INVALID_ARGUMENT,
-            "Only the NetworkServices process capability is supported",
-        )
-    capabilities = (1 << 13) if capability_names else 0
+    capabilities = _process_capabilities(options.get("capabilities", []))
     preset = options.get("cmake_preset", "symbian-pic")
     if not isinstance(preset, str) or not re.fullmatch(
         r"[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}", preset

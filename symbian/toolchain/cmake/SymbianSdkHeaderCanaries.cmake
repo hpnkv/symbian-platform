@@ -25,13 +25,49 @@ function(symbian_sdk_header_canaries)
   symbian_header_canary(symbian_sdk_text_header_canary
     HEADERS "${SYMBIAN_SDK_PREFIX}/include/symbian/api/text/utf8.h"
     LIBRARIES Symbian::AbseilStatusOr)
-  foreach(component IN ITEMS System Connectivity Storage Power Display Media Camera)
+  foreach(component IN ITEMS System Connectivity Storage Power Display Camera)
     string(TOLOWER "${component}" directory)
     file(GLOB_RECURSE headers CONFIGURE_DEPENDS
       "${SYMBIAN_SDK_PREFIX}/include/symbian/api/${directory}/*.h")
+    if(component STREQUAL "Camera")
+      list(FILTER headers EXCLUDE REGEX "gles2_frame_backend\\.h$")
+    elseif(component STREQUAL "Display")
+      list(FILTER headers EXCLUDE REGEX "gles_(window_context|rect_batch)\\.h$|gles2_texture\\.h$")
+    elseif(component STREQUAL "System")
+      list(FILTER headers EXCLUDE REGEX "(clipboard|failure_handler)\\.h$")
+    endif()
     symbian_header_canary(symbian_sdk_${directory}_header_canary
       HEADERS ${headers} LIBRARIES Symbian::${component})
   endforeach()
+  if(TARGET Symbian::GlesDisplay)
+    symbian_header_canary(symbian_sdk_gles_display_header_canary
+      HEADERS
+        "${SYMBIAN_SDK_PREFIX}/include/symbian/api/display/gles_window_context.h"
+        "${SYMBIAN_SDK_PREFIX}/include/symbian/api/display/gles_rect_batch.h"
+        "${SYMBIAN_SDK_PREFIX}/include/symbian/api/display/gles2_texture.h"
+      LIBRARIES Symbian::GlesDisplay)
+  endif()
+  symbian_header_canary(symbian_sdk_midi_output_header_canary
+    HEADERS "${SYMBIAN_SDK_PREFIX}/include/symbian/api/media/midi_output.h"
+    LIBRARIES Symbian::MidiOutput)
+  symbian_header_canary(symbian_sdk_vibration_header_canary
+    HEADERS "${SYMBIAN_SDK_PREFIX}/include/symbian/api/media/vibration.h"
+    LIBRARIES Symbian::Vibration)
+  if(TARGET Symbian::Clipboard)
+    symbian_header_canary(symbian_sdk_clipboard_header_canary
+      HEADERS "${SYMBIAN_SDK_PREFIX}/include/symbian/api/system/clipboard.h"
+      LIBRARIES Symbian::Clipboard)
+  endif()
+  if(TARGET Symbian::FailureHandler)
+    symbian_header_canary(symbian_sdk_failure_handler_header_canary
+      HEADERS "${SYMBIAN_SDK_PREFIX}/include/symbian/api/system/failure_handler.h"
+      LIBRARIES Symbian::FailureHandler)
+  endif()
+  if(TARGET Symbian::CameraGles2)
+    symbian_header_canary(symbian_sdk_camera_gles2_header_canary
+      HEADERS "${SYMBIAN_SDK_PREFIX}/include/symbian/api/camera/gles2_frame_backend.h"
+      LIBRARIES Symbian::CameraGles2)
+  endif()
   if(TARGET Symbian::PortableSdl2)
     symbian_header_canary(symbian_sdk_sdl2_c_header_canary C
       HEADERS "${SYMBIAN_SDK_PREFIX}/include/portable/sdl2/SDL.h"

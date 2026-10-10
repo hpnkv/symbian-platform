@@ -157,7 +157,11 @@ function(symbian_add_pic_executable target)
     cmake_language(EVAL CODE
       "cmake_language(DEFER CALL _symbian_executable_unwind ${target})")
   endif()
-  target_compile_options(${target} PRIVATE -fPIC)
+  target_compile_options(${target} PRIVATE -fPIC -g -gdwarf-4
+    "-fdebug-compilation-dir=/symbian-build/${target}"
+    "-fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=/symbian-src/${target}"
+    "-fdebug-prefix-map=${CMAKE_BINARY_DIR}=/symbian-build/${target}"
+    "-fdebug-prefix-map=${SYMBIAN_SDK_PREFIX}/include/platform=/symbian-sdk/include")
   target_link_options(${target} PRIVATE -T "${script}")
   set_target_properties(${target} PROPERTIES
     SUFFIX ".elf" LINK_DEPENDS "${script}"
@@ -166,8 +170,34 @@ function(symbian_add_pic_executable target)
 endfunction()
 
 # Exception-enabled translation units need the SDK's retained unwind metadata
-# and E32 descriptor. Source compile options select this after the whole target
-# has been declared; applications do not supply assembly or another layout.
+# and E32 descriptor. Inspect both local sources and linked SDK archives after
+# the whole target has been declared; applications supply no layout themselves.
+function(_symbian_dependency_needs_unwind target result)
+  set(pending "${target}")
+  set(seen)
+  while(pending)
+    list(POP_FRONT pending current)
+    if(NOT TARGET "${current}" OR "${current}" IN_LIST seen)
+      continue()
+    endif()
+    list(APPEND seen "${current}")
+    get_target_property(definitions ${current} INTERFACE_COMPILE_DEFINITIONS)
+    if("SYMBIAN_NATIVE_LEAVES=1" IN_LIST definitions)
+      set(${result} TRUE PARENT_SCOPE)
+      return()
+    endif()
+    foreach(property IN ITEMS LINK_LIBRARIES INTERFACE_LINK_LIBRARIES)
+      get_target_property(dependencies ${current} ${property})
+      foreach(dependency IN LISTS dependencies)
+        if(TARGET "${dependency}")
+          list(APPEND pending "${dependency}")
+        endif()
+      endforeach()
+    endforeach()
+  endwhile()
+  set(${result} FALSE PARENT_SCOPE)
+endfunction()
+
 function(_symbian_executable_unwind target)
   _symbian_link_default_runtime(${target})
   get_target_property(sources ${target} SOURCES)
@@ -176,7 +206,8 @@ function(_symbian_executable_unwind target)
     get_source_file_property(source_options "${source}" COMPILE_OPTIONS)
     list(APPEND options ${source_options})
   endforeach()
-  if(NOT "-fexceptions" IN_LIST options)
+  _symbian_dependency_needs_unwind(${target} dependency_needs_unwind)
+  if(NOT "-fexceptions" IN_LIST options AND NOT dependency_needs_unwind)
     return()
   endif()
   if(TARGET Symbian::CxxAbi)

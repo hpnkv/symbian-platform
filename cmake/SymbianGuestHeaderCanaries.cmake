@@ -22,13 +22,17 @@ function(symbian_guest_api_header_canaries root)
       "${root}/cpp/symbian/api/include/symbian/api/time/monotonic_clock.h"
       "${root}/cpp/symbian/api/include/symbian/api/time/sleep.h"
     LIBRARIES Symbian::Runtime)
-  foreach(component IN ITEMS system connectivity storage agent power display media camera)
+  foreach(component IN ITEMS system connectivity storage agent power display camera)
     # Public API consumers receive the source include root, as installed SDK
     # consumers receive include/symbian/api; internals use the same owner's ABI.
     file(GLOB_RECURSE public_headers CONFIGURE_DEPENDS
       "${root}/cpp/symbian/api/include/symbian/api/${component}/*.h")
     if(component STREQUAL "display")
-      list(FILTER public_headers EXCLUDE REGEX "gles_window_context\\.h$")
+      list(FILTER public_headers EXCLUDE REGEX "gles_(window_context|rect_batch)\\.h$|gles2_texture\\.h$")
+    elseif(component STREQUAL "camera")
+      list(FILTER public_headers EXCLUDE REGEX "gles2_frame_backend\\.h$")
+    elseif(component STREQUAL "system")
+      list(FILTER public_headers EXCLUDE REGEX "(clipboard|failure_handler)\\.h$")
     endif()
     if(public_headers)
       symbian_header_canary(symbian_api_${component}_public_header_canary
@@ -41,9 +45,26 @@ function(symbian_guest_api_header_canaries root)
         HEADERS ${internal_headers} LIBRARIES symbian_api_${component})
     endif()
   endforeach()
+  symbian_header_canary(symbian_api_midi_output_public_header_canary
+    HEADERS "${root}/cpp/symbian/api/include/symbian/api/media/midi_output.h"
+    LIBRARIES symbian_api_midi_output)
+  symbian_header_canary(symbian_api_vibration_public_header_canary
+    HEADERS "${root}/cpp/symbian/api/include/symbian/api/media/vibration.h"
+    LIBRARIES symbian_api_vibration)
+  symbian_header_canary(symbian_api_clipboard_public_header_canary
+    HEADERS "${root}/cpp/symbian/api/include/symbian/api/system/clipboard.h"
+    LIBRARIES symbian_api_clipboard)
+  symbian_header_canary(symbian_api_failure_handler_public_header_canary
+    HEADERS "${root}/cpp/symbian/api/include/symbian/api/system/failure_handler.h"
+    LIBRARIES symbian_api_failure_handler)
+  symbian_header_canary(symbian_api_camera_gles2_public_header_canary
+    HEADERS "${root}/cpp/symbian/api/include/symbian/api/camera/gles2_frame_backend.h"
+    LIBRARIES symbian_api_camera_gles2)
   symbian_header_canary(symbian_api_gles_public_header_canary
     HEADERS
       "${root}/cpp/symbian/api/include/symbian/api/display/gles_window_context.h"
+      "${root}/cpp/symbian/api/include/symbian/api/display/gles_rect_batch.h"
+      "${root}/cpp/symbian/api/include/symbian/api/display/gles2_texture.h"
     LIBRARIES symbian_api_gles)
   symbian_header_canary(symbian_guest_agent_header_canary
     HEADERS "${root}/cpp/symbian/agent/guest_control.h"

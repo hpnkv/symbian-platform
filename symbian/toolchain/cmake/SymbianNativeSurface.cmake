@@ -5,7 +5,9 @@ include_guard(GLOBAL)
 # This adds the C++ ABI/personality boundary; other target sources retain the
 # SDK default of disabled exceptions. Call after declaring the CMake target.
 function(symbian_enable_native_leaves target)
-  target_compile_definitions(${target} PRIVATE SYMBIAN_NATIVE_LEAVES=1)
+  # The final executable's startup must initialize drtaeabi thread globals
+  # before a leave-enabled SDK archive can run.
+  target_compile_definitions(${target} PUBLIC SYMBIAN_NATIVE_LEAVES=1)
   cmake_parse_arguments(PARSE_ARGV 1 LEAVES "" "" "SOURCES")
   if(LEAVES_UNPARSED_ARGUMENTS OR NOT LEAVES_SOURCES)
     message(FATAL_ERROR "symbian_enable_native_leaves needs SOURCES: select the native leave boundary explicitly")
@@ -18,7 +20,9 @@ function(symbian_enable_native_leaves target)
   endforeach()
   target_link_libraries(${target} PRIVATE Symbian::CxxAbi)
   # A proxy carries ordinals, never the bytes of a firmware type-info object.
-  target_link_options(${target} PRIVATE "SHELL:-z nocopyreloc" "SHELL:-z notext"
+  # Native leave sources live in static SDK archives. Their final E32 consumer
+  # must retain the personality and avoid COPY relocations for EH type info.
+  target_link_options(${target} INTERFACE "SHELL:-z nocopyreloc" "SHELL:-z notext"
     "--undefined=symbian_native_leave_personalities")
   target_sources(${target} PRIVATE
     "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/native_leave_personality.S"

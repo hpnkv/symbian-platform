@@ -320,18 +320,33 @@ endif()
 # Each verified device capability is a separate opt-in archive. Absent
 # archives create no target, so a project cannot accidentally link a planned
 # but unimplemented device facility.
-foreach(component IN ITEMS system connectivity agent power media display sensors
-                           camera storage)
+foreach(component IN ITEMS system connectivity agent power midi_output vibration
+                           display sensors camera camera_gles2 storage
+                           clipboard failure_handler)
   set(component_archive
     "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_api_${component}.a")
   if((EXISTS "${component_archive}" OR
-      (SYMBIAN_WORKSPACE_BUILD AND EXISTS
-       "${CMAKE_SOURCE_DIR}/cpp/symbian/api/${component}/CMakeLists.txt"))
+      (SYMBIAN_WORKSPACE_BUILD AND
+       (EXISTS "${CMAKE_SOURCE_DIR}/cpp/symbian/api/${component}/CMakeLists.txt"
+        OR ((component STREQUAL "midi_output" OR component STREQUAL "vibration") AND
+            EXISTS "${CMAKE_SOURCE_DIR}/cpp/symbian/api/media/CMakeLists.txt")
+        OR ((component STREQUAL "clipboard" OR
+             component STREQUAL "failure_handler") AND
+            EXISTS "${CMAKE_SOURCE_DIR}/cpp/symbian/api/system/CMakeLists.txt")
+        OR (component STREQUAL "camera_gles2" AND
+            EXISTS "${CMAKE_SOURCE_DIR}/cpp/symbian/api/camera/CMakeLists.txt"))))
      AND TARGET Symbian::AbseilStatusOr)
     string(SUBSTRING "${component}" 0 1 component_initial)
     string(TOUPPER "${component_initial}" component_initial)
     string(SUBSTRING "${component}" 1 -1 component_rest)
     set(component_name "${component_initial}${component_rest}")
+    if(component STREQUAL "midi_output")
+      set(component_name MidiOutput)
+    elseif(component STREQUAL "camera_gles2")
+      set(component_name CameraGles2)
+    elseif(component STREQUAL "failure_handler")
+      set(component_name FailureHandler)
+    endif()
     set(component_target "SymbianApi${component_name}")
     add_library(${component_target} STATIC IMPORTED)
     set_target_properties(${component_target} PROPERTIES
@@ -348,10 +363,16 @@ foreach(component IN ITEMS system connectivity agent power media display sensors
         "${SYMBIAN_SDK_PREFIX}/proxies/gdi/gdi.dso"
         "${SYMBIAN_SDK_PREFIX}/proxies/fbscli/fbscli.dso")
     endif()
-    if(component STREQUAL "media")
+    if(component STREQUAL "midi_output" OR component STREQUAL "vibration")
       target_link_libraries(${component_target} INTERFACE
-        Symbian::Fibers
-        "${SYMBIAN_SDK_PREFIX}/proxies/midiclient/midiclient.dso"
+        Symbian::Fibers)
+    endif()
+    if(component STREQUAL "midi_output")
+      target_link_libraries(${component_target} INTERFACE
+        "${SYMBIAN_SDK_PREFIX}/proxies/midiclient/midiclient.dso")
+    endif()
+    if(component STREQUAL "vibration")
+      target_link_libraries(${component_target} INTERFACE
         "${SYMBIAN_SDK_PREFIX}/proxies/hwrmvibraclient/hwrmvibraclient.dso")
     endif()
     if(component STREQUAL "storage")
@@ -365,7 +386,31 @@ foreach(component IN ITEMS system connectivity agent power media display sensors
     endif()
     if(component STREQUAL "camera")
       target_link_libraries(${component_target} INTERFACE
-        "${SYMBIAN_SDK_PREFIX}/proxies/ecam/ecam.dso")
+        "${SYMBIAN_SDK_PREFIX}/proxies/ecam/ecam.dso"
+        "${SYMBIAN_SDK_PREFIX}/proxies/fbscli/fbscli.dso")
+    endif()
+    if(component STREQUAL "camera" OR component STREQUAL "midi_output" OR
+        component STREQUAL "vibration" OR component STREQUAL "clipboard")
+      target_link_libraries(${component_target} INTERFACE Symbian::CxxAbi)
+      target_compile_definitions(${component_target} INTERFACE
+        SYMBIAN_NATIVE_LEAVES=1)
+      target_link_options(${component_target} INTERFACE
+        "SHELL:-z nocopyreloc" "SHELL:-z notext"
+        "--undefined=symbian_native_leave_personalities")
+    endif()
+    if(component STREQUAL "camera_gles2")
+      target_link_libraries(${component_target} INTERFACE
+        Symbian::Camera Symbian::GLES2)
+    endif()
+    if(component STREQUAL "clipboard")
+      target_link_libraries(${component_target} INTERFACE
+        "${SYMBIAN_SDK_PREFIX}/proxies/bafl/bafl.dso"
+        "${SYMBIAN_SDK_PREFIX}/proxies/etext/etext.dso")
+    endif()
+    if(component STREQUAL "failure_handler")
+      target_link_libraries(${component_target} INTERFACE
+        Symbian::System Symbian::Display Symbian::Storage
+        Symbian::Clipboard)
     endif()
     add_library(Symbian::${component_name} ALIAS ${component_target})
   endif()

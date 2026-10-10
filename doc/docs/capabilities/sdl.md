@@ -16,7 +16,7 @@ validate selected firmware.
 | Video | One Window Server window, RGB565 software framebuffer, OpenGL ES 2 renderer in GPU builds, display size and reported refresh rate. |
 | Input | Pointer press, release and continuous motion, arrows, select/enter, escape/back, and focus notifications. |
 | Time | SDL ticks and delay; SDK monotonic `FramePacer` for a refresh cap. |
-| Audio, haptics | SDK `GameFeedback` offers MIDI playback and light system tactile feedback, with HWRM fallback and a bounded worker for applications. SDL's audio and haptic device backends are currently dummy. |
+| Audio, haptics | SDK `MidiOutput` queues notes through the optional MIDI service; `Vibration` requests HWRM pulses. Apps choose melodies and event timing. SDL's audio and haptic device backends are currently dummy. |
 | Other SDL services | Upstream core APIs are compiled where they do not require a missing platform backend. Joystick, filesystem, sensor, power and dynamic-library backends currently use upstream dummy implementations. |
 
 The SDL2 and SDL3 Bounce-style Arkanoid targets share game and assets, and
@@ -28,20 +28,15 @@ pointer event stream, AppArc task name, refresh query and EGL context; the game
 owns its fixed-step simulation and application policy.
 
 The pause menu shows the first GPU initialization error if SDL used the software
-fallback. It also shows the failed tactile or HWRM stage after a hit pulse.
-The tactile resolver is loaded dynamically when its server is already running;
-the game asks for the system's `Sensitive` cue with vibration only and uses a
-short HWRM pulse otherwise. Both calls are synchronous server transactions,
-so the SDK keeps them on a worker. Starting the optional tactile server on
-demand caused an RM-807 emulator haptics-stack stall; the guard avoids that
-startup during gameplay. The normal HWRM vibration profile switch can differ
-from the system's tactile feedback switch. The HWRM server's ordinary IPC range is marked
-`EAlwaysPass`; FM transmitter operations have separate capability checks.
+fallback. It also shows an HWRM service error after a hit pulse. The game
+chooses a short pulse and rate limit; the optional `Symbian::Vibration` owner
+performs the native server call on a worker and reports a stalled-service
+deadline. Its behavior can differ from the system's tactile feedback setting.
 
 The current RM-807, C7/RM-675 and E6/RM-609 emulator fixtures rendered both
 SDL2 and SDL3 GPU targets. The Nokia 808 ran the earlier GPU build at about
-54 FPS and reported an HWRM vibration timeout. The new tactile path requires
-a physical check. The source-built emulator control frontend injected held
+54 FPS and reported an HWRM vibration timeout. The split MIDI/vibration path
+still requires a physical device check. The source-built emulator control frontend injected held
 pointer motion and system-menu keys. The separately installed emulator 0.1.0
 lacks the task-close control used by the executable matrix. The API table
 describes implemented adapters and

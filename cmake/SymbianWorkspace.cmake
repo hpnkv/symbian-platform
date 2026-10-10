@@ -12,11 +12,17 @@ function(symbian_workspace_archive public_target source_target)
 endfunction()
 
 function(symbian_workspace_components)
-  foreach(component IN ITEMS System Connectivity Agent Power Media Display Camera Storage)
+  foreach(component IN ITEMS System Connectivity Agent Power Display Camera Storage)
     string(TOLOWER "${component}" component_lower)
     symbian_workspace_archive(SymbianApi${component}
       symbian_api_${component_lower})
   endforeach()
+  symbian_workspace_archive(SymbianApiMidiOutput symbian_api_midi_output)
+  symbian_workspace_archive(SymbianApiVibration symbian_api_vibration)
+  symbian_workspace_archive(SymbianApiClipboard symbian_api_clipboard)
+  symbian_workspace_archive(SymbianApiFailureHandler
+    symbian_api_failure_handler)
+  symbian_workspace_archive(SymbianApiCameraGles2 symbian_api_camera_gles2)
   symbian_workspace_archive(SymbianRuntime symbian_guest_runtime)
   symbian_workspace_archive(SymbianStreams symbian_guest_runtime)
   symbian_workspace_archive(SymbianHttp symbian_http)
