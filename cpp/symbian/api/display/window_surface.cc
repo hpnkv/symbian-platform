@@ -77,6 +77,15 @@ WindowKey KeyFromScanCode(int scan_code) {
   }
 }
 
+TFontSpec TextFontSpecification(int height_pixels) {
+  TFontSpec specification(_L("Series 60 Sans"), height_pixels);
+  // The font store's default may be monochrome on real phones, even when
+  // emulator scalable fonts are smoothed by default. Request grayscale
+  // coverage explicitly, independently of display orientation/subpixel order.
+  specification.iFontStyle.SetBitmapType(EAntiAliasedGlyphBitmap);
+  return specification;
+}
+
 void AppendWrappedLines(std::u16string_view paragraph, CFont* absl_nonnull font,
                         int max_width_pixels,
                         std::vector<std::u16string>* absl_nonnull output) {
@@ -136,9 +145,15 @@ struct WindowSurface::Impl {
   RWindow* absl_nullable window = nullptr;
   CWsScreenDevice* absl_nullable screen = nullptr;
   CWindowGc* absl_nullable gc = nullptr;
-  CFbsBitmap* absl_nullable bitmap = nullptr;
+  std::unique_ptr<CFbsBitmap> bitmap;
   std::unique_ptr<CFbsBitmapDevice> bitmap_device;
   std::unique_ptr<CFbsBitGc> bitmap_gc;
+  // Keep the last submitted bitmap immutable while composing its successor.
+  // Window Server may replay it on exposure independently of this thread.
+  std::unique_ptr<CFbsBitmap> previous_bitmap;
+  std::unique_ptr<CFbsBitmapDevice> previous_bitmap_device;
+  std::unique_ptr<CFbsBitGc> previous_bitmap_gc;
+  bool bitmap_submitted = false;
   bool bitmap_in_flight = false;
   RChunk frame_chunk;
   std::byte* absl_nullable frame_pixels = nullptr;
@@ -222,8 +237,50 @@ struct WindowSurface::Impl {
     }
     bitmap_gc.reset();
     bitmap_device.reset();
-    delete bitmap;
-    bitmap = nullptr;
+    bitmap.reset();
+    previous_bitmap_gc.reset();
+    previous_bitmap_device.reset();
+    previous_bitmap.reset();
+    bitmap_submitted = false;
+  }
+
+  absl::Status PrepareBitmap(bool preserve = false) {
+    WaitForBitmap();
+    const bool replacing = bitmap_submitted;
+    if (replacing) {
+      std::swap(bitmap, previous_bitmap);
+      bitmap_device.swap(previous_bitmap_device);
+      bitmap_gc.swap(previous_bitmap_gc);
+      bitmap_submitted = false;
+    }
+    if (bitmap == nullptr) {
+      auto created = std::make_unique<CFbsBitmap>();
+      ABSL_RETURN_IF_ERROR(NativeError(
+          created->Create(TSize(size.width, size.height), EColor64K),
+          "RGB565 bitmap"));
+      bitmap = std::move(created);
+    }
+    if (preserve && replacing) {
+      ABSL_RETURN_IF_ERROR(PrepareBitmapContext());
+      bitmap_gc->BitBlt(TPoint(0, 0), previous_bitmap.get());
+    }
+    return absl::OkStatus();
+  }
+
+  absl::Status PrepareBitmapContext() {
+    if (bitmap_device == nullptr) {
+      CFbsBitmapDevice* absl_nullable device = nullptr;
+      TRAPD(error, device = CFbsBitmapDevice::NewL(bitmap.get()));
+      bitmap_device.reset(device);
+      ABSL_RETURN_IF_ERROR(NativeError(error, "bitmap graphics device"));
+    }
+    if (bitmap_gc == nullptr) {
+      CFbsBitGc* absl_nullable context = nullptr;
+      const TInt error = bitmap_device->CreateContext(context);
+      bitmap_gc.reset(context);
+      ABSL_RETURN_IF_ERROR(NativeError(error, "bitmap graphics context"));
+    }
+    return absl::OkStatus();
   }
 
   void Close() {
@@ -284,11 +341,11 @@ struct WindowSurface::Impl {
   }
 
   absl::Status CopyFrame() {
-    if (bitmap == nullptr || !window_open) {
+    if (!window_open || (bitmap == nullptr && frame_pixels == nullptr)) {
       return absl::FailedPreconditionError("RGB565 frame is not ready");
     }
     if (frame_pixels != nullptr) {
-      WaitForBitmap();
+      ABSL_RETURN_IF_ERROR(PrepareBitmap());
       bitmap->LockHeap();
       void* absl_nullable destination = bitmap->DataAddress();
       if (destination == nullptr) {
@@ -301,15 +358,20 @@ struct WindowSurface::Impl {
     return absl::OkStatus();
   }
 
-  absl::Status Present(bool flush = true) {
-    if (bitmap == nullptr || !window_open) {
+  absl::Status Present(bool flush = true, bool replay = false) {
+    const CFbsBitmap* absl_nullable displayed =
+        replay && !bitmap_submitted ? previous_bitmap.get() : bitmap.get();
+    if (displayed == nullptr || !window_open) {
       return absl::FailedPreconditionError("RGB565 frame is not ready");
     }
     const std::uint32_t before = measure_frames ? User::NTickCount() : 0;
     gc->Activate(*window);
-    gc->BitBlt(TPoint(0, 0), bitmap);
+    gc->BitBlt(TPoint(0, 0), displayed);
     gc->Deactivate();
     bitmap_in_flight = true;
+    if (!replay) {
+      bitmap_submitted = true;
+    }
     if (flush) {
       session.Flush();
     }
@@ -332,26 +394,14 @@ struct WindowSurface::Impl {
     if (bitmap == nullptr) {
       return absl::FailedPreconditionError("text needs an RGB565 frame");
     }
-    WaitForBitmap();
-    if (bitmap_device == nullptr) {
-      // Translate the native leaving factory at this implementation boundary.
-      CFbsBitmapDevice* absl_nullable device = nullptr;
-      TRAPD(error, device = CFbsBitmapDevice::NewL(bitmap));
-      bitmap_device.reset(device);
-      ABSL_RETURN_IF_ERROR(NativeError(error, "bitmap graphics device"));
-    }
-    if (bitmap_gc == nullptr) {
-      CFbsBitGc* absl_nullable context = nullptr;
-      const TInt error = bitmap_device->CreateContext(context);
-      bitmap_gc.reset(context);
-      ABSL_RETURN_IF_ERROR(NativeError(error, "bitmap graphics context"));
-    }
+    ABSL_RETURN_IF_ERROR(PrepareBitmap(true));
+    ABSL_RETURN_IF_ERROR(PrepareBitmapContext());
     if (text_font != nullptr && cached_font_height != font_height) {
       screen->ReleaseFont(text_font);
       text_font = nullptr;
     }
     if (text_font == nullptr) {
-      const TFontSpec specification(_L("Series 60 Sans"), font_height);
+      const TFontSpec specification = TextFontSpecification(font_height);
       if (const TInt result =
               screen->GetNearestFontInPixels(text_font, specification);
           result != KErrNone) {
@@ -523,6 +573,9 @@ absl::Status WindowSurface::Open(std::string_view task_caption) {
     return NativeError(result, "window group");
   }
   impl_->group_open = true;
+  // WaitForInput must also wake for layout changes while the app is idle.
+  ABSL_RETURN_IF_ERROR(NativeError(impl_->group->EnableScreenChangeEvents(),
+                                   "screen change events"));
   if (!task_caption.empty()) {
     const std::uint32_t uid = RProcess().SecureId().iId;
     result = internal::SetWindowTaskIdentity(impl_->group, uid, task_caption);
@@ -609,7 +662,7 @@ absl::StatusOr<std::vector<std::u16string>> WindowSurface::WrapTextLines(
     return absl::InvalidArgumentError("invalid text wrap geometry");
   }
   CFont* absl_nullable font = nullptr;
-  const TFontSpec specification(_L("Series 60 Sans"), font_height_pixels);
+  const TFontSpec specification = TextFontSpecification(font_height_pixels);
   if (const TInt result =
           impl_->screen->GetNearestFontInPixels(font, specification);
       result != KErrNone) {
@@ -642,7 +695,7 @@ absl::StatusOr<Rgb565Frame> WindowSurface::CreateRgb565Frame() {
   if (impl_->bitmap != nullptr) {
     return absl::FailedPreconditionError("frame already exists");
   }
-  impl_->bitmap = new CFbsBitmap;
+  impl_->bitmap = std::make_unique<CFbsBitmap>();
   if (impl_->bitmap == nullptr) {
     return absl::ResourceExhaustedError("bitmap allocation failed");
   }
@@ -682,19 +735,7 @@ absl::Status WindowSurface::UpdateRgb565Frame(Rgb565FrameWriter writer) {
   if (impl_->frame_chunk_open) {
     return absl::FailedPreconditionError("frame chunk is already active");
   }
-  if (impl_->bitmap == nullptr) {
-    impl_->bitmap = new CFbsBitmap;
-    if (impl_->bitmap == nullptr) {
-      return absl::ResourceExhaustedError("RGB565 bitmap allocation failed");
-    }
-    if (const TInt created = impl_->bitmap->Create(
-            TSize(impl_->size.width, impl_->size.height), EColor64K);
-        created != KErrNone) {
-      delete impl_->bitmap;
-      impl_->bitmap = nullptr;
-      return NativeError(created, "RGB565 bitmap");
-    }
-  }
+  ABSL_RETURN_IF_ERROR(impl_->PrepareBitmap());
   const int pitch = CFbsBitmap::ScanLineLength(impl_->size.width, EColor64K);
   if (pitch < impl_->size.width * 2) {
     return absl::InternalError("bitmap has invalid stride");
@@ -801,7 +842,7 @@ absl::StatusOr<std::optional<WindowInput>> WindowSurface::PollInput() {
     if (redraw.Handle() == 2) {
       impl_->window->BeginRedraw(redraw.Rect());
       if (impl_->bitmap != nullptr) {
-        impl_->Present(false).IgnoreError();
+        impl_->Present(false, true).IgnoreError();
       }
       impl_->window->EndRedraw();
     }
@@ -809,6 +850,15 @@ absl::StatusOr<std::optional<WindowInput>> WindowSurface::PollInput() {
   }
   impl_->session.Flush();
   return input;
+}
+
+absl::Status WindowSurface::WaitForInput() {
+  if (impl_ == nullptr || !impl_->requests_open) {
+    return absl::FailedPreconditionError("window is closed");
+  }
+  impl_->session.Flush();
+  User::WaitForRequest(impl_->event, impl_->redraw);
+  return absl::OkStatus();
 }
 
 void WindowSurface::DestroyFrame() {

@@ -317,7 +317,15 @@ def _exercise_failure_view(control, process, output):
     # separate background/text submissions used to expose blank labels here.
     chrome = (0, height - 76, width, height)
     expected_chrome = first.crop(chrome)
+    # Let non-redraw command stores age before the first movement; checking
+    # only continuous drags missed a one-frame flash when leaving idle.
+    time.sleep(1.2)
     _ready(lambda: control.pointer(width // 2, height // 2, "press"))
+    for sample in range(4):
+        frame = capture(f"scroll-start-{sample}")
+        assert ImageChops.difference(first, frame).getbbox() is None, (
+            "Failure view changed on pointer down before scrolling"
+        )
     for step in range(24):
         y = height // 2 - (step + 1) * 2
         _ready(lambda y=y: control.pointer(width // 2, y, "move"))

@@ -103,17 +103,24 @@ SDK executables link the failure handler automatically. A failed `CHECK` or
 report with Copy Logs and Exit controls; a background failure only writes the
 file. The failure view is also available explicitly through
 `symbian::api::system::ShowFailureReport` and `RunWithFailureHandler`.
-Dragging moves the content by the pointer's distance in screen pixels, paced to
-the reported display refresh rate. Pending input is applied before painting;
-host trackpad momentum retains its original deltas. Clipped native text is
-composed into the background bitmap before
-one window blit, so scrolling cannot present a background-only update. Redraws
-reuse that complete bitmap without a second text pass or self-invalidation.
-Bitmap writes wait for outstanding Window Server reads; font and bitmap graphics
-contexts are cached. Rendering uses Window Server,
-so the platform can use its accelerated compositor without requiring EGL or
-GLES support in the failing process. Acceleration depends on the device and
-Window Server implementation; the same path works on older software renderers.
+Dragging moves the content by the pointer's distance in screen pixels.
+The view waits for Window Server input or redraw events, with no periodic idle
+wakeups or frame-timer delay before responding to a drag. Pending input is
+applied before painting; host trackpad momentum retains its original deltas.
+Clipped native text is composed before one window blit. Two reusable native
+bitmaps keep the last presented frame immutable while its successor is painted;
+ordinary full-frame updates write directly to the alternate bitmap without a
+staging copy. Exposure redraws reuse the complete presented bitmap without
+rerasterizing text. Native font antialiasing is preserved: text is rasterized at
+the current device font size on integer pixel baselines, without scaling a
+low-resolution glyph cache. Font requests explicitly select 8-bit grayscale
+antialiased glyphs; the platform font store's default can be monochrome on a
+physical phone even when emulator fonts look smooth.
+Bitmap reuse waits for outstanding Window Server reads; font and bitmap graphics
+contexts are cached. Rendering uses Window Server, so the platform can use its
+accelerated compositor without requiring EGL or GLES support in the failing
+process. Acceleration depends on the device and Window Server implementation;
+the same path works on older software renderers.
 `examples/failure_handler_app` logs varied messages and deliberately fails a
 `CHECK_EQ` for quick on-device testing of scrolling, copying and exit.
 

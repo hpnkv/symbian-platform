@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -31,8 +30,6 @@
 #include "symbian/api/system/clipboard.h"
 #include "symbian/api/system/debug_log.h"
 #include "symbian/api/text/utf8.h"
-#include "symbian/api/time/frame_pacer.h"
-#include "symbian/api/time/sleep.h"
 
 namespace symbian::api::system {
 namespace {
@@ -310,8 +307,6 @@ absl::Status ShowFailureReport(const absl::Status& error,
   bool dragging = false;
   bool redraw = true;
   std::u16string feedback;
-  time::FramePacer pacer(
-      display::WindowSurface::PrimaryRefreshRateHz().value_or(60));
   for (;;) {
     // Consume input before painting, so a drag is visible in this frame rather
     // than waiting through another display-pacing interval.
@@ -406,7 +401,9 @@ absl::Status ShowFailureReport(const absl::Status& error,
       ABSL_RETURN_IF_ERROR(Render(&window, caption, lines, scroll, feedback));
       redraw = false;
     }
-    symbian::api::time::SleepFor(pacer.NextDelayNanoseconds());
+    // Wake on the next pointer event, rather than sleeping through part of a
+    // frame after each draw. Static reports consume no periodic wakeups.
+    ABSL_RETURN_IF_ERROR(window.WaitForInput());
   }
 }
 

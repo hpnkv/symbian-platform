@@ -123,7 +123,8 @@ class WindowSurface final {
   absl::StatusOr<Rgb565Frame> CreateRgb565Frame();
   absl::Status UpdateRgb565Frame(Rgb565FrameWriter writer);
   absl::Status Present();
-  // Composes clipped native text into the bitmap before a single window blit.
+  // Composes clipped text with explicitly requested grayscale antialiasing
+  // into the bitmap before a single window blit.
   // Window Server chooses the platform rendering backend; this needs neither
   // EGL nor a GPU on older devices.
   absl::Status Present(std::span<const WindowTextLine> lines,
@@ -138,6 +139,9 @@ class WindowSurface final {
       std::u16string_view text, int max_width_pixels,
       int font_height_pixels = 20) const;
   absl::StatusOr<std::optional<WindowInput>> PollInput();
+  // Block until input or an exposure redraw is ready without consuming it.
+  // Call PollInput to drain ready events before waiting again.
+  absl::Status WaitForInput();
   void DestroyFrame();
   void Close();
 
