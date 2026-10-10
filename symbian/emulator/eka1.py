@@ -47,7 +47,7 @@ def run_probe(
         raise StatusError(
             Code.FAILED_PRECONDITION,
             "EKA1 process execution is tested only on the preserved Nokia "
-            "7610 RH-51 fixture; see .dev/EKA1.md",
+            "7610 RH-51 fixture; see archived ~/.symbian-dev/EKA1.md",
         )
     info = inspect_image(image)
     if info["kernel"] != "eka1":

@@ -17,8 +17,8 @@ uv run --no-sync --only-group docs ./doc/build.sh --strict
 
 The complete site is written to ignored `doc/site/`. The build requires both
 MkDocs and Doxygen; the GitHub Action uses the same script. Source articles
-live under `doc/docs/`, while project plans and experiment logs live under
-`.dev/`. All article filenames are lowercase.
+live under `doc/docs/`. The owner's plan and experiment archive is backed up
+outside the repository at `~/.symbian-dev/`. All article filenames are lowercase.
 
 The Console screenshots under `doc/docs/assets/screenshots/` are rendered from
 the current frontend with sample paths and no connected phone. On macOS with

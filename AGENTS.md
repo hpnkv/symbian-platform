@@ -1,8 +1,10 @@
 # Symbian platform engineering
 
-Read .dev/plan.md and .dev/research.md before expanding platform scope. Record
-experiments and open questions in .dev/research-log.md. Update .dev/status.md
-with evidence; ARM ELF generation does not prove Symbian loader compatibility.
+The former `.dev` research archive is backed up at `~/.symbian-dev` on the
+owner's machine and is intentionally outside the repository. Read its
+`plan.md` and `research.md` before expanding platform scope. Record experiments
+in its `research-log.md` and update its `status.md` with evidence; ARM ELF
+generation does not prove Symbian loader compatibility.
 
 Use ~/dev/a11 as the implementation reference. Python lives in symbian/,
 native libraries in cpp/symbian/<component>/, and Python bindings in

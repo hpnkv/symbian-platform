@@ -1,4 +1,5 @@
-# Status/StatusOr runtime integration ported from A11; see .dev/a11-status.md.
+# Status/StatusOr runtime integration ported from A11; see the archived
+# ~/.symbian-dev/a11-status.md on the owner's machine.
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 set(Python3_EXECUTABLE "${Python_EXECUTABLE}")
 find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)

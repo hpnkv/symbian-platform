@@ -152,7 +152,7 @@ def test_dll_definition_cannot_escape_project(tmp_path):
             {
                 "kind": "e32-dll-experiment",
                 "uid3": 0xE0000810,
-                "export_definition": "../../.dev/plan.md",
+                "export_definition": "../../doc/README.md",
             },
             "clang++",
             "ld.lld",
