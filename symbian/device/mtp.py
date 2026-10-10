@@ -19,15 +19,49 @@ def inspect_selected(selector: str | None = None, limit: int = 0) -> UsbProbe:
     return inspect(select(selector), limit)
 
 
+def _has_mtp_interface(device: ConnectedDevice) -> bool:
+    """Whether this serial-matched device exposes a candidate MTP interface."""
+    return device.identity_basis == "usb-serial" and any(
+        (item.class_code, item.subclass_code, item.protocol_code) == (6, 1, 1)
+        for item in device.interfaces
+    )
+
+
 def can_stage_sis(device: ConnectedDevice) -> bool:
-    """Whether a serial-matched device exposes a candidate MTP interface.
+    """Whether a candidate MTP interface could stage a SIS.
 
     The native transfer checks writable storage and the Installs folder again
     immediately before writing. Descriptors alone do not prove writability.
     """
-    return device.identity_basis == "usb-serial" and any(
-        (item.class_code, item.subclass_code, item.protocol_code) == (6, 1, 1)
-        for item in device.interfaces
+    return _has_mtp_interface(device)
+
+
+def read_file(
+    device: ConnectedDevice,
+    storage_id: int,
+    relative_path: str,
+    *,
+    max_bytes: int = 1024 * 1024,
+) -> bytes:
+    """Read one bounded file by exact path from a selected MTP storage.
+
+    The storage ID comes from ``inspect(device).storage``. The native reader
+    resolves each path component, rejects ambiguous names, and checks file
+    metadata against the returned byte count. It never scans outside the
+    selected storage or writes to the device.
+    """
+    if not _has_mtp_interface(device):
+        raise StatusError(
+            Code.FAILED_PRECONDITION,
+            "Selected device has no serial-matched MTP interface",
+        )
+    return require_native().read_mtp_file_native(
+        device.vendor_id,
+        device.product_id,
+        device.identity_anchor,
+        storage_id,
+        relative_path,
+        max_bytes,
     )
 
 

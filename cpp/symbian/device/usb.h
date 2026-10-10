@@ -4,7 +4,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <absl/status/statusor.h>
@@ -180,6 +182,16 @@ absl::StatusOr<MtpStageResult> StageMtpSis(uint16_t vendor, uint16_t product,
                                            const std::string& package_path,
                                            const std::string& filename,
                                            const std::string& expected_sha256);
+
+/** Read one exact relative path from a serial-matched MTP storage.
+ *
+ * The caller selects a storage ID reported by InspectUsb. Names are resolved
+ * one directory at a time; ambiguous names and files above max_bytes fail.
+ */
+absl::StatusOr<std::vector<unsigned char>> ReadMtpFile(
+    uint16_t vendor, uint16_t product, const std::string& anchor,
+    uint32_t storage_id, std::string_view relative_path, uint32_t max_bytes);
+
 
 }  // namespace symbian::device
 #endif  // SYMBIAN_DEVICE_USB_H_

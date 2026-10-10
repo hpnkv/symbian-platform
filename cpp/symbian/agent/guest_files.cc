@@ -3,11 +3,13 @@
 
 #include "symbian/agent/guest_files.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "symbian/api/storage/storage.h"
@@ -17,6 +19,45 @@ namespace {
 
 constexpr std::u16string_view kWorkspace =
     u"C:\\private\\e0000a31\\workspace\\";
+constexpr std::u16string_view kSharedApps = u"C:\\Data\\SymbianAgent\\apps\\";
+constexpr std::uint64_t kMaximumResourceBytes = 16 * 1024 * 1024;
+
+absl::StatusOr<std::u16string> ResourceDirectory(std::uint8_t scope,
+                                                  std::uint32_t uid) {
+  if (scope == 0 && uid == 0) {
+    return std::u16string(kWorkspace);
+  }
+  if (scope != 1 || uid == 0) {
+    return absl::InvalidArgumentError("Invalid resource scope");
+  }
+  std::u16string path(kSharedApps);
+  constexpr char16_t kHex[] = u"0123456789abcdef";
+  for (int shift = 28; shift >= 0; shift -= 4) {
+    path.push_back(kHex[(uid >> shift) & 15]);
+  }
+  path.push_back(u'\\');
+  return path;
+}
+
+absl::StatusOr<std::u16string> ResourcePath(std::uint8_t scope,
+                                             std::uint32_t uid,
+                                             std::string_view name) {
+  if (name.empty() || name.size() > 64 || name == "." || name == "..") {
+    return absl::InvalidArgumentError("Invalid resource name");
+  }
+  auto directory = ResourceDirectory(scope, uid);
+  if (!directory.ok()) {
+    return directory.status();
+  }
+  for (char ch : name) {
+    if (!((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
+          (ch >= '0' && ch <= '9') || ch == '.' || ch == '_' || ch == '-')) {
+      return absl::InvalidArgumentError("Invalid resource name");
+    }
+    directory->push_back(static_cast<char16_t>(ch));
+  }
+  return *directory;
+}
 
 absl::StatusOr<std::string> Utf16ToUtf8(std::u16string_view input) {
   std::string output;
@@ -104,6 +145,78 @@ absl::StatusOr<GuestFilePage> ReadWorkspacePage(std::uint16_t after,
   }
   page.more = extra->has_value();
   return page;
+}
+
+absl::StatusOr<GuestResourceChunk> ReadResourceChunk(
+    std::uint8_t scope, std::uint32_t uid, std::string_view name,
+    std::uint64_t offset, std::uint32_t length) {
+  if (length == 0 || length > 32768 || offset > kMaximumResourceBytes) {
+    return absl::InvalidArgumentError("Invalid resource read bounds");
+  }
+  auto path = ResourcePath(scope, uid, name);
+  if (!path.ok()) {
+    return path.status();
+  }
+  auto file = api::storage::ReadOnlyFile::Open(*path);
+  if (!file.ok()) {
+    return file.status();
+  }
+  auto size = file->Size();
+  if (!size.ok()) {
+    return size.status();
+  }
+  if (*size > kMaximumResourceBytes) {
+    return absl::ResourceExhaustedError("Resource exceeds 16 MiB");
+  }
+  GuestResourceChunk chunk;
+  chunk.total_bytes = *size;
+  if (offset >= *size) {
+    return chunk;
+  }
+  chunk.bytes.resize(static_cast<std::size_t>(
+      std::min<std::uint64_t>(length, *size - offset)));
+  auto read = file->ReadAt(
+      offset, std::span(reinterpret_cast<std::byte*>(chunk.bytes.data()),
+                        chunk.bytes.size()));
+  if (!read.ok()) {
+    return read.status();
+  }
+  chunk.bytes.resize(*read);
+  return chunk;
+}
+
+absl::Status WriteResourceChunk(std::uint8_t scope, std::uint32_t uid,
+                                std::string_view name, std::uint64_t offset,
+                                std::uint8_t mode,
+                                std::span<const std::byte> bytes) {
+  if (mode > 2 || bytes.empty() || bytes.size() > 32768 ||
+      offset > kMaximumResourceBytes - bytes.size()) {
+    return absl::InvalidArgumentError("Invalid resource write bounds");
+  }
+  auto path = ResourcePath(scope, uid, name);
+  auto directory = ResourceDirectory(scope, uid);
+  if (!path.ok()) {
+    return path.status();
+  }
+  if (!directory.ok()) {
+    return directory.status();
+  }
+  if (mode != 1) {
+    absl::Status created = api::storage::CreateDirectories(*directory);
+    if (!created.ok()) {
+      return created;
+    }
+  }
+  const api::storage::WriteMode write_mode =
+      mode == 0 ? api::storage::WriteMode::kCreateNew
+      : mode == 1 ? api::storage::WriteMode::kOpenExisting
+                  : api::storage::WriteMode::kReplaceExisting;
+  auto file = api::storage::WritableFile::Open(*path, write_mode);
+  if (!file.ok()) {
+    return file.status();
+  }
+  absl::Status written = file->WriteAt(offset, bytes);
+  return written.ok() ? file->Flush() : written;
 }
 
 }  // namespace symbian::agent

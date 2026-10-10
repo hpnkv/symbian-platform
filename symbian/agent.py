@@ -1,4 +1,4 @@
-"""Authenticated, manually addressed read-only development-agent sessions."""
+"""Authenticated, manually addressed development-agent sessions."""
 
 from __future__ import annotations
 
@@ -102,8 +102,33 @@ class AgentHello(BaseModel):
     capabilities: tuple[str, ...]
 
 
-class ReadOnlyAgentSession:
-    """One authenticated connection to a read-only guest agent.
+class AgentScreenCapture(BaseModel):
+    """An owned RGB565 snapshot of the primary screen."""
+
+    model_config = ConfigDict(frozen=True)
+
+    width: int
+    height: int
+    stride_bytes: int
+    pixels: bytes
+
+    def image(self):
+        """Decode this capture with Pillow's native RGB565 decoder."""
+        from PIL import Image
+
+        return Image.frombytes(
+            "RGB",
+            (self.width, self.height),
+            self.pixels,
+            "raw",
+            "BGR;16",
+            self.stride_bytes,
+            1,
+        )
+
+
+class AgentSession:
+    """One authenticated connection to a bounded guest development agent.
 
     The session authenticates both peers with a private 32-byte key and fresh
     nonces. The channel has no confidentiality; use a trusted local network.
@@ -341,7 +366,7 @@ class ReadOnlyAgentSession:
         if (
             hello.protocol_version != 1
             or not 128 <= hello.maximum_control_bytes <= 4096
-            or not 2 <= hello.maximum_requests <= 16
+            or not 2 <= hello.maximum_requests <= 1024
             or "status" not in hello.capabilities
         ):
             raise StatusError(
@@ -447,16 +472,253 @@ class ReadOnlyAgentSession:
             self._exchange(request_id, frame)
         )
 
-    def _exchange(self, request_id: int, frame: bytes) -> dict:
+    def capture_screen(self) -> AgentScreenCapture:
+        """Capture the complete primary screen as an owned RGB565 image."""
+        if (
+            self.hello is None
+            or "screen-capture" not in self.hello.capabilities
+        ):
+            raise StatusError(
+                Code.FAILED_PRECONDITION, "Screen capture unavailable"
+            )
+        if self._next_request_id > self.hello.maximum_requests:
+            raise StatusError(
+                Code.RESOURCE_EXHAUSTED, "Session request cap reached"
+            )
+        request_id = self._next_request_id
+        self._next_request_id += 1
+        body = self._exchange(
+            request_id, _native.pack_agent_display_request(request_id, 8)
+        )
+        width = body.get("width")
+        height = body.get("height")
+        stride = body.get("stride_bytes")
+        length = body.get("data_bytes")
+        if (
+            body.get("format") != "rgb565-le"
+            or not all(
+                type(value) is int for value in (width, height, stride, length)
+            )
+            or not 0 < width <= 4096
+            or not 0 < height <= 4096
+            or not width * 2 <= stride <= 8192
+            or length != stride * height
+            or length > 32 * 1024 * 1024
+        ):
+            raise StatusError(Code.DATA_LOSS, "Invalid screen metadata")
+        pixels = self._receive_exact(
+            length, time.monotonic() + max(15, self._timeout)
+        )
+        return AgentScreenCapture(
+            width=width, height=height, stride_bytes=stride, pixels=pixels
+        )
+
+    def pointer_event(self, action: str, x: int, y: int) -> None:
+        """Send one move, down, or up event in primary screen pixels."""
+        if self.hello is None or "pointer-event" not in self.hello.capabilities:
+            raise StatusError(
+                Code.FAILED_PRECONDITION, "Pointer input unavailable"
+            )
+        if self._next_request_id > self.hello.maximum_requests:
+            raise StatusError(
+                Code.RESOURCE_EXHAUSTED, "Session request cap reached"
+            )
+        actions = {"move": 1, "down": 2, "up": 3}
+        if action not in actions or not 0 <= x <= 4095 or not 0 <= y <= 4095:
+            raise StatusError(Code.INVALID_ARGUMENT, "Invalid pointer event")
+        request_id = self._next_request_id
+        self._next_request_id += 1
+        self._exchange(
+            request_id,
+            _native.pack_agent_display_request(
+                request_id, 9, x, y, actions[action]
+            ),
+        )
+
+    def resource_read(self, name: str, *, app_uid: int | None = None) -> bytes:
+        """Read an agent workspace file or a cooperating app's shared resource.
+
+        App resources live under ``C:\\Data\\SymbianAgent\\apps\\<uid>``.
+        Native Symbian data cages remain enforced by the File Server.
+        """
+        if self.hello is None or "resource-read" not in self.hello.capabilities:
+            raise StatusError(
+                Code.FAILED_PRECONDITION, "Resource read unavailable"
+            )
+        self._validate_resource_name(name)
+        scope, uid = self._resource_scope(app_uid)
+        output = bytearray()
+        total = None
+        while total is None or len(output) < total:
+            if self._next_request_id > self.hello.maximum_requests:
+                raise StatusError(
+                    Code.RESOURCE_EXHAUSTED, "Session request cap reached"
+                )
+            request_id = self._next_request_id
+            self._next_request_id += 1
+            frame = _native.pack_agent_resource_request(
+                request_id, 10, scope, uid, name, len(output), 32768
+            )
+            body = self._exchange(request_id, frame)
+            count = body.get("data_bytes")
+            reported_total = body.get("total_bytes")
+            if (
+                type(count) is not int
+                or type(reported_total) is not int
+                or not 0 <= count <= 32768
+                or not 0 <= reported_total <= 16 * 1024 * 1024
+                or (total is not None and total != reported_total)
+                or len(output) + count > reported_total
+                or (count == 0 and len(output) < reported_total)
+            ):
+                raise StatusError(Code.DATA_LOSS, "Invalid resource metadata")
+            total = reported_total
+            if count:
+                output.extend(self._receive_exact(count, time.monotonic() + 15))
+        return bytes(output)
+
+    def resource_write(
+        self,
+        name: str,
+        data: bytes,
+        *,
+        app_uid: int | None = None,
+        replace: bool = False,
+    ) -> None:
+        """Create or explicitly replace a bounded resource, then flush it."""
+        if (
+            self.hello is None
+            or "resource-write" not in self.hello.capabilities
+        ):
+            raise StatusError(
+                Code.FAILED_PRECONDITION, "Resource write unavailable"
+            )
+        self._validate_resource_name(name)
+        if not data or len(data) > 16 * 1024 * 1024:
+            raise StatusError(
+                Code.INVALID_ARGUMENT, "Resource size is out of bounds"
+            )
+        scope, uid = self._resource_scope(app_uid)
+        for offset in range(0, len(data), 32768):
+            if self._next_request_id > self.hello.maximum_requests:
+                raise StatusError(
+                    Code.RESOURCE_EXHAUSTED, "Session request cap reached"
+                )
+            chunk = data[offset : offset + 32768]
+            request_id = self._next_request_id
+            self._next_request_id += 1
+            mode = (2 if replace else 0) if offset == 0 else 1
+            frame = _native.pack_agent_resource_request(
+                request_id, 11, scope, uid, name, offset, len(chunk), mode
+            )
+            body = self._exchange(request_id, frame, upload=chunk)
+            if body.get("written") != len(chunk):
+                raise StatusError(Code.DATA_LOSS, "Resource write incomplete")
+
+    def package_open(self, name: str, app_uid: int) -> bool:
+        """Ask AppArc to launch the registered installer for a staged SIS.
+
+        Returns whether the app UID was already registered before launch.
+        Installer UI and its outcome are separate; use screen and pointer
+        controls to interact with it, then check registration again.
+        """
+        if self.hello is None or "package-open" not in self.hello.capabilities:
+            raise StatusError(
+                Code.FAILED_PRECONDITION, "Installer launch unavailable"
+            )
+        self._validate_resource_name(name)
+        if not name.endswith(".sis"):
+            raise StatusError(Code.INVALID_ARGUMENT, "Package must end in .sis")
+        self._resource_scope(app_uid)
+        if self._next_request_id > self.hello.maximum_requests:
+            raise StatusError(
+                Code.RESOURCE_EXHAUSTED, "Session request cap reached"
+            )
+        request_id = self._next_request_id
+        self._next_request_id += 1
+        frame = _native.pack_agent_application_request(
+            request_id, 12, app_uid, name
+        )
+        body = self._exchange(request_id, frame)
+        if (
+            body.get("state") != "installer-launched"
+            or type(body.get("registered_before")) is not bool
+        ):
+            raise StatusError(Code.DATA_LOSS, "Invalid installer response")
+        return body["registered_before"]
+
+    def app_registered(self, app_uid: int) -> bool:
+        """Ask AppArc whether an app UID is currently registered."""
+        if (
+            self.hello is None
+            or "app-registered" not in self.hello.capabilities
+        ):
+            raise StatusError(
+                Code.FAILED_PRECONDITION, "AppArc query unavailable"
+            )
+        self._resource_scope(app_uid)
+        if self._next_request_id > self.hello.maximum_requests:
+            raise StatusError(
+                Code.RESOURCE_EXHAUSTED, "Session request cap reached"
+            )
+        request_id = self._next_request_id
+        self._next_request_id += 1
+        frame = _native.pack_agent_application_request(request_id, 13, app_uid)
+        body = self._exchange(request_id, frame)
+        if type(body.get("registered")) is not bool:
+            raise StatusError(Code.DATA_LOSS, "Invalid AppArc response")
+        return body["registered"]
+
+    @staticmethod
+    def _validate_resource_name(name: str) -> None:
+        if (
+            not isinstance(name, str)
+            or not 1 <= len(name) <= 64
+            or name in (".", "..")
+            or any(
+                not (ch.isascii() and (ch.isalnum() or ch in "._-"))
+                for ch in name
+            )
+        ):
+            raise StatusError(Code.INVALID_ARGUMENT, "Invalid resource name")
+
+    @staticmethod
+    def _resource_scope(app_uid: int | None) -> tuple[int, int]:
+        if app_uid is None:
+            return 0, 0
+        if type(app_uid) is not int or not 0 < app_uid <= 0xFFFFFFFF:
+            raise StatusError(Code.INVALID_ARGUMENT, "Invalid app UID")
+        return 1, app_uid
+
+    def _exchange(
+        self, request_id: int, frame: bytes, *, upload: bytes = b""
+    ) -> dict:
         deadline = time.monotonic() + self._timeout
         self._set_remaining_timeout(deadline)
         self._stream.sendall(frame)
+        for offset in range(0, len(upload), 4096):
+            self._set_remaining_timeout(deadline)
+            self._stream.sendall(upload[offset : offset + 4096])
         prefix = self._receive_exact(4, deadline)
         length = _native.agent_control_payload_length(prefix)
         result = _native.parse_agent_result_frame(
             prefix + self._receive_exact(length, deadline)
         )
-        if result["request_id"] != request_id or result["kind"] != 4:
+        if result["request_id"] != request_id:
+            raise StatusError(Code.DATA_LOSS, "Unexpected agent result")
+        if result["kind"] == 5:
+            body = result["body"]
+            code = body.get("code")
+            message = body.get("message")
+            if type(code) is not int or type(message) is not str:
+                raise StatusError(Code.DATA_LOSS, "Invalid agent error")
+            try:
+                raise StatusError(Code(code), message)
+            except ValueError as error:
+                raise StatusError(
+                    Code.DATA_LOSS, "Unknown agent error"
+                ) from error
+        if result["kind"] != 4:
             raise StatusError(Code.DATA_LOSS, "Unexpected agent result")
         return result["body"]
 
@@ -475,3 +737,7 @@ class ReadOnlyAgentSession:
                 raise StatusError(Code.UNAVAILABLE, "Agent connection closed")
             data.extend(chunk)
         return bytes(data)
+
+
+# Older integrations can migrate without changing their authentication flow.
+ReadOnlyAgentSession = AgentSession

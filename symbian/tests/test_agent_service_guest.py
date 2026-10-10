@@ -207,6 +207,15 @@ def test_local_window_controls(service_image, tmp_path, action):
                         break
                     time.sleep(0.1)
                 assert seen, "The agent status panel did not render"
+                with _connect() as agent:
+                    screen = agent.capture_screen()
+                    assert screen.width > 0 and screen.height > 0
+                    assert (
+                        len(screen.pixels)
+                        == screen.stride_bytes * screen.height
+                    )
+                    assert screen.image().size == (screen.width, screen.height)
+                    agent.pointer_event("move", 180, 300)
                 if action == "stop":
                     control.pointer(180, 520, "press")
                     process.wait(timeout=15)
@@ -306,6 +315,12 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                                 "status",
                                 "logs",
                                 "workspace-list",
+                                "screen-capture",
+                                "pointer-event",
+                                "resource-read",
+                                "resource-write",
+                                "package-open",
+                                "app-registered",
                             )
                             assert first.system is not None
                             assert first.system.tick_period_us > 0
@@ -349,6 +364,30 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                                 entry.name for entry in workspace_page.entries
                             ] == ["hello.txt"]
                             assert not workspace_page.more
+                            assert agent.resource_read("hello.txt") == (
+                                b"agent workspace fixture\n"
+                            )
+                            agent.resource_write("roundtrip.bin", b"one\x00two")
+                            assert agent.resource_read("roundtrip.bin") == (
+                                b"one\x00two"
+                            )
+                            agent.resource_write(
+                                "shared.bin",
+                                b"shared app data",
+                                app_uid=0xE0000A59,
+                            )
+                            assert (
+                                agent.resource_read(
+                                    "shared.bin", app_uid=0xE0000A59
+                                )
+                                == b"shared app data"
+                            )
+                            with pytest.raises(StatusError):
+                                agent.resource_read("..\\sys\\bin")
+                            assert agent.app_registered(0xE0000A59) in (
+                                True,
+                                False,
+                            )
                         break
                     except StatusError as error:
                         if (
@@ -457,9 +496,8 @@ def test_resident_agent_status_and_recovery(service_image, tmp_path, backend):
                         with _connect() as agent:
                             for _request in range(15):
                                 assert agent.status().state == "ready"
-                            with pytest.raises(StatusError) as error:
-                                agent.status()
-                            assert error.value.code == Code.RESOURCE_EXHAUSTED
+                            assert agent.hello.maximum_requests == 1024
+                            assert agent.status().state == "ready"
                     with _connect() as agent:
                         wrapped = agent.logs(after=0, limit=8)
                         assert wrapped.gap

@@ -267,6 +267,8 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
   std::uint64_t version = 0;
   unsigned seen = 0;
   unsigned page_fields = 0;
+  unsigned pointer_fields = 0;
+  unsigned resource_fields = 0;
   bool nonempty_body = false;
   std::array<std::string_view, 8> extension_keys{};
   for (std::size_t index = 0; index < count; ++index) {
@@ -302,18 +304,64 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
     } else if (key == "body") {
       bit = 16;
       std::size_t body_items = 0;
-      if (!cursor.Map(&body_items) || body_items > 2) {
+      if (!cursor.Map(&body_items) || body_items > 6) {
         return absl::InvalidArgumentError("Unsupported control body");
       }
       nonempty_body = body_items != 0;
       for (std::size_t body_index = 0; body_index < body_items; ++body_index) {
         std::string_view body_key;
         std::uint64_t body_value = 0;
-        if (!cursor.String(&body_key) || !cursor.Unsigned(&body_value)) {
-          return absl::InvalidArgumentError("Invalid page request body");
+        if (!cursor.String(&body_key)) {
+          return absl::InvalidArgumentError("Invalid request body key");
+        }
+        if (body_key == "name") {
+          std::string_view name;
+          if ((resource_fields & 4) != 0 || !cursor.String(&name) ||
+              name.empty() || name.size() > 64 || name == "." || name == "..") {
+            return absl::InvalidArgumentError("Invalid resource name");
+          }
+          for (char ch : name) {
+            if (!((ch >= 'a' && ch <= 'z') ||
+                  (ch >= 'A' && ch <= 'Z') ||
+                  (ch >= '0' && ch <= '9') || ch == '.' || ch == '_' ||
+                  ch == '-')) {
+              return absl::InvalidArgumentError("Invalid resource name");
+            }
+          }
+          result.resource_name = name;
+          resource_fields |= 4;
+          continue;
+        }
+        if (!cursor.Unsigned(&body_value)) {
+          return absl::InvalidArgumentError("Invalid request body integer");
         }
         unsigned body_bit = 0;
-        if (body_key == "after") {
+        if (body_key == "scope" && body_value <= 1) {
+          body_bit = 1;
+          result.resource_scope = static_cast<std::uint8_t>(body_value);
+        } else if (body_key == "uid" && body_value <= 0xffffffff) {
+          body_bit = 2;
+          result.resource_uid = static_cast<std::uint32_t>(body_value);
+        } else if (body_key == "offset" && body_value <= 16 * 1024 * 1024) {
+          body_bit = 8;
+          result.resource_offset = body_value;
+        } else if (body_key == "length" && body_value <= 32768) {
+          body_bit = 16;
+          result.resource_length = static_cast<std::uint32_t>(body_value);
+        } else if (body_key == "mode" && body_value <= 2) {
+          body_bit = 32;
+          result.resource_mode = static_cast<std::uint8_t>(body_value);
+        } else if (body_key == "x" && body_value <= 4095) {
+          body_bit = 1;
+          result.pointer_x = static_cast<std::uint32_t>(body_value);
+        } else if (body_key == "y" && body_value <= 4095) {
+          body_bit = 2;
+          result.pointer_y = static_cast<std::uint32_t>(body_value);
+        } else if (body_key == "action" && body_value >= 1 &&
+                   body_value <= 3) {
+          body_bit = 4;
+          result.pointer_action = static_cast<std::uint8_t>(body_value);
+        } else if (body_key == "after") {
           body_bit = 1;
           result.page_after = body_value;
         } else if (body_key == "limit" && body_value <= 8) {
@@ -322,10 +370,18 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
         } else {
           return absl::InvalidArgumentError("Unsupported page request field");
         }
-        if ((page_fields & body_bit) != 0) {
+        const bool pointer = body_key == "x" || body_key == "y" ||
+                             body_key == "action";
+        const bool resource = body_key == "scope" || body_key == "uid" ||
+                              body_key == "offset" || body_key == "length" ||
+                              body_key == "mode";
+        unsigned* absl_nonnull fields = resource ? &resource_fields
+                                                : pointer ? &pointer_fields
+                                                          : &page_fields;
+        if ((*fields & body_bit) != 0) {
           return absl::InvalidArgumentError("Duplicate page request field");
         }
-        page_fields |= body_bit;
+        *fields |= body_bit;
       }
     } else {
       for (std::uint8_t previous = 0; previous < result.extension_count;
@@ -351,10 +407,34 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
   if (!cursor.done() || (seen & 7) != 7 || version != 1 ||
       result.request_id == 0 ||
       (result.kind != 1 && result.kind != 2 && result.kind != 6 &&
-       result.kind != 7) ||
+       result.kind != 7 && result.kind != 8 && result.kind != 9 &&
+       result.kind != 10 && result.kind != 11 && result.kind != 12 &&
+       result.kind != 13) ||
       ((result.kind == 6 || result.kind == 7) &&
-       (page_fields != 3 || result.page_limit == 0)) ||
-      (result.kind != 6 && result.kind != 7 && nonempty_body)) {
+       (page_fields != 3 || pointer_fields != 0 || resource_fields != 0 ||
+        result.page_limit == 0)) ||
+      (result.kind == 9 && (pointer_fields != 7 || page_fields != 0 ||
+                            resource_fields != 0)) ||
+      (result.kind == 10 &&
+       (resource_fields != 31 || page_fields != 0 || pointer_fields != 0 ||
+        result.resource_length == 0)) ||
+      (result.kind == 11 &&
+       (resource_fields != 63 || page_fields != 0 || pointer_fields != 0 ||
+        result.resource_length == 0)) ||
+      (result.kind == 12 &&
+       (resource_fields != 6 || result.resource_uid == 0 ||
+        page_fields != 0 || pointer_fields != 0 ||
+        result.resource_name.size() < 5 ||
+        result.resource_name.substr(result.resource_name.size() - 4) !=
+            ".sis")) ||
+      (result.kind == 13 &&
+       (resource_fields != 2 || result.resource_uid == 0 ||
+        page_fields != 0 || pointer_fields != 0)) ||
+      ((result.kind == 10 || result.kind == 11) &&
+       ((result.resource_scope == 0 && result.resource_uid != 0) ||
+        (result.resource_scope == 1 && result.resource_uid == 0))) ||
+      ((result.kind == 1 || result.kind == 2 || result.kind == 8) &&
+       nonempty_body)) {
     return absl::InvalidArgumentError("Unsupported agent control request");
   }
   return result;
@@ -467,7 +547,7 @@ absl::StatusOr<std::string> PackGuestResult(
 
 absl::StatusOr<std::string> PackGuestHelloResult(
     const GuestControlRequest& request, bool logs_available,
-    std::uint8_t maximum_requests, bool workspace_available) {
+    std::uint16_t maximum_requests, bool workspace_available) {
   if (request.request_id == 0 || request.kind != 1 || maximum_requests == 0 ||
       request.extension_count > 8 ||
       request.extensions.size() > kMaximumControlBytes) {
@@ -494,7 +574,7 @@ absl::StatusOr<std::string> PackGuestHelloResult(
   WriteUInt(&result, maximum_requests);
   WriteString(&result, "capabilities");
   result.push_back(
-      static_cast<char>(0x91 + logs_available + workspace_available));
+      static_cast<char>(0x97 + logs_available + workspace_available));
   WriteString(&result, "status");
   if (logs_available) {
     WriteString(&result, "logs");
@@ -502,6 +582,12 @@ absl::StatusOr<std::string> PackGuestHelloResult(
   if (workspace_available) {
     WriteString(&result, "workspace-list");
   }
+  WriteString(&result, "screen-capture");
+  WriteString(&result, "pointer-event");
+  WriteString(&result, "resource-read");
+  WriteString(&result, "resource-write");
+  WriteString(&result, "package-open");
+  WriteString(&result, "app-registered");
   result.append(request.extensions);
   if (result.size() > kMaximumControlBytes) {
     return absl::ResourceExhaustedError("Agent hello exceeds 4 KiB");
@@ -535,7 +621,7 @@ absl::StatusOr<std::string> PackGuestResult(
   WriteString(&result, "state");
   WriteString(&result, "ready");
   WriteString(&result, "capabilities");
-  result.push_back(static_cast<char>(0x91 + snapshot.logs_available +
+  result.push_back(static_cast<char>(0x97 + snapshot.logs_available +
                                      snapshot.workspace_available));
   WriteString(&result, "status");
   if (snapshot.logs_available) {
@@ -544,6 +630,12 @@ absl::StatusOr<std::string> PackGuestResult(
   if (snapshot.workspace_available) {
     WriteString(&result, "workspace-list");
   }
+  WriteString(&result, "screen-capture");
+  WriteString(&result, "pointer-event");
+  WriteString(&result, "resource-read");
+  WriteString(&result, "resource-write");
+  WriteString(&result, "package-open");
+  WriteString(&result, "app-registered");
   if (snapshot.tick) {
     WriteString(&result, "system");
     result.push_back(static_cast<char>(0x82));
@@ -564,6 +656,190 @@ absl::StatusOr<std::string> PackGuestResult(
   if (result.size() > kMaximumControlBytes) {
     return absl::ResourceExhaustedError("Agent result exceeds 4 KiB");
   }
+  return result;
+}
+
+absl::StatusOr<std::string> PackGuestScreenResult(
+    const GuestControlRequest& request, std::uint32_t width,
+    std::uint32_t height, std::uint32_t stride, std::uint32_t bytes) {
+  if (request.kind != 8 || request.request_id == 0 || width == 0 ||
+      height == 0 || stride < width * 2 || bytes != stride * height ||
+      bytes > 32 * 1024 * 1024 || request.extension_count > 8) {
+    return absl::InvalidArgumentError("Invalid screen result");
+  }
+  std::string result;
+  result.push_back(static_cast<char>(0x85 + request.extension_count));
+  WriteString(&result, "v");
+  WriteUInt(&result, 1);
+  WriteString(&result, "id");
+  WriteUInt(&result, request.request_id);
+  WriteString(&result, "kind");
+  WriteUInt(&result, 4);
+  WriteString(&result, "deadline_ms");
+  WriteUInt(&result, request.deadline_millis);
+  WriteString(&result, "body");
+  result.push_back(static_cast<char>(0x85));
+  WriteString(&result, "width");
+  WriteUInt(&result, width);
+  WriteString(&result, "height");
+  WriteUInt(&result, height);
+  WriteString(&result, "stride_bytes");
+  WriteUInt(&result, stride);
+  WriteString(&result, "format");
+  WriteString(&result, "rgb565-le");
+  WriteString(&result, "data_bytes");
+  WriteUInt(&result, bytes);
+  result.append(request.extensions);
+  return result;
+}
+
+absl::StatusOr<std::string> PackGuestPointerResult(
+    const GuestControlRequest& request) {
+  if (request.kind != 9 || request.request_id == 0 ||
+      request.extension_count > 8) {
+    return absl::InvalidArgumentError("Invalid pointer result");
+  }
+  std::string result;
+  result.push_back(static_cast<char>(0x85 + request.extension_count));
+  WriteString(&result, "v");
+  WriteUInt(&result, 1);
+  WriteString(&result, "id");
+  WriteUInt(&result, request.request_id);
+  WriteString(&result, "kind");
+  WriteUInt(&result, 4);
+  WriteString(&result, "deadline_ms");
+  WriteUInt(&result, request.deadline_millis);
+  WriteString(&result, "body");
+  result.push_back(static_cast<char>(0x80));
+  result.append(request.extensions);
+  return result;
+}
+
+absl::StatusOr<std::string> PackGuestResourceReadResult(
+    const GuestControlRequest& request, std::uint64_t total_bytes,
+    std::uint32_t data_bytes) {
+  if (request.kind != 10 || request.request_id == 0 ||
+      total_bytes > 16 * 1024 * 1024 || data_bytes > request.resource_length ||
+      request.extension_count > 8) {
+    return absl::InvalidArgumentError("Invalid resource read result");
+  }
+  std::string result;
+  result.push_back(static_cast<char>(0x85 + request.extension_count));
+  WriteString(&result, "v");
+  WriteUInt(&result, 1);
+  WriteString(&result, "id");
+  WriteUInt(&result, request.request_id);
+  WriteString(&result, "kind");
+  WriteUInt(&result, 4);
+  WriteString(&result, "deadline_ms");
+  WriteUInt(&result, request.deadline_millis);
+  WriteString(&result, "body");
+  result.push_back(static_cast<char>(0x82));
+  WriteString(&result, "total_bytes");
+  WriteUInt(&result, total_bytes);
+  WriteString(&result, "data_bytes");
+  WriteUInt(&result, data_bytes);
+  result.append(request.extensions);
+  return result;
+}
+
+absl::StatusOr<std::string> PackGuestResourceWriteResult(
+    const GuestControlRequest& request) {
+  if (request.kind != 11 || request.request_id == 0 ||
+      request.extension_count > 8) {
+    return absl::InvalidArgumentError("Invalid resource write result");
+  }
+  std::string result;
+  result.push_back(static_cast<char>(0x85 + request.extension_count));
+  WriteString(&result, "v");
+  WriteUInt(&result, 1);
+  WriteString(&result, "id");
+  WriteUInt(&result, request.request_id);
+  WriteString(&result, "kind");
+  WriteUInt(&result, 4);
+  WriteString(&result, "deadline_ms");
+  WriteUInt(&result, request.deadline_millis);
+  WriteString(&result, "body");
+  result.push_back(static_cast<char>(0x81));
+  WriteString(&result, "written");
+  WriteUInt(&result, request.resource_length);
+  result.append(request.extensions);
+  return result;
+}
+
+absl::StatusOr<std::string> PackGuestPackageOpenResult(
+    const GuestControlRequest& request, bool registered_before) {
+  if (request.kind != 12 || request.request_id == 0 ||
+      request.extension_count > 8) {
+    return absl::InvalidArgumentError("Invalid package result");
+  }
+  std::string result;
+  result.push_back(static_cast<char>(0x85 + request.extension_count));
+  WriteString(&result, "v");
+  WriteUInt(&result, 1);
+  WriteString(&result, "id");
+  WriteUInt(&result, request.request_id);
+  WriteString(&result, "kind");
+  WriteUInt(&result, 4);
+  WriteString(&result, "deadline_ms");
+  WriteUInt(&result, request.deadline_millis);
+  WriteString(&result, "body");
+  result.push_back(static_cast<char>(0x82));
+  WriteString(&result, "state");
+  WriteString(&result, "installer-launched");
+  WriteString(&result, "registered_before");
+  result.push_back(static_cast<char>(registered_before ? 0xc3 : 0xc2));
+  result.append(request.extensions);
+  return result;
+}
+
+absl::StatusOr<std::string> PackGuestAppRegisteredResult(
+    const GuestControlRequest& request, bool registered) {
+  if (request.kind != 13 || request.request_id == 0 ||
+      request.extension_count > 8) {
+    return absl::InvalidArgumentError("Invalid app registration result");
+  }
+  std::string result;
+  result.push_back(static_cast<char>(0x85 + request.extension_count));
+  WriteString(&result, "v");
+  WriteUInt(&result, 1);
+  WriteString(&result, "id");
+  WriteUInt(&result, request.request_id);
+  WriteString(&result, "kind");
+  WriteUInt(&result, 4);
+  WriteString(&result, "deadline_ms");
+  WriteUInt(&result, request.deadline_millis);
+  WriteString(&result, "body");
+  result.push_back(static_cast<char>(0x81));
+  WriteString(&result, "registered");
+  result.push_back(static_cast<char>(registered ? 0xc3 : 0xc2));
+  result.append(request.extensions);
+  return result;
+}
+
+absl::StatusOr<std::string> PackGuestError(
+    const GuestControlRequest& request, const absl::Status& status) {
+  if (request.request_id == 0 || status.ok() ||
+      request.extension_count > 8) {
+    return absl::InvalidArgumentError("Invalid agent error result");
+  }
+  std::string result;
+  result.push_back(static_cast<char>(0x85 + request.extension_count));
+  WriteString(&result, "v");
+  WriteUInt(&result, 1);
+  WriteString(&result, "id");
+  WriteUInt(&result, request.request_id);
+  WriteString(&result, "kind");
+  WriteUInt(&result, 5);
+  WriteString(&result, "deadline_ms");
+  WriteUInt(&result, request.deadline_millis);
+  WriteString(&result, "body");
+  result.push_back(static_cast<char>(0x82));
+  WriteString(&result, "code");
+  WriteUInt(&result, static_cast<std::uint8_t>(status.code()));
+  WriteString(&result, "message");
+  WriteString(&result, status.message().substr(0, 256));
+  result.append(request.extensions);
   return result;
 }
 

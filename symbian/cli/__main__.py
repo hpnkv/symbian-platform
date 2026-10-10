@@ -369,7 +369,19 @@ def _parser() -> argparse.ArgumentParser:
     agent_commands = commands.add_parser("agent").add_subparsers(
         dest="agent_command", required=True
     )
-    for name in ("hello", "status", "logs", "files"):
+    for name in (
+        "hello",
+        "status",
+        "logs",
+        "files",
+        "screen",
+        "pointer",
+        "get",
+        "put",
+        "package-open",
+        "app-registered",
+        "install",
+    ):
         agent_parser = agent_commands.add_parser(name)
         agent_parser.add_argument("host", help="Agent host address.")
         agent_parser.add_argument("port", type=int, help="Agent TCP port.")
@@ -398,6 +410,26 @@ def _parser() -> argparse.ArgumentParser:
                 default=8,
                 help="Return 1–8 records or entries (default: 8).",
             )
+        if name == "screen":
+            agent_parser.add_argument("output", type=Path)
+        if name == "pointer":
+            agent_parser.add_argument("action", choices=("move", "down", "up"))
+            agent_parser.add_argument("x", type=int)
+            agent_parser.add_argument("y", type=int)
+        if name in ("get", "put"):
+            agent_parser.add_argument(
+                "name", help="One scoped resource filename."
+            )
+            agent_parser.add_argument("path", type=Path)
+            agent_parser.add_argument("--app-uid", type=lambda x: int(x, 0))
+            if name == "put":
+                agent_parser.add_argument("--replace", action="store_true")
+        if name in ("package-open", "app-registered", "install"):
+            agent_parser.add_argument("app_uid", type=lambda x: int(x, 0))
+        if name == "package-open":
+            agent_parser.add_argument("name")
+        if name == "install":
+            agent_parser.add_argument("package", type=Path)
     listen_agent = agent_commands.add_parser("listen")
     listen_agent.add_argument(
         "--key-file",
@@ -830,7 +862,7 @@ def _execute(args: argparse.Namespace) -> dict:
     if args.command == "doctor":
         return doctor()
     if args.command == "agent":
-        from symbian.agent import ReadOnlyAgentSession
+        from symbian.agent import AgentSession
         from symbian.status import Code, StatusError
 
         if args.agent_command == "listen":
@@ -846,14 +878,14 @@ def _execute(args: argparse.Namespace) -> dict:
                     "--after and --limit require --logs or --files",
                 )
         session = (
-            ReadOnlyAgentSession.accept(
+            AgentSession.accept(
                 args.listen_host,
                 args.port,
                 key_file=args.key_file,
                 timeout=args.timeout,
             )
             if args.agent_command == "listen"
-            else ReadOnlyAgentSession.connect(
+            else AgentSession.connect(
                 args.host,
                 args.port,
                 key_file=args.key_file,
@@ -897,6 +929,51 @@ def _execute(args: argparse.Namespace) -> dict:
                 return agent.workspace_list(
                     after=args.after, limit=args.limit
                 ).model_dump()
+            if args.agent_command == "screen":
+                capture = agent.capture_screen()
+                capture.image().save(args.output)
+                return {
+                    "path": str(args.output),
+                    "width": capture.width,
+                    "height": capture.height,
+                }
+            if args.agent_command == "pointer":
+                agent.pointer_event(args.action, args.x, args.y)
+                return {"action": args.action, "x": args.x, "y": args.y}
+            if args.agent_command == "get":
+                data = agent.resource_read(args.name, app_uid=args.app_uid)
+                args.path.write_bytes(data)
+                return {"path": str(args.path), "bytes": len(data)}
+            if args.agent_command == "put":
+                data = args.path.read_bytes()
+                agent.resource_write(
+                    args.name,
+                    data,
+                    app_uid=args.app_uid,
+                    replace=args.replace,
+                )
+                return {"name": args.name, "bytes": len(data)}
+            if args.agent_command == "package-open":
+                existed = agent.package_open(args.name, args.app_uid)
+                return {
+                    "installer_launched": True,
+                    "registered_before": existed,
+                }
+            if args.agent_command == "app-registered":
+                return {"registered": agent.app_registered(args.app_uid)}
+            if args.agent_command == "install":
+                import hashlib
+
+                data = args.package.read_bytes()
+                name = f"agent-{hashlib.sha256(data).hexdigest()[:16]}.sis"
+                agent.resource_write(name, data, replace=True)
+                existed = agent.package_open(name, args.app_uid)
+                return {
+                    "staged_name": name,
+                    "installer_launched": True,
+                    "registered_before": existed,
+                    "installation_verified": False,
+                }
             return agent.status().model_dump()
     if args.command == "firmware":
         from symbian.emulator.configuration import (

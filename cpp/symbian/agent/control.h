@@ -26,6 +26,12 @@ enum class ControlKind : std::uint8_t {
   kError = 5,
   kLogs = 6,
   kWorkspaceList = 7,
+  kScreenCapture = 8,
+  kPointerEvent = 9,
+  kResourceRead = 10,
+  kResourceWrite = 11,
+  kPackageOpen = 12,
+  kAppRegistered = 13,
 };
 
 /**

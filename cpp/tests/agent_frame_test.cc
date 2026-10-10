@@ -178,7 +178,11 @@ TEST(AgentFrame, GuestReadOnlyResultMatchesHostControlEnvelope) {
   EXPECT_EQ(host->request_id, 17);
   EXPECT_EQ(host->kind, symbian::agent::ControlKind::kResult);
   EXPECT_EQ(host->body["service"], "symbian-agent");
-  EXPECT_EQ(host->body["capabilities"], nlohmann::json::array({"status"}));
+  EXPECT_EQ(host->body["capabilities"],
+            nlohmann::json::array({"status", "screen-capture",
+                                   "pointer-event", "resource-read",
+                                   "resource-write", "package-open",
+                                   "app-registered"}));
   EXPECT_EQ(host->extensions, request.extensions);
 }
 
@@ -208,7 +212,10 @@ TEST(AgentFrame, GuestStatusIncludesOnlyAvailableNativeSnapshots) {
   parsed = symbian::agent::ParseControl(*encoded);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_EQ(parsed->body["capabilities"],
-            nlohmann::json::array({"status", "logs"}));
+            nlohmann::json::array({"status", "logs", "screen-capture",
+                                   "pointer-event", "resource-read",
+                                   "resource-write", "package-open",
+                                   "app-registered"}));
 }
 
 TEST(AgentFrame, GuestHelloAdvertisesBoundedServiceProfile) {
@@ -223,7 +230,10 @@ TEST(AgentFrame, GuestHelloAdvertisesBoundedServiceProfile) {
   EXPECT_EQ(parsed->body["maximum_control_bytes"], 4096);
   EXPECT_EQ(parsed->body["maximum_requests"], 16);
   EXPECT_EQ(parsed->body["capabilities"],
-            nlohmann::json::array({"status", "logs"}));
+            nlohmann::json::array({"status", "logs", "screen-capture",
+                                   "pointer-event", "resource-read",
+                                   "resource-write", "package-open",
+                                   "app-registered"}));
   request.kind = 2;
   EXPECT_FALSE(symbian::agent::PackGuestHelloResult(request, true, 16).ok());
   request.kind = 1;
@@ -332,7 +342,107 @@ TEST(AgentFrame, GuestWorkspacePageIsScopedAndBounded) {
   parsed = symbian::agent::ParseControl(*hello);
   ASSERT_TRUE(parsed.ok()) << parsed.status();
   EXPECT_EQ(parsed->body["capabilities"],
-            nlohmann::json::array({"status", "logs", "workspace-list"}));
+            nlohmann::json::array({"status", "logs", "workspace-list",
+                                   "screen-capture", "pointer-event",
+                                   "resource-read", "resource-write",
+                                   "package-open", "app-registered"}));
+}
+
+TEST(AgentFrame, GuestScreenAndPointerRequestsAreBounded) {
+  symbian::agent::ControlMessage request;
+  request.request_id = 42;
+  request.kind = symbian::agent::ControlKind::kScreenCapture;
+  auto encoded = symbian::agent::PackControl(request);
+  ASSERT_TRUE(encoded.ok());
+  auto guest = symbian::agent::ParseGuestControl(*encoded);
+  ASSERT_TRUE(guest.ok()) << guest.status();
+  auto result = symbian::agent::PackGuestScreenResult(*guest, 360, 640, 720,
+                                                       720 * 640);
+  ASSERT_TRUE(result.ok()) << result.status();
+  auto parsed = symbian::agent::ParseControl(*result);
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_EQ(parsed->body["format"], "rgb565-le");
+  EXPECT_EQ(parsed->body["data_bytes"], 720 * 640);
+  EXPECT_FALSE(symbian::agent::PackGuestScreenResult(*guest, 360, 640, 700,
+                                                      700 * 640).ok());
+
+  request.kind = symbian::agent::ControlKind::kPointerEvent;
+  request.body = {{"action", 2}, {"x", 120}, {"y", 240}};
+  encoded = symbian::agent::PackControl(request);
+  ASSERT_TRUE(encoded.ok());
+  guest = symbian::agent::ParseGuestControl(*encoded);
+  ASSERT_TRUE(guest.ok()) << guest.status();
+  EXPECT_EQ(guest->pointer_action, 2);
+  EXPECT_EQ(guest->pointer_x, 120);
+  EXPECT_EQ(guest->pointer_y, 240);
+  EXPECT_TRUE(symbian::agent::PackGuestPointerResult(*guest).ok());
+  request.body["x"] = 4096;
+  encoded = symbian::agent::PackControl(request);
+  ASSERT_TRUE(encoded.ok());
+  EXPECT_FALSE(symbian::agent::ParseGuestControl(*encoded).ok());
+}
+
+TEST(AgentFrame, GuestResourceTransferRequestsAreScoped) {
+  symbian::agent::ControlMessage request;
+  request.request_id = 44;
+  request.kind = symbian::agent::ControlKind::kResourceRead;
+  request.body = {{"scope", 1}, {"uid", 0xe0000a59u},
+                  {"name", "capture.dat"}, {"offset", 32768},
+                  {"length", 32768}};
+  auto encoded = symbian::agent::PackControl(request);
+  ASSERT_TRUE(encoded.ok());
+  auto guest = symbian::agent::ParseGuestControl(*encoded);
+  ASSERT_TRUE(guest.ok()) << guest.status();
+  EXPECT_EQ(guest->resource_uid, 0xe0000a59u);
+  EXPECT_EQ(guest->resource_name, "capture.dat");
+  auto result =
+      symbian::agent::PackGuestResourceReadResult(*guest, 65536, 32768);
+  ASSERT_TRUE(result.ok()) << result.status();
+  auto parsed = symbian::agent::ParseControl(*result);
+  ASSERT_TRUE(parsed.ok());
+  EXPECT_EQ(parsed->body["total_bytes"], 65536);
+  EXPECT_EQ(parsed->body["data_bytes"], 32768);
+
+  request.kind = symbian::agent::ControlKind::kResourceWrite;
+  request.body["mode"] = 2;
+  encoded = symbian::agent::PackControl(request);
+  ASSERT_TRUE(encoded.ok());
+  guest = symbian::agent::ParseGuestControl(*encoded);
+  ASSERT_TRUE(guest.ok()) << guest.status();
+  EXPECT_TRUE(symbian::agent::PackGuestResourceWriteResult(*guest).ok());
+  request.body["name"] = "..\\sys\\bin";
+  encoded = symbian::agent::PackControl(request);
+  ASSERT_TRUE(encoded.ok());
+  EXPECT_FALSE(symbian::agent::ParseGuestControl(*encoded).ok());
+}
+
+TEST(AgentFrame, GuestPackageLaunchAndRegistrationAreDistinct) {
+  symbian::agent::ControlMessage request;
+  request.request_id = 45;
+  request.kind = symbian::agent::ControlKind::kPackageOpen;
+  request.body = {{"uid", 0xe0000a59u}, {"name", "camera.sis"}};
+  auto encoded = symbian::agent::PackControl(request);
+  ASSERT_TRUE(encoded.ok());
+  auto guest = symbian::agent::ParseGuestControl(*encoded);
+  ASSERT_TRUE(guest.ok()) << guest.status();
+  auto launched = symbian::agent::PackGuestPackageOpenResult(*guest, true);
+  ASSERT_TRUE(launched.ok());
+  auto parsed = symbian::agent::ParseControl(*launched);
+  ASSERT_TRUE(parsed.ok());
+  EXPECT_EQ(parsed->body["state"], "installer-launched");
+  EXPECT_EQ(parsed->body["registered_before"], true);
+
+  request.kind = symbian::agent::ControlKind::kAppRegistered;
+  request.body = {{"uid", 0xe0000a59u}};
+  encoded = symbian::agent::PackControl(request);
+  ASSERT_TRUE(encoded.ok());
+  guest = symbian::agent::ParseGuestControl(*encoded);
+  ASSERT_TRUE(guest.ok()) << guest.status();
+  auto registered = symbian::agent::PackGuestAppRegisteredResult(*guest, false);
+  ASSERT_TRUE(registered.ok());
+  parsed = symbian::agent::ParseControl(*registered);
+  ASSERT_TRUE(parsed.ok());
+  EXPECT_EQ(parsed->body["registered"], false);
 }
 
 TEST(AgentFrame, GuestReadOnlyRejectsMalformedAndExcessiveInput) {

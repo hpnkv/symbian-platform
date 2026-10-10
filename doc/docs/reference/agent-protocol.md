@@ -1,6 +1,6 @@
 # Development-agent protocol
 
-The resident agent is a manually started, read-only service. USB discovery
+The resident agent is a manually started development service. USB discovery
 identifies a connected phone and can stage its SIS package; it does not expose
 an agent socket. The emulator profile listens on `127.0.0.1:39101` with a
 public test key. A phone-specific build embeds a separate 32-byte key, sends
@@ -93,9 +93,10 @@ Each control frame starts with a four-byte unsigned length in network byte
 order and exactly that many MessagePack bytes. Zero and lengths above 4 KiB
 are rejected before the payload is read. The first authenticated request must
 be hello. Any other request sent first, or a repeated hello, closes the session.
-The hello result declares protocol version 1, the 4 KiB limit, a cap of 16
-requests per connection, and the available `status`, `logs` and
-`workspace-list` operations.
+The hello result declares protocol version 1, the 4 KiB control limit, a cap
+of 1024 requests per connection, and the available `status`, `logs`,
+`workspace-list`, `screen-capture`, `pointer-event`, `resource-read`,
+`resource-write`, `package-open` and `app-registered` operations.
 Hello consumes one request slot.
 
 The service applies one five-second Abseil deadline to each exchange's prefix,
@@ -103,14 +104,15 @@ payload and response. The host session uses one response deadline even if a
 peer sends fragments slowly. An active-object listener passes accepted sockets
 to a bounded SDK worker in the emulator profile. The phone profile uses that
 worker for bounded UDP discovery and outbound TCP connection attempts. The
-service does not offer file writes, command
-execution, flashing or recovery operations.
+service offers bounded writes only inside its workspace and explicitly shared
+application resource directories. It has no arbitrary command execution,
+flashing, recovery, partition or calibration operation.
 
 The guest `Symbian::Agent` target owns the control codec in
-`symbian/agent/guest_control.h`. It accepts version-one hello/status with an
-empty body, or logs and workspace listing with exactly unsigned `after` and
-`limit` fields; `limit` must be 1–8. Unknown top-level fields survive a
-parse/encode cycle.
+`symbian/agent/guest_control.h`. Hello/status have an empty body. Logs and
+workspace listing carry unsigned `after` and `limit` fields; `limit` is 1–8.
+The other operations have bounded typed arguments. Unknown top-level fields
+survive a parse/encode cycle.
 The codec validates MessagePack after the socket owner checks framing and
 authentication. It does not own the listener, permission policy or scheduler.
 The C++ declarations and return types are in the
@@ -140,21 +142,40 @@ adjustments can affect elapsed intervals.
 path. Each page contains at most eight immediate child names, directory and
 read-only flags, byte sizes, a `next_offset`, and a `more` flag. The listing
 stops at 256 entries; offsets at or beyond that bound are rejected. A missing
-workspace is empty. Pages are not a snapshot, so files
-changed during pagination can shift their offsets. The agent does not read file
-contents or expose arbitrary device paths.
+workspace is empty. Pages are not a snapshot, so files changed during
+pagination can shift their offsets.
+
+### Screen, input and resources
+
+`screen-capture` returns a complete primary-screen RGB565 bitmap. The control
+result carries width, height, stride and byte count; raw pixels follow in
+binary WebSocket messages of at most 4096 bytes each. `pointer-event` injects
+one move, down or up event in primary-screen pixel coordinates.
+
+`resource-read` and `resource-write` transfer at most 16 MiB per file in
+chunks of at most 32 KiB. Filenames are single ASCII components and cannot
+escape their selected directory. Scope zero is the agent workspace. Scope one
+is `C:\Data\SymbianAgent\apps\<uid>\`, for applications that deliberately
+share resources there; Symbian data cages remain in force.
+
+`package-open` opens a staged `.sis` document through AppArc. It starts the
+installer UI and reports whether the target UID was registered before launch.
+It does not confirm that an installation or update completed.
+`app-registered` queries AppArc later; a previously registered UID alone
+cannot prove an update. Screen capture and pointer input let a client drive
+the installer UI and inspect its result. There is no uninstall operation yet.
 
 ## Host API and CLI
 
-`ReadOnlyAgentSession` uses native bindings for MessagePack framing and typed
+`AgentSession` uses native bindings for MessagePack framing and typed
 Python models for results. The direct connection API and CLI serve the emulator
-listener. Pass its test key:
+listener. `ReadOnlyAgentSession` remains an alias. Pass its test key:
 
 ```python
 from pathlib import Path
-from symbian.agent import ReadOnlyAgentSession
+from symbian.agent import AgentSession
 
-with ReadOnlyAgentSession.connect(
+with AgentSession.connect(
     "127.0.0.1", 39101, key_file=Path("agent_service/test-agent.key")
 ) as agent:
     print(agent.status())
@@ -173,7 +194,19 @@ symbian agent logs 127.0.0.1 39101 --key-file agent_service/test-agent.key \
   --after 0 --limit 8
 symbian agent files 127.0.0.1 39101 --key-file agent_service/test-agent.key \
   --after 0 --limit 8
+symbian agent screen 127.0.0.1 39101 --key-file agent_service/test-agent.key screen.png
+symbian agent pointer 127.0.0.1 39101 --key-file agent_service/test-agent.key down 180 300
+symbian agent put 127.0.0.1 39101 --key-file agent_service/test-agent.key \
+  config.txt ./config.txt --app-uid 0xe0000a59
+symbian agent get 127.0.0.1 39101 --key-file agent_service/test-agent.key \
+  config.txt ./downloaded.txt --app-uid 0xe0000a59
+symbian agent install 127.0.0.1 39101 --key-file agent_service/test-agent.key \
+  0xe0000a59 ./camera_app.sis
 ```
+
+The `install` command transfers the SIS and opens its installer UI. Its JSON
+result reports `installation_verified: false`; inspect the screen and confirm
+the application version before treating an update as complete.
 
 For a phone, the desktop console's **Check live status** opens temporary
 discovery and TCP listeners. Code using the host API directly can call

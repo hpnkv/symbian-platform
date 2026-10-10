@@ -190,6 +190,21 @@ void BindDevice(pybind11::module_* absl_nonnull module) {
       pybind11::arg("vendor"), pybind11::arg("product"),
       pybind11::arg("anchor"), pybind11::arg("package_path"),
       pybind11::arg("filename"), pybind11::arg("expected_sha256"));
+  module->def(
+      "read_mtp_file_native",
+      [](uint16_t vendor, uint16_t product, const std::string& anchor,
+         uint32_t storage_id, const std::string& relative_path,
+         uint32_t max_bytes) {
+        auto bytes = ValueWithoutGil([&] {
+          return device::ReadMtpFile(vendor, product, anchor, storage_id,
+                                     relative_path, max_bytes);
+        });
+        return pybind11::bytes(reinterpret_cast<const char*>(bytes.data()),
+                               bytes.size());
+      },
+      pybind11::arg("vendor"), pybind11::arg("product"),
+      pybind11::arg("anchor"), pybind11::arg("storage_id"),
+      pybind11::arg("relative_path"), pybind11::arg("max_bytes") = 1 << 20);
   module->def("list_usb_devices_native", [] {
     return ValueWithoutGil([] { return device::ListUsbDevices(); });
   });
