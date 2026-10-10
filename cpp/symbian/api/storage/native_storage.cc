@@ -130,6 +130,10 @@ extern "C" int SymbianDeviceCreateDirectories(
   if (path == nullptr || length <= 0 || length > KMaxFileName) {
     return KErrArgument;
   }
+  const bool ends_in_separator = path[length - 1] == u'\\';
+  if (!ends_in_separator && length == KMaxFileName) {
+    return KErrArgument;
+  }
   RFs session;
   const TInt connected = session.Connect();
   if (connected != KErrNone) {
@@ -137,7 +141,12 @@ extern "C" int SymbianDeviceCreateDirectories(
   }
   const TPtrC16 native_path(reinterpret_cast<const TText* absl_nonnull>(path),
                             length);
-  const TInt created = session.MkDirAll(native_path);
+  TBuf<KMaxFileName> directory;
+  directory.Copy(native_path);
+  if (!ends_in_separator) {
+    directory.Append(u'\\');
+  }
+  const TInt created = session.MkDirAll(directory);
   session.Close();
   return created == KErrAlreadyExists ? KErrNone : created;
 }

@@ -4,7 +4,10 @@
 #include "native_power.h"
 
 #include <absl/base/nullability.h>
+#include <e32std.h>
 #include <hal.h>
+
+#include "symbian/api/power/power.h"
 
 namespace symbian::api::power {
 
@@ -20,5 +23,7 @@ extern "C" void SymbianDeviceReadPower(
   reading->battery_result =
       HAL::Get(HALData::EPowerBatteryStatus, reading->battery);
 }
+
+void ResetInactivityTimer() { User::ResetInactivityTime(); }
 
 }  // namespace symbian::api::power

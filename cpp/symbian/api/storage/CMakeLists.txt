@@ -4,7 +4,8 @@ target_compile_options(symbian_api_storage PRIVATE -fno-pic -fno-exceptions)
 target_include_directories(symbian_api_storage PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/../include"
   "${SYMBIAN_SDK_PREFIX}/include/platform")
-target_link_libraries(symbian_api_storage PUBLIC Symbian::AbseilStatusOr)
+target_link_libraries(symbian_api_storage PUBLIC Symbian::AbseilStatusOr
+  Symbian::FileServer)
 
 target_include_directories(symbian_api_storage PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/../include")

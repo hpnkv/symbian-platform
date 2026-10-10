@@ -1,6 +1,7 @@
 # Power component
 
-**Implemented:** `Symbian::Power` exports `ReadPowerSnapshot()` in
+**Implemented:** `Symbian::Power` exports `ReadPowerSnapshot()` and
+`ResetInactivityTimer()` in
 `<symbian/api/power/power.h>`.
 
 ## Motivation and modernization
@@ -53,3 +54,9 @@ work policy only; it does not imply that the battery is charging.
 The snapshot is not atomic across its three HAL calls. Change subscriptions
 and model-specific charging information are unavailable. External power alone
 is never labelled "charging".
+
+`ResetInactivityTimer()` restarts the system display inactivity timer without
+changing the user's timeout setting. An app with a continuously visible task
+can call it about once per second while its window is foreground, then stop
+calling it on focus loss. `examples/condition_display` uses this for its color
+cycle.

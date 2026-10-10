@@ -2,7 +2,49 @@
 
 **Implemented:** `Symbian::System` exports typed readings of the system tick
 and fast counters in `<symbian/api/system/counters.h>`, plus an active
-service loop in `<symbian/api/system/active_service.h>`.
+service loop in `<symbian/api/system/active_service.h>`. The optional
+`DebugLog(std::string_view)` call in `<symbian/api/system/debug_log.h>` writes
+diagnostic bytes to the platform debug sink and keeps the newest 16 KiB in a
+process ring. `CopyRecentDebugLogs` reads that ring even when the device has no
+visible sink.
+
+`Symbian::Clipboard` exposes `CopyTextToClipboard(std::u16string_view)` and
+`ReadTextFromClipboard()` in `<symbian/api/system/clipboard.h>`. They exchange
+interoperable UTF-16 plain text through the OS clipboard and return statuses.
+Text is limited to 64 Ki UTF-16 code units. Applications
+do not need native clipboard stores, descriptors or leave handling.
+
+`Symbian::FailureHandler` exports `RunWithFailureHandler` and
+`ShowFailureReport` from `<symbian/api/system/failure_handler.h>`. A top-level
+entry returning an `absl::Status` can opt in to a scrollable error and log
+view with Exit and Copy buttons. Recent `DebugLog` calls are included
+automatically; optional device file paths add the latest 16 KiB of each log.
+Copy places the error and displayed logs on the plain-text clipboard. A
+Symbian panic, process kill or failure before the handler runs cannot be shown
+by that same process; these still need a separate crash collector.
+
+`<symbian/api/system/application_management.h>` offers `OpenDocument` and
+`IsApplicationRegistered` for applications that need the OS application
+registry or document launcher. The SDK loads the AppArc libraries when one of
+these calls is made and returns a status if a library or required export is
+unavailable. An application can therefore start on a device without those
+AppArc exports and use its other facilities. The ordinal mapping is checked
+against the Belle SDK profile; other devices still need runtime verification.
+
+```cpp
+#include "symbian/api/system/failure_handler.h"
+
+absl::Status RunApplication(void* absl_nullable context);
+
+int main() {
+  return symbian::api::system::RunWithFailureHandler(
+      RunApplication, nullptr, {.caption = "My app failed"});
+}
+```
+
+Link `Symbian::FailureHandler` for the view, or `Symbian::Clipboard` alone for
+clipboard use. The failure view needs the Window Server, File Server and text
+clipboard services; opening or copying can fail independently.
 
 ## Motivation and modernization
 

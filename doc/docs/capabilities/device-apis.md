@@ -16,11 +16,15 @@ SDK's C++20 standard library.
 | --- | --- | --- |
 | `Symbian::System` | Read tick and fast counters with their period or frequency | 32-bit counters wrap; these are not wall time |
 | `Symbian::Storage` | Stream files and directories, write and flush, copy in chunks | Synchronous I/O; offsets below 2 GiB |
-| `Symbian::Power` | Read power-good, external-supply and qualitative battery fields | Optional fields can be unknown; snapshot only |
+| `Symbian::Power` | Read power-good, external-supply and qualitative battery fields; reset the display inactivity timer for a foreground task | Optional snapshot fields can be unknown |
 | `Symbian::Display` | Query primary pixel geometry and optional physical twips | Snapshot only; no multiple-screen or orientation subscription |
-| `Symbian::Camera` | Discover the available camera count | No camera opening, preview or capture |
+| `Symbian::Camera` | Discover cameras; transform borrowed RAM or mapped camera frames | ECam opening/viewfinder remain gated by ARM leave and imported type-info data |
+| `Symbian::CameraGles2` | Copy and resize RGBA8888 textures on GLES2, explicitly upload/read back RAM | Current GL context and matching context token required |
 | `Symbian::Connectivity` | Resolve hosts, connect, accept and exchange IPv4 TCP data | Worker-owned blocking operations; active accepts require an active scheduler |
-| `Symbian::Media` | Optional MIDI playback and tactile/HWRM feedback for a game | Service availability is queried at runtime; SDL audio and haptic devices remain dummy |
+| `Symbian::MidiOutput` | Queue bounded MIDI note playback | The MIDI server opens on a worker and can fail at runtime; no PCM audio device |
+| `Symbian::Vibration` | Request a duration-limited HWRM pulse | One worker request at a time; hardware and profile behavior need device checks |
+| `Symbian::Clipboard` | Copy UTF-16 plain text for other applications | File Server and clipboard service can reject a write |
+| `Symbian::FailureHandler` | Show a scrollable returned error with recent logs, Exit and Copy | Requires a live process and Window Server; panics cannot be caught in-process |
 
 Sensors have no general public component yet. Display/window APIs additionally
 expose task identity, focus events, pointer input and an optional GLES2
@@ -33,7 +37,7 @@ reliable menu input there. Window Server focus and AppArc close were exercised
 in the named emulator fixtures; arbitrary orientation transitions and physical
 task-menu restoration remain open.
 
-IPv4 TCP, camera count and optional MIDI/tactile services are separate
+IPv4 TCP, camera count, MIDI and HWRM vibration are separate
 capabilities. A successful SDL render or DLL import does not establish that a
 network bearer, camera capture, audio device or haptic server works on that
 firmware. Keep each operation fallible and retain the reported native error.

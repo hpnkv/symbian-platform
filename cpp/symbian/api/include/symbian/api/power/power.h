@@ -28,6 +28,10 @@ struct PowerSnapshot {
 // schedule it on a worker when the event thread must stay bounded-fast.
 absl::StatusOr<PowerSnapshot> ReadPowerSnapshot();
 
+// Restarts the system's display inactivity timer. Call periodically only while
+// the relevant window is foreground. This does not change the user's timeout.
+void ResetInactivityTimer();
+
 }  // namespace symbian::api::power
 
 #endif  // SYMBIAN_API_POWER_POWER_H_
