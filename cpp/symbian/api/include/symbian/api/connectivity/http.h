@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 #ifndef SYMBIAN_API_CONNECTIVITY_HTTP_H_
 #define SYMBIAN_API_CONNECTIVITY_HTTP_H_
+#include <absl/status/status_macros.h>
 #include "symbian/api/connectivity/byte_stream.h"
 #include "symbian/api/connectivity/tcp_listener.h"
 #include "symbian/http/connection.h"
@@ -23,12 +24,9 @@ class HttpClient {
     if (request.scheme != "http") {
       return absl::InvalidArgumentError("HTTPS requires a verified TLS stream");
     }
-    auto tcp = TcpClient::ConnectHost(hostname, port, deadline);
-    if (!tcp.ok()) {
-      return tcp.status();
-    }
+    ABSL_ASSIGN_OR_RETURN(auto tcp, TcpClient::ConnectHost(hostname, port, deadline));
     return http::Connection::Client(
-        std::make_unique<TcpByteStream>(std::move(*tcp)), std::move(request),
+        std::make_unique<TcpByteStream>(std::move(tcp)), std::move(request),
         protocol, limits, body_length, deadline);
   }
 
@@ -41,12 +39,9 @@ class HttpClient {
     if (request.scheme != "http") {
       return absl::InvalidArgumentError("HTTPS requires a verified TLS stream");
     }
-    auto tcp = TcpClient::ConnectIpv4(address, port, deadline);
-    if (!tcp.ok()) {
-      return tcp.status();
-    }
+    ABSL_ASSIGN_OR_RETURN(auto tcp, TcpClient::ConnectIpv4(address, port, deadline));
     return http::Connection::Client(
-        std::make_unique<TcpByteStream>(std::move(*tcp)), std::move(request),
+        std::make_unique<TcpByteStream>(std::move(tcp)), std::move(request),
         protocol, limits, body_length, deadline);
   }
 };
@@ -58,21 +53,15 @@ class HttpServer {
       std::array<std::uint8_t, 4> address, std::uint16_t port,
       http::Protocol protocol = http::Protocol::kHttp11,
       http::Limits limits = {}) {
-    auto listener = TcpListener::ListenIpv4(address, port);
-    if (!listener.ok()) {
-      return listener.status();
-    }
-    return HttpServer(std::move(*listener), protocol, limits);
+    ABSL_ASSIGN_OR_RETURN(auto listener, TcpListener::ListenIpv4(address, port));
+    return HttpServer(std::move(listener), protocol, limits);
   }
 
   absl::StatusOr<std::unique_ptr<http::Connection>> Accept(
       absl::Time deadline) {
-    auto tcp = listener_.Accept(deadline);
-    if (!tcp.ok()) {
-      return tcp.status();
-    }
+    ABSL_ASSIGN_OR_RETURN(auto tcp, listener_.Accept(deadline));
     return http::Connection::Accept(
-        std::make_unique<TcpByteStream>(std::move(*tcp)), protocol_, limits_,
+        std::make_unique<TcpByteStream>(std::move(tcp)), protocol_, limits_,
         deadline);
   }
 

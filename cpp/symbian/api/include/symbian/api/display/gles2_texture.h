@@ -5,6 +5,7 @@
 #define SYMBIAN_API_DISPLAY_GLES2_TEXTURE_H_
 
 #include <cstdint>
+#include <memory>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -15,9 +16,13 @@ namespace symbian::api::display {
 // occur while its context is current on the creating thread.
 class Gles2Texture final {
  public:
-  Gles2Texture() = default;
+  static absl::StatusOr<Gles2Texture> Create(int width, int height);
+  static absl::StatusOr<std::unique_ptr<Gles2Texture>> CreateUnique(int width,
+                                                                    int height);
   Gles2Texture(const Gles2Texture&) = delete;
   Gles2Texture& operator=(const Gles2Texture&) = delete;
+  Gles2Texture(Gles2Texture&& other) noexcept;
+  Gles2Texture& operator=(Gles2Texture&& other) noexcept;
   ~Gles2Texture();
 
   absl::Status Resize(int width, int height);
@@ -30,6 +35,7 @@ class Gles2Texture final {
   int height() const { return height_; }
 
  private:
+  Gles2Texture() = default;
   unsigned int texture_ = 0;
   int width_ = 0;
   int height_ = 0;
@@ -76,18 +82,22 @@ struct Gles2TextureSampling {
 // it. The caller owns context activation and swap timing.
 class Gles2TexturePresenter final {
  public:
-  Gles2TexturePresenter() = default;
+  static absl::StatusOr<Gles2TexturePresenter> Create();
+  static absl::StatusOr<std::unique_ptr<Gles2TexturePresenter>> CreateUnique();
   Gles2TexturePresenter(const Gles2TexturePresenter&) = delete;
   Gles2TexturePresenter& operator=(const Gles2TexturePresenter&) = delete;
+  Gles2TexturePresenter(Gles2TexturePresenter&& other) noexcept;
+  Gles2TexturePresenter& operator=(Gles2TexturePresenter&& other) noexcept;
   ~Gles2TexturePresenter();
 
-  absl::Status Open();
   absl::Status Clear(int width, int height, float red, float green, float blue);
   absl::Status Draw(const Gles2Texture& texture, Gles2Viewport viewport,
                     Gles2TextureSampling sampling = {});
   void Close();
 
  private:
+  Gles2TexturePresenter() = default;
+  absl::Status Open();
   unsigned int program_ = 0;
   int sampler_ = -1;
   int blue_first_ = -1;

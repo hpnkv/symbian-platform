@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <string_view>
 
@@ -50,6 +51,9 @@ class TlsStream {
                                           std::string_view server_private_key,
                                           std::string_view client_ca_bundle,
                                           TlsVersion version);
+  static absl::StatusOr<std::unique_ptr<TlsStream>> CreateUnique(
+      std::string_view server_certificate, std::string_view server_private_key,
+      std::string_view client_ca_bundle, TlsVersion version);
 
   TlsStream(TlsStream&& other) noexcept;
   TlsStream& operator=(TlsStream&& other) noexcept;

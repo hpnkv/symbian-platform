@@ -4,8 +4,11 @@
 #ifndef SYMBIAN_API_MEDIA_VIBRATION_H_
 #define SYMBIAN_API_MEDIA_VIBRATION_H_
 
+#include <memory>
+
 #include "absl/base/nullability.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace symbian::api::media {
 
@@ -19,9 +22,12 @@ namespace symbian::api::media {
  */
 class Vibration final {
  public:
-  Vibration();
+  static absl::StatusOr<Vibration> Create();
+  static absl::StatusOr<std::unique_ptr<Vibration>> CreateUnique();
   Vibration(const Vibration&) = delete;
   Vibration& operator=(const Vibration&) = delete;
+  Vibration(Vibration&& other) noexcept;
+  Vibration& operator=(Vibration&& other) noexcept;
   ~Vibration();
 
   absl::Status Start();
@@ -30,7 +36,8 @@ class Vibration final {
 
  private:
   struct Impl;
-  Impl* absl_nullable impl_ = nullptr;
+  explicit Vibration(std::unique_ptr<Impl> impl);
+  std::unique_ptr<Impl> impl_;
 };
 
 }  // namespace symbian::api::media

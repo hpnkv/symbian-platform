@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <span>
 #include <string>
@@ -71,12 +72,21 @@ struct Rgb565FrameWriter {
   std::function<absl::Status(Rgb565Frame)> write;
 };
 
+// A window-local clipping rectangle. Pixels outside it are unchanged.
+struct WindowRect {
+  int x = 0;
+  int y = 0;
+  int width = 0;
+  int height = 0;
+};
+
 // A native-font label drawn over the most recently presented frame.
 struct WindowTextLine {
   std::u16string_view text;
   int x = 0;
   int baseline_y = 0;
   std::uint32_t rgb = 0xffffff;
+  std::optional<WindowRect> clip;
 };
 
 /** @brief Optional per-window presentation counters for device comparisons. */
@@ -95,7 +105,10 @@ struct WindowFrameMetrics {
  */
 class WindowSurface final {
  public:
-  WindowSurface();
+  static absl::StatusOr<WindowSurface> Create(
+      std::string_view task_caption = {});
+  static absl::StatusOr<std::unique_ptr<WindowSurface>> CreateUnique(
+      std::string_view task_caption = {});
   WindowSurface(const WindowSurface&) = delete;
   WindowSurface& operator=(const WindowSurface&) = delete;
   WindowSurface(WindowSurface&& other) noexcept;
@@ -105,13 +118,16 @@ class WindowSurface final {
   static absl::StatusOr<WindowSize> PrimarySize();
   /** @brief Physical refresh rate when the display driver reports one. */
   static std::optional<std::uint32_t> PrimaryRefreshRateHz();
-  /** @brief Open a task-listed window with the process UID and caption. */
-  absl::Status Open(std::string_view task_caption = {});
   /** @brief Follow the device's automatic display orientation policy. */
   absl::Status SetAutomaticOrientation(bool enabled);
   absl::StatusOr<Rgb565Frame> CreateRgb565Frame();
   absl::Status UpdateRgb565Frame(Rgb565FrameWriter writer);
   absl::Status Present();
+  // Submits bitmap and clipped native text together, without flushing the
+  // bitmap separately. Window Server chooses the platform rendering backend;
+  // this needs neither EGL nor a GPU on older devices.
+  absl::Status Present(std::span<const WindowTextLine> lines,
+                       int font_height_pixels = 20);
   // Draws a bounded batch using the device font. Call after Present; the next
   // Present replaces these labels. The window replays labels during native
   // redraws. The caller owns text until this returns.
@@ -133,6 +149,10 @@ class WindowSurface final {
   WindowFrameMetrics frame_metrics() const;
 
  private:
+  WindowSurface();
+  absl::Status Open(std::string_view task_caption);
+  absl::Status SetTextLines(std::span<const WindowTextLine> lines,
+                            int font_height_pixels);
   struct Impl;
   Impl* absl_nullable impl_ = nullptr;
 };

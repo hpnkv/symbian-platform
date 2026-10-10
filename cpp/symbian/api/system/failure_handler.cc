@@ -193,10 +193,11 @@ absl::Status ShowFailureReport(const absl::Status& error,
   if (caption.empty()) {
     caption = u"Application failure";
   }
-  display::WindowSurface window;
-  if (absl::Status opened = window.Open(options.caption); !opened.ok()) {
-    return opened;
+  auto opened = display::WindowSurface::Create(options.caption);
+  if (!opened.ok()) {
+    return opened.status();
   }
+  auto window = std::move(*opened);
   auto created = window.CreateRgb565Frame();
   if (!created.ok()) {
     return created.status();

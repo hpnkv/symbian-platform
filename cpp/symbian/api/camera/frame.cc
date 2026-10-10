@@ -1,6 +1,7 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
 
+#include <absl/status/status_macros.h>
 #include "symbian/api/camera/frame.h"
 
 #include <algorithm>
@@ -664,6 +665,7 @@ FrameLease::FrameLease(FrameView view, Release release)
 FrameLease::FrameLease(FrameLease&& other) noexcept
     : view_(std::move(other.view_)), release_(std::move(other.release_)) {
   other.release_ = nullptr;
+  other.view_ = {};
 }
 
 FrameLease& FrameLease::operator=(FrameLease&& other) noexcept {
@@ -672,6 +674,7 @@ FrameLease& FrameLease::operator=(FrameLease&& other) noexcept {
     view_ = std::move(other.view_);
     release_ = std::move(other.release_);
     other.release_ = nullptr;
+    other.view_ = {};
   }
   return *this;
 }
@@ -810,15 +813,10 @@ absl::StatusOr<FrameRect> CenteredAspectFit(int source_width, int source_height,
 
 absl::StatusOr<FrameView> CropFrameView(const FrameView& source,
                                         FrameRect crop) {
-  absl::Status valid = ValidateLayout(source.layout, source.memory);
-  if (!valid.ok()) {
-    return valid;
-  }
-  valid = ValidateStorage(source.layout, source.memory, source.planes,
-                          source.handle, source.device);
-  if (!valid.ok()) {
-    return valid;
-  }
+  ABSL_RETURN_IF_ERROR(ValidateLayout(source.layout, source.memory));
+  ABSL_RETURN_IF_ERROR(ValidateStorage(source.layout, source.memory,
+                                       source.planes, source.handle,
+                                       source.device));
   if (!IsMemory(source.memory)) {
     return absl::UnimplementedError("Opaque frame cropping needs a backend");
   }
@@ -858,25 +856,14 @@ absl::Status TransformFrame(const FrameView& source,
       rotation != FrameRotation::kClockwise270) {
     return absl::InvalidArgumentError("Invalid frame rotation");
   }
-  absl::Status valid = ValidateLayout(source.layout, source.memory);
-  if (!valid.ok()) {
-    return valid;
-  }
-  valid = ValidateLayout(destination.layout, destination.memory);
-  if (!valid.ok()) {
-    return valid;
-  }
-  valid = ValidateStorage(source.layout, source.memory, source.planes,
-                          source.handle, source.device);
-  if (!valid.ok()) {
-    return valid;
-  }
-  valid = ValidateStorage(destination.layout, destination.memory,
-                          destination.planes, destination.handle,
-                          destination.device);
-  if (!valid.ok()) {
-    return valid;
-  }
+  ABSL_RETURN_IF_ERROR(ValidateLayout(source.layout, source.memory));
+  ABSL_RETURN_IF_ERROR(ValidateLayout(destination.layout, destination.memory));
+  ABSL_RETURN_IF_ERROR(ValidateStorage(source.layout, source.memory,
+                                       source.planes, source.handle,
+                                       source.device));
+  ABSL_RETURN_IF_ERROR(ValidateStorage(destination.layout, destination.memory,
+                                       destination.planes, destination.handle,
+                                       destination.device));
   if (!IsMemory(source.memory) || !IsMemory(destination.memory)) {
     if (rotation != FrameRotation::k0) {
       return absl::UnimplementedError(

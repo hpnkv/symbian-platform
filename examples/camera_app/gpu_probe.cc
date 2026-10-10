@@ -12,6 +12,8 @@
 #include <string>
 #include <utility>
 
+#include <absl/status/status_macros.h>
+
 #include "capture_preferences.h"
 #include "symbian/api/camera/camera.h"
 #include "symbian/api/camera/camera_stream.h"
@@ -135,11 +137,8 @@ class GpuFrameConsumer final {
     }
     if (texture_->width() != frame.layout.width ||
         texture_->height() != frame.layout.height) {
-      if (absl::Status resized =
-              texture_->Resize(frame.layout.width, frame.layout.height);
-          !resized.ok()) {
-        return resized;
-      }
+      ABSL_RETURN_IF_ERROR(
+          texture_->Resize(frame.layout.width, frame.layout.height));
     }
     const bool bgrx = frame.layout.format == camera::PixelFormat::kBgrx8888;
     camera::MutableFrameView output;
@@ -150,13 +149,11 @@ class GpuFrameConsumer final {
     output.memory = camera::MemoryKind::kGles2Texture;
     output.handle = texture_->handle();
     output.device = device_;
-    absl::Status uploaded = camera::TransformFrame(
-        frame, output, camera::ResampleFilter::kNearest, backend_);
-    if (uploaded.ok()) {
-      raw_bgrx_ = bgrx;
-      has_frame_ = true;
-    }
-    return uploaded;
+    ABSL_RETURN_IF_ERROR(camera::TransformFrame(
+        frame, output, camera::ResampleFilter::kNearest, backend_));
+    raw_bgrx_ = bgrx;
+    has_frame_ = true;
+    return absl::OkStatus();
   }
 
   bool has_frame() const { return has_frame_; }
@@ -181,7 +178,7 @@ class GpuFrameConsumer final {
 
 }  // namespace
 
-int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
+absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
   Trace("GPU: discover begin");
   const auto inventory = camera::DiscoverCameras();
   Trace(inventory.ok() ? "GPU: discover done" : "GPU: discover error");
@@ -194,13 +191,10 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
   if (present) {
     Trace("GPU: stream open begin");
   }
-  if (absl::Status opened =
-          present ? stream.Open(0, preferences) : absl::OkStatus();
-      !opened.ok()) {
-    RecordFailure(opened);
-    return 1;
+  if (present) {
+    ABSL_RETURN_IF_ERROR(stream.Open(0, preferences));
   }
-  bool live = present;
+  const bool live = present;
   Trace(live ? "GPU: stream open done" : "GPU: stream unavailable");
   symbian::api::system::DebugLog(live ? "camera GPU capture opening"
                                       : "camera GPU capture unavailable");
@@ -208,32 +202,21 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
   bool received_frame = false;
   bool capturing = live;
 
-  display::GlesWindowContext context;
-  if (absl::Status context_opened = context.Open(
+  ABSL_ASSIGN_OR_RETURN(
+      auto context,
+      display::GlesWindowContext::Create(
           window, 2,
-          {.red_bits = 8, .green_bits = 8, .blue_bits = 8, .depth_bits = 0});
-      !context_opened.ok()) {
-    Trace("GPU: context open error");
-    RecordFailure(context_opened);
-    return 1;
-  }
+          {.red_bits = 8, .green_bits = 8, .blue_bits = 8, .depth_bits = 0}));
   Trace("GPU: context open done");
-  display::Gles2Texture source_texture;
-  display::Gles2Texture output_texture;
-  display::Gles2TexturePresenter presenter;
+  ABSL_ASSIGN_OR_RETURN(auto source_texture,
+                        display::Gles2Texture::Create(2, 2));
+  ABSL_ASSIGN_OR_RETURN(auto output_texture,
+                        display::Gles2Texture::Create(2, 2));
+  ABSL_ASSIGN_OR_RETURN(auto presenter,
+                        display::Gles2TexturePresenter::Create());
   display::WindowSize window_size = window->size();
-  auto surface_size = context.SurfaceSize();
-  if (!surface_size.ok()) {
-    RecordFailure(surface_size.status());
-    return 1;
-  }
-  display::WindowSize size = *surface_size;
+  ABSL_ASSIGN_OR_RETURN(display::WindowSize size, context.SurfaceSize());
   TraceGeometry(window_size, size, window->rotation());
-  if (!source_texture.Resize(2, 2).ok() || !output_texture.Resize(2, 2).ok() ||
-      !presenter.Open().ok()) {
-    Trace("GPU: texture or presenter error");
-    return 1;
-  }
   Trace("GPU: texture and presenter done");
   const std::uintptr_t device = reinterpret_cast<std::uintptr_t>(&context);
   camera::Gles2FrameBackend backend(device,
@@ -257,25 +240,20 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
   while (running) {
     ++poll_count;
     for (int count = 0; count < 64; ++count) {
-      auto input = window->PollInput();
-      if (!input.ok()) {
-        Trace("GPU: input error");
-        RecordFailure(input.status());
-        return 1;
-      }
-      if (!input->has_value()) {
+      ABSL_ASSIGN_OR_RETURN(auto input, window->PollInput());
+      if (!input.has_value()) {
         break;
       }
-      switch ((**input).kind) {
+      switch (input->kind) {
         case display::WindowInputKind::kPointerDown:
           ToggleFilter(&filter);
           break;
         case display::WindowInputKind::kKeyDown:
-          if ((**input).key == display::WindowKey::kEscape) {
+          if (input->key == display::WindowKey::kEscape) {
             Trace("GPU: escape key");
             running = false;
-          } else if ((**input).key == display::WindowKey::kSelect ||
-                     (**input).key == display::WindowKey::kEnter) {
+          } else if (input->key == display::WindowKey::kSelect ||
+                     input->key == display::WindowKey::kEnter) {
             ToggleFilter(&filter);
           }
           break;
@@ -330,27 +308,16 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
     }
     if (surface_refresh_pending) {
       Trace("GPU: surface refresh begin");
-      if (absl::Status refreshed = context.RefreshSurface(); !refreshed.ok()) {
-        RecordFailure(refreshed);
-        return 1;
-      }
+      ABSL_RETURN_IF_ERROR(context.RefreshSurface());
       Trace("GPU: surface refresh done");
-      auto refreshed_size = context.SurfaceSize();
-      if (!refreshed_size.ok()) {
-        RecordFailure(refreshed_size.status());
-        return 1;
-      }
-      size = *refreshed_size;
+      ABSL_ASSIGN_OR_RETURN(size, context.SurfaceSize());
       TraceGeometry(window_size, size, window->rotation());
       surface_refresh_pending = false;
       redraw_pending = true;
     }
     if (live && !capturing) {
       Trace("GPU: capture resume begin");
-      if (absl::Status resumed = stream.Open(0, preferences); !resumed.ok()) {
-        RecordFailure(resumed);
-        return 1;
-      }
+      ABSL_RETURN_IF_ERROR(stream.Open(0, preferences));
       Trace("GPU: capture resume done");
       capturing = true;
       opening_time = time::MonotonicClock::NowNanoseconds();
@@ -361,14 +328,12 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
       if (poll_count < 8) {
         Trace("GPU: poll begin");
       }
-      auto polled = stream.PollScoped(consumer.Borrow());
+      ABSL_ASSIGN_OR_RETURN(const bool polled,
+                            stream.PollScoped(consumer.Borrow()));
       if (poll_count < 8) {
-        Trace(polled.ok() ? "GPU: poll done" : "GPU: poll error");
+        Trace("GPU: poll done");
       }
-      if (!polled.ok()) {
-        RecordFailure(polled.status());
-        return 1;
-      } else if (*polled) {
+      if (polled) {
         new_frame = true;
         if (!received_frame) {
           Trace("GPU: first frame");
@@ -382,22 +347,15 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
     if (live && !received_frame && now - opening_time > 5000000000LL) {
       symbian::api::system::DebugLog("camera GPU capture timed out");
       Trace("camera GPU capture timed out");
-      RecordFailure(
-          absl::DeadlineExceededError("camera GPU capture timed out"));
-      return 1;
+      return absl::DeadlineExceededError("camera GPU capture timed out");
     }
     if (live && !received_frame) {
       if (poll_count < 8) {
         Trace("GPU: wait frame present begin");
       }
-      if (!presenter
-               .Clear(size.width, size.height, TraceReady() ? 0.0f : 1.0f, 0.0f,
-                      1.0f)
-               .ok() ||
-          !context.Swap().ok()) {
-        Trace("GPU: wait frame present error");
-        return 1;
-      }
+      ABSL_RETURN_IF_ERROR(presenter.Clear(
+          size.width, size.height, TraceReady() ? 0.0f : 1.0f, 0.0f, 1.0f));
+      ABSL_RETURN_IF_ERROR(context.Swap());
       if (poll_count < 8) {
         Trace("GPU: wait frame present done");
       }
@@ -416,7 +374,6 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
     output.handle = output_texture.handle();
     output.device = device;
 
-    absl::Status transform_status = absl::OkStatus();
     if (!live) {
       if (first_frame) {
         symbian::api::system::DebugLog("camera GPU synthetic upload start");
@@ -441,43 +398,23 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
       source.memory = camera::MemoryKind::kGles2Texture;
       source.handle = source_texture.handle();
       source.device = device;
-      transform_status = camera::TransformFrame(
-          memory, upload, camera::ResampleFilter::kNearest, &backend_view);
+      ABSL_RETURN_IF_ERROR(camera::TransformFrame(
+          memory, upload, camera::ResampleFilter::kNearest, &backend_view));
       if (first_frame) {
-        symbian::api::system::DebugLog(
-            transform_status.ok() ? "camera GPU synthetic upload done"
-                                  : "camera GPU synthetic upload failed");
+        symbian::api::system::DebugLog("camera GPU synthetic upload done");
       }
-      if (transform_status.ok()) {
-        transform_status =
-            camera::TransformFrame(source, output, filter, &backend_view);
-      }
+      ABSL_RETURN_IF_ERROR(
+          camera::TransformFrame(source, output, filter, &backend_view));
     }
-
-    const bool transformed = transform_status.ok();
-
     if (first_frame) {
-      symbian::api::system::DebugLog(transformed
-                                         ? "camera GPU transform done"
-                                         : "camera GPU transform failed");
+      symbian::api::system::DebugLog("camera GPU transform done");
     }
-
     const float red = !live && (!TraceReady() || !discovered) ? 1.0f : 0.0f;
     const float green = !live && discovered ? 1.0f : 0.0f;
-    if (!transformed) {
-      Trace("GPU: transform error");
-      RecordFailure(transform_status);
-      return 1;
-    }
-    const bool cleared =
-        presenter.Clear(size.width, size.height, red, green, 0.0f).ok();
+    ABSL_RETURN_IF_ERROR(
+        presenter.Clear(size.width, size.height, red, green, 0.0f));
     if (first_frame) {
-      symbian::api::system::DebugLog(cleared ? "camera GPU clear done"
-                                             : "camera GPU clear failed");
-    }
-    if (!cleared) {
-      Trace("GPU: clear error");
-      return 1;
+      symbian::api::system::DebugLog("camera GPU clear done");
     }
     const camera::FrameRotation camera_rotation =
         PresentationRotation(window->rotation(), opening_rotation);
@@ -492,45 +429,26 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
                                  output_texture.height()};
     const int image_width = quarter_turn ? content.height : content.width;
     const int image_height = quarter_turn ? content.width : content.height;
-    auto viewport = display::AspectFitViewport(size.width, size.height,
-                                               image_width, image_height);
-    if (!viewport.ok()) {
-      RecordFailure(viewport.status());
-      return 1;
-    }
-    const bool drawn =
-        presenter
-            .Draw(
-                output_texture, *viewport,
-                {.blue_first = consumer.raw_bgrx(),
-                 .top_down = consumer.raw_bgrx(),
-                 .rotation = image_rotation,
-                 .source_left =
-                     static_cast<float>(content.x) / output_texture.width(),
-                 .source_top =
-                     static_cast<float>(content.y) / output_texture.height(),
-                 .source_right = static_cast<float>(content.x + content.width) /
-                                 output_texture.width(),
-                 .source_bottom =
-                     static_cast<float>(content.y + content.height) /
-                     output_texture.height()})
-            .ok();
+    ABSL_ASSIGN_OR_RETURN(
+        auto viewport, display::AspectFitViewport(size.width, size.height,
+                                                  image_width, image_height));
+    ABSL_RETURN_IF_ERROR(presenter.Draw(
+        output_texture, viewport,
+        {.blue_first = consumer.raw_bgrx(),
+         .top_down = consumer.raw_bgrx(),
+         .rotation = image_rotation,
+         .source_left = static_cast<float>(content.x) / output_texture.width(),
+         .source_top = static_cast<float>(content.y) / output_texture.height(),
+         .source_right = static_cast<float>(content.x + content.width) /
+                         output_texture.width(),
+         .source_bottom = static_cast<float>(content.y + content.height) /
+                          output_texture.height()}));
     if (first_frame) {
-      symbian::api::system::DebugLog(drawn ? "camera GPU draw done"
-                                           : "camera GPU draw failed");
+      symbian::api::system::DebugLog("camera GPU draw done");
     }
-    if (!drawn) {
-      Trace("GPU: draw error");
-      return 1;
-    }
-    const bool swapped = context.Swap().ok();
+    ABSL_RETURN_IF_ERROR(context.Swap());
     if (first_frame) {
-      symbian::api::system::DebugLog(swapped ? "camera GPU swap done"
-                                             : "camera GPU swap failed");
-    }
-    if (!swapped) {
-      Trace("GPU: swap error");
-      return 1;
+      symbian::api::system::DebugLog("camera GPU swap done");
     }
     redraw_pending = false;
     if (poll_count < 8) {
@@ -555,7 +473,7 @@ int RunGpuWindow(display::WindowSurface* absl_nonnull window) {
   Trace("GPU: stream close begin");
   stream.Close();
   Trace("GPU: stream close returned");
-  return 0;
+  return absl::OkStatus();
 }
 
 }  // namespace camera_app

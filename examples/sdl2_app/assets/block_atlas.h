@@ -4,6 +4,11 @@
 #ifndef SYMBIAN_EXAMPLES_SDL2_APP_ASSETS_BLOCK_ATLAS_H_
 #define SYMBIAN_EXAMPLES_SDL2_APP_ASSETS_BLOCK_ATLAS_H_
 
+#include <memory>
+
+#include <absl/status/status.h>
+#include <absl/status/statusor.h>
+
 #include "sdl2_app/arkanoid_adapter.h"
 
 namespace arkanoid::art {
@@ -12,17 +17,23 @@ namespace arkanoid::art {
 // The renderer must outlive this atlas.
 class BlockAtlas final {
  public:
-  BlockAtlas() = default;
+  static absl::StatusOr<BlockAtlas> Create(SDL_Renderer* absl_nonnull renderer,
+                                           int cell_width, int cell_height);
+  static absl::StatusOr<std::unique_ptr<BlockAtlas>> CreateUnique(
+      SDL_Renderer* absl_nonnull renderer, int cell_width, int cell_height);
   BlockAtlas(const BlockAtlas&) = delete;
   BlockAtlas& operator=(const BlockAtlas&) = delete;
+  BlockAtlas(BlockAtlas&& other) noexcept;
+  BlockAtlas& operator=(BlockAtlas&& other) noexcept;
   ~BlockAtlas();
 
-  bool Open(SDL_Renderer* absl_nonnull renderer, int cell_width,
-            int cell_height);
   bool Draw(SDL_Renderer* absl_nonnull renderer, int x, int y, int width,
             int height, int variation) const;
 
  private:
+  BlockAtlas() = default;
+  absl::Status Open(SDL_Renderer* absl_nonnull renderer, int cell_width,
+                    int cell_height);
   SDL_Texture* absl_nullable texture_ = nullptr;
   int cell_width_ = 0;
   int cell_height_ = 0;

@@ -7,11 +7,12 @@
 #include <cstdint>
 
 #include <absl/base/nullability.h>
+#include <absl/status/status_macros.h>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "symbian/api/display/window_surface.h"
 #include "symbian/api/power/power.h"
-#include "symbian/api/system/debug_log.h"
 #include "symbian/api/time/monotonic_clock.h"
 #include "symbian/api/time/sleep.h"
 
@@ -52,15 +53,9 @@ struct FillColor {
 };
 
 absl::Status Run() {
-  display::WindowSurface window;
-  absl::Status status = window.Open("Condition display");
-  if (!status.ok()) {
-    return status;
-  }
-  status = window.SetAutomaticOrientation(true);
-  if (!status.ok()) {
-    return status;
-  }
+  ABSL_ASSIGN_OR_RETURN(auto window,
+                        display::WindowSurface::Create("Condition display"));
+  ABSL_RETURN_IF_ERROR(window.SetAutomaticOrientation(true));
   bool running = true;
   bool foreground = true;
   bool redraw = true;
@@ -75,19 +70,16 @@ absl::Status Run() {
     }
     last_tick = now;
     for (int i = 0; i < 32; ++i) {
-      auto event = window.PollInput();
-      if (!event.ok()) {
-        return event.status();
-      }
-      if (!event->has_value()) {
+      ABSL_ASSIGN_OR_RETURN(auto event, window.PollInput());
+      if (!event.has_value()) {
         break;
       }
-      switch ((**event).kind) {
+      switch ((*event).kind) {
         case display::WindowInputKind::kCloseRequested:
           running = false;
           break;
         case display::WindowInputKind::kKeyDown:
-          if ((**event).key == display::WindowKey::kEscape) {
+          if ((*event).key == display::WindowKey::kEscape) {
             running = false;
           }
           break;
@@ -120,18 +112,12 @@ absl::Status Run() {
       redraw = true;
     }
     if (foreground && redraw) {
-      FillColor fill{kColors[current_color]};
-      status = window.UpdateRgb565Frame(
+      const FillColor fill{kColors[current_color]};
+      ABSL_RETURN_IF_ERROR(window.UpdateRgb565Frame(
           {.write = [&fill](display::Rgb565Frame frame) {
             return fill.Write(frame);
-          }});
-      if (!status.ok()) {
-        return status;
-      }
-      status = window.Present();
-      if (!status.ok()) {
-        return status;
-      }
+          }}));
+      ABSL_RETURN_IF_ERROR(window.Present());
       redraw = false;
     }
     time::SleepFor(std::chrono::nanoseconds(kPollNanoseconds));
@@ -142,9 +128,6 @@ absl::Status Run() {
 }  // namespace
 
 int main() {
-  if (absl::Status result = Run(); !result.ok()) {
-    symbian::api::system::DebugLog(result.ToString());
-    return 1;
-  }
+  CHECK_OK(Run());
   return 0;
 }

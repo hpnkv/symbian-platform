@@ -10,7 +10,7 @@ namespace arkanoid::art {
 
 void DrawText(SDL_Renderer* absl_nonnull renderer, std::string_view message,
               int x, int y, int scale) {
-  for (char letter : message) {
+  for (const char letter : message) {
     const arkanoid::art::GlyphRows& glyph = arkanoid::art::GlyphFor(letter);
     for (int row = 0; row < 7; ++row) {
       for (int column = 0; column < 5; ++column) {

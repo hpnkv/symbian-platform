@@ -9,6 +9,8 @@
 
 namespace symbian::api::storage {
 
+// RFs::Close only adds tracing to RSessionBase::Close on newer systems. Call
+// the base operation directly so this boundary also runs on older EKA2 ROMs.
 struct NativeFile {
   RFs session;
   RFile file;
@@ -28,7 +30,7 @@ extern "C" void SymbianDeviceFileClose(NativeFile* absl_nullable file) {
   if (file->file_open) {
     file->file.Close();
   }
-  file->session.Close();
+  file->session.RSessionBase::Close();
   file->~NativeFile();
   User::Free(file);
 }
@@ -144,7 +146,7 @@ extern "C" int SymbianDeviceCreateDirectories(
     directory.Append(u'\\');
   }
   const TInt created = session.MkDirAll(directory);
-  session.Close();
+  session.RSessionBase::Close();
   return created == KErrAlreadyExists ? KErrNone : created;
 }
 
@@ -182,7 +184,7 @@ extern "C" void SymbianDeviceDirectoryClose(
   if (directory->directory_open) {
     directory->directory.Close();
   }
-  directory->session.Close();
+  directory->session.RSessionBase::Close();
   directory->~NativeDirectory();
   User::Free(directory);
 }

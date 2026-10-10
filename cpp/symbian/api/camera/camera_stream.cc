@@ -7,6 +7,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <absl/status/status_macros.h>
+
 #include "native_camera_stream.h"
 #include "symbian/native_status.h"
 
@@ -129,9 +131,7 @@ absl::StatusOr<bool> CameraStream::PollScoped(FrameConsumer consumer) {
         error, error == symbian::native_error::kInUse ? "Camera is in use"
                                                       : "Poll ECam stream");
   }
-  if (!scoped.status.ok()) {
-    return scoped.status;
-  }
+  ABSL_RETURN_IF_ERROR(scoped.status);
   return delivered;
 }
 

@@ -5,9 +5,12 @@
 #define SYMBIAN_SDL2_SDL2_H_
 
 #include <cstdint>
+#include <memory>
+#include <new>
 #include <utility>
 
 #include <SDL.h>
+#include <absl/status/status_macros.h>
 #include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <absl/status/statusor.h>
@@ -54,7 +57,11 @@ class Window final {
   Window(Window&& other) noexcept
       : value_(std::exchange(other.value_, nullptr)) {}
 
-  ~Window() { SDL_DestroyWindow(value_); }
+  ~Window() {
+    if (value_ != nullptr) {
+      SDL_DestroyWindow(value_);
+    }
+  }
 
   static absl::StatusOr<Window> Create(const char* absl_nonnull title,
                                        int width, int height,
@@ -68,7 +75,19 @@ class Window final {
     return Window(value);
   }
 
-  SDL_Window* absl_nonnull get() const { return value_; }
+  static absl::StatusOr<std::unique_ptr<Window>> CreateUnique(
+      const char* absl_nonnull title, int width, int height,
+      std::uint32_t flags) {
+    ABSL_ASSIGN_OR_RETURN(auto created, Create(title, width, height, flags));
+    std::unique_ptr<Window> owner(new (std::nothrow)
+                                      Window(std::move(created)));
+    if (owner == nullptr) {
+      return absl::ResourceExhaustedError("SDL window owner allocation failed");
+    }
+    return owner;
+  }
+
+  SDL_Window* absl_nullable get() const { return value_; }
 
  private:
   explicit Window(SDL_Window* absl_nonnull value) : value_(value) {}
@@ -87,13 +106,19 @@ class Renderer final {
 
   Renderer& operator=(Renderer&& other) noexcept {
     if (this != &other) {
-      SDL_DestroyRenderer(value_);
+      if (value_ != nullptr) {
+        SDL_DestroyRenderer(value_);
+      }
       value_ = std::exchange(other.value_, nullptr);
     }
     return *this;
   }
 
-  ~Renderer() { SDL_DestroyRenderer(value_); }
+  ~Renderer() {
+    if (value_ != nullptr) {
+      SDL_DestroyRenderer(value_);
+    }
+  }
 
   static absl::StatusOr<Renderer> Create(SDL_Window* absl_nonnull window,
                                          std::uint32_t flags) {
@@ -104,7 +129,19 @@ class Renderer final {
     return Renderer(value);
   }
 
-  SDL_Renderer* absl_nonnull get() const { return value_; }
+  static absl::StatusOr<std::unique_ptr<Renderer>> CreateUnique(
+      SDL_Window* absl_nonnull window, std::uint32_t flags) {
+    ABSL_ASSIGN_OR_RETURN(auto created, Create(window, flags));
+    std::unique_ptr<Renderer> owner(new (std::nothrow)
+                                        Renderer(std::move(created)));
+    if (owner == nullptr) {
+      return absl::ResourceExhaustedError(
+          "SDL renderer owner allocation failed");
+    }
+    return owner;
+  }
+
+  SDL_Renderer* absl_nullable get() const { return value_; }
 
  private:
   explicit Renderer(SDL_Renderer* absl_nonnull value) : value_(value) {}

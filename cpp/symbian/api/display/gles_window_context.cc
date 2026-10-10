@@ -1,11 +1,13 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
 
+#include <absl/status/status_macros.h>
 #include "symbian/api/display/gles_window_context.h"
 
 #include <cstring>
 #include <new>
 #include <string>
+#include <utility>
 
 #include <EGL/egl.h>
 #include <e32std.h>
@@ -95,6 +97,42 @@ struct GlesWindowContext::Impl {
 };
 
 GlesWindowContext::GlesWindowContext() : impl_(new (std::nothrow) Impl) {}
+
+GlesWindowContext::GlesWindowContext(GlesWindowContext&& other) noexcept
+    : impl_(std::exchange(other.impl_, nullptr)) {}
+
+GlesWindowContext& GlesWindowContext::operator=(
+    GlesWindowContext&& other) noexcept {
+  if (this != &other) {
+    Close();
+    delete impl_;
+    impl_ = std::exchange(other.impl_, nullptr);
+  }
+  return *this;
+}
+
+absl::StatusOr<GlesWindowContext> GlesWindowContext::Create(
+    WindowSurface* absl_nonnull window, int major_version,
+    GlesContextFormat format) {
+  GlesWindowContext result;
+  if (result.impl_ == nullptr) {
+    return absl::ResourceExhaustedError("EGL context owner allocation failed");
+  }
+  ABSL_RETURN_IF_ERROR(result.Open(window, major_version, format));
+  return result;
+}
+
+absl::StatusOr<std::unique_ptr<GlesWindowContext>>
+GlesWindowContext::CreateUnique(WindowSurface* absl_nonnull window,
+                                int major_version, GlesContextFormat format) {
+  ABSL_ASSIGN_OR_RETURN(auto created, Create(window, major_version, format));
+  std::unique_ptr<GlesWindowContext> owner(
+      new (std::nothrow) GlesWindowContext(std::move(created)));
+  if (owner == nullptr) {
+    return absl::ResourceExhaustedError("EGL context owner allocation failed");
+  }
+  return owner;
+}
 
 GlesWindowContext::~GlesWindowContext() {
   Close();

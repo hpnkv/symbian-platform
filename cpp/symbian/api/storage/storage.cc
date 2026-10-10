@@ -10,6 +10,7 @@
 #include <new>
 #include <utility>
 
+#include <absl/status/status_macros.h>
 #include <absl/base/nullability.h>
 
 #include "native_storage.h"
@@ -34,9 +35,7 @@ absl::Status ValidatePath(std::u16string_view path,
 }  // namespace
 
 absl::StatusOr<ReadOnlyFile> ReadOnlyFile::Open(std::u16string_view path) {
-  if (const absl::Status valid = ValidatePath(path, 255); !valid.ok()) {
-    return valid;
-  }
+  ABSL_RETURN_IF_ERROR(ValidatePath(path, 255));
   NativeFile* absl_nullable native = nullptr;
   if (const int result = SymbianDeviceFileOpen(
           path.data(), static_cast<int>(path.size()), &native);
@@ -63,9 +62,7 @@ ReadOnlyFile::~ReadOnlyFile() {
 
 absl::StatusOr<WritableFile> WritableFile::Open(std::u16string_view path,
                                                 WriteMode mode) {
-  if (const absl::Status valid = ValidatePath(path, 255); !valid.ok()) {
-    return valid;
-  }
+  ABSL_RETURN_IF_ERROR(ValidatePath(path, 255));
   if (mode != WriteMode::kCreateNew && mode != WriteMode::kOpenExisting &&
       mode != WriteMode::kReplaceExisting) {
     return absl::InvalidArgumentError("Unknown file write mode");
@@ -127,9 +124,7 @@ absl::Status WritableFile::Flush() {
 }
 
 absl::Status CreateDirectories(std::u16string_view path) {
-  if (const absl::Status valid = ValidatePath(path, 255); !valid.ok()) {
-    return valid;
-  }
+  ABSL_RETURN_IF_ERROR(ValidatePath(path, 255));
   const int result = SymbianDeviceCreateDirectories(
       path.data(), static_cast<int>(path.size()));
   return result == 0
@@ -158,14 +153,8 @@ FileCopy::FileCopy(State* absl_nonnull state) : state_(state) {}
 absl::StatusOr<FileCopy> FileCopy::Open(std::u16string_view source,
                                         std::u16string_view destination,
                                         WriteMode destination_mode) {
-  auto opened_source = ReadOnlyFile::Open(source);
-  if (!opened_source.ok()) {
-    return opened_source.status();
-  }
-  auto size = opened_source->Size();
-  if (!size.ok()) {
-    return size.status();
-  }
+  ABSL_ASSIGN_OR_RETURN(auto opened_source, ReadOnlyFile::Open(source));
+  ABSL_ASSIGN_OR_RETURN(auto size, opened_source.Size());
   // Reserve memory before a mode that can create or replace the destination
   // has any filesystem side effect.
   void* absl_nullable memory = ::operator new(sizeof(State), std::nothrow);
@@ -178,7 +167,7 @@ absl::StatusOr<FileCopy> FileCopy::Open(std::u16string_view source,
     return opened_destination.status();
   }
   State* absl_nonnull state = new (memory)
-      State(std::move(*opened_source), std::move(*opened_destination), *size);
+      State(std::move(opened_source), std::move(*opened_destination), size);
   return FileCopy(state);
 }
 
@@ -226,33 +215,25 @@ absl::StatusOr<CopyProgress> FileCopy::Step() {
     const auto remaining = state_->total_bytes - state_->bytes_copied;
     const auto capacity = static_cast<std::size_t>(
         std::min<std::uint64_t>(remaining, state_->buffer.size()));
-    auto read = state_->source.ReadAt(
+    ABSL_ASSIGN_OR_RETURN(auto read, state_->source.ReadAt(
         state_->bytes_copied,
-        std::span<std::byte>(state_->buffer.data(), capacity));
-    if (!read.ok()) {
-      return read.status();
-    }
-    if (*read == 0) {
+        std::span<std::byte>(state_->buffer.data(), capacity)));
+    if (read == 0) {
       return absl::DataLossError("Source ended during file copy");
     }
     if (state_->cancel_requested.load(std::memory_order_acquire)) {
       return absl::CancelledError("File copy cancelled");
     }
-    if (const auto written = state_->destination.WriteAt(
+    ABSL_RETURN_IF_ERROR(state_->destination.WriteAt(
             state_->bytes_copied,
-            std::span<const std::byte>(state_->buffer.data(), *read));
-        !written.ok()) {
-      return written;
-    }
-    state_->bytes_copied += *read;
+            std::span<const std::byte>(state_->buffer.data(), read)));
+    state_->bytes_copied += read;
   }
   if (state_->cancel_requested.load(std::memory_order_acquire)) {
     return absl::CancelledError("File copy cancelled");
   }
   if (state_->bytes_copied == state_->total_bytes) {
-    if (const auto flushed = state_->destination.Flush(); !flushed.ok()) {
-      return flushed;
-    }
+    ABSL_RETURN_IF_ERROR(state_->destination.Flush());
     state_->complete = true;
   }
   return progress();
@@ -303,9 +284,7 @@ absl::StatusOr<std::size_t> ReadOnlyFile::ReadAt(
 
 absl::StatusOr<DirectoryReader> DirectoryReader::Open(
     std::u16string_view path) {
-  if (const absl::Status valid = ValidatePath(path, 253); !valid.ok()) {
-    return valid;
-  }
+  ABSL_RETURN_IF_ERROR(ValidatePath(path, 253));
   NativeDirectory* absl_nullable native = nullptr;
   if (const int result = SymbianDeviceDirectoryOpen(
           path.data(), static_cast<int>(path.size()), &native);

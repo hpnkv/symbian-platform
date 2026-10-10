@@ -22,8 +22,8 @@ TInt Draw(CWsScreenDevice* absl_nonnull screen, CWindowGc* absl_nonnull gc,
           TInt preview_width, TInt preview_height, const TRect& run_button,
           const TRect& close_button) {
   CFont* absl_nullable font = nullptr;
-  if (TFontSpec font_spec(_L("Series 60 Sans"), 20);
-      TInt result = screen->GetNearestFontInPixels(font, font_spec);
+  const TFontSpec font_spec(_L("Series 60 Sans"), 20);
+  if (const TInt result = screen->GetNearestFontInPixels(font, font_spec);
       result != KErrNone) {
     return result;
   }

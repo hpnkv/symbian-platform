@@ -67,7 +67,7 @@ absl::Status CopyTextToClipboard(std::u16string_view text) {
   const TPtrC descriptor(reinterpret_cast<const TUint16*>(text.data()),
                          static_cast<TInt>(text.size()));
   TRAPD(error, CopyTextL(&session, descriptor));
-  session.Close();
+  session.RSessionBase::Close();
   return symbian::StatusFromNativeError(error, "clipboard write");
 }
 
@@ -78,7 +78,7 @@ absl::StatusOr<std::u16string> ReadTextFromClipboard() {
   }
   std::u16string text;
   TRAPD(error, ReadTextL(&session, &text));
-  session.Close();
+  session.RSessionBase::Close();
   if (error != KErrNone) {
     return symbian::StatusFromNativeError(error, "clipboard read");
   }

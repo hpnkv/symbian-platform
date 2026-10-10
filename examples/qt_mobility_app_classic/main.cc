@@ -4,8 +4,8 @@
 #include "ui.h"
 
 int RunFeature(void* absl_nullable) {
-  QtMobility::QContact contact;
-  QtMobility::QGeoCoordinate coordinate(0.0, 0.0);
+  const QtMobility::QContact contact;
+  const QtMobility::QGeoCoordinate coordinate(0.0, 0.0);
   return contact.isEmpty() && coordinate.isValid() ? 0 : 1;
 }
 

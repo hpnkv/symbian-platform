@@ -48,7 +48,7 @@ absl::StatusOr<TcpClient> TcpClient::ConnectHost(std::string_view hostname,
   if (hostname.empty() || hostname.size() > 253 || port == 0) {
     return absl::InvalidArgumentError("Invalid TCP hostname or port");
   }
-  for (char c : hostname) {
+  for (const char c : hostname) {
     if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
           (c >= '0' && c <= '9') || c == '-' || c == '.')) {
       return absl::InvalidArgumentError("DNS hostname requires ASCII labels");

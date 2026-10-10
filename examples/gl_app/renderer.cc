@@ -1,48 +1,112 @@
 #include "renderer.h"
 
+#include <memory>
+#include <new>
+#include <optional>
+#include <utility>
+
 #include <absl/base/nullability.h>
+#include <absl/status/status_macros.h>
+
+#include "cube.h"
+#include "exit_button.h"
+#include "symbian/api/display/gles_rect_batch.h"
+#include "symbian/api/display/gles_window_context.h"
 
 namespace gl_app {
-Renderer::~Renderer() {
-  if (objects_open_) {
-    cube_.Close();
-    ui_batch_.Close();
+
+struct Renderer::Impl {
+  std::optional<symbian::api::display::GlesWindowContext> context;
+  std::optional<Cube> cube;
+  std::optional<symbian::api::display::GlesRectBatch> ui_batch;
+  ExitButton exit_button;
+  PausePanel pause_panel;
+  TSize size{0, 0};
+
+  ~Impl() {
+    cube.reset();
+    if (ui_batch.has_value()) {
+      ui_batch->Close();
+    }
+  }
+};
+
+Renderer::Renderer(std::unique_ptr<Impl> impl) : impl_(std::move(impl)) {}
+
+Renderer::Renderer(Renderer&& other) noexcept = default;
+Renderer& Renderer::operator=(Renderer&& other) noexcept = default;
+Renderer::~Renderer() = default;
+
+absl::StatusOr<Renderer> Renderer::Create(
+    symbian::api::display::WindowSurface* absl_nonnull window) {
+  std::unique_ptr<Impl> impl(new (std::nothrow) Impl);
+  if (impl == nullptr) {
+    return absl::ResourceExhaustedError("GL renderer owner allocation failed");
+  }
+  ABSL_ASSIGN_OR_RETURN(
+      auto context,
+      symbian::api::display::GlesWindowContext::Create(
+          window, 2,
+          {.red_bits = 8, .green_bits = 8, .blue_bits = 8, .depth_bits = 16}));
+  impl->context = std::move(context);
+  ABSL_ASSIGN_OR_RETURN(auto cube, Cube::Create());
+  impl->cube = std::move(cube);
+  ABSL_ASSIGN_OR_RETURN(auto ui_batch,
+                        symbian::api::display::GlesRectBatch::Create());
+  impl->ui_batch = std::move(ui_batch);
+  impl->context->SetSwapInterval(1).IgnoreError();
+  return Renderer(std::move(impl));
+}
+
+absl::StatusOr<std::unique_ptr<Renderer>> Renderer::CreateUnique(
+    symbian::api::display::WindowSurface* absl_nonnull window) {
+  ABSL_ASSIGN_OR_RETURN(auto created, Create(window));
+  std::unique_ptr<Renderer> owner(new (std::nothrow)
+                                      Renderer(std::move(created)));
+  if (owner == nullptr) {
+    return absl::ResourceExhaustedError("GL renderer owner allocation failed");
+  }
+  return owner;
+}
+
+void Renderer::Resize(TSize size) {
+  if (impl_ != nullptr) {
+    impl_->size = size;
   }
 }
 
-absl::Status Renderer::Open(
-    symbian::api::display::WindowSurface* absl_nonnull window) {
-  if (const absl::Status opened = context_.Open(
-          window, 2,
-          {.red_bits = 8, .green_bits = 8, .blue_bits = 8, .depth_bits = 16});
-      !opened.ok()) {
-    return opened;
-  }
-  if (!cube_.Open() || !ui_batch_.Open().ok()) {
-    cube_.Close();
-    ui_batch_.Close();
-    return absl::UnavailableError("cube shader setup failed");
-  }
-  objects_open_ = true;
-  context_.SetSwapInterval(1).IgnoreError();
-  return absl::OkStatus();
+bool Renderer::HandlePointer(
+    const symbian::api::display::WindowInput& pointer) {
+  return impl_ != nullptr &&
+         impl_->exit_button.HandlePointer(pointer, impl_->size);
+}
+
+PausePanel::Action Renderer::HandlePausePointer(
+    const symbian::api::display::WindowInput& pointer) {
+  return impl_ == nullptr
+             ? PausePanel::Action::kNone
+             : impl_->pause_panel.HandlePointer(pointer, impl_->size);
 }
 
 absl::Status Renderer::Draw(float yaw, float pitch, bool paused,
                             std::uint32_t frames_per_second) {
-  glViewport(0, 0, size_.iWidth, size_.iHeight);
+  if (impl_ == nullptr) {
+    return absl::FailedPreconditionError("GL renderer was moved");
+  }
+  glViewport(0, 0, impl_->size.iWidth, impl_->size.iHeight);
   glClearColor(0, 0, 0, 1);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  cube_.Draw(size_, yaw, pitch);
-  ui_batch_.Begin(size_.iWidth, size_.iHeight);
+  impl_->cube->Draw(impl_->size, yaw, pitch);
+  impl_->ui_batch->Begin(impl_->size.iWidth, impl_->size.iHeight);
   if (paused) {
-    pause_panel_.Draw(size_, &ui_batch_);
+    impl_->pause_panel.Draw(impl_->size, &*impl_->ui_batch);
   } else {
-    exit_button_.Draw(size_, &ui_batch_);
+    impl_->exit_button.Draw(impl_->size, &*impl_->ui_batch);
   }
-  pause_panel_.DrawFrameRate(size_, frames_per_second, &ui_batch_);
-  ui_batch_.Draw();
-  return context_.Swap();
+  impl_->pause_panel.DrawFrameRate(impl_->size, frames_per_second,
+                                   &*impl_->ui_batch);
+  impl_->ui_batch->Draw();
+  return impl_->context->Swap();
 }
 
 }  // namespace gl_app

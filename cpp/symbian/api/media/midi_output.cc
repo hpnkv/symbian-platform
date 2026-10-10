@@ -7,8 +7,10 @@
 #include <chrono>
 #include <memory>
 #include <new>
+#include <utility>
 
 #include <absl/base/nullability.h>
+#include <absl/status/status_macros.h>
 
 #include "symbian/api/time/sleep.h"
 #include "symbian/concurrency/bounded_channel.h"
@@ -119,23 +121,42 @@ struct MidiOutput::Impl {
   std::shared_ptr<MidiState> state = std::make_shared<MidiState>();
   symbian::concurrency::WorkerExecutor* absl_nullable worker = nullptr;
   absl::Status startup = absl::FailedPreconditionError("MIDI not started");
+
+  ~Impl() {
+    state->stop.store(true);
+    state->notes.Close();
+    delete worker;
+  }
 };
 
-MidiOutput::MidiOutput() : impl_(new (std::nothrow) Impl) {}
+MidiOutput::MidiOutput(std::unique_ptr<Impl> impl) : impl_(std::move(impl)) {}
 
-MidiOutput::~MidiOutput() {
-  if (impl_ == nullptr) {
-    return;
+MidiOutput::MidiOutput(MidiOutput&& other) noexcept = default;
+MidiOutput& MidiOutput::operator=(MidiOutput&& other) noexcept = default;
+
+absl::StatusOr<MidiOutput> MidiOutput::Create() {
+  std::unique_ptr<Impl> impl(new (std::nothrow) Impl);
+  if (impl == nullptr) {
+    return absl::ResourceExhaustedError("MIDI owner allocation failed");
   }
-  impl_->state->stop.store(true);
-  impl_->state->notes.Close();
-  delete impl_->worker;
-  delete impl_;
+  return MidiOutput(std::move(impl));
 }
+
+absl::StatusOr<std::unique_ptr<MidiOutput>> MidiOutput::CreateUnique() {
+  ABSL_ASSIGN_OR_RETURN(auto created, Create());
+  std::unique_ptr<MidiOutput> owner(new (std::nothrow)
+                                        MidiOutput(std::move(created)));
+  if (owner == nullptr) {
+    return absl::ResourceExhaustedError("MIDI owner allocation failed");
+  }
+  return owner;
+}
+
+MidiOutput::~MidiOutput() = default;
 
 absl::Status MidiOutput::Start() {
   if (impl_ == nullptr) {
-    return absl::ResourceExhaustedError("MIDI owner allocation failed");
+    return absl::FailedPreconditionError("MIDI owner was moved");
   }
   if (impl_->worker != nullptr) {
     return impl_->startup;
@@ -156,14 +177,15 @@ absl::Status MidiOutput::Start() {
 }
 
 absl::Status MidiOutput::PlayNote(int note, int duration_ms, int velocity) {
+  if (impl_ == nullptr) {
+    return absl::FailedPreconditionError("MIDI owner was moved");
+  }
   if (note < 0 || note > 127 || duration_ms <= 0 || duration_ms > 60000 ||
       velocity <= 0 || velocity > 127) {
     return absl::InvalidArgumentError(
         "Invalid MIDI note, duration or velocity");
   }
-  if (const absl::Status ready = status(); !ready.ok()) {
-    return ready;
-  }
+  ABSL_RETURN_IF_ERROR(status());
   return impl_->state->notes.TryWrite(
       Note{.pitch = note, .duration_ms = duration_ms, .velocity = velocity});
 }
@@ -174,11 +196,9 @@ bool MidiOutput::available() const {
 
 absl::Status MidiOutput::status() const {
   if (impl_ == nullptr) {
-    return absl::ResourceExhaustedError("MIDI owner allocation failed");
+    return absl::FailedPreconditionError("MIDI owner was moved");
   }
-  if (!impl_->startup.ok()) {
-    return impl_->startup;
-  }
+  ABSL_RETURN_IF_ERROR(impl_->startup);
   if (const int error = impl_->state->error.load(); error != KErrNone) {
     return symbian::StatusFromNativeError(error, "MIDI service");
   }

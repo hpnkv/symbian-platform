@@ -1,7 +1,11 @@
 #include "cube.h"
 
+#include <algorithm>
 #include <cstddef>
+#include <new>
+#include <utility>
 
+#include <absl/status/status_macros.h>
 #include <math.h>
 
 #include "shader.h"
@@ -9,10 +13,51 @@
 
 namespace gl_app {
 
-bool Cube::Open() {
+absl::StatusOr<Cube> Cube::Create() {
+  Cube result;
+  ABSL_RETURN_IF_ERROR(result.Open());
+  return result;
+}
+
+absl::StatusOr<std::unique_ptr<Cube>> Cube::CreateUnique() {
+  ABSL_ASSIGN_OR_RETURN(auto created, Create());
+  std::unique_ptr<Cube> result(new (std::nothrow) Cube(std::move(created)));
+  if (result == nullptr) {
+    return absl::ResourceExhaustedError("cube owner allocation failed");
+  }
+  return result;
+}
+
+Cube::~Cube() {
+  Close();
+}
+
+Cube::Cube(Cube&& other) noexcept
+    : program_(std::exchange(other.program_, 0)),
+      vertex_buffer_(std::exchange(other.vertex_buffer_, 0)),
+      model_view_(std::exchange(other.model_view_, -1)),
+      projection_(std::exchange(other.projection_, -1)) {
+  std::copy(std::begin(other.vertices_), std::end(other.vertices_),
+            std::begin(vertices_));
+}
+
+Cube& Cube::operator=(Cube&& other) noexcept {
+  if (this != &other) {
+    Close();
+    program_ = std::exchange(other.program_, 0);
+    vertex_buffer_ = std::exchange(other.vertex_buffer_, 0);
+    model_view_ = std::exchange(other.model_view_, -1);
+    projection_ = std::exchange(other.projection_, -1);
+    std::copy(std::begin(other.vertices_), std::end(other.vertices_),
+              std::begin(vertices_));
+  }
+  return *this;
+}
+
+absl::Status Cube::Open() {
   program_ = CreateProgram(shaders::kCubeVertex, shaders::kCubeFragment);
   if (!program_) {
-    return false;
+    return absl::UnavailableError("cube shader setup failed");
   }
   model_view_ = glGetUniformLocation(program_, "uModelView");
   projection_ = glGetUniformLocation(program_, "uProjection");
@@ -27,7 +72,7 @@ bool Cube::Open() {
       vertex_buffer_ = 0;
     }
   }
-  return true;
+  return absl::OkStatus();
 }
 
 void Cube::Close() {
@@ -39,9 +84,14 @@ void Cube::Close() {
     glDeleteProgram(program_);
   }
   program_ = 0;
+  model_view_ = -1;
+  projection_ = -1;
 }
 
 void Cube::Draw(TSize size, float yaw, float pitch) {
+  if (program_ == 0 || size.iHeight <= 0) {
+    return;
+  }
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
   glUseProgram(program_);

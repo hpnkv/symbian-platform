@@ -6,13 +6,16 @@
 
 #include <absl/base/nullability.h>
 
+#include "absl/status/status.h"
+
 namespace symbian::api::display {
 class WindowSurface;
 }
 
 namespace camera_app {
 
-int RunGpuWindow(symbian::api::display::WindowSurface* absl_nonnull window);
+absl::Status RunGpuWindow(
+    symbian::api::display::WindowSurface* absl_nonnull window);
 
 }  // namespace camera_app
 

@@ -1,6 +1,7 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
 
+#include <absl/status/status_macros.h>
 #include "symbian/api/camera/gles2_frame_backend.h"
 
 #include <cstring>
@@ -222,16 +223,15 @@ absl::Status DownloadRows(const MutableFrameView& destination) {
       static_cast<std::size_t>(destination.layout.width) * 4;
   const std::size_t bytes =
       row_bytes * static_cast<std::size_t>(destination.layout.height);
-  std::unique_ptr<std::byte[]> staging(new (std::nothrow) std::byte[bytes]);
+  const std::unique_ptr<std::byte[]> staging(new (std::nothrow)
+                                                 std::byte[bytes]);
   if (staging == nullptr) {
     return absl::ResourceExhaustedError("GLES2 camera readback allocation");
   }
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
   glReadPixels(0, 0, destination.layout.width, destination.layout.height,
                GL_RGBA, GL_UNSIGNED_BYTE, staging.get());
-  if (absl::Status result = GlStatus("GLES2 camera readback"); !result.ok()) {
-    return result;
-  }
+  ABSL_RETURN_IF_ERROR(GlStatus("GLES2 camera readback"));
   for (int row = 0; row < destination.layout.height; ++row) {
     std::byte* absl_nonnull output =
         destination.planes[0].data() +
@@ -416,10 +416,7 @@ absl::Status Gles2FrameBackend::Transform(const FrameView& source,
   std::optional<GlStateGuard> guard;
   if (context_use_ == Gles2ContextUse::kPreserveState) {
     guard.emplace();
-    if (absl::Status state = GlStatus("GLES2 camera state query");
-        !state.ok()) {
-      return state;
-    }
+    ABSL_RETURN_IF_ERROR(GlStatus("GLES2 camera state query"));
   }
   absl::Status result = absl::OkStatus();
   if (impl_ == nullptr) {
@@ -427,13 +424,8 @@ absl::Status Gles2FrameBackend::Transform(const FrameView& source,
     if (impl_ == nullptr) {
       return absl::ResourceExhaustedError("GLES2 camera backend allocation");
     }
-    if (absl::Status opened = impl_->Open(); !opened.ok()) {
-      return opened;
-    }
-    result = GlStatus("GLES2 camera setup");
-    if (!result.ok()) {
-      return result;
-    }
+    ABSL_RETURN_IF_ERROR(impl_->Open());
+    ABSL_RETURN_IF_ERROR(GlStatus("GLES2 camera setup"));
   }
   GLuint temporary_source = 0;
   GLuint temporary_destination = 0;

@@ -7,12 +7,12 @@
 #include "ui.h"
 
 int RunFeature(void* absl_nullable) {
-  QHostAddress address(QString::fromLatin1("127.0.0.1"));
+  const QHostAddress address(QString::fromLatin1("127.0.0.1"));
   QDomDocument document;
-  bool parsed = document.setContent(QString::fromLatin1("<root/>"));
-  bool has_drivers = !QSqlDatabase::drivers().isEmpty();
-  bool has_web_settings = QWebSettings::globalSettings() != nullptr;
-  bool has_gl = QGLFormat::hasOpenGL();
+  const bool parsed = document.setContent(QString::fromLatin1("<root/>"));
+  const bool has_drivers = !QSqlDatabase::drivers().isEmpty();
+  const bool has_web_settings = QWebSettings::globalSettings() != nullptr;
+  const bool has_gl = QGLFormat::hasOpenGL();
   return address.isNull() || !parsed || !has_drivers || !has_web_settings ||
          !has_gl;
 }

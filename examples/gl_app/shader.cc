@@ -21,7 +21,7 @@ void ShaderDiagnostic(GLuint object, bool program) {
 }
 
 GLuint CompileShader(GLenum type, std::string_view source) {
-  GLuint shader = glCreateShader(type);
+  const GLuint shader = glCreateShader(type);
   if (!shader) {
     return 0;
   }
@@ -43,8 +43,8 @@ GLuint CompileShader(GLenum type, std::string_view source) {
 
 GLuint CreateProgram(std::string_view vertex_source,
                      std::string_view fragment_source) {
-  GLuint vertex = CompileShader(GL_VERTEX_SHADER, vertex_source);
-  GLuint fragment = CompileShader(GL_FRAGMENT_SHADER, fragment_source);
+  const GLuint vertex = CompileShader(GL_VERTEX_SHADER, vertex_source);
+  const GLuint fragment = CompileShader(GL_FRAGMENT_SHADER, fragment_source);
   GLuint program = 0;
   if (vertex && fragment) {
     program = glCreateProgram();

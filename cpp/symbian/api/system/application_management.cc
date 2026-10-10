@@ -8,6 +8,7 @@
 #include <memory>
 #include <type_traits>
 
+#include <absl/status/status_macros.h>
 #include <absl/base/nullability.h>
 #include <apgcli.h>
 
@@ -74,24 +75,18 @@ class AppArcSession {
  public:
   static absl::StatusOr<std::unique_ptr<AppArcSession>> Open(
       const LoadedLibrary& library) {
-    auto constructor =
-        library.Lookup<SessionConstructor>(kAppArcSessionConstructorOrdinal);
-    auto connect = library.Lookup<SessionConnect>(kAppArcConnectOrdinal);
-    auto close = library.Lookup<SessionClose>(kAppArcCloseOrdinal);
-    if (!constructor.ok()) {
-      return constructor.status();
-    }
-    if (!connect.ok()) {
-      return connect.status();
-    }
-    if (!close.ok()) {
-      return close.status();
-    }
+    ABSL_ASSIGN_OR_RETURN(
+        auto constructor,
+        library.Lookup<SessionConstructor>(kAppArcSessionConstructorOrdinal));
+    ABSL_ASSIGN_OR_RETURN(
+        auto connect, library.Lookup<SessionConnect>(kAppArcConnectOrdinal));
+    ABSL_ASSIGN_OR_RETURN(
+        auto close, library.Lookup<SessionClose>(kAppArcCloseOrdinal));
     auto session =
-        std::unique_ptr<AppArcSession>(new AppArcSession(std::move(*close)));
-    (*constructor)(session->native());
+        std::unique_ptr<AppArcSession>(new AppArcSession(std::move(close)));
+    constructor(session->native());
     session->constructed_ = true;
-    if (const TInt result = (*connect)(session->native()); result != KErrNone) {
+    if (const TInt result = connect(session->native()); result != KErrNone) {
       return symbian::StatusFromNativeError(result, "AppArc session");
     }
     return session;
@@ -128,23 +123,16 @@ absl::Status OpenDocument(std::u16string_view absolute_path) {
     return absl::InvalidArgumentError("Invalid document path");
   }
   _LIT(KAppArcLibrary, "apgrfx.dll");
-  LoadedLibrary library(KAppArcLibrary);
-  if (!library.status().ok()) {
-    return library.status();
-  }
-  auto start =
-      library.Lookup<StartDocumentFunction>(kAppArcStartDocumentOrdinal);
-  if (!start.ok()) {
-    return start.status();
-  }
-  auto session = AppArcSession::Open(library);
-  if (!session.ok()) {
-    return session.status();
-  }
+  const LoadedLibrary library(KAppArcLibrary);
+  ABSL_RETURN_IF_ERROR(library.status());
+  ABSL_ASSIGN_OR_RETURN(
+      auto start,
+      library.Lookup<StartDocumentFunction>(kAppArcStartDocumentOrdinal));
+  ABSL_ASSIGN_OR_RETURN(auto session, AppArcSession::Open(library));
   const TPtrC path(reinterpret_cast<const TUint16*>(absolute_path.data()),
                    static_cast<TInt>(absolute_path.size()));
   TThreadId launched;
-  const TInt result = (*start)((*session)->native(), path, launched,
+  const TInt result = start(session->native(), path, launched,
                                RApaLsSession::ELaunchNewApp);
   return symbian::StatusFromNativeError(result, "open document");
 }
@@ -155,31 +143,21 @@ absl::StatusOr<bool> IsApplicationRegistered(std::uint32_t uid) {
   }
   _LIT(KAppArcLibrary, "apgrfx.dll");
   _LIT(KAppInfoLibrary, "apparc.dll");
-  LoadedLibrary app_arc(KAppArcLibrary);
-  LoadedLibrary app_info(KAppInfoLibrary);
-  if (!app_arc.status().ok()) {
-    return app_arc.status();
-  }
-  if (!app_info.status().ok()) {
-    return app_info.status();
-  }
-  auto get_info = app_arc.Lookup<GetAppInfoFunction>(kAppArcGetAppInfoOrdinal);
-  auto constructor =
-      app_info.Lookup<AppInfoConstructor>(kAppInfoConstructorOrdinal);
-  if (!get_info.ok()) {
-    return get_info.status();
-  }
-  if (!constructor.ok()) {
-    return constructor.status();
-  }
-  auto session = AppArcSession::Open(app_arc);
-  if (!session.ok()) {
-    return session.status();
-  }
+  const LoadedLibrary app_arc(KAppArcLibrary);
+  const LoadedLibrary app_info(KAppInfoLibrary);
+  ABSL_RETURN_IF_ERROR(app_arc.status());
+  ABSL_RETURN_IF_ERROR(app_info.status());
+  ABSL_ASSIGN_OR_RETURN(
+      auto get_info,
+      app_arc.Lookup<GetAppInfoFunction>(kAppArcGetAppInfoOrdinal));
+  ABSL_ASSIGN_OR_RETURN(
+      auto constructor,
+      app_info.Lookup<AppInfoConstructor>(kAppInfoConstructorOrdinal));
+  ABSL_ASSIGN_OR_RETURN(auto session, AppArcSession::Open(app_arc));
   alignas(TApaAppInfo) std::byte storage[sizeof(TApaAppInfo)]{};
   auto* absl_nonnull info = reinterpret_cast<TApaAppInfo*>(storage);
-  (*constructor)(info);
-  const TInt result = (*get_info)((*session)->native(), *info, TUid::Uid(uid));
+  constructor(info);
+  const TInt result = get_info(session->native(), *info, TUid::Uid(uid));
   std::destroy_at(info);
   if (result == KErrNotFound) {
     return false;

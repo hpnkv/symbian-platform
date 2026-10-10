@@ -4,6 +4,7 @@
 #include "symbian/api/system/active_service.h"
 
 #include <absl/base/nullability.h>
+#include <absl/status/status_macros.h>
 
 #include "native_active_service.h"
 #include "symbian/native_status.h"
@@ -45,9 +46,7 @@ absl::Status RunActiveService(std::int32_t category, std::uint32_t stop_key,
                       .start_status = absl::OkStatus()};
   const int result = SymbianDeviceRunActiveService(
       category, stop_key, &Start, &OnStop, &OnReady, &callbacks);
-  if (!callbacks.start_status.ok()) {
-    return callbacks.start_status;
-  }
+  ABSL_RETURN_IF_ERROR(callbacks.start_status);
   return symbian::StatusFromNativeError(result, "Active service");
 }
 

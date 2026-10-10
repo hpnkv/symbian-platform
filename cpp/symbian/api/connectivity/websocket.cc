@@ -6,10 +6,32 @@
 #include <cstring>
 #include <utility>
 
+#include <absl/status/status_macros.h>
+
 namespace symbian::api::connectivity {
 WebSocketStream::WebSocketStream(net::ByteStream transport,
                                  std::unique_ptr<websocket::WebSocket> codec)
     : transport_(std::move(transport)), codec_(std::move(codec)) {}
+
+WebSocketStream::WebSocketStream(WebSocketStream&& other) noexcept
+    : transport_(std::move(other.transport_)),
+      codec_(std::move(other.codec_)),
+      pending_(std::move(other.pending_)),
+      offset_(std::exchange(other.offset_, 0)) {
+  other.pending_.clear();
+}
+
+WebSocketStream& WebSocketStream::operator=(WebSocketStream&& other) noexcept {
+  if (this != &other) {
+    Abort();
+    transport_ = std::move(other.transport_);
+    codec_ = std::move(other.codec_);
+    pending_ = std::move(other.pending_);
+    offset_ = std::exchange(other.offset_, 0);
+    other.pending_.clear();
+  }
+  return *this;
+}
 
 absl::StatusOr<WebSocketStream> WebSocketStream::Connect(
     TcpClient client, websocket::Options options, absl::Time deadline) {
@@ -43,30 +65,19 @@ absl::StatusOr<WebSocketStream> WebSocketStream::Open(
   if (!transport) {
     return absl::InvalidArgumentError("Missing WebSocket transport");
   }
-  auto codec = websocket::WebSocket::Create(role, std::move(options));
-  if (!codec.ok()) {
-    return codec.status();
-  }
-  WebSocketStream stream(std::move(transport), std::move(*codec));
-  auto status = stream.Flush(deadline);
-  if (!status.ok()) {
-    return status;
-  }
+  ABSL_ASSIGN_OR_RETURN(
+      auto codec, websocket::WebSocket::CreateUnique(role, std::move(options)));
+  WebSocketStream stream(std::move(transport), std::move(codec));
+  ABSL_RETURN_IF_ERROR(stream.Flush(deadline));
   while (!stream.codec_->open()) {
-    status = stream.Pump(deadline);
-    if (!status.ok()) {
-      return status;
-    }
+    ABSL_RETURN_IF_ERROR(stream.Pump(deadline));
   }
   return stream;
 }
 
 absl::Status WebSocketStream::Flush(absl::Time deadline) {
-  auto output = codec_->TakeOutput();
-  if (!output.ok()) {
-    return output.status();
-  }
-  std::string_view bytes = *output;
+  ABSL_ASSIGN_OR_RETURN(auto output, codec_->TakeOutput());
+  std::string_view bytes = output;
   while (!bytes.empty()) {
     const auto count = std::min<std::size_t>(bytes.size(), 32768);
     if (auto status = transport_.Write(
@@ -104,41 +115,35 @@ absl::Status WebSocketStream::Pump(absl::Time deadline) {
 
 absl::Status WebSocketStream::Send(std::span<const std::uint8_t> bytes,
                                    absl::Time deadline) {
-  auto status = codec_->Send(std::string_view(
-      reinterpret_cast<const char*>(bytes.data()), bytes.size()));
-  if (!status.ok()) {
-    return status;
+  if (codec_ == nullptr) {
+    return absl::FailedPreconditionError("WebSocket stream is closed");
   }
-  status = Flush(deadline);
-  if (!status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(codec_->Send(std::string_view(
+      reinterpret_cast<const char*>(bytes.data()), bytes.size())));
+  ABSL_RETURN_IF_ERROR(Flush(deadline));
   // A successful socket write may only contain the DATA permitted by the
   // peer's current HTTP/2 window. Read its WINDOW_UPDATE and send the rest
   // before accepting another message into the bounded send queue.
   while (codec_->buffered_amount() != 0) {
-    status = Pump(deadline);
-    if (!status.ok()) {
-      return status;
-    }
+    ABSL_RETURN_IF_ERROR(Pump(deadline));
   }
   return absl::OkStatus();
 }
 
 absl::StatusOr<std::size_t> WebSocketStream::Receive(
     std::span<std::uint8_t> bytes, absl::Time deadline) {
+  if (codec_ == nullptr) {
+    return absl::FailedPreconditionError("WebSocket stream is closed");
+  }
   if (bytes.empty()) {
     return std::size_t{0};
   }
   while (offset_ == pending_.size()) {
     pending_.clear();
     offset_ = 0;
-    auto message = codec_->Receive();
-    if (!message.ok()) {
-      return message.status();
-    }
-    if (message->has_value()) {
-      pending_ = std::move(**message);
+    ABSL_ASSIGN_OR_RETURN(auto message, codec_->Receive());
+    if (message.has_value()) {
+      pending_ = std::move(*message);
       if (!pending_.empty()) {
         break;
       }
@@ -146,9 +151,7 @@ absl::StatusOr<std::size_t> WebSocketStream::Receive(
     if (codec_->closed()) {
       return absl::UnavailableError("WebSocket closed");
     }
-    if (auto status = Pump(deadline); !status.ok()) {
-      return status;
-    }
+    ABSL_RETURN_IF_ERROR(Pump(deadline));
   }
   const auto count = std::min(bytes.size(), pending_.size() - offset_);
   std::memcpy(bytes.data(), pending_.data() + offset_, count);
@@ -157,49 +160,42 @@ absl::StatusOr<std::size_t> WebSocketStream::Receive(
 }
 
 absl::Status WebSocketStream::Close(absl::Time deadline) {
-  auto status = codec_->Close();
-  if (!status.ok()) {
-    return status;
+  if (codec_ == nullptr) {
+    return absl::OkStatus();
   }
-  status = Flush(deadline);
-  if (!status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(codec_->Close());
+  ABSL_RETURN_IF_ERROR(Flush(deadline));
   while (!codec_->closed()) {
-    status = Pump(deadline);
-    if (!status.ok()) {
-      return status;
-    }
+    ABSL_RETURN_IF_ERROR(Pump(deadline));
   }
   transport_.Close();
   return absl::OkStatus();
 }
 
 void WebSocketStream::Abort() {
-  codec_->Abort();
-  transport_.Close();
+  if (codec_ != nullptr) {
+    codec_->Abort();
+    transport_.Close();
+    codec_.reset();
+  }
+  pending_.clear();
+  offset_ = 0;
 }
 
 absl::StatusOr<WebSocketServer> WebSocketServer::ListenIpv4(
     std::array<std::uint8_t, 4> address, std::uint16_t port,
     websocket::Options options) {
-  if (auto validation =
-          websocket::WebSocket::Create(websocket::Role::kServer, options);
+  if (const auto validation =
+          websocket::WebSocket::CreateUnique(websocket::Role::kServer, options);
       !validation.ok()) {
     return validation.status();
   }
-  auto listener = TcpListener::ListenIpv4(address, port);
-  if (!listener.ok()) {
-    return listener.status();
-  }
-  return WebSocketServer(std::move(*listener), std::move(options));
+  ABSL_ASSIGN_OR_RETURN(auto listener, TcpListener::ListenIpv4(address, port));
+  return WebSocketServer(std::move(listener), std::move(options));
 }
 
 absl::StatusOr<WebSocketStream> WebSocketServer::Accept(absl::Time deadline) {
-  auto client = listener_.Accept(deadline);
-  if (!client.ok()) {
-    return client.status();
-  }
-  return WebSocketStream::Accept(std::move(*client), options_, deadline);
+  ABSL_ASSIGN_OR_RETURN(auto client, listener_.Accept(deadline));
+  return WebSocketStream::Accept(std::move(client), options_, deadline);
 }
 }  // namespace symbian::api::connectivity

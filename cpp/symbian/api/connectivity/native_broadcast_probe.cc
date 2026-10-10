@@ -31,7 +31,7 @@ extern "C" int SymbianDeviceBroadcastProbe(
   result = socket.Open(server, KAfInet, KSockDatagram, KProtocolInetUdp);
   if (result == KErrNone) {
     TInetAddr destination(KInetAddrBroadcast, port);
-    TPtrC8 query(request, request_length);
+    const TPtrC8 query(request, request_length);
     TRequestStatus send;
     socket.SendTo(query, destination, 0, send);
     result = symbian::api::connectivity::WaitForSocketRequest(

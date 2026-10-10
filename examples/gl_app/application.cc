@@ -4,8 +4,10 @@
 #include <chrono>
 #include <cstdint>
 
+#include <absl/status/status_macros.h>
 #include <e32std.h>
 
+#include "exit_button.h"
 #include "renderer.h"
 #include "symbian/api/display/window_surface.h"
 #include "symbian/api/time/frame_pacer.h"
@@ -15,11 +17,9 @@
 namespace gl_app {
 namespace {
 
-int RunWindow(symbian::api::display::WindowSurface* absl_nonnull window) {
-  Renderer renderer;
-  if (!renderer.Open(window).ok()) {
-    return KErrNotSupported;
-  }
+absl::Status RunWindow(
+    symbian::api::display::WindowSurface* absl_nonnull window) {
+  ABSL_ASSIGN_OR_RETURN(auto renderer, Renderer::Create(window));
   renderer.Resize(TSize(window->size().width, window->size().height));
   const std::uint32_t refresh_rate =
       symbian::api::display::WindowSurface::PrimaryRefreshRateHz().value_or(60);
@@ -39,14 +39,11 @@ int RunWindow(symbian::api::display::WindowSurface* absl_nonnull window) {
   bool foreground = true;
   while (running) {
     for (int event_count = 0; event_count < 64; ++event_count) {
-      auto event = window->PollInput();
-      if (!event.ok()) {
-        return KErrGeneral;
-      }
-      if (!event->has_value()) {
+      ABSL_ASSIGN_OR_RETURN(auto event, window->PollInput());
+      if (!event.has_value()) {
         break;
       }
-      const symbian::api::display::WindowInput& input = **event;
+      const symbian::api::display::WindowInput& input = *event;
       if (input.kind == symbian::api::display::WindowInputKind::kPointerDown ||
           input.kind == symbian::api::display::WindowInputKind::kPointerMove ||
           input.kind == symbian::api::display::WindowInputKind::kPointerUp) {
@@ -147,23 +144,20 @@ int RunWindow(symbian::api::display::WindowSurface* absl_nonnull window) {
       yaw += static_cast<float>(delta) * 0.00000000065f;
       pitch += static_cast<float>(delta) * 0.0000000004095f;
     }
-    if (!renderer.Draw(yaw, pitch, paused, frames_per_second).ok()) {
-      return KErrGeneral;
-    }
+    ABSL_RETURN_IF_ERROR(renderer.Draw(yaw, pitch, paused, frames_per_second));
     symbian::api::time::SleepFor(frame_pacer.NextDelayNanoseconds());
   }
-  return KErrNone;
+  return absl::OkStatus();
 }
 
 }  // namespace
 
-int RunApplication() {
-  symbian::api::display::WindowSurface window;
-  if (!window.Open("Symbian GL Cube").ok()) {
-    return KErrNotSupported;
-  }
+absl::Status RunApplication() {
+  ABSL_ASSIGN_OR_RETURN(
+      auto window,
+      symbian::api::display::WindowSurface::Create("Symbian GL Cube"));
   if (window.size().width < 160 || window.size().height < 240) {
-    return KErrNotSupported;
+    return absl::FailedPreconditionError("screen is too small for GL Cube");
   }
   return RunWindow(&window);
 }

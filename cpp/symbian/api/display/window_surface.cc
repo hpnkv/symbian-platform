@@ -4,8 +4,10 @@
 #include "symbian/api/display/window_surface.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <new>
 #include <string>
 #include <string_view>
@@ -13,15 +15,20 @@
 #include <vector>
 
 #include <absl/base/nullability.h>
+#include <absl/status/status_macros.h>
 #include <e32keys.h>
 #include <fbs.h>
 #include <w32std.h>
 
+#include "foreground_state.h"
 #include "symbian/native_status.h"
 #include "window_task_identity.h"
 
 namespace symbian::api::display {
 namespace {
+
+std::atomic<bool> last_window_closed_in_foreground{false};
+std::atomic<unsigned int> open_window_count{0};
 
 // AppArc's EApaSystemEventShutdown is 1. Keep this wire value at the
 // Window Server boundary; apgtask.h is not part of the staged SDK headers.
@@ -120,6 +127,7 @@ struct WindowSurface::Impl {
     int x;
     int baseline_y;
     std::uint32_t rgb;
+    std::optional<WindowRect> clip;
   };
 
   RWsSession session;
@@ -139,6 +147,7 @@ struct WindowSurface::Impl {
   bool fbs_open = false;
   bool group_open = false;
   bool window_open = false;
+  bool counted_window = false;
   bool requests_open = false;
   bool frame_chunk_open = false;
   bool measure_frames = false;
@@ -147,6 +156,8 @@ struct WindowSurface::Impl {
   unsigned int geometry_poll_count = 0;
   std::vector<TextLine> text_lines;
   int text_font_height = 20;
+  CFont* absl_nullable text_font = nullptr;
+  int cached_font_height = 0;
 
   bool RefreshDisplayGeometry() {
     if (screen == nullptr || window == nullptr || !window_open) {
@@ -200,6 +211,15 @@ struct WindowSurface::Impl {
   }
 
   void Close() {
+    if (session_open && group_open) {
+      last_window_closed_in_foreground.store(
+          session.GetFocusWindowGroup() == group->Identifier(),
+          std::memory_order_relaxed);
+    }
+    if (counted_window) {
+      open_window_count.fetch_sub(1, std::memory_order_relaxed);
+      counted_window = false;
+    }
     if (requests_open) {
       session.EventReadyCancel();
       session.RedrawReadyCancel();
@@ -224,6 +244,11 @@ struct WindowSurface::Impl {
     window = nullptr;
     delete group;
     group = nullptr;
+    if (text_font != nullptr) {
+      screen->ReleaseFont(text_font);
+      text_font = nullptr;
+      cached_font_height = 0;
+    }
     delete gc;
     gc = nullptr;
     delete screen;
@@ -243,7 +268,7 @@ struct WindowSurface::Impl {
     text_lines.clear();
   }
 
-  absl::Status Present() {
+  absl::Status Present(bool flush = true) {
     if (bitmap == nullptr || !window_open) {
       return absl::FailedPreconditionError("RGB565 frame is not ready");
     }
@@ -261,7 +286,9 @@ struct WindowSurface::Impl {
     gc->Activate(*window);
     gc->BitBlt(TPoint(0, 0), bitmap);
     gc->Deactivate();
-    session.Flush();
+    if (flush) {
+      session.Flush();
+    }
     if (measure_frames) {
       const std::uint32_t elapsed = User::NTickCount() - before;
       ++metrics.frames;
@@ -277,14 +304,21 @@ struct WindowSurface::Impl {
     if (text_lines.empty()) {
       return absl::OkStatus();
     }
-    CFont* absl_nullable font = nullptr;
-    const TFontSpec specification(_L("Series 60 Sans"), text_font_height);
-    if (const TInt result = screen->GetNearestFontInPixels(font, specification);
-        result != KErrNone) {
-      return NativeError(result, "device font");
+    if (text_font != nullptr && cached_font_height != text_font_height) {
+      screen->ReleaseFont(text_font);
+      text_font = nullptr;
+    }
+    if (text_font == nullptr) {
+      const TFontSpec specification(_L("Series 60 Sans"), text_font_height);
+      if (const TInt result =
+              screen->GetNearestFontInPixels(text_font, specification);
+          result != KErrNone) {
+        return NativeError(result, "device font");
+      }
+      cached_font_height = text_font_height;
     }
     gc->Activate(*window);
-    gc->UseFont(font);
+    gc->UseFont(text_font);
     gc->SetPenStyle(CGraphicsContext::ESolidPen);
     for (const TextLine& line : text_lines) {
       if (line.text.empty()) {
@@ -294,16 +328,49 @@ struct WindowSurface::Impl {
                            line.rgb & 0xff));
       const TPtrC text(reinterpret_cast<const TUint16*>(line.text.data()),
                        static_cast<TInt>(line.text.size()));
+      if (line.clip.has_value()) {
+        const WindowRect& clip = *line.clip;
+        gc->SetClippingRect(
+            TRect(TPoint(clip.x, clip.y), TSize(clip.width, clip.height)));
+      }
       gc->DrawText(text, TPoint(line.x, line.baseline_y));
+      if (line.clip.has_value()) {
+        gc->CancelClippingRect();
+      }
     }
     gc->DiscardFont();
     gc->Deactivate();
-    screen->ReleaseFont(font);
     return absl::OkStatus();
   }
 };
 
+bool internal::LastWindowClosedInForeground() {
+  return open_window_count.load(std::memory_order_relaxed) == 0 &&
+         last_window_closed_in_foreground.load(std::memory_order_relaxed);
+}
+
 WindowSurface::WindowSurface() : impl_(new (std::nothrow) Impl) {}
+
+absl::StatusOr<WindowSurface> WindowSurface::Create(
+    std::string_view task_caption) {
+  WindowSurface result;
+  if (result.impl_ == nullptr) {
+    return absl::ResourceExhaustedError("window owner allocation failed");
+  }
+  ABSL_RETURN_IF_ERROR(result.Open(task_caption));
+  return result;
+}
+
+absl::StatusOr<std::unique_ptr<WindowSurface>> WindowSurface::CreateUnique(
+    std::string_view task_caption) {
+  ABSL_ASSIGN_OR_RETURN(auto created, Create(task_caption));
+  std::unique_ptr<WindowSurface> owner(new (std::nothrow)
+                                           WindowSurface(std::move(created)));
+  if (owner == nullptr) {
+    return absl::ResourceExhaustedError("window owner allocation failed");
+  }
+  return owner;
+}
 
 WindowSurface::WindowSurface(WindowSurface&& other) noexcept
     : impl_(std::exchange(other.impl_, nullptr)) {}
@@ -442,6 +509,8 @@ absl::Status WindowSurface::Open(std::string_view task_caption) {
   impl_->session.RedrawReady(&impl_->redraw);
   impl_->requests_open = true;
   impl_->session.Flush();
+  impl_->counted_window = true;
+  open_window_count.fetch_add(1, std::memory_order_relaxed);
   return absl::OkStatus();
 }
 
@@ -458,8 +527,8 @@ absl::Status WindowSurface::SetAutomaticOrientation(bool enabled) {
   return absl::OkStatus();
 }
 
-absl::Status WindowSurface::DrawTextLines(std::span<const WindowTextLine> lines,
-                                          int font_height_pixels) {
+absl::Status WindowSurface::SetTextLines(std::span<const WindowTextLine> lines,
+                                         int font_height_pixels) {
   if (impl_ == nullptr || !impl_->window_open || impl_->screen == nullptr ||
       impl_->gc == nullptr) {
     return absl::FailedPreconditionError("window is closed");
@@ -468,6 +537,14 @@ absl::Status WindowSurface::DrawTextLines(std::span<const WindowTextLine> lines,
     return absl::InvalidArgumentError("invalid text batch");
   }
   for (const WindowTextLine& line : lines) {
+    if (line.clip.has_value() &&
+        (line.clip->width <= 0 || line.clip->height <= 0 || line.clip->x < 0 ||
+         line.clip->y < 0 || line.clip->width > impl_->size.width ||
+         line.clip->height > impl_->size.height ||
+         line.clip->x > impl_->size.width - line.clip->width ||
+         line.clip->y > impl_->size.height - line.clip->height)) {
+      return absl::InvalidArgumentError("text clip is outside the window");
+    }
     if (line.text.size() > 4096) {
       return absl::InvalidArgumentError("text line is too long");
     }
@@ -479,11 +556,16 @@ absl::Status WindowSurface::DrawTextLines(std::span<const WindowTextLine> lines,
     impl_->text_lines.push_back({.text = std::u16string(line.text),
                                  .x = line.x,
                                  .baseline_y = line.baseline_y,
-                                 .rgb = line.rgb});
+                                 .rgb = line.rgb,
+                                 .clip = line.clip});
   }
-  if (absl::Status drawn = impl_->DrawTextOverlay(); !drawn.ok()) {
-    return drawn;
-  }
+  return absl::OkStatus();
+}
+
+absl::Status WindowSurface::DrawTextLines(std::span<const WindowTextLine> lines,
+                                          int font_height_pixels) {
+  ABSL_RETURN_IF_ERROR(SetTextLines(lines, font_height_pixels));
+  ABSL_RETURN_IF_ERROR(impl_->DrawTextOverlay());
   impl_->window->Invalidate();
   impl_->session.Flush();
   return absl::OkStatus();
@@ -613,6 +695,16 @@ absl::Status WindowSurface::Present() {
   return impl_->Present();
 }
 
+absl::Status WindowSurface::Present(std::span<const WindowTextLine> lines,
+                                    int font_height_pixels) {
+  ABSL_RETURN_IF_ERROR(SetTextLines(lines, font_height_pixels));
+  ABSL_RETURN_IF_ERROR(impl_->Present(false));
+  ABSL_RETURN_IF_ERROR(impl_->DrawTextOverlay());
+  impl_->window->Invalidate();
+  impl_->session.Flush();
+  return absl::OkStatus();
+}
+
 absl::StatusOr<std::optional<WindowInput>> WindowSurface::PollInput() {
   if (impl_ == nullptr || !impl_->requests_open) {
     return absl::FailedPreconditionError("window is closed");
@@ -683,13 +775,11 @@ absl::StatusOr<std::optional<WindowInput>> WindowSurface::PollInput() {
     if (redraw.Handle() == 2) {
       impl_->window->BeginRedraw(redraw.Rect());
       if (impl_->bitmap != nullptr) {
-        impl_->Present().IgnoreError();
+        impl_->Present(false).IgnoreError();
       }
       absl::Status text_result = impl_->DrawTextOverlay();
       impl_->window->EndRedraw();
-      if (!text_result.ok()) {
-        return text_result;
-      }
+      ABSL_RETURN_IF_ERROR(text_result);
     }
     impl_->session.RedrawReady(&impl_->redraw);
   }

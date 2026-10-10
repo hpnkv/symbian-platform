@@ -11,6 +11,9 @@
 #include <optional>
 #include <utility>
 
+#include <absl/cleanup/cleanup.h>
+#include <absl/status/status_macros.h>
+
 #include "capture_preferences.h"
 #include "symbian/api/camera/camera.h"
 #include "symbian/api/camera/camera_stream.h"
@@ -106,22 +109,21 @@ class SoftwareFrameConsumer final {
         PresentationRotation(window_->rotation(), opening_rotation_);
     const bool quarter_turn = rotation == camera::FrameRotation::kClockwise90 ||
                               rotation == camera::FrameRotation::kClockwise270;
-    auto fitted = camera::CenteredAspectFit(
-        quarter_turn ? source_->layout.height : source_->layout.width,
-        quarter_turn ? source_->layout.width : source_->layout.height,
-        frame.size.width, frame.size.height);
-    if (!fitted.ok()) {
-      return fitted.status();
-    }
+    ABSL_ASSIGN_OR_RETURN(
+        auto fitted,
+        camera::CenteredAspectFit(
+            quarter_turn ? source_->layout.height : source_->layout.width,
+            quarter_turn ? source_->layout.width : source_->layout.height,
+            frame.size.width, frame.size.height));
     std::fill(frame.pixels.begin(), frame.pixels.end(), std::byte{0});
     camera::MutableFrameView output;
-    output.layout = {.width = fitted->width,
-                     .height = fitted->height,
+    output.layout = {.width = fitted.width,
+                     .height = fitted.height,
                      .format = camera::PixelFormat::kRgb565,
                      .stride_bytes = {frame.pitch_bytes, 0, 0}};
     const std::size_t offset =
-        static_cast<std::size_t>(fitted->y) * frame.pitch_bytes +
-        static_cast<std::size_t>(fitted->x) * 2;
+        static_cast<std::size_t>(fitted.y) * frame.pitch_bytes +
+        static_cast<std::size_t>(fitted.x) * 2;
     output.planes[0] = frame.pixels.subspan(offset);
     return camera::TransformFrame(*source_, output, *filter_, nullptr,
                                   rotation);
@@ -134,7 +136,7 @@ class SoftwareFrameConsumer final {
   const camera::FrameView* absl_nullable source_ = nullptr;
 };
 
-int RunWindow(display::WindowSurface* absl_nonnull window) {
+absl::Status RunWindow(display::WindowSurface* absl_nonnull window) {
   Trace("software: discover begin");
   const auto inventory = camera::DiscoverCameras();
   Trace(inventory.ok() ? "software: discover done"
@@ -148,13 +150,10 @@ int RunWindow(display::WindowSurface* absl_nonnull window) {
   if (camera_present) {
     Trace("software: stream open begin");
   }
-  if (absl::Status opened =
-          camera_present ? stream.Open(0, preferences) : absl::OkStatus();
-      !opened.ok()) {
-    RecordFailure(opened);
-    return 1;
+  if (camera_present) {
+    ABSL_RETURN_IF_ERROR(stream.Open(0, preferences));
   }
-  bool live = camera_present;
+  const bool live = camera_present;
   Trace(live ? "software: stream open done" : "software: stream unavailable");
   symbian::api::system::DebugLog(live ? "camera capture opening"
                                       : "camera capture unavailable");
@@ -163,12 +162,7 @@ int RunWindow(display::WindowSurface* absl_nonnull window) {
   bool capturing = live;
   std::optional<display::Rgb565Frame> frame;
   if (!live) {
-    auto created = window->CreateRgb565Frame();
-    if (!created.ok()) {
-      RecordFailure(created.status());
-      return 1;
-    }
-    frame = *created;
+    ABSL_ASSIGN_OR_RETURN(frame, window->CreateRgb565Frame());
   }
   const std::uint32_t refresh =
       display::WindowSurface::PrimaryRefreshRateHz().value_or(30);
@@ -180,27 +174,22 @@ int RunWindow(display::WindowSurface* absl_nonnull window) {
   bool running = true;
   while (running) {
     for (int count = 0; count < 64; ++count) {
-      auto input = window->PollInput();
-      if (!input.ok()) {
-        Trace("software: input error");
-        RecordFailure(input.status());
-        return 1;
-      }
-      if (!input->has_value()) {
+      ABSL_ASSIGN_OR_RETURN(auto input, window->PollInput());
+      if (!input.has_value()) {
         break;
       }
-      switch ((**input).kind) {
+      switch (input->kind) {
         case display::WindowInputKind::kPointerDown:
           filter = filter == camera::ResampleFilter::kNearest
                        ? camera::ResampleFilter::kBilinear
                        : camera::ResampleFilter::kNearest;
           break;
         case display::WindowInputKind::kKeyDown:
-          if ((**input).key == display::WindowKey::kEscape) {
+          if (input->key == display::WindowKey::kEscape) {
             Trace("software: escape key");
             running = false;
-          } else if ((**input).key == display::WindowKey::kSelect ||
-                     (**input).key == display::WindowKey::kEnter) {
+          } else if (input->key == display::WindowKey::kSelect ||
+                     input->key == display::WindowKey::kEnter) {
             filter = filter == camera::ResampleFilter::kNearest
                          ? camera::ResampleFilter::kBilinear
                          : camera::ResampleFilter::kNearest;
@@ -219,12 +208,7 @@ int RunWindow(display::WindowSurface* absl_nonnull window) {
           foreground = true;
           if (!live && (frame->size.width != window->size().width ||
                         frame->size.height != window->size().height)) {
-            auto created = window->CreateRgb565Frame();
-            if (!created.ok()) {
-              RecordFailure(created.status());
-              return 1;
-            }
-            frame = *created;
+            ABSL_ASSIGN_OR_RETURN(frame, window->CreateRgb565Frame());
           }
           pacer.Reset();
           break;
@@ -232,12 +216,7 @@ int RunWindow(display::WindowSurface* absl_nonnull window) {
           Trace("software: display changed");
           if (!live) {
             window->DestroyFrame();
-            auto created = window->CreateRgb565Frame();
-            if (!created.ok()) {
-              RecordFailure(created.status());
-              return 1;
-            }
-            frame = *created;
+            ABSL_ASSIGN_OR_RETURN(frame, window->CreateRgb565Frame());
           }
           break;
         default:
@@ -260,10 +239,7 @@ int RunWindow(display::WindowSurface* absl_nonnull window) {
     }
     if (live && !capturing) {
       Trace("software: capture resume begin");
-      if (absl::Status resumed = stream.Open(0, preferences); !resumed.ok()) {
-        RecordFailure(resumed);
-        return 1;
-      }
+      ABSL_RETURN_IF_ERROR(stream.Open(0, preferences));
       Trace("software: capture resume done");
       capturing = true;
       opening_time = time::MonotonicClock::NowNanoseconds();
@@ -274,14 +250,12 @@ int RunWindow(display::WindowSurface* absl_nonnull window) {
       if (sequence < 8) {
         Trace("software: poll begin");
       }
-      auto polled = stream.PollScoped(consumer.Borrow());
+      ABSL_ASSIGN_OR_RETURN(const bool polled,
+                            stream.PollScoped(consumer.Borrow()));
       if (sequence < 8) {
-        Trace(polled.ok() ? "software: poll done" : "software: poll error");
+        Trace("software: poll done");
       }
-      if (!polled.ok()) {
-        RecordFailure(polled.status());
-        return 1;
-      } else if (*polled) {
+      if (polled) {
         if (!received_frame) {
           Trace("software: first frame");
         }
@@ -292,8 +266,7 @@ int RunWindow(display::WindowSurface* absl_nonnull window) {
     if (live && !received_frame && now - opening_time > 5000000000LL) {
       symbian::api::system::DebugLog("camera capture timed out");
       Trace("camera capture timed out");
-      RecordFailure(absl::DeadlineExceededError("camera capture timed out"));
-      return 1;
+      return absl::DeadlineExceededError("camera capture timed out");
     }
     if (live && !captured) {
       time::SleepFor(pacer.NextDelayNanoseconds());
@@ -316,24 +289,14 @@ int RunWindow(display::WindowSurface* absl_nonnull window) {
                        .format = camera::PixelFormat::kRgb565,
                        .stride_bytes = {frame->pitch_bytes, 0, 0}};
       output.planes[0] = frame->pixels;
-      if (absl::Status transformed =
-              camera::TransformFrame(source, output, filter);
-          !transformed.ok()) {
-        Trace("software: transform error");
-        RecordFailure(transformed);
-        return 1;
-      }
+      ABSL_RETURN_IF_ERROR(camera::TransformFrame(source, output, filter));
       const int third = frame->size.width / 3;
       DrawStripe(*frame, 0, third, !discovery_ok ? 0xf800 : 0xffe0);
       DrawStripe(*frame, third, third * 2,
                  filter == camera::ResampleFilter::kNearest ? 0x001f : 0x07ff);
       DrawStripe(*frame, third * 2, frame->size.width, 0x7bef);
     }
-    if (absl::Status presented = window->Present(); !presented.ok()) {
-      Trace("software: present error");
-      RecordFailure(presented);
-      return 1;
-    }
+    ABSL_RETURN_IF_ERROR(window->Present());
     if (sequence < 8) {
       Trace("software: present done");
     }
@@ -341,42 +304,42 @@ int RunWindow(display::WindowSurface* absl_nonnull window) {
     time::SleepFor(pacer.NextDelayNanoseconds());
   }
   Trace("software: normal exit");
-  return 0;
+  return absl::OkStatus();
+}
+
+absl::Status RunApplication() {
+  ABSL_ASSIGN_OR_RETURN(auto window,
+                        display::WindowSurface::Create("Camera capture"));
+  Trace("app: window open done");
+  ABSL_RETURN_IF_ERROR(window.SetAutomaticOrientation(true));
+#if defined(SYMBIAN_CAMERA_GPU_PROBE)
+  ABSL_RETURN_IF_ERROR(RunGpuWindow(&window));
+#else
+  ABSL_RETURN_IF_ERROR(RunWindow(&window));
+#endif
+  Trace("app: window close begin");
+  window.Close();
+  Trace("app: window close returned");
+  return absl::OkStatus();
 }
 
 }  // namespace
 
-int Run() {
+absl::Status Run() {
   OpenTrace();
+  const absl::Cleanup close_trace = [] {
+    CloseTrace();
+  };
 #if defined(SYMBIAN_CAMERA_GPU_PROBE)
   Trace("GPU: start");
 #else
   Trace("software: start");
 #endif
-  display::WindowSurface window;
-  if (absl::Status opened = window.Open("Camera capture"); !opened.ok()) {
-    Trace("software: window open error");
-    RecordFailure(opened);
-    CloseTrace();
-    return 1;
+  const absl::Status result = RunApplication();
+  if (!result.ok()) {
+    RecordFailure(result);
   }
-  Trace("software: window open done");
-  if (absl::Status orientation = window.SetAutomaticOrientation(true);
-      !orientation.ok()) {
-    RecordFailure(orientation);
-    CloseTrace();
-    return 1;
-  }
-#if defined(SYMBIAN_CAMERA_GPU_PROBE)
-  const int result = RunGpuWindow(&window);
-#else
-  const int result = RunWindow(&window);
-#endif
-  Trace(result == 0 ? "app: return success" : "app: return failure");
-  Trace("app: window close begin");
-  window.Close();
-  Trace("app: window close returned");
-  CloseTrace();
+  Trace(result.ok() ? "app: return success" : "app: return failure");
   return result;
 }
 

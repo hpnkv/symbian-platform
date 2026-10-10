@@ -4,6 +4,7 @@
 #ifndef SYMBIAN_EXAMPLES_SDL2_APP_RENDERER_H_
 #define SYMBIAN_EXAMPLES_SDL2_APP_RENDERER_H_
 
+#include <optional>
 #include <string_view>
 
 #include "sdl2_app/arkanoid_adapter.h"
@@ -25,7 +26,7 @@ class GameRenderer final {
                             SDL_Renderer* absl_nonnull renderer,
                             std::string_view gpu_fallback_reason,
                             std::string_view vibration_error);
-  arkanoid::art::BlockAtlas block_atlas_;
+  std::optional<arkanoid::art::BlockAtlas> block_atlas_;
   bool atlas_attempted_ = false;
 };
 

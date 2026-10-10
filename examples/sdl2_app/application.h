@@ -4,9 +4,11 @@
 #ifndef SYMBIAN_EXAMPLES_SDL2_APP_APPLICATION_H_
 #define SYMBIAN_EXAMPLES_SDL2_APP_APPLICATION_H_
 
+#include "absl/status/status.h"
+
 namespace arkanoid {
 
-int Run();
+absl::Status Run();
 
 }  // namespace arkanoid
 

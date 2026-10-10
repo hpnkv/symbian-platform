@@ -35,8 +35,8 @@ class WebSocketStream {
   static absl::StatusOr<WebSocketStream> Accept(
       net::ByteStream transport, websocket::Options options = {},
       absl::Time deadline = absl::InfiniteFuture());
-  WebSocketStream(WebSocketStream&&) noexcept = default;
-  WebSocketStream& operator=(WebSocketStream&&) noexcept = default;
+  WebSocketStream(WebSocketStream&& other) noexcept;
+  WebSocketStream& operator=(WebSocketStream&& other) noexcept;
   absl::Status Send(std::span<const std::uint8_t> bytes,
                     absl::Time deadline = absl::InfiniteFuture());
   absl::StatusOr<std::size_t> Receive(

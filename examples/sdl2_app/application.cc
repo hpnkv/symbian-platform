@@ -6,8 +6,13 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
+#include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
+
+#include <absl/status/status_macros.h>
 
 #include "sdl2_app/arkanoid_adapter.h"
 #include "sdl2_app/game.h"
@@ -25,18 +30,16 @@ constexpr int kStepMs = 16;
 constexpr int kMelodyNotes[] = {60, 64, 67, 72, 67, 64, 62, 67};
 }  // namespace
 
-int Run() {
+absl::Status Run() {
   if (!symbian_sdl2_c_api_probe()) {
-    return 5;
+    return absl::FailedPreconditionError("SDL C API probe failed");
   }
 #ifdef SYMBIAN_ARKANOID_SDL3
-  auto session = symbian::sdl3::Session::Start(SDL_INIT_VIDEO);
+  const auto session = symbian::sdl3::Session::Start(SDL_INIT_VIDEO);
 #else
-  auto session = symbian::sdl2::Session::Start(SDL_INIT_VIDEO);
+  const auto session = symbian::sdl2::Session::Start(SDL_INIT_VIDEO);
 #endif
-  if (!session.ok()) {
-    return 1;
-  }
+  ABSL_RETURN_IF_ERROR(session.status());
 #ifdef SYMBIAN_ARKANOID_SDL3
   auto window =
       symbian::sdl3::Window::Create("Bounce Style Arkanoid", 640, 360, 0);
@@ -44,9 +47,7 @@ int Run() {
   auto window = symbian::sdl2::Window::Create("Bounce Style Arkanoid", 640, 360,
                                               SDL_WINDOW_SHOWN);
 #endif
-  if (!window.ok()) {
-    return 2;
-  }
+  ABSL_RETURN_IF_ERROR(window.status());
   std::string gpu_fallback_reason;
 #ifdef SYMBIAN_ARKANOID_SDL3
 #ifdef SYMBIAN_ARKANOID_GPU
@@ -75,9 +76,7 @@ int Run() {
       symbian::sdl2::Renderer::Create(window->get(), SDL_RENDERER_SOFTWARE);
 #endif
 #endif
-  if (!renderer.ok()) {
-    return 3;
-  }
+  ABSL_RETURN_IF_ERROR(renderer.status());
   bool gpu_active = false;
 #ifdef SYMBIAN_ARKANOID_SDL3
   const char* absl_nullable renderer_name =
@@ -93,24 +92,38 @@ int Run() {
   int height = 0;
   SDL_GetWindowSize(window->get(), &width, &height);
   if (width < 240 || height < 200) {
-    return 4;
+    return absl::FailedPreconditionError("SDL window is too small");
   }
   const auto touchscreen_presence =
       symbian::api::display::ReadTouchscreenPresence();
   // An unknown HAL result keeps the on-screen control available.
   const bool touchscreen = !touchscreen_presence.ok() || *touchscreen_presence;
   Game game(width, height, touchscreen);
-  symbian::api::media::MidiOutput midi;
-  symbian::api::media::Vibration vibration;
+  auto midi_result = symbian::api::media::MidiOutput::Create();
+  auto vibration_result = symbian::api::media::Vibration::Create();
+  std::optional<symbian::api::media::MidiOutput> midi;
+  std::optional<symbian::api::media::Vibration> vibration;
   std::string vibration_error;
+  if (midi_result.ok()) {
+    midi = std::move(*midi_result);
+  }
+  if (vibration_result.ok()) {
+    vibration = std::move(*vibration_result);
+  } else {
+    vibration_error = std::string(vibration_result.status().message());
+  }
   arkanoid::GameRenderer game_renderer;
   // Present a complete frame before opening device media services. Some
   // firmware starts those servers synchronously, so they must not keep the
   // initial window white while the request is in flight.
   game_renderer.Draw(game, renderer->get(), 0, gpu_active, gpu_fallback_reason,
                      vibration_error);
-  midi.Start().IgnoreError();
-  vibration.Start().IgnoreError();
+  if (midi.has_value()) {
+    midi->Start().IgnoreError();
+  }
+  if (vibration.has_value()) {
+    vibration->Start().IgnoreError();
+  }
   std::uint32_t last_hits = 0;
   std::uint64_t last_vibration_ms = 0;
   std::uint64_t next_note_ms = 0;
@@ -163,20 +176,22 @@ int Run() {
       lag -= kStepMs;
     }
     if (game.hits() != last_hits) {
-      if (now - last_vibration_ms >= 120 && vibration.Pulse(60).ok()) {
+      if (vibration.has_value() && now - last_vibration_ms >= 120 &&
+          vibration->Pulse(60).ok()) {
         last_vibration_ms = now;
       }
       last_hits = game.hits();
     }
-    if (game.music_enabled() && midi.available() && now >= next_note_ms) {
-      midi.PlayNote(kMelodyNotes[note_index++ % 8], 170, 52).IgnoreError();
+    if (game.music_enabled() && midi.has_value() && midi->available() &&
+        now >= next_note_ms) {
+      midi->PlayNote(kMelodyNotes[note_index++ % 8], 170, 52).IgnoreError();
       next_note_ms = now + 220;
     }
     if (!game.music_enabled()) {
       next_note_ms = 0;
     }
-    if (vibration_error.empty()) {
-      if (const absl::Status vibration_status = vibration.status();
+    if (vibration_error.empty() && vibration.has_value()) {
+      if (const absl::Status vibration_status = vibration->status();
           !vibration_status.ok()) {
         vibration_error.assign(vibration_status.message().data(),
                                vibration_status.message().size());
@@ -197,7 +212,7 @@ int Run() {
     }
     symbian::api::time::SleepFor(frame_pacer.NextDelayNanoseconds());
   }
-  return 0;
+  return absl::OkStatus();
 }
 
 }  // namespace arkanoid

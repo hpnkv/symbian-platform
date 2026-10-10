@@ -1,9 +1,11 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
 
+#include <absl/status/status_macros.h>
 #include "symbian/api/display/gles_rect_batch.h"
 
 #include <new>
+#include <utility>
 
 #include <GLES2/gl2.h>
 
@@ -73,6 +75,34 @@ struct GlesRectBatch::Impl {
 };
 
 GlesRectBatch::GlesRectBatch() = default;
+
+GlesRectBatch::GlesRectBatch(GlesRectBatch&& other) noexcept
+    : impl_(std::exchange(other.impl_, nullptr)) {}
+
+GlesRectBatch& GlesRectBatch::operator=(GlesRectBatch&& other) noexcept {
+  if (this != &other) {
+    Close();
+    delete impl_;
+    impl_ = std::exchange(other.impl_, nullptr);
+  }
+  return *this;
+}
+
+absl::StatusOr<GlesRectBatch> GlesRectBatch::Create() {
+  GlesRectBatch result;
+  ABSL_RETURN_IF_ERROR(result.Open());
+  return result;
+}
+
+absl::StatusOr<std::unique_ptr<GlesRectBatch>> GlesRectBatch::CreateUnique() {
+  ABSL_ASSIGN_OR_RETURN(auto created, Create());
+  std::unique_ptr<GlesRectBatch> owner(new (std::nothrow)
+                                           GlesRectBatch(std::move(created)));
+  if (owner == nullptr) {
+    return absl::ResourceExhaustedError("GLES batch owner allocation failed");
+  }
+  return owner;
+}
 
 GlesRectBatch::~GlesRectBatch() {
   Close();

@@ -21,15 +21,16 @@ std::size_t log_next = 0;
 std::size_t log_size = 0;
 
 void LockLogs() {
-  while (log_lock.test_and_set(std::memory_order_acquire)) {
-  }
+  while (log_lock.test_and_set(std::memory_order_acquire)) {}
 }
 
-void UnlockLogs() { log_lock.clear(std::memory_order_release); }
+void UnlockLogs() {
+  log_lock.clear(std::memory_order_release);
+}
 
 void AppendLog(std::string_view message) {
   LockLogs();
-  for (char character : message) {
+  for (const char character : message) {
     recent_logs[log_next] = character;
     log_next = (log_next + 1) % kLogCapacity;
     log_size = std::min(log_size + 1, kLogCapacity);

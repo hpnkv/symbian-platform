@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <string_view>
+#include <utility>
 
 #include "sdl2_app/assets/ball.h"
 #include "sdl2_app/assets/block.h"
@@ -21,7 +22,11 @@ void GameRenderer::Draw(const Game& game, SDL_Renderer* absl_nonnull renderer,
                         std::string_view vibration_error) {
   if (!atlas_attempted_) {
     atlas_attempted_ = true;
-    block_atlas_.Open(renderer, game.cell_width_, game.brick_height_);
+    auto atlas = arkanoid::art::BlockAtlas::Create(renderer, game.cell_width_,
+                                                   game.brick_height_);
+    if (atlas.ok()) {
+      block_atlas_ = std::move(*atlas);
+    }
   }
   arkanoid::art::SetColor(renderer, 161, 208, 221);
   SDL_RenderClear(renderer);
@@ -31,7 +36,8 @@ void GameRenderer::Draw(const Game& game, SDL_Renderer* absl_nonnull renderer,
   for (int x = 0, column = 0; x < game.width_;
        x += game.cell_width_, ++column) {
     if (const int width = std::min(game.cell_width_, game.width_ - x);
-        !block_atlas_.Draw(renderer, x, 0, width, game.brick_height_, column)) {
+        (!block_atlas_ || !block_atlas_->Draw(renderer, x, 0, width,
+                                              game.brick_height_, column))) {
       arkanoid::art::DrawBlock(renderer, x, 0, width, game.brick_height_,
                                column);
     }
@@ -61,8 +67,9 @@ void GameRenderer::Draw(const Game& game, SDL_Renderer* absl_nonnull renderer,
       const int x = 12 + col * game.cell_width_;
       const int y = game.layout_.brick_top() + row * game.brick_height_;
       if (const int variation = row * Game::kColumns + col;
-          !block_atlas_.Draw(renderer, x, y, game.cell_width_,
-                             game.brick_height_, variation)) {
+          (!block_atlas_ ||
+           !block_atlas_->Draw(renderer, x, y, game.cell_width_,
+                               game.brick_height_, variation))) {
         arkanoid::art::DrawBlock(renderer, x, y, game.cell_width_,
                                  game.brick_height_, variation);
       }

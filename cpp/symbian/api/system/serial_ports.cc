@@ -8,6 +8,7 @@
 #include <type_traits>
 
 #include <absl/base/nullability.h>
+#include <absl/status/status_macros.h>
 #include <c32comm.h>
 
 #include "symbian/native_status.h"
@@ -51,34 +52,29 @@ absl::StatusOr<std::vector<SerialPortRange>> ListSerialPortRanges() {
     RLibrary* absl_nonnull library;
 
     ~LibraryCloser() { library->Close(); }
-  } closer{&library};
+  };
 
-  auto constructor =
-      Lookup<void(RCommServ* absl_nonnull)>(library, kConstructorOrdinal);
-  auto connect =
-      Lookup<TInt(RCommServ* absl_nonnull)>(library, kConnectOrdinal);
-  auto count_ports = Lookup<TInt(RCommServ* absl_nonnull, TInt* absl_nonnull)>(
-      library, kNumPortsOrdinal);
-  auto port_info =
+  const LibraryCloser closer{&library};
+
+  ABSL_ASSIGN_OR_RETURN(
+      auto constructor,
+      Lookup<void(RCommServ* absl_nonnull)>(library, kConstructorOrdinal));
+  ABSL_ASSIGN_OR_RETURN(
+      auto connect,
+      Lookup<TInt(RCommServ* absl_nonnull)>(library, kConnectOrdinal));
+  ABSL_ASSIGN_OR_RETURN(
+      auto count_ports,
+      Lookup<TInt(RCommServ* absl_nonnull, TInt* absl_nonnull)>(
+          library, kNumPortsOrdinal));
+  ABSL_ASSIGN_OR_RETURN(
+      auto port_info,
       Lookup<TInt(RCommServ* absl_nonnull, TInt, TDes16* absl_nonnull,
-                  TSerialInfo* absl_nonnull)>(library, kGetPortInfoOrdinal);
-  if (!constructor.ok()) {
-    return constructor.status();
-  }
-  if (!connect.ok()) {
-    return connect.status();
-  }
-  if (!count_ports.ok()) {
-    return count_ports.status();
-  }
-  if (!port_info.ok()) {
-    return port_info.status();
-  }
+                  TSerialInfo* absl_nonnull)>(library, kGetPortInfoOrdinal));
 
   alignas(RCommServ) std::byte storage[sizeof(RCommServ)]{};
   auto* absl_nonnull session = reinterpret_cast<RCommServ*>(storage);
-  (*constructor)(session);
-  if (const TInt connected = (*connect)(session); connected != KErrNone) {
+  constructor(session);
+  if (const TInt connected = connect(session); connected != KErrNone) {
     return symbian::StatusFromNativeError(connected, "C32 connect");
   }
 
@@ -86,10 +82,12 @@ absl::StatusOr<std::vector<SerialPortRange>> ListSerialPortRanges() {
     RCommServ* absl_nonnull session;
 
     ~SessionCloser() { session->Close(); }
-  } session_closer{session};
+  };
+
+  const SessionCloser session_closer{session};
 
   TInt count = 0;
-  if (const TInt counted = (*count_ports)(session, &count);
+  if (const TInt counted = count_ports(session, &count);
       counted != KErrNone) {
     return symbian::StatusFromNativeError(counted, "C32 port count");
   }
@@ -101,7 +99,7 @@ absl::StatusOr<std::vector<SerialPortRange>> ListSerialPortRanges() {
   for (TInt index = 0; index < count; ++index) {
     TBuf<64> module;
     TSerialInfo info{};
-    if (const TInt fetched = (*port_info)(session, index, &module, &info);
+    if (const TInt fetched = port_info(session, index, &module, &info);
         fetched != KErrNone) {
       return symbian::StatusFromNativeError(fetched, "C32 port info");
     }

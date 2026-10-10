@@ -7,8 +7,10 @@
 #include <cstdint>
 #include <memory>
 #include <new>
+#include <utility>
 
 #include <absl/base/nullability.h>
+#include <absl/status/status_macros.h>
 
 #include "symbian/api/time/monotonic_clock.h"
 #include "symbian/concurrency/worker_executor.h"
@@ -85,20 +87,38 @@ struct Vibration::Impl {
       std::make_shared<std::atomic<int>>(kQueued);
   std::int64_t started_ns = 0;
   absl::Status failure = absl::OkStatus();
+
+  ~Impl() { delete worker; }
 };
 
-Vibration::Vibration() : impl_(new (std::nothrow) Impl) {}
+Vibration::Vibration(std::unique_ptr<Impl> impl) : impl_(std::move(impl)) {}
 
-Vibration::~Vibration() {
-  if (impl_ != nullptr) {
-    delete impl_->worker;
-    delete impl_;
+Vibration::Vibration(Vibration&& other) noexcept = default;
+Vibration& Vibration::operator=(Vibration&& other) noexcept = default;
+
+absl::StatusOr<Vibration> Vibration::Create() {
+  std::unique_ptr<Impl> impl(new (std::nothrow) Impl);
+  if (impl == nullptr) {
+    return absl::ResourceExhaustedError("vibration owner allocation failed");
   }
+  return Vibration(std::move(impl));
 }
+
+absl::StatusOr<std::unique_ptr<Vibration>> Vibration::CreateUnique() {
+  ABSL_ASSIGN_OR_RETURN(auto created, Create());
+  std::unique_ptr<Vibration> owner(new (std::nothrow)
+                                       Vibration(std::move(created)));
+  if (owner == nullptr) {
+    return absl::ResourceExhaustedError("vibration owner allocation failed");
+  }
+  return owner;
+}
+
+Vibration::~Vibration() = default;
 
 absl::Status Vibration::Start() {
   if (impl_ == nullptr) {
-    return absl::ResourceExhaustedError("vibration owner allocation failed");
+    return absl::FailedPreconditionError("Vibration owner was moved");
   }
   if (impl_->worker != nullptr || !impl_->failure.ok()) {
     return impl_->failure;
@@ -115,14 +135,8 @@ absl::Status Vibration::Pulse(int duration_ms) {
   if (duration_ms <= 0 || duration_ms > 5000) {
     return absl::InvalidArgumentError("Vibration duration must be 1..5000 ms");
   }
-  absl::Status ready = Start();
-  if (!ready.ok()) {
-    return ready;
-  }
-  ready = status();
-  if (!ready.ok()) {
-    return ready;
-  }
+  ABSL_RETURN_IF_ERROR(Start());
+  ABSL_RETURN_IF_ERROR(status());
   if (impl_->result->load() == kPending) {
     return absl::ResourceExhaustedError("Vibration request already pending");
   }
@@ -145,11 +159,9 @@ absl::Status Vibration::Pulse(int duration_ms) {
 
 absl::Status Vibration::status() {
   if (impl_ == nullptr) {
-    return absl::ResourceExhaustedError("vibration owner allocation failed");
+    return absl::FailedPreconditionError("Vibration owner was moved");
   }
-  if (!impl_->failure.ok()) {
-    return impl_->failure;
-  }
+  ABSL_RETURN_IF_ERROR(impl_->failure);
   if (impl_->worker == nullptr) {
     return absl::FailedPreconditionError("vibration worker not started");
   }

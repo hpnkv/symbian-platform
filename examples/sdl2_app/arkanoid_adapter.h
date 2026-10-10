@@ -87,8 +87,9 @@ inline std::uint32_t RefreshRateHz() {
 
 inline void Fill(SDL_Renderer* absl_nonnull renderer, int x, int y, int width,
                  int height) {
-  SDL_FRect rectangle = {static_cast<float>(x), static_cast<float>(y),
-                         static_cast<float>(width), static_cast<float>(height)};
+  const SDL_FRect rectangle = {static_cast<float>(x), static_cast<float>(y),
+                               static_cast<float>(width),
+                               static_cast<float>(height)};
   SDL_RenderFillRect(renderer, &rectangle);
 }
 
@@ -182,7 +183,7 @@ inline std::uint32_t RefreshRateHz() {
 
 inline void Fill(SDL_Renderer* absl_nonnull renderer, int x, int y, int width,
                  int height) {
-  SDL_Rect rectangle = {x, y, width, height};
+  const SDL_Rect rectangle = {x, y, width, height};
   SDL_RenderFillRect(renderer, &rectangle);
 }
 

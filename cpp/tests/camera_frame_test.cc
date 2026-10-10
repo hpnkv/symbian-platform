@@ -4,6 +4,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -450,9 +451,21 @@ TEST(CameraFrame, DispatchesOpaqueFramesWithoutCpuMapping) {
 
 TEST(CameraFrame, LeaseMoveReleasesExactlyOnce) {
   int releases = 0;
+  std::byte pixel{1};
+  FrameView view;
+  view.layout = {.width = 1, .height = 1, .format = PixelFormat::kGray8};
+  view.planes[0] = std::span<const std::byte>(&pixel, 1);
   {
-    FrameLease original({}, [&releases] { ++releases; });
+    FrameLease original(view, [&releases] { ++releases; });
     FrameLease moved(std::move(original));
+    EXPECT_TRUE(original.view().planes[0].empty());
+    EXPECT_EQ(original.view().layout.width, 0);
+    EXPECT_EQ(moved.view().planes[0].data(), &pixel);
+    FrameLease assigned;
+    assigned = std::move(moved);
+    EXPECT_TRUE(moved.view().planes[0].empty());
+    EXPECT_EQ(moved.view().layout.width, 0);
+    EXPECT_EQ(assigned.view().planes[0].data(), &pixel);
     EXPECT_EQ(releases, 0);
   }
   EXPECT_EQ(releases, 1);

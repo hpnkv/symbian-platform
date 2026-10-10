@@ -2,6 +2,7 @@
 // Uses original EKA2L1 installation/loader implementations, revision recorded
 // in the archived ~/.symbian-dev/research/eka2l1.md. No firmware parser is
 // reimplemented here.
+#include <absl/status/status_macros.h>
 #include "symbian/emulator/firmware.h"
 
 #include <algorithm>
@@ -198,9 +199,7 @@ absl::StatusOr<nlohmann::json> ImportFirmware(const std::string& form,
     if (!eka2l1::common::list_archive(source, entries)) {
       return absl::InvalidArgumentError("Cannot read firmware archive");
     }
-    if (auto status = ValidateArchive(entries); !status.ok()) {
-      return status;
-    }
+    ABSL_RETURN_IF_ERROR(ValidateArchive(entries));
     result = eka2l1::loader::install_archive(&manager, source, "data/roms/",
                                              "data/drives/z/", true, nullptr,
                                              nullptr);
@@ -213,9 +212,7 @@ absl::StatusOr<nlohmann::json> ImportFirmware(const std::string& form,
     if (!stream.valid() || !eka2l1::loader::load_rom(&stream)) {
       return absl::InvalidArgumentError("Invalid ROM image");
     }
-    if (auto status = CopyZ(companion, "data/drive-z-staging"); !status.ok()) {
-      return status;
-    }
+    ABSL_RETURN_IF_ERROR(CopyZ(companion, "data/drive-z-staging"));
     std::string manufacturer, code, model;
     if (!eka2l1::loader::determine_rpkg_product_info(
             "data/drive-z-staging/", manufacturer, code, model)) {
@@ -269,9 +266,7 @@ absl::StatusOr<nlohmann::json> ImportFirmware(const std::string& form,
   } else {
     return absl::InvalidArgumentError("Unknown import form");
   }
-  if (auto status = InstallationStatus(result); !status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(InstallationStatus(result));
   if (manager.total() != 1) {
     return absl::FailedPreconditionError(
         "Import must produce exactly one device");

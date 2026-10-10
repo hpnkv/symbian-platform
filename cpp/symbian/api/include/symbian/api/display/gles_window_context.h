@@ -5,6 +5,7 @@
 #define SYMBIAN_API_DISPLAY_GLES_WINDOW_CONTEXT_H_
 
 #include <cstdint>
+#include <memory>
 #include <string_view>
 
 #include "absl/base/nullability.h"
@@ -33,20 +34,25 @@ struct GlesContextFormat {
  * @brief Owns an OpenGL ES context and EGL surface for a WindowSurface.
  *
  * The window must outlive the context. All methods run on the opening thread.
- * Open fails when the deployment firmware has no suitable EGL configuration;
+ * Creation fails when the firmware has no suitable EGL configuration;
  * callers can then use WindowSurface's RGB565 software frame instead.
  */
 class GlesWindowContext final {
  public:
   using Procedure = void (*absl_nullable)(...);
 
-  GlesWindowContext();
+  static absl::StatusOr<GlesWindowContext> Create(
+      WindowSurface* absl_nonnull window, int major_version,
+      GlesContextFormat format = {});
+  static absl::StatusOr<std::unique_ptr<GlesWindowContext>> CreateUnique(
+      WindowSurface* absl_nonnull window, int major_version,
+      GlesContextFormat format = {});
   GlesWindowContext(const GlesWindowContext&) = delete;
   GlesWindowContext& operator=(const GlesWindowContext&) = delete;
+  GlesWindowContext(GlesWindowContext&& other) noexcept;
+  GlesWindowContext& operator=(GlesWindowContext&& other) noexcept;
   ~GlesWindowContext();
 
-  absl::Status Open(WindowSurface* absl_nonnull window, int major_version,
-                    GlesContextFormat format = {});
   absl::Status MakeCurrent();
   absl::Status ClearCurrent();
   // Recreate the native EGL surface after the window changes geometry while
@@ -66,6 +72,9 @@ class GlesWindowContext final {
   static Procedure absl_nullable GetProcAddress(std::string_view name);
 
  private:
+  GlesWindowContext();
+  absl::Status Open(WindowSurface* absl_nonnull window, int major_version,
+                    GlesContextFormat format);
   struct Impl;
   Impl* absl_nullable impl_ = nullptr;
 };

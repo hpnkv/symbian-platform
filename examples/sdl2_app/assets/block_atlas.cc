@@ -6,6 +6,9 @@
 #include <cstdint>
 #include <memory>
 #include <new>
+#include <utility>
+
+#include <absl/status/status_macros.h>
 
 namespace arkanoid::art {
 namespace {
@@ -51,18 +54,55 @@ BlockAtlas::~BlockAtlas() {
   }
 }
 
-bool BlockAtlas::Open(SDL_Renderer* absl_nonnull renderer, int cell_width,
-                      int cell_height) {
-  if (texture_ != nullptr || cell_width < 9 || cell_height < 9) {
-    return false;
+BlockAtlas::BlockAtlas(BlockAtlas&& other) noexcept
+    : texture_(std::exchange(other.texture_, nullptr)),
+      cell_width_(std::exchange(other.cell_width_, 0)),
+      cell_height_(std::exchange(other.cell_height_, 0)) {}
+
+BlockAtlas& BlockAtlas::operator=(BlockAtlas&& other) noexcept {
+  if (this != &other) {
+    if (texture_ != nullptr) {
+      SDL_DestroyTexture(texture_);
+    }
+    texture_ = std::exchange(other.texture_, nullptr);
+    cell_width_ = std::exchange(other.cell_width_, 0);
+    cell_height_ = std::exchange(other.cell_height_, 0);
+  }
+  return *this;
+}
+
+absl::StatusOr<BlockAtlas> BlockAtlas::Create(
+    SDL_Renderer* absl_nonnull renderer, int cell_width, int cell_height) {
+  BlockAtlas result;
+  ABSL_RETURN_IF_ERROR(result.Open(renderer, cell_width, cell_height));
+  return result;
+}
+
+absl::StatusOr<std::unique_ptr<BlockAtlas>> BlockAtlas::CreateUnique(
+    SDL_Renderer* absl_nonnull renderer, int cell_width, int cell_height) {
+  ABSL_ASSIGN_OR_RETURN(auto created,
+                        Create(renderer, cell_width, cell_height));
+  std::unique_ptr<BlockAtlas> owner(new (std::nothrow)
+                                        BlockAtlas(std::move(created)));
+  if (owner == nullptr) {
+    return absl::ResourceExhaustedError("block atlas owner allocation failed");
+  }
+  return owner;
+}
+
+absl::Status BlockAtlas::Open(SDL_Renderer* absl_nonnull renderer,
+                              int cell_width, int cell_height) {
+  if (cell_width < 9 || cell_height < 9 || cell_width > 2048 ||
+      cell_height > 2048) {
+    return absl::InvalidArgumentError("block atlas cell size is invalid");
   }
   const int width = kColumns * cell_width;
   const int height = kRows * cell_height;
   const std::size_t count = static_cast<std::size_t>(width) * height;
-  std::unique_ptr<std::uint32_t[]> pixels(new (std::nothrow)
-                                              std::uint32_t[count]);
+  const std::unique_ptr<std::uint32_t[]> pixels(new (std::nothrow)
+                                                    std::uint32_t[count]);
   if (pixels == nullptr) {
-    return false;
+    return absl::ResourceExhaustedError("block atlas pixels allocation failed");
   }
   for (int row = 0; row < kRows; ++row) {
     for (int column = 0; column < kColumns; ++column) {
@@ -73,17 +113,23 @@ bool BlockAtlas::Open(SDL_Renderer* absl_nonnull renderer, int cell_width,
   texture_ = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
                                SDL_TEXTUREACCESS_STATIC, width, height);
   if (texture_ == nullptr) {
-    return false;
+    return absl::UnavailableError("block atlas texture creation failed");
   }
   if (!arkanoid::UpdateTexture(texture_, pixels.get(), width * 4)) {
-    SDL_DestroyTexture(texture_);
-    texture_ = nullptr;
-    return false;
+    return absl::UnavailableError("block atlas texture upload failed");
   }
-  SDL_SetTextureBlendMode(texture_, SDL_BLENDMODE_NONE);
+#ifdef SYMBIAN_ARKANOID_SDL3
+  const bool blend_set = SDL_SetTextureBlendMode(texture_, SDL_BLENDMODE_NONE);
+#else
+  const bool blend_set =
+      SDL_SetTextureBlendMode(texture_, SDL_BLENDMODE_NONE) == 0;
+#endif
+  if (!blend_set) {
+    return absl::UnavailableError("block atlas blend setup failed");
+  }
   cell_width_ = cell_width;
   cell_height_ = cell_height;
-  return true;
+  return absl::OkStatus();
 }
 
 bool BlockAtlas::Draw(SDL_Renderer* absl_nonnull renderer, int x, int y,

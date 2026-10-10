@@ -5,8 +5,12 @@
 
 #include <cstdint>
 #include <limits>
+#include <memory>
+#include <new>
+#include <utility>
 
 #include <GLES2/gl2.h>
+#include <absl/status/status_macros.h>
 #include <absl/base/nullability.h>
 
 namespace symbian::api::display {
@@ -114,6 +118,39 @@ absl::StatusOr<Gles2Viewport> AspectFitViewport(int surface_width,
                        static_cast<int>(width), static_cast<int>(height)};
 }
 
+Gles2Texture::Gles2Texture(Gles2Texture&& other) noexcept
+    : texture_(std::exchange(other.texture_, 0)),
+      width_(std::exchange(other.width_, 0)),
+      height_(std::exchange(other.height_, 0)) {}
+
+Gles2Texture& Gles2Texture::operator=(Gles2Texture&& other) noexcept {
+  if (this != &other) {
+    Close();
+    texture_ = std::exchange(other.texture_, 0);
+    width_ = std::exchange(other.width_, 0);
+    height_ = std::exchange(other.height_, 0);
+  }
+  return *this;
+}
+
+absl::StatusOr<Gles2Texture> Gles2Texture::Create(int width, int height) {
+  Gles2Texture result;
+  ABSL_RETURN_IF_ERROR(result.Resize(width, height));
+  return result;
+}
+
+absl::StatusOr<std::unique_ptr<Gles2Texture>> Gles2Texture::CreateUnique(
+    int width, int height) {
+  ABSL_ASSIGN_OR_RETURN(auto created, Create(width, height));
+  std::unique_ptr<Gles2Texture> owner(new (std::nothrow)
+                                          Gles2Texture(std::move(created)));
+  if (owner == nullptr) {
+    return absl::ResourceExhaustedError(
+        "GLES2 texture owner allocation failed");
+  }
+  return owner;
+}
+
 Gles2Texture::~Gles2Texture() {
   Close();
 }
@@ -151,6 +188,47 @@ void Gles2Texture::Close() {
   }
   width_ = 0;
   height_ = 0;
+}
+
+Gles2TexturePresenter::Gles2TexturePresenter(
+    Gles2TexturePresenter&& other) noexcept
+    : program_(std::exchange(other.program_, 0)),
+      sampler_(std::exchange(other.sampler_, -1)),
+      blue_first_(std::exchange(other.blue_first_, -1)),
+      top_down_(std::exchange(other.top_down_, -1)),
+      rotation_(std::exchange(other.rotation_, -1)),
+      source_rect_(std::exchange(other.source_rect_, -1)) {}
+
+Gles2TexturePresenter& Gles2TexturePresenter::operator=(
+    Gles2TexturePresenter&& other) noexcept {
+  if (this != &other) {
+    Close();
+    program_ = std::exchange(other.program_, 0);
+    sampler_ = std::exchange(other.sampler_, -1);
+    blue_first_ = std::exchange(other.blue_first_, -1);
+    top_down_ = std::exchange(other.top_down_, -1);
+    rotation_ = std::exchange(other.rotation_, -1);
+    source_rect_ = std::exchange(other.source_rect_, -1);
+  }
+  return *this;
+}
+
+absl::StatusOr<Gles2TexturePresenter> Gles2TexturePresenter::Create() {
+  Gles2TexturePresenter result;
+  ABSL_RETURN_IF_ERROR(result.Open());
+  return result;
+}
+
+absl::StatusOr<std::unique_ptr<Gles2TexturePresenter>>
+Gles2TexturePresenter::CreateUnique() {
+  ABSL_ASSIGN_OR_RETURN(auto created, Create());
+  std::unique_ptr<Gles2TexturePresenter> owner(
+      new (std::nothrow) Gles2TexturePresenter(std::move(created)));
+  if (owner == nullptr) {
+    return absl::ResourceExhaustedError(
+        "GLES2 presenter owner allocation failed");
+  }
+  return owner;
 }
 
 Gles2TexturePresenter::~Gles2TexturePresenter() {

@@ -4,8 +4,11 @@
 #ifndef SYMBIAN_API_MEDIA_MIDI_OUTPUT_H_
 #define SYMBIAN_API_MEDIA_MIDI_OUTPUT_H_
 
+#include <memory>
+
 #include "absl/base/nullability.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace symbian::api::media {
 
@@ -19,9 +22,12 @@ namespace symbian::api::media {
  */
 class MidiOutput final {
  public:
-  MidiOutput();
+  static absl::StatusOr<MidiOutput> Create();
+  static absl::StatusOr<std::unique_ptr<MidiOutput>> CreateUnique();
   MidiOutput(const MidiOutput&) = delete;
   MidiOutput& operator=(const MidiOutput&) = delete;
+  MidiOutput(MidiOutput&& other) noexcept;
+  MidiOutput& operator=(MidiOutput&& other) noexcept;
   ~MidiOutput();
 
   absl::Status Start();
@@ -31,7 +37,8 @@ class MidiOutput final {
 
  private:
   struct Impl;
-  Impl* absl_nullable impl_ = nullptr;
+  explicit MidiOutput(std::unique_ptr<Impl> impl);
+  std::unique_ptr<Impl> impl_;
 };
 
 }  // namespace symbian::api::media

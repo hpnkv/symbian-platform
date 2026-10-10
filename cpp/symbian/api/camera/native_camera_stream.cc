@@ -462,7 +462,7 @@ class CameraState final : public MCameraObserver2, public MCameraObserver {
       bitmap.LockHeap();
       const TUint32* absl_nullable address = bitmap.DataAddress();
       if (address != nullptr) {
-        NativeCameraFrame borrowed{
+        const NativeCameraFrame borrowed{
             .data = reinterpret_cast<const unsigned char*>(address),
             .bytes = stride * size.iHeight,
             .width = size.iWidth,
@@ -753,7 +753,7 @@ class CameraState final : public MCameraObserver2, public MCameraObserver {
       trace_file_.Close();
       trace_open_ = false;
     }
-    trace_session_.Close();
+    trace_session_.RSessionBase::Close();
 #endif
   }
 
@@ -787,7 +787,7 @@ class CameraState final : public MCameraObserver2, public MCameraObserver {
   }
 
   const unsigned char* absl_nonnull ChunkPixelsL() {
-    RChunk& chunk = held_->ChunkL();
+    const RChunk& chunk = held_->ChunkL();
     const TInt offset = held_->ChunkOffsetL(0);
     if (offset < 0 || offset > chunk.Size() - held_->FrameSize(0)) {
       User::Leave(KErrCorrupt);

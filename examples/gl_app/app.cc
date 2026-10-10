@@ -1,5 +1,7 @@
+#include "absl/log/check.h"
 #include "application.h"
 
 int main() {
-  return gl_app::RunApplication();
+  CHECK_OK(gl_app::RunApplication());
+  return 0;
 }

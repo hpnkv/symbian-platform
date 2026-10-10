@@ -2,7 +2,10 @@
 // Licensed under the Apache License, Version 2.0.
 
 #include <cstdint>
+#include <memory>
 #include <new>
+#include <optional>
+#include <utility>
 
 #include <absl/base/nullability.h>
 
@@ -27,13 +30,13 @@ class VideoOwner final {
     if (window_ != nullptr) {
       return SDL_SetError("Only one window is supported");
     }
-    if (const absl::Status status =
-            surface_.Open(window->title == nullptr ? "" : window->title);
-        !status.ok()) {
-      surface_.Close();
-      return SDL_SetError("Window open: %s", status.message().data());
+    auto surface = symbian::api::display::WindowSurface::Create(
+        window->title == nullptr ? "" : window->title);
+    if (!surface.ok()) {
+      return SDL_SetError("Window open: %s", surface.status().message().data());
     }
-    const auto size = surface_.size();
+    surface_ = std::move(*surface);
+    const auto size = surface_->size();
     window->x = 0;
     window->y = 0;
     window->w = size.width;
@@ -51,7 +54,10 @@ class VideoOwner final {
   bool CreateFramebuffer(SDL_PixelFormat* absl_nonnull format,
                          void* absl_nullable* absl_nonnull pixels,
                          int* absl_nonnull pitch) {
-    auto frame = surface_.CreateRgb565Frame();
+    if (!surface_) {
+      return SDL_SetError("Window is closed");
+    }
+    auto frame = surface_->CreateRgb565Frame();
     if (!frame.ok()) {
       return SDL_SetError("Framebuffer: %s", frame.status().message().data());
     }
@@ -62,7 +68,10 @@ class VideoOwner final {
   }
 
   bool Present() {
-    if (const absl::Status status = surface_.Present(); !status.ok()) {
+    if (!surface_) {
+      return SDL_SetError("Window is closed");
+    }
+    if (const absl::Status status = surface_->Present(); !status.ok()) {
       return SDL_SetError("Present: %s", status.message().data());
     }
     return true;
@@ -73,7 +82,7 @@ class VideoOwner final {
       return;
     }
     for (int count = 0; count < 32; ++count) {
-      auto input = surface_.PollInput();
+      auto input = surface_->PollInput();
       if (!input.ok()) {
         SDL_SetError("Input: %s", input.status().message().data());
         return;
@@ -146,61 +155,59 @@ class VideoOwner final {
 
   void Close() {
 #ifdef SYMBIAN_SDL_GPU
-    delete gpu_context_;
-    gpu_context_ = nullptr;
+    gpu_context_.reset();
 #endif
-    surface_.Close();
+    surface_.reset();
     window_ = nullptr;
   }
 
-  void DestroyFramebuffer() { surface_.DestroyFrame(); }
+  void DestroyFramebuffer() {
+    if (surface_.has_value()) {
+      surface_->DestroyFrame();
+    }
+  }
 
 #ifdef SYMBIAN_SDL_GPU
   SDL_GLContext CreateGlContext() {
-    if (window_ == nullptr || gpu_context_ != nullptr) {
+    if (window_ == nullptr || gpu_context_.has_value()) {
       SDL_SetError("OpenGL ES window unavailable or context already open");
       return nullptr;
     }
-    auto* absl_nullable context =
-        new (std::nothrow) symbian::api::display::GlesWindowContext;
-    if (context == nullptr) {
-      SDL_OutOfMemory();
+    auto context = symbian::api::display::GlesWindowContext::Create(
+        &*surface_, 2);
+    if (!context.ok()) {
+      SDL_SetError("OpenGL ES: %s", context.status().message().data());
       return nullptr;
     }
-    if (const absl::Status status = context->Open(&surface_, 2); !status.ok()) {
-      SDL_SetError("OpenGL ES: %s", status.message().data());
-      delete context;
-      return nullptr;
-    }
-    gpu_context_ = context;
-    return reinterpret_cast<SDL_GLContext>(context);
+    gpu_context_ = std::move(*context);
+    return reinterpret_cast<SDL_GLContext>(GpuContext());
   }
 
   bool MakeCurrent(SDL_GLContext context) {
-    if (context == nullptr && gpu_context_ != nullptr) {
+    if (context == nullptr && gpu_context_.has_value()) {
       return GlStatus(gpu_context_->ClearCurrent());
     }
-    if (context != reinterpret_cast<SDL_GLContext>(gpu_context_) ||
-        gpu_context_ == nullptr) {
+    if (context != reinterpret_cast<SDL_GLContext>(GpuContext()) ||
+        !gpu_context_) {
       return SDL_SetError("Unknown OpenGL ES context");
     }
     return GlStatus(gpu_context_->MakeCurrent());
   }
 
   bool Swap() {
-    return gpu_context_ == nullptr
+    return !gpu_context_
                ? SDL_SetError("OpenGL ES context unavailable")
                : GlStatus(gpu_context_->Swap());
   }
 
   bool SetSwapInterval(int interval) {
-    return gpu_context_ == nullptr
+    return !gpu_context_
                ? SDL_SetError("OpenGL ES context unavailable")
                : GlStatus(gpu_context_->SetSwapInterval(interval));
   }
 
   bool GetSwapInterval(int* absl_nonnull interval) const {
-    if (gpu_context_ == nullptr) {
+    if (!gpu_context_) {
       return SDL_SetError("OpenGL ES context unavailable");
     }
     *interval = gpu_context_->swap_interval();
@@ -208,11 +215,10 @@ class VideoOwner final {
   }
 
   bool DeleteContext(SDL_GLContext context) {
-    if (context != reinterpret_cast<SDL_GLContext>(gpu_context_)) {
+    if (context != reinterpret_cast<SDL_GLContext>(GpuContext())) {
       return SDL_SetError("Unknown OpenGL ES context");
     }
-    delete gpu_context_;
-    gpu_context_ = nullptr;
+    gpu_context_.reset();
     return true;
   }
 #endif
@@ -224,10 +230,13 @@ class VideoOwner final {
                        : SDL_SetError("OpenGL ES: %s", status.message().data());
   }
 
-  symbian::api::display::GlesWindowContext* absl_nullable gpu_context_ =
-      nullptr;
+  symbian::api::display::GlesWindowContext* absl_nullable GpuContext() {
+    return gpu_context_ ? &*gpu_context_ : nullptr;
+  }
+
+  std::optional<symbian::api::display::GlesWindowContext> gpu_context_;
 #endif
-  symbian::api::display::WindowSurface surface_;
+  std::optional<symbian::api::display::WindowSurface> surface_;
   SDL_Window* absl_nullable window_ = nullptr;
 };
 

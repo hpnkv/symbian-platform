@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0.
 #ifndef SYMBIAN_API_CONNECTIVITY_BYTE_STREAM_H_
 #define SYMBIAN_API_CONNECTIVITY_BYTE_STREAM_H_
+#include <absl/status/status_macros.h>
 #include <algorithm>
 #include <memory>
 
@@ -30,10 +31,7 @@ class TcpByteStream final {
   absl::Status Write(std::span<const std::uint8_t> bytes, absl::Time deadline) {
     while (!bytes.empty()) {
       auto count = std::min<std::size_t>(bytes.size(), 32768);
-      if (auto status = client_.Send(bytes.first(count), deadline);
-          !status.ok()) {
-        return status;
-      }
+      ABSL_RETURN_IF_ERROR(client_.Send(bytes.first(count), deadline));
       bytes = bytes.subspan(count);
     }
     return absl::OkStatus();

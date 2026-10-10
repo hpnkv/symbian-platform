@@ -80,7 +80,7 @@ extern "C" int SymbianDeviceResolveIpv4(const char* absl_nullable hostname,
     for (int i = 0; i < length; ++i) {
       text[i] = static_cast<TUint8>(hostname[i]);
     }
-    TPtrC16 name(text, length);
+    const TPtrC16 name(text, length);
     TNameEntry entry;
     TRequestStatus request;
     resolver.GetByName(name, entry, request);
@@ -271,7 +271,7 @@ extern "C" int SymbianDeviceTcpSend(NativeTcpClient* absl_nullable client,
   if (client == nullptr || bytes == nullptr || length <= 0 || length > 32768) {
     return KErrArgument;
   }
-  TPtrC8 data(bytes, length);
+  const TPtrC8 data(bytes, length);
   TRequestStatus request;
   client->socket.Send(data, 0, request);
   return WaitForSocketRequest(&(client->socket), &request, deadline,

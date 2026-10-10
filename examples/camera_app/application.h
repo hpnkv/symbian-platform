@@ -4,9 +4,11 @@
 #ifndef SYMBIAN_CAMERA_APP_APPLICATION_H_
 #define SYMBIAN_CAMERA_APP_APPLICATION_H_
 
+#include "absl/status/status.h"
+
 namespace camera_app {
 
-int Run();
+absl::Status Run();
 
 }  // namespace camera_app
 
