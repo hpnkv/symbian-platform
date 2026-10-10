@@ -105,13 +105,13 @@ synchronous and belong on one worker thread.
 ## Accept while the event thread is idle
 
 `ActiveTcpListener` wraps one native `CActive` accept. Construct it on a thread
-with an installed `CActiveScheduler`, implement `TcpAcceptObserver`, and call
-`AcceptNext()` from the observer when ready for another connection. The
+with an installed `CActiveScheduler`, pass a callback, and call
+`AcceptNext()` from that callback when ready for another connection. The
 pending accept does not poll. `Stop()` cancels and drains it.
 
-When the observer hands a client to an SDK worker, call
+When the callback hands a client to an SDK worker, call
 `EnableWorkerSharing()` **before** `ListenIpv4()`. This makes the Socket Server
-session shareable before its sockets open. Keep `OnAccept()` short: post the
+session shareable before its sockets open. Keep the callback short: post the
 move-only client to `Symbian::Stackless`'s `WorkerExecutor`, then rearm. The
 worker can call `Send`, `Receive`, or the `Symbian::Tls` owner. The
 [development agent source](https://github.com/hpnkv/symbian-platform/tree/main/agent_service)

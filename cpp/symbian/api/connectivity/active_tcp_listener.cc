@@ -12,8 +12,8 @@
 
 namespace symbian::api::connectivity {
 
-ActiveTcpListener::ActiveTcpListener(TcpAcceptObserver* absl_nonnull observer)
-    : observer_(*observer) {}
+ActiveTcpListener::ActiveTcpListener(AcceptCallback on_accept)
+    : on_accept_(std::move(on_accept)) {}
 
 ActiveTcpListener::~ActiveTcpListener() {
   Stop();
@@ -26,6 +26,9 @@ absl::Status ActiveTcpListener::ListenIpv4(std::array<std::uint8_t, 4> address,
   }
   if (port == 0) {
     return absl::InvalidArgumentError("Active TCP port must be nonzero");
+  }
+  if (!on_accept_) {
+    return absl::InvalidArgumentError("Active TCP accept callback is empty");
   }
   const unsigned packed = (static_cast<unsigned>(address[0]) << 24) |
                           (static_cast<unsigned>(address[1]) << 16) |
@@ -75,11 +78,11 @@ void ActiveTcpListener::OnNativeAccept(void* absl_nonnull context,
                                        int result) {
   auto* absl_nonnull self = static_cast<ActiveTcpListener*>(context);
   if (result != 0) {
-    self->observer_.OnAccept(
+    self->on_accept_(
         symbian::StatusFromNativeError(result, "Active TCP accept"));
     return;
   }
-  self->observer_.OnAccept(TcpClient(accepted));
+  self->on_accept_(TcpClient(accepted));
 }
 
 }  // namespace symbian::api::connectivity

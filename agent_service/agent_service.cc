@@ -43,8 +43,8 @@
 #include "symbian/api/system/debug_log.h"
 #include "symbian/api/system/serial_ports.h"
 #include "symbian/api/time/sleep.h"
-#include "symbian/concurrency/worker_executor.h"
 #include "symbian/concurrency/mutex.h"
+#include "symbian/concurrency/worker_executor.h"
 #include "symbian/native_status.h"
 
 namespace {
@@ -526,10 +526,12 @@ void Serve(TcpClient raw, symbian::agent::AgentLogRing* absl_nonnull log) {
   client.Close(absl::Now() + kControlDeadline).IgnoreError();
 }
 
-class AgentService final
-    : public symbian::api::connectivity::TcpAcceptObserver {
+class AgentService final {
  public:
-  AgentService() : listener_(this) {}
+  AgentService()
+      : listener_([this](absl::StatusOr<TcpClient> result) {
+          OnAccept(std::move(result));
+        }) {}
 
   absl::Status Start() {
     if (SYMBIAN_AGENT_PRIVATE_PROFILE) {
@@ -570,7 +572,7 @@ class AgentService final
     return listener_.ListenIpv4({127, 0, 0, 1}, kAgentPort);
   }
 
-  void OnAccept(absl::StatusOr<TcpClient> result) override {
+  void OnAccept(absl::StatusOr<TcpClient> result) {
     if (stopping_local_) {
       return;
     }

@@ -17,10 +17,9 @@ extern "C" void ProbeStartScheduler();
 
 namespace {
 
-class Observer final : public symbian::api::connectivity::TcpAcceptObserver {
+class ProbeState final {
  public:
-  void OnAccept(
-      absl::StatusOr<symbian::api::connectivity::TcpClient> result) override {
+  void OnAccept(absl::StatusOr<symbian::api::connectivity::TcpClient> result) {
     if (!result.ok()) {
       return;
     }
@@ -55,9 +54,10 @@ class Observer final : public symbian::api::connectivity::TcpAcceptObserver {
 }  // namespace
 
 extern "C" int RunActiveProbe() {
-  Observer observer;
-  symbian::api::connectivity::ActiveTcpListener listener(&observer);
-  observer.listener = &listener;
+  ProbeState state;
+  symbian::api::connectivity::ActiveTcpListener listener(
+      [&state](auto result) { state.OnAccept(std::move(result)); });
+  state.listener = &listener;
   if (!listener.EnableWorkerSharing().ok() ||
       !listener.ListenIpv4({127, 0, 0, 1}, 39100).ok()) {
     return -236;

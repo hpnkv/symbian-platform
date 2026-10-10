@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cstdint>
+#include <functional>
 
 #include <absl/base/nullability.h>
 
@@ -19,29 +20,24 @@ struct NativeTcpListener;
 struct NativeActiveTcpListener;
 struct NativeTcpClient;
 
-/** @brief Receives one accepted stream or native error on the event thread. */
-class TcpAcceptObserver {
- public:
-  virtual ~TcpAcceptObserver() = default;
-  virtual void OnAccept(absl::StatusOr<TcpClient> result) = 0;
-};
-
 /**
  * @brief A single pending RSocket accept managed by a Symbian active scheduler.
  *
  * Construct on a thread with an installed CActiveScheduler. ListenIpv4 arms
- * one accept. The observer must call AcceptNext when ready for another; no
- * polling or timeout wakeups occur while an accept is pending. The observer
- * and listener must remain alive until OnAccept returns. Stop synchronously
+ * one accept. The callback must call AcceptNext when ready for another; no
+ * polling or timeout wakeups occur while an accept is pending. Callback
+ * captures must remain alive until it returns. Stop synchronously
  * cancels and drains a pending accept before closing its native handles.
  *
- * OnAccept must not leave or destroy this listener. Keep it short. A connected
+ * The callback must not leave or destroy this listener. Keep it short. A connected
  * TcpClient is worker-facing; a service
  * should arrange its TLS work without blocking this scheduler thread.
  */
 class ActiveTcpListener final {
  public:
-  explicit ActiveTcpListener(TcpAcceptObserver* absl_nonnull observer);
+  using AcceptCallback = std::function<void(absl::StatusOr<TcpClient>)>;
+
+  explicit ActiveTcpListener(AcceptCallback on_accept);
   ActiveTcpListener(const ActiveTcpListener&) = delete;
   ActiveTcpListener& operator=(const ActiveTcpListener&) = delete;
   ~ActiveTcpListener();
@@ -73,7 +69,7 @@ class ActiveTcpListener final {
                              NativeTcpClient* absl_nonnull accepted,
                              int result);
 
-  TcpAcceptObserver& observer_;
+  AcceptCallback on_accept_;
   NativeActiveTcpListener* absl_nullable native_ = nullptr;
   bool started_ = false;
   bool share_with_workers_ = false;

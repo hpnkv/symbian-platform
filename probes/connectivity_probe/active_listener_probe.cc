@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstdint>
+#include <utility>
 
 #include <absl/base/nullability.h>
 
@@ -13,10 +14,9 @@ extern "C" void ProbeStopScheduler();
 
 namespace {
 
-class Observer final : public symbian::api::connectivity::TcpAcceptObserver {
+class ProbeState final {
  public:
-  void OnAccept(
-      absl::StatusOr<symbian::api::connectivity::TcpClient> result) override {
+  void OnAccept(absl::StatusOr<symbian::api::connectivity::TcpClient> result) {
     if (!result.ok()) {
       outcome = -231;
       ProbeStopScheduler();
@@ -54,12 +54,13 @@ class Observer final : public symbian::api::connectivity::TcpAcceptObserver {
 }  // namespace
 
 extern "C" int RunActiveProbe() {
-  Observer observer;
-  symbian::api::connectivity::ActiveTcpListener listener(&observer);
-  observer.listener = &listener;
+  ProbeState state;
+  symbian::api::connectivity::ActiveTcpListener listener(
+      [&state](auto result) { state.OnAccept(std::move(result)); });
+  state.listener = &listener;
   if (!listener.ListenIpv4({127, 0, 0, 1}, 39099).ok()) {
     return -230;
   }
   ProbeStartScheduler();
-  return observer.accepted_count == 2 ? observer.outcome : -235;
+  return state.accepted_count == 2 ? state.outcome : -235;
 }
