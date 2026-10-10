@@ -59,10 +59,7 @@
 #define inline __inline
 #endif
 
-#ifdef __SYMBIAN32__
-#include <e32def.h>
-
-#elif !defined(MBEDTLS_STATIC)
+#if !defined(MBEDTLS_STATIC)
 #ifndef EXPORT_C
 #define EXPORT_C
 #endif

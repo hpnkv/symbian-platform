@@ -2,9 +2,6 @@
 #ifndef SYMBIAN_MBEDTLS_PLATFORM_H_
 #define SYMBIAN_MBEDTLS_PLATFORM_H_
 #include <absl/base/nullability.h>
-#if defined(__SYMBIAN32__)
-#include <e32def.h>
-#endif
 #include <stddef.h>
 #include <time.h>
 #ifdef __cplusplus

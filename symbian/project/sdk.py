@@ -632,6 +632,15 @@ def stage_headers(workspace: Path, output: Path, compiler: Path) -> None:
         "*.h"
     ):
         shutil.copyfile(header, host_headers / header.name)
+    run(
+        [
+            sys.executable,
+            str(workspace / "scripts/check_public_header_boundary.py"),
+            str(output / "include"),
+        ],
+        cwd=workspace,
+        timeout=60,
+    )
 
 
 def stage_imports(

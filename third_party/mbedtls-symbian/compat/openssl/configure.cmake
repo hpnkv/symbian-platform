@@ -19,7 +19,6 @@ endif()
 file(READ "${openssl_source}/inc/include/openssl/bn.h" bn_header)
 string(REPLACE "# if 1" "# ifdef SIXTY_FOUR_BIT" bn_header "${bn_header}")
 file(WRITE "${openssl_include}/openssl/bn.h" "${bn_header}")
-set(config "#if defined(OPENSSL_SYS_SYMBIAN)\n#include <e32def.h>\n#endif\n${config}")
 file(WRITE "${openssl_include}/openssl/opensslconf.h" "${config}")
 
 # Stable compiler/profile identity instead of a generated build timestamp.

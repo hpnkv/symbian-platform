@@ -9,6 +9,10 @@ The SDK owns any legacy Symbian header, descriptor, leave and request-status
 translation in separate native bridge translation units. Applications receive
 typed C++ values and `absl::Status` or `absl::StatusOr` and can keep using the
 SDK's C++20 standard library.
+SDK-owned public headers do not include original Symbian headers, including
+through other SDK-owned headers. Export checks that include graph; native OS
+types stay in implementation files and private bridge headers. The separate
+legacy platform headers remain available for SDK implementation work.
 
 ## Available components
 
