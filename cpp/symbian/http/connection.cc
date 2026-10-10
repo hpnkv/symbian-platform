@@ -8,22 +8,22 @@
 #include <absl/base/nullability.h>
 
 namespace symbian::http {
-Connection::Connection(std::unique_ptr<net::ByteStream> transport, Role role,
-                       Protocol protocol, Limits limits)
+Connection::Connection(net::ByteStream transport, Role role, Protocol protocol,
+                       Limits limits)
     : transport_(std::move(transport)),
       role_(role),
       protocol_(protocol),
       limits_(limits) {}
 
 Connection::~Connection() {
-  transport_->Close();
+  transport_.Close();
 }
 
 absl::Status Connection::Fail(absl::Status status) {
   if (error_.ok()) {
     error_ = std::move(status);
   }
-  transport_->Close();
+  transport_.Close();
   return error_;
 }
 
@@ -56,7 +56,7 @@ absl::Status Connection::Send(std::string_view bytes, absl::Time deadline) {
   }
   while (!bytes.empty()) {
     auto size = std::min<std::size_t>(32768, bytes.size());
-    auto status = transport_->Write(
+    auto status = transport_.Write(
         std::span(reinterpret_cast<const std::uint8_t*>(bytes.data()), size),
         deadline);
     if (!status.ok()) {
@@ -84,7 +84,7 @@ absl::Status Connection::Pump(absl::Time deadline) {
     return status;
   }
   std::array<std::uint8_t, 16384> bytes;
-  auto count = transport_->Read(bytes, deadline);
+  auto count = transport_.Read(bytes, deadline);
   if (!count.ok()) {
     return Fail(count.status());
   }
@@ -140,8 +140,8 @@ absl::Status Connection::PrepareOutput(Headers* absl_nonnull headers,
 }
 
 absl::StatusOr<std::unique_ptr<Connection>> Connection::Client(
-    std::unique_ptr<net::ByteStream> transport, RequestHead request,
-    Protocol protocol, Limits limits, std::optional<std::size_t> body_length,
+    net::ByteStream transport, RequestHead request, Protocol protocol,
+    Limits limits, std::optional<std::size_t> body_length,
     absl::Time deadline) {
   if (!transport) {
     return absl::InvalidArgumentError("Missing HTTP transport");
@@ -186,8 +186,8 @@ absl::StatusOr<std::unique_ptr<Connection>> Connection::Client(
 }
 
 absl::StatusOr<std::unique_ptr<Connection>> Connection::Accept(
-    std::unique_ptr<net::ByteStream> transport, Protocol protocol,
-    Limits limits, absl::Time deadline) {
+    net::ByteStream transport, Protocol protocol, Limits limits,
+    absl::Time deadline) {
   if (!transport) {
     return absl::InvalidArgumentError("Missing HTTP transport");
   }

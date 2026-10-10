@@ -193,8 +193,11 @@ ordering remain unsupported or unverified.
 
 The local GOT is word-aligned, limited to 1,024 words, and requires retained
 `R_ARM_GOT_PREL` symbol coverage. Imported function pointers resolve through
-validated PLT entries. Imported data objects, including exception typeinfo,
-are unsupported. Internal or hidden PC-relative references across the code/data
+validated PLT entries. Bounded imported object pointers in read-only code
+storage are supported; the ECam native-leave boundary publishes its
+`drtaeabi` exception type-info pointer through that path. Imported object
+storage outside the validated relocation forms remains unsupported. Internal
+or hidden PC-relative references across the code/data
 mappings are rejected; keep DLL globals default-visible when GOT references
 are needed. Unsupported sections and relocations cause conversion errors.
 

@@ -51,11 +51,6 @@ class ParkWithoutHostLock {
   void* absl_nullable held_ = nullptr;
 };
 
-class RoundRobinPolicy final : public SchedulerPolicy {
- public:
-  size_t PickNext(size_t) noexcept override { return 0; }
-};
-
 thread_local bool scheduler_installed = false;
 thread_local std::shared_ptr<SchedulerPolicy> scheduler_policy;
 
@@ -73,7 +68,7 @@ class SdkAlgorithm final : public boost::fibers::algo::algorithm {
     if (ready_queue_.empty()) {
       return nullptr;
     }
-    const size_t choice = policy_->PickNext(ready_queue_.size());
+    const size_t choice = policy_->pick_next(ready_queue_.size());
     if (choice >= ready_queue_.size()) {
       std::abort();
     }
@@ -135,7 +130,7 @@ absl::Status SetCurrentSchedulerPolicy(
     return absl::FailedPreconditionError(
         "The calling OS thread already owns a fiber scheduler");
   }
-  if (policy == nullptr) {
+  if (policy == nullptr || !policy->pick_next) {
     return absl::InvalidArgumentError("Scheduler policy is null");
   }
   scheduler_policy = std::move(policy);
@@ -148,7 +143,8 @@ void EnsureCurrentScheduler() {
     return;
   }
   if (scheduler_policy == nullptr) {
-    scheduler_policy = std::make_shared<RoundRobinPolicy>();
+    scheduler_policy = std::make_shared<SchedulerPolicy>(
+        SchedulerPolicy{.pick_next = [](size_t) { return size_t{0}; }});
   }
   boost::fibers::use_scheduling_algorithm<SdkAlgorithm>(scheduler_policy);
   scheduler_installed = true;

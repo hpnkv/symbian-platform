@@ -56,6 +56,28 @@ TEST(E32Test, OptsInToNetworkServicesCapability) {
       absl::StatusCode::kUnimplemented);
 }
 
+TEST(E32Test, OptsInToCameraUserEnvironmentCapability) {
+  constexpr uint32_t kUserEnvironment = 1U << 19;
+  const auto image =
+      ConvertPicExecutable(Executable(), 0xe0000808, kUserEnvironment);
+  ASSERT_TRUE(image.ok()) << image.status();
+  EXPECT_EQ(Read32(*image, 136), kUserEnvironment);
+  const auto inspected = InspectImage(*image);
+  ASSERT_TRUE(inspected.ok()) << inspected.status();
+  EXPECT_EQ(inspected->capabilities, kUserEnvironment);
+}
+
+TEST(E32Test, PreservesDevelopmentAgentCapabilities) {
+  constexpr uint32_t kAgentCapabilities =
+      (1U << 12) | (1U << 13) | (1U << 15) | (1U << 16);
+  const auto image =
+      ConvertPicExecutable(Executable(), 0xe0000808, kAgentCapabilities);
+  ASSERT_TRUE(image.ok()) << image.status();
+  const auto inspected = InspectImage(*image);
+  ASSERT_TRUE(inspected.ok()) << inspected.status();
+  EXPECT_EQ(inspected->capabilities, kAgentCapabilities);
+}
+
 TEST(E32Test, RejectsRenamedArmExceptionIndexWithoutDescriptor) {
   auto elf = Executable();
   Put32(elf, 160, 0x70000001);  // SHT_ARM_EXIDX without .ARM.exidx name.

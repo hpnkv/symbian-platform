@@ -67,19 +67,6 @@ struct WorkerExecutor::State : std::enable_shared_from_this<State> {
     cv.notify_one();
   }
 
-  struct Policy final : thread::SchedulerPolicy {
-    explicit Policy(State* absl_nonnull owner) : owner(*owner) {}
-
-    std::size_t PickNext(
-        std::span<thread::Fiber* absl_nonnull const>) override {
-      return 0;
-    }
-
-    void NotifyReady() noexcept override { owner.Wake(); }
-
-    State& owner;
-  };
-
   void Run() {
     SymbianRuntimeThreadCacheEnter();
 
@@ -87,7 +74,11 @@ struct WorkerExecutor::State : std::enable_shared_from_this<State> {
       ~CacheScope() { SymbianRuntimeThreadCacheLeave(); }
     } cache_scope;
 
-    Policy policy(this);
+    thread::SchedulerPolicy policy{
+        .pick_next = [](std::span<thread::Fiber* absl_nonnull const>) {
+          return std::size_t{0};
+        },
+        .notify_ready = [this] { Wake(); }};
     thread::Scheduler scheduler(&policy);
     std::vector<std::unique_ptr<thread::Fiber>> fibers;
     while (true) {

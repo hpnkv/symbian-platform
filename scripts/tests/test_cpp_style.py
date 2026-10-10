@@ -50,6 +50,11 @@ def test_pointer_const_forwarding_and_required_operator_contracts(source):
     assert not style.check_source(source)
 
 
+def test_external_override_preserves_mutable_reference_signature():
+    source = b"class Adapter { void Ready(NativeBuffer& buffer) override; };"
+    assert not style.check_source(source, pointers=False)
+
+
 @pytest.mark.parametrize(
     "source",
     [

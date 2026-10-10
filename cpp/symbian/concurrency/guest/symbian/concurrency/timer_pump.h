@@ -56,11 +56,11 @@ inline absl::StatusOr<absl::Duration> RemainingAtRegistration(
 class TimerPump {
  public:
   static constexpr std::size_t kDefaultMaxPending = 64;
-  using WallClock = absl::Time (*absl_nonnull)();
+  using WallClock = std::function<absl::Time()>;
 
   explicit TimerPump(std::size_t max_pending = kDefaultMaxPending,
-                     WallClock wall_now = &absl::Now)
-      : max_pending_(max_pending), wall_now_(wall_now) {}
+                     WallClock wall_now = absl::Now)
+      : max_pending_(max_pending), wall_now_(std::move(wall_now)) {}
 
   TimerPump(const TimerPump&) = delete;
   TimerPump& operator=(const TimerPump&) = delete;
@@ -92,7 +92,7 @@ class TimerPump {
   // Absolute times are wall times. Convert once at acceptance; later device
   // clock corrections do not move an already accepted timer.
   Task ScheduleAt(absl::Time deadline) {
-    if (wall_now_ == nullptr) {
+    if (!wall_now_) {
       return FailedTask(absl::FailedPreconditionError("No wall clock"));
     }
     auto remaining = internal::RemainingAtRegistration(deadline, wall_now_());

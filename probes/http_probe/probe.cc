@@ -108,7 +108,7 @@ int Run(const ProbeCase& test) {
     Save(tcp.status().ToString()).IgnoreError();
     return -301;
   }
-  std::unique_ptr<symbian::net::ByteStream> stream;
+  symbian::net::ByteStream stream;
   std::string tls_version, alpn;
   if (test.tls_version) {
     auto tls = TlsStream::Connect(

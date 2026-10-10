@@ -32,14 +32,13 @@ enum class Protocol { kHttp11, kHttp2 };
 class Connection {
  public:
   static absl::StatusOr<std::unique_ptr<Connection>> Client(
-      std::unique_ptr<net::ByteStream> transport, RequestHead request,
+      net::ByteStream transport, RequestHead request,
       Protocol protocol = Protocol::kHttp11, Limits limits = {},
       std::optional<std::size_t> body_length = 0,
       absl::Time deadline = absl::InfiniteFuture());
   static absl::StatusOr<std::unique_ptr<Connection>> Accept(
-      std::unique_ptr<net::ByteStream> transport,
-      Protocol protocol = Protocol::kHttp11, Limits limits = {},
-      absl::Time deadline = absl::InfiniteFuture());
+      net::ByteStream transport, Protocol protocol = Protocol::kHttp11,
+      Limits limits = {}, absl::Time deadline = absl::InfiniteFuture());
   ~Connection();
 
   const RequestHead& request() const { return request_; }
@@ -58,8 +57,8 @@ class Connection {
   void Abort();
 
  private:
-  Connection(std::unique_ptr<net::ByteStream> transport, Role role,
-             Protocol protocol, Limits limits);
+  Connection(net::ByteStream transport, Role role, Protocol protocol,
+             Limits limits);
   absl::Status Initialize();
   absl::Status Pump(absl::Time deadline);
   absl::Status Flush(absl::Time deadline);
@@ -68,7 +67,7 @@ class Connection {
   absl::Status Fail(absl::Status status);
   absl::Status PrepareOutput(Headers* absl_nonnull headers,
                              std::optional<std::size_t> length, bool no_body);
-  std::unique_ptr<net::ByteStream> transport_;
+  net::ByteStream transport_;
   Role role_;
   Protocol protocol_;
   Limits limits_;

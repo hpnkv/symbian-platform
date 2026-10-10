@@ -11,25 +11,24 @@
 
 namespace symbian::http {
 namespace {
-class MemoryStream final : public net::ByteStream {
+class MemoryStream final {
  public:
   explicit MemoryStream(std::string input, std::size_t fragment = 7)
       : input_(std::move(input)), fragment_(fragment) {}
 
-  absl::StatusOr<std::size_t> Read(std::span<std::uint8_t> bytes,
-                                   absl::Time) override {
+  absl::StatusOr<std::size_t> Read(std::span<std::uint8_t> bytes, absl::Time) {
     auto count = std::min({bytes.size(), input_.size(), fragment_});
     std::memcpy(bytes.data(), input_.data(), count);
     input_.erase(0, count);
     return count;
   }
 
-  absl::Status Write(std::span<const std::uint8_t> bytes, absl::Time) override {
+  absl::Status Write(std::span<const std::uint8_t> bytes, absl::Time) {
     output.append(reinterpret_cast<const char*>(bytes.data()), bytes.size());
     return absl::OkStatus();
   }
 
-  void Close() override { closed = true; }
+  void Close() { closed = true; }
 
   std::string output;
   bool closed = false;
@@ -40,6 +39,43 @@ class MemoryStream final : public net::ByteStream {
 };
 
 constexpr auto kDeadline = absl::InfiniteFuture();
+
+TEST(ByteStreamTest, MoveTransfersSingularTransportOwnership) {
+  struct CountingTransport {
+    int* absl_nonnull closed;
+    int* absl_nonnull destroyed;
+
+    ~CountingTransport() { ++*destroyed; }
+
+    absl::StatusOr<std::size_t> Read(std::span<std::uint8_t>, absl::Time) {
+      return std::size_t{0};
+    }
+
+    absl::Status Write(std::span<const std::uint8_t>, absl::Time) {
+      return absl::OkStatus();
+    }
+
+    void Close() { ++*closed; }
+  };
+
+  int closed = 0;
+  int destroyed = 0;
+  {
+    net::ByteStream first(
+        std::make_unique<CountingTransport>(&closed, &destroyed));
+    net::ByteStream second(std::move(first));
+    EXPECT_FALSE(first);
+    EXPECT_FALSE(first.Read({}, kDeadline).ok());
+    EXPECT_TRUE(second);
+    auto count = second.Read({}, kDeadline);
+    ASSERT_TRUE(count.ok());
+    EXPECT_EQ(*count, 0);
+    second.Close();
+    EXPECT_EQ(closed, 1);
+    EXPECT_EQ(destroyed, 0);
+  }
+  EXPECT_EQ(destroyed, 1);
+}
 
 RequestHead Request(std::string method = "GET") {
   RequestHead head;

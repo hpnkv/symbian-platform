@@ -58,8 +58,8 @@ extern "C" int SymbianRuntimeFastCounterFrequency();
 extern "C" std::int64_t SymbianRuntimeSteadyClockNanoseconds();
 extern "C" int SymbianRuntimeSleepMicroseconds(std::uint64_t microseconds);
 
-// Internal narrow bridge for thread-relative RTimer requests. The caller must
-// keep the state alive until cancellation has completed and been drained.
+// Internal narrow bridge for thread-relative RTimer requests. Cancellation
+// and close drain pending requests before returning.
 struct SymbianRuntimeTimerState;
 extern "C" int SymbianRuntimeTimerCreate(
     SymbianRuntimeTimerState* absl_nullable* absl_nullable state);

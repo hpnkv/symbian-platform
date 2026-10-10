@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <span>
@@ -35,11 +36,15 @@ void FiberEntry();
 // Application-provided ordering and event-loop wake integration. Both hooks
 // run outside Scheduler's internal lock. NotifyReady may run on a worker OS
 // thread, so implementations must coalesce and dispatch to the event thread.
-class SchedulerPolicy {
- public:
-  virtual ~SchedulerPolicy() = default;
-  virtual std::size_t PickNext(std::span<Fiber* absl_nonnull const> ready) = 0;
-  virtual void NotifyReady() noexcept = 0;
+struct SchedulerPolicy {
+  std::function<std::size_t(std::span<Fiber* absl_nonnull const>)> pick_next;
+  std::function<void()> notify_ready;
+
+  std::size_t PickNext(std::span<Fiber* absl_nonnull const> ready) const {
+    return pick_next(ready);
+  }
+
+  void NotifyReady() const noexcept { notify_ready(); }
 };
 
 // One explicitly pumped executor, pinned to its creating OS thread. RunReady

@@ -104,17 +104,12 @@ TEST(ConcurrencyFiberTest, FutureAwaitParksAnSdkFiber) {
 }
 
 TEST(ConcurrencyFiberTest, SchedulerPolicyAndHostLockParkGuard) {
-  class LastReadyPolicy final : public thread::SchedulerPolicy {
-   public:
-    size_t PickNext(size_t ready_count) noexcept override {
-      picks.fetch_add(1, std::memory_order_relaxed);
-      return ready_count - 1;
-    }
-
-    std::atomic<int> picks{0};
-  };
-
-  auto policy = std::make_shared<LastReadyPolicy>();
+  std::atomic<int> picks{0};
+  auto policy = std::make_shared<thread::SchedulerPolicy>(
+      thread::SchedulerPolicy{.pick_next = [&](size_t ready_count) {
+        picks.fetch_add(1, std::memory_order_relaxed);
+        return ready_count - 1;
+      }});
   std::atomic<int> releases{0};
   std::atomic<int> acquires{0};
   thread::SetSchedulerParkGuard(thread::SchedulerParkGuard{
@@ -148,7 +143,7 @@ TEST(ConcurrencyFiberTest, SchedulerPolicyAndHostLockParkGuard) {
   });
   worker.join();
   thread::SetSchedulerParkGuard({});
-  EXPECT_GT(policy->picks.load(std::memory_order_relaxed), 0);
+  EXPECT_GT(picks.load(std::memory_order_relaxed), 0);
   EXPECT_GT(releases.load(std::memory_order_relaxed), 0);
   EXPECT_EQ(releases.load(std::memory_order_relaxed),
             acquires.load(std::memory_order_relaxed));

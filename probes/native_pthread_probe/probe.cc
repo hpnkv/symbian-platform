@@ -224,6 +224,30 @@ int main() {
     return -645;
   }
 #endif
+  // Native errno storage must stay thread-specific even while both threads
+  // access it concurrently. The worker stays alive until the parent checks.
+  errno = E2BIG;
+  int* absl_nonnull parent_errno = &errno;
+  std::atomic<int* absl_nullable> worker_errno{nullptr};
+  std::atomic<bool> release_errno_worker{false};
+  std::thread errno_worker([&] {
+    errno = EINVAL;
+    worker_errno.store(&errno, std::memory_order_release);
+    while (!release_errno_worker.load(std::memory_order_acquire)) {
+      std::this_thread::yield();
+    }
+  });
+  while (worker_errno.load(std::memory_order_acquire) == nullptr) {
+    std::this_thread::yield();
+  }
+  const bool errno_isolated = worker_errno.load() != parent_errno &&
+                              *parent_errno == E2BIG &&
+                              *worker_errno.load() == EINVAL;
+  release_errno_worker.store(true, std::memory_order_release);
+  errno_worker.join();
+  if (!errno_isolated) {
+    return -662;
+  }
   pthread_key_t key = 0;
   pthread_once_t once = PTHREAD_ONCE_INIT;
   if (pthread_key_create(&key, DestroyKey) != 0) {

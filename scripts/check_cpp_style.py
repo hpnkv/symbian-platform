@@ -101,6 +101,9 @@ def check_source(
             owner = node.parent.parent
             if owner.type == "catch_clause":
                 continue
+            # External virtual callbacks must retain their exact override ABI.
+            if b"override" in masked[owner.start_byte : owner.end_byte]:
+                continue
             # C++ operators have language/standard-library operand contracts.
             name = owner.child_by_field_name("declarator")
             if name and any(

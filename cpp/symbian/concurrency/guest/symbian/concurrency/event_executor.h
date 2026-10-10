@@ -28,7 +28,7 @@ namespace symbian::concurrency {
 // Native adapters remove completed requests before invoking inline callbacks.
 class EventExecutor {
  public:
-  EventExecutor() : scheduler_(&policy_) {}
+  EventExecutor() : scheduler_(policy_.Borrow()) {}
 
   EventExecutor(const EventExecutor&) = delete;
   EventExecutor& operator=(const EventExecutor&) = delete;
@@ -178,14 +178,18 @@ class EventExecutor {
   }
 
  private:
-  class WakePolicy final : public thread::SchedulerPolicy {
+  class WakePolicy final {
    public:
-    std::size_t PickNext(
-        std::span<thread::Fiber* absl_nonnull const>) override {
-      return 0;
-    }
+    WakePolicy()
+        : callbacks_{.pick_next =
+                         [](std::span<thread::Fiber* absl_nonnull const>) {
+                           return std::size_t{0};
+                         },
+                     .notify_ready = [this] { NotifyReady(); }} {}
 
-    void NotifyReady() noexcept override {
+    thread::SchedulerPolicy* absl_nonnull Borrow() { return &callbacks_; }
+
+    void NotifyReady() noexcept {
       std::function<void()> callback;
       {
         std::lock_guard lock(mu_);
@@ -202,6 +206,7 @@ class EventExecutor {
     }
 
    private:
+    thread::SchedulerPolicy callbacks_;
     std::mutex mu_;
     std::function<void()> wake_;
   };

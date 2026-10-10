@@ -14,15 +14,21 @@
 #include "thread/fiber.h"
 
 namespace {
-class LifoPolicy final : public thread::SchedulerPolicy {
+class LifoPolicy final {
  public:
-  std::size_t PickNext(
-      std::span<thread::Fiber* absl_nonnull const> ready) override {
-    return ready.size() - 1;
-  }
+  LifoPolicy()
+      : callbacks{.context = this,
+                  .pick_next =
+                      [](void* absl_nonnull,
+                         std::span<thread::Fiber* absl_nonnull const> ready) {
+                        return ready.size() - 1;
+                      },
+                  .notify_ready =
+                      [](void* absl_nonnull context) noexcept {
+                        ++static_cast<LifoPolicy*>(context)->notifications;
+                      }} {}
 
-  void NotifyReady() noexcept override { ++notifications; }
-
+  thread::SchedulerPolicy callbacks;
   std::atomic<int> notifications{0};
 };
 }  // namespace
@@ -114,7 +120,7 @@ extern "C" int SymbianRuntimeFiberLocksProbe() {
   }
   {
     LifoPolicy policy;
-    thread::Scheduler scheduler(&policy);
+    thread::Scheduler scheduler(&policy.callbacks);
     int order = 0;
     thread::Fiber first(&scheduler, [&] { order = order * 10 + 1; });
     thread::Fiber second(&scheduler, [&] { order = order * 10 + 2; });

@@ -8,24 +8,34 @@ extern "C" int SymbianRuntimeNativeTimerProbe() {
   {
     NativeTimer first;
     NativeTimer second;
-    NativeTimer closed_while_pending;
-    if (first.Open() != 0 || second.Open() != 0 ||
-        closed_while_pending.Open() != 0) {
+    if (first.Open() != 0 || second.Open() != 0) {
       return -250;
     }
     if (first.Start(-1) != -6 || first.Start(10000) != 0 ||
-        first.Start(10000) != -14 || second.Start(100000) != 0 ||
-        closed_while_pending.Start(100000) != 0) {
+        first.Start(10000) != -14 || second.Start(100000) != 0) {
       return -251;
     }
+    {
+      NativeTimer abandoned;
+      if (abandoned.Open() != 0 || abandoned.Start(100000) != 0) {
+        return -259;
+      }
+    }
     second.Cancel();
-    closed_while_pending.Close();
-    // A cancellation may complete before the first wait. Symbian's request
-    // semaphore retains that completion while the second timer is pending.
+    if (!second.IsReady() || second.Result() != -3 ||
+        second.Start(100000) != 0) {
+      return -257;
+    }
+    second.Cancel();
+    if (!second.IsReady() || second.Result() != -3 ||
+        second.Start(0) != 0) {
+      return -258;
+    }
+    // A completed request can remain queued while the first timer is pending.
     while (!first.IsReady() || !second.IsReady()) {
       SymbianRuntimeWaitForAnyRequest();
     }
-    if (first.Result() != 0 || second.Result() != -3) {
+    if (first.Result() != 0 || second.Result() != 0) {
       return -252;
     }
     if (first.Start(0) != 0) {

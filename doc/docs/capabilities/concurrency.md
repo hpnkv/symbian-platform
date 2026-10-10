@@ -58,8 +58,10 @@ An `OnReady` observer may run immediately when attached to a completed Future.
 ## Native request owners and the event loop
 
 `NativeTimer` owns one thread-relative `RTimer`. Create, arm, cancel and close
-it on the same OS thread. It rejects overlapping arms and drains a pending
-request before close; the surrounding event loop owns the shared semaphore wait.
+it on the same OS thread. It rejects overlapping arms. `Cancel()` waits for
+the cancelled request to finish, and `Close()` and the destructor also cancel
+and drain a pending request before releasing its status storage. The
+surrounding event loop owns the shared semaphore wait.
 
 `TimerPump` turns timer completions into Tasks. `ScheduleAfter` accepts an
 `absl::Duration`; `ScheduleAt` accepts an absolute `absl::Time` and converts it
@@ -153,8 +155,12 @@ contract failure. Fibers do not virtualize OS TLS, heaps or Symbian leave state.
 `thread::Mutex`, `MutexLock`, `CondVar` and `SleepFor` park fibers cooperatively.
 Outside a fiber they use blocking OS-thread behavior, so keep those calls off
 the event thread. `CondVar` follows A11's convention: `true` means timeout and
-`false` means signal. `SchedulerPolicy` selects ready ordering and provides a
-wake hook; `EventExecutor` supplies the native-wait integration.
+`false` means signal. Guest `SchedulerPolicy` is a borrowed callback value that
+selects ready ordering and provides a wake hook; its context owner outlives the
+scheduler. The host policy owns its callable through a shared policy value
+because its installer and Boost scheduler have independent lifetimes. Neither
+requires an application subclass. `EventExecutor` supplies native-wait
+integration.
 
 `thread::Channel<T>` supports bounded buffering, rendezvous, selection,
 cancellation-aware writes and one-time close. `Case`, `PermanentEvent`,

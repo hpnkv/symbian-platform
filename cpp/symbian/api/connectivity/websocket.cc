@@ -7,7 +7,7 @@
 #include <utility>
 
 namespace symbian::api::connectivity {
-WebSocketStream::WebSocketStream(std::unique_ptr<net::ByteStream> transport,
+WebSocketStream::WebSocketStream(net::ByteStream transport,
                                  std::unique_ptr<websocket::WebSocket> codec)
     : transport_(std::move(transport)), codec_(std::move(codec)) {}
 
@@ -24,22 +24,22 @@ absl::StatusOr<WebSocketStream> WebSocketStream::Accept(
 }
 
 absl::StatusOr<WebSocketStream> WebSocketStream::Connect(
-    std::unique_ptr<net::ByteStream> transport, websocket::Options options,
+    net::ByteStream transport, websocket::Options options,
     absl::Time deadline) {
   return Open(std::move(transport), websocket::Role::kClient,
               std::move(options), deadline);
 }
 
 absl::StatusOr<WebSocketStream> WebSocketStream::Accept(
-    std::unique_ptr<net::ByteStream> transport, websocket::Options options,
+    net::ByteStream transport, websocket::Options options,
     absl::Time deadline) {
   return Open(std::move(transport), websocket::Role::kServer,
               std::move(options), deadline);
 }
 
 absl::StatusOr<WebSocketStream> WebSocketStream::Open(
-    std::unique_ptr<net::ByteStream> transport, websocket::Role role,
-    websocket::Options options, absl::Time deadline) {
+    net::ByteStream transport, websocket::Role role, websocket::Options options,
+    absl::Time deadline) {
   if (!transport) {
     return absl::InvalidArgumentError("Missing WebSocket transport");
   }
@@ -69,7 +69,7 @@ absl::Status WebSocketStream::Flush(absl::Time deadline) {
   std::string_view bytes = *output;
   while (!bytes.empty()) {
     const auto count = std::min<std::size_t>(bytes.size(), 32768);
-    auto status = transport_->Write(
+    auto status = transport_.Write(
         std::span(reinterpret_cast<const std::uint8_t*>(bytes.data()), count),
         deadline);
     if (!status.ok()) {
@@ -83,7 +83,7 @@ absl::Status WebSocketStream::Flush(absl::Time deadline) {
 
 absl::Status WebSocketStream::Pump(absl::Time deadline) {
   std::array<std::uint8_t, 16384> input{};
-  auto count = transport_->Read(input, deadline);
+  auto count = transport_.Read(input, deadline);
   if (!count.ok()) {
     Abort();
     return count.status();
@@ -105,7 +105,23 @@ absl::Status WebSocketStream::Send(std::span<const std::uint8_t> bytes,
                                    absl::Time deadline) {
   auto status = codec_->Send(std::string_view(
       reinterpret_cast<const char*>(bytes.data()), bytes.size()));
-  return status.ok() ? Flush(deadline) : status;
+  if (!status.ok()) {
+    return status;
+  }
+  status = Flush(deadline);
+  if (!status.ok()) {
+    return status;
+  }
+  // A successful socket write may only contain the DATA permitted by the
+  // peer's current HTTP/2 window. Read its WINDOW_UPDATE and send the rest
+  // before accepting another message into the bounded send queue.
+  while (codec_->buffered_amount() != 0) {
+    status = Pump(deadline);
+    if (!status.ok()) {
+      return status;
+    }
+  }
+  return absl::OkStatus();
 }
 
 absl::StatusOr<std::size_t> WebSocketStream::Receive(
@@ -155,13 +171,13 @@ absl::Status WebSocketStream::Close(absl::Time deadline) {
       return status;
     }
   }
-  transport_->Close();
+  transport_.Close();
   return absl::OkStatus();
 }
 
 void WebSocketStream::Abort() {
   codec_->Abort();
-  transport_->Close();
+  transport_.Close();
 }
 
 absl::StatusOr<WebSocketServer> WebSocketServer::ListenIpv4(

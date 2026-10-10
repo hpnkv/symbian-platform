@@ -7,6 +7,7 @@
 #define THREAD_EXECUTOR_H_
 
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <utility>
 
@@ -41,11 +42,9 @@ struct SchedulerParkGuard {
 void SetSchedulerParkGuard(SchedulerParkGuard guard);
 
 // A policy controls ready-fiber order on one OS thread. PickNext must return
-// an index less than ready_count and must not block or enter Python.
-class SchedulerPolicy {
- public:
-  virtual ~SchedulerPolicy() = default;
-  virtual size_t PickNext(size_t ready_count) noexcept = 0;
+// an index less than ready_count and must not block, throw or enter Python.
+struct SchedulerPolicy {
+  std::function<size_t(size_t ready_count)> pick_next;
 };
 
 // Installs a policy for the calling OS thread before its first SDK fiber.

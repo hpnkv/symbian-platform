@@ -33,6 +33,8 @@ constexpr uint32_t kHeaderSize = 156;
 constexpr uint32_t kFlags = 0x12000028;  // V header, ELF imports, EABI, EKA2.
 constexpr uint32_t kCrcInitializer = 0xc90fdaa2;
 constexpr uint32_t kMaxImageSize = 0x0fffffff;
+constexpr uint32_t kSupportedCapabilities =
+    (1U << 12) | (1U << 13) | (1U << 15) | (1U << 16) | (1U << 19);
 
 // Symbian CRC32 uses reflected polynomial 0xedb88320, initial zero and no
 // final complement. UID CRC16 uses polynomial 0x1021 and initial zero.
@@ -800,8 +802,7 @@ absl::StatusOr<std::string> ConvertExecutable(
   if (uid3 < 0xe0000000 || uid3 > 0xefffffff) {
     return absl::InvalidArgumentError("Experimental unprotected UID3 required");
   }
-  constexpr uint32_t kNetworkServices = 1U << 13;
-  if ((capabilities & ~kNetworkServices) != 0) {
+  if ((capabilities & ~kSupportedCapabilities) != 0) {
     return absl::UnimplementedError("Unsupported E32 capability");
   }
   const auto header = analysis::InspectElf32(elf);
@@ -1184,8 +1185,7 @@ absl::StatusOr<ImageInfo> InspectImage(std::string_view bytes) {
       return absl::UnimplementedError("Unsupported E32 security header");
     }
   }
-  constexpr uint32_t kNetworkServices = 1U << 13;
-  if ((Read32(bytes, 136) & ~kNetworkServices) != 0) {
+  if ((Read32(bytes, 136) & ~kSupportedCapabilities) != 0) {
     return absl::UnimplementedError("Unsupported E32 capability");
   }
   const uint32_t descriptor = Read32(bytes, 144);

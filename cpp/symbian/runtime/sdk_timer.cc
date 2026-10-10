@@ -78,6 +78,7 @@ extern "C" void SymbianRuntimeTimerCancel(
     SymbianRuntimeTimerState* absl_nullable state) {
   if (state != nullptr && state->pending && state->status == KRequestPending) {
     state->timer.Cancel();
+    User::WaitForRequest(state->status);
   }
 }
 
@@ -99,9 +100,8 @@ extern "C" void SymbianRuntimeTimerClose(
   if (state == nullptr) {
     return;
   }
-  if (state->pending && state->status == KRequestPending) {
-    state->timer.Cancel();
-    User::WaitForRequest(state->status);
+  if (state->pending) {
+    SymbianRuntimeTimerCancel(state);
   }
   state->timer.Close();
   state->~SymbianRuntimeTimerState();

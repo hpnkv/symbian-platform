@@ -28,7 +28,9 @@ absl::StatusOr<std::string> StringAt(std::string_view table, size_t offset) {
     return absl::DataLossError("Import string outside table");
   }
   const size_t end = table.find('\0', offset);
-  if (end == std::string_view::npos || end - offset > 512) {
+  // Clang can emit long but valid C++ template names in .symtab. Keep the
+  // parser bounded by both the section and a generous single-name limit.
+  if (end == std::string_view::npos || end - offset > 16 * 1024) {
     return absl::DataLossError("Unterminated/oversized import string");
   }
   return std::string(table.substr(offset, end - offset));

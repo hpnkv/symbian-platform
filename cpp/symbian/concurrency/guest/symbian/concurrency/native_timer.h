@@ -36,6 +36,8 @@ class NativeTimer {
     return SymbianRuntimeTimerStart(state_, microseconds);
   }
 
+  // Cancellation finishes before return; Close and destruction do the same.
+  // Use on the OS thread that opened this timer.
   void Cancel() { SymbianRuntimeTimerCancel(state_); }
 
   int Result() const { return SymbianRuntimeTimerResult(state_); }
