@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include <absl/status/status_macros.h>
 #include "absl/status/status.h"
 #include "symbian/concurrency/bounded_channel.h"
 
@@ -29,10 +30,7 @@ class EventMailbox {
   ~EventMailbox() { Close(); }
 
   absl::Status Enqueue(std::function<void()> callback) {
-    if (absl::Status status = queue_.TryWrite(std::move(callback));
-        !status.ok()) {
-      return status;
-    }
+    ABSL_RETURN_IF_ERROR(queue_.TryWrite(std::move(callback)));
     wake_();
     return absl::OkStatus();
   }

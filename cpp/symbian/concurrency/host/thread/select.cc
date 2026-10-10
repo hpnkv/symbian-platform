@@ -80,14 +80,14 @@ int SelectUntil(absl::Time deadline, const CaseArray& cases) {
   if (!need_to_block) {
     // No need to Unregister() any cases since we passed enqueue=false
     // to each Handle() above.
-    thread::MutexLock lock(&selector.mu);
+    const thread::MutexLock lock(&selector.mu);
     return ready ? selector.picked_case_index : -1;
   }
 
   bool expired = false;
   int selected_case = internal::Selector::kNonePicked;
   {
-    thread::MutexLock lock(&selector.mu);
+    const thread::MutexLock lock(&selector.mu);
     if (!ready) {
       // A11's wait diagnostics require its full fiber registry. The host
       // adaptation retains the selection protocol without that registry.

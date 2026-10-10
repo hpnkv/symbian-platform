@@ -39,7 +39,7 @@ class WorkerPool {
 
   ~WorkerPool() {
     {
-      std::lock_guard lock(mu_);
+      const std::lock_guard lock(mu_);
       stopping_ = true;
       wake_sequence_.fetch_add(1, std::memory_order_release);
     }
@@ -70,7 +70,7 @@ class WorkerPool {
       }
     }
     {
-      std::lock_guard lock(mu_);
+      const std::lock_guard lock(mu_);
       timers_.emplace(monotonic_deadline, std::move(work));
       wake_sequence_.fetch_add(1, std::memory_order_release);
     }
@@ -82,7 +82,7 @@ class WorkerPool {
  private:
   void WakeOne() {
     {
-      std::lock_guard lock(mu_);
+      const std::lock_guard lock(mu_);
       wake_sequence_.fetch_add(1, std::memory_order_release);
     }
     if (parked_.load(std::memory_order_acquire) != 0) {

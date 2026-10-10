@@ -11,6 +11,8 @@
 #include <utility>
 #include <vector>
 
+#include <absl/status/status_macros.h>
+
 #include "symbian/concurrency/parallel.h"
 
 namespace symbian::concurrency {
@@ -60,13 +62,9 @@ class TaskGroup {
         Then(joined,
              [](const absl::StatusOr<std::vector<absl::StatusOr<Unit>>>& all)
                  -> absl::StatusOr<Unit> {
-               if (!all.ok()) {
-                 return all.status();
-               }
-               for (const auto& child : all.value()) {
-                 if (!child.ok()) {
-                   return child.status();
-                 }
+               ABSL_ASSIGN_OR_RETURN(const auto& results, all);
+               for (const auto& child : results) {
+                 ABSL_RETURN_IF_ERROR(child.status());
                }
                return Unit{};
              });

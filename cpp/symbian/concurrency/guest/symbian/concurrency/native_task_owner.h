@@ -9,6 +9,7 @@
 #include <optional>
 
 #include <absl/base/nullability.h>
+#include <absl/status/status_macros.h>
 
 #include "absl/time/time.h"
 #include "symbian/concurrency/event_executor.h"
@@ -54,9 +55,7 @@ class NativeTaskOwner {
     children.Add(
         Then(state->property,
              [](const absl::StatusOr<int>& result) -> absl::StatusOr<Unit> {
-               if (!result.ok()) {
-                 return result.status();
-               }
+               ABSL_RETURN_IF_ERROR(result.status());
                return Unit{};
              }));
     state->children = children.Finish();

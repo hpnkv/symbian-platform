@@ -25,6 +25,7 @@
 #include <type_traits>
 #include <utility>
 
+#include <absl/status/status_macros.h>
 #include <absl/base/nullability.h>
 
 #include "absl/status/status.h"
@@ -106,9 +107,7 @@ class BoundedChannel {
       const T& item) requires std::is_copy_constructible_v<T> {
     {
       thread::MutexLock lock(&mu_);
-      if (absl::Status ready = CheckWritable(); !ready.ok()) {
-        return ready;
-      }
+      ABSL_RETURN_IF_ERROR(CheckWritable());
       queue_.push_back(item);
     }
     readers_.Signal();
@@ -216,9 +215,7 @@ class BoundedChannel {
   absl::Status TryWriteMoved(T* absl_nonnull item) {
     {
       thread::MutexLock lock(&mu_);
-      if (absl::Status ready = CheckWritable(); !ready.ok()) {
-        return ready;
-      }
+      ABSL_RETURN_IF_ERROR(CheckWritable());
       queue_.push_back(std::move(*item));
     }
     readers_.Signal();

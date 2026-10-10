@@ -319,7 +319,7 @@ absl::StatusOr<GuestControlRequest> ParseGuestControl(
               name.empty() || name.size() > 64 || name == "." || name == "..") {
             return absl::InvalidArgumentError("Invalid resource name");
           }
-          for (char ch : name) {
+          for (const char ch : name) {
             if (!((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
                   (ch >= '0' && ch <= '9') || ch == '.' || ch == '_' ||
                   ch == '-')) {

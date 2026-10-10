@@ -43,7 +43,7 @@ void ChannelWaiterState::CloseAndReleaseReaders() {
       next_reader = nullptr;
     }
 
-    thread::MutexLock l2(&reader->selector->mu);
+    const thread::MutexLock l2(&reader->selector->mu);
     if (reader->selector->picked_case_index == Selector::kNonePicked) {
       bool* absl_nonnull ok = reader->GetCase()->GetArgPtr<bool>(1);
       *ok = false;

@@ -26,11 +26,11 @@ namespace thread {
 // PermanentEvent
 bool PermanentEvent::Handle(
     internal::CaseInSelectClause* absl_nonnull case_state, bool enqueue) {
-  thread::MutexLock event_lock(&mu_);
+  const thread::MutexLock event_lock(&mu_);
 
   if (notified_.load(std::memory_order_relaxed)) {
     // Synchronized by lock_
-    thread::MutexLock l2(&case_state->selector->mu);
+    const thread::MutexLock l2(&case_state->selector->mu);
     // Consider that in the presence of a race with another Selectable,
     // c->TryPick() may return false in this case.
     return case_state->TryPick();
@@ -44,7 +44,7 @@ bool PermanentEvent::Handle(
 
 void PermanentEvent::Unregister(
     internal::CaseInSelectClause* absl_nonnull case_state) {
-  thread::MutexLock lock(&mu_);
+  const thread::MutexLock lock(&mu_);
   if (!notified_.load(std::memory_order_relaxed)) {
     // We only maintain lists of active cases up until notification.
     internal::UnlinkFromList(&cases_to_be_selected_, case_state);
@@ -52,7 +52,7 @@ void PermanentEvent::Unregister(
 }
 
 void PermanentEvent::Notify() {
-  thread::MutexLock lock(&mu_);
+  const thread::MutexLock lock(&mu_);
 
   DCHECK(!notified_.load(std::memory_order_relaxed))
       << "Notify() method called more than once for "
@@ -65,7 +65,7 @@ void PermanentEvent::Notify() {
   while (cases_to_be_selected_) {
     internal::CaseInSelectClause* absl_nonnull case_in_select_clause =
         cases_to_be_selected_;
-    thread::MutexLock l2(&case_in_select_clause->selector->mu);
+    const thread::MutexLock l2(&case_in_select_clause->selector->mu);
     case_in_select_clause->TryPick();
     // Continued storage of enqueued_list_ after TryPick() is guaranteed by
     // selector->mu
@@ -102,7 +102,7 @@ class AlwaysSelectable final : public internal::Selectable {
   ~AlwaysSelectable() override = default;
 
   bool Handle(internal::CaseInSelectClause* absl_nonnull c, bool) override {
-    thread::MutexLock lock(&c->selector->mu);
+    const thread::MutexLock lock(&c->selector->mu);
     // This selectable is always ready, so ask the selector to pick it.
     // Note: the selector still does not *have to* pick it if there are
     // other ready candidates.

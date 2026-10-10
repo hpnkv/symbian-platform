@@ -5,6 +5,7 @@
 
 #include <string>
 
+#include <absl/status/status_macros.h>
 #include <absl/base/nullability.h>
 
 #include "absl/status/status.h"
@@ -43,45 +44,31 @@ absl::StatusOr<ControlMessage> ParseControl(std::string_view encoded) {
   if (encoded.size() > kMaximumControlBytes) {
     return absl::ResourceExhaustedError("Control frame exceeds 4 KiB");
   }
-  auto parsed = symbian::UnpackMsgpack(encoded, "agent control");
-  if (!parsed.ok()) {
-    return parsed.status();
-  }
-  if (!parsed->is_object()) {
+  ABSL_ASSIGN_OR_RETURN(auto parsed, symbian::UnpackMsgpack(encoded, "agent control"));
+  if (!parsed.is_object()) {
     return absl::InvalidArgumentError("Control frame must be a map");
   }
-  auto version = UnsignedField(*parsed, "v", true);
-  auto request_id = UnsignedField(*parsed, "id", true);
-  auto kind = UnsignedField(*parsed, "kind", true);
-  auto deadline = UnsignedField(*parsed, "deadline_ms", false);
-  if (!version.ok()) {
-    return version.status();
-  }
-  if (!request_id.ok()) {
-    return request_id.status();
-  }
-  if (!kind.ok()) {
-    return kind.status();
-  }
-  if (!deadline.ok()) {
-    return deadline.status();
-  }
-  if (*version != 1 || *request_id == 0 || !ValidKind(*kind)) {
+  ABSL_ASSIGN_OR_RETURN(auto version, UnsignedField(parsed, "v", true));
+  ABSL_ASSIGN_OR_RETURN(auto request_id, UnsignedField(parsed, "id", true));
+  ABSL_ASSIGN_OR_RETURN(auto kind, UnsignedField(parsed, "kind", true));
+  ABSL_ASSIGN_OR_RETURN(auto deadline,
+                        UnsignedField(parsed, "deadline_ms", false));
+  if (version != 1 || request_id == 0 || !ValidKind(kind)) {
     return absl::InvalidArgumentError("Unsupported control envelope");
   }
   ControlMessage result;
   result.version = 1;
-  result.request_id = *request_id;
-  result.kind = static_cast<ControlKind>(*kind);
-  result.deadline_millis = *deadline;
-  const auto body = parsed->find("body");
-  if (body != parsed->end()) {
+  result.request_id = request_id;
+  result.kind = static_cast<ControlKind>(kind);
+  result.deadline_millis = deadline;
+  const auto body = parsed.find("body");
+  if (body != parsed.end()) {
     if (!body->is_object()) {
       return absl::InvalidArgumentError("Control body must be a map");
     }
     result.body = *body;
   }
-  result.extensions = *parsed;
+  result.extensions = parsed;
   for (const char* absl_nonnull key :
        {"v", "id", "kind", "deadline_ms", "body"}) {
     result.extensions.erase(key);
@@ -107,11 +94,9 @@ absl::StatusOr<std::string> PackControl(const ControlMessage& message) {
   encoded["kind"] = static_cast<std::uint8_t>(message.kind);
   encoded["deadline_ms"] = message.deadline_millis;
   encoded["body"] = message.body;
-  auto bytes = symbian::PackMsgpack(encoded, "agent control");
-  if (!bytes.ok()) {
-    return bytes.status();
-  }
-  if (bytes->size() > kMaximumControlBytes) {
+  ABSL_ASSIGN_OR_RETURN(auto bytes,
+                        symbian::PackMsgpack(encoded, "agent control"));
+  if (bytes.size() > kMaximumControlBytes) {
     return absl::ResourceExhaustedError("Control frame exceeds 4 KiB");
   }
   return bytes;

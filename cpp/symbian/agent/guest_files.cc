@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include <absl/status/status_macros.h>
 #include "absl/status/status.h"
 #include "symbian/api/storage/storage.h"
 
@@ -45,18 +46,15 @@ absl::StatusOr<std::u16string> ResourcePath(std::uint8_t scope,
   if (name.empty() || name.size() > 64 || name == "." || name == "..") {
     return absl::InvalidArgumentError("Invalid resource name");
   }
-  auto directory = ResourceDirectory(scope, uid);
-  if (!directory.ok()) {
-    return directory.status();
-  }
-  for (char ch : name) {
+  ABSL_ASSIGN_OR_RETURN(auto directory, ResourceDirectory(scope, uid));
+  for (const char ch : name) {
     if (!((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
           (ch >= '0' && ch <= '9') || ch == '.' || ch == '_' || ch == '-')) {
       return absl::InvalidArgumentError("Invalid resource name");
     }
-    directory->push_back(static_cast<char16_t>(ch));
+    directory.push_back(static_cast<char16_t>(ch));
   }
-  return *directory;
+  return directory;
 }
 
 absl::StatusOr<std::string> Utf16ToUtf8(std::u16string_view input) {
@@ -112,38 +110,27 @@ absl::StatusOr<GuestFilePage> ReadWorkspacePage(std::uint16_t after,
   }
   GuestFilePage page{.next_offset = after};
   for (std::uint16_t index = 0; index < after; ++index) {
-    auto skipped = reader->Next();
-    if (!skipped.ok()) {
-      return skipped.status();
-    }
-    if (!skipped->has_value()) {
+    ABSL_ASSIGN_OR_RETURN(auto skipped, reader->Next());
+    if (!skipped.has_value()) {
       return page;
     }
   }
   for (; page.count < limit && page.next_offset < 256; ++page.count) {
-    auto next = reader->Next();
-    if (!next.ok()) {
-      return next.status();
-    }
-    if (!next->has_value()) {
+    ABSL_ASSIGN_OR_RETURN(auto next, reader->Next());
+    if (!next.has_value()) {
       return page;
     }
-    auto name = Utf16ToUtf8((*next)->name);
-    if (!name.ok()) {
-      return name.status();
-    }
+    auto name = Utf16ToUtf8((next)->name);
+    ABSL_RETURN_IF_ERROR(name.status());
     page.entries[page.count] =
         GuestFileEntry{.name = std::move(*name),
-                       .is_directory = (*next)->is_directory,
-                       .is_read_only = (*next)->is_read_only,
-                       .size_bytes = (*next)->size_bytes};
+                       .is_directory = (next)->is_directory,
+                       .is_read_only = (next)->is_read_only,
+                       .size_bytes = (next)->size_bytes};
     ++page.next_offset;
   }
-  auto extra = reader->Next();
-  if (!extra.ok()) {
-    return extra.status();
-  }
-  page.more = extra->has_value();
+  ABSL_ASSIGN_OR_RETURN(auto extra, reader->Next());
+  page.more = extra.has_value();
   return page;
 }
 
@@ -155,18 +142,10 @@ absl::StatusOr<GuestResourceChunk> ReadResourceChunk(std::uint8_t scope,
   if (length == 0 || length > 32768 || offset > kMaximumResourceBytes) {
     return absl::InvalidArgumentError("Invalid resource read bounds");
   }
-  auto path = ResourcePath(scope, uid, name);
-  if (!path.ok()) {
-    return path.status();
-  }
-  auto file = api::storage::ReadOnlyFile::Open(*path);
-  if (!file.ok()) {
-    return file.status();
-  }
-  auto size = file->Size();
-  if (!size.ok()) {
-    return size.status();
-  }
+  ABSL_ASSIGN_OR_RETURN(auto path, ResourcePath(scope, uid, name));
+  ABSL_ASSIGN_OR_RETURN(auto file, api::storage::ReadOnlyFile::Open(path));
+  auto size = file.Size();
+  ABSL_RETURN_IF_ERROR(size.status());
   if (*size > kMaximumResourceBytes) {
     return absl::ResourceExhaustedError("Resource exceeds 16 MiB");
   }
@@ -177,13 +156,10 @@ absl::StatusOr<GuestResourceChunk> ReadResourceChunk(std::uint8_t scope,
   }
   chunk.bytes.resize(static_cast<std::size_t>(
       std::min<std::uint64_t>(length, *size - offset)));
-  auto read = file->ReadAt(
-      offset, std::span(reinterpret_cast<std::byte*>(chunk.bytes.data()),
-                        chunk.bytes.size()));
-  if (!read.ok()) {
-    return read.status();
-  }
-  chunk.bytes.resize(*read);
+  const auto destination = std::span(
+      reinterpret_cast<std::byte*>(chunk.bytes.data()), chunk.bytes.size());
+  ABSL_ASSIGN_OR_RETURN(auto read, file.ReadAt(offset, destination));
+  chunk.bytes.resize(read);
   return chunk;
 }
 
@@ -195,30 +171,20 @@ absl::Status WriteResourceChunk(std::uint8_t scope, std::uint32_t uid,
       offset > kMaximumResourceBytes - bytes.size()) {
     return absl::InvalidArgumentError("Invalid resource write bounds");
   }
-  auto path = ResourcePath(scope, uid, name);
-  auto directory = ResourceDirectory(scope, uid);
-  if (!path.ok()) {
-    return path.status();
-  }
-  if (!directory.ok()) {
-    return directory.status();
-  }
+  ABSL_ASSIGN_OR_RETURN(auto path, ResourcePath(scope, uid, name));
+  ABSL_ASSIGN_OR_RETURN(auto directory,
+                        ResourceDirectory(scope, uid));
   if (mode != 1) {
-    if (absl::Status created = api::storage::CreateDirectories(*directory);
-        !created.ok()) {
-      return created;
-    }
+    ABSL_RETURN_IF_ERROR(api::storage::CreateDirectories(directory));
   }
   const api::storage::WriteMode write_mode =
       mode == 0   ? api::storage::WriteMode::kCreateNew
       : mode == 1 ? api::storage::WriteMode::kOpenExisting
                   : api::storage::WriteMode::kReplaceExisting;
-  auto file = api::storage::WritableFile::Open(*path, write_mode);
-  if (!file.ok()) {
-    return file.status();
-  }
-  absl::Status written = file->WriteAt(offset, bytes);
-  return written.ok() ? file->Flush() : written;
+  ABSL_ASSIGN_OR_RETURN(auto file,
+                        api::storage::WritableFile::Open(path, write_mode));
+  const absl::Status written = file.WriteAt(offset, bytes);
+  return written.ok() ? file.Flush() : written;
 }
 
 }  // namespace symbian::agent

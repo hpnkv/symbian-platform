@@ -11,6 +11,7 @@
 #include <mutex>
 #include <utility>
 
+#include <absl/status/status_macros.h>
 #include <absl/base/nullability.h>
 
 #include "absl/status/status.h"
@@ -129,9 +130,7 @@ class EventExecutor {
     }
     timers_.DispatchReady(budget);
     mailbox_->DispatchReady(budget);
-    if (absl::Status status = scheduler_.RunReady(budget); !status.ok()) {
-      return status;
-    }
+    ABSL_RETURN_IF_ERROR(scheduler_.RunReady(budget));
     return RearmFiberDeadline();
   }
 
