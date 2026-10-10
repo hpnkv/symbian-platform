@@ -225,8 +225,8 @@ void Transfer(Http2* absl_nonnull from, Http2* absl_nonnull to,
 }
 
 TEST(Http2Test, SharedDuplexAndPullFlowControl) {
-  auto client = Http2::Create(Role::kClient);
-  auto server = Http2::Create(Role::kServer);
+  auto client = Http2::CreateUnique(Role::kClient);
+  auto server = Http2::CreateUnique(Role::kServer);
   ASSERT_TRUE(client.ok());
   ASSERT_TRUE(server.ok());
   Transfer(&**client, &**server);
@@ -265,9 +265,9 @@ TEST(Http2Test, SharedDuplexAndPullFlowControl) {
 }
 
 TEST(Http2Test, ConnectionClientReadsNativeServerOutput) {
-  auto server = Http2::Create(Role::kServer);
+  auto server = Http2::CreateUnique(Role::kServer);
   ASSERT_TRUE(server.ok());
-  auto client_codec = Http2::Create(Role::kClient);
+  auto client_codec = Http2::CreateUnique(Role::kClient);
   ASSERT_TRUE(client_codec.ok());
   ASSERT_TRUE((*client_codec)->SendRequest(Request()).ok());
   ASSERT_TRUE((*client_codec)->Finish().ok());
@@ -284,6 +284,39 @@ TEST(Http2Test, ConnectionClientReadsNativeServerOutput) {
   auto body = ReadAll(&**c);
   ASSERT_TRUE(body.ok()) << body.status();
   EXPECT_EQ(*body, "hello");
+}
+
+TEST(Http2Test, MovesTransferTheSessionAndLeaveAnEmptyOwner) {
+  auto original = Http2::Create(Role::kClient);
+  auto server = Http2::Create(Role::kServer);
+  ASSERT_TRUE(original.ok());
+  ASSERT_TRUE(server.ok());
+  Http2 client(std::move(*original));
+  EXPECT_FALSE(original->Feed({}).ok());
+  EXPECT_FALSE(original->TakeOutput().ok());
+  EXPECT_FALSE(original->Read().ok());
+  EXPECT_TRUE(original->ended());
+  EXPECT_FALSE(original->headers_received());
+  EXPECT_FALSE(original->peer_settings_received());
+  EXPECT_FALSE(original->peer_connect_enabled());
+  EXPECT_TRUE(original->request().headers.empty());
+  EXPECT_TRUE(original->response().headers.empty());
+  EXPECT_TRUE(original->trailers().empty());
+  EXPECT_EQ(original->buffered_amount(), 0);
+  original->Abort();
+  auto replacement = Http2::Create(Role::kClient);
+  ASSERT_TRUE(replacement.ok());
+  *replacement = std::move(client);
+  EXPECT_FALSE(client.Finish().ok());
+  auto wire = replacement->TakeOutput();
+  ASSERT_TRUE(wire.ok());
+  ASSERT_FALSE(wire->empty());
+  ASSERT_TRUE(server->Feed(*wire).ok());
+  EXPECT_TRUE(server->peer_settings_received());
+  auto reply = server->TakeOutput();
+  ASSERT_TRUE(reply.ok());
+  ASSERT_TRUE(replacement->Feed(*reply).ok());
+  EXPECT_TRUE(replacement->peer_settings_received());
 }
 }  // namespace
 }  // namespace symbian::http

@@ -31,8 +31,8 @@ int main() {
     }
     return mask;
   };
-  auto client = WebSocket::Create(Role::kClient, options);
-  auto server = WebSocket::Create(Role::kServer);
+  auto client = WebSocket::CreateUnique(Role::kClient, options);
+  auto server = WebSocket::CreateUnique(Role::kServer);
   if (!client.ok() || !server.ok()) {
     return 1;
   }

@@ -24,6 +24,7 @@
 #include <string_view>
 #include <vector>
 
+#include <absl/status/status_macros.h>
 #include <absl/base/nullability.h>
 
 namespace symbian::http::internal {
@@ -67,7 +68,7 @@ std::vector<std::string_view> Split(
     std::size_t max = std::numeric_limits<std::size_t>::max()) {
   std::vector<std::string_view> out;
   while (out.size() < max) {
-    auto pos = v.find(separator);
+    const auto pos = v.find(separator);
     if (pos == std::string_view::npos) {
       break;
     }
@@ -84,8 +85,8 @@ bool Number(std::string_view v, T* absl_nonnull out, unsigned base) {
     return false;
   }
   std::uint64_t n = 0;
-  for (char c : v) {
-    unsigned digit =
+  for (const char c : v) {
+    const unsigned digit =
         c >= '0' && c <= '9'   ? static_cast<unsigned>(c - '0')
         : c >= 'a' && c <= 'f' ? static_cast<unsigned>(c - 'a' + 10)
         : c >= 'A' && c <= 'F' ? static_cast<unsigned>(c - 'A' + 10)
@@ -197,7 +198,7 @@ absl::Status ParseHeaderLines(const std::vector<std::string_view>& lines,
   if (!value.has_value()) {
     return false;
   }
-  for (std::string_view piece : Split(*value, ',')) {
+  for (const std::string_view piece : Split(*value, ',')) {
     if (Equal(Trim(piece), token)) {
       return true;
     }
@@ -227,11 +228,8 @@ std::optional<std::size_t> FindHeaderBlockEnd(std::string_view data) {
 }
 
 absl::StatusOr<Http1RequestHead> ParseRequestHead(std::string_view head_block) {
-  auto parsed_lines = SplitLines(head_block);
-  if (!parsed_lines.ok()) {
-    return parsed_lines.status();
-  }
-  const auto& lines = *parsed_lines;
+  ABSL_ASSIGN_OR_RETURN(auto parsed_lines, SplitLines(head_block));
+  const auto& lines = parsed_lines;
   const std::vector<std::string_view> parts = Split(lines[0], ' ', 2);
   if (parts.size() != 3 || parts[0].empty() || parts[1].empty()) {
     return absl::InvalidArgumentError(
@@ -246,20 +244,14 @@ absl::StatusOr<Http1RequestHead> ParseRequestHead(std::string_view head_block) {
 
   head.target = std::string(parts[1]);
   head.version = std::string(parts[2]);
-  if (auto header_status = ParseHeaderLines(lines, 1, &head.headers);
-      !header_status.ok()) {
-    return header_status;
-  }
+  ABSL_RETURN_IF_ERROR(ParseHeaderLines(lines, 1, &head.headers));
   return std::move(head);
 }
 
 absl::StatusOr<Http1ResponseHead> ParseResponseHead(
     std::string_view head_block) {
-  auto parsed_lines = SplitLines(head_block);
-  if (!parsed_lines.ok()) {
-    return parsed_lines.status();
-  }
-  const auto& lines = *parsed_lines;
+  ABSL_ASSIGN_OR_RETURN(auto parsed_lines, SplitLines(head_block));
+  const auto& lines = parsed_lines;
   const std::vector<std::string_view> parts = Split(lines[0], ' ', 2);
   if (parts.size() < 2) {
     return absl::InvalidArgumentError(
@@ -278,10 +270,7 @@ absl::StatusOr<Http1ResponseHead> ParseResponseHead(
   head.version = std::string(parts[0]);
   head.status = status;
   head.reason = parts.size() == 3 ? std::string(parts[2]) : std::string();
-  if (auto header_status = ParseHeaderLines(lines, 1, &head.headers);
-      !header_status.ok()) {
-    return header_status;
-  }
+  ABSL_RETURN_IF_ERROR(ParseHeaderLines(lines, 1, &head.headers));
   return std::move(head);
 }
 
@@ -289,9 +278,7 @@ namespace {
 
 absl::StatusOr<BodyPlan> PlanBody(const Headers& headers,
                                   bool allow_until_close) {
-  if (auto valid = ValidateHeaders(headers, Limits{}); !valid.ok()) {
-    return valid;
-  }
+  ABSL_RETURN_IF_ERROR(ValidateHeaders(headers, Limits{}));
   std::optional<std::size_t> length;
   bool transfer = false;
   for (const auto& [name, value] : headers) {
@@ -408,9 +395,7 @@ absl::Status ChunkedDecoder::Feed(std::string_view data,
             return absl::InvalidArgumentError("Malformed HTTP trailer");
           }
           pending_.clear();
-          if (auto valid = ValidateHeaders(trailers_, Limits{}); !valid.ok()) {
-            return valid;
-          }
+          ABSL_RETURN_IF_ERROR(ValidateHeaders(trailers_, Limits{}));
         }
         break;
       }

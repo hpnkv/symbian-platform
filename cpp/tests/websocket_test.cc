@@ -20,8 +20,8 @@ class WebSocketTest : public ::testing::Test {
         []() -> absl::StatusOr<std::array<std::uint8_t, 4>> {
       return std::array<std::uint8_t, 4>{1, 2, 3, 4};
     };
-    auto c = WebSocket::Create(Role::kClient, options);
-    auto s = WebSocket::Create(Role::kServer);
+    auto c = WebSocket::CreateUnique(Role::kClient, options);
+    auto s = WebSocket::CreateUnique(Role::kServer);
     ASSERT_TRUE(c.ok());
     ASSERT_TRUE(s.ok());
     client = std::move(*c);
@@ -146,10 +146,33 @@ TEST_F(WebSocketTest, RepeatedTrafficReplenishesFlowControl) {
 }
 
 TEST(WebSocketOptionsTest, RequiresClientEntropyAndValidBounds) {
-  EXPECT_FALSE(WebSocket::Create(Role::kClient).ok());
+  EXPECT_FALSE(WebSocket::CreateUnique(Role::kClient).ok());
   Options options;
   options.maximum_message_bytes = 32769;
-  EXPECT_FALSE(WebSocket::Create(Role::kServer, options).ok());
+  EXPECT_FALSE(WebSocket::CreateUnique(Role::kServer, options).ok());
+}
+
+TEST(WebSocketOptionsTest, MovesPreserveValueOwnershipAndEmptyTheSource) {
+  auto original = WebSocket::Create(Role::kServer);
+  ASSERT_TRUE(original.ok());
+  WebSocket transferred(std::move(*original));
+  EXPECT_TRUE(original->closed());
+  EXPECT_FALSE(original->open());
+  EXPECT_EQ(original->buffered_amount(), 0);
+  EXPECT_FALSE(original->Feed({}).ok());
+  EXPECT_FALSE(original->TakeOutput().ok());
+  EXPECT_FALSE(original->Send("message").ok());
+  EXPECT_FALSE(original->Receive().ok());
+  EXPECT_FALSE(original->Close().ok());
+  original->Abort();
+  auto replacement = WebSocket::Create(Role::kServer);
+  ASSERT_TRUE(replacement.ok());
+  *replacement = std::move(transferred);
+  EXPECT_TRUE(transferred.closed());
+  EXPECT_FALSE(transferred.TakeOutput().ok());
+  auto wire = replacement->TakeOutput();
+  ASSERT_TRUE(wire.ok());
+  EXPECT_FALSE(wire->empty());
 }
 }  // namespace
 }  // namespace symbian::websocket

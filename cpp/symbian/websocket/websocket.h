@@ -38,12 +38,17 @@ struct Options {
  * This codec owns no socket, thread, Python reference or authentication policy.
  * Drain output before reading again, including after peer close. An error is
  * terminal; discard the connection after any transport failure.
+ * A moved-from owner is closed and empty. Status-returning operations fail
+ * with FailedPrecondition; querying or aborting the empty owner is safe.
  */
 class WebSocket {
  public:
-  static absl::StatusOr<std::unique_ptr<WebSocket>> Create(
+  static absl::StatusOr<WebSocket> Create(Role role, Options options = {});
+  static absl::StatusOr<std::unique_ptr<WebSocket>> CreateUnique(
       Role role, Options options = {});
   ~WebSocket();
+  WebSocket(WebSocket&& other) noexcept;
+  WebSocket& operator=(WebSocket&& other) noexcept;
   WebSocket(const WebSocket&) = delete;
   WebSocket& operator=(const WebSocket&) = delete;
 

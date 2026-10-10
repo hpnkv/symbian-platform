@@ -6,8 +6,11 @@
 #include <algorithm>
 #include <cstring>
 #include <deque>
+#include <new>
+#include <utility>
 
 #include <absl/base/nullability.h>
+#include <absl/status/status_macros.h>
 #include <nghttp2/nghttp2.h>
 
 namespace symbian::http {
@@ -135,7 +138,8 @@ struct Http2::State {
               absl::InvalidArgumentError("HTTP/2 trailers without END_STREAM"));
         }
         s.trailers = std::move(s.block);
-        if (auto status = ValidateHeaders(s.trailers, s.limits); !status.ok()) {
+        if (const auto status = ValidateHeaders(s.trailers, s.limits);
+            !status.ok()) {
           return s.Fail(status);
         }
       } else {
@@ -176,9 +180,10 @@ struct Http2::State {
           s.response.headers.clear();
         } else {
           s.head_received = true;
-          if (auto status = s.role == Role::kServer
-                                ? ValidateRequest(s.request, s.limits)
-                                : ValidateHeaders(s.response.headers, s.limits);
+          if (const auto status =
+                  s.role == Role::kServer
+                      ? ValidateRequest(s.request, s.limits)
+                      : ValidateHeaders(s.response.headers, s.limits);
               !status.ok()) {
             return s.Fail(status);
           }
@@ -230,8 +235,10 @@ struct Http2::State {
 Http2::Http2(std::unique_ptr<State> state) : state_(std::move(state)) {}
 
 Http2::~Http2() = default;
+Http2::Http2(Http2&& other) noexcept = default;
+Http2& Http2::operator=(Http2&& other) noexcept = default;
 
-absl::StatusOr<std::unique_ptr<Http2>> Http2::Create(Role role, Limits limits) {
+absl::StatusOr<Http2> Http2::Create(Role role, Limits limits) {
   if (limits.maximum_buffered_bytes < 16384 ||
       limits.maximum_buffered_bytes > 1048576 ||
       limits.maximum_header_bytes == 0 || limits.maximum_header_bytes > 65536 ||
@@ -292,15 +299,26 @@ absl::StatusOr<std::unique_ptr<Http2>> Http2::Create(Role role, Limits limits) {
   if (code) {
     return Error(code);
   }
-  return std::unique_ptr<Http2>(new Http2(std::move(s)));
+  return Http2(std::move(s));
+}
+
+absl::StatusOr<std::unique_ptr<Http2>> Http2::CreateUnique(Role role,
+                                                           Limits limits) {
+  ABSL_ASSIGN_OR_RETURN(auto value, Create(role, std::move(limits)));
+  std::unique_ptr<Http2> owner(new (std::nothrow) Http2(std::move(value)));
+  if (owner == nullptr) {
+    return absl::ResourceExhaustedError("Allocate Http2 owner");
+  }
+  return owner;
 }
 
 absl::Status Http2::Feed(std::string_view bytes) {
-  auto& s = *state_;
-  if (!s.error.ok()) {
-    return s.error;
+  if (state_ == nullptr) {
+    return absl::FailedPreconditionError("Http2 owner was moved");
   }
-  if (auto count = nghttp2_session_mem_recv(
+  auto& s = *state_;
+  ABSL_RETURN_IF_ERROR(s.error);
+  if (const auto count = nghttp2_session_mem_recv(
           s.session, reinterpret_cast<const std::uint8_t*>(bytes.data()),
           bytes.size());
       s.error.ok() &&
@@ -312,14 +330,15 @@ absl::Status Http2::Feed(std::string_view bytes) {
 }
 
 absl::StatusOr<std::string> Http2::TakeOutput() {
-  auto& s = *state_;
-  if (!s.error.ok()) {
-    return s.error;
+  if (state_ == nullptr) {
+    return absl::FailedPreconditionError("Http2 owner was moved");
   }
+  auto& s = *state_;
+  ABSL_RETURN_IF_ERROR(s.error);
   std::string result;
   const std::uint8_t* absl_nonnull bytes;
   while (true) {
-    auto count = nghttp2_session_mem_send(s.session, &bytes);
+    const auto count = nghttp2_session_mem_send(s.session, &bytes);
     if (count < 0) {
       s.Fail(Error(static_cast<int>(count)));
       return s.error;
@@ -340,16 +359,15 @@ absl::StatusOr<std::string> Http2::TakeOutput() {
 }
 
 absl::Status Http2::SendRequest(RequestHead head) {
-  auto& s = *state_;
-  if (!s.error.ok()) {
-    return s.error;
+  if (state_ == nullptr) {
+    return absl::FailedPreconditionError("Http2 owner was moved");
   }
+  auto& s = *state_;
+  ABSL_RETURN_IF_ERROR(s.error);
   if (s.role != Role::kClient || s.sent) {
     return absl::FailedPreconditionError("HTTP/2 request already sent");
   }
-  if (auto status = ValidateRequest(head, s.limits); !status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(ValidateRequest(head, s.limits));
   if (!head.protocol.empty() && !peer_connect_enabled()) {
     return absl::FailedPreconditionError("Peer lacks RFC 8441 support");
   }
@@ -363,9 +381,9 @@ absl::Status Http2::SendRequest(RequestHead head) {
   }
   headers.insert(headers.end(), head.headers.begin(), head.headers.end());
   auto fields = Fields(&headers);
-  auto provider = s.Provider();
-  int id = nghttp2_submit_request(s.session, nullptr, fields.data(),
-                                  fields.size(), &provider, nullptr);
+  const auto provider = s.Provider();
+  const int id = nghttp2_submit_request(s.session, nullptr, fields.data(),
+                                        fields.size(), &provider, nullptr);
   if (id < 0) {
     return Error(id);
   }
@@ -377,27 +395,25 @@ absl::Status Http2::SendRequest(RequestHead head) {
 }
 
 absl::Status Http2::SendHeaders(ResponseHead head) {
-  auto& s = *state_;
-  if (!s.error.ok()) {
-    return s.error;
+  if (state_ == nullptr) {
+    return absl::FailedPreconditionError("Http2 owner was moved");
   }
+  auto& s = *state_;
+  ABSL_RETURN_IF_ERROR(s.error);
   if (s.role != Role::kServer || !s.head_received || s.sent) {
     return absl::FailedPreconditionError("HTTP/2 response out of order");
   }
   if (head.status < 200 || head.status > 599) {
     return absl::InvalidArgumentError("Invalid HTTP status");
   }
-  auto status = ValidateHeaders(head.headers, s.limits);
-  if (!status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(ValidateHeaders(head.headers, s.limits));
   NormalizeHeaders(&head.headers);
   Headers headers{{":status", std::to_string(head.status)}};
   headers.insert(headers.end(), head.headers.begin(), head.headers.end());
   auto fields = Fields(&headers);
-  auto provider = s.Provider();
-  if (int code = nghttp2_submit_response(s.session, s.stream, fields.data(),
-                                         fields.size(), &provider);
+  const auto provider = s.Provider();
+  if (const int code = nghttp2_submit_response(
+          s.session, s.stream, fields.data(), fields.size(), &provider);
       code) {
     return Error(code);
   }
@@ -407,10 +423,11 @@ absl::Status Http2::SendHeaders(ResponseHead head) {
 }
 
 absl::Status Http2::Write(std::string_view bytes) {
-  auto& s = *state_;
-  if (!s.error.ok()) {
-    return s.error;
+  if (state_ == nullptr) {
+    return absl::FailedPreconditionError("Http2 owner was moved");
   }
+  auto& s = *state_;
+  ABSL_RETURN_IF_ERROR(s.error);
   if (!s.sent || s.finished) {
     return absl::FailedPreconditionError(
         "HTTP/2 write after finish or before headers");
@@ -423,77 +440,81 @@ absl::Status Http2::Write(std::string_view bytes) {
     s.offset = 0;
   }
   s.tx.append(bytes);
-  int code = nghttp2_session_resume_data(s.session, s.stream);
+  const int code = nghttp2_session_resume_data(s.session, s.stream);
   return code == NGHTTP2_ERR_INVALID_ARGUMENT ? absl::OkStatus() : Error(code);
 }
 
 absl::Status Http2::Finish() {
-  auto& s = *state_;
-  if (!s.error.ok()) {
-    return s.error;
+  if (state_ == nullptr) {
+    return absl::FailedPreconditionError("Http2 owner was moved");
   }
+  auto& s = *state_;
+  ABSL_RETURN_IF_ERROR(s.error);
   if (!s.sent) {
     return absl::FailedPreconditionError("HTTP/2 finish before headers");
   }
   s.finished = true;
-  int code = nghttp2_session_resume_data(s.session, s.stream);
+  const int code = nghttp2_session_resume_data(s.session, s.stream);
   return code == NGHTTP2_ERR_INVALID_ARGUMENT ? absl::OkStatus() : Error(code);
 }
 
 absl::StatusOr<std::optional<std::string>> Http2::Read() {
-  auto& s = *state_;
-  if (!s.error.ok()) {
-    return s.error;
+  if (state_ == nullptr) {
+    return absl::FailedPreconditionError("Http2 owner was moved");
   }
+  auto& s = *state_;
+  ABSL_RETURN_IF_ERROR(s.error);
   if (s.rx.empty()) {
     return std::optional<std::string>();
   }
   std::string result;
   result.swap(s.rx);
   s.queued_bytes -= result.size();
-  if (auto status =
-          Error(nghttp2_session_consume(s.session, s.stream, result.size()));
-      !status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(
+      Error(nghttp2_session_consume(s.session, s.stream, result.size())));
   return std::optional<std::string>(std::move(result));
 }
 
 bool Http2::headers_received() const {
-  return state_->head_received;
+  return state_ != nullptr && state_->head_received;
 }
 
 bool Http2::ended() const {
-  return state_->end;
+  return state_ == nullptr || state_->end;
 }
 
 bool Http2::peer_settings_received() const {
-  return state_->settings;
+  return state_ != nullptr && state_->settings;
 }
 
 bool Http2::peer_connect_enabled() const {
-  return state_->settings &&
+  return state_ != nullptr && state_->settings &&
          nghttp2_session_get_remote_settings(
              state_->session, NGHTTP2_SETTINGS_ENABLE_CONNECT_PROTOCOL) == 1;
 }
 
 const RequestHead& Http2::request() const {
-  return state_->request;
+  static const RequestHead empty;
+  return state_ == nullptr ? empty : state_->request;
 }
 
 const ResponseHead& Http2::response() const {
-  return state_->response;
+  static const ResponseHead empty;
+  return state_ == nullptr ? empty : state_->response;
 }
 
 const Headers& Http2::trailers() const {
-  return state_->trailers;
+  static const Headers empty;
+  return state_ == nullptr ? empty : state_->trailers;
 }
 
 std::size_t Http2::buffered_amount() const {
-  return state_->tx.size() - state_->offset;
+  return state_ == nullptr ? 0 : state_->tx.size() - state_->offset;
 }
 
 void Http2::Abort() {
-  state_->Fail(absl::CancelledError("HTTP/2 aborted"));
+  if (state_ != nullptr) {
+    state_->Fail(absl::CancelledError("HTTP/2 aborted"));
+  }
 }
 }  // namespace symbian::http

@@ -17,12 +17,19 @@ namespace symbian::http {
  * and Finish operate independently of the read half for duplex CONNECT.
  * Header and DATA errors are terminal. No sockets, callbacks into Python, or
  * scheduler are owned here. Only one request is supported per connection.
+ * A moved-from owner is ended and empty; status-returning operations fail
+ * with FailedPrecondition, queries return empty values, and Abort is harmless.
  */
 class Http2 {
  public:
-  static absl::StatusOr<std::unique_ptr<Http2>> Create(Role role,
-                                                       Limits limits = {});
+  static absl::StatusOr<Http2> Create(Role role, Limits limits = {});
+  static absl::StatusOr<std::unique_ptr<Http2>> CreateUnique(
+      Role role, Limits limits = {});
+  Http2(const Http2&) = delete;
+  Http2& operator=(const Http2&) = delete;
   ~Http2();
+  Http2(Http2&& other) noexcept;
+  Http2& operator=(Http2&& other) noexcept;
   absl::Status Feed(std::string_view bytes);
   absl::StatusOr<std::string> TakeOutput();
   absl::Status SendRequest(RequestHead head);

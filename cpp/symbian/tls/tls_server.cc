@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <memory>
 #include <new>
 #include <optional>
 #include <span>
@@ -10,6 +11,7 @@
 #include <utility>
 
 #include <absl/base/nullability.h>
+#include <absl/status/status_macros.h>
 
 #include "absl/time/clock.h"
 #include "mbedtls/ctr_drbg.h"
@@ -127,11 +129,8 @@ absl::StatusOr<TlsStream> TlsStream::Create(std::string_view server_certificate,
       client_ca_bundle.size() > kMaximumPemBytes) {
     return absl::InvalidArgumentError("TLS PEM input is empty or oversized");
   }
-  auto initialized = Initialize(true, version);
-  if (!initialized.ok()) {
-    return initialized.status();
-  }
-  TlsStream result = std::move(*initialized);
+  ABSL_ASSIGN_OR_RETURN(auto initialized, Initialize(true, version));
+  TlsStream result = std::move(initialized);
   auto* absl_nonnull impl = result.impl_;
   int status = 0;
   const std::string certificate(server_certificate);
@@ -165,6 +164,20 @@ absl::StatusOr<TlsStream> TlsStream::Create(std::string_view server_certificate,
   return result;
 }
 
+absl::StatusOr<std::unique_ptr<TlsStream>> TlsStream::CreateUnique(
+    std::string_view server_certificate, std::string_view server_private_key,
+    std::string_view client_ca_bundle, TlsVersion version) {
+  auto created =
+      Create(server_certificate, server_private_key, client_ca_bundle, version);
+  ABSL_RETURN_IF_ERROR(created.status());
+  std::unique_ptr<TlsStream> owner(new (std::nothrow)
+                                       TlsStream(std::move(*created)));
+  if (owner == nullptr) {
+    return absl::ResourceExhaustedError("TLS owner allocation failed");
+  }
+  return owner;
+}
+
 absl::StatusOr<TlsStream> TlsStream::Initialize(bool server,
                                                 TlsVersion version) {
   void* absl_nullable memory = std::malloc(sizeof(Impl));
@@ -181,7 +194,7 @@ absl::StatusOr<TlsStream> TlsStream::Initialize(bool server,
       seed != 0) {
     return TlsError("TLS entropy seed failed", seed);
   }
-  if (int status = mbedtls_ssl_config_defaults(
+  if (const int status = mbedtls_ssl_config_defaults(
           &impl->config, server ? MBEDTLS_SSL_IS_SERVER : MBEDTLS_SSL_IS_CLIENT,
           MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
       status != 0) {
@@ -206,13 +219,10 @@ absl::StatusOr<TlsStream> TlsStream::Connect(
       (alpn != "http/1.1" && alpn != "h2")) {
     return absl::InvalidArgumentError("Invalid TLS hostname, roots or ALPN");
   }
-  auto configured = Initialize(false, version);
-  if (!configured.ok()) {
-    return configured.status();
-  }
-  TlsStream result = std::move(*configured);
+  ABSL_ASSIGN_OR_RETURN(auto configured, Initialize(false, version));
+  TlsStream result = std::move(configured);
   auto* absl_nonnull impl = result.impl_;
-  std::string roots(ca_bundle);
+  const std::string roots(ca_bundle);
   int code = mbedtls_x509_crt_parse(
       &impl->client_roots,
       reinterpret_cast<const unsigned char*>(roots.c_str()), roots.size() + 1);
@@ -237,9 +247,7 @@ absl::StatusOr<TlsStream> TlsStream::Connect(
   }
   impl->client.emplace(std::move(client));
   mbedtls_ssl_set_bio(&impl->ssl, impl, &Impl::Send, &Impl::Receive, nullptr);
-  if (auto status = result.Handshake(deadline); !status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(result.Handshake(deadline));
   const char* absl_nullable selected =
       mbedtls_ssl_get_alpn_protocol(&impl->ssl);
   if ((selected && alpn != selected) || (!selected && alpn == "h2")) {
@@ -305,7 +313,7 @@ absl::Status TlsStream::Accept(TcpClient&& client, absl::Time deadline) {
   impl_->client.emplace(std::move(client));
   impl_->deadline = deadline;
   impl_->io_status = absl::OkStatus();
-  if (int status = mbedtls_ssl_setup(&impl_->ssl, &impl_->config);
+  if (const int status = mbedtls_ssl_setup(&impl_->ssl, &impl_->config);
       status != 0) {
     CloseSession();
     return TlsError("TLS setup failed", status);
@@ -355,9 +363,7 @@ absl::StatusOr<std::size_t> TlsStream::Read(std::span<std::uint8_t> bytes,
     if (count > 0) {
       return static_cast<std::size_t>(count);
     }
-    if (!impl_->io_status.ok()) {
-      return impl_->io_status;
-    }
+    ABSL_RETURN_IF_ERROR(impl_->io_status);
     if (count == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
       return std::size_t{0};
     }
@@ -389,9 +395,7 @@ absl::Status TlsStream::Write(std::span<const std::uint8_t> bytes,
       written += static_cast<std::size_t>(count);
       continue;
     }
-    if (!impl_->io_status.ok()) {
-      return impl_->io_status;
-    }
+    ABSL_RETURN_IF_ERROR(impl_->io_status);
     if (count != MBEDTLS_ERR_SSL_WANT_READ &&
         count != MBEDTLS_ERR_SSL_WANT_WRITE) {
       return TlsError("TLS write failed", count);

@@ -10,7 +10,7 @@ bool Token(std::string_view value) {
   if (value.empty()) {
     return false;
   }
-  for (char c : value) {
+  for (const char c : value) {
     if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
           (c >= '0' && c <= '9') ||
           std::string_view("!#$%&'*+-.^_`|~").find(c) !=
@@ -26,7 +26,7 @@ bool Equal(std::string_view a, std::string_view b) {
     return false;
   }
   for (std::size_t i = 0; i < a.size(); ++i) {
-    if (auto lower =
+    if (const auto lower =
             [](char c) {
               return c >= 'A' && c <= 'Z' ? c + 32 : c;
             };
@@ -67,7 +67,7 @@ absl::Status ValidateHeaders(const Headers& headers, const Limits& limits) {
     if (!Token(name)) {
       return absl::InvalidArgumentError("Invalid HTTP field name");
     }
-    for (char c : value) {
+    for (const char c : value) {
       if ((c < 32 && c != '\t') || c == 127) {
         return absl::InvalidArgumentError("Invalid HTTP field value");
       }
@@ -88,7 +88,7 @@ absl::Status ValidateRequest(const RequestHead& head, const Limits& limits) {
     return absl::InvalidArgumentError("Invalid HTTP request target");
   }
   for (const auto& v : {head.path, head.authority}) {
-    for (char c : v) {
+    for (const char c : v) {
       if (c <= 32 || c == 127) {
         return absl::InvalidArgumentError("Invalid HTTP request target byte");
       }

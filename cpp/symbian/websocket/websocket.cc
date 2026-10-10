@@ -3,6 +3,10 @@
 #include "symbian/websocket/websocket.h"
 
 #include <deque>
+#include <new>
+#include <utility>
+
+#include <absl/status/status_macros.h>
 
 #include "symbian/http/http2.h"
 #include "symbian/websocket/framing.h"
@@ -34,11 +38,8 @@ struct WebSocket::State {
   absl::Status Frame(std::uint8_t opcode, std::string_view payload,
                      std::array<std::uint8_t, 4> mask) {
     if (role == Role::kClient) {
-      auto random = options.mask_provider();
-      if (!random.ok()) {
-        return random.status();
-      }
-      mask = *random;
+      ABSL_ASSIGN_OR_RETURN(auto random, options.mask_provider());
+      mask = random;
     }
     if (const std::size_t overhead = role == Role::kClient ? 8 : 4;
         payload.size() + overhead >
@@ -58,7 +59,7 @@ struct WebSocket::State {
     if (!status.ok()) {
       return Fail(status);
     }
-    for (auto& pong : actions.pongs) {
+    for (const auto& pong : actions.pongs) {
       status = Frame(10, pong, {});
       if (!status.ok()) {
         return Fail(status);
@@ -87,9 +88,7 @@ struct WebSocket::State {
   }
 
   absl::Status Advance() {
-    if (!error.ok()) {
-      return error;
-    }
+    ABSL_RETURN_IF_ERROR(error);
     if (role == Role::kClient && !submitted && http->peer_settings_received() &&
         !http->peer_connect_enabled()) {
       Fail(absl::FailedPreconditionError("Peer lacks RFC 8441 support"));
@@ -102,7 +101,8 @@ struct WebSocket::State {
       request.authority = options.authority;
       request.path = options.path;
       request.headers = {{"sec-websocket-version", "13"}};
-      if (auto status = http->SendRequest(std::move(request)); !status.ok()) {
+      if (const auto status = http->SendRequest(std::move(request));
+          !status.ok()) {
         Fail(status);
         return error;
       }
@@ -121,7 +121,8 @@ struct WebSocket::State {
           Fail(absl::InvalidArgumentError("Invalid WebSocket CONNECT"));
           return error;
         }
-        if (auto status = http->SendHeaders({.status = 200, .headers = {}});
+        if (const auto status =
+                http->SendHeaders({.status = 200, .headers = {}});
             !status.ok()) {
           Fail(status);
           return error;
@@ -148,12 +149,10 @@ struct WebSocket::State {
       }
       framing.input_.append(**data);
       Parse();
-      if (!error.ok()) {
-        return error;
-      }
+      ABSL_RETURN_IF_ERROR(error);
     }
     if (closing) {
-      if (auto status = http->Finish(); !status.ok()) {
+      if (const auto status = http->Finish(); !status.ok()) {
         Fail(status);
       }
     }
@@ -167,9 +166,10 @@ struct WebSocket::State {
 WebSocket::WebSocket(std::unique_ptr<State> state) : state_(std::move(state)) {}
 
 WebSocket::~WebSocket() = default;
+WebSocket::WebSocket(WebSocket&& other) noexcept = default;
+WebSocket& WebSocket::operator=(WebSocket&& other) noexcept = default;
 
-absl::StatusOr<std::unique_ptr<WebSocket>> WebSocket::Create(Role role,
-                                                             Options options) {
+absl::StatusOr<WebSocket> WebSocket::Create(Role role, Options options) {
   if ((role == Role::kClient && !options.mask_provider) ||
       options.path.empty() || options.path[0] != '/' ||
       options.path.size() > 512 || options.authority.empty() ||
@@ -184,20 +184,30 @@ absl::StatusOr<std::unique_ptr<WebSocket>> WebSocket::Create(Role role,
   limits.maximum_headers = 16;
   limits.maximum_header_bytes = 2048;
   limits.maximum_buffered_bytes = state->options.maximum_buffered_bytes;
-  auto http = http::Http2::Create(
+  auto http = http::Http2::CreateUnique(
       role == Role::kClient ? http::Role::kClient : http::Role::kServer,
       limits);
-  if (!http.ok()) {
-    return http.status();
-  }
+  ABSL_RETURN_IF_ERROR(http.status());
   state->http = std::move(*http);
-  return std::unique_ptr<WebSocket>(new WebSocket(std::move(state)));
+  return WebSocket(std::move(state));
+}
+
+absl::StatusOr<std::unique_ptr<WebSocket>> WebSocket::CreateUnique(
+    Role role, Options options) {
+  ABSL_ASSIGN_OR_RETURN(auto value, Create(role, std::move(options)));
+  std::unique_ptr<WebSocket> owner(new (std::nothrow)
+                                       WebSocket(std::move(value)));
+  if (owner == nullptr) {
+    return absl::ResourceExhaustedError("Allocate WebSocket owner");
+  }
+  return owner;
 }
 
 absl::Status WebSocket::Feed(std::string_view bytes) {
-  if (!state_->error.ok()) {
-    return state_->error;
+  if (state_ == nullptr) {
+    return absl::FailedPreconditionError("WebSocket owner was moved");
   }
+  ABSL_RETURN_IF_ERROR(state_->error);
   if (auto status = state_->http->Feed(bytes); !status.ok()) {
     state_->Fail(status);
     return status;
@@ -206,17 +216,19 @@ absl::Status WebSocket::Feed(std::string_view bytes) {
 }
 
 absl::StatusOr<std::string> WebSocket::TakeOutput() {
-  if (!state_->error.ok()) {
-    return state_->error;
+  if (state_ == nullptr) {
+    return absl::FailedPreconditionError("WebSocket owner was moved");
   }
+  ABSL_RETURN_IF_ERROR(state_->error);
   return state_->http->TakeOutput();
 }
 
 absl::Status WebSocket::Send(std::string_view message) {
-  auto& s = *state_;
-  if (!s.error.ok()) {
-    return s.error;
+  if (state_ == nullptr) {
+    return absl::FailedPreconditionError("WebSocket owner was moved");
   }
+  auto& s = *state_;
+  ABSL_RETURN_IF_ERROR(s.error);
   if (!open()) {
     return absl::FailedPreconditionError("WebSocket is not open");
   }
@@ -227,10 +239,11 @@ absl::Status WebSocket::Send(std::string_view message) {
 }
 
 absl::StatusOr<std::optional<std::string>> WebSocket::Receive() {
-  auto& s = *state_;
-  if (!s.error.ok()) {
-    return s.error;
+  if (state_ == nullptr) {
+    return absl::FailedPreconditionError("WebSocket owner was moved");
   }
+  auto& s = *state_;
+  ABSL_RETURN_IF_ERROR(s.error);
   if (s.messages.empty()) {
     return std::optional<std::string>();
   }
@@ -241,10 +254,11 @@ absl::StatusOr<std::optional<std::string>> WebSocket::Receive() {
 }
 
 absl::Status WebSocket::Close() {
-  auto& s = *state_;
-  if (!s.error.ok()) {
-    return s.error;
+  if (state_ == nullptr) {
+    return absl::FailedPreconditionError("WebSocket owner was moved");
   }
+  auto& s = *state_;
+  ABSL_RETURN_IF_ERROR(s.error);
   if (s.closing) {
     return absl::OkStatus();
   }
@@ -260,18 +274,21 @@ absl::Status WebSocket::Close() {
 }
 
 void WebSocket::Abort() {
-  state_->Fail(absl::CancelledError("WebSocket aborted"));
+  if (state_ != nullptr) {
+    state_->Fail(absl::CancelledError("WebSocket aborted"));
+  }
 }
 
 bool WebSocket::open() const {
-  return state_->opened && !state_->closed && !state_->closing;
+  return state_ != nullptr && state_->opened && !state_->closed &&
+         !state_->closing;
 }
 
 bool WebSocket::closed() const {
-  return state_->closed;
+  return state_ == nullptr || state_->closed;
 }
 
 std::size_t WebSocket::buffered_amount() const {
-  return state_->http->buffered_amount();
+  return state_ == nullptr ? 0 : state_->http->buffered_amount();
 }
 }  // namespace symbian::websocket

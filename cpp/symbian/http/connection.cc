@@ -6,6 +6,7 @@
 #include <array>
 
 #include <absl/base/nullability.h>
+#include <absl/status/status_macros.h>
 
 namespace symbian::http {
 Connection::Connection(net::ByteStream transport, Role role, Protocol protocol,
@@ -41,22 +42,17 @@ absl::Status Connection::Initialize() {
         "Invalid HTTP connection limits or transport");
   }
   if (protocol_ == Protocol::kHttp2) {
-    auto codec = Http2::Create(role_, limits_);
-    if (!codec.ok()) {
-      return codec.status();
-    }
-    h2_ = std::move(*codec);
+    ABSL_ASSIGN_OR_RETURN(auto codec, Http2::CreateUnique(role_, limits_));
+    h2_ = std::move(codec);
   }
   return absl::OkStatus();
 }
 
 absl::Status Connection::Send(std::string_view bytes, absl::Time deadline) {
-  if (!error_.ok()) {
-    return error_;
-  }
+  ABSL_RETURN_IF_ERROR(error_);
   while (!bytes.empty()) {
-    auto size = std::min<std::size_t>(32768, bytes.size());
-    if (auto status = transport_.Write(
+    const auto size = std::min<std::size_t>(32768, bytes.size());
+    if (const auto status = transport_.Write(
             std::span(reinterpret_cast<const std::uint8_t*>(bytes.data()),
                       size),
             deadline);
@@ -69,9 +65,7 @@ absl::Status Connection::Send(std::string_view bytes, absl::Time deadline) {
 }
 
 absl::Status Connection::Flush(absl::Time deadline) {
-  if (!error_.ok()) {
-    return error_;
-  }
+  ABSL_RETURN_IF_ERROR(error_);
   if (!h2_) {
     return absl::OkStatus();
   }
@@ -80,10 +74,7 @@ absl::Status Connection::Flush(absl::Time deadline) {
 }
 
 absl::Status Connection::Pump(absl::Time deadline) {
-  auto status = Flush(deadline);
-  if (!status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(Flush(deadline));
   std::array<std::uint8_t, 16384> bytes;
   auto count = transport_.Read(bytes, deadline);
   if (!count.ok()) {
@@ -95,9 +86,10 @@ absl::Status Connection::Pump(absl::Time deadline) {
                      "HTTP/2 transport EOF before END_STREAM"))
                : absl::OkStatus();
   }
-  std::string_view data(reinterpret_cast<const char*>(bytes.data()), *count);
+  const std::string_view data(reinterpret_cast<const char*>(bytes.data()),
+                              *count);
   if (h2_) {
-    status = h2_->Feed(data);
+    const absl::Status status = h2_->Feed(data);
     return status.ok() ? Flush(deadline) : Fail(status);
   }
   if (input_.size() + data.size() > limits_.maximum_buffered_bytes) {
@@ -111,9 +103,7 @@ absl::Status Connection::Pump(absl::Time deadline) {
 absl::Status Connection::PrepareOutput(Headers* absl_nonnull headers,
                                        std::optional<std::size_t> length,
                                        bool no_body) {
-  if (auto status = ValidateHeaders(*headers, limits_); !status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(ValidateHeaders(*headers, limits_));
   for (const auto& name :
        {"content-length", "transfer-encoding", "connection", "host"}) {
     if (GetHeader(*headers, name)) {
@@ -148,23 +138,15 @@ absl::StatusOr<std::unique_ptr<Connection>> Connection::Client(
   }
   auto c = std::unique_ptr<Connection>(
       new Connection(std::move(transport), Role::kClient, protocol, limits));
-  auto status = c->Initialize();
-  if (!status.ok()) {
-    return status;
-  }
-  status = ValidateRequest(request, limits);
-  if (!status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(c->Initialize());
+  ABSL_RETURN_IF_ERROR(ValidateRequest(request, limits));
   if (!request.protocol.empty() || request.method == "CONNECT") {
     return absl::InvalidArgumentError(
         "Use the duplex HTTP/2 primitive for CONNECT");
   }
-  status = c->PrepareOutput(&request.headers, body_length, false);
-  if (!status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(c->PrepareOutput(&request.headers, body_length, false));
   c->request_ = std::move(request);
+  absl::Status status;
   if (c->h2_) {
     status = c->h2_->SendRequest(c->request_);
   } else {
@@ -174,14 +156,9 @@ absl::StatusOr<std::unique_ptr<Connection>> Connection::Client(
                                            c->request_.headers),
                 deadline);
   }
-  if (!status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(status);
   c->sent_head_ = true;
-  status = c->Flush(deadline);
-  if (!status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(c->Flush(deadline));
   return c;
 }
 
@@ -193,21 +170,13 @@ absl::StatusOr<std::unique_ptr<Connection>> Connection::Accept(
   }
   auto c = std::unique_ptr<Connection>(
       new Connection(std::move(transport), Role::kServer, protocol, limits));
-  auto status = c->Initialize();
-  if (!status.ok()) {
-    return status;
-  }
-  status = c->ReadHead(deadline);
-  if (!status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(c->Initialize());
+  ABSL_RETURN_IF_ERROR(c->ReadHead(deadline));
   return c;
 }
 
 absl::Status Connection::ReadHead(absl::Time deadline) {
-  if (!error_.ok()) {
-    return error_;
-  }
+  ABSL_RETURN_IF_ERROR(error_);
   if (received_head_) {
     return absl::OkStatus();
   }
@@ -237,7 +206,7 @@ absl::Status Connection::ReadHead(absl::Time deadline) {
         request_.path = head->target;
         request_.headers = std::move(head->headers);
         request_.authority = GetHeader(request_.headers, "host").value_or("");
-        auto status = ValidateRequest(request_, limits_);
+        const auto status = ValidateRequest(request_, limits_);
         if (!status.ok()) {
           return Fail(status);
         }
@@ -275,7 +244,7 @@ absl::Status Connection::ReadHead(absl::Time deadline) {
         }
         response_ = {.status = head->status,
                      .headers = std::move(head->headers)};
-        if (auto valid = ValidateHeaders(response_.headers, limits_);
+        if (const auto valid = ValidateHeaders(response_.headers, limits_);
             !valid.ok()) {
           return Fail(valid);
         }
@@ -298,9 +267,7 @@ absl::Status Connection::ReadHead(absl::Time deadline) {
     if (eof_) {
       return Fail(absl::DataLossError("Truncated HTTP head"));
     }
-    if (auto status = Pump(deadline); !status.ok()) {
-      return status;
-    }
+    ABSL_RETURN_IF_ERROR(Pump(deadline));
   }
   return absl::OkStatus();
 }
@@ -311,10 +278,7 @@ absl::Status Connection::ReceiveHeaders(absl::Time deadline) {
 
 absl::StatusOr<std::optional<std::string>> Connection::Read(
     absl::Time deadline) {
-  auto status = ReadHead(deadline);
-  if (!status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(ReadHead(deadline));
   while (!read_end_) {
     std::string output;
     if (h2_) {
@@ -328,25 +292,23 @@ absl::StatusOr<std::optional<std::string>> Connection::Read(
         read_end_ = true;
         trailers_ = h2_->trailers();
       }
-      status = Flush(deadline);
-      if (!status.ok()) {
-        return status;
-      }
+      ABSL_RETURN_IF_ERROR(Flush(deadline));
     } else {
       switch (plan_.framing) {
         case internal::BodyFraming::kNone:
           read_end_ = true;
           break;
         case internal::BodyFraming::kContentLength: {
-          auto count =
+          const auto count =
               std::min(input_.size(), plan_.content_length - read_bytes_);
           output = input_.substr(0, count);
           input_.erase(0, count);
           read_end_ = read_bytes_ + count == plan_.content_length;
           break;
         }
-        case internal::BodyFraming::kChunked:
-          status = decoder_.Feed(input_, &output, &read_end_);
+        case internal::BodyFraming::kChunked: {
+          const absl::Status status =
+              decoder_.Feed(input_, &output, &read_end_);
           input_.clear();
           if (!status.ok()) {
             return Fail(status);
@@ -355,6 +317,7 @@ absl::StatusOr<std::optional<std::string>> Connection::Read(
             trailers_ = decoder_.trailers();
           }
           break;
+        }
         case internal::BodyFraming::kUntilClose:
           output.swap(input_);
           read_end_ = eof_;
@@ -374,39 +337,32 @@ absl::StatusOr<std::optional<std::string>> Connection::Read(
     if (eof_) {
       return Fail(absl::DataLossError("Truncated HTTP body"));
     }
-    status = Pump(deadline);
-    if (!status.ok()) {
-      return status;
-    }
+    ABSL_RETURN_IF_ERROR(Pump(deadline));
   }
   return std::optional<std::string>();
 }
 
 absl::Status Connection::SendHeaders(ResponseHead head, absl::Time deadline,
                                      std::optional<std::size_t> body_length) {
-  if (!error_.ok()) {
-    return error_;
-  }
+  ABSL_RETURN_IF_ERROR(error_);
   if (role_ != Role::kServer || sent_head_ || !received_head_) {
     return absl::FailedPreconditionError("HTTP response out of order");
   }
   if (head.status < 200 || head.status > 599) {
     return absl::InvalidArgumentError("Invalid HTTP response status");
   }
-  bool no_body =
+  const bool no_body =
       request_.method == "HEAD" || head.status == 204 || head.status == 304;
   if (head.status == 204) {
     body_length = std::nullopt;
   }
-  auto status = PrepareOutput(&head.headers, body_length, no_body);
-  if (!status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(PrepareOutput(&head.headers, body_length, no_body));
   response_ = std::move(head);
-  status = h2_ ? h2_->SendHeaders(response_)
-               : Send(internal::SerializeResponse(response_.status,
-                                                  response_.headers),
-                      deadline);
+  const absl::Status status =
+      h2_ ? h2_->SendHeaders(response_)
+          : Send(internal::SerializeResponse(response_.status,
+                                             response_.headers),
+                 deadline);
   if (!status.ok()) {
     return Fail(status);
   }
@@ -415,9 +371,7 @@ absl::Status Connection::SendHeaders(ResponseHead head, absl::Time deadline,
 }
 
 absl::Status Connection::Write(std::string_view bytes, absl::Time deadline) {
-  if (!error_.ok()) {
-    return error_;
-  }
+  ABSL_RETURN_IF_ERROR(error_);
   if (!sent_head_ || write_end_) {
     return absl::FailedPreconditionError("HTTP write out of order");
   }
@@ -440,15 +394,9 @@ absl::Status Connection::Write(std::string_view bytes, absl::Time deadline) {
   written_bytes_ += bytes.size();
   if (h2_) {
     do {
-      status = Flush(deadline);
-      if (!status.ok()) {
-        return status;
-      }
+      ABSL_RETURN_IF_ERROR(Flush(deadline));
       if (h2_->buffered_amount()) {
-        status = Pump(deadline);
-        if (!status.ok()) {
-          return status;
-        }
+        ABSL_RETURN_IF_ERROR(Pump(deadline));
       }
     } while (h2_->buffered_amount());
   }
@@ -456,9 +404,7 @@ absl::Status Connection::Write(std::string_view bytes, absl::Time deadline) {
 }
 
 absl::Status Connection::Finish(absl::Time deadline) {
-  if (!error_.ok()) {
-    return error_;
-  }
+  ABSL_RETURN_IF_ERROR(error_);
   if (!sent_head_) {
     return absl::FailedPreconditionError("HTTP finish before headers");
   }
@@ -468,10 +414,11 @@ absl::Status Connection::Finish(absl::Time deadline) {
   if (!no_write_body_ && write_length_ && written_bytes_ != *write_length_) {
     return Fail(absl::DataLossError("HTTP body shorter than declared length"));
   }
-  if (auto status = h2_ ? h2_->Finish()
-                        : (!write_length_ && !no_write_body_
-                               ? Send(internal::EncodeLastChunk(), deadline)
-                               : absl::OkStatus());
+  if (const auto status =
+          h2_ ? h2_->Finish()
+              : (!write_length_ && !no_write_body_
+                     ? Send(internal::EncodeLastChunk(), deadline)
+                     : absl::OkStatus());
       !status.ok()) {
     return Fail(status);
   }

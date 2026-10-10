@@ -32,7 +32,7 @@ void BindWebSocket(pybind11::module_* absl_nonnull module) {
                  }
                  return mask;
                };
-               return WebSocket::Create(
+               return WebSocket::CreateUnique(
                    server ? websocket::Role::kServer : websocket::Role::kClient,
                    std::move(options));
              });
