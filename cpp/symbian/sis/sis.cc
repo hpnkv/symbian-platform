@@ -10,6 +10,7 @@
 
 #include <absl/base/nullability.h>
 #include <absl/status/status.h>
+#include <absl/status/status_macros.h>
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
@@ -68,7 +69,7 @@ std::string Array(uint32_t type, std::string_view elements = "") {
 
 std::string Utf16(std::string_view ascii) {
   std::string result;
-  for (char c : ascii) {
+  for (const char c : ascii) {
     result += c;
     result += '\0';
   }
@@ -101,13 +102,13 @@ absl::Status CheckOptions(const PackageOptions& options) {
     return absl::InvalidArgumentError(
         "SIS application package requires an unprotected experimental UID");
   }
-  for (std::string_view text :
+  for (const std::string_view text :
        {std::string_view(options.name), std::string_view(options.vendor)}) {
     if (text.empty() || text.size() > 128) {
       return absl::InvalidArgumentError(
           "SIS name/vendor must contain 1..128 printable ASCII characters");
     }
-    for (char value : text) {
+    for (const char value : text) {
       if (const auto c = static_cast<uint8_t>(value); c < 32 || c > 126) {
         return absl::InvalidArgumentError(
             "SIS metadata requires printable ASCII");
@@ -119,14 +120,14 @@ absl::Status CheckOptions(const PackageOptions& options) {
     return absl::InvalidArgumentError(
         "SIS executable name must end with .exe and contain 5..64 characters");
   }
-  for (char c : std::string_view(name).substr(0, name.size() - 4)) {
+  for (const char c : std::string_view(name).substr(0, name.size() - 4)) {
     if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
           (c >= '0' && c <= '9') || c == '_' || c == '-')) {
       return absl::InvalidArgumentError(
           "SIS executable basename requires ASCII letters, digits, _ or -");
     }
   }
-  for (int32_t part : options.version) {
+  for (const int32_t part : options.version) {
     if (part < 0 || part > 32767) {
       return absl::InvalidArgumentError(
           "SIS version components must be in 0..32767");
@@ -193,9 +194,7 @@ class Reader {
   }
 
   absl::Status Finish() const {
-    if (!status_.ok()) {
-      return status_;
-    }
+    ABSL_RETURN_IF_ERROR(status_);
     if (position_ != bytes_.size()) {
       return absl::UnimplementedError("Extra SIS fields are unsupported");
     }
@@ -230,9 +229,7 @@ absl::StatusOr<std::string_view> Single(std::string_view bytes, uint32_t type) {
     return absl::UnimplementedError("Unsupported SIS array element type");
   }
   const View element = array.Take(type, true);
-  if (const auto status = array.Finish(); !status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(array.Finish());
   return element.payload;
 }
 
@@ -250,9 +247,7 @@ absl::StatusOr<std::vector<std::string_view>> Elements(std::string_view bytes,
     }
     result.push_back(array.Take(type, true).payload);
   }
-  if (const auto status = array.Finish(); !status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(array.Finish());
   return result;
 }
 
@@ -318,20 +313,15 @@ absl::StatusOr<std::string> BuildFiles(
     std::string_view executable, const PackageOptions& options,
     const std::vector<ApplicationFile>& assets,
     const std::vector<ApplicationFile>& libraries = {}) {
-  if (const auto status = CheckOptions(options); !status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(CheckOptions(options));
   if (executable.size() > kMaxPayload) {
     return absl::ResourceExhaustedError("SIS payload exceeds 16 MiB");
   }
-  const auto image = e32::InspectImage(executable);
-  if (!image.ok()) {
-    return image.status();
-  }
-  if (image->kernel != "eka2") {
+  ABSL_ASSIGN_OR_RETURN(const auto image, e32::InspectImage(executable));
+  if (image.kernel != "eka2") {
     return absl::UnimplementedError("EKA1 requires legacy SIS, not SISX");
   }
-  if (image->dll) {
+  if (image.dll) {
     return absl::UnimplementedError("SIS requires an executable, not a DLL");
   }
   if (!assets.empty() && (assets.size() < 2 || assets.size() > 40)) {
@@ -348,21 +338,15 @@ absl::StatusOr<std::string> BuildFiles(
       return absl::InvalidArgumentError(
           "Application resource targets mismatch");
     }
-    if (const auto status =
-            CheckResource(assets[0].bytes, 0x101f8021, image->uid3);
-        !status.ok()) {
-      return status;
-    }
+    ABSL_RETURN_IF_ERROR(
+        CheckResource(assets[0].bytes, 0x101f8021, image.uid3));
     std::string previous;
     bool icon_seen = false;
     bool ca_seen = false;
     for (size_t index = 1; index < assets.size(); ++index) {
       const auto& asset = assets[index];
       if (index == 1) {
-        if (const auto status = CheckResource(asset.bytes, 0, 0);
-            !status.ok()) {
-          return status;
-        }
+        ABSL_RETURN_IF_ERROR(CheckResource(asset.bytes, 0, 0));
         continue;
       }
       if (asset.target == "!:\\resource\\apps\\" + stem + ".mif") {
@@ -407,9 +391,7 @@ absl::StatusOr<std::string> BuildFiles(
         return absl::InvalidArgumentError(
             "Invalid locale resource target/order");
       }
-      if (const auto status = CheckResource(asset.bytes, 0, 0); !status.ok()) {
-        return status;
-      }
+      ABSL_RETURN_IF_ERROR(CheckResource(asset.bytes, 0, 0));
       previous = asset.target;
     }
   }
@@ -440,7 +422,7 @@ absl::StatusOr<std::string> BuildFiles(
     }
     const auto filename =
         target.substr(prefix.size(), target.size() - prefix.size() - 4);
-    for (char c : filename) {
+    for (const char c : filename) {
       if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
             (c >= '0' && c <= '9') || c == '_' || c == '-')) {
         return absl::InvalidArgumentError(
@@ -448,16 +430,13 @@ absl::StatusOr<std::string> BuildFiles(
             "underscores");
       }
     }
-    const auto dll = e32::InspectImage(library.bytes);
-    if (!dll.ok()) {
-      return dll.status();
-    }
-    if (!dll->dll || dll->kernel != image->kernel ||
-        dll->architecture != image->architecture) {
+    ABSL_ASSIGN_OR_RETURN(const auto dll, e32::InspectImage(library.bytes));
+    if (!dll.dll || dll.kernel != image.kernel ||
+        dll.architecture != image.architecture) {
       return absl::InvalidArgumentError(
           "Packaged DLL must match the application's architecture and kernel");
     }
-    if ((dll->capabilities & image->capabilities) != image->capabilities) {
+    if ((dll.capabilities & image.capabilities) != image.capabilities) {
       return absl::InvalidArgumentError(
           "Packaged DLL capabilities do not cover the application");
     }
@@ -472,7 +451,7 @@ absl::StatusOr<std::string> BuildFiles(
     return absl::ResourceExhaustedError("SIS payload exceeds 16 MiB");
   }
   std::string version;
-  for (int32_t part : options.version) {
+  for (const int32_t part : options.version) {
     version += Word(static_cast<uint32_t>(part));
   }
   const std::string date = Half(2004) + std::string("\0\1", 2);
@@ -485,23 +464,18 @@ absl::StatusOr<std::string> BuildFiles(
   std::string descriptions;
   std::string payloads;
   for (size_t index = 0; index < files.size(); ++index) {
-    const auto digest = Digest(files[index].bytes);
-    if (!digest.ok()) {
-      return digest.status();
-    }
-    uint32_t capability_bits = index == 0 ? image->capabilities : 0;
+    ABSL_ASSIGN_OR_RETURN(const auto digest, Digest(files[index].bytes));
+    uint32_t capability_bits = index == 0 ? image.capabilities : 0;
     if (index > assets.size()) {
-      const auto dll = e32::InspectImage(files[index].bytes);
-      if (!dll.ok()) {
-        return dll.status();
-      }
-      capability_bits = dll->capabilities;
+      ABSL_ASSIGN_OR_RETURN(const auto dll,
+                            e32::InspectImage(files[index].bytes));
+      capability_bits = dll.capabilities;
     }
     const std::string capabilities =
         capability_bits != 0 ? Field(41, Word(capability_bits)) : std::string();
     const std::string file = String(files[index].target) + String("") +
                              capabilities +
-                             Field(25, Word(1) + Field(37, *digest)) + Word(1) +
+                             Field(25, Word(1) + Field(37, digest)) + Word(1) +
                              Word(0) + WideWord(files[index].bytes.size()) +
                              WideWord(files[index].bytes.size()) +
                              Word(static_cast<uint32_t>(index));
@@ -595,28 +569,25 @@ absl::StatusOr<std::string> SignPackage(std::string_view unsigned_package,
       private_key_pem.size() > 16 * 1024) {
     return absl::InvalidArgumentError("PEM signing input exceeds 16 KiB");
   }
-  const auto inspected = InspectPackage(unsigned_package);
-  if (!inspected.ok()) {
-    return inspected.status();
-  }
-  if (inspected->signed_package) {
+  ABSL_ASSIGN_OR_RETURN(const auto inspected, InspectPackage(unsigned_package));
+  if (inspected.signed_package) {
     return absl::InvalidArgumentError("SIS package is already signed");
   }
-  std::unique_ptr<BIO, decltype(&BIO_free)> certificate_input(
+  const std::unique_ptr<BIO, decltype(&BIO_free)> certificate_input(
       BIO_new_mem_buf(certificate_pem.data(),
                       static_cast<int>(certificate_pem.size())),
       BIO_free);
-  std::unique_ptr<BIO, decltype(&BIO_free)> key_input(
+  const std::unique_ptr<BIO, decltype(&BIO_free)> key_input(
       BIO_new_mem_buf(private_key_pem.data(),
                       static_cast<int>(private_key_pem.size())),
       BIO_free);
   if (!certificate_input || !key_input) {
     return absl::InternalError("OpenSSL input allocation failed");
   }
-  std::unique_ptr<X509, decltype(&X509_free)> certificate(
+  const std::unique_ptr<X509, decltype(&X509_free)> certificate(
       PEM_read_bio_X509(certificate_input.get(), nullptr, nullptr, nullptr),
       X509_free);
-  std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> key(
+  const std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> key(
       PEM_read_bio_PrivateKey(key_input.get(), nullptr, nullptr, nullptr),
       EVP_PKEY_free);
   if (!certificate || !key || EVP_PKEY_base_id(key.get()) != EVP_PKEY_RSA ||
@@ -644,28 +615,22 @@ absl::StatusOr<std::string> SignPackage(std::string_view unsigned_package,
       !controller_crc.raw.size() || !data_crc.raw.size()) {
     return absl::DataLossError("Malformed canonical SIS contents");
   }
-  const auto raw_controller = Uncompressed(compressed.payload);
-  if (!raw_controller.ok()) {
-    return raw_controller.status();
-  }
+  ABSL_ASSIGN_OR_RETURN(const auto raw_controller,
+                        Uncompressed(compressed.payload));
   // SignSIS hashes the controller payload through the install block, excluding
   // the signature chain and trailing data index.
-  Reader payload_reader(*raw_controller);
+  Reader payload_reader(raw_controller);
   const View controller_field = payload_reader.Take(13);
   Reader fields(controller_field.payload);
-  for (uint32_t type : {14u, 16u, 15u, 17u, 19u, 28u}) {
+  for (const uint32_t type : {14u, 16u, 15u, 17u, 19u, 28u}) {
     fields.Take(type);
   }
-  if (!fields.status().ok()) {
-    return fields.status();
-  }
+  ABSL_RETURN_IF_ERROR(fields.status());
   const std::string_view prefix =
       controller_field.payload.substr(0, fields.position());
   const View index = fields.Take(40);
-  if (!fields.Finish().ok()) {
-    return fields.Finish();
-  }
-  std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> context(
+  ABSL_RETURN_IF_ERROR(fields.Finish());
+  const std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> context(
       EVP_MD_CTX_new(), EVP_MD_CTX_free);
   if (!context ||
       EVP_DigestSignInit(context.get(), nullptr, EVP_sha1(), nullptr,
@@ -720,47 +685,33 @@ absl::StatusOr<PackageInfo> InspectPackage(std::string_view bytes) {
   }
   Reader root(bytes.substr(16));
   Reader contents(root.Take(12).payload);
-  if (const auto status = root.Finish(); !status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(root.Finish());
   const View controller_crc = contents.Take(34);
   const View data_crc = contents.Take(35);
   const View compressed = contents.Take(3);
   const View data = contents.Take(30);
-  if (const auto status = contents.Finish(); !status.ok()) {
-    return status;
-  }
-  if (const auto status = CheckCrc(controller_crc, compressed); !status.ok()) {
-    return status;
-  }
-  if (const auto status = CheckCrc(data_crc, data); !status.ok()) {
-    return status;
-  }
-  const auto controller_bytes = Uncompressed(compressed.payload);
-  if (!controller_bytes.ok()) {
-    return controller_bytes.status();
-  }
+  ABSL_RETURN_IF_ERROR(contents.Finish());
+  ABSL_RETURN_IF_ERROR(CheckCrc(controller_crc, compressed));
+  ABSL_RETURN_IF_ERROR(CheckCrc(data_crc, data));
+  ABSL_ASSIGN_OR_RETURN(const auto controller_bytes,
+                        Uncompressed(compressed.payload));
   // A signed package differs from this writer's canonical package only by one
   // RSA/SHA-1 certificate chain inserted immediately before the data index.
   // Verify the chain, remove it, then run the ordinary complete inspection.
-  Reader signature_root(*controller_bytes);
+  Reader signature_root(controller_bytes);
   const View signed_controller = signature_root.Take(13);
   Reader signed_fields(signed_controller.payload);
-  for (uint32_t type : {14u, 16u, 15u, 17u, 19u, 28u}) {
+  for (const uint32_t type : {14u, 16u, 15u, 17u, 19u, 28u}) {
     signed_fields.Take(type);
   }
-  if (!signed_fields.status().ok()) {
-    return signed_fields.status();
-  }
+  ABSL_RETURN_IF_ERROR(signed_fields.status());
   if (signed_fields.PeekType() == 39) {
     const std::string_view signed_prefix =
         signed_controller.payload.substr(0, signed_fields.position());
     Reader chain(signed_fields.Take(39).payload);
-    const auto signature_element = Single(chain.Take(2).payload, 36);
-    if (!signature_element.ok()) {
-      return signature_element.status();
-    }
-    Reader signature(*signature_element);
+    ABSL_ASSIGN_OR_RETURN(const auto signature_element,
+                          Single(chain.Take(2).payload, 36));
+    Reader signature(signature_element);
     Reader algorithm(signature.Take(38).payload);
     const auto oid = Ascii(algorithm.Take(1).payload);
     const View signature_blob = signature.Take(37);
@@ -776,16 +727,16 @@ absl::StatusOr<PackageInfo> InspectPackage(std::string_view bytes) {
     const auto* absl_nonnull der =
         reinterpret_cast<const unsigned char*>(certificate_blob.payload.data());
     const auto* absl_nonnull der_end = der + certificate_blob.payload.size();
-    std::unique_ptr<X509, decltype(&X509_free)> certificate(
+    const std::unique_ptr<X509, decltype(&X509_free)> certificate(
         d2i_X509(nullptr, &der,
                  static_cast<long>(certificate_blob.payload.size())),
         X509_free);
     if (!certificate || der != der_end) {
       return absl::DataLossError("Invalid SIS certificate DER");
     }
-    std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> public_key(
+    const std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> public_key(
         X509_get_pubkey(certificate.get()), EVP_PKEY_free);
-    std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> verify(
+    const std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> verify(
         EVP_MD_CTX_new(), EVP_MD_CTX_free);
     if (!public_key || !verify ||
         EVP_DigestVerifyInit(verify.get(), nullptr, EVP_sha1(), nullptr,
@@ -807,37 +758,25 @@ absl::StatusOr<PackageInfo> InspectPackage(std::string_view bytes) {
                       std::string(data_crc.raw) + unsigned_compressed +
                       std::string(data.raw));
     auto canonical = InspectPackage(unsigned_package);
-    if (!canonical.ok()) {
-      return canonical.status();
-    }
+    ABSL_RETURN_IF_ERROR(canonical.status());
     canonical->signed_package = true;
     return canonical;
   }
-  Reader controller_root(*controller_bytes);
+  Reader controller_root(controller_bytes);
   Reader controller(controller_root.Take(13).payload);
-  if (const auto status = controller_root.Finish(); !status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(controller_root.Finish());
   Reader info(controller.Take(14).payload);
   Reader uid(info.Take(9).payload);
   PackageInfo result;
   result.options.uid = uid.WordValue();
-  if (const auto status = uid.Finish(); !status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(uid.Finish());
   const auto vendor = Ascii(info.Take(1).payload);
-  if (!vendor.ok()) {
-    return vendor.status();
-  }
+  ABSL_RETURN_IF_ERROR(vendor.status());
   result.options.vendor = *vendor;
-  const auto name_element = Single(info.Take(2).payload, 1);
-  if (!name_element.ok()) {
-    return name_element.status();
-  }
-  const auto name = Ascii(*name_element);
-  if (!name.ok()) {
-    return name.status();
-  }
+  ABSL_ASSIGN_OR_RETURN(const auto name_element,
+                        Single(info.Take(2).payload, 1));
+  const auto name = Ascii(name_element);
+  ABSL_RETURN_IF_ERROR(name.status());
   result.options.name = *name;
   info.Take(2);  // Localized vendor; canonical comparison verifies it.
   Reader version(info.Take(4).payload);
@@ -848,33 +787,24 @@ absl::StatusOr<PackageInfo> InspectPackage(std::string_view bytes) {
     }
     part = static_cast<int32_t>(value);
   }
-  if (const auto status = version.Finish(); !status.ok()) {
-    return status;
-  }
-  if (!info.status().ok()) {
-    return info.status();
-  }
+  ABSL_RETURN_IF_ERROR(version.Finish());
+  ABSL_RETURN_IF_ERROR(info.status());
   controller.Take(16);
   controller.Take(15);
   controller.Take(17);
   controller.Take(19);
   Reader block(controller.Take(28).payload);
-  const auto descriptions = Elements(block.Take(2).payload, 24, 41);
-  if (!descriptions.ok()) {
-    return descriptions.status();
-  }
-  if (descriptions->empty() || descriptions->size() > 41) {
+  ABSL_ASSIGN_OR_RETURN(const auto descriptions,
+                        Elements(block.Take(2).payload, 24, 41));
+  if (descriptions.empty() || descriptions.size() > 41) {
     return absl::UnimplementedError("Unsupported SIS file count");
   }
   constexpr std::string_view prefix = "!:\\sys\\bin\\";
   std::vector<std::string> expected_digests;
-  for (const auto description : *descriptions) {
+  for (const auto description : descriptions) {
     Reader file(description);
-    const auto target = Ascii(file.Take(1).payload);
-    if (!target.ok()) {
-      return target.status();
-    }
-    result.files.push_back({*target, 0, {}});
+    ABSL_ASSIGN_OR_RETURN(const auto target, Ascii(file.Take(1).payload));
+    result.files.push_back({target, 0, {}});
     file.Take(1);
     if (file.PeekType() == 41) {
       const View capabilities = file.Take(41);
@@ -888,65 +818,42 @@ absl::StatusOr<PackageInfo> InspectPackage(std::string_view bytes) {
       return absl::UnimplementedError("Unsupported SIS hash algorithm");
     }
     const View digest = hash.Take(37);
-    if (const auto status = hash.Finish(); !status.ok()) {
-      return status;
-    }
+    ABSL_RETURN_IF_ERROR(hash.Finish());
     expected_digests.emplace_back(digest.payload);
-    if (!file.status().ok()) {
-      return file.status();
-    }
+    ABSL_RETURN_IF_ERROR(file.status());
   }
   result.target = result.files.front().target;
   if (!result.target.starts_with(prefix)) {
     return absl::UnimplementedError("Unsupported SIS install destination");
   }
   result.options.executable_name = result.target.substr(prefix.size());
-  if (!block.status().ok()) {
-    return block.status();
-  }
-  if (!controller.status().ok()) {
-    return controller.status();
-  }
+  ABSL_RETURN_IF_ERROR(block.status());
+  ABSL_RETURN_IF_ERROR(controller.status());
   Reader data_reader(data.payload);
-  const auto unit = Single(data_reader.Take(2).payload, 31);
-  if (!unit.ok()) {
-    return unit.status();
-  }
-  if (const auto status = data_reader.Finish(); !status.ok()) {
-    return status;
-  }
-  Reader unit_reader(*unit);
-  const auto file_data = Elements(unit_reader.Take(2).payload, 32, 41);
-  if (!file_data.ok()) {
-    return file_data.status();
-  }
-  if (const auto status = unit_reader.Finish(); !status.ok()) {
-    return status;
-  }
-  if (file_data->size() != result.files.size()) {
+  ABSL_ASSIGN_OR_RETURN(const auto unit,
+                        Single(data_reader.Take(2).payload, 31));
+  ABSL_RETURN_IF_ERROR(data_reader.Finish());
+  Reader unit_reader(unit);
+  ABSL_ASSIGN_OR_RETURN(const auto file_data,
+                        Elements(unit_reader.Take(2).payload, 32, 41));
+  ABSL_RETURN_IF_ERROR(unit_reader.Finish());
+  if (file_data.size() != result.files.size()) {
     return absl::DataLossError("SIS file description/data count mismatch");
   }
   std::vector<std::string_view> payloads;
   constexpr char kHex[] = "0123456789abcdef";
-  for (size_t index = 0; index < file_data->size(); ++index) {
-    Reader payload_reader((*file_data)[index]);
-    const auto payload = Uncompressed(payload_reader.Take(3).payload);
-    if (!payload.ok()) {
-      return payload.status();
-    }
-    if (const auto status = payload_reader.Finish(); !status.ok()) {
-      return status;
-    }
-    const auto digest = Digest(*payload);
-    if (!digest.ok()) {
-      return digest.status();
-    }
-    if (*digest != expected_digests[index]) {
+  for (size_t index = 0; index < file_data.size(); ++index) {
+    Reader payload_reader((file_data)[index]);
+    ABSL_ASSIGN_OR_RETURN(const auto payload,
+                          Uncompressed(payload_reader.Take(3).payload));
+    ABSL_RETURN_IF_ERROR(payload_reader.Finish());
+    ABSL_ASSIGN_OR_RETURN(const auto digest, Digest(payload));
+    if (digest != expected_digests[index]) {
       return absl::DataLossError("SIS file SHA-1 mismatch");
     }
-    payloads.push_back(*payload);
-    result.files[index].size = static_cast<uint32_t>(payload->size());
-    for (const char value : *digest) {
+    payloads.push_back(payload);
+    result.files[index].size = static_cast<uint32_t>(payload.size());
+    for (const char value : digest) {
       const auto byte = static_cast<unsigned char>(value);
       result.files[index].sha1.push_back(kHex[byte >> 4]);
       result.files[index].sha1.push_back(kHex[byte & 15]);
@@ -973,9 +880,7 @@ absl::StatusOr<PackageInfo> InspectPackage(std::string_view bytes) {
       payloads.size() == 1 ? BuildPackage(payloads[0], result.options)
                            : BuildApplicationPackage(payloads[0], assets,
                                                      result.options, libraries);
-  if (!canonical.ok()) {
-    return canonical.status();
-  }
+  ABSL_RETURN_IF_ERROR(canonical.status());
   if (*canonical != bytes) {
     return absl::UnimplementedError(
         "SIS fields are outside the canonical unsigned application package "

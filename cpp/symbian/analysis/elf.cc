@@ -5,6 +5,7 @@
 #include <string_view>
 
 #include <absl/status/status.h>
+#include <absl/status/status_macros.h>
 #include <absl/strings/str_cat.h>
 
 #include "symbian/analysis/bytes.h"
@@ -56,17 +57,12 @@ absl::StatusOr<Elf32Header> InspectElf32(std::string_view bytes) {
   if (string_section != 0 && string_section >= section_count) {
     return absl::DataLossError("Invalid ELF section-name table index");
   }
-  absl::Status status =
-      CheckTable(bytes.size(), program_offset, Read16(bytes, 42), program_count,
-                 32, "Program");
-  if (!status.ok()) {
-    return status;
-  }
-  status = CheckTable(bytes.size(), section_offset, Read16(bytes, 46),
-                      section_count, 40, "Section");
-  if (!status.ok()) {
-    return status;
-  }
+  ABSL_RETURN_IF_ERROR(CheckTable(bytes.size(), program_offset,
+                                  Read16(bytes, 42), program_count, 32,
+                                  "Program"));
+  ABSL_RETURN_IF_ERROR(CheckTable(bytes.size(), section_offset,
+                                  Read16(bytes, 46), section_count, 40,
+                                  "Section"));
   ArmAttributes arm;
   if (Read16(bytes, 18) == 40) {
     bool found_attributes = false;
@@ -83,11 +79,8 @@ absl::StatusOr<Elf32Header> InspectElf32(std::string_view bytes) {
             "Duplicate/out-of-bounds ARM attributes section");
       }
       found_attributes = true;
-      auto parsed = InspectArmAttributes(bytes.substr(offset, size));
-      if (!parsed.ok()) {
-        return parsed.status();
-      }
-      arm = *parsed;
+      ABSL_ASSIGN_OR_RETURN(arm,
+                            InspectArmAttributes(bytes.substr(offset, size)));
     }
   }
   return Elf32Header{.type = Read16(bytes, 16),

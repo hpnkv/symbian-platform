@@ -10,6 +10,7 @@
 #include <string_view>
 #include <vector>
 
+#include <absl/status/status_macros.h>
 #include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <absl/strings/str_cat.h>
@@ -30,7 +31,7 @@ bool SymbolName(std::string_view value) {
   if (value.empty() || value.size() > 512) {
     return false;
   }
-  for (char c : value) {
+  for (const char c : value) {
     if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' ||
           (c >= '0' && c <= '9') || c == '.')) {
       return false;
@@ -92,7 +93,7 @@ absl::StatusOr<std::vector<Export>> ParseExports(std::string_view text) {
   if (text.size() > 8 * 1024 * 1024) {
     return absl::ResourceExhaustedError("DEF input exceeds 8 MiB");
   }
-  for (char c : text) {
+  for (const char c : text) {
     if (const auto byte = static_cast<uint8_t>(c);
         (byte < 32 && c != '\r' && c != '\n' && c != '\t') || byte > 126) {
       return absl::InvalidArgumentError("DEF requires ASCII text");
@@ -130,9 +131,7 @@ absl::StatusOr<std::vector<Export>> ParseExports(std::string_view text) {
       return absl::UnimplementedError("Unsupported DEF export declaration");
     }
     const auto ordinal = Number(words[2]);
-    if (!ordinal.ok()) {
-      return ordinal.status();
-    }
+    ABSL_RETURN_IF_ERROR(ordinal.status());
     Export item{.symbol = std::string(words[0]), .ordinal = *ordinal};
     item.absent = unnamed_tombstone;
     for (size_t i = 4; i < words.size(); ++i) {
@@ -175,18 +174,15 @@ absl::StatusOr<std::string> GenerateExportDefinition(std::string_view elf) {
   if (elf.size() > 64 * 1024 * 1024) {
     return absl::ResourceExhaustedError("DLL ELF exceeds 64 MiB");
   }
-  const auto header = analysis::InspectElf32(elf);
-  if (!header.ok()) {
-    return header.status();
-  }
-  if (header->machine != 40 || header->type != 2) {
+  ABSL_ASSIGN_OR_RETURN(const auto header, analysis::InspectElf32(elf));
+  if (header.machine != 40 || header.type != 2) {
     return absl::InvalidArgumentError("DLL exports require a linked ARM ELF");
   }
   std::set<std::string> names;
   bool found_table = false;
   const uint32_t sections = Read32(elf, 32);
   const uint16_t stride = Read16(elf, 46);
-  for (size_t index = 1; index < header->section_count; ++index) {
+  for (size_t index = 1; index < header.section_count; ++index) {
     const size_t p = sections + index * stride;
     if (Read32(elf, p + 4) != 2) {
       continue;
@@ -200,7 +196,7 @@ absl::StatusOr<std::string> GenerateExportDefinition(std::string_view elf) {
     const uint32_t strings_index = Read32(elf, p + 24);
     if (Read32(elf, p + 36) != 16 || size % 16 ||
         !Within(elf.size(), offset, size) ||
-        strings_index >= header->section_count) {
+        strings_index >= header.section_count) {
       return absl::DataLossError("Invalid DLL symbol table");
     }
     const size_t strings_header = sections + strings_index * stride;
@@ -216,14 +212,11 @@ absl::StatusOr<std::string> GenerateExportDefinition(std::string_view elf) {
       const uint8_t info = static_cast<uint8_t>(elf[symbol + 12]);
       const uint16_t owner = Read16(elf, symbol + 14);
       if ((info >> 4 != 1 && info >> 4 != 2) || elf[symbol + 13] != 0 ||
-          owner == 0 || owner >= header->section_count) {
+          owner == 0 || owner >= header.section_count) {
         continue;
       }
-      const auto name = Text(strings, Read32(elf, symbol));
-      if (!name.ok()) {
-        return name.status();
-      }
-      if (*name == "_E32Startup" || !SymbolName(*name)) {
+      ABSL_ASSIGN_OR_RETURN(const auto name, Text(strings, Read32(elf, symbol)));
+      if (name == "_E32Startup" || !SymbolName(name)) {
         continue;
       }
       const uint32_t flags = Read32(elf, sections + owner * stride + 8);
@@ -238,9 +231,9 @@ absl::StatusOr<std::string> GenerateExportDefinition(std::string_view elf) {
       }
       if ((info & 15) != 2 || (flags & 6) != 6) {
         return absl::UnimplementedError(
-            absl::StrCat("Automatic DLL exports require functions: ", *name));
+            absl::StrCat("Automatic DLL exports require functions: ", name));
       }
-      names.insert(*name);
+      names.insert(name);
     }
   }
   if (names.empty() || names.size() > 65535) {
@@ -265,21 +258,18 @@ absl::StatusOr<ProxySources> GenerateProxy(
     return absl::ResourceExhaustedError(
         "Proxy selection exceeds 65535 exports");
   }
-  const auto table = ParseExports(definition);
-  if (!table.ok()) {
-    return table.status();
-  }
+  ABSL_ASSIGN_OR_RETURN(const auto table, ParseExports(definition));
   ProxySources result;
   if (symbols.empty()) {
     // A library target exposes its complete frozen ABI, excluding tombstones.
-    for (const Export& item : *table) {
+    for (const Export& item : table) {
       if (!item.absent) {
         result.exports.push_back(item);
       }
     }
   } else {
     std::map<std::string_view, const Export* absl_nonnull> by_name;
-    for (const Export& item : *table) {
+    for (const Export& item : table) {
       if (const auto match = by_name.find(item.symbol);
           match == by_name.end() || !item.absent) {
         by_name[item.symbol] = &item;
@@ -341,20 +331,17 @@ absl::StatusOr<ProxyInfo> InspectProxy(std::string_view bytes) {
   if (bytes.size() > 32 * 1024 * 1024) {
     return absl::ResourceExhaustedError("Proxy exceeds 32 MiB");
   }
-  const auto header = analysis::InspectElf32(bytes);
-  if (!header.ok()) {
-    return header.status();
-  }
-  if (header->type != 3 || header->machine != 40 ||
-      header->flags != 0x05000200 || header->program_count != 2 ||
-      header->section_count < 8) {
+  ABSL_ASSIGN_OR_RETURN(const auto header, analysis::InspectElf32(bytes));
+  if (header.type != 3 || header.machine != 40 ||
+      header.flags != 0x05000200 || header.program_count != 2 ||
+      header.section_count < 8) {
     return absl::UnimplementedError(
         "Requires generated ARM soft-float ordinal proxy");
   }
   std::vector<Section> sections;
   size_t symbols_index = 0, versions_index = 0, definitions_index = 0,
          dynamic_index = 0;
-  for (size_t i = 0; i < header->section_count; ++i) {
+  for (size_t i = 0; i < header.section_count; ++i) {
     const size_t p = Read32(bytes, 32) + i * Read16(bytes, 46);
     Section section{.type = Read32(bytes, p + 4),
                     .address = Read32(bytes, p + 12),
@@ -409,7 +396,7 @@ absl::StatusOr<ProxyInfo> InspectProxy(std::string_view bytes) {
   if (strings.type != 3) {
     return absl::DataLossError("Proxy symbols require a string table");
   }
-  for (size_t i = 0; i < header->program_count; ++i) {
+  for (size_t i = 0; i < header.program_count; ++i) {
     const size_t p = Read32(bytes, 28) + i * Read16(bytes, 42);
     if (!Within(bytes.size(), Read32(bytes, p + 4), Read32(bytes, p + 16))) {
       return absl::DataLossError("Proxy segment exceeds file");
@@ -440,11 +427,8 @@ absl::StatusOr<ProxyInfo> InspectProxy(std::string_view bytes) {
         Read32(definitions.bytes, p + 24) != 0) {
       return absl::DataLossError("Invalid proxy version definition");
     }
-    const auto name = Text(strings.bytes, Read32(definitions.bytes, p + 20));
-    if (!name.ok()) {
-      return name.status();
-    }
-    (i == 0 ? info.soname : info.target_dll) = *name;
+    ABSL_ASSIGN_OR_RETURN(const auto name, Text(strings.bytes, Read32(definitions.bytes, p + 20)));
+    (i == 0 ? info.soname : info.target_dll) = name;
   }
   if (!FileName(info.soname, ".dso") || !FileName(info.target_dll, ".dll")) {
     return absl::UnimplementedError("Unsupported proxy DLL name");
@@ -464,8 +448,9 @@ absl::StatusOr<ProxyInfo> InspectProxy(std::string_view bytes) {
         }
         break;
       case 4: {
-        auto hash = std::find_if(sections.begin(), sections.end(),
-                                 [](const Section& s) { return s.type == 5; });
+        const auto hash =
+            std::find_if(sections.begin(), sections.end(),
+                         [](const Section& s) { return s.type == 5; });
         if (hash == sections.end()) {
           return absl::DataLossError("Missing proxy ELF hash");
         }
@@ -485,11 +470,8 @@ absl::StatusOr<ProxyInfo> InspectProxy(std::string_view bytes) {
         expected = 16;
         break;
       case 14: {
-        const auto name = Text(strings.bytes, value);
-        if (!name.ok()) {
-          return name.status();
-        }
-        if (*name != info.soname) {
+        ABSL_ASSIGN_OR_RETURN(const auto name, Text(strings.bytes, value));
+        if (name != info.soname) {
           return absl::DataLossError("Proxy soname mismatch");
         }
         expected = value;
@@ -538,9 +520,7 @@ absl::StatusOr<ProxyInfo> InspectProxy(std::string_view bytes) {
       return absl::DataLossError("Invalid proxy ordinal symbol");
     }
     const auto name = Text(strings.bytes, Read32(symbols.bytes, p));
-    if (!name.ok()) {
-      return name.status();
-    }
+    ABSL_RETURN_IF_ERROR(name.status());
     const uint32_t ordinal = Read32(code.bytes, address - code.address);
     if (!SymbolName(*name) || ordinal == 0 || ordinal > 65535 ||
         !names.insert(*name).second || !ordinals.insert(ordinal).second) {

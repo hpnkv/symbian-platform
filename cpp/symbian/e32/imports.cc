@@ -7,6 +7,7 @@
 #include <string_view>
 #include <vector>
 
+#include <absl/status/status_macros.h>
 #include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <absl/strings/ascii.h>
@@ -41,7 +42,7 @@ bool DllName(std::string_view name) {
       name.front() == '.') {
     return false;
   }
-  for (char c : name) {
+  for (const char c : name) {
     if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
           (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.')) {
       return false;
@@ -94,21 +95,16 @@ absl::StatusOr<ResolvedImports> ResolveImports(
   std::set<std::string> dlls;
   for (const std::string& bytes : proxies) {
     auto proxy = sdk::InspectProxy(bytes);
-    if (!proxy.ok()) {
-      return proxy.status();
-    }
+    ABSL_RETURN_IF_ERROR(proxy.status());
     if (!dlls.insert(absl::AsciiStrToLower(proxy->target_dll)).second ||
         !libraries.emplace(proxy->soname, *proxy).second) {
       return absl::InvalidArgumentError("Duplicate proxy identity");
     }
   }
   std::map<uint32_t, size_t> indices;
-  for (uint32_t type : {6U, 11U, 5U, 0x6fffffffU, 0x6ffffffeU}) {
-    auto index = UniqueSection(sections, type);
-    if (!index.ok()) {
-      return index.status();
-    }
-    indices.emplace(type, *index);
+  for (const uint32_t type : {6U, 11U, 5U, 0x6fffffffU, 0x6ffffffeU}) {
+    ABSL_ASSIGN_OR_RETURN(auto index, UniqueSection(sections, type));
+    indices.emplace(type, index);
   }
   const Section& dynamic = sections[indices.at(6)];
   const Section& symbols = sections[indices.at(11)];
@@ -152,12 +148,8 @@ absl::StatusOr<ResolvedImports> ResolveImports(
     }
     const auto soname = StringAt(table, Read32(elf, p + 4));
     const auto dll = StringAt(table, Read32(elf, aux + 8));
-    if (!soname.ok()) {
-      return soname.status();
-    }
-    if (!dll.ok()) {
-      return dll.status();
-    }
+    ABSL_RETURN_IF_ERROR(soname.status());
+    ABSL_RETURN_IF_ERROR(dll.status());
     const auto library = libraries.find(*soname);
     if (const uint16_t version = Read16(elf, aux + 6);
         library == libraries.end() || library->second.target_dll != *dll ||
@@ -282,12 +274,9 @@ absl::StatusOr<ResolvedImports> ResolveImports(
   for (size_t p = dynamic.offset; p < dynamic.offset + dynamic.size; p += 8) {
     const uint32_t tag = Read32(elf, p), value = Read32(elf, p + 4);
     if (tag == 1) {
-      auto name = StringAt(table, value);
-      if (!name.ok()) {
-        return name.status();
-      }
-      if (!needed.insert(*name).second ||
-          libraries.find(*name) == libraries.end()) {
+      ABSL_ASSIGN_OR_RETURN(auto name, StringAt(table, value));
+      if (!needed.insert(name).second ||
+          libraries.find(name) == libraries.end()) {
         return absl::FailedPreconditionError("Unknown/duplicate needed proxy");
       }
       continue;
@@ -346,21 +335,18 @@ absl::StatusOr<ResolvedImports> ResolveImports(
     if (version == version_libraries.end()) {
       return absl::DataLossError("Import symbol has unknown DLL version");
     }
-    const auto name = SymbolName(elf, sections, symbols, symbol);
-    if (!name.ok()) {
-      return name.status();
-    }
+    ABSL_ASSIGN_OR_RETURN(const auto name, SymbolName(elf, sections, symbols, symbol));
     const auto& library = libraries.at(version->second);
     const auto function =
         std::find_if(library.exports.begin(), library.exports.end(),
-                     [&](const sdk::Export& e) { return e.symbol == *name; });
+                     [&](const sdk::Export& e) { return e.symbol == name; });
     if (function == library.exports.end() ||
-        !result.functions.emplace(*name, location - code.address).second) {
+        !result.functions.emplace(name, location - code.address).second) {
       return absl::FailedPreconditionError(
           "Missing/ambiguous imported function");
     }
     if (plt != nullptr) {
-      result.plt_functions.emplace(*name, plt_value);
+      result.plt_functions.emplace(name, plt_value);
     }
     blocks[library.target_dll].push_back(
         {.code_offset = location - code.address, .ordinal = function->ordinal});
@@ -413,19 +399,16 @@ absl::StatusOr<ResolvedImports> ResolveImports(
           return absl::DataLossError(
               "Imported function has unknown DLL version");
         }
-        const auto name = SymbolName(elf, sections, symbols, symbol);
-        if (!name.ok()) {
-          return name.status();
-        }
+        ABSL_ASSIGN_OR_RETURN(const auto name, SymbolName(elf, sections, symbols, symbol));
         const auto& library = libraries.at(version->second);
         const auto item = std::find_if(
             library.exports.begin(), library.exports.end(),
-            [&](const sdk::Export& e) { return e.symbol == *name; });
+            [&](const sdk::Export& e) { return e.symbol == name; });
         if (item == library.exports.end() || item->data) {
           return absl::FailedPreconditionError("Missing imported function");
         }
-        result.functions.try_emplace(*name, location - code.address);
-        result.code_function_pointers.emplace(location, *name);
+        result.functions.try_emplace(name, location - code.address);
+        result.code_function_pointers.emplace(location, name);
         symbol_indices.insert(symbol);
         blocks[library.target_dll].push_back(
             {.code_offset = location - code.address, .ordinal = item->ordinal});
@@ -443,9 +426,7 @@ absl::StatusOr<ResolvedImports> ResolveImports(
         return absl::DataLossError("Imported object has unknown DLL version");
       }
       const auto name = SymbolName(elf, sections, symbols, symbol);
-      if (!name.ok()) {
-        return name.status();
-      }
+      ABSL_RETURN_IF_ERROR(name.status());
       const auto& library = libraries.at(version->second);
       const auto item =
           std::find_if(library.exports.begin(), library.exports.end(),
@@ -527,14 +508,11 @@ absl::StatusOr<ResolvedImports> ResolveImports(
         (function &&
          ((sections[index].flags & 6) != 6 || address < code.address ||
           !Within(code.size, address - code.address, size)))) {
-      const auto name = SymbolName(elf, sections, symbols, symbol);
-      if (!name.ok()) {
-        return name.status();
-      }
+      ABSL_ASSIGN_OR_RETURN(const auto name, SymbolName(elf, sections, symbols, symbol));
       return absl::UnimplementedError(absl::StrCat(
           "Unreferenced dynamic symbol is not a defined local function or weak "
           "object: ",
-          *name));
+          name));
     }
   }
   if (blocks.size() != needed_count) {
@@ -560,16 +538,13 @@ absl::StatusOr<ResolvedImports> ResolveImports(
         return absl::UnimplementedError(
             "Only imported-function R_ARM_ABS32 data relocations");
       }
-      const auto name = SymbolName(elf, sections, symbols, symbol);
-      if (!name.ok()) {
-        return name.status();
-      }
-      if (const auto plt_function = result.plt_functions.find(*name);
+      ABSL_ASSIGN_OR_RETURN(const auto name, SymbolName(elf, sections, symbols, symbol));
+      if (const auto plt_function = result.plt_functions.find(name);
           plt_function == result.plt_functions.end() ||
           !result.data_function_pointers.emplace(location, plt_function->second)
                .second) {
         return absl::UnimplementedError(absl::StrCat(
-            "Imported data pointer lacks a unique function PLT slot: ", *name));
+            "Imported data pointer lacks a unique function PLT slot: ", name));
       }
     }
   }
@@ -632,7 +607,7 @@ absl::Status CheckImportCall(std::string_view elf, const Segment& code,
       (c & 0xfffff000) != 0xe5bcf000) {
     return absl::UnimplementedError("Requires PC-relative ARM LLD PLT veneer");
   }
-  auto immediate = [](uint32_t instruction) {
+  const auto immediate = [](uint32_t instruction) {
     const uint32_t value = instruction & 0xff;
     const uint32_t rotation = ((instruction >> 8) & 15) * 2;
     return rotation == 0 ? value
@@ -684,9 +659,7 @@ absl::StatusOr<std::vector<ImportBlock>> DecodeImports(std::string_view section,
       return absl::DataLossError("Truncated E32 import block");
     }
     const auto dll = StringAt(section, Read32(section, p));
-    if (!dll.ok()) {
-      return dll.status();
-    }
+    ABSL_RETURN_IF_ERROR(dll.status());
     const uint32_t slots = Read32(section, p + 4);
     p += 8;
     if (!DllName(*dll) || (!blocks.empty() && *dll <= blocks.back().dll) ||
@@ -746,9 +719,7 @@ absl::StatusOr<std::vector<ImportBlock>> DecodePeImports(
       return absl::DataLossError("Truncated PE import block");
     }
     const auto dll = StringAt(section, Read32(section, p));
-    if (!dll.ok()) {
-      return dll.status();
-    }
+    ABSL_RETURN_IF_ERROR(dll.status());
     const uint32_t slots = Read32(section, p + 4);
     p += 8;
     if (!DllName(*dll) || (!blocks.empty() && *dll <= blocks.back().dll) ||

@@ -281,7 +281,7 @@ endif()
 FetchContent_MakeAvailable(abseil)
 
 function(symbian_native_library target)
-  target_link_libraries(${target} PUBLIC absl::nullability)
+  target_link_libraries(${target} PUBLIC absl::nullability absl::status_macros)
   target_compile_features(${target} PUBLIC cxx_std_20)
   target_compile_options(${target} PRIVATE
     $<$<CXX_COMPILER_ID:AppleClang,Clang,GNU>:-fno-exceptions;-Wall;-Wextra;-Wconversion;-Wshadow>

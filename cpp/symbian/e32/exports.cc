@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 
+#include <absl/status/status_macros.h>
 #include <absl/base/nullability.h>
 #include <absl/status/status.h>
 #include <absl/strings/str_cat.h>
@@ -25,9 +26,7 @@ absl::StatusOr<std::vector<ExportSlot>> ResolveExports(
     std::string_view elf, const std::vector<Section>& sections,
     const Segment& code, uint32_t entry, std::string_view definition) {
   const auto table = sdk::ParseExports(definition);
-  if (!table.ok()) {
-    return table.status();
-  }
+  ABSL_RETURN_IF_ERROR(table.status());
   std::vector<ExportSlot> exports(table->back().ordinal);
   const uint32_t absent = code.address + entry;
   for (size_t i = 0; i < exports.size(); ++i) {
@@ -63,11 +62,8 @@ absl::StatusOr<std::vector<ExportSlot>> ResolveExports(
     if (info >> 4 != 1 && info >> 4 != 2) {
       continue;
     }
-    const auto name = SymbolName(elf, sections, *symbols, i);
-    if (!name.ok()) {
-      return name.status();
-    }
-    const auto match = wanted.find(*name);
+    ABSL_ASSIGN_OR_RETURN(const auto name, SymbolName(elf, sections, *symbols, i));
+    const auto match = wanted.find(name);
     if (match == wanted.end()) {
       continue;
     }

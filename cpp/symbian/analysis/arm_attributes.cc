@@ -5,6 +5,7 @@
 #include <set>
 #include <string_view>
 
+#include <absl/status/status_macros.h>
 #include <absl/base/nullability.h>
 #include <absl/status/status.h>
 
@@ -68,19 +69,13 @@ absl::StatusOr<ArmAttributes> InspectArmAttributes(std::string_view bytes) {
     const auto vendor = bytes.substr(position, length);
     position += length;
     size_t sub = 4;
-    auto name = String(vendor, &sub);
-    if (!name.ok()) {
-      return name.status();
-    }
-    if (*name != "aeabi") {
+    ABSL_ASSIGN_OR_RETURN(auto name, String(vendor, &sub));
+    if (name != "aeabi") {
       continue;
     }
     while (sub < vendor.size()) {
       const size_t start = sub;
-      const auto tag = Uleb(vendor, &sub);
-      if (!tag.ok()) {
-        return tag.status();
-      }
+      ABSL_ASSIGN_OR_RETURN(const auto tag, Uleb(vendor, &sub));
       if (vendor.size() - sub < 4) {
         return absl::DataLossError("Truncated ARM subsection length");
       }
@@ -90,61 +85,51 @@ absl::StatusOr<ArmAttributes> InspectArmAttributes(std::string_view bytes) {
         return absl::DataLossError("Invalid ARM subsection bounds");
       }
       const auto attributes = vendor.substr(0, start + count);
-      if (*tag != 1) {
+      if (tag != 1) {
         sub = start + count;
         continue;
       }
       while (sub < attributes.size()) {
-        const auto attribute = Uleb(attributes, &sub);
-        if (!attribute.ok()) {
-          return attribute.status();
-        }
-        if (*attribute == 0) {
+        ABSL_ASSIGN_OR_RETURN(const auto attribute, Uleb(attributes, &sub));
+        if (attribute == 0) {
           return absl::DataLossError("Invalid ARM attribute tag zero");
         }
-        if (*attribute == 65) {
+        if (attribute == 65) {
           return absl::UnimplementedError(
               "Nested ARM compatibility attributes unsupported");
         }
-        if (*attribute == 4 || *attribute == 5 || *attribute == 67 ||
-            (*attribute > 32 && (*attribute & 1))) {
-          if (const auto text = String(attributes, &sub); !text.ok()) {
-            return text.status();
-          }
+        if (attribute == 4 || attribute == 5 || attribute == 67 ||
+            (attribute > 32 && (attribute & 1))) {
+          ABSL_RETURN_IF_ERROR(String(attributes, &sub).status());
           continue;
         }
-        if (*attribute == 64) {
+        if (attribute == 64) {
           continue;  // Tag_nodefaults carries no value.
         }
-        const auto value = Uleb(attributes, &sub);
-        if (!value.ok()) {
-          return value.status();
+        ABSL_ASSIGN_OR_RETURN(const auto value, Uleb(attributes, &sub));
+        if (attribute == 32) {  // Compatibility: integer followed by NTBS.
+          ABSL_RETURN_IF_ERROR(String(attributes, &sub).status());
         }
-        if (*attribute == 32) {  // Compatibility: integer followed by NTBS.
-          if (const auto text = String(attributes, &sub); !text.ok()) {
-            return text.status();
-          }
-        }
-        if (*attribute == 6 || *attribute == 9 || *attribute == 10 ||
-            *attribute == 12 || *attribute == 28) {
-          if (!seen.insert(*attribute).second) {
+        if (attribute == 6 || attribute == 9 || attribute == 10 ||
+            attribute == 12 || attribute == 28) {
+          if (!seen.insert(attribute).second) {
             return absl::DataLossError("Duplicate ARM execution attribute");
           }
-          switch (*attribute) {
+          switch (attribute) {
             case 6:
-              result.cpu_arch = *value;
+              result.cpu_arch = value;
               break;
             case 9:
-              result.thumb_isa = *value;
+              result.thumb_isa = value;
               break;
             case 10:
-              result.fp_arch = *value;
+              result.fp_arch = value;
               break;
             case 12:
-              result.simd_arch = *value;
+              result.simd_arch = value;
               break;
             case 28:
-              result.vfp_args = *value;
+              result.vfp_args = value;
               break;
           }
         }

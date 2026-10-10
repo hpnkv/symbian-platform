@@ -218,9 +218,7 @@ absl::Status Run(int argc, char* absl_nullable* absl_nonnull argv) {
     image = symbian::e32::ConvertImportedExecutable(elf, proxies, uid,
                                                     capabilities);
   }
-  if (!image.ok()) {
-    return image.status();
-  }
+  ABSL_RETURN_IF_ERROR(image.status());
   return Write(output, *image, options);
 }
 }  // namespace
