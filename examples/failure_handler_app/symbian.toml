@@ -1,0 +1,17 @@
+[project]
+architecture = "armv6"
+name = "failure_handler_app"
+kind = "e32-import-experiment"
+cmake_preset = "symbian-pic"
+uid3 = 0xe0000a72
+
+[package]
+uid = 0xe0000a73
+name = "Failure Handler Demo"
+vendor = "Symbian platform"
+executable_name = "failure_handler_app.exe"
+version = [1, 0, 0]
+
+[application]
+caption = "Failure Handler Demo"
+short_caption = "Failure Demo"

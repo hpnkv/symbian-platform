@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.28)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  project(failure_handler_app LANGUAGES CXX ASM)
+endif()
+include(SymbianApp)
+
+symbian_add_executable(failure_handler_app main.cc)
+if(TARGET symbian_api_display)
+  target_link_libraries(failure_handler_app PRIVATE symbian_api_display)
+else()
+  target_link_libraries(failure_handler_app PRIVATE Symbian::Display)
+endif()
+symbian_publish_executable(failure_handler_app UID3 0xe0000a72)
