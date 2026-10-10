@@ -30,11 +30,10 @@ class WebSocketStream {
       TcpClient client, websocket::Options options = {},
       absl::Time deadline = absl::InfiniteFuture());
   static absl::StatusOr<WebSocketStream> Connect(
-      std::unique_ptr<net::ByteStream> transport, websocket::Options options,
+      net::ByteStream transport, websocket::Options options,
       absl::Time deadline = absl::InfiniteFuture());
   static absl::StatusOr<WebSocketStream> Accept(
-      std::unique_ptr<net::ByteStream> transport,
-      websocket::Options options = {},
+      net::ByteStream transport, websocket::Options options = {},
       absl::Time deadline = absl::InfiniteFuture());
   WebSocketStream(WebSocketStream&&) noexcept = default;
   WebSocketStream& operator=(WebSocketStream&&) noexcept = default;
@@ -47,14 +46,15 @@ class WebSocketStream {
   void Abort();
 
  private:
-  WebSocketStream(std::unique_ptr<net::ByteStream> transport,
+  WebSocketStream(net::ByteStream transport,
                   std::unique_ptr<websocket::WebSocket> codec);
-  static absl::StatusOr<WebSocketStream> Open(
-      std::unique_ptr<net::ByteStream> transport, websocket::Role role,
-      websocket::Options options, absl::Time deadline);
+  static absl::StatusOr<WebSocketStream> Open(net::ByteStream transport,
+                                              websocket::Role role,
+                                              websocket::Options options,
+                                              absl::Time deadline);
   absl::Status Flush(absl::Time deadline);
   absl::Status Pump(absl::Time deadline);
-  std::unique_ptr<net::ByteStream> transport_;
+  net::ByteStream transport_;
   std::unique_ptr<websocket::WebSocket> codec_;
   std::string pending_;
   std::size_t offset_ = 0;

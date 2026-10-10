@@ -3,7 +3,7 @@ name = "agent_service"
 kind = "e32-import"
 cmake_preset = "symbian-pic"
 uid3 = 0xe0000a31
-capabilities = ["NetworkServices"]
+capabilities = ["NetworkServices", "ReadUserData", "WriteUserData"]
 import_proxies = [
   "${sdk}/proxies/euser/euser.dso",
   "${sdk}/proxies/libc/libc.dso",
@@ -15,6 +15,7 @@ import_proxies = [
   "${sdk}/proxies/hal/hal.dso",
   "${sdk}/proxies/ws32/ws32.dso",
   "${sdk}/proxies/gdi/gdi.dso",
+  "${sdk}/proxies/fbscli/fbscli.dso",
   "${sdk}/proxies/efsrv/efsrv.dso",
 ]
 
@@ -23,7 +24,7 @@ uid = 0xe0000a32
 name = "Symbian Development Agent"
 vendor = "Symbian SDK"
 executable_name = "agent_service.exe"
-version = [1, 1, 0]
+version = [1, 2, 7]
 
 [application]
 caption = "Development Agent"

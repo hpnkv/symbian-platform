@@ -11,12 +11,12 @@
 
 namespace symbian::api::connectivity {
 /** @brief Owning TCP transport for both HTTP and WebSocket streams. */
-class TcpByteStream final : public net::ByteStream {
+class TcpByteStream final {
  public:
   explicit TcpByteStream(TcpClient client) : client_(std::move(client)) {}
 
   absl::StatusOr<std::size_t> Read(std::span<std::uint8_t> bytes,
-                                   absl::Time deadline) override {
+                                   absl::Time deadline) {
     auto count = client_.Receive(
         bytes.first(std::min<std::size_t>(bytes.size(), 32768)), deadline);
     // RSocket's KErrEof is an orderly receive shutdown. Disconnect/reset remains
@@ -27,8 +27,7 @@ class TcpByteStream final : public net::ByteStream {
     return count;
   }
 
-  absl::Status Write(std::span<const std::uint8_t> bytes,
-                     absl::Time deadline) override {
+  absl::Status Write(std::span<const std::uint8_t> bytes, absl::Time deadline) {
     while (!bytes.empty()) {
       auto count = std::min<std::size_t>(bytes.size(), 32768);
       auto status = client_.Send(bytes.first(count), deadline);
@@ -40,7 +39,7 @@ class TcpByteStream final : public net::ByteStream {
     return absl::OkStatus();
   }
 
-  void Close() override { client_.Close(); }
+  void Close() { client_.Close(); }
 
  private:
   TcpClient client_;

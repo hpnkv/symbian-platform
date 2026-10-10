@@ -71,11 +71,19 @@ symbian agent files 127.0.0.1 39101 \
   --key-file agent_service/test-agent.key
 ```
 
-An empty result is expected until the agent creates files there. The request
-cannot name another directory or read file contents. Use `--after` and
-`--limit` to page through at most eight entries at a time. The
+An empty result is expected until the agent creates files there. Use
+`symbian agent put` and `get` to transfer bounded files within the agent
+workspace, or use `--app-uid` for a cooperating app's shared directory under
+`C:\Data\SymbianAgent\apps\<uid>\`. `symbian agent screen` captures RGB565
+pixels as PNG, and `symbian agent pointer` sends move, down or up input. The
 [protocol reference](../reference/agent-protocol.md#agent-workspace) explains
-the 256-entry bound and what happens if the directory changes mid-listing.
+the limits and scopes.
+
+`symbian agent install` transfers a SIS and opens its installer UI. Use screen
+capture and pointer input to complete its prompts. The command reports
+`installation_verified: false` until the installed version is independently
+checked. `app-registered` only confirms that AppArc knows the UID; for an
+update, the same UID may have been registered before the installer started.
 
 ## Prepare a SIS in the desktop console
 
@@ -90,6 +98,14 @@ interface in PC Suite mode. The SDK reads the staged bytes back to verify the
 hash. Safely eject a mounted volume, then complete the installer prompts on
 the phone. Self-signing checks the package's origin and integrity, but the
 handset can still reject it under its own installation policy.
+
+The agent manifest requests `NetworkServices`, `ReadUserData`,
+`WriteUserData` and `SwEvent`, matching its socket, shared-file and simulated
+pointer operations. `SwEvent` may require a signing identity trusted for that
+capability on a particular phone. The SDK writes these bits into E32 and SIS;
+a self-signed package does not itself grant permission to use them. Check the
+actual installer result and each command on the device before relying on the
+phone agent.
 
 USB detection and SIS staging cannot establish that the service installed or
 started. The phone-specific panel shows an eight-character pairing code;

@@ -14,13 +14,13 @@
 
 #include "window_task_identity.h"
 
-namespace symbian::api::display {
+namespace agent_service {
 namespace {
 
 TInt NameResidentWindowGroup(RWindowGroup* absl_nonnull group,
                              const NativeResidentPanelOptions& options) {
-  return internal::SetWindowTaskIdentity(group, options.app_uid,
-                                         std::string_view(options.caption));
+  return agent_service::internal::SetWindowTaskIdentity(
+      group, options.app_uid, std::string_view(options.caption));
 }
 
 class RaisePanelProperty {
@@ -149,7 +149,8 @@ void DrawLabel(CWindowGc* absl_nonnull gc, const char* absl_nonnull label,
 const char* absl_nonnull Heading(const NativeResidentPanelOptions& options) {
   const char* absl_nullable dynamic = options.heading_provider == nullptr
                                           ? nullptr
-                                          : options.heading_provider();
+                                          : options.heading_provider(
+                                                options.heading_context);
   return dynamic == nullptr ? options.heading : dynamic;
 }
 
@@ -356,4 +357,4 @@ extern "C" int SymbianDeviceRequestResidentPanelForeground(int category,
   return result;
 }
 
-}  // namespace symbian::api::display
+}  // namespace agent_service

@@ -1,17 +1,18 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
 
-#ifndef SYMBIAN_API_DISPLAY_RESIDENT_PANEL_H_
-#define SYMBIAN_API_DISPLAY_RESIDENT_PANEL_H_
+#ifndef AGENT_SERVICE_RESIDENT_PANEL_H_
+#define AGENT_SERVICE_RESIDENT_PANEL_H_
 
 #include <atomic>
 #include <cstdint>
+#include <functional>
 
 #include <absl/base/nullability.h>
 
 #include "absl/status/status.h"
 
-namespace symbian::api::display {
+namespace agent_service {
 
 /**
  * @brief Minimal Window Server panel for a manually started resident service.
@@ -34,7 +35,7 @@ struct ResidentPanelOptions {
   const char* absl_nonnull state = "RUNNING";
   const char* absl_nonnull back_label = "BACK";
   const char* absl_nonnull stop_label = "STOP";
-  const char* absl_nullable (*absl_nullable heading_provider)() = nullptr;
+  std::function<const char* absl_nullable()> heading_provider;
 };
 
 /** @brief Run a resident panel until STOP or an external stop request. */
@@ -45,6 +46,6 @@ absl::Status RunResidentPanel(const ResidentPanelOptions& options,
 absl::Status RequestResidentPanelForeground(std::int32_t category,
                                             std::uint32_t key);
 
-}  // namespace symbian::api::display
+}  // namespace agent_service
 
-#endif  // SYMBIAN_API_DISPLAY_RESIDENT_PANEL_H_
+#endif  // AGENT_SERVICE_RESIDENT_PANEL_H_

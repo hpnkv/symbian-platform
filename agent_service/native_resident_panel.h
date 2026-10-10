@@ -1,8 +1,8 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
 
-#ifndef SYMBIAN_API_DISPLAY_NATIVE_RESIDENT_PANEL_H_
-#define SYMBIAN_API_DISPLAY_NATIVE_RESIDENT_PANEL_H_
+#ifndef AGENT_SERVICE_NATIVE_RESIDENT_PANEL_H_
+#define AGENT_SERVICE_NATIVE_RESIDENT_PANEL_H_
 
 #include <absl/base/nullability.h>
 #include <stdint.h>
@@ -16,7 +16,9 @@ struct NativeResidentPanelOptions {
   const char* absl_nonnull state;
   const char* absl_nonnull back_label;
   const char* absl_nonnull stop_label;
-  const char* absl_nullable (*absl_nullable heading_provider)();
+  const void* absl_nullable heading_context;
+  const char* absl_nullable (*absl_nullable heading_provider)(
+      const void* absl_nonnull context);
 };
 
 extern "C" int SymbianDeviceRunResidentPanel(
@@ -25,4 +27,4 @@ extern "C" int SymbianDeviceRunResidentPanel(
 extern "C" int SymbianDeviceRequestResidentPanelForeground(int category,
                                                            unsigned key);
 
-#endif  // SYMBIAN_API_DISPLAY_NATIVE_RESIDENT_PANEL_H_
+#endif  // AGENT_SERVICE_NATIVE_RESIDENT_PANEL_H_

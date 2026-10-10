@@ -38,7 +38,7 @@ enum class TlsVersion { kTls12, kTls13 };
  * active scheduler callbacks. CloseSession cancels by closing the socket,
  * without a blocking close alert. Inbound state may then Accept another peer.
  */
-class TlsStream : public net::ByteStream {
+class TlsStream {
  public:
   /**
    * @brief Configure identity, trust roots and one TLS protocol version.
@@ -70,7 +70,7 @@ class TlsStream : public net::ByteStream {
   std::string_view negotiated_version() const;
   std::string_view negotiated_protocol() const;
 
-  void Close() override { CloseSession(); }
+  void Close() { CloseSession(); }
 
   /** @brief Complete TLS 1.2/1.3 handshake by an absolute deadline. */
   absl::Status Accept(TcpClient&& client,
@@ -79,11 +79,11 @@ class TlsStream : public net::ByteStream {
   /** @brief Receive application data into at most 32 KiB. */
   absl::StatusOr<std::size_t> Read(
       std::span<std::uint8_t> bytes,
-      absl::Time deadline = absl::InfiniteFuture()) override;
+      absl::Time deadline = absl::InfiniteFuture());
 
   /** @brief Send at most 32 KiB of application data. */
   absl::Status Write(std::span<const std::uint8_t> bytes,
-                     absl::Time deadline = absl::InfiniteFuture()) override;
+                     absl::Time deadline = absl::InfiniteFuture());
 
   /** @brief Close the current stream and reset its TLS state. */
   void CloseSession();

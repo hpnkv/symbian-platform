@@ -66,7 +66,8 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/agent_key.h"
 symbian_add_import_executable(agent_service
   STARTUP startup.S
   LINKER_SCRIPT image.ld
-  SOURCES startup.cc agent_service.cc)
+  SOURCES startup.cc agent_service.cc resident_panel.cc
+    native_resident_panel.cc window_task_identity.cc)
 target_include_directories(agent_service PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_compile_definitions(agent_service PRIVATE MBEDTLS_STATIC SYMBIAN_MBEDTLS_GUEST=1
   MBEDTLS_USER_CONFIG_FILE="symbian_mbedtls/config.h")
