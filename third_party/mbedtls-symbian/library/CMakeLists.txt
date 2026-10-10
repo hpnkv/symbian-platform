@@ -36,7 +36,10 @@ foreach(component crypto x509 tls)
     target_compile_definitions(${target} PUBLIC MBEDTLS_SSL_PROTO_TLS1_3)
   endif()
   if(NOT SYMBIAN_MBEDTLS_HOST)
-    target_compile_definitions(${target} PUBLIC SYMBIAN_MBEDTLS_GUEST=1)
+    # Original Open C declarations use this empty ARM soft-float annotation.
+    # Every C translation unit, including public-header canaries, needs it.
+    target_compile_definitions(${target} PUBLIC SYMBIAN_MBEDTLS_GUEST=1
+      __SOFTFP=)
   endif()
   install(TARGETS ${target} EXPORT MbedTLSTargets ARCHIVE DESTINATION lib)
 endforeach()
