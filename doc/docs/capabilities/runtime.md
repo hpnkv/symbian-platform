@@ -14,7 +14,7 @@ runtime dependencies.
 | `Symbian::Streams` | Core runtime plus classic C/POSIX locale and string-stream formatting |
 | `Symbian::LegacyEka2` | ARMv5T older-ROM streams runtime with SDK C, threading, math, UTF-8, file, formatting and time adapters; select `SYMBIAN_RUNTIME_LEGACY_EKA2=ON` for SDK component targets |
 | `Symbian::Threads` | Threaded runtime profile; firmware must provide the selected `libpthread.dll` imports |
-| `Symbian::AbseilStatusOr` | Status, StatusOr, Cord, time and flat hash maps with the matching streams runtime |
+| `Symbian::AbseilStatusOr` | Status, StatusOr, Abseil logging, Cord, time and flat hash maps with the matching streams runtime |
 | `Symbian::NativeAtomics64` | Alternative runtime using native EUSER 64-bit atomics; requires matching firmware exports |
 | `Symbian::Stackless` | Future/Task composition, native request owners and event/worker executors |
 | `Symbian::Fibers` | ARM-backed fibers and an explicitly pumped, thread-affine scheduler |
@@ -84,6 +84,41 @@ with `KErrArgument` (-6). These exits are runtime contract failures, rather
 than recoverable application argument errors. Check ownership and input ranges
 before calling operations such as `std::thread::join()`.
 
+## Abseil logging and failure reports
+
+`LOG`, `DLOG`, `VLOG`, `DVLOG`, the rate-limited `LOG_*` family and `CHECK`
+use the installed Abseil logging implementation. SDK executables initialize
+Abseil logging at startup and route its messages to `DebugLog`, which writes
+to the platform debug sink and retains the newest messages for failure reports.
+To receive logs in an additional destination, implement the `absl::LogSink`
+observer, keep it alive while registered,
+and pair `absl::AddLogSink(&sink)` with `absl::RemoveLogSink(&sink)` before its
+destruction. `LOG(...).ToSinkOnly(&sink)` is available for one statement.
+Sinks run synchronously and must avoid locks held by logging callers. Do not
+call `absl::InitializeLog()` again in an SDK executable.
+
+SDK executables link the failure handler automatically. A failed `CHECK` or
+`CHECK_OK` saves its message and recent SDK `DebugLog` lines to
+`C:\private\<app UID>\failure.txt`. A foreground failure shows the scrollable
+report with Copy Logs and Exit controls; a background failure only writes the
+file. The failure view is also available explicitly through
+`symbian::api::system::ShowFailureReport` and `RunWithFailureHandler`.
+Dragging scrolls by pixels rather than whole rows, paced to the reported display
+refresh rate. Clipped native text and the background are submitted together;
+font handles are reused until the size changes. Rendering uses Window Server,
+so the platform can use its accelerated compositor without requiring EGL or
+GLES support in the failing process. Acceleration depends on the device and
+Window Server implementation; the same path works on older software renderers.
+
+```cpp
+absl::Status Main();
+
+int main() {
+  CHECK_OK(Main());
+  return 0;
+}
+```
+
 ## Standard library and C services
 
 The core archive supplies strings, vectors, smart pointers, hash containers,
@@ -108,6 +143,12 @@ application so Abseil and component targets select that same archive. Use the
 software SDL targets on firmware without EGL/GLES2. The older firmware
 checks covered E71/RM-346 and 6120c/RM-243 in EKA2L1; other ROM export
 tables need their own check.
+
+The legacy calendar parser uses fixed C-locale names; its `%Z` adapter recognizes
+`STD`/`DST`, without general timezone or locale support. A separate experiment
+with the modern firmware's native Open C parser faulted while parsing named
+weekdays/months. That locale-dependent path remains unresolved and is excluded
+from the passing logging/codec probes.
 
 The C adapter provides reached integer conversion, sort, float conversion,
 ASCII ctype, error text, allocation, bounded formatting and UTF-8 functions.

@@ -45,7 +45,9 @@ if(NOT SYMBIAN_ABSEIL_USE_SDK)
   target_include_directories(abseil_status_probe PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../../cpp/symbian/runtime")
 endif()
-set_target_properties(abseil_status_probe PROPERTIES SUFFIX ".elf")
+set_target_properties(abseil_status_probe PROPERTIES
+  SUFFIX ".elf" POSITION_INDEPENDENT_CODE OFF)
+target_compile_options(abseil_status_probe PRIVATE "SHELL:-fno-pic")
 target_link_options(abseil_status_probe PRIVATE
   --gc-sections --hash-style=sysv --no-dynamic-linker --as-needed
   --error-limit=0)
@@ -53,10 +55,14 @@ if(SYMBIAN_ABSEIL_USE_SDK)
   if(NOT TARGET Symbian::AbseilStatusOr)
     message(FATAL_ERROR "The selected SDK has no Abseil StatusOr profile")
   endif()
-  target_link_libraries(abseil_status_probe PRIVATE Symbian::AbseilStatusOr)
+  target_link_libraries(abseil_status_probe PRIVATE
+    Symbian::AbseilStatusOr Symbian::WebSocket)
+  target_compile_definitions(abseil_status_probe PRIVATE
+    SYMBIAN_ABSEIL_CODEC_FACTORIES=1)
 else()
   target_link_libraries(abseil_status_probe PRIVATE
-    absl::statusor absl::flat_hash_map
+    absl::statusor absl::status_macros absl::flat_hash_map absl::log
+    absl::check absl::log_initialize absl::log_sink_registry
     "${SYMBIAN_SDK_PREFIX}/lib/${SYMBIAN_TARGET_ARCH}/libsymbian_guest_runtime_streams.a"
     "${SYMBIAN_SDK_PREFIX}/proxies/euser/euser.dso"
     "${SYMBIAN_SDK_PREFIX}/proxies/libc/libc.dso"
@@ -65,7 +71,20 @@ else()
     "${SYMBIAN_SDK_PREFIX}/proxies/drtaeabi/drtaeabi.dso")
 endif()
 option(SYMBIAN_ABSEIL_CHANGED_STATUS "Fail the Abseil Status result" OFF)
+option(SYMBIAN_ABSEIL_FAILED_CHECK "Trigger a fatal CHECK for reporting" OFF)
+option(SYMBIAN_ABSEIL_FOREGROUND_CHECK "Fail CHECK_OK after closing a window" OFF)
 if(SYMBIAN_ABSEIL_CHANGED_STATUS)
   target_compile_definitions(abseil_status_probe PRIVATE
     SYMBIAN_ABSEIL_CHANGED_STATUS=1)
+endif()
+if(SYMBIAN_ABSEIL_FAILED_CHECK)
+  target_compile_definitions(abseil_status_probe PRIVATE
+    SYMBIAN_ABSEIL_FAILED_CHECK=1)
+endif()
+if(SYMBIAN_ABSEIL_FOREGROUND_CHECK)
+  target_compile_definitions(abseil_status_probe PRIVATE
+    SYMBIAN_ABSEIL_FOREGROUND_CHECK=1)
+endif()
+if(SYMBIAN_ABSEIL_USE_SDK)
+  symbian_publish_executable(abseil_status_probe UID3 0xE0000814)
 endif()

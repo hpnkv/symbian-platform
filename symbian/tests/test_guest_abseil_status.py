@@ -4,9 +4,11 @@ import os
 import shutil
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
 import pytest
+from PIL import Image, ImageChops
 
 from symbian.e32.images import convert_imported_executable, inspect_image
 from symbian.emulator import Control
@@ -14,9 +16,16 @@ from symbian.emulator.background import (
     background_environment,
     executable_for_session,
 )
-from symbian.emulator.firmware import EUSER_808, ROM_808
+from symbian.emulator.firmware import (
+    EUSER_808,
+    ROM_808,
+    locate,
+    validate_manifest,
+)
 from symbian.emulator.launch import _digest, _stop
+from symbian.paths import asset_directory
 from symbian.project.sdk import AppSdk
+from symbian.tests.test_guest_gui import _ready
 
 WORKSPACE = os.environ.get("SYMBIAN_RUNTIME_WORKSPACE")
 ABSEIL_SOURCE = os.environ.get("SYMBIAN_ABSEIL_SOURCE")
@@ -51,12 +60,18 @@ def images(tmp_path_factory):
         environment["SYMBIAN_ABSEIL_SOURCE"] = str(source)
     cached = {}
 
-    def build(architecture, changed):
-        key = (architecture, changed)
+    def build(
+        architecture, changed, fatal=False, legacy=False, foreground=False
+    ):
+        key = (architecture, changed, fatal, legacy, foreground)
         if key not in cached:
-            directory = (
-                output / f"{architecture}-{'changed' if changed else 'normal'}"
+            mode = (
+                "foreground"
+                if foreground
+                else "fatal" if fatal else "changed" if changed else "normal"
             )
+            suffix = "-legacy" if legacy else ""
+            directory = output / f"{architecture}-{mode}{suffix}"
             subprocess.run(
                 [
                     "cmake",
@@ -65,9 +80,15 @@ def images(tmp_path_factory):
                     "-B",
                     str(directory),
                     f"-DSYMBIAN_TARGET_ARCH={architecture}",
+                    "-DSYMBIAN_RUNTIME_LEGACY_EKA2="
+                    + ("ON" if legacy else "OFF"),
                     f"-DSYMBIAN_ABSEIL_USE_SDK={'ON' if USE_SDK else 'OFF'}",
                     "-DSYMBIAN_ABSEIL_CHANGED_STATUS="
                     + ("ON" if changed else "OFF"),
+                    "-DSYMBIAN_ABSEIL_FAILED_CHECK="
+                    + ("ON" if fatal else "OFF"),
+                    "-DSYMBIAN_ABSEIL_FOREGROUND_CHECK="
+                    + ("ON" if foreground else "OFF"),
                 ],
                 cwd=project,
                 env=environment,
@@ -81,7 +102,11 @@ def images(tmp_path_factory):
                     "--build",
                     str(directory),
                     "--target",
-                    "abseil_status_probe",
+                    (
+                        "abseil_status_probe_e32"
+                        if USE_SDK
+                        else "abseil_status_probe"
+                    ),
                     "-j",
                     "8",
                 ],
@@ -91,11 +116,16 @@ def images(tmp_path_factory):
                 capture_output=True,
                 text=True,
             )
-            cached[key] = convert_imported_executable(
-                (directory / "abseil_status_probe.elf").read_bytes(),
-                proxies,
-                0xE0000814,
-            )
+            if USE_SDK:
+                cached[key] = (
+                    directory / "e32/abseil_status_probe.exe"
+                ).read_bytes()
+            else:
+                cached[key] = convert_imported_executable(
+                    (directory / "abseil_status_probe.elf").read_bytes(),
+                    proxies,
+                    0xE0000814,
+                )
         return cached[key]
 
     return build
@@ -110,12 +140,15 @@ def test_guest_abseil_status_or(
     """Check payload/copy/move and reject a deliberately changed result."""
     root = Path(WORKSPACE).resolve()
     image = images(architecture, changed)
-    golden = root / ".symbian/instances/delight-import-01"
+    source = locate(asset_directory("data") / "firmware", "nokia808")
+    validate_manifest(source)
+    golden = source / "instance"
     pinned = {
         golden / "data/roms/rm-807/SYM.ROM": ROM_808,
         golden / "data/drives/z/rm-807/sys/bin/euser.dll": EUSER_808,
     }
     assert {path: _digest(path) for path in pinned} == pinned
+
     with tempfile.TemporaryDirectory(prefix="absl-status-", dir="/tmp") as name:
         session = Path(name)
         instance = session / "instance"
@@ -160,6 +193,176 @@ def test_guest_abseil_status_or(
     assert {path: _digest(path) for path in pinned} == pinned
 
 
+@pytest.mark.skipif(
+    not USE_SDK, reason="Requires installed SDK failure handler"
+)
+@pytest.mark.parametrize("reference", ["nokia808", "c7", "e6", "6120", "e71"])
+@pytest.mark.parametrize("mode", ["normal", "fatal", "foreground"])
+def test_abseil_logging_on_named_roms(images, tmp_path, reference, mode):
+    """Run logging and CHECK reporting on each named EKA2 ROM."""
+    root = Path(WORKSPACE).resolve()
+    fatal = mode == "fatal"
+    foreground = mode == "foreground"
+    architecture = "armv5t" if reference in ("6120", "e71") else "armv6"
+    image = images(
+        architecture, False, fatal, reference in ("6120", "e71"), foreground
+    )
+    source = locate(asset_directory("data") / "firmware", reference)
+    manifest = validate_manifest(source)
+    assert manifest.device.kernel == "eka2"
+    with tempfile.TemporaryDirectory(prefix="absl-rom-", dir="/tmp") as name:
+        session = Path(name)
+        instance = session / "instance"
+        shutil.copytree(source / "instance", instance)
+        target = (
+            instance / manifest.device.c_drive / "sys/bin/runtime_probe.exe"
+        )
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(image)
+        (instance / "config.yml").write_text(
+            "data-storage: data\ncpu: dynarmic\ndevice: 0\nlanguage: 1\n"
+            "enable-gdb-stub: false\nlog-svc: true\n"
+        )
+        control = Control(session / "control.sock")
+        executable = root / "build/eka2l1/bin/EKA2L1.app/Contents/MacOS/EKA2L1"
+        environment = dict(os.environ)
+        environment.update(
+            EKA2L1_DATA_ROOT=str(instance),
+            EKA2L1_RESEARCH_CONTROL_SOCKET=str(control.endpoint),
+            **background_environment(),
+        )
+        if reference == "nokia808":
+            environment["EKA2L1_EXPERIMENTAL_SVC_PROFILE"] = (
+                "rm807-113.010.1508"
+            )
+        else:
+            environment.pop("EKA2L1_EXPERIMENTAL_SVC_PROFILE", None)
+        with (tmp_path / "fatal-frontend.log").open("w") as log:
+            process = subprocess.Popen(
+                [
+                    executable_for_session(executable, session),
+                    "--device",
+                    manifest.device.firmware_code,
+                    "--run",
+                    "C:\\sys\\bin\\runtime_probe.exe",
+                ],
+                env=environment,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+            )
+            try:
+                if foreground:
+                    _exercise_failure_view(control, process, tmp_path)
+                assert process.wait(timeout=30) == 0
+                exits = control.exit_report()["process_exits"]
+                assert len(exits) == 1
+                assert exits[0]["reason"] == (0 if mode == "normal" else 1)
+                if mode != "normal":
+                    report = (
+                        instance
+                        / manifest.device.c_drive
+                        / "private/e0000814/failure.txt"
+                    )
+                    text = report.read_text()
+                    assert f"{mode} guest reporting probe" in text
+                    if foreground:
+                        assert "foreground recent log 39" in text
+            finally:
+                report = (
+                    instance
+                    / manifest.device.c_drive
+                    / "private/e0000814/failure.txt"
+                )
+                if report.is_file():
+                    shutil.copyfile(report, tmp_path / "failure.txt")
+                _stop(process)
+    validate_manifest(source)
+
+
+def _exercise_failure_view(control, process, output):
+    """Verify text, scrolling, clipboard feedback and the Exit button."""
+
+    def capture(name):
+        assert process.poll() is None
+        result = _ready(lambda: control.capture(name))
+        with Image.open(result["path"]) as image:
+            frame = image.convert("RGB").resize(
+                (result["logical_width"], result["logical_height"])
+            )
+        frame.save(output / "failure-latest.png")
+        return frame
+
+    def ink(image):
+        return image.convert("L").point(lambda value: 255 if value > 160 else 0)
+
+    deadline = time.monotonic() + 20
+    attempt = 0
+    while True:
+        first = capture(f"failure-{attempt}")
+        attempt += 1
+        width, height = first.size
+        body = (24, 80, width - 30, height - 88)
+        left = (24, height - 72, width // 2 - 8, height - 10)
+        right = (width // 2 + 8, height - 72, width - 16, height - 10)
+        if all(
+            sum(ink(first.crop(box)).histogram()[1:]) > 30
+            for box in (body, left, right)
+        ):
+            break
+        assert time.monotonic() < deadline, "Failure text or labels missing"
+        time.sleep(0.05)
+    first.save(output / "failure.png")
+    # A movement smaller than any font row must still move the text. This
+    # catches whole-line quantization independently of a large swipe.
+    _ready(lambda: control.pointer(width // 2, height // 2, "press"))
+    _ready(lambda: control.pointer(width // 2, height // 2 - 3, "move"))
+    _ready(lambda: control.pointer(width // 2, height // 2 - 3, "release"))
+    deadline = time.monotonic() + 5
+    while True:
+        shifted = capture(f"pixel-scroll-{attempt}")
+        attempt += 1
+        difference = ImageChops.difference(first.crop(body), shifted.crop(body))
+        if sum(difference.convert("L").histogram()[20:]) > 100:
+            break
+        assert (
+            time.monotonic() < deadline
+        ), "Sub-row scrolling did not move text"
+        time.sleep(0.05)
+    shifted.save(output / "failure-pixel-scrolled.png")
+
+    _ready(lambda: control.pointer(width // 2, height // 2, "press"))
+    _ready(lambda: control.pointer(width // 2, 85, "move"))
+    _ready(lambda: control.pointer(width // 2, 85, "release"))
+    deadline = time.monotonic() + 5
+    while True:
+        scrolled = capture(f"scroll-{attempt}")
+        attempt += 1
+        difference = ImageChops.difference(
+            first.crop(body), scrolled.crop(body)
+        )
+        if sum(difference.convert("L").histogram()[20:]) > 100:
+            break
+        assert time.monotonic() < deadline, "Failure report did not scroll"
+        time.sleep(0.05)
+    scrolled.save(output / "failure-scrolled.png")
+    initial_label = ink(first.crop(right)).getbbox()
+    _ready(lambda: control.pointer(width * 3 // 4, height - 40, "press"))
+    _ready(lambda: control.pointer(width * 3 // 4, height - 40, "release"))
+    deadline = time.monotonic() + 5
+    while True:
+        copied = capture(f"copy-{attempt}")
+        attempt += 1
+        label = ink(copied.crop(right)).getbbox()
+        # COPIED is narrower than COPY LOGS; COPY FAILED is wider.
+        if label and label[2] - label[0] < initial_label[2] - initial_label[0]:
+            break
+        assert time.monotonic() < deadline, "Clipboard copy did not succeed"
+        time.sleep(0.05)
+    copied.save(output / "failure-copied.png")
+    _ready(lambda: control.pointer(width // 4, height - 40, "press"))
+    _ready(lambda: control.pointer(width // 4, height - 40, "release"))
+
+
 @pytest.mark.skipif(not USE_SDK, reason="Requires installed Abseil SDK mode")
 def test_copied_project_uses_only_installed_abseil(tmp_path):
     """Builds a moved project without source-tree runtime or Abseil files."""
@@ -187,7 +390,13 @@ def test_copied_project_uses_only_installed_abseil(tmp_path):
         text=True,
     )
     subprocess.run(
-        ["cmake", "--build", str(build), "--target", "abseil_status_probe"],
+        [
+            "cmake",
+            "--build",
+            str(build),
+            "--target",
+            "abseil_status_probe_e32",
+        ],
         cwd=project,
         env=environment,
         check=True,
@@ -197,15 +406,5 @@ def test_copied_project_uses_only_installed_abseil(tmp_path):
     commands = (build / "compile_commands.json").read_text()
     assert str(root / "cpp/symbian/runtime") not in commands
     assert str(root / "research/upstream") not in commands
-    proxies = [
-        (sdk / "proxies" / name / f"{name}.dso").read_bytes()
-        for name in ("euser", "libc", "libpthread", "libm", "drtaeabi")
-    ]
-    image = convert_imported_executable(
-        (build / "abseil_status_probe.elf").read_bytes(),
-        proxies,
-        0xE0000814,
-    )
-    image_path = tmp_path / "abseil-status.exe"
-    image_path.write_bytes(image)
+    image_path = build / "e32/abseil_status_probe.exe"
     assert inspect_image(image_path)["code_size"] > 0

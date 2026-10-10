@@ -4,6 +4,7 @@
 #include "symbian/api/system/failure_handler.h"
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -14,12 +15,23 @@
 #include <vector>
 
 #include <absl/base/nullability.h>
+#include <absl/status/status_macros.h>
+#include <e32std.h>
+#include <w32std.h>
 
+#include "../display/foreground_state.h"
+#include "absl/base/config.h"
+#include "absl/base/no_destructor.h"
+#include "absl/log/initialize.h"
+#include "absl/log/log_entry.h"
+#include "absl/log/log_sink.h"
+#include "absl/log/log_sink_registry.h"
 #include "symbian/api/display/window_surface.h"
 #include "symbian/api/storage/storage.h"
 #include "symbian/api/system/clipboard.h"
 #include "symbian/api/system/debug_log.h"
 #include "symbian/api/text/utf8.h"
+#include "symbian/api/time/frame_pacer.h"
 #include "symbian/api/time/sleep.h"
 
 namespace symbian::api::system {
@@ -36,6 +48,81 @@ constexpr std::uint16_t kBackground = 0x10c4;
 constexpr std::uint16_t kPanel = 0x2148;
 constexpr std::uint16_t kExitButton = 0x6188;
 constexpr std::uint16_t kCopyButton = 0x3489;
+std::atomic_flag reporting_fatal = ATOMIC_FLAG_INIT;
+
+class SdkLogSink final : public absl::LogSink {
+ public:
+  void Send(const absl::LogEntry& entry) override {
+    const absl::string_view message = entry.text_message_with_prefix();
+    DebugLog(std::string_view(message.data(), message.size()));
+  }
+};
+
+[[maybe_unused]] const bool logging_registered = [] {
+  static absl::NoDestructor<SdkLogSink> sink;
+  absl::InitializeLog();
+  absl::AddLogSink(sink.get());
+  return true;
+}();
+
+std::u16string FailurePath() {
+  std::u16string path = u"C:\\private\\";
+  const std::uint32_t uid = RProcess().SecureId().iId;
+  constexpr char16_t hex[] = u"0123456789abcdef";
+  for (int shift = 28; shift >= 0; shift -= 4) {
+    path.push_back(hex[(uid >> shift) & 15]);
+  }
+  path += u"\\failure.txt";
+  return path;
+}
+
+void PersistReport(std::string_view report) {
+  const std::u16string path = FailurePath();
+  const std::u16string directory = path.substr(0, path.rfind(u'\\'));
+  storage::CreateDirectories(directory).IgnoreError();
+  auto file =
+      storage::WritableFile::Open(path, storage::WriteMode::kReplaceExisting);
+  if (!file.ok()) {
+    return;
+  }
+  const auto* absl_nonnull bytes =
+      reinterpret_cast<const std::byte*>(report.data());
+  if (file->WriteAt(0, std::span<const std::byte>(bytes, report.size())).ok()) {
+    file->Flush().IgnoreError();
+  }
+}
+
+bool CurrentProcessOwnsFocusedWindow() {
+  RWsSession session;
+  if (session.Connect() != KErrNone) {
+    return false;
+  }
+  TThreadId owner;
+  const TInt focused = session.GetFocusWindowGroup();
+  const TInt result = focused > 0
+                          ? session.GetWindowGroupClientThreadId(focused, owner)
+                          : KErrNotFound;
+  session.Close();
+  if (result != KErrNone) {
+    return false;
+  }
+  if (owner == RThread().Id()) {
+    return true;
+  }
+  RThread thread;
+  if (thread.Open(owner) != KErrNone) {
+    return false;
+  }
+  RProcess process;
+  const TInt opened = thread.Process(process);
+  thread.Close();
+  if (opened != KErrNone) {
+    return false;
+  }
+  const bool same_process = process.Id() == RProcess().Id();
+  process.Close();
+  return same_process;
+}
 
 void Fill(display::Rgb565Frame* absl_nonnull frame, int left, int top,
           int right, int bottom, std::uint16_t color) {
@@ -84,7 +171,7 @@ std::string BuildReport(const absl::Status& error,
   recent.resize(
       CopyRecentDebugLogs(std::span<char>(recent.data(), recent.size())));
   report += recent.empty() ? "[no recent DebugLog messages]\n" : recent;
-  for (std::u16string_view path : options.log_paths) {
+  for (const std::u16string_view path : options.log_paths) {
     report += "\nFILE: ";
     auto name = text::Utf16ToUtf8(path);
     report += name.ok() ? *name : "[invalid path]";
@@ -100,7 +187,7 @@ std::u16string DisplayText(std::string_view source) {
   }
   std::u16string fallback;
   fallback.reserve(source.size());
-  for (unsigned char byte : source) {
+  for (const unsigned char byte : source) {
     fallback.push_back((byte >= 32 && byte < 127) || byte == '\n' ||
                                byte == '\r' || byte == '\t'
                            ? byte
@@ -115,58 +202,72 @@ int FontHeight(display::WindowSize size) {
 
 int VisibleRows(display::WindowSize size, int line_height) {
   return std::max(
-      1, (size.height - kHeaderHeight - kFooterHeight - 20) / line_height);
+      1, (size.height - kHeaderHeight - kFooterHeight - 24) / line_height);
 }
 
-int MaxScroll(std::size_t lines, int rows) {
-  return std::max(0, static_cast<int>(lines) - rows);
+int MaxScroll(std::size_t lines, display::WindowSize size, int line_height) {
+  const int viewport =
+      std::max(1, size.height - kHeaderHeight - kFooterHeight - 24);
+  return std::max(0, static_cast<int>(lines) * line_height - viewport);
 }
 
 absl::Status Render(display::WindowSurface* absl_nonnull window,
-                    display::Rgb565Frame* absl_nonnull frame,
                     std::u16string_view caption,
                     const std::vector<std::u16string>& lines, int scroll,
                     std::u16string_view copy_feedback) {
-  const display::WindowSize size = frame->size;
+  const display::WindowSize size = window->size();
   const int font_height = FontHeight(size);
   const int line_height = font_height + 8;
   const int visible = VisibleRows(size, line_height);
+  const int first_line = scroll / line_height;
+  const int remainder = scroll % line_height;
   const int footer_top = size.height - kFooterHeight;
   const int middle = size.width / 2;
-  Fill(frame, 0, 0, size.width, size.height, kBackground);
-  Fill(frame, 0, 0, size.width, kHeaderHeight, kExitButton);
-  Fill(frame, kMargin, kHeaderHeight + 8, size.width - kMargin, footer_top - 8,
-       kPanel);
-  Fill(frame, kMargin, footer_top + 8, middle - 5, size.height - 10,
-       kExitButton);
-  Fill(frame, middle + 5, footer_top + 8, size.width - kMargin,
-       size.height - 10, kCopyButton);
-  if (static_cast<int>(lines.size()) > visible) {
-    const int track_top = kHeaderHeight + 12;
-    const int track_height = std::max(1, footer_top - track_top - 24);
-    const int thumb_height =
-        std::max(12, track_height * visible / static_cast<int>(lines.size()));
-    const int thumb_top = track_top + (track_height - thumb_height) * scroll /
-                                          MaxScroll(lines.size(), visible);
-    Fill(frame, size.width - kMargin - 5, track_top, size.width - kMargin - 2,
-         track_top + track_height, 0x8410);
-    Fill(frame, size.width - kMargin - 7, thumb_top, size.width - kMargin,
-         thumb_top + thumb_height, 0xffff);
-  }
-  if (absl::Status presented = window->Present(); !presented.ok()) {
-    return presented;
-  }
+  // Paint directly into the native bitmap while its heap is locked. No
+  // persistent writable view, staging chunk or frame-size copy is needed.
+  ABSL_RETURN_IF_ERROR(window->UpdateRgb565Frame(
+      {.write = [&](display::Rgb565Frame frame) -> absl::Status {
+        Fill(&frame, 0, 0, size.width, size.height, kBackground);
+        Fill(&frame, 0, 0, size.width, kHeaderHeight, kExitButton);
+        Fill(&frame, kMargin, kHeaderHeight + 8, size.width - kMargin,
+             footer_top - 8, kPanel);
+        Fill(&frame, kMargin, footer_top + 8, middle - 5, size.height - 10,
+             kExitButton);
+        Fill(&frame, middle + 5, footer_top + 8, size.width - kMargin,
+             size.height - 10, kCopyButton);
+        if (MaxScroll(lines.size(), size, line_height) > 0) {
+          const int track_top = kHeaderHeight + 12;
+          const int track_height = std::max(1, footer_top - track_top - 24);
+          const int thumb_height = std::max(
+              12, track_height * visible / static_cast<int>(lines.size()));
+          const int thumb_top =
+              track_top +
+              static_cast<std::int64_t>(track_height - thumb_height) * scroll /
+                  MaxScroll(lines.size(), size, line_height);
+          Fill(&frame, size.width - kMargin - 5, track_top,
+               size.width - kMargin - 2, track_top + track_height, 0x8410);
+          Fill(&frame, size.width - kMargin - 7, thumb_top,
+               size.width - kMargin, thumb_top + thumb_height, 0xffff);
+        }
+        return absl::OkStatus();
+      }}));
   std::vector<display::WindowTextLine> text_lines;
-  text_lines.reserve(static_cast<std::size_t>(visible) + 4);
+  text_lines.reserve(static_cast<std::size_t>(visible) + 6);
   text_lines.push_back(
       {.text = caption, .x = kMargin + 8, .baseline_y = 42, .rgb = 0xffffff});
   for (int row = 0;
-       row < visible && scroll + row < static_cast<int>(lines.size()); ++row) {
-    text_lines.push_back(
-        {.text = lines[scroll + row],
-         .x = kMargin + 8,
-         .baseline_y = kHeaderHeight + 18 + (row + 1) * line_height,
-         .rgb = 0xf7f7f7});
+       row < visible + 2 && first_line + row < static_cast<int>(lines.size());
+       ++row) {
+    text_lines.push_back({.text = lines[first_line + row],
+                          .x = kMargin + 8,
+                          .baseline_y = kHeaderHeight + 12 + font_height +
+                                        row * line_height - remainder,
+                          .rgb = 0xf7f7f7,
+                          .clip = display::WindowRect{
+                              .x = kMargin + 8,
+                              .y = kHeaderHeight + 12,
+                              .width = size.width - 2 * kMargin - 18,
+                              .height = footer_top - kHeaderHeight - 24}});
   }
   text_lines.push_back({.text = u"EXIT",
                         .x = kMargin + 18,
@@ -177,7 +278,7 @@ absl::Status Render(display::WindowSurface* absl_nonnull window,
        .x = middle + 18,
        .baseline_y = footer_top + 46,
        .rgb = 0xffffff});
-  return window->DrawTextLines(text_lines, font_height);
+  return window->Present(text_lines, font_height);
 }
 
 }  // namespace
@@ -188,30 +289,20 @@ absl::Status ShowFailureReport(const absl::Status& error,
     return absl::InvalidArgumentError("failure report needs an error");
   }
   const std::string report = BuildReport(error, options);
+  PersistReport(report);
   const std::u16string report_text = DisplayText(report);
   std::u16string caption = DisplayText(options.caption);
   if (caption.empty()) {
     caption = u"Application failure";
   }
-  auto opened = display::WindowSurface::Create(options.caption);
-  if (!opened.ok()) {
-    return opened.status();
-  }
-  auto window = std::move(*opened);
-  auto created = window.CreateRgb565Frame();
-  if (!created.ok()) {
-    return created.status();
-  }
-  display::Rgb565Frame frame = *created;
-  const int font_height = FontHeight(frame.size);
-  const int line_height = font_height + 8;
-  auto wrapped = window.WrapTextLines(
-      report_text, std::max(1, frame.size.width - 2 * kMargin - 26),
-      font_height);
-  if (!wrapped.ok()) {
-    return wrapped.status();
-  }
-  std::vector<std::u16string> lines = std::move(*wrapped);
+  ABSL_ASSIGN_OR_RETURN(auto window,
+                        display::WindowSurface::Create(options.caption));
+  display::WindowSize size = window.size();
+  int font_height = FontHeight(size);
+  int line_height = font_height + 8;
+  const int text_width = std::max(1, size.width - 2 * kMargin - 26);
+  ABSL_ASSIGN_OR_RETURN(
+      auto lines, window.WrapTextLines(report_text, text_width, font_height));
   int scroll = 0;
   int touch_start_y = 0;
   int touch_start_scroll = 0;
@@ -219,30 +310,24 @@ absl::Status ShowFailureReport(const absl::Status& error,
   bool dragging = false;
   bool redraw = true;
   std::u16string feedback;
+  time::FramePacer pacer(
+      display::WindowSurface::PrimaryRefreshRateHz().value_or(60));
   for (;;) {
     if (redraw) {
-      if (absl::Status result =
-              Render(&window, &frame, caption, lines, scroll, feedback);
-          !result.ok()) {
-        return result;
-      }
+      ABSL_RETURN_IF_ERROR(Render(&window, caption, lines, scroll, feedback));
       redraw = false;
     }
     for (int count = 0; count < 64; ++count) {
-      auto next = window.PollInput();
-      if (!next.ok()) {
-        return next.status();
-      }
-      if (!next->has_value()) {
+      ABSL_ASSIGN_OR_RETURN(auto next, window.PollInput());
+      if (!next.has_value()) {
         break;
       }
-      const display::WindowInput& input = **next;
-      const int maximum =
-          MaxScroll(lines.size(), VisibleRows(frame.size, line_height));
+      const display::WindowInput& input = *next;
+      const int maximum = MaxScroll(lines.size(), size, line_height);
       switch (input.kind) {
         case display::WindowInputKind::kPointerDown:
-          pressed_button = input.y >= frame.size.height - kFooterHeight
-                               ? (input.x < frame.size.width / 2 ? 0 : 1)
+          pressed_button = input.y >= size.height - kFooterHeight
+                               ? (input.x < size.width / 2 ? 0 : 1)
                                : -1;
           dragging = pressed_button < 0;
           touch_start_y = input.y;
@@ -251,23 +336,20 @@ absl::Status ShowFailureReport(const absl::Status& error,
         case display::WindowInputKind::kPointerMove:
           if (dragging) {
             const int next_scroll = std::clamp(
-                touch_start_scroll + (touch_start_y - input.y) / line_height, 0,
-                maximum);
+                touch_start_scroll + (touch_start_y - input.y), 0, maximum);
             redraw |= next_scroll != scroll;
             scroll = next_scroll;
           }
           break;
         case display::WindowInputKind::kPointerUp:
           dragging = false;
-          if (pressed_button == 0 &&
-              input.y >= frame.size.height - kFooterHeight &&
-              input.x < frame.size.width / 2) {
+          if (pressed_button == 0 && input.y >= size.height - kFooterHeight &&
+              input.x < size.width / 2) {
             return absl::OkStatus();
           }
-          if (pressed_button == 1 &&
-              input.y >= frame.size.height - kFooterHeight &&
-              input.x >= frame.size.width / 2) {
-            absl::Status copied = CopyTextToClipboard(report_text);
+          if (pressed_button == 1 && input.y >= size.height - kFooterHeight &&
+              input.x >= size.width / 2) {
+            const absl::Status copied = CopyTextToClipboard(report_text);
             feedback = copied.ok() ? u"COPIED" : u"COPY FAILED";
             redraw = true;
           }
@@ -280,35 +362,38 @@ absl::Status ShowFailureReport(const absl::Status& error,
           }
           if (input.key == display::WindowKey::kSelect ||
               input.key == display::WindowKey::kEnter) {
-            absl::Status copied = CopyTextToClipboard(report_text);
+            const absl::Status copied = CopyTextToClipboard(report_text);
             feedback = copied.ok() ? u"COPIED" : u"COPY FAILED";
             redraw = true;
           } else if (input.key == display::WindowKey::kUp) {
-            scroll = std::max(0, scroll - 1);
+            scroll = std::max(0, scroll - line_height);
             redraw = true;
           } else if (input.key == display::WindowKey::kDown) {
-            scroll = std::min(maximum, scroll + 1);
+            scroll = std::min(maximum, scroll + line_height);
             redraw = true;
           }
           break;
         case display::WindowInputKind::kCloseRequested:
           return absl::OkStatus();
-        case display::WindowInputKind::kDisplayChanged:
+        case display::WindowInputKind::kDisplayChanged: {
           window.DestroyFrame();
-          created = window.CreateRgb565Frame();
-          if (!created.ok()) {
-            return created.status();
-          }
-          frame = *created;
+          size = window.size();
           scroll = 0;
-          wrapped = window.WrapTextLines(
-              report_text, std::max(1, frame.size.width - 2 * kMargin - 26),
-              FontHeight(frame.size));
-          if (!wrapped.ok()) {
-            return wrapped.status();
-          }
-          lines = std::move(*wrapped);
+          dragging = false;
+          pressed_button = -1;
+          font_height = FontHeight(size);
+          line_height = font_height + 8;
+          ABSL_ASSIGN_OR_RETURN(
+              lines,
+              window.WrapTextLines(report_text,
+                                   std::max(1, size.width - 2 * kMargin - 26),
+                                   FontHeight(size)));
           redraw = true;
+          break;
+        }
+        case display::WindowInputKind::kFocusLost:
+          dragging = false;
+          pressed_button = -1;
           break;
         case display::WindowInputKind::kFocusGained:
           redraw = true;
@@ -317,7 +402,7 @@ absl::Status ShowFailureReport(const absl::Status& error,
           break;
       }
     }
-    symbian::api::time::SleepFor(std::chrono::milliseconds(30));
+    symbian::api::time::SleepFor(pacer.NextDelayNanoseconds());
   }
 }
 
@@ -338,3 +423,33 @@ int RunWithFailureHandler(FailureHandledEntry entry,
 }
 
 }  // namespace symbian::api::system
+
+// The application link roots this object even when only CHECK/LOG macros are
+// used. A named anchor avoids whole-archive duplication in dependency graphs.
+extern "C" void symbian_sdk_failure_handler_link_anchor() {}
+
+// Abseil calls this weak extension point before it aborts for CHECK and
+// CHECK_OK. Its strong definition is linked into each SDK application.
+extern "C" void ABSL_INTERNAL_C_SYMBOL(AbslInternalOnFatalLogMessage)(
+    const absl::LogEntry& entry) {
+  using symbian::api::system::ShowFailureReport;
+  if (symbian::api::system::reporting_fatal.test_and_set(
+          std::memory_order_acq_rel)) {
+    RProcess().Kill(1);
+    User::Exit(1);
+  }
+  const absl::string_view message = entry.text_message_with_prefix();
+  const absl::Status failure =
+      absl::InternalError(std::string(message.data(), message.size()));
+  const bool foreground =
+      symbian::api::system::CurrentProcessOwnsFocusedWindow() ||
+      symbian::api::display::internal::LastWindowClosedInForeground();
+  if (foreground) {
+    ShowFailureReport(failure).IgnoreError();
+  } else {
+    symbian::api::system::PersistReport(
+        symbian::api::system::BuildReport(failure, {}));
+  }
+  RProcess().Kill(1);
+  User::Exit(1);
+}
