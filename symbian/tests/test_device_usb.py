@@ -7,7 +7,7 @@ import pytest
 from symbian.device.usb import AsyncUsbSession, list_devices
 from symbian.device.usb_models import UsbCompletion, UsbDeviceDescriptor
 from symbian.native import require_native
-from symbian.status import StatusException
+from symbian.status import Code, StatusException
 
 
 def test_native_inventory_redacts_serials() -> None:
@@ -29,6 +29,27 @@ def test_low_level_session_requires_serial_anchor() -> None:
     with pytest.raises(StatusException):
         native.UsbSession.open(0x0421, 0x05D1, "bad")
     assert isinstance(native.list_usb_devices_native(), list)
+
+
+@pytest.mark.parametrize(
+    ("anchor", "path", "digest"),
+    [
+        ("bad", "Installs/app.sis", "0" * 64),
+        ("0" * 24, "../app.sis", "0" * 64),
+        ("0" * 24, "Installs/", "0" * 64),
+        ("0" * 24, "Installs/app.sis", "bad"),
+        ("0" * 24, "Installs/app.sis", "G" * 64),
+    ],
+)
+def test_mtp_deletion_rejects_invalid_identity_path_or_digest(
+    anchor, path, digest
+):
+    """Malformed deletion requests fail before opening any USB device."""
+    with pytest.raises(StatusException) as caught:
+        require_native().delete_mtp_file_native(
+            0x0421, 0x05D1, anchor, 131073, path, digest
+        )
+    assert caught.value.code == Code.INVALID_ARGUMENT
 
 
 def test_async_adapter_returns_typed_future_result() -> None:

@@ -1012,10 +1012,11 @@ absl::StatusOr<MtpStageResult> StageOnHandle(
                         .unreadable_children = unreadable_children};
 }
 
-absl::StatusOr<std::vector<unsigned char>> ReadPathOnHandle(
+absl::StatusOr<std::vector<unsigned char>> AccessPathOnHandle(
     libusb_device_handle* absl_nonnull handle,
     const libusb_config_descriptor& config, uint32_t storage_id,
-    std::string_view relative_path, uint32_t max_bytes) {
+    std::string_view relative_path, uint32_t max_bytes,
+    std::optional<std::string_view> delete_sha256) {
   const Endpoints endpoints = FindEndpoints(config, 6, 1, 1);
   if (endpoints.number < 0) {
     return absl::FailedPreconditionError("No unique MTP USB interface");
@@ -1108,6 +1109,30 @@ absl::StatusOr<std::vector<unsigned char>> ReadPathOnHandle(
                                   {selected->handle}, max_bytes + 12));
     if (contents.data.size() != selected->size_bytes) {
       return absl::DataLossError("MTP file size changed during read");
+    }
+    if (delete_sha256.has_value()) {
+      if (Sha256Hex(contents.data) != *delete_sha256) {
+        return absl::FailedPreconditionError(
+            "MTP deletion digest does not match the file");
+      }
+      if (std::find(device_info.supported_operation_codes.begin(),
+                    device_info.supported_operation_codes.end(),
+                    0x100b) == device_info.supported_operation_codes.end()) {
+        return absl::UnimplementedError("MTP DeleteObject unavailable");
+      }
+      ABSL_RETURN_IF_ERROR(CheckedPtp(handle, endpoints, 0x100b,
+                                      transaction_id++, {selected->handle})
+                               .status());
+      // Confirm removal in the same directory; a success response alone does
+      // not establish that the object disappeared.
+      ABSL_ASSIGN_OR_RETURN(const auto remaining,
+                            ObjectHandles(handle, endpoints, transaction_id++,
+                                          storage_id, parent));
+      if (std::find(remaining.begin(), remaining.end(), selected->handle) !=
+          remaining.end()) {
+        return absl::DataLossError("MTP object remains after deletion");
+      }
+      return std::vector<unsigned char>{};
     }
     return std::move(contents.data);
   }
@@ -1415,13 +1440,14 @@ absl::StatusOr<MtpStageResult> StageMtpSis(uint16_t vendor, uint16_t product,
                        expected_sha256);
 }
 
-absl::StatusOr<std::vector<unsigned char>> ReadMtpFile(
+static absl::StatusOr<std::vector<unsigned char>> AccessMtpFile(
     uint16_t vendor, uint16_t product, const std::string& anchor,
-    uint32_t storage_id, std::string_view relative_path, uint32_t max_bytes) {
+    uint32_t storage_id, std::string_view relative_path, uint32_t max_bytes,
+    std::optional<std::string_view> delete_sha256) {
   if (anchor.size() != 24 || storage_id == 0 || max_bytes == 0 ||
       max_bytes > kMaxSisBytes || relative_path.empty() ||
       relative_path.size() > 255) {
-    return absl::InvalidArgumentError("Invalid bounded MTP read request");
+    return absl::InvalidArgumentError("Invalid bounded MTP file request");
   }
   size_t components = 0;
   std::string_view rest = relative_path;
@@ -1488,8 +1514,30 @@ absl::StatusOr<std::vector<unsigned char>> ReadMtpFile(
   if (code != 0) {
     return absl::UnavailableError("USB configuration: " + UsbError(code));
   }
-  return ReadPathOnHandle(handle.value, *config.value, storage_id,
-                          relative_path, max_bytes);
+  return AccessPathOnHandle(handle.value, *config.value, storage_id,
+                            relative_path, max_bytes, delete_sha256);
+}
+
+absl::StatusOr<std::vector<unsigned char>> ReadMtpFile(
+    uint16_t vendor, uint16_t product, const std::string& anchor,
+    uint32_t storage_id, std::string_view relative_path, uint32_t max_bytes) {
+  return AccessMtpFile(vendor, product, anchor, storage_id, relative_path,
+                       max_bytes, std::nullopt);
+}
+
+absl::Status DeleteMtpFile(uint16_t vendor, uint16_t product,
+                           const std::string& anchor, uint32_t storage_id,
+                           std::string_view relative_path,
+                           std::string_view expected_sha256) {
+  if (expected_sha256.size() != 64 ||
+      !std::all_of(expected_sha256.begin(), expected_sha256.end(), [](char c) {
+        return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+      })) {
+    return absl::InvalidArgumentError("Expected lowercase SHA-256 required");
+  }
+  return AccessMtpFile(vendor, product, anchor, storage_id, relative_path,
+                       kMaxSisBytes, expected_sha256)
+      .status();
 }
 
 }  // namespace symbian::device

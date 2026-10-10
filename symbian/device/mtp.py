@@ -65,6 +65,33 @@ def read_file(
     )
 
 
+def delete_file(
+    device: ConnectedDevice,
+    storage_id: int,
+    relative_path: str,
+    *,
+    expected_sha256: str,
+) -> None:
+    """Delete an exact file after checking its current contents against a hash.
+
+    Native code resolves the path, reads at most 16 MiB, rejects a mismatched
+    digest, and confirms removal. This never deletes folders recursively.
+    """
+    if not _has_mtp_interface(device):
+        raise StatusError(
+            Code.FAILED_PRECONDITION,
+            "Selected device has no serial-matched MTP interface",
+        )
+    require_native().delete_mtp_file_native(
+        device.vendor_id,
+        device.product_id,
+        device.identity_anchor,
+        storage_id,
+        relative_path,
+        expected_sha256,
+    )
+
+
 def stage_sis(
     device: ConnectedDevice, package_path: Path, filename: str, sha256: str
 ) -> dict:

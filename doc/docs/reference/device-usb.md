@@ -116,6 +116,15 @@ async def main():
 asyncio.run(main())
 ```
 
+For exact-path file operations in PC Suite mode,
+`symbian.device.mtp.read_file(device, storage_id, relative_path)` reads a bounded
+file. `delete_file(device, storage_id, relative_path, expected_sha256=...)`
+removes a file only after reading and matching its current contents. Paths
+must resolve uniquely; folders and files above 16 MiB are rejected for deletion.
+The native implementation closes its MTP session on every error and confirms
+removal by listing the containing directory again. This can remove an older
+installer after its replacement has passed upload readback verification.
+
 The native session also exposes synchronous bulk, interrupt, and control
 transfers. Its explicit `submit_*` methods return transfer IDs;
 `handle_events()` returns typed native completions for callers driving libusb

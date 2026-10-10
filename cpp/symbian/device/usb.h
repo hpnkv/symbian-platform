@@ -192,6 +192,15 @@ absl::StatusOr<std::vector<unsigned char>> ReadMtpFile(
     uint16_t vendor, uint16_t product, const std::string& anchor,
     uint32_t storage_id, std::string_view relative_path, uint32_t max_bytes);
 
+/** Delete one exact file only after its bytes match the expected SHA-256.
+ *
+ * Folders, ambiguous paths and files above 16 MiB are rejected. The containing
+ * directory is checked again after DeleteObject confirms success.
+ */
+absl::Status DeleteMtpFile(uint16_t vendor, uint16_t product,
+                           const std::string& anchor, uint32_t storage_id,
+                           std::string_view relative_path,
+                           std::string_view expected_sha256);
 
 }  // namespace symbian::device
 #endif  // SYMBIAN_DEVICE_USB_H_
