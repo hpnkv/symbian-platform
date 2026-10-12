@@ -160,7 +160,7 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                 )
                 logical_size = "640x360" if landscape else "360x640"
                 assert f"GPU: geometry window={logical_size}" in diagnostic
-                assert "GPU: fit viewport=" in diagnostic
+                assert "GPU: fill viewport=" in diagnostic
                 assert f"window={logical_size}" in diagnostic
                 assert "camera GPU swap done" in diagnostic
                 assert "GPU: stream unavailable" not in diagnostic
@@ -198,33 +198,55 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                     source_size = re.findall(
                         r"GPU: source (\d+x\d+)", mode_start
                     )[-1]
-                    crop = re.findall(r"GPU: view crop=([\d,]+)", mode_start)[
-                        -1
-                    ]
                     source_width, source_height = map(
                         int, source_size.split("x")
                     )
-                    assert crop == f"0,0,{source_width},{source_height},"
                     if presentation == "rear":
                         assert source_size == "640x360"
-                        assert crop == "0,0,640,360,"
                     for mode in [int(not landscape), int(landscape)]:
                         previous = log.read_text(errors="replace")
                         change = _retry(control.screen_mode, mode)
                         expected = "640x360" if mode else "360x640"
-                        image_width, image_height = (
-                            (source_height, source_width)
-                            if mode
-                            else (source_width, source_height)
-                        )
                         width, height = (640, 360) if mode else (360, 640)
-                        if width * image_height > height * image_width:
-                            fit_width = height * image_width // image_height
-                            fit_height = height
+                        crop_width, crop_height = source_width, source_height
+                        crop_target = (
+                            (360, 640)
+                            if presentation == "rear"
+                            else (width, height)
+                        )
+                        target_width, target_height = crop_target
+                        if (
+                            source_width * target_height
+                            > source_height * target_width
+                        ):
+                            crop_width = (
+                                source_height * target_width // target_height
+                            )
                         else:
-                            fit_width = width
-                            fit_height = width * image_height // image_width
-                        expected_fit = f"{fit_width}x{fit_height}"
+                            crop_height = (
+                                source_width * target_height // target_width
+                            )
+                        expected_crop = (
+                            f"{(source_width - crop_width) // 2},"
+                            f"{(source_height - crop_height) // 2},"
+                            f"{crop_width},{crop_height},"
+                        )
+                        image_width, image_height = crop_width, crop_height
+                        if presentation == "rear" and mode:
+                            image_width, image_height = (
+                                image_height,
+                                image_width,
+                            )
+                        fill_width, fill_height = width, height
+                        if width * image_height < height * image_width:
+                            fill_width = (
+                                height * image_width + image_height - 1
+                            ) // image_height
+                        else:
+                            fill_height = (
+                                width * image_height + image_width - 1
+                            ) // image_width
+                        expected_fill = f"{fill_width}x{fill_height}"
                         assert (change["width"], change["height"]) == (
                             (640, 360) if mode else (360, 640)
                         )
@@ -234,7 +256,7 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                                 len(previous) :
                             ]
                             if (
-                                f"GPU: fit viewport={expected_fit}" in updated
+                                f"GPU: fill viewport={expected_fill}" in updated
                                 and f"window={expected}" in updated
                                 and "GPU: presented 60 frames in " in updated
                             ):
@@ -247,7 +269,11 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                         assert "GPU: source " not in updated
                         assert set(
                             re.findall(r"GPU: view crop=([\d,]+)", updated)
-                        ) == {crop}
+                        ) == {expected_crop}
+                        expected_orientation = (
+                            3 if presentation == "rear" and mode else 0
+                        )
+                        assert f"orientation={expected_orientation}" in updated
                         rotated = _retry(
                             control.capture,
                             f"{presentation}-{mode}-{len(previous)}",
@@ -260,10 +286,21 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                             assert image.size == (
                                 (1280, 720) if mode else (720, 1280)
                             )
-                            if (fit_width, fit_height) != (width, height):
-                                assert image.convert("RGB").getpixel(
-                                    (0, 0)
-                                ) == (0, 0, 0)
+                            # Each former margin contains live image pixels.
+                            # Sample all four borders, away from the controls.
+                            rgb = image.convert("RGB")
+                            for edge in (
+                                (0, 0, image.width, 2),
+                                (
+                                    0,
+                                    image.height - 2,
+                                    image.width,
+                                    image.height,
+                                ),
+                                (0, 0, 2, image.height),
+                                (image.width - 2, 0, image.width, image.height),
+                            ):
+                                assert rgb.crop(edge).getbbox() is not None
                             # The group stays at physical (180,584), with an
                             # eight-pixel gap between pills in either rotation.
                             # Check each pill's logical top-center border.

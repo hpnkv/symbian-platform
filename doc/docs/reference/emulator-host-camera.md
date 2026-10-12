@@ -228,8 +228,9 @@ request, although its bitmap was 4:3. Filling portrait then retained only about
 returned the requested dimensions and checked metadata rather than a known
 physical scene; their success did not establish the phone's orientation.
 
-The owner chose the complete stream with margins when the requested full-screen
-shape is unavailable. Both examples now preserve every returned source pixel.
+For version 1.0.28, the owner chose the complete stream with margins when the
+requested full-screen shape was unavailable. That version preserved every
+returned source pixel.
 They compensate Window Server rotation relative to the native display, without
 a fixed 90° offset or an inferred opening-orientation offset. GPU presentation
 uses SDK `AspectFitViewport`; software uses SDK `CenteredAspectFit` and
@@ -250,8 +251,9 @@ cover opening in landscape and the exact 360×270 portrait fallback.
 The earlier aspect-fill and 90° reference descriptions above document the
 superseded experiments. The emulator's Qt aspect correction is still required:
 it preserves proportions before delivering a guest bitmap, while this fix
-preserves the complete bitmap returned by ECam. Phone optical correctness of
-the updated build still requires an on-device run.
+preserves the complete bitmap returned by ECam. The subsequent phone run confirmed correct initial content and proportions,
+but also showed excessive margins and identical behavior in the two modes.
+The policy below supersedes universal aspect fit.
 
 
 The corrected build passed seven native presentation tests and all four real
@@ -264,3 +266,52 @@ camera/guest/frontend shutdown. Both guest apps, host/guest header canaries and
 style checks pass. The signed 1.0.28 phone package contains the exact E32 tested
 in all four emulator cases. The old phone trace and final text/hash evidence are
 retained under `~/.symbian-dev/research/camera-phone-framing-20261012`.
+
+## Screen filling with separate Rear and Rotate policies (1.0.29)
+
+The next phone run confirmed that 1.0.28 removed the initial distortion and
+incorrect content rotation. It also showed large margins: both buttons used the
+same inverse Window Server transform and aspect fit. The modes therefore had
+no presentation difference even when the display orientation changed.
+
+The renderer now fills the screen using the minimum centered crop of the actual
+source dimensions. A complete source axis remains visible. Filling a portrait
+screen with a landscape bitmap necessarily discards side content; retaining all
+four edges would require margins. There is no additional zoom factor or inferred
+sensor mounting turn.
+
+Rear retains the confirmed native reference and inverse Window Server transform.
+Its crop stays fixed in source coordinates and on the physical glass. Rotate
+instead follows the logical UI, with no inverse Window Server transform, and
+recomputes its crop for the current screen aspect. The modes can coincide in
+portrait but differ when the phone turns. For the measured 480×360 phone source:
+
+| Policy | Portrait source crop | Landscape source crop | Landscape presentation rotation |
+| --- | --- | --- | --- |
+| Rear | (139,0,202,360) | (139,0,202,360) | Counterclockwise 90°, canceling Window Server |
+| Rotate | (139,0,202,360) | (0,45,480,270) | None; follows logical UI |
+
+The software path uses SDK `CropFrameView` and `TransformFrame` directly into
+screen storage. GLES samples the same source bounds and uses SDK
+`AspectFillViewport` to cover integer-rounding slivers. Neither allocates a
+rotated/cropped source or changes capture storage on a display event. Controls
+retain the compact physical group anchor.
+
+Eight native tests cover the actual 808 fallback sizes, landscape opening,
+all four display rotations, mode differences, borrowed buffer offsets/stride,
+unchanged source bytes, full-screen known-color pixels and square proportions
+to one output pixel of rounding. Rear's physical calibration image remains
+byte-identical through all four orientations. Rotate reveals the full source
+width in landscape and keeps the calibration square proportional.
+
+All four real-host-camera cases pass (Dynarmic/Dyncom × portrait/landscape
+opening), with full-screen border content, the distinct crop/rotation policies,
+selected button pixels, six display changes per case and normal shutdown.
+The suite took 97.20 seconds including fixture copying. Its 36 intervals of
+60 fresh frames took 1977–2017 ms; these are emulator throughput measurements.
+Both guest executables, independent host/guest header checks and styles pass.
+The signed 1.0.29 package contains the E32 tested in all four cases. SDK MTP
+transfer and full readback verified `Installs/camera_app_gles2-d0a69eab330a.sis`
+on the Nokia 808; installation and optical confirmation are still pending.
+Text/hash evidence is under
+`~/.symbian-dev/research/camera-phone-framing-20261012/iteration-129`.

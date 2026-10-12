@@ -527,10 +527,10 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
     const int image_width = geometry.oriented_size.width;
     const int image_height = geometry.oriented_size.height;
     ABSL_ASSIGN_OR_RETURN(
-        auto viewport, display::AspectFitViewport(size.width, size.height,
-                                                  image_width, image_height));
+        auto viewport, display::AspectFillViewport(size.width, size.height,
+                                                   image_width, image_height));
     if (first_frame || redraw_pending) {
-      std::string viewport_detail("GPU: fit viewport=");
+      std::string viewport_detail("GPU: fill viewport=");
       AppendDecimal(viewport.width, &viewport_detail);
       viewport_detail.push_back('x');
       AppendDecimal(viewport.height, &viewport_detail);
