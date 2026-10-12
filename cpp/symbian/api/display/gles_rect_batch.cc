@@ -1,13 +1,13 @@
 // Copyright 2026 The Symbian SDK Authors.
 // Licensed under the Apache License, Version 2.0.
 
-#include <absl/status/status_macros.h>
 #include "symbian/api/display/gles_rect_batch.h"
 
 #include <new>
 #include <utility>
 
 #include <GLES2/gl2.h>
+#include <absl/status/status_macros.h>
 
 namespace symbian::api::display {
 namespace {
@@ -58,6 +58,8 @@ struct GlesRectBatch::Impl {
     if (rects == 0 || program == 0) {
       return;
     }
+    glViewport(0, 0, width, height);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glUseProgram(program);

@@ -1,9 +1,16 @@
 """Native export contracts with CMake/LLVM proxy build orchestration."""
 
+import fcntl
 import hashlib
+import inspect
 import json
+import os
 import re
+import shutil
 import tempfile
+from contextlib import contextmanager
+from contextvars import ContextVar
+from functools import lru_cache
 from importlib.resources import files
 from pathlib import Path
 
@@ -12,6 +19,129 @@ from symbian.process import run
 from symbian.status import Code, StatusError
 from symbian.toolchain.builds import _compiler
 from symbian.toolchain.project_build import dependencies
+
+_CACHE = ContextVar("import_proxy_cache", default=None)
+
+
+@contextmanager
+def import_proxy_cache(directory: Path):
+    """Reuses independently verified proxies during SDK input preparation.
+
+    Standalone experiments and header link probes retain their complete builds.
+    Entries keep the original CMake trees and reproducibility evidence.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    counts = {"built": 0, "reused": 0}
+    token = _CACHE.set((directory, counts))
+    try:
+        yield counts
+    finally:
+        _CACHE.reset(token)
+
+
+@lru_cache(maxsize=32)
+def _tool_version(path: str, identity: tuple) -> str:
+    return run([path, "--version"], cwd=Path(path).parent)
+
+
+def _tool_identity(path: str) -> tuple:
+    info = Path(path).stat()
+    return (
+        info.st_dev,
+        info.st_ino,
+        info.st_size,
+        info.st_mtime_ns,
+        info.st_ctime_ns,
+    )
+
+
+def _cached_proxy(definition, symbols, target_dll, output, compiler, linker):
+    directory, counts = _CACHE.get()
+    tools = [_compiler(name) for name in (compiler, linker, "cmake", "ninja")]
+    toolchain = Path(str(files("symbian.toolchain").joinpath("cmake")))
+    definition_bytes = definition.read_bytes()
+    key = {
+        "definition": hashlib.sha256(definition_bytes).hexdigest(),
+        "symbols": symbols,
+        "dll": target_dll,
+        "implementation": _BUILD_RECIPE,
+        "native": _tool_identity(require_native().__file__),
+        "toolchain": {
+            p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in (
+                toolchain / "symbian-arm.cmake",
+                toolchain / "SymbianSdk.cmake",
+            )
+        },
+        "tools": [
+            (p, _tool_identity(p), _tool_version(p, _tool_identity(p)))
+            for p in tools
+        ],
+        "environment": {
+            name: os.environ.get(name)
+            for name in (
+                "PATH",
+                "CC",
+                "CXX",
+                "CFLAGS",
+                "CXXFLAGS",
+                "ASMFLAGS",
+                "LDFLAGS",
+                "SDKROOT",
+                "MACOSX_DEPLOYMENT_TARGET",
+                "CMAKE_PREFIX_PATH",
+                "SYMBIAN_SDK_MANIFEST",
+                "SYMBIAN_HOME",
+                "XDG_CONFIG_HOME",
+            )
+        },
+    }
+    digest = hashlib.sha256(
+        json.dumps(key, sort_keys=True).encode()
+    ).hexdigest()
+    entry = directory / digest
+    with (directory / (digest + ".lock")).open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            report = json.loads((entry / "report.json").read_text())
+            artifact = Path(report["artifact"])
+            valid = (
+                artifact.parent == entry
+                and report["reproducible"] is True
+                and Path(report["compile_commands"]).is_file()
+                and hashlib.sha256(artifact.read_bytes()).hexdigest()
+                == report["sha256"]
+                and inspect_proxy(artifact) == report["proxy"]
+                and all(
+                    Path(p).is_file()
+                    and hashlib.sha256(Path(p).read_bytes()).hexdigest() == h
+                    for p, h in report["inputs"].items()
+                )
+            )
+        except (OSError, ValueError, KeyError, StatusError):
+            valid = False
+        if not valid:
+            shutil.rmtree(entry, ignore_errors=True)
+            report = _build_import_proxy(
+                definition, symbols, target_dll, entry, compiler, linker
+            )
+            counts["built"] += 1
+        else:
+            counts["reused"] += 1
+        if definition.read_bytes() != definition_bytes:
+            raise StatusError(Code.ABORTED, "DEF changed during cache lookup")
+        output.mkdir(parents=True, exist_ok=True)
+        destination = output / Path(report["artifact"]).name
+        shutil.copyfile(report["artifact"], destination)
+        report = {
+            **report,
+            "artifact": str(destination),
+            "definition": str(definition),
+            "cache_entry": str(entry),
+        }
+        (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
+        return report
+
 
 _CMAKE = """cmake_minimum_required(VERSION 3.28)
 project(symbian_import_proxy LANGUAGES CXX ASM)
@@ -76,6 +206,31 @@ def build_import_proxy(
     linker: str = "ld.lld",
     headers: Path | None = None,
 ) -> dict:
+    """Builds a verified proxy, reusing it only within a preparation cache."""
+    definition, output = definition.resolve(), output.resolve()
+    if _CACHE.get() is not None and headers is None:
+        if definition.is_relative_to(output):
+            raise StatusError(
+                Code.INVALID_ARGUMENT,
+                "Keep the DEF outside the generated output tree",
+            )
+        return _cached_proxy(
+            definition, symbols, target_dll, output, compiler, linker
+        )
+    return _build_import_proxy(
+        definition, symbols, target_dll, output, compiler, linker, headers
+    )
+
+
+def _build_import_proxy(
+    definition: Path,
+    symbols: list[str],
+    target_dll: str,
+    output: Path,
+    compiler: str = "clang++",
+    linker: str = "ld.lld",
+    headers: Path | None = None,
+) -> dict:
     """Builds a repeatable selected ordinal proxy using native DEF contracts.
 
     Args:
@@ -116,7 +271,7 @@ def build_import_proxy(
         "ninja": _compiler("ninja"),
     }
     versions = {
-        name: run([tool, "--version"], cwd=definition.parent)
+        name: _tool_version(tool, _tool_identity(tool))
         for name, tool in tools.items()
     }
     source = output / "source"
@@ -258,3 +413,15 @@ def build_import_proxy(
     }
     (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     return report
+
+
+# Capture the loaded implementation before waiting on other preparers. Reading
+# source by a code object's old line number after an IDE edit can identify a
+# different function, causing unnecessary misses or recording the wrong recipe.
+_BUILD_RECIPE = hashlib.sha256(
+    (
+        _CMAKE
+        + inspect.getsource(_build_import_proxy)
+        + inspect.getsource(_exports)
+    ).encode()
+).hexdigest()

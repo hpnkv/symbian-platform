@@ -449,11 +449,14 @@ class CameraState final : public MCameraObserver2, public MCameraObserver {
       error_ = KErrCorrupt;
       return;
     }
-    if (const TDisplayMode mode = bitmap.DisplayMode();
-        scoped_consumer_.has_value() &&
-        (mode == EColor16MU || mode == EColor64K)) {
+    const TDisplayMode mode = bitmap.DisplayMode();
+    // Straight-alpha bitmaps have the same B,G,R bytes as EColor16MU. Camera
+    // frames ignore alpha, as the GetPixel fallback below also does. Premultiplied
+    // EColor16MAP still needs that fallback to recover the original RGB values.
+    const bool bgrx = mode == EColor16MU || mode == EColor16MA;
+    if (scoped_consumer_.has_value() && (bgrx || mode == EColor64K)) {
       const TInt stride = CFbsBitmap::ScanLineLength(size.iWidth, mode);
-      if (const TInt pixel_bytes = mode == EColor16MU ? 4 : 2;
+      if (const TInt pixel_bytes = bgrx ? 4 : 2;
           stride < size.iWidth * pixel_bytes ||
           static_cast<std::int64_t>(stride) * size.iHeight > 64 * 1024 * 1024) {
         error_ = KErrCorrupt;
@@ -469,9 +472,8 @@ class CameraState final : public MCameraObserver2, public MCameraObserver {
             .height = size.iHeight,
             .stride = stride,
             .format = static_cast<int>(
-                mode == EColor16MU
-                    ? symbian::api::camera::PixelFormat::kBgrx8888
-                    : symbian::api::camera::PixelFormat::kRgb565),
+                bgrx ? symbian::api::camera::PixelFormat::kBgrx8888
+                     : symbian::api::camera::PixelFormat::kRgb565),
             .mapped = true,
             .sequence = ++sequence_,
             .capture_time_ns =
@@ -520,8 +522,8 @@ class CameraState final : public MCameraObserver2, public MCameraObserver {
       result->stride = stride;
       result->format =
           static_cast<int>(symbian::api::camera::PixelFormat::kRgb565);
-    } else if (bitmap.DisplayMode() == EColor16MU) {
-      const TInt stride = CFbsBitmap::ScanLineLength(size.iWidth, EColor16MU);
+    } else if (bgrx) {
+      const TInt stride = CFbsBitmap::ScanLineLength(size.iWidth, mode);
       if (stride < size.iWidth * 4 ||
           static_cast<std::int64_t>(stride) * size.iHeight > 64 * 1024 * 1024) {
         error_ = KErrCorrupt;

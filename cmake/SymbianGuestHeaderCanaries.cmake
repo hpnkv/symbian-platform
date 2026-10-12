@@ -40,11 +40,19 @@ function(symbian_guest_api_header_canaries root)
     endif()
     file(GLOB internal_headers CONFIGURE_DEPENDS
       "${root}/cpp/symbian/api/${component}/*.h")
+    if(component STREQUAL "system")
+      list(FILTER internal_headers EXCLUDE REGEX "failure_(report_tasks|view_thread)\\.h$")
+    endif()
     if(internal_headers)
       symbian_header_canary(symbian_api_${component}_internal_header_canary
         HEADERS ${internal_headers} LIBRARIES symbian_api_${component})
     endif()
   endforeach()
+  symbian_header_canary(symbian_camera_example_header_canary
+    HEADERS "${root}/examples/camera_app/capture_preferences.h"
+      "${root}/examples/camera_app/viewfinder_presentation.h"
+      "${root}/examples/camera_app/mode_controls.h"
+    LIBRARIES symbian_api_camera symbian_api_display)
   symbian_header_canary(symbian_api_midi_output_public_header_canary
     HEADERS "${root}/cpp/symbian/api/include/symbian/api/media/midi_output.h"
     LIBRARIES symbian_api_midi_output)
@@ -56,6 +64,10 @@ function(symbian_guest_api_header_canaries root)
     LIBRARIES symbian_api_clipboard)
   symbian_header_canary(symbian_api_failure_handler_public_header_canary
     HEADERS "${root}/cpp/symbian/api/include/symbian/api/system/failure_handler.h"
+    LIBRARIES symbian_api_failure_handler)
+  symbian_header_canary(symbian_api_failure_handler_internal_header_canary
+    HEADERS "${root}/cpp/symbian/api/system/failure_report_tasks.h"
+      "${root}/cpp/symbian/api/system/failure_view_thread.h"
     LIBRARIES symbian_api_failure_handler)
   symbian_header_canary(symbian_api_camera_gles2_public_header_canary
     HEADERS "${root}/cpp/symbian/api/include/symbian/api/camera/gles2_frame_backend.h"

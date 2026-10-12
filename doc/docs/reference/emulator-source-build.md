@@ -18,7 +18,7 @@ importer and native tests. The same driver supports both host architectures.
     Install the build tools and Qt modules:
 
     ```sh
-    brew install cmake ninja nasm pkg-config qtbase qttools qtsvg
+    brew install cmake ninja nasm pkg-config qtbase qttools qtsvg qtmultimedia
     python3 scripts/build_emulator.py all \
       --workspace .symbian/emulator-build --qt-prefix "$(brew --prefix)"
     ```
@@ -36,6 +36,7 @@ importer and native tests. The same driver supports both host architectures.
     sudo apt-get update
     sudo apt-get install -y build-essential clang cmake ninja-build pkg-config \
       nasm qt6-base-dev qt6-base-private-dev qt6-tools-dev qt6-svg-dev \
+      qt6-multimedia-dev libqt6multimedia6-plugins \
       libpulse-dev libasound2-dev libvulkan-dev libgl1-mesa-dev libx11-dev \
       libxext-dev libxi-dev libxrandr-dev libxrender-dev xvfb patchelf
     python3 scripts/build_emulator.py all \
@@ -49,7 +50,15 @@ For a separately installed Qt 6.8.3, pass its installation prefix through
 `--qt-prefix`. Use `--jobs N` to control build parallelism. Stages `acquire`,
 `ffmpeg`, `sdl`, `configure`, `build` and `test` can also be run separately.
 The driver creates CMake/Ninja presets and a compilation database in the
-workspace. The frontend disables camera and Lua integration.
+workspace. The frontend enables the Qt Multimedia camera backend and disables
+Lua integration. Missing Qt Multimedia is a configuration error. Release bundles
+include multimedia plugins so camera discovery also works outside the build
+machine's Qt installation.
+
+Camera applications use the host's default video input as guest camera 0.
+On macOS, allow EKA2L1 camera access when prompted; a previous denial can be
+changed in System Settings → Privacy & Security → Camera. Host camera access
+is requested when a guest opens a camera, and requires an available host device.
 
 The release source archive also includes patched sources and configured
 Abseil, JSON and libuv sources. Its `BUILD.md` shows how to rebuild Qt and use

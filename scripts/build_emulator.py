@@ -49,6 +49,8 @@ PATCHES = (
     "belle-secure-random",
     "belle-recv-one-or-more-no-length",
     "distribution-build",
+    "distribution-camera",
+    "camera-aspect",
     "distribution-query",
     "distribution-sdl",
     "distribution-resources",
@@ -336,7 +338,7 @@ def configure(
             workspace / "dependencies/ffmpeg"
         ),
         "QT_DEFAULT_MAJOR_VERSION": "6",
-        "EKA2L1_ENABLE_QT_CAMERA": "OFF",
+        "EKA2L1_ENABLE_QT_CAMERA": "ON",
         "EKA2L1_SCRIPTING_LUA": "OFF",
         "EKA2L1_BUILD_TESTS": "ON",
     }

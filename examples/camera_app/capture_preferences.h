@@ -5,6 +5,7 @@
 #define EXAMPLES_CAMERA_APP_CAPTURE_PREFERENCES_H_
 
 #include <array>
+#include <cstddef>
 
 #include "symbian/api/camera/frame.h"
 #include "symbian/api/display/window_surface.h"
@@ -15,12 +16,14 @@ inline std::array<symbian::api::camera::FrameLayout, 8> CapturePreferences(
     bool portrait) {
   namespace camera = symbian::api::camera;
   const std::array<std::array<int, 2>, 4> sizes =
-      portrait ? std::array<std::array<int, 2>, 4>{
-                     {{480, 640}, {360, 640}, {640, 480}, {320, 240}}}
+      portrait ? std::array<std::array<int, 2>, 4>{{{360, 640},
+                                                    {480, 640},
+                                                    {640, 480},
+                                                    {320, 240}}}
                : std::array<std::array<int, 2>, 4>{
                      {{640, 360}, {640, 480}, {320, 240}, {320, 180}}};
   std::array<camera::FrameLayout, 8> preferences{};
-  for (int i = 0; i < 4; ++i) {
+  for (std::size_t i = 0; i < sizes.size(); ++i) {
     preferences[i * 2] = {.width = sizes[i][0],
                           .height = sizes[i][1],
                           .format = camera::PixelFormat::kBgr565};

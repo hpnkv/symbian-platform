@@ -1,4 +1,4 @@
-# Focused tests for the maintained Qt input patch, without starting a ROM.
+# Focused tests for maintained Qt input and camera patches, without a ROM.
 cmake_minimum_required(VERSION 3.24)
 project(symbian_emulator_input_tests LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
@@ -23,3 +23,9 @@ target_link_libraries(trackpad_scroll_test PRIVATE Qt6::Widgets Qt6::OpenGL
 enable_testing()
 add_test(NAME trackpad_scroll COMMAND trackpad_scroll_test)
 set_tests_properties(trackpad_scroll PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+add_executable(camera_image_test camera_image_test.cc)
+target_include_directories(camera_image_test PRIVATE
+  ${EKA2L1_SOURCE}/src/emu/drivers/src/camera/backend/qt)
+target_link_libraries(camera_image_test PRIVATE Qt6::Gui GTest::gtest_main)
+add_test(NAME camera_image COMMAND camera_image_test)

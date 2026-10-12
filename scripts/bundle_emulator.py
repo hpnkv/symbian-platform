@@ -26,6 +26,8 @@ PLUGINS = (
     "platformthemes",
     "styles",
     "imageformats",
+    "multimedia",
+    "permissions",
     "iconengines",
     "tls",
     "xcbglintegrations",
@@ -233,6 +235,8 @@ def linux_bundle(args, output):
         if directory.is_dir():
             for plugin in directory.glob("*.so"):
                 closure.copy(plugin, output / "plugins" / group / plugin.name)
+    if not list((output / "plugins/multimedia").glob("*.so")):
+        raise RuntimeError("Qt Multimedia backend plugin is missing")
     if not (output / "plugins/platforms/libqxcb.so").is_file():
         raise RuntimeError("Qt XCB platform plugin is missing")
     # Qt's OpenSSL backend loads these with dlopen, so ldd cannot find them.

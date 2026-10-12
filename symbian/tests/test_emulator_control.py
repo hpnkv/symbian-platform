@@ -84,3 +84,10 @@ def test_cli_status_requires_explicit_saved_flag(tmp_path, capsys):
     assert json.loads(capsys.readouterr().out)["status"]["code"] == 14
     assert main(args + ["--saved"]) == 0
     assert json.loads(capsys.readouterr().out)["result"]["process_exits"] == []
+
+
+@pytest.mark.parametrize("mode", [-1, 256, True, 1.5, "1", None])
+def test_screen_mode_rejects_invalid_index_before_transport(tmp_path, mode):
+    with pytest.raises(StatusError) as error:
+        Control(tmp_path / "control.sock").screen_mode(mode)
+    assert error.value.code == Code.INVALID_ARGUMENT

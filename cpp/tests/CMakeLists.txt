@@ -63,6 +63,24 @@ symbian_native_library(symbian_camera_frame_test)
 add_test(NAME symbian_camera_frame_test COMMAND symbian_camera_frame_test)
 set_tests_properties(symbian_camera_frame_test PROPERTIES TIMEOUT 15)
 
+add_library(symbian_camera_presentation_model INTERFACE)
+target_include_directories(symbian_camera_presentation_model INTERFACE
+  "${CMAKE_SOURCE_DIR}/examples/camera_app"
+  "${CMAKE_SOURCE_DIR}/cpp/symbian/api/include")
+target_link_libraries(symbian_camera_presentation_model INTERFACE
+  absl::statusor absl::status absl::nullability)
+add_executable(symbian_camera_presentation_test camera_presentation_test.cc
+  ../symbian/api/camera/frame.cc)
+target_link_libraries(symbian_camera_presentation_test PRIVATE
+  symbian_camera_presentation_model GTest::gtest_main)
+symbian_native_library(symbian_camera_presentation_test)
+add_test(NAME symbian_camera_presentation_test
+  COMMAND symbian_camera_presentation_test)
+symbian_header_canary(symbian_camera_presentation_header_canary
+  HEADERS "${CMAKE_SOURCE_DIR}/examples/camera_app/viewfinder_presentation.h"
+    "${CMAKE_SOURCE_DIR}/examples/camera_app/mode_controls.h"
+  LIBRARIES symbian_camera_presentation_model)
+
 add_executable(symbian_status_test status_test.cc)
 target_link_libraries(symbian_status_test PRIVATE symbian::status GTest::gtest_main)
 symbian_native_library(symbian_status_test)
@@ -109,6 +127,19 @@ symbian_native_library(symbian_device_api_test)
 add_test(NAME symbian_device_api_test COMMAND symbian_device_api_test)
 set_tests_properties(symbian_device_api_test PROPERTIES TIMEOUT 15)
 if(TARGET symbian_host_primitives)
+  add_executable(symbian_failure_report_tasks_test failure_report_tasks_test.cc
+    ../symbian/api/system/failure_report_tasks.cc)
+  target_include_directories(symbian_failure_report_tasks_test PRIVATE
+    "${CMAKE_SOURCE_DIR}/cpp")
+  target_link_libraries(symbian_failure_report_tasks_test PRIVATE
+    symbian::concurrency GTest::gtest_main)
+  symbian_native_library(symbian_failure_report_tasks_test)
+  symbian_header_canary(symbian_failure_report_tasks_host_header_canary
+    HEADERS "${CMAKE_SOURCE_DIR}/cpp/symbian/api/system/failure_report_tasks.h"
+    LIBRARIES symbian::concurrency)
+  add_test(NAME symbian_failure_report_tasks_test
+    COMMAND symbian_failure_report_tasks_test)
+  set_tests_properties(symbian_failure_report_tasks_test PROPERTIES TIMEOUT 15)
   add_executable(symbian_concurrency_fiber_test concurrency_fiber_test.cc)
   target_link_libraries(symbian_concurrency_fiber_test PRIVATE
     symbian::concurrency GTest::gtest_main)

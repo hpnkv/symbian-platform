@@ -1,0 +1,71 @@
+--- a/src/emu/drivers/src/camera/backend/qt/camera_qt.cpp
++++ b/src/emu/drivers/src/camera/backend/qt/camera_qt.cpp
+@@ -18,6 +18,7 @@
+  */
+ 
+ #include <drivers/camera/backend/qt/camera_qt.h>
++#include "camera_image_qt.h"
+ #include <drivers/camera/camera_pixel.h>
+ 
+ #include <common/log.h>
+@@ -225,26 +226,9 @@
+             return true;
+         }
+ 
+-        // Stretch rather than letterbox: the guest scales the frame over its own
+-        // window, and the two stretches cancel.
+         bool image_to_guest(QImage image, const int dest_width, const int dest_height,
+             const int rotation_ccw_deg, const frame_format format, std::vector<std::uint8_t> &out) {
+-            if (image.isNull() || (dest_width <= 0) || (dest_height <= 0)) {
+-                return false;
+-            }
+-
+-            const int rotation = ((rotation_ccw_deg % 360) + 360) % 360;
+-
+-            if (rotation != 0) {
+-                // QTransform rotates clockwise in y-down image space.
+-                image = image.transformed(QTransform().rotate(-rotation), Qt::FastTransformation);
+-            }
+-
+-            if ((image.width() != dest_width) || (image.height() != dest_height)) {
+-                image = image.scaled(dest_width, dest_height, Qt::IgnoreAspectRatio,
+-                    Qt::SmoothTransformation);
+-            }
+-
++            image = prepare_camera_image(std::move(image), dest_width, dest_height, rotation_ccw_deg);
+             if (image.isNull()) {
+                 return false;
+             }
+--- /dev/null
++++ b/src/emu/drivers/src/camera/backend/qt/camera_image_qt.h
+@@ -0,0 +1,30 @@
++/*
++ * Copyright (c) 2026 EKA2L1 Team.
++ * SPDX-License-Identifier: GPL-3.0-or-later
++ */
++#pragma once
++
++#include <QImage>
++#include <QTransform>
++
++namespace eka2l1::drivers::camera {
++    // Preserve one complete source axis. The guest may request a portrait buffer
++    // from a landscape host camera; stretching here cannot be undone by its UI.
++    inline QImage prepare_camera_image(QImage image, const int width, const int height,
++        const int rotation_ccw_deg) {
++        if (image.isNull() || width <= 0 || height <= 0) {
++            return {};
++        }
++        const int rotation = ((rotation_ccw_deg % 360) + 360) % 360;
++        if (rotation != 0) {
++            image = image.transformed(QTransform().rotate(-rotation), Qt::FastTransformation);
++        }
++        image = image.scaled(width, height, Qt::KeepAspectRatioByExpanding,
++            Qt::SmoothTransformation);
++        if (image.isNull()) {
++            return {};
++        }
++        return image.copy((image.width() - width) / 2, (image.height() - height) / 2,
++            width, height);
++    }
++}

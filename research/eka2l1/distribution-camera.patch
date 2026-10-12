@@ -1,0 +1,63 @@
+diff --git a/src/emu/CMakeLists.txt b/src/emu/CMakeLists.txt
+--- a/src/emu/CMakeLists.txt
++++ b/src/emu/CMakeLists.txt
+@@ -23,15 +23,10 @@
+     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-invalid-offsetof")
+ endif ()
+ 
+-# Qt Multimedia backs the desktop camera. It is optional -- a build without it
+-# keeps the null camera -- and is looked up here, the scope both drivers/ and
+-# qt/ inherit the imported target from.
++# An enabled desktop camera must not silently become the null backend when a
++# build dependency is missing. Look it up in the common drivers/ and qt/ scope.
+ if (EKA2L1_ENABLE_QT_CAMERA AND NOT ANDROID AND NOT EKA2L1_IOS)
+-    find_package(Qt6 COMPONENTS Multimedia QUIET)
+-
+-    if (NOT Qt6Multimedia_FOUND)
+-        message(STATUS "Qt Multimedia was not found, the desktop camera backend will not be built")
+-    endif ()
++    find_package(Qt6 REQUIRED COMPONENTS Multimedia)
+ endif ()
+ 
+ add_subdirectory(bridge)
+diff --git a/src/emu/kernel/src/libmanager.cpp b/src/emu/kernel/src/libmanager.cpp
+--- a/src/emu/kernel/src/libmanager.cpp
++++ b/src/emu/kernel/src/libmanager.cpp
+@@ -248,6 +248,10 @@
+ 
+         if (force_code_addr != 0) {
+             info.code_load_addr = force_code_addr;
++            // E32 stores an offset; a ROM-backed codeseg expects an address.
++            if (info.exception_descriptor != 0) {
++                info.exception_descriptor += force_code_addr;
++            }
+         }
+ 
+         codeseg_ptr cs = kern->create<kernel::codeseg>(get_e32_codeseg_name_from_path(path), info);
+diff --git a/src/emu/qt/CMakeLists.txt b/src/emu/qt/CMakeLists.txt
+--- a/src/emu/qt/CMakeLists.txt
++++ b/src/emu/qt/CMakeLists.txt
+@@ -320,7 +320,7 @@
+ if(APPLE)
+     set_target_properties(eka2l1_qt PROPERTIES
+        MACOSX_BUNDLE True
+-       MACOSX_BUNDLE_GUI_IDENTIFIER my.github.eka2l1
++       MACOSX_BUNDLE_GUI_IDENTIFIER io.github.hpnkv.symbian.emulator
+        MACOSX_BUNDLE_BUNDLE_VERSION 0.0.4.2
+        MACOSX_BUNDLE_SHORT_VERSION_STRING 0.0.4.2
+        MACOSX_BUNDLE_ICON_FILE duck.icns
+@@ -329,6 +329,14 @@
+        XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "--deep --options=runtime"
+        OUTPUT_NAME EKA2L1
+     )
++
++    # SDK background sessions launch a symlink outside the app bundle. Embed
++    # the same privacy declarations so Qt/macOS can request camera permission
++    # through that launch path too. CMake generates this plist at configure time.
++    set(camera_info_plist "${CMAKE_BINARY_DIR}/bin/EKA2L1.app/Contents/Info.plist")
++    target_link_options(eka2l1_qt PRIVATE
++        "LINKER:-sectcreate,__TEXT,__info_plist,${camera_info_plist}")
++    set_property(TARGET eka2l1_qt APPEND PROPERTY LINK_DEPENDS "${camera_info_plist}")
+ 
+     # Copy Qt plugins into the bundle. Without the platform plugin the app exits
+     # at startup with "no Qt platform plugin could be initialized"; qt6's

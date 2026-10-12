@@ -65,6 +65,12 @@ class Control:
         """Queues a named guest key press or release."""
         return self._request({"operation": "key", "key": key, "action": action})
 
+    def screen_mode(self, mode: int) -> dict:
+        """Switches the emulator display to a device's zero-based mode index."""
+        if type(mode) is not int or not 0 <= mode <= 255:
+            raise StatusError(Code.INVALID_ARGUMENT, "Invalid screen mode")
+        return self._request({"operation": "screen_mode", "mode": mode})
+
     def close_focused_task(self) -> dict:
         """Request normal AppArc shutdown of the focused window group."""
         return self._request({"operation": "task_close"})

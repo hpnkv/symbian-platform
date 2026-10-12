@@ -27,7 +27,11 @@ target_link_libraries(symbian_api_clipboard PUBLIC Symbian::AbseilStatusOr
   "${SYMBIAN_SDK_PREFIX}/proxies/bafl/bafl.dso"
   "${SYMBIAN_SDK_PREFIX}/proxies/etext/etext.dso")
 
-add_library(symbian_api_failure_handler STATIC failure_handler.cc)
+add_library(symbian_api_failure_handler STATIC failure_handler.cc
+  failure_report_tasks.cc failure_report_workers.cc failure_view_thread.cc)
+symbian_enable_native_leaves(symbian_api_failure_handler
+  SOURCES failure_view_thread.cc)
+set_property(SOURCE failure_view_thread.cc APPEND PROPERTY COMPILE_OPTIONS -fno-rtti)
 target_compile_features(symbian_api_failure_handler PUBLIC cxx_std_20)
 target_compile_options(symbian_api_failure_handler PRIVATE
   -fno-pic -fno-exceptions -fno-rtti)
@@ -35,4 +39,10 @@ target_include_directories(symbian_api_failure_handler PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/../include")
 target_link_libraries(symbian_api_failure_handler PUBLIC
   symbian_api_clipboard symbian_api_system symbian_api_display
-  symbian_api_storage)
+  symbian_api_storage Symbian::Fibers)
+if(TARGET absl::log)
+  # The source workspace uses Abseil CMake targets; installed SDKs already
+  # carry the logging closure in Symbian::AbseilStatusOr.
+  target_link_libraries(symbian_api_failure_handler PUBLIC
+    absl::log absl::check absl::log_initialize absl::status_builder)
+endif()

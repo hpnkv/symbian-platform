@@ -90,3 +90,152 @@ def test_changing_input_links_never_writes_into_source_files(tmp_path):
     assert not (output / "header.h").is_symlink()
     assert not (output / "nested").is_symlink()
     assert (output / "header.h").read_text() == "generated header"
+
+
+def test_stage_reuse_is_scoped_and_preserves_dependency_mtimes(tmp_path):
+    from symbian.project.input_cache import InputCache
+
+    sources = tmp_path / "sources"
+    sources.mkdir()
+    definition = sources / "test.def"
+    patch = sources / "abseil.patch"
+    definition.write_text("Function @ 1")
+    patch.write_text("initial patch")
+    output = tmp_path / "output"
+    calls = []
+
+    def prepare():
+        cache = InputCache(tmp_path / "cache")
+        for name, source in (("proxy", definition), ("abseil", patch)):
+
+            def build(staged, name=name, source=source):
+                calls.append(name)
+                (staged / name).write_text(source.read_text())
+
+            cache.stage(name, cache.snapshot([source]), output, build)
+        cache.save()
+
+    prepare()
+    stamp = (output / "proxy").stat().st_mtime_ns
+    prepare()
+    assert calls == ["proxy", "abseil"]
+    patch.write_text("changed patch")
+    prepare()
+    assert calls == ["proxy", "abseil", "abseil"]
+    assert (output / "proxy").stat().st_mtime_ns == stamp
+    definition.write_text("Function @ 2")
+    prepare()
+    assert calls[-1] == "proxy"
+    assert (output / "proxy").read_text() == "Function @ 2"
+    (output / "proxy").write_text("corrupted")
+    prepare()
+    assert calls[-1] == "proxy"
+    assert (output / "proxy").read_text() == "Function @ 2"
+
+
+def test_snapshots_notice_preserved_mtime_additions_and_removals(tmp_path):
+    import os
+
+    from symbian.project.input_cache import InputCache
+
+    source = tmp_path / "source"
+    source.mkdir()
+    header = source / "header.h"
+    header.write_text("old")
+    cache = InputCache(tmp_path / "cache")
+    original = cache.snapshot([source])
+    cache.save()
+    timestamp = header.stat().st_mtime_ns
+    header.write_text("new")
+    os.utime(header, ns=(timestamp, timestamp))
+    cache = InputCache(tmp_path / "cache")
+    changed = cache.snapshot([source])
+    assert changed != original
+    added = source / "added.h"
+    added.write_text("new header")
+    assert cache.snapshot([source]) != changed
+    added.unlink()
+    assert cache.snapshot([source]) == changed
+    header.unlink()
+    assert cache.snapshot([source]) not in (original, changed)
+
+
+def test_failed_stage_keeps_previous_outputs_and_retry_is_not_cached(tmp_path):
+    import pytest
+
+    from symbian.project.input_cache import InputCache
+
+    cache = InputCache(tmp_path / "cache")
+    output = tmp_path / "output"
+    cache.stage(
+        "headers",
+        "before",
+        output,
+        lambda stage: (stage / "old.h").write_text("old"),
+    )
+    cache.save()
+
+    def fail(stage):
+        (stage / "new.h").write_text("partial")
+        raise ValueError("Input validation failed")
+
+    with pytest.raises(ValueError, match="validation"):
+        cache.stage("headers", "after", output, fail)
+    assert (output / "old.h").read_text() == "old"
+    assert not (output / "new.h").exists()
+    cache = InputCache(tmp_path / "cache")
+    assert cache.stage(
+        "headers",
+        "after",
+        output,
+        lambda stage: (stage / "new.h").write_text("complete"),
+    )
+    assert not (output / "old.h").exists()
+    assert (output / "new.h").read_text() == "complete"
+
+
+def test_live_cpp_edits_leave_foreign_header_inputs_current(tmp_path):
+    from symbian.project.input_cache import InputCache
+
+    source = tmp_path / "owned"
+    source.mkdir()
+    (source / "public.h").write_text("API")
+    implementation = source / "implementation.cc"
+    implementation.write_text("before")
+    cache = InputCache(tmp_path / "cache")
+    before = cache.snapshot(cache.select(source, ("*.h",)))
+    cache.save()
+    implementation.write_text("after")
+    (source / "new.cc").write_text("new implementation")
+    cache = InputCache(tmp_path / "cache")
+    assert cache.snapshot(cache.select(source, ("*.h",))) == before
+    (source / "new.h").write_text("new API")
+    assert cache.snapshot(cache.select(source, ("*.h",))) != before
+    (source / "public.h").unlink()
+    assert cache.snapshot(cache.select(source, ("*.h",))) != before
+    cmake = tmp_path / "dependencies.cmake"
+    cache.cmake_dependencies(cmake)
+    assert "CONFIGURE_DEPENDS" in cmake.read_text()
+    assert "*.h" in cmake.read_text()
+    assert "implementation.cc" not in cmake.read_text()
+
+
+def test_changed_copied_bytes_get_fresh_ninja_timestamp(tmp_path):
+    import os
+
+    from symbian.project.input_cache import InputCache
+
+    cache = InputCache(tmp_path / "cache")
+    output = tmp_path / "output"
+
+    def build(staged):
+        file = staged / "foreign.h"
+        file.write_text("new bytes from an older archive")
+        os.utime(file, (1, 1))
+
+    started = time.time_ns()
+    assert cache.stage("headers", "changed", output, build)
+    assert (output / "foreign.h").stat().st_mtime_ns >= started
+    stamp = (output / "foreign.h").stat().st_mtime_ns
+    assert not cache.stage("headers", "changed", output, build)
+    assert (output / "foreign.h").stat().st_mtime_ns == stamp

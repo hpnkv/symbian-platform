@@ -15,6 +15,7 @@
 #include <absl/status/status_macros.h>
 
 #include "capture_preferences.h"
+#include "mode_controls.h"
 #include "symbian/api/camera/camera.h"
 #include "symbian/api/camera/camera_stream.h"
 #include "symbian/api/camera/frame.h"
@@ -24,6 +25,7 @@
 #include "symbian/api/time/monotonic_clock.h"
 #include "symbian/api/time/sleep.h"
 #include "trace.h"
+#include "viewfinder_presentation.h"
 
 #if defined(SYMBIAN_CAMERA_GPU_PROBE)
 #include "gpu_probe.h"
@@ -83,12 +85,32 @@ void DrawStripe(const display::Rgb565Frame& frame, int first_x, int last_x,
   }
 }
 
+void DrawControls(display::Rgb565Frame frame, display::DisplayRotation rotation,
+                  ViewfinderMode selected) {
+  DrawModeButtons(
+      frame.size, rotation, selected,
+      [frame](int x, int y, int width, int height, std::uint32_t color) {
+        const std::uint16_t packed = ((color >> 8) & 0xf800) |
+                                     ((color >> 5) & 0x07e0) |
+                                     ((color >> 3) & 0x001f);
+        const int right = std::clamp(x + width, 0, frame.size.width);
+        const int bottom = std::clamp(y + height, 0, frame.size.height);
+        for (int row = std::max(y, 0); row < bottom; ++row) {
+          for (int column = std::max(x, 0); column < right; ++column) {
+            const int offset = row * frame.pitch_bytes + column * 2;
+            frame.pixels[offset] = static_cast<std::byte>(packed & 255);
+            frame.pixels[offset + 1] = static_cast<std::byte>(packed >> 8);
+          }
+        }
+      });
+}
+
 class SoftwareFrameConsumer final {
  public:
   SoftwareFrameConsumer(display::WindowSurface* absl_nonnull window,
                         camera::ResampleFilter* absl_nonnull filter,
-                        display::DisplayRotation opening_rotation)
-      : window_(window), filter_(filter), opening_rotation_(opening_rotation) {}
+                        ViewfinderPresentation* absl_nonnull viewfinder)
+      : window_(window), filter_(filter), viewfinder_(viewfinder) {}
 
   camera::FrameConsumer Borrow() {
     return {.consume = [this](const camera::FrameView& source) {
@@ -105,34 +127,28 @@ class SoftwareFrameConsumer final {
   }
 
   absl::Status Write(display::Rgb565Frame frame) {
-    const camera::FrameRotation rotation =
-        PresentationRotation(window_->rotation(), opening_rotation_);
-    const bool quarter_turn = rotation == camera::FrameRotation::kClockwise90 ||
-                              rotation == camera::FrameRotation::kClockwise270;
     ABSL_ASSIGN_OR_RETURN(
-        auto fitted,
-        camera::CenteredAspectFit(
-            quarter_turn ? source_->layout.height : source_->layout.width,
-            quarter_turn ? source_->layout.width : source_->layout.height,
-            frame.size.width, frame.size.height));
-    std::fill(frame.pixels.begin(), frame.pixels.end(), std::byte{0});
+        auto geometry,
+        viewfinder_->Describe(source_->layout.width, source_->layout.height,
+                              window_->rotation()));
+    ABSL_ASSIGN_OR_RETURN(auto source,
+                          camera::CropFrameView(*source_, geometry.crop));
     camera::MutableFrameView output;
-    output.layout = {.width = fitted.width,
-                     .height = fitted.height,
+    output.layout = {.width = frame.size.width,
+                     .height = frame.size.height,
                      .format = camera::PixelFormat::kRgb565,
                      .stride_bytes = {frame.pitch_bytes, 0, 0}};
-    const std::size_t offset =
-        static_cast<std::size_t>(fitted.y) * frame.pitch_bytes +
-        static_cast<std::size_t>(fitted.x) * 2;
-    output.planes[0] = frame.pixels.subspan(offset);
-    return camera::TransformFrame(*source_, output, *filter_, nullptr,
-                                  rotation);
+    output.planes[0] = frame.pixels;
+    ABSL_RETURN_IF_ERROR(camera::TransformFrame(source, output, *filter_,
+                                                nullptr, geometry.orientation));
+    DrawControls(frame, window_->rotation(), viewfinder_->mode());
+    return absl::OkStatus();
   }
 
  private:
   display::WindowSurface* absl_nonnull window_;
   camera::ResampleFilter* absl_nonnull filter_;
-  display::DisplayRotation opening_rotation_;
+  ViewfinderPresentation* absl_nonnull viewfinder_;
   const camera::FrameView* absl_nullable source_ = nullptr;
 };
 
@@ -144,14 +160,13 @@ absl::Status RunWindow(display::WindowSurface* absl_nonnull window) {
   const bool discovery_ok = inventory.ok();
   const bool camera_present = inventory.ok() && inventory->available_count > 0;
   camera::CameraStream stream;
-  const display::DisplayRotation opening_rotation = window->rotation();
-  const auto preferences =
-      CapturePreferences(window->size().height >= window->size().width);
+  ViewfinderPresentation viewfinder(window->rotation(), window->size());
+  Trace("software: mode rear");
   if (camera_present) {
     Trace("software: stream open begin");
   }
   if (camera_present) {
-    ABSL_RETURN_IF_ERROR(stream.Open(0, preferences));
+    ABSL_RETURN_IF_ERROR(stream.Open(0, viewfinder.preferences()));
   }
   const bool live = camera_present;
   Trace(live ? "software: stream open done" : "software: stream unavailable");
@@ -168,10 +183,20 @@ absl::Status RunWindow(display::WindowSurface* absl_nonnull window) {
       display::WindowSurface::PrimaryRefreshRateHz().value_or(30);
   time::FramePacer pacer(std::min(refresh, std::uint32_t{30}));
   camera::ResampleFilter filter = camera::ResampleFilter::kNearest;
-  SoftwareFrameConsumer consumer(window, &filter, opening_rotation);
+  SoftwareFrameConsumer consumer(window, &filter, &viewfinder);
   std::uint64_t sequence = 0;
   bool foreground = true;
   bool running = true;
+  bool restart_pending = false;
+  const auto select_mode = [&](ViewfinderMode mode) {
+    if (mode == viewfinder.mode()) {
+      return;
+    }
+    viewfinder.Configure(mode, window->rotation(), window->size());
+    restart_pending = true;
+    Trace(mode == ViewfinderMode::kRearCamera ? "software: mode rear"
+                                              : "software: mode rotate");
+  };
   while (running) {
     for (int count = 0; count < 64; ++count) {
       ABSL_ASSIGN_OR_RETURN(auto input, window->PollInput());
@@ -180,6 +205,11 @@ absl::Status RunWindow(display::WindowSurface* absl_nonnull window) {
       }
       switch (input->kind) {
         case display::WindowInputKind::kPointerDown:
+          if (auto selected = HitModeButton(window->size(), window->rotation(),
+                                            input->x, input->y)) {
+            select_mode(*selected);
+            break;
+          }
           filter = filter == camera::ResampleFilter::kNearest
                        ? camera::ResampleFilter::kBilinear
                        : camera::ResampleFilter::kNearest;
@@ -188,6 +218,10 @@ absl::Status RunWindow(display::WindowSurface* absl_nonnull window) {
           if (input->key == display::WindowKey::kEscape) {
             Trace("software: escape key");
             running = false;
+          } else if (input->key == display::WindowKey::kLeft) {
+            select_mode(ViewfinderMode::kRearCamera);
+          } else if (input->key == display::WindowKey::kRight) {
+            select_mode(ViewfinderMode::kRotateView);
           } else if (input->key == display::WindowKey::kSelect ||
                      input->key == display::WindowKey::kEnter) {
             filter = filter == camera::ResampleFilter::kNearest
@@ -226,6 +260,12 @@ absl::Status RunWindow(display::WindowSurface* absl_nonnull window) {
     if (!running) {
       break;
     }
+    if (restart_pending) {
+      stream.Close();
+      capturing = false;
+      received_frame = false;
+      restart_pending = false;
+    }
     if (!foreground) {
       if (capturing) {
         Trace("software: capture suspend begin");
@@ -239,7 +279,7 @@ absl::Status RunWindow(display::WindowSurface* absl_nonnull window) {
     }
     if (live && !capturing) {
       Trace("software: capture resume begin");
-      ABSL_RETURN_IF_ERROR(stream.Open(0, preferences));
+      ABSL_RETURN_IF_ERROR(stream.Open(0, viewfinder.preferences()));
       Trace("software: capture resume done");
       capturing = true;
       opening_time = time::MonotonicClock::NowNanoseconds();
@@ -269,6 +309,16 @@ absl::Status RunWindow(display::WindowSurface* absl_nonnull window) {
       return absl::DeadlineExceededError("camera capture timed out");
     }
     if (live && !captured) {
+      if (!received_frame) {
+        ABSL_RETURN_IF_ERROR(window->UpdateRgb565Frame(
+            {.write = [&](display::Rgb565Frame waiting) {
+              std::fill(waiting.pixels.begin(), waiting.pixels.end(),
+                        std::byte{0});
+              DrawControls(waiting, window->rotation(), viewfinder.mode());
+              return absl::OkStatus();
+            }}));
+        ABSL_RETURN_IF_ERROR(window->Present());
+      }
       time::SleepFor(pacer.NextDelayNanoseconds());
       continue;
     }
@@ -295,6 +345,7 @@ absl::Status RunWindow(display::WindowSurface* absl_nonnull window) {
       DrawStripe(*frame, third, third * 2,
                  filter == camera::ResampleFilter::kNearest ? 0x001f : 0x07ff);
       DrawStripe(*frame, third * 2, frame->size.width, 0x7bef);
+      DrawControls(*frame, window->rotation(), viewfinder.mode());
     }
     ABSL_RETURN_IF_ERROR(window->Present());
     if (sequence < 8) {

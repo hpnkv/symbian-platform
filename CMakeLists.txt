@@ -33,7 +33,7 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
       abi_probe abseil_allocator_probe abseil_status_probe
       connectivity_probe http_probe cxx20_probe cxx20_module_probe dll_data_probe
       dll_lifecycle_probe dll_probe e32_probe entropy_probe import_probe
-      mbedtls_dll_probe pointer_probe runtime_probe)
+      failure_handler_probe mbedtls_dll_probe pointer_probe runtime_probe)
   file(GLOB existing_probe_directories CONFIGURE_DEPENDS
        RELATIVE "${CMAKE_SOURCE_DIR}/probes"
        "${CMAKE_SOURCE_DIR}/probes/*_probe")
@@ -223,6 +223,8 @@ if(SYMBIAN_INDEX_GUEST_PROBES)
     endif()
   endforeach()
   add_subdirectory(probes/native_pthread_probe EXCLUDE_FROM_ALL)
+  add_subdirectory(probes/failure_handler_probe EXCLUDE_FROM_ALL)
+  add_dependencies(symbian_probe_index failure_handler_probe)
   include(cmake/SymbianGuestHeaderCanaries.cmake)
   symbian_guest_shared_header_canaries("${CMAKE_SOURCE_DIR}")
   symbian_index_remaining_native(symbian_index_remaining_guest

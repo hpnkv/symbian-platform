@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 from symbian import toolchain
 from symbian.process import run
 from symbian.sdk import build_import_proxy
+from symbian.sdk.proxies import import_proxy_cache
 from symbian.status import Code, StatusError
 from symbian.toolchain.host_tools import llvm_tool
 
@@ -663,6 +664,25 @@ def stage_headers(workspace: Path, output: Path, compiler: Path) -> None:
 
 
 def stage_imports(
+    workspace: Path,
+    output: Path,
+    compiler: Path,
+    linker: Path,
+    progress: Callable[[str], None] | None = None,
+) -> None:
+    """Stages imports using independent, content-addressed proxy entries."""
+    with import_proxy_cache(
+        workspace / ".symbian/cache/import-proxies"
+    ) as counts:
+        _stage_imports(workspace, output, compiler, linker, progress)
+    if progress:
+        progress(
+            f"import proxies: {counts['built']} built, "
+            f"{counts['reused']} reused"
+        )
+
+
+def _stage_imports(
     workspace: Path,
     output: Path,
     compiler: Path,

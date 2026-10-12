@@ -2,14 +2,18 @@
 
 import argparse
 import fcntl
+import json
 import shutil
-import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+from symbian.native import require_native
 from symbian.process import run
+from symbian.project.input_cache import InputCache
 from symbian.project.sdk import stage_headers, stage_imports
+from symbian.project.workspace_sources import stage_sources
+from symbian.status import Code, StatusError
 from symbian.toolchain.host_tools import llvm_tool
 
 
@@ -110,17 +114,6 @@ def _prepare(root: Path) -> Path:
     """
     root = root.resolve()
     output = root / ".symbian/workspace-inputs"
-    dependencies = [root / "symbian/project/sdk.py", Path(__file__)]
-    dependencies.append(root / "symbian/project/graphics.py")
-    dependencies.append(root / "symbian/project/qt.py")
-    dependencies.append(root / "symbian/project/qtmobility.py")
-    dependencies.append(root / "symbian/project/native_surface.py")
-    dependencies += list((root / "research/native-sdk").glob("*.json"))
-    dependencies += list((root / "research/portable").glob("*.json"))
-    dependencies.append(root / "symbian/project/portable.py")
-    dependencies += list((root / "symbian/toolchain/cmake").glob("*"))
-    dependencies += list((root / "research/abseil").glob("*.patch"))
-    dependencies += list((root / ".symbian/gui-sdk/include").glob("*"))
     compiler = llvm_tool("clang++")
     linker = llvm_tool("ld.lld", sibling=compiler.parent)
     tools = {
@@ -134,70 +127,28 @@ def _prepare(root: Path) -> Path:
             "clang-scan-deps",
         )
     }
-    stamp = output / ".prepared"
-    tools_match = all(
-        (output / "bin" / name).is_symlink()
-        and (output / "bin" / name).readlink() == tool
-        for name, tool in tools.items()
+    output.mkdir(parents=True, exist_ok=True)
+    cache = InputCache(root / ".symbian/cache/workspace")
+    resource = Path(
+        run([str(compiler), "-print-resource-dir"], cwd=root).strip()
     )
-    if (
-        tools_match
-        and stamp.exists()
-        and all(
-            path.stat().st_mtime <= stamp.stat().st_mtime
-            for path in dependencies
-            if path.is_file()
-        )
-    ):
-        _progress(root, "cached inputs are current")
-        return output
-    _progress(root, "refreshing headers and frozen import interfaces")
-    output.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(dir=output.parent) as directory:
-        staged = Path(directory) / "inputs"
-        staged.mkdir()
-        (staged / "bin").mkdir()
-        for name, tool in tools.items():
-            (staged / "bin" / name).symlink_to(tool)
+    sources = stage_sources(root, cache, resource)
+    # Tool replacements invalidate their dependent stages, not patched Abseil.
+    tool_inputs = (
+        list(tools.values())
+        + [Path(require_native().__file__)]
+        + [Path(shutil.which(name)) for name in ("cmake", "ninja", "perl")]
+    )
+    tool_key = cache.snapshot(tool_inputs)
+    source_keys = {
+        name: cache.snapshot(paths) for name, paths in sources.items()
+    }
+    keys = dict(source_keys)
+    keys["headers"] += tool_key
+    keys["imports"] += tool_key
+
+    def headers(staged):
         stage_headers(root, staged, compiler)
-        _progress(root, "public headers staged")
-        stage_imports(
-            root,
-            staged,
-            compiler,
-            linker,
-            progress=lambda message: _progress(root, message),
-        )
-        (staged / "cmake").mkdir()
-        for directory in (
-            "symbian/toolchain/cmake",
-            "symbian/project/templates",
-        ):
-            for module in (root / directory).glob("*"):
-                if module.is_file():
-                    (staged / "cmake" / module.name).symlink_to(module)
-        abseil = staged / "abseil"
-        run(
-            [
-                "git",
-                "clone",
-                "--quiet",
-                "--no-hardlinks",
-                str(root / "research/upstream/abseil-cpp"),
-                str(abseil),
-            ],
-            cwd=root,
-        )
-        for name in (
-            "symbian-platform.patch",
-            "symbian-low-level-alloc.patch",
-            "symbian-container-no-elf-tls.patch",
-        ):
-            run(
-                ["git", "apply", str(root / "research/abseil" / name)],
-                cwd=abseil,
-            )
-        shutil.rmtree(abseil / ".git")
         # SDK-owned public headers remain live source inputs in an IDE.
         for relative, directory in (
             ("include/symbian", "cpp/symbian/concurrency/common/symbian"),
@@ -220,9 +171,119 @@ def _prepare(root: Path) -> Path:
         runtime_header = staged / "include/symbian/runtime.h"
         runtime_header.unlink()
         runtime_header.symlink_to(root / "cpp/symbian/runtime/abi.h")
-        _publish(staged, output)
-        stamp.touch()
-    _progress(root, "source workspace inputs ready")
+
+    def imports(staged):
+        # Native validation also checks the public header closure.
+        # Borrow those outputs for validation without assigning their ownership
+        # to this stage or rebuilding them when only a frozen DEF changes.
+        borrowed = cache.state["stages"]["headers"]["files"]
+        for relative in borrowed:
+            source, destination = output / relative, staged / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, destination)
+        stage_imports(
+            root,
+            staged,
+            compiler,
+            linker,
+            progress=lambda message: _progress(root, message),
+        )
+        for report in (staged / "proxies").glob("*/report.json"):
+            data = json.loads(report.read_text())
+            for field in ("artifact", "definition"):
+                path = Path(data[field])
+                if path.is_relative_to(staged):
+                    data[field] = str(output / path.relative_to(staged))
+            report.write_text(json.dumps(data, indent=2) + "\n")
+        for relative in borrowed:
+            (staged / relative).unlink()
+
+    def abseil(staged):
+        dependency = staged / "abseil"
+        shutil.copytree(
+            root / "research/upstream/abseil-cpp",
+            dependency,
+            ignore=shutil.ignore_patterns(".git"),
+        )
+        for name in (
+            "symbian-platform.patch",
+            "symbian-low-level-alloc.patch",
+            "symbian-container-no-elf-tls.patch",
+            "symbian-log-no-weak-gcov.patch",
+        ):
+            run(
+                ["git", "apply", str(root / "research/abseil" / name)],
+                cwd=dependency,
+            )
+
+    changed = []
+    for name, build in (
+        ("headers", headers),
+        ("imports", imports),
+        ("abseil", abseil),
+    ):
+        if cache.stage(name, keys[name], output, build):
+            changed.append(name)
+            _progress(root, f"{name} refreshed")
+        else:
+            _progress(root, f"{name} unchanged")
+    # CMake module and tool paths are live links, not copied foreign inputs.
+    for name, tool in tools.items():
+        destination = output / "bin" / name
+        destination.parent.mkdir(exist_ok=True)
+        if not destination.is_symlink() or destination.readlink() != tool:
+            destination.unlink(missing_ok=True)
+            destination.symlink_to(tool)
+    modules = list((root / "symbian/toolchain/cmake").glob("*")) + list(
+        (root / "symbian/project/templates").glob("*")
+    )
+    cache.trees.update(
+        (root / "symbian/toolchain/cmake", root / "symbian/project/templates")
+    )
+    module_output = output / "cmake"
+    module_output.mkdir(exist_ok=True)
+    for module in modules:
+        if module.is_file():
+            destination = module_output / module.name
+            if not destination.is_symlink() or destination.readlink() != module:
+                destination.unlink(missing_ok=True)
+                destination.symlink_to(module)
+    names = {module.name for module in modules if module.is_file()}
+    for module in module_output.iterdir():
+        if module.name not in names:
+            module.unlink()
+    if any(
+        cache.snapshot(paths) != source_keys[name]
+        for name, paths in sources.items()
+    ) or (cache.snapshot(tool_inputs) != tool_key):
+        raise StatusError(
+            Code.ABORTED, "Workspace inputs changed during preparation"
+        )
+    if not cache.state.get("scoped_publication"):
+        # Retire obsolete files from the former monolithic staging layout.
+        owned = {
+            relative
+            for stage in cache.state["stages"].values()
+            for relative in stage["files"]
+        }
+        owned.update("cmake/" + name for name in names)
+        owned.update("bin/" + name for name in tools)
+        owned.add(".prepared")
+        for path in sorted(output.rglob("*"), reverse=True):
+            if path.is_dir() and not path.is_symlink():
+                if not any(path.iterdir()):
+                    path.rmdir()
+            elif str(path.relative_to(output)) not in owned:
+                path.unlink()
+        cache.state["scoped_publication"] = True
+    cache.cmake_dependencies(root / ".symbian/workspace-dependencies.cmake")
+    cache.save()
+    (output / ".prepared").touch()
+    _progress(
+        root,
+        "source workspace inputs ready: "
+        + (", ".join(changed) or "all current"),
+    )
     return output
 
 

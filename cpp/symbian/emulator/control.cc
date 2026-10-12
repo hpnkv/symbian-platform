@@ -145,7 +145,8 @@ struct ControlServer::Impl {
       return nlohmann::json{{"process_exits", records}};
     }
     if (operation != "capture" && operation != "pointer" &&
-        operation != "key" && operation != "task_close") {
+        operation != "key" && operation != "task_close" &&
+        operation != "screen_mode") {
       return absl::UnimplementedError("Unknown emulator control operation");
     }
     std::unique_lock state_lock(state->lockdown, std::try_to_lock);
@@ -162,6 +163,22 @@ struct ControlServer::Impl {
     auto* absl_nullable screen = state->winserv->get_current_focus_screen();
     if (!screen) {
       return absl::UnavailableError("No focused emulator screen");
+    }
+    if (operation == "screen_mode") {
+      const auto mode_field = request.find("mode");
+      if (mode_field == request.end() || !mode_field->is_number_integer()) {
+        return absl::InvalidArgumentError("Invalid screen mode");
+      }
+      const auto mode = mode_field->get<std::int64_t>();
+      if (mode < 0 || mode >= screen->total_screen_mode()) {
+        return absl::InvalidArgumentError("Screen mode outside device modes");
+      }
+      screen->set_screen_mode(state->winserv, state->graphics_driver.get(),
+                              static_cast<int>(mode));
+      const auto& current = screen->current_mode();
+      return nlohmann::json{{"mode", mode},
+                            {"width", current.size.x},
+                            {"height", current.size.y}};
     }
     if (operation == "task_close") {
       auto* absl_nullable group = screen->focus;

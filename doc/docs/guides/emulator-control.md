@@ -98,7 +98,8 @@ there. See [QLocalServer](https://doc.qt.io/qt-6/qlocalserver.html).
 
 One compact JSON object plus newline is accepted per connection, at most 4096
 bytes. There are at most 16 active clients with a five-second idle bound. The
-operations are `status`, `capture`, `pointer`, `key` and `task_close`; all others return
+operations are `status`, `capture`, `pointer`, `key`, `screen_mode` and
+`task_close`; all others return
 UNIMPLEMENTED. There is no hardware transport, guest command runner or arbitrary
 filesystem path argument. Responses use `symbian.emulator-control/v1` and
 canonical Abseil status codes. Status retains at most 256 process exit records.
@@ -108,6 +109,13 @@ screen. `key` accepts `left`, `right`, `up`, `down`, `select`, `enter`, `space`,
 `back` and `menu`, each with `press` or `release`. These are named guest scan
 codes sent through the Window Server input queue. A queued reply confirms
 submission; inspect a capture or guest event to verify delivery.
+
+`screen_mode` selects a zero-based index from the emulated device's existing
+screen modes and sends the normal Window Server display-change notifications.
+Python exposes `Control.screen_mode(index)` and returns the selected mode's
+logical width and height. On the named RM-807 fixture, indices 0 and 1 select
+360×640 portrait and 640×360 landscape. This changes the guest display mode;
+the frontend's monitor rotation is a separate setting.
 
 `task_close` queues AppArc's normal shutdown user event. Without a UID it
 targets the focused window group; with a 32-bit application UID it finds that

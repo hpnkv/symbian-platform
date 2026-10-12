@@ -96,6 +96,7 @@ jobs:
           host: ${{ matrix.qt_host }}
           target: desktop
           arch: ${{ matrix.qt_arch }}
+          modules: "qtmultimedia qtshadertools"
           cache: true
       - name: Restore pinned source checkout
         id: source

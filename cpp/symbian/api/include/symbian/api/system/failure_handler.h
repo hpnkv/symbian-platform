@@ -26,12 +26,18 @@ using FailureHandledEntry = std::function<absl::Status()>;
 // Runs a top-level application entry. On a returned error, saves a report to
 // C:\private\<app UID>\failure.txt and presents its status and latest logs in a
 // scrollable window with Exit and Copy buttons.
-// Returns zero on success and one after the failure view closes or cannot open.
+// Presentation and persistence run independently. Closing/failing the view
+// destroys its window immediately; process exit waits for the background write.
+// Returns zero on success and one after both failure tasks finish.
 int RunWithFailureHandler(FailureHandledEntry entry,
                           const FailureHandlerOptions& options = {});
 
-// Saves the failure report and displays it after the application's own window
-// has closed. The view owns its window and blocks until Exit is chosen.
+// Saves and displays an immutable report on independent A11 workers after the
+// application's own window has closed. Exit destroys the view immediately;
+// the caller stays parked until persistence finishes, without retaining a
+// window. Neither task cancels the other. Returns the view error if any,
+// otherwise the persistence result. Native file operations run on the writer
+// thread; they never block the UI thread.
 // SDK executables also install this behavior for Abseil CHECK failures:
 // CHECK_OK(Main()) can be used at the integer entry boundary. A fatal CHECK
 // in a background app writes the report without opening a window.

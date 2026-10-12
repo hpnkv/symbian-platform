@@ -5,7 +5,11 @@ then deliberately fail `CHECK_EQ(2 + 2, 5)`. The SDK automatically saves the
 report to `C:\private\e0000a72\failure.txt` and shows its failure view.
 
 Drag the text to check scrolling and wrapping. Copy Logs copies the complete
-report, including text outside the viewport. Exit closes the failed process.
+report, including text outside the viewport. Exit immediately destroys the
+failure window. A separate SDK worker saves and flushes the report independently
+of presentation; if saving is still in progress, the process remains alive
+without that window until it finishes. Presentation failure does not cancel
+saving, and saving failure does not close the view.
 The example uses public SDK facilities and Abseil; it needs no device-specific
 configuration or additional capabilities.
 

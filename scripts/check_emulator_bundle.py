@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import platform
+import plistlib
 import shutil
 import subprocess
 import tarfile
@@ -62,6 +63,10 @@ def main():
             assert (instance / directory).is_dir(), directory
         assert list((relocated / "licenses/Qt").rglob("LICENSE*"))
         if platform.system() == "Darwin":
+            app = relocated / "EKA2L1.app"
+            info = plistlib.loads((app / "Contents/Info.plist").read_bytes())
+            assert info.get("NSCameraUsageDescription")
+            assert any(app.glob("Contents/**/multimedia/*.dylib"))
             subprocess.run(
                 [
                     "codesign",
@@ -72,6 +77,8 @@ def main():
                 ],
                 check=True,
             )
+        else:
+            assert any((relocated / "plugins/multimedia").glob("*.so"))
         # A second clean instance must not reuse the first instance's state.
         marker = instance / "private-marker"
         marker.write_text("first instance\n")

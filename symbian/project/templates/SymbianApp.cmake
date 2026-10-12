@@ -413,7 +413,7 @@ foreach(component IN ITEMS system connectivity agent power midi_output vibration
     if(component STREQUAL "failure_handler")
       target_link_libraries(${component_target} INTERFACE
         Symbian::System Symbian::Display Symbian::Storage
-        Symbian::Clipboard)
+        Symbian::Clipboard Symbian::Fibers)
     endif()
     add_library(Symbian::${component_name} ALIAS ${component_target})
   endif()

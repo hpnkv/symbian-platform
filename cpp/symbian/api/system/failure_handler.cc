@@ -7,6 +7,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <string>
 #include <string_view>
@@ -25,6 +26,8 @@
 #include "absl/log/log_entry.h"
 #include "absl/log/log_sink.h"
 #include "absl/log/log_sink_registry.h"
+#include "failure_report_tasks.h"
+#include "failure_view_thread.h"
 #include "symbian/api/display/window_surface.h"
 #include "symbian/api/storage/storage.h"
 #include "symbian/api/system/clipboard.h"
@@ -73,20 +76,18 @@ std::u16string FailurePath() {
   return path;
 }
 
-void PersistReport(std::string_view report) {
+absl::Status PersistReport(std::string_view report) {
   const std::u16string path = FailurePath();
   const std::u16string directory = path.substr(0, path.rfind(u'\\'));
-  storage::CreateDirectories(directory).IgnoreError();
-  auto file =
-      storage::WritableFile::Open(path, storage::WriteMode::kReplaceExisting);
-  if (!file.ok()) {
-    return;
-  }
+  ABSL_RETURN_IF_ERROR(storage::CreateDirectories(directory));
+  ABSL_ASSIGN_OR_RETURN(
+      auto file,
+      storage::WritableFile::Open(path, storage::WriteMode::kReplaceExisting));
   const auto* absl_nonnull bytes =
       reinterpret_cast<const std::byte*>(report.data());
-  if (file->WriteAt(0, std::span<const std::byte>(bytes, report.size())).ok()) {
-    file->Flush().IgnoreError();
-  }
+  ABSL_RETURN_IF_ERROR(
+      file.WriteAt(0, std::span<const std::byte>(bytes, report.size())));
+  return file.Flush();
 }
 
 bool CurrentProcessOwnsFocusedWindow() {
@@ -278,22 +279,15 @@ absl::Status Render(display::WindowSurface* absl_nonnull window,
   return window->Present(text_lines, font_height);
 }
 
-}  // namespace
-
-absl::Status ShowFailureReport(const absl::Status& error,
-                               const FailureHandlerOptions& options) {
-  if (error.ok()) {
-    return absl::InvalidArgumentError("failure report needs an error");
-  }
-  const std::string report = BuildReport(error, options);
-  PersistReport(report);
+absl::Status PresentReport(std::string_view report,
+                           std::string_view task_caption) {
   const std::u16string report_text = DisplayText(report);
-  std::u16string caption = DisplayText(options.caption);
+  std::u16string caption = DisplayText(task_caption);
   if (caption.empty()) {
     caption = u"Application failure";
   }
   ABSL_ASSIGN_OR_RETURN(auto window,
-                        display::WindowSurface::Create(options.caption));
+                        display::WindowSurface::Create(task_caption));
   display::WindowSize size = window.size();
   int font_height = FontHeight(size);
   int line_height = font_height + 8;
@@ -407,6 +401,33 @@ absl::Status ShowFailureReport(const absl::Status& error,
   }
 }
 
+absl::Status RunReportTasks(std::string report, std::string caption,
+                            bool show_view) {
+  // Both tasks own an immutable snapshot, independent of the failed entry's
+  // stack and of each other's outcome. No UI error or Exit cancels the writer.
+  const auto snapshot = std::make_shared<const std::string>(std::move(report));
+  std::function<absl::Status()> presentation;
+  if (show_view) {
+    presentation = [snapshot, caption = std::move(caption)] {
+      return internal::RunFailureView(
+          [&] { return PresentReport(*snapshot, caption); });
+    };
+  }
+  return internal::RunFailureReportTasks(
+      std::move(presentation), [snapshot] { return PersistReport(*snapshot); });
+}
+
+}  // namespace
+
+absl::Status ShowFailureReport(const absl::Status& error,
+                               const FailureHandlerOptions& options) {
+  if (error.ok()) {
+    return absl::InvalidArgumentError("failure report needs an error");
+  }
+  return RunReportTasks(BuildReport(error, options),
+                        std::string(options.caption), true);
+}
+
 int RunWithFailureHandler(FailureHandledEntry entry,
                           const FailureHandlerOptions& options) {
   if (!entry) {
@@ -448,8 +469,9 @@ extern "C" void ABSL_INTERNAL_C_SYMBOL(AbslInternalOnFatalLogMessage)(
   if (foreground) {
     ShowFailureReport(failure).IgnoreError();
   } else {
-    symbian::api::system::PersistReport(
-        symbian::api::system::BuildReport(failure, {}));
+    symbian::api::system::RunReportTasks(
+        symbian::api::system::BuildReport(failure, {}), {}, false)
+        .IgnoreError();
   }
   RProcess().Kill(1);
   User::Exit(1);
