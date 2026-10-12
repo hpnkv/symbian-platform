@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 
 import pytest
-from PIL import Image, ImageStat
+from PIL import Image, ImageDraw, ImageStat
 
 from symbian.emulator import Control
 from symbian.emulator.background import (
@@ -45,16 +45,27 @@ def _button_center(landscape):
     return (584, 180) if landscape else (180, 584)
 
 
+@pytest.mark.parametrize("sensor_frame", ["live", "phone-reference"])
 @pytest.mark.parametrize("backend", ["dynarmic", "dyncom"])
 @pytest.mark.parametrize(
     "landscape", [False, True], ids=["portrait", "landscape"]
 )
-def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
+def test_camera_gl_receives_host_frames(
+    tmp_path, backend, landscape, sensor_frame
+):
     """Requires sustained real frames, GLES presentation and orderly release."""
     root = Path(WORKSPACE).resolve()
-    artifact = root / (
-        "build/guest-probes-armv6-release-gpu/examples/camera_app/e32/"
-        "camera_app_gles2.exe"
+    artifact = Path(
+        os.environ.get(
+            "SYMBIAN_CAMERA_HOST_ARTIFACT",
+            str(
+                root
+                / (
+                    "build/guest-probes-armv6-release-gpu/examples/camera_app/e32/"
+                    "camera_app_gles2.exe"
+                )
+            ),
+        )
     )
     executable = Path(
         os.environ.get(
@@ -88,6 +99,61 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
     compat.parent.mkdir(parents=True, exist_ok=True)
     compat.write_text(f"screen-mode: {int(landscape)}\nscreen-rotation: 0\n")
     log = tmp_path / "frontend.log"
+    reference = None
+    if sensor_frame == "phone-reference":
+        # A native phone frame has a physical up direction. Aspect ratio must
+        # never override that reference. Distinct horizontal bands reveal a
+        # quarter-turn, upside-down output, channel swap or incorrect crop.
+        reference = tmp_path / "phone-reference.png"
+        image = Image.new("RGB", (640, 480), (32, 48, 64))
+        draw = ImageDraw.Draw(image)
+        draw.rectangle((0, 0, 639, 47), fill=(240, 32, 48))
+        draw.rectangle((0, 432, 639, 479), fill=(32, 64, 240))
+        draw.rectangle((140, 64, 171, 415), fill=(32, 224, 64))
+        draw.rectangle((468, 64, 499, 415), fill=(224, 192, 32))
+        draw.polygon(
+            [
+                (320, 96),
+                (272, 160),
+                (304, 160),
+                (304, 352),
+                (336, 352),
+                (336, 160),
+                (368, 160),
+            ],
+            fill=(240, 240, 240),
+        )
+        image.save(reference)
+
+    def check_phone_reference(path, mode):
+        if reference is None:
+            return
+        with Image.open(path) as screenshot:
+            physical = screenshot.convert("RGB")
+            # A capture immediately after screen_mode can still contain the
+            # previous compositor frame. Use its actual coordinate system.
+            if physical.width > physical.height:
+                physical = physical.transpose(Image.Transpose.ROTATE_270)
+            # The retained upright 360x480 image starts at physical (0,80).
+            # Source x=140 maps to physical x=0, all rows remain visible.
+            for x, y, expected in (
+                (180, 96, (240, 32, 48)),
+                (240, 544, (32, 64, 240)),
+                (16, 320, (32, 224, 64)),
+                (344, 320, (224, 192, 32)),
+                (180, 208, (240, 240, 240)),
+                (148, 384, (32, 48, 64)),
+                (180, 32, (0, 0, 0)),
+            ):
+                actual = physical.getpixel((x * 2, y * 2))
+                matches = all(
+                    abs(a - b) <= 2
+                    for a, b in zip(actual, expected, strict=True)
+                )
+                if not matches:
+                    screenshot.save(tmp_path / "reference-failure.png")
+                assert matches, (mode, x, y, actual, expected)
+
     with tempfile.TemporaryDirectory(prefix="camera-", dir="/tmp") as d:
         control = Control(Path(d) / "control.sock")
         environment = {
@@ -98,6 +164,8 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
             "EKA2L1_RESEARCH_FIT_DISPLAY": "1",
             "EKA2L1_EXPERIMENTAL_SVC_PROFILE": "rm807-113.010.1508",
         }
+        if reference is not None:
+            environment["EKA2L1_RESEARCH_CAMERA_FRAME"] = str(reference)
         with log.open("w") as output:
             process = subprocess.Popen(
                 [
@@ -124,27 +192,61 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                         if waiting_observed_at is None:
                             waiting_observed_at = time.monotonic()
                         if not waiting_captured:
-                            waiting = _retry(control.capture, "camera-waiting")
+                            # The socket acknowledges the guest swap before
+                            # the host compositor necessarily consumes it.
+                            # Do not inspect a partially initialized texture.
+                            clear_deadline = time.monotonic() + 1
+                            attempt = 0
+                            while True:
+                                waiting = _retry(
+                                    control.capture, f"camera-waiting-{attempt}"
+                                )
+                                with Image.open(waiting["path"]) as image:
+                                    corner = image.convert("RGB").getpixel(
+                                        (0, 0)
+                                    )
+                                if all(
+                                    abs(a - b) <= 2
+                                    for a, b in zip(
+                                        corner, (9, 12, 16), strict=True
+                                    )
+                                ):
+                                    break
+                                assert time.monotonic() < clear_deadline, corner
+                                attempt += 1
+                                time.sleep(0.01)
                             shutil.copyfile(
                                 waiting["path"], tmp_path / "waiting.png"
                             )
                             with Image.open(waiting["path"]) as image:
-                                # Slate background and cyan camera glyph;
-                                # catches the old solid blue/magenta surface.
-                                assert all(
-                                    abs(a - b) <= 2
-                                    for a, b in zip(
-                                        image.convert("RGB").getpixel((0, 0)),
-                                        (9, 12, 16),
-                                        strict=True,
-                                    )
+                                # Check asymmetric camera housing and dots in
+                                # logical coordinates: landscape must rotate
+                                # the complete loading glyph, not just controls.
+                                rgb = image.convert("RGB")
+                                width, height = (
+                                    (640, 360) if landscape else (360, 640)
                                 )
-                                colors = image.convert("RGB").getcolors(4096)
-                                assert colors is not None
-                                assert any(
-                                    g > 150 and b > 150 and r < 100
-                                    for _, (r, g, b) in colors
-                                )
+                                assert rgb.size == (width * 2, height * 2)
+                                unit = min(width, height) // 120
+                                cx, cy = width // 2, height // 2 - 6 * unit
+                                for x, y, expected in (
+                                    (0, 0, (9, 12, 16)),
+                                    (cx, cy - 12 * unit, (133, 153, 168)),
+                                    (cx + 6 * unit, cy, (66, 196, 204)),
+                                    (cx, cy + 15 * unit, (9, 12, 16)),
+                                ):
+                                    actual = rgb.getpixel((x * 2, y * 2))
+                                    assert all(
+                                        abs(a - b) <= 2
+                                        for a, b in zip(
+                                            actual, expected, strict=True
+                                        )
+                                    ), (landscape, x, y, actual, expected)
+                                for dot in range(3):
+                                    x = cx + (dot - 1) * 7 * unit
+                                    y = cy + 24 * unit
+                                    r, g, b = rgb.getpixel((x * 2, y * 2))
+                                    assert g > r and b > r and g >= 54
                             waiting_captured = True
                     if "GPU: first frame" in diagnostic:
                         if first_frame_observed_at is None:
@@ -172,12 +274,13 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                 with Image.open(frame["path"]) as image:
                     baseline_luma = ImageStat.Stat(image.convert("L")).mean[0]
                 assert baseline_luma > 5
+                check_phone_reference(frame["path"], int(landscape))
                 source_size = re.findall(r"GPU: source (\d+x\d+)", diagnostic)[
                     -1
                 ]
                 assert source_size == "640x480"
                 crop = re.findall(r"GPU: view crop=([\d,]+)", diagnostic)[-1]
-                assert crop == "0,0,640,480,"
+                assert crop == "140,0,360,480,"
                 transition_samples = []
                 # Native EGL storage and camera sampling stay fixed. Only the
                 # logical window and the overlay follow display orientation.
@@ -237,9 +340,9 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                         assert set(
                             re.findall(r"GPU: view crop=([\d,]+)", updated)
                         ) == {crop}
-                        assert "orientation=1" in updated
+                        assert "orientation=0" in updated
                         assert (
-                            f"GPU: orientation metadata={0 if mode else 1}"
+                            f"GPU: orientation metadata={3 if mode else 0}"
                             in updated
                         )
                         expected = "640x360" if mode else "360x640"
@@ -247,10 +350,24 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                             f"GPU: geometry window={expected} egl=360x640"
                             in updated
                         )
+                        settled = _retry(
+                            control.capture, f"settled-reference-{phase}-{mode}"
+                        )
+                        check_phone_reference(settled["path"], mode)
                         # Toggle smoothing at its logical button position.
                         x, y = _button_center(bool(mode))
                         _retry(control.pointer, x, y, "press")
                         _retry(control.pointer, x, y, "release")
+                        smooth = mode == int(not landscape)
+                        expected_filter = "smooth" if smooth else "nearest"
+                        toggle_deadline = time.monotonic() + 5
+                        while (
+                            f"GPU: filter {expected_filter}"
+                            not in log.read_text()[len(previous) :]
+                        ):
+                            assert time.monotonic() < toggle_deadline
+                            time.sleep(0.01)
+                        # The input trace precedes the next buffer swap.
                         time.sleep(0.1)
                         capture = _retry(
                             control.capture, f"smooth-{phase}-{mode}"
@@ -266,7 +383,6 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                             actual = image.convert("RGB").getpixel(
                                 (x * 2, (y - 18) * 2)
                             )
-                            smooth = mode == int(not landscape)
                             expected_color = (
                                 (67, 196, 204) if smooth else (83, 99, 110)
                             )
@@ -287,6 +403,7 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                     json.dumps(
                         {
                             "backend": backend,
+                            "sensor_frame": sensor_frame,
                             "transition_luma": transition_samples,
                             "baseline_luma": baseline_luma,
                             "landscape": landscape,

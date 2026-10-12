@@ -28,33 +28,32 @@ TEST(CameraPresentation,
   }
 }
 
-TEST(CameraPresentation, PlacementUsesWholeSourceAndStaysFixed) {
+TEST(CameraPresentation, UprightReferenceAndCropStayFixed) {
   ViewfinderPresentation view({360, 640});
   for (int turn = 0; turn < 4; ++turn) {
     const auto geometry =
         view.Describe(480, 360, static_cast<display::DisplayRotation>(turn));
     ASSERT_TRUE(geometry.ok()) << geometry.status();
-    EXPECT_EQ(geometry->crop.x, 0);
+    EXPECT_EQ(geometry->crop.x, 60);
     EXPECT_EQ(geometry->crop.y, 0);
-    EXPECT_EQ(geometry->crop.width, 480);
+    EXPECT_EQ(geometry->crop.width, 360);
     EXPECT_EQ(geometry->crop.height, 360);
-    EXPECT_EQ(geometry->native_orientation,
-              camera::FrameRotation::kClockwise90);
+    EXPECT_EQ(geometry->native_orientation, camera::FrameRotation::k0);
     EXPECT_EQ(geometry->native_viewport.x, 0);
-    EXPECT_EQ(geometry->native_viewport.y, 80);
+    EXPECT_EQ(geometry->native_viewport.y, 140);
     EXPECT_EQ(geometry->native_viewport.width, 360);
-    EXPECT_EQ(geometry->native_viewport.height, 480);
-    EXPECT_EQ(static_cast<int>(geometry->orientation), (5 - turn) % 4);
+    EXPECT_EQ(geometry->native_viewport.height, 360);
+    EXPECT_EQ(static_cast<int>(geometry->orientation), (4 - turn) % 4);
   }
   EXPECT_FALSE(view.Describe(0, 360, display::DisplayRotation::k0).ok());
   EXPECT_FALSE(view.Describe(480, -1, display::DisplayRotation::k0).ok());
 }
 
-TEST(CameraPresentation, InitialAlignmentMinimizesMarginsWithoutEnlargement) {
+TEST(CameraPresentation, MinimizesMarginsWithoutTurningTheSceneOrEnlargement) {
   ViewfinderPresentation portrait({360, 640});
   auto small = portrait.Describe(320, 240, display::DisplayRotation::k0);
   ASSERT_TRUE(small.ok());
-  // Equal occupied area at unit scale: preserve the original alignment.
+  // Smaller frames keep their original scale and axes.
   EXPECT_EQ(small->native_orientation, camera::FrameRotation::k0);
   EXPECT_EQ(small->native_viewport.width, 320);
   EXPECT_EQ(small->native_viewport.height, 240);
@@ -62,7 +61,18 @@ TEST(CameraPresentation, InitialAlignmentMinimizesMarginsWithoutEnlargement) {
   ASSERT_TRUE(tall.ok());
   EXPECT_EQ(tall->native_orientation, camera::FrameRotation::k0);
   EXPECT_EQ(tall->native_viewport.width, 360);
-  EXPECT_EQ(tall->native_viewport.height, 480);
+  EXPECT_EQ(tall->native_viewport.height, 640);
+  // The phone now delivers 640x480. Keep all 480 rows, crop only the
+  // horizontal overflow, and preserve the 360x480 footprint of 1.0.30.
+  auto phone = portrait.Describe(640, 480, display::DisplayRotation::k0);
+  ASSERT_TRUE(phone.ok());
+  EXPECT_EQ(phone->native_orientation, camera::FrameRotation::k0);
+  EXPECT_EQ(phone->crop.x, 140);
+  EXPECT_EQ(phone->crop.width, 360);
+  EXPECT_EQ(phone->crop.height, 480);
+  EXPECT_EQ(phone->native_viewport.y, 80);
+  EXPECT_EQ(phone->native_viewport.width, 360);
+  EXPECT_EQ(phone->native_viewport.height, 480);
   ViewfinderPresentation landscape({640, 360});
   auto wide = landscape.Describe(480, 360, display::DisplayRotation::k0);
   ASSERT_TRUE(wide.ok());
@@ -71,8 +81,8 @@ TEST(CameraPresentation, InitialAlignmentMinimizesMarginsWithoutEnlargement) {
   EXPECT_EQ(wide->native_viewport.height, 360);
 }
 
-// Four different corner colors and a centered square reveal lost edges,
-// quarter-turns and stretched proportions without relying on a live scene.
+// Four different corner colors and a centered square reveal quarter-turns
+// and stretched proportions without relying on a live scene.
 camera::FrameView CalibrationFrame(std::span<std::byte> pixels) {
   constexpr int kWidth = 480;
   constexpr int kHeight = 360;
@@ -102,7 +112,7 @@ camera::FrameView CalibrationFrame(std::span<std::byte> pixels) {
   return frame;
 }
 
-TEST(CameraPresentation, WholeFrameKeepsEdgesSquaresAndPhysicalPosition) {
+TEST(CameraPresentation, CropKeepsSceneUpSquaresAndPhysicalPosition) {
   std::vector<std::byte> pixels((480 * 2 + 8) * 360);
   const auto source = CalibrationFrame(pixels);
   const auto original = pixels;
@@ -147,19 +157,19 @@ TEST(CameraPresentation, WholeFrameKeepsEdgesSquaresAndPhysicalPosition) {
       return std::to_integer<unsigned int>(physical[offset]) |
              (std::to_integer<unsigned int>(physical[offset + 1]) << 8);
     };
-    EXPECT_EQ(at(0, 80), 0x001f);
-    EXPECT_EQ(at(359, 80), 0xf800);
-    EXPECT_EQ(at(0, 559), 0xffff);
-    EXPECT_EQ(at(359, 559), 0x07e0);
-    EXPECT_EQ(at(180, 80), 0x07ff);
-    EXPECT_EQ(at(180, 559), 0x07ff);
+    // Producer top remains physical top: fitting the source's long axis to
+    // the panel's long axis would instead put blue at this top-left corner.
+    EXPECT_EQ(at(0, 140), 0xf800);
+    EXPECT_EQ(at(359, 140), 0x07e0);
+    EXPECT_EQ(at(0, 499), 0x001f);
+    EXPECT_EQ(at(359, 499), 0xffff);
     int min_x = 360;
     int min_y = 640;
     int max_x = -1;
     int max_y = -1;
     for (int y = 0; y < 640; ++y) {
       for (int x = 0; x < 360; ++x) {
-        if (y < 80 || y >= 560) {
+        if (y < 140 || y >= 500) {
           EXPECT_EQ(at(x, y), 0);
         } else {
           ASSERT_NE(at(x, y), 0);

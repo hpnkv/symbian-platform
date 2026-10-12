@@ -90,27 +90,36 @@ display::TextureRotation ToTextureRotation(camera::FrameRotation rotation) {
 // compete with swaps and could reappear over the first camera frame.
 absl::Status DrawWaiting(display::Gles2TexturePresenter* absl_nonnull presenter,
                          display::GlesRectBatch* absl_nonnull shapes,
-                         display::WindowSize size, std::int64_t now) {
+                         display::WindowSize size,
+                         display::WindowSize logical_size,
+                         display::DisplayRotation rotation, std::int64_t now) {
   ABSL_RETURN_IF_ERROR(
       presenter->Clear(size.width, size.height, 0.035f, 0.047f, 0.063f));
   shapes->Begin(size.width, size.height);
-  const int unit = std::max(1, std::min(size.width, size.height) / 120);
-  const int cx = size.width / 2;
-  const int cy = size.height / 2 - 6 * unit;
+  const auto emit = [shapes, logical_size, rotation](int x, int y, int width,
+                                                     int height, float red,
+                                                     float green, float blue) {
+    const auto rect =
+        NativePreviewRect({x, y, width, height}, logical_size, rotation);
+    shapes->AddRect(rect.x, rect.y, rect.width, rect.height, red, green, blue);
+  };
+  const int unit =
+      std::max(1, std::min(logical_size.width, logical_size.height) / 120);
+  const int cx = logical_size.width / 2;
+  const int cy = logical_size.height / 2 - 6 * unit;
   // Camera body, raised shutter housing, and a circular lens.
-  shapes->AddRect(cx - 16 * unit, cy - 10 * unit, 32 * unit, 22 * unit, 0.52f,
-                  0.60f, 0.66f);
-  shapes->AddRect(cx - 8 * unit, cy - 14 * unit, 16 * unit, 4 * unit, 0.52f,
-                  0.60f, 0.66f);
-  shapes->AddRect(cx - 14 * unit, cy - 8 * unit, 28 * unit, 18 * unit, 0.035f,
-                  0.047f, 0.063f);
+  emit(cx - 16 * unit, cy - 10 * unit, 32 * unit, 22 * unit, 0.52f, 0.60f,
+       0.66f);
+  emit(cx - 8 * unit, cy - 14 * unit, 16 * unit, 4 * unit, 0.52f, 0.60f, 0.66f);
+  emit(cx - 14 * unit, cy - 8 * unit, 28 * unit, 18 * unit, 0.035f, 0.047f,
+       0.063f);
   const int radius = 7 * unit;
   for (int y = -radius; y <= radius; ++y) {
     int x = radius;
     while (x * x + y * y > radius * radius) {
       --x;
     }
-    shapes->AddRect(cx - x, cy + y, 2 * x + 1, 1, 0.26f, 0.77f, 0.80f);
+    emit(cx - x, cy + y, 2 * x + 1, 1, 0.26f, 0.77f, 0.80f);
   }
   const int inner = 5 * unit;
   for (int y = -inner; y <= inner; ++y) {
@@ -118,14 +127,14 @@ absl::Status DrawWaiting(display::Gles2TexturePresenter* absl_nonnull presenter,
     while (x * x + y * y > inner * inner) {
       --x;
     }
-    shapes->AddRect(cx - x, cy + y, 2 * x + 1, 1, 0.035f, 0.047f, 0.063f);
+    emit(cx - x, cy + y, 2 * x + 1, 1, 0.035f, 0.047f, 0.063f);
   }
   const int active = static_cast<int>((now / 250000000) % 3);
   for (int dot = 0; dot < 3; ++dot) {
     const bool bright = dot == active;
-    shapes->AddRect(cx + (dot - 1) * 7 * unit - unit, cy + 23 * unit, 3 * unit,
-                    3 * unit, bright ? 0.26f : 0.16f, bright ? 0.77f : 0.22f,
-                    bright ? 0.80f : 0.27f);
+    emit(cx + (dot - 1) * 7 * unit - unit, cy + 23 * unit, 3 * unit, 3 * unit,
+         bright ? 0.26f : 0.16f, bright ? 0.77f : 0.22f,
+         bright ? 0.80f : 0.27f);
   }
   shapes->Draw();
   return absl::OkStatus();
@@ -153,6 +162,8 @@ void ToggleFilter(camera::ResampleFilter* absl_nonnull filter) {
   *filter = *filter == camera::ResampleFilter::kNearest
                 ? camera::ResampleFilter::kBilinear
                 : camera::ResampleFilter::kNearest;
+  Trace(*filter == camera::ResampleFilter::kBilinear ? "GPU: filter smooth"
+                                                     : "GPU: filter nearest");
 }
 
 class GpuFrameConsumer final {
@@ -265,6 +276,7 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
   ABSL_ASSIGN_OR_RETURN(auto waiting_shapes, display::GlesRectBatch::Create());
   ViewfinderPresentation viewfinder(size);
   ABSL_RETURN_IF_ERROR(DrawWaiting(&presenter, &waiting_shapes, size,
+                                   window->size(), window->rotation(),
                                    time::MonotonicClock::NowNanoseconds()));
   DrawControls(&waiting_shapes, size, window->size(), window->rotation(),
                false);
@@ -417,7 +429,9 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
       if (poll_count < 8) {
         Trace("GPU: wait frame present begin");
       }
-      ABSL_RETURN_IF_ERROR(DrawWaiting(&presenter, &waiting_shapes, size, now));
+      ABSL_RETURN_IF_ERROR(DrawWaiting(&presenter, &waiting_shapes, size,
+                                       window->size(), window->rotation(),
+                                       now));
       DrawControls(&waiting_shapes, size, window->size(), window->rotation(),
                    filter == camera::ResampleFilter::kBilinear);
       ABSL_RETURN_IF_ERROR(context.Swap());

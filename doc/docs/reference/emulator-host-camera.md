@@ -388,3 +388,89 @@ SDK MTP transfer and complete readback verified
 `Installs/camera_app_gles2-2a05e11069c3.sis` on the Nokia 808. The state is
 `awaiting-on-device-install`: staging does not establish installation, execution
 or physical-camera framing. No release/tag or old installer deletion was made.
+
+## Preserve scene-up while minimizing margins (1.0.31)
+
+The owner's two phone photographs of 1.0.30 show a sideways scene in both
+physical orientations. The image stays fixed on the glass, but the initial
+quarter-turn is wrong. The retrieved app trace confirms source 640×480,
+full-frame sampling and native angle 1 at both display rotations. The separate
+native ECam trace still describes an older 480×640 request/480×360 result;
+native tracing is disabled in the current build, so that stale file is not
+current capture evidence.
+
+The error was choosing a sensor sampling angle from rectangle occupancy.
+Bitmap aspect does not identify sensor mounting. Camera GL now retains the
+producer's native pixel axes and minimizes margins using a proportional centered
+crop without enlarging pixels. The largest viewport is bounded by the native
+screen and source dimensions on each axis. SDK `CenteredAspectCrop` selects
+source bounds for that viewport; camera/source storage stays unchanged.
+
+For the observed 640×480 frame and 360×640 screen, (140,0,360,480) maps at
+unit scale to (0,80,360,480). It keeps all 480 source rows and the middle 360
+columns. Thus the corrected upright view occupies exactly the same screen
+rectangle as the sideways 1.0.30 view. Whole-frame upright fitting would leave
+185-pixel margins; this crop leaves 80. A 480×360 fallback uses a centered
+360×360 crop at unit scale. Larger frames can scale down to cover the panel.
+Source bounds, viewport and native angle 0 stay fixed through display changes;
+only consumer metadata and controls rotate. No new camera zoom API is used.
+
+The earlier emulator tests verified geometry, colors of controls and continuity,
+but had no independent reference for scene-up. They accepted the incorrect
+quarter-turn. The new maintained `camera-reference-fixture.patch` adds an
+explicit research replay input, `EKA2L1_RESEARCH_CAMERA_FRAME`: a PNG with the
+exact requested dimensions replaces camera pixels before format conversion.
+It bypasses monitor/UI compensation for this reference input only. Real host
+camera frames still drive callbacks, so this replay requires a functioning host
+camera; it is not a standalone simulated-camera backend.
+
+Tests generate a 640×480 native-reference frame containing a white upward
+arrow, distinct top/bottom bands and markers at both crop edges. They check
+known image pixels after mapping logical screenshots back onto the physical
+panel, initially and after each orientation has presented fresh frames. Rapid
+transition captures separately check for blanking. This exercises the ECam bitmap,
+BGRX upload and GLES presentation path. Replaying the exact shipped 1.0.30 E32
+fails the new top-band pixel assertion in 12.48 seconds: background appears
+where red must be. That failure establishes that the new check detects the
+reported error rather than just reproducing the renderer's orientation math.
+
+The camera loading glyph (including its raised housing and all three animated
+dots) is now laid out in logical UI coordinates and mapped onto the retained
+native drawable using the same transform as the controls. It follows device
+orientation while the live preview remains fixed. Opening-orientation checks
+sample the asymmetric housing, lens, background and each dot in portrait and
+landscape. Filter-toggle checks wait for the guest input acknowledgement before
+sampling the button; a fixed 100 ms delay could capture its previous state.
+
+A full-suite attempt also captured a tiled/offset first compositor texture
+before the host had consumed the guest's initial swap. The waiting-screen check
+now waits at most one second for the slate clear at the corner before checking
+the asymmetric glyph pixels. It does not add any delay to the application or
+accept incorrect icon orientation; a persistent malformed screen still fails.
+
+The final eight cases pass (152.97 seconds including fixture copying):
+live/native-reference × Dynarmic/Dyncom × portrait/landscape opening. Across
+48 display changes, 576 transition captures contain no sampled blank frame;
+minimum mean luminance is 54.1% of the corresponding baseline. Sampling cannot
+exclude blanks shorter than the capture cadence, and strict reference pixels
+are checked after fresh frames have settled, not during compositor transitions.
+All cases retain the same 360×640 EGL storage, 360×480 viewport, centered crop
+and native angle 0 without capture restart, source resize or surface refresh.
+The 56 measured 60-frame intervals take 1976–2017 ms. These are emulator
+throughput measurements; fixture copying and suite wall time are not startup
+measurements. All guests and frontends exit normally.
+
+Five native presentation tests pass in 0.48 seconds. Both ARMv6 E32s and the
+independent host/guest header canaries build; C++ style reports zero violations,
+Ruff/Black pass, and seven emulator-build driver tests pass in 1.09 seconds.
+The exact E32 used in all eight cases and the signed reproducible 1.0.31 SIS is
+`d0b6435286b2739b766942782cfedd3df81691c87b75135b50ee3fb9f8e165bc`.
+The SIS SHA256 is
+`82ee8aa5dccb99c0f76432a57d0af3575a52f5766ca09dd1fd26c39fb57507f7`.
+
+SDK MTP transfer and complete readback verified
+`Installs/camera_app_gles2-82ee8aa5dccb.sis` on the Nokia 808. Installation,
+execution and physical framing remain unverified. Text/hash/source evidence is
+archived at `~/.symbian-dev/research/camera-phone-framing-20261012/iteration-131`;
+camera imagery and runtime/firmware state remain ignored. No release, tag or
+old installer deletion was made.

@@ -1,0 +1,21 @@
+--- a/src/emu/drivers/src/camera/backend/qt/camera_qt.cpp
++++ b/src/emu/drivers/src/camera/backend/qt/camera_qt.cpp
+@@ -228,7 +228,17 @@
+ 
+         bool image_to_guest(QImage image, const int dest_width, const int dest_height,
+             const int rotation_ccw_deg, const frame_format format, std::vector<std::uint8_t> &out) {
+-            image = prepare_camera_image(std::move(image), dest_width, dest_height, rotation_ccw_deg);
++            // Research replay: supply an exact native sensor frame, independent
++            // of the monitor/UI rotation used to compensate a real host camera.
++            const QString reference_path = qEnvironmentVariable("EKA2L1_RESEARCH_CAMERA_FRAME");
++            if (!reference_path.isEmpty()) {
++                image = QImage(reference_path);
++                if (image.size() != QSize(dest_width, dest_height)) {
++                    return false;
++                }
++            } else {
++                image = prepare_camera_image(std::move(image), dest_width, dest_height, rotation_ccw_deg);
++            }
+             if (image.isNull()) {
+                 return false;
+             }

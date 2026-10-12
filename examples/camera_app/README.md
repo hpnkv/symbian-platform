@@ -6,24 +6,30 @@ to EKA2L1. See the [host-camera investigation and replay](../../doc/docs/referen
 for build dependencies, measured results and the opt-in integration test.
 
 Both examples query ECam and reserve camera 0 when one is reported. The
-viewfinder uses one fixed placement on the physical screen. From the actual
-returned frame and native drawable dimensions, it compares the original and
-quarter-turned axis alignments and selects the one occupying the most screen
-area. The entire frame is visible, proportionally fitted and never enlarged
-above one output pixel per source pixel. Equal-area alignments preserve the
-original alignment. Remaining margins are centered.
+viewfinder uses one fixed placement on the physical screen, keeping the camera's
+native pixel axes. A landscape-shaped bitmap does not establish how the sensor
+is mounted: turning it merely to fit the panel made the phone scene sideways
+in 1.0.30.
 
-For a 480×360 phone frame on a 360×640 physical screen, the chosen alignment
-is 360×480, with 80-pixel top and bottom margins. Every source column and row
-remains visible, replacing the narrow 202×360 crop used in 1.0.29. A 640×480
-frame fits into the same rectangle at 0.75 scale. Smaller frames are not enlarged.
-Capture preferences begin with 640×480, favoring the full 4:3 source over a
-16:9 request. Request dimensions alone do not establish optical field of view:
-the Nokia 808 previously returned 480×360 for a landscape request.
+Placement minimizes margins without enlarging source pixels. It uses the largest
+rectangle allowed by both the native screen and the returned frame dimensions,
+then takes a proportional centered source crop for that rectangle. At least one
+complete source axis remains visible. Overflow on the other axis is cropped;
+if a source axis is shorter than the screen, the remaining margin is centered.
+The source buffer itself stays unchanged.
+
+The phone trace now reports a 640×480 source. On its 360×640 native drawable,
+source rectangle (140,0,360,480) maps at unit scale to the centered 360×480
+viewport, with 80-pixel top/bottom margins. This preserves the previous image
+footprint while correcting the sideways scene; fitting the whole upright frame
+would instead leave 185-pixel margins. Smaller 480×360 frames use a centered
+360×360 crop at unit scale. Frames that cover both screen axes can scale down
+to fill the screen. Capture preferences begin with 640×480. Request dimensions
+alone do not establish optical field of view.
 
 After that initial choice, turning the phone changes only orientation metadata
 and the overlay. The GL app keeps its native EGL drawable, source texture,
-full-frame sampling bounds and initial sampling angle. It does not refresh the
+sampling bounds and native sampling angle. It does not refresh the
 surface, restart capture, rotate a source buffer or reconsider its placement
 on a display event. A genuine change in delivered source dimensions can select
 a new placement. Saving/transferring consumers retain
@@ -41,6 +47,7 @@ Server at up to 30 Hz. `camera_app_gles2` uploads viewfinder frames into a GPU
 texture and keeps presentation on the GPU. Its startup screen is a dark camera
 glyph with three animated dots, shown before discovery/reservation and while
 waiting for the first frame, including after a focus-related camera restart.
+The complete glyph and dot animation follow the current UI orientation.
 It uses the SDK rectangle batch on the EGL surface, so no bitmap overlay can
 obscure the live image. The former blue/magenta diagnostic clear is removed.
 
