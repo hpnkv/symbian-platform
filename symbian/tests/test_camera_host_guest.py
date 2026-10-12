@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 
 import pytest
-from PIL import Image
+from PIL import Image, ImageStat
 
 from symbian.emulator import Control
 from symbian.emulator.background import (
@@ -40,9 +40,9 @@ def _retry(method, *args):
             time.sleep(0.01)
 
 
-def _button_center(index, landscape):
-    """Returns compact button centers around RM-807's fixed physical anchor."""
-    return (584, 202 - index * 44) if landscape else (132 + index * 96, 584)
+def _button_center(landscape):
+    """Returns the smoothing control at the same physical-screen anchor."""
+    return (584, 180) if landscape else (180, 584)
 
 
 @pytest.mark.parametrize("backend", ["dynarmic", "dyncom"])
@@ -160,8 +160,8 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                 )
                 logical_size = "640x360" if landscape else "360x640"
                 assert f"GPU: geometry window={logical_size}" in diagnostic
-                assert "GPU: fill viewport=" in diagnostic
-                assert f"window={logical_size}" in diagnostic
+                assert "GPU: fit viewport=" in diagnostic
+                assert "window=360x640" in diagnostic
                 assert "camera GPU swap done" in diagnostic
                 assert "GPU: stream unavailable" not in diagnostic
                 frame = _retry(control.capture, "live-host-camera")
@@ -169,161 +169,113 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                 with Image.open(frame["path"]) as image:
                     assert image.width > 0 and image.height > 0
                     dimensions = image.size
-                # Rear is the default. Orientation may update metadata and
-                # EGL window storage, but never source size/crop or camera mode.
-                for phase, presentation in enumerate(
-                    ["rear", "rotate", "rear"]
-                ):
-                    if phase:
-                        selected = 0 if presentation == "rear" else 1
-                        x, y = _button_center(selected, landscape)
-                        previous = log.read_text(errors="replace")
-                        _retry(control.pointer, x, y, "press")
-                        _retry(control.pointer, x, y, "release")
-                        mode_deadline = time.monotonic() + 15
-                        while True:
-                            updated = log.read_text(errors="replace")[
-                                len(previous) :
-                            ]
-                            if (
-                                f"GPU: mode {presentation}" in updated
-                                and "GPU: presented 60 frames in " in updated
-                            ):
-                                break
-                            assert process.poll() is None, updated
-                            assert time.monotonic() < mode_deadline, updated
-                            time.sleep(0.01)
-                        assert updated.count("GPU: capture resume begin") == 1
-                    mode_start = log.read_text(errors="replace")
-                    source_size = re.findall(
-                        r"GPU: source (\d+x\d+)", mode_start
-                    )[-1]
-                    source_width, source_height = map(
-                        int, source_size.split("x")
-                    )
-                    if presentation == "rear":
-                        assert source_size == "640x360"
+                with Image.open(frame["path"]) as image:
+                    baseline_luma = ImageStat.Stat(image.convert("L")).mean[0]
+                assert baseline_luma > 5
+                source_size = re.findall(r"GPU: source (\d+x\d+)", diagnostic)[
+                    -1
+                ]
+                assert source_size == "640x480"
+                crop = re.findall(r"GPU: view crop=([\d,]+)", diagnostic)[-1]
+                assert crop == "0,0,640,480,"
+                transition_samples = []
+                # Native EGL storage and camera sampling stay fixed. Only the
+                # logical window and the overlay follow display orientation.
+                for phase in range(3):
                     for mode in [int(not landscape), int(landscape)]:
                         previous = log.read_text(errors="replace")
                         change = _retry(control.screen_mode, mode)
-                        expected = "640x360" if mode else "360x640"
-                        width, height = (640, 360) if mode else (360, 640)
-                        crop_width, crop_height = source_width, source_height
-                        crop_target = (
-                            (360, 640)
-                            if presentation == "rear"
-                            else (width, height)
-                        )
-                        target_width, target_height = crop_target
-                        if (
-                            source_width * target_height
-                            > source_height * target_width
-                        ):
-                            crop_width = (
-                                source_height * target_width // target_height
-                            )
-                        else:
-                            crop_height = (
-                                source_width * target_height // target_width
-                            )
-                        expected_crop = (
-                            f"{(source_width - crop_width) // 2},"
-                            f"{(source_height - crop_height) // 2},"
-                            f"{crop_width},{crop_height},"
-                        )
-                        image_width, image_height = crop_width, crop_height
-                        if presentation == "rear" and mode:
-                            image_width, image_height = (
-                                image_height,
-                                image_width,
-                            )
-                        fill_width, fill_height = width, height
-                        if width * image_height < height * image_width:
-                            fill_width = (
-                                height * image_width + image_height - 1
-                            ) // image_height
-                        else:
-                            fill_height = (
-                                width * image_height + image_width - 1
-                            ) // image_width
-                        expected_fill = f"{fill_width}x{fill_height}"
                         assert (change["width"], change["height"]) == (
                             (640, 360) if mode else (360, 640)
                         )
+                        # Observe during the transition, not only after the
+                        # viewfinder has recovered. Catch blank surfaces.
+                        for sample in range(12):
+                            capture = _retry(
+                                control.capture,
+                                f"transition-{phase}-{mode}-{sample}",
+                            )
+                            with Image.open(capture["path"]) as image:
+                                luma = ImageStat.Stat(image.convert("L")).mean[
+                                    0
+                                ]
+                            transition_samples.append(luma)
+                            assert luma > baseline_luma * 0.25, (
+                                phase,
+                                mode,
+                                sample,
+                                luma,
+                            )
+                            if sample in (0, 11):
+                                shutil.copyfile(
+                                    capture["path"],
+                                    tmp_path
+                                    / f"transition-{phase}-{mode}-{sample}.png",
+                                )
+                            time.sleep(0.01)
                         rotation_deadline = time.monotonic() + 15
                         while True:
                             updated = log.read_text(errors="replace")[
                                 len(previous) :
                             ]
                             if (
-                                f"GPU: fill viewport={expected_fill}" in updated
-                                and f"window={expected}" in updated
+                                "GPU: fit viewport=360x480" in updated
                                 and "GPU: presented 60 frames in " in updated
                             ):
                                 break
                             assert process.poll() is None, updated
                             assert time.monotonic() < rotation_deadline, updated
                             time.sleep(0.01)
-                        assert "GPU: source texture resized" not in updated
-                        assert "GPU: capture resume begin" not in updated
-                        assert "GPU: source " not in updated
+                        for unexpected in (
+                            "GPU: source texture resized",
+                            "GPU: capture resume begin",
+                            "GPU: source ",
+                            "GPU: surface refresh",
+                            "mode rotate",
+                        ):
+                            assert unexpected not in updated
                         assert set(
                             re.findall(r"GPU: view crop=([\d,]+)", updated)
-                        ) == {expected_crop}
-                        expected_orientation = (
-                            3 if presentation == "rear" and mode else 0
+                        ) == {crop}
+                        assert "orientation=1" in updated
+                        assert (
+                            f"GPU: orientation metadata={0 if mode else 1}"
+                            in updated
                         )
-                        assert f"orientation={expected_orientation}" in updated
-                        rotated = _retry(
-                            control.capture,
-                            f"{presentation}-{mode}-{len(previous)}",
+                        expected = "640x360" if mode else "360x640"
+                        assert (
+                            f"GPU: geometry window={expected} egl=360x640"
+                            in updated
+                        )
+                        # Toggle smoothing at its logical button position.
+                        x, y = _button_center(bool(mode))
+                        _retry(control.pointer, x, y, "press")
+                        _retry(control.pointer, x, y, "release")
+                        time.sleep(0.1)
+                        capture = _retry(
+                            control.capture, f"smooth-{phase}-{mode}"
                         )
                         shutil.copyfile(
-                            rotated["path"],
-                            tmp_path / f"{presentation}-mode-{mode}.png",
+                            capture["path"],
+                            tmp_path / f"smooth-{phase}-{mode}.png",
                         )
-                        with Image.open(rotated["path"]) as image:
+                        with Image.open(capture["path"]) as image:
                             assert image.size == (
                                 (1280, 720) if mode else (720, 1280)
                             )
-                            # Each former margin contains live image pixels.
-                            # Sample all four borders, away from the controls.
-                            rgb = image.convert("RGB")
-                            for edge in (
-                                (0, 0, image.width, 2),
-                                (
-                                    0,
-                                    image.height - 2,
-                                    image.width,
-                                    image.height,
-                                ),
-                                (0, 0, 2, image.height),
-                                (image.width - 2, 0, image.width, image.height),
-                            ):
-                                assert rgb.crop(edge).getbbox() is not None
-                            # The group stays at physical (180,584), with an
-                            # eight-pixel gap between pills in either rotation.
-                            # Check each pill's logical top-center border.
-                            for index in range(2):
-                                x, center_y = _button_center(index, bool(mode))
-                                y = center_y - 18
-                                selected = index == (
-                                    0 if presentation == "rear" else 1
+                            actual = image.convert("RGB").getpixel(
+                                (x * 2, (y - 18) * 2)
+                            )
+                            smooth = mode == int(not landscape)
+                            expected_color = (
+                                (67, 196, 204) if smooth else (83, 99, 110)
+                            )
+                            assert all(
+                                abs(a - b) <= 2
+                                for a, b in zip(
+                                    actual, expected_color, strict=True
                                 )
-                                expected_color = (
-                                    (67, 196, 204)
-                                    if selected
-                                    else (83, 99, 110)
-                                )
-                                actual = image.convert("RGB").getpixel(
-                                    (x * 2, y * 2)
-                                )
-                                assert all(
-                                    abs(a - b) <= 2
-                                    for a, b in zip(
-                                        actual, expected_color, strict=True
-                                    )
-                                )
+                            ), (actual, expected_color)
                 _retry(control.close_task, 0xE0000A5A)
                 assert process.wait(timeout=20) == 0
                 exits = control.exit_report()["process_exits"]
@@ -335,6 +287,8 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                     json.dumps(
                         {
                             "backend": backend,
+                            "transition_luma": transition_samples,
+                            "baseline_luma": baseline_luma,
                             "landscape": landscape,
                             "waiting_to_frame_observed_ms": round(
                                 1000

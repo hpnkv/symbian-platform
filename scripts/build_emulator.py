@@ -51,6 +51,7 @@ PATCHES = (
     "distribution-build",
     "distribution-camera",
     "camera-aspect",
+    "native-egl-orientation",
     "distribution-query",
     "distribution-sdl",
     "distribution-resources",

@@ -12,16 +12,12 @@
 
 namespace camera_app {
 
-inline std::array<symbian::api::camera::FrameLayout, 8> CapturePreferences(
-    bool portrait) {
+inline std::array<symbian::api::camera::FrameLayout, 8> CapturePreferences() {
   namespace camera = symbian::api::camera;
-  const std::array<std::array<int, 2>, 4> sizes =
-      portrait ? std::array<std::array<int, 2>, 4>{{{360, 640},
-                                                    {480, 640},
-                                                    {640, 480},
-                                                    {320, 240}}}
-               : std::array<std::array<int, 2>, 4>{
-                     {{640, 360}, {640, 480}, {320, 240}, {320, 180}}};
+  // Prefer the complete 4:3 scene rather than asking ECam to crop it to 16:9
+  // before the renderer has seen the actual frame bounds.
+  const std::array<std::array<int, 2>, 4> sizes{
+      {{640, 480}, {640, 360}, {320, 240}, {320, 180}}};
   std::array<camera::FrameLayout, 8> preferences{};
   for (std::size_t i = 0; i < sizes.size(); ++i) {
     preferences[i * 2] = {.width = sizes[i][0],

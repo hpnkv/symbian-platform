@@ -15,7 +15,7 @@
 #include <absl/status/status_macros.h>
 
 #include "capture_preferences.h"
-#include "mode_controls.h"
+#include "preview_controls.h"
 #include "symbian/api/camera/camera.h"
 #include "symbian/api/camera/camera_stream.h"
 #include "symbian/api/camera/frame.h"
@@ -132,13 +132,18 @@ absl::Status DrawWaiting(display::Gles2TexturePresenter* absl_nonnull presenter,
 }
 
 void DrawControls(display::GlesRectBatch* absl_nonnull shapes,
-                  display::WindowSize size, display::DisplayRotation rotation,
-                  ViewfinderMode selected) {
-  shapes->Begin(size.width, size.height);
-  DrawModeButtons(
-      size, rotation, selected,
-      [shapes](int x, int y, int width, int height, std::uint32_t color) {
-        shapes->AddRect(x, y, width, height, ((color >> 16) & 255) / 255.0f,
+                  display::WindowSize drawable_size,
+                  display::WindowSize logical_size,
+                  display::DisplayRotation rotation, bool smooth) {
+  shapes->Begin(drawable_size.width, drawable_size.height);
+  DrawPreviewButton(
+      logical_size, rotation, smooth,
+      [shapes, logical_size, rotation](int x, int y, int width, int height,
+                                       std::uint32_t color) {
+        const auto rect =
+            NativePreviewRect({x, y, width, height}, logical_size, rotation);
+        shapes->AddRect(rect.x, rect.y, rect.width, rect.height,
+                        ((color >> 16) & 255) / 255.0f,
                         ((color >> 8) & 255) / 255.0f, (color & 255) / 255.0f);
       });
   shapes->Draw();
@@ -258,10 +263,11 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
   TraceGeometry(window_size, size, window->rotation());
   Trace("GPU: texture and presenter done");
   ABSL_ASSIGN_OR_RETURN(auto waiting_shapes, display::GlesRectBatch::Create());
-  ViewfinderPresentation viewfinder(window_size);
+  ViewfinderPresentation viewfinder(size);
   ABSL_RETURN_IF_ERROR(DrawWaiting(&presenter, &waiting_shapes, size,
                                    time::MonotonicClock::NowNanoseconds()));
-  DrawControls(&waiting_shapes, size, window->rotation(), viewfinder.mode());
+  DrawControls(&waiting_shapes, size, window->size(), window->rotation(),
+               false);
   ABSL_RETURN_IF_ERROR(context.Swap());
   Trace("GPU: waiting UI presented");
   Trace("GPU: discover begin");
@@ -297,19 +303,7 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
   bool foreground = true;
   bool running = true;
   bool first_frame = true;
-  bool surface_refresh_pending = false;
   bool redraw_pending = false;
-  bool restart_pending = false;
-  const auto select_mode = [&](ViewfinderMode mode) {
-    if (mode == viewfinder.mode()) {
-      return;
-    }
-    viewfinder.Configure(mode, window->size());
-    restart_pending = true;
-    redraw_pending = true;
-    Trace(mode == ViewfinderMode::kRearCamera ? "GPU: mode rear"
-                                              : "GPU: mode rotate");
-  };
   std::uint64_t sequence = 0;
   std::uint64_t poll_count = 0;
   std::uint64_t presented_frames = 0;
@@ -324,21 +318,13 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
       }
       switch (input->kind) {
         case display::WindowInputKind::kPointerDown:
-          if (auto selected = HitModeButton(window->size(), window->rotation(),
-                                            input->x, input->y)) {
-            select_mode(*selected);
-          } else {
-            ToggleFilter(&filter);
-          }
+          ToggleFilter(&filter);
+          redraw_pending = true;
           break;
         case display::WindowInputKind::kKeyDown:
           if (input->key == display::WindowKey::kEscape) {
             Trace("GPU: escape key");
             running = false;
-          } else if (input->key == display::WindowKey::kLeft) {
-            select_mode(ViewfinderMode::kRearCamera);
-          } else if (input->key == display::WindowKey::kRight) {
-            select_mode(ViewfinderMode::kRotateView);
           } else if (input->key == display::WindowKey::kSelect ||
                      input->key == display::WindowKey::kEnter) {
             ToggleFilter(&filter);
@@ -358,7 +344,7 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
           if (window->size().width != window_size.width ||
               window->size().height != window_size.height) {
             window_size = window->size();
-            surface_refresh_pending = true;
+            TraceGeometry(window_size, size, window->rotation());
           }
           redraw_pending = true;
           pacer.Reset();
@@ -369,7 +355,7 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
               updated.width != window_size.width ||
               updated.height != window_size.height) {
             window_size = updated;
-            surface_refresh_pending = true;
+            TraceGeometry(window_size, size, window->rotation());
           }
           redraw_pending = true;
           break;
@@ -380,14 +366,6 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
     }
     if (!running) {
       break;
-    }
-    if (restart_pending) {
-      stream.Close();
-      capturing = false;
-      received_frame = false;
-      consumer.Reset();
-      first_frame = true;
-      restart_pending = false;
     }
     if (!foreground) {
       if (capturing) {
@@ -400,15 +378,6 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
       }
       time::SleepFor(std::chrono::milliseconds(80));
       continue;
-    }
-    if (surface_refresh_pending) {
-      Trace("GPU: surface refresh begin");
-      ABSL_RETURN_IF_ERROR(context.RefreshSurface());
-      Trace("GPU: surface refresh done");
-      ABSL_ASSIGN_OR_RETURN(size, context.SurfaceSize());
-      TraceGeometry(window_size, size, window->rotation());
-      surface_refresh_pending = false;
-      redraw_pending = true;
     }
     if (live && !capturing) {
       Trace("GPU: capture resume begin");
@@ -449,8 +418,8 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
         Trace("GPU: wait frame present begin");
       }
       ABSL_RETURN_IF_ERROR(DrawWaiting(&presenter, &waiting_shapes, size, now));
-      DrawControls(&waiting_shapes, size, window->rotation(),
-                   viewfinder.mode());
+      DrawControls(&waiting_shapes, size, window->size(), window->rotation(),
+                   filter == camera::ResampleFilter::kBilinear);
       ABSL_RETURN_IF_ERROR(context.Swap());
       if (poll_count < 8) {
         Trace("GPU: wait frame present done");
@@ -515,22 +484,28 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
     ViewfinderGeometry geometry{
         {0, 0, output_texture.width(), output_texture.height()},
         camera::FrameRotation::k0,
-        {output_texture.width(), output_texture.height()}};
+        {output_texture.width(), output_texture.height()},
+        camera::FrameRotation::k0,
+        {output_texture.width(), output_texture.height()},
+        {0, 0, size.width, size.height}};
     if (live) {
       ABSL_ASSIGN_OR_RETURN(
           geometry,
           viewfinder.Describe(output_texture.width(), output_texture.height(),
                               window->rotation()));
     }
-    const auto image_rotation = ToTextureRotation(geometry.orientation);
+    const auto image_rotation = ToTextureRotation(geometry.native_orientation);
     const auto content = geometry.crop;
-    const int image_width = geometry.oriented_size.width;
-    const int image_height = geometry.oriented_size.height;
-    ABSL_ASSIGN_OR_RETURN(
-        auto viewport, display::AspectFillViewport(size.width, size.height,
-                                                   image_width, image_height));
+    const int image_width = geometry.native_size.width;
+    const int image_height = geometry.native_size.height;
+    const display::Gles2Viewport viewport =
+        live ? display::Gles2Viewport{geometry.native_viewport.x,
+                                      geometry.native_viewport.y,
+                                      geometry.native_viewport.width,
+                                      geometry.native_viewport.height}
+             : display::Gles2Viewport{0, 0, size.width, size.height};
     if (first_frame || redraw_pending) {
-      std::string viewport_detail("GPU: fill viewport=");
+      std::string viewport_detail("GPU: fit viewport=");
       AppendDecimal(viewport.width, &viewport_detail);
       viewport_detail.push_back('x');
       AppendDecimal(viewport.height, &viewport_detail);
@@ -551,6 +526,9 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
       bounds.append(" orientation=");
       AppendDecimal(static_cast<int>(image_rotation), &bounds);
       Trace(bounds);
+      std::string metadata("GPU: orientation metadata=");
+      AppendDecimal(static_cast<int>(geometry.orientation), &metadata);
+      Trace(metadata);
     }
     ABSL_RETURN_IF_ERROR(presenter.Draw(
         output_texture, viewport,
@@ -566,7 +544,8 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
     if (first_frame) {
       symbian::api::system::DebugLog("camera GPU draw done");
     }
-    DrawControls(&waiting_shapes, size, window->rotation(), viewfinder.mode());
+    DrawControls(&waiting_shapes, size, window->size(), window->rotation(),
+                 filter == camera::ResampleFilter::kBilinear);
     ABSL_RETURN_IF_ERROR(context.Swap());
     if (first_frame) {
       symbian::api::system::DebugLog("camera GPU swap done");

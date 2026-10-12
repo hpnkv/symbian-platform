@@ -315,3 +315,76 @@ transfer and full readback verified `Installs/camera_app_gles2-d0a69eab330a.sis`
 on the Nokia 808; installation and optical confirmation are still pending.
 Text/hash evidence is under
 `~/.symbian-dev/research/camera-phone-framing-20261012/iteration-129`.
+
+## One-time placement on the native drawable (1.0.30)
+
+The owner confirmed Rear's physical geometry in 1.0.29, but reported excessive
+zoom and a brief black screen on rotation. The subsequent requirement is to
+place the complete stream once, minimize margins by choosing its initial axis
+alignment, and leave the view fixed thereafter. This supersedes both the narrow
+portrait crop and the separate Rotate policy above.
+
+Placement compares the fitted area of the source and its quarter-turned
+alignment on the actual native EGL drawable. It chooses the larger area,
+centers it and caps enlargement at unit scale. Ties retain the original
+alignment. Source pixels, stride and storage remain in producer order. The GPU
+uses the chosen sampling angle without rotating or copying the source buffer.
+For the measured phone's 480×360 source and 360×640 screen, initial placement
+becomes 360×480 with 80-pixel top/bottom margins; all 480 source columns remain
+visible, replacing the previous 202-column crop. A 640×480 source occupies the
+same rectangle at 0.75 scale. Capture preferences start with 640×480 rather than
+640×360; this preference alone does not establish optical field of view.
+
+The SDK now exposes `WindowSurfaceOptions.fixed_egl_orientation`, applied before
+activation through the native window's `FixNativeOrientation` API. Camera GL
+opts in, retains that drawable and does not call `RefreshSurface` on display
+changes. Orientation changes update consumer metadata and the overlay only:
+source bounds, texture dimensions, sampling angle and physical viewport remain
+fixed. Genuine focus loss still releases the camera. Rotate mode is removed;
+a single rounded SMOOTH toggle rotates around the existing physical anchor.
+
+The first fixed-drawable emulator run exposed a separate EKA2L1 compositor bug:
+its native-orientation flag added 180° at display rotations 0°/180°. The
+maintained `native-egl-orientation.patch` uses the inverse display rotation
+instead. The correction belongs to the emulator rather than a phone-specific
+workaround in the guest. The initial pixel assertion caught the upside-down
+control; the corrected run passed.
+
+A system Camera comparison was attempted on isolated copies of the RM-807
+fixture, using both `Z:\sys\bin\cameraapp.exe` and AppArc UID `0x101f857a`.
+The executable loaded, but neither launch produced a screen texture, window
+group or camera stream within 20/12 seconds respectively. Caption-based launch
+also found no registered Camera entry. Logs contain parameter-slot and font
+errors, but do not establish the cause. These attempts provide no optical
+field-of-view comparison. Phone confirmation of the new framing is still
+required; the app's complete-source sampling is independently verified below.
+
+Five native presentation tests pass (0.45 seconds), including complete colored
+edges, unchanged padded source storage, a unit-scale 96×96 calibration square,
+identical physical-screen output at all four rotations, initial alignment,
+no enlargement of smaller frames and the overlay's fixed physical anchor.
+Both guest E32 targets and independent host/guest header canaries build; C++
+style, Ruff/Black and seven emulator-build driver tests pass.
+
+All four real-host-camera cases pass (Dynarmic/Dyncom × portrait/landscape
+opening), in 75.26 seconds including fixture copying. Across 24 display changes,
+288 transition captures contain no sampled blank frame; the lowest mean
+luminance is 66.4% of that case's live baseline. Sampling cannot rule out a
+blank shorter than the capture cadence. Logs require the same 360×640 EGL
+storage, full 640×480 source, 360×480 viewport and initial angle, without a
+capture restart, source resize or surface refresh. Consumer orientation metadata
+and the SMOOTH border pixels follow logical rotation. All guests/frontends exit
+normally. The 28 measured 60-frame intervals take 1976–2017 ms; neither suite
+wall time nor fixture copying is an application startup measurement.
+
+The signed 1.0.30 SIS contains the exact E32 used in all four cases:
+`6303dd6a593595c8ab189c6f41fcf7498d5f9332b168224c543e99440e7cad9c`.
+Its SIS SHA256 is
+`2a05e11069c3b55e85b6f3bca8dc77307d122ee33dfce46e588fec324d4e86e8`.
+Text/hash evidence is retained outside version control at
+`~/.symbian-dev/research/camera-phone-framing-20261012/iteration-130`;
+local camera captures and emulator/firmware state remain ignored.
+SDK MTP transfer and complete readback verified
+`Installs/camera_app_gles2-2a05e11069c3.sis` on the Nokia 808. The state is
+`awaiting-on-device-install`: staging does not establish installation, execution
+or physical-camera framing. No release/tag or old installer deletion was made.

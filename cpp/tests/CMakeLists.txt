@@ -78,7 +78,7 @@ add_test(NAME symbian_camera_presentation_test
   COMMAND symbian_camera_presentation_test)
 symbian_header_canary(symbian_camera_presentation_header_canary
   HEADERS "${CMAKE_SOURCE_DIR}/examples/camera_app/viewfinder_presentation.h"
-    "${CMAKE_SOURCE_DIR}/examples/camera_app/mode_controls.h"
+    "${CMAKE_SOURCE_DIR}/examples/camera_app/preview_controls.h"
   LIBRARIES symbian_camera_presentation_model)
 
 add_executable(symbian_status_test status_test.cc)

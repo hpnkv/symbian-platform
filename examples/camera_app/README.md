@@ -5,44 +5,36 @@ uses the host's default video input; macOS camera permission must be granted
 to EKA2L1. See the [host-camera investigation and replay](../../doc/docs/reference/emulator-host-camera.md)
 for build dependencies, measured results and the opt-in integration test.
 
-Both examples query ECam and reserve camera 0 when one is reported. Two small
-rounded buttons overlay the viewfinder: **REAR** (the default) and **ROTATE**.
-The selected button has a cyan border. The buttons select presentation policy;
-the camera remains camera 0. Left/Right also select Rear/Rotate. The pair stays
-centered around the same physical-screen anchor in both modes. The pills and
-labels rotate there, with spacing adjusted to keep the same small gap in either
-orientation. Touch targets follow the rotated pills.
+Both examples query ECam and reserve camera 0 when one is reported. The
+viewfinder uses one fixed placement on the physical screen. From the actual
+returned frame and native drawable dimensions, it compares the original and
+quarter-turned axis alignments and selects the one occupying the most screen
+area. The entire frame is visible, proportionally fitted and never enlarged
+above one output pixel per source pixel. Equal-area alignments preserve the
+original alignment. Remaining margins are centered.
 
-Both modes fill the screen with a proportional, centered crop of the actual
-returned bitmap. One complete source axis remains visible; only the excess on
-the other axis is hidden. Filling portrait with a landscape frame necessarily
-removes side content. There is no extra zoom factor. ECam request dimensions
-do not establish the delivered aspect or sensor mounting angle: the Nokia 808
-returned 480×360 for a landscape request and 360×270 for a portrait request.
+For a 480×360 phone frame on a 360×640 physical screen, the chosen alignment
+is 360×480, with 80-pixel top and bottom margins. Every source column and row
+remains visible, replacing the narrow 202×360 crop used in 1.0.29. A 640×480
+frame fits into the same rectangle at 0.75 scale. Smaller frames are not enlarged.
+Capture preferences begin with 640×480, favoring the full 4:3 source over a
+16:9 request. Request dimensions alone do not establish optical field of view:
+the Nokia 808 previously returned 480×360 for a landscape request.
 
-**Rear camera** (default) requests a landscape stream, starting with 640×360.
-Its crop uses the native portrait screen aspect and remains fixed on the physical
-glass. Only presentation metadata compensates Window Server rotation. For a
-480×360 phone frame on the 360×640 screen, the source rectangle is the centered
-202×360 strip. Turning the phone preserves this rectangle, the original capture
-storage, stride and texture dimensions. Saving/transferring consumers keep
-`ViewfinderGeometry.orientation` alongside the borrowed source; swapping raw
+After that initial choice, turning the phone changes only orientation metadata
+and the overlay. The GL app keeps its native EGL drawable, source texture,
+full-frame sampling bounds and initial sampling angle. It does not refresh the
+surface, restart capture, rotate a source buffer or reconsider its placement
+on a display event. A genuine change in delivered source dimensions can select
+a new placement. Saving/transferring consumers retain
+`ViewfinderGeometry.orientation` alongside the original source; swapping raw
 width/height would corrupt its stride.
 
-**Rotate view** requests 360×640 when selected in portrait or 640×360 in
-landscape. It follows the logical UI without Rear's inverse Window Server
-rotation, and recalculates the crop for that UI aspect. With a 480×360 source,
-portrait uses 202×360 and landscape uses 480×270. Thus the modes can agree in
-portrait, but differ after an orientation change: Rear stays fixed on the glass,
-while Rotate turns with the controls and exposes a wider landscape composition.
-
-Switching modes can reopen capture. Changing orientation alone does not. Camera
-GL samples the crop from the retained texture using SDK `AspectFillViewport`;
-software borrows it with SDK `CropFrameView` and samples directly into the screen
-bitmap. Neither path allocates a rotated or recropped source. Both preserve
-proportions to integer-pixel rounding. The previous 1.0.28 aspect-fit fallback
-preserved every edge but left large margins and made the modes behave alike;
-this screen-filling policy supersedes it.
+The Rotate mode has been removed. A small rounded **SMOOTH** control toggles
+nearest/bilinear filtering. Its label rotates around the same physical-screen
+anchor; it has a cyan border when enabled. Software presentation samples the
+original source directly into the logical screen bitmap, compensating Window
+Server's display transform without allocating a rotated source.
 
 `camera_app` displays borrowed BGR565 or RGBX8888 frames through the Window
 Server at up to 30 Hz. `camera_app_gles2` uploads viewfinder frames into a GPU
@@ -54,7 +46,7 @@ obscure the live image. The former blue/magenta diagnostic clear is removed.
 
 If no camera is reported, the examples retain their synthetic rendering
 diagnostic. Opening, polling and startup timeout errors go to the SDK failure
-handler. Tap outside the buttons or press Select/Enter to change the resampling
+handler. Tap the screen or press Select/Enter to change the resampling
 filter; press Back
 or Escape to exit. The GLES target requires EGL and GLES2; configure with
 `-DSYMBIAN_CAMERA_GPU_PROBE=OFF` on devices without those libraries.

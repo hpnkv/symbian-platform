@@ -96,6 +96,14 @@ struct WindowFrameMetrics {
   std::uint32_t max_native_ticks = 0;
 };
 
+/** @brief Options applied before a native window becomes visible. */
+struct WindowSurfaceOptions {
+  // Keep the EGL drawable in physical panel coordinates across display mode
+  // changes. Window layout and pointer events remain in logical coordinates.
+  // This avoids replacing a camera's surface merely to rotate its controls.
+  bool fixed_egl_orientation = false;
+};
+
 /**
  * @brief Owns one Window Server window, its requests and optional RGB565 frame.
  *
@@ -106,9 +114,9 @@ struct WindowFrameMetrics {
 class WindowSurface final {
  public:
   static absl::StatusOr<WindowSurface> Create(
-      std::string_view task_caption = {});
+      std::string_view task_caption = {}, WindowSurfaceOptions options = {});
   static absl::StatusOr<std::unique_ptr<WindowSurface>> CreateUnique(
-      std::string_view task_caption = {});
+      std::string_view task_caption = {}, WindowSurfaceOptions options = {});
   WindowSurface(const WindowSurface&) = delete;
   WindowSurface& operator=(const WindowSurface&) = delete;
   WindowSurface(WindowSurface&& other) noexcept;
@@ -154,7 +162,8 @@ class WindowSurface final {
 
  private:
   WindowSurface();
-  absl::Status Open(std::string_view task_caption);
+  absl::Status Open(std::string_view task_caption,
+                    WindowSurfaceOptions options);
   absl::Status ValidateTextLines(std::span<const WindowTextLine> lines,
                                  int font_height_pixels) const;
   struct Impl;

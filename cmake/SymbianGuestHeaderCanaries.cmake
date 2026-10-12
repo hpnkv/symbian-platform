@@ -51,7 +51,7 @@ function(symbian_guest_api_header_canaries root)
   symbian_header_canary(symbian_camera_example_header_canary
     HEADERS "${root}/examples/camera_app/capture_preferences.h"
       "${root}/examples/camera_app/viewfinder_presentation.h"
-      "${root}/examples/camera_app/mode_controls.h"
+      "${root}/examples/camera_app/preview_controls.h"
     LIBRARIES symbian_api_camera symbian_api_display)
   symbian_header_canary(symbian_api_midi_output_public_header_canary
     HEADERS "${root}/cpp/symbian/api/include/symbian/api/media/midi_output.h"

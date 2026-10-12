@@ -443,18 +443,18 @@ bool internal::LastWindowClosedInForeground() {
 WindowSurface::WindowSurface() : impl_(new (std::nothrow) Impl) {}
 
 absl::StatusOr<WindowSurface> WindowSurface::Create(
-    std::string_view task_caption) {
+    std::string_view task_caption, WindowSurfaceOptions options) {
   WindowSurface result;
   if (result.impl_ == nullptr) {
     return absl::ResourceExhaustedError("window owner allocation failed");
   }
-  ABSL_RETURN_IF_ERROR(result.Open(task_caption));
+  ABSL_RETURN_IF_ERROR(result.Open(task_caption, options));
   return result;
 }
 
 absl::StatusOr<std::unique_ptr<WindowSurface>> WindowSurface::CreateUnique(
-    std::string_view task_caption) {
-  ABSL_ASSIGN_OR_RETURN(auto created, Create(task_caption));
+    std::string_view task_caption, WindowSurfaceOptions options) {
+  ABSL_ASSIGN_OR_RETURN(auto created, Create(task_caption, options));
   std::unique_ptr<WindowSurface> owner(new (std::nothrow)
                                            WindowSurface(std::move(created)));
   if (owner == nullptr) {
@@ -522,7 +522,8 @@ std::optional<std::uint32_t> WindowSurface::PrimaryRefreshRateHz() {
   return information().refresh_rate_hz;
 }
 
-absl::Status WindowSurface::Open(std::string_view task_caption) {
+absl::Status WindowSurface::Open(std::string_view task_caption,
+                                 WindowSurfaceOptions options) {
   if (impl_ == nullptr) {
     return absl::ResourceExhaustedError("window owner allocation failed");
   }
@@ -592,6 +593,10 @@ absl::Status WindowSurface::Open(std::string_view task_caption) {
     return NativeError(result, "window");
   }
   impl_->window_open = true;
+  if (options.fixed_egl_orientation) {
+    ABSL_RETURN_IF_ERROR(NativeError(impl_->window->FixNativeOrientation(),
+                                     "fixed EGL orientation"));
+  }
   // Window Server filters drag and move events by default. Touch tracking
   // needs the drag stream while the finger remains down.
   impl_->window->PointerFilter(EPointerFilterDrag | EPointerFilterMove, 0);
