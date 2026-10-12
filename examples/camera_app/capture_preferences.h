@@ -34,8 +34,9 @@ inline std::array<symbian::api::camera::FrameLayout, 8> CapturePreferences(
   return preferences;
 }
 
-// ECam is asked for the opening display orientation once. Later display
-// changes rotate sampling only; the capture mode and source storage stay put.
+// Compensate Window Server rotation relative to the frame's actual reference.
+// A requested width/height does not establish that reference or rotate pixels.
+// Capture storage stays unchanged; only presentation sampling is transformed.
 inline symbian::api::camera::FrameRotation PresentationRotation(
     symbian::api::display::DisplayRotation display,
     symbian::api::display::DisplayRotation opening_display) {

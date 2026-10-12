@@ -14,29 +14,30 @@ labels rotate there, with spacing adjusted to keep the same small gap in either
 orientation. Touch targets follow the rotated pills.
 
 **Rear camera** always requests a landscape stream, starting with 640×360 and
-falling back to 4:3 and smaller sizes. Once ECam supplies its actual frame size,
-the app chooses the same centered crop it would use on a landscape screen. For
-example, 640×480 retains all 640 columns and the middle 360 rows. That crop,
-source storage, stride and texture dimensions stay fixed through orientation
-changes. The renderer compensates for Window Server rotation so the image stays
-in the same position on the physical glass. Its portrait/landscape interpretation
-is carried separately in `ViewfinderGeometry.orientation` and `oriented_size`.
+falling back to 4:3 and smaller sizes. Capture storage, stride and texture
+dimensions stay fixed through orientation changes. ECam request dimensions do
+not establish a sensor mounting angle: the Nokia 808 bitmap is aligned with the
+native display. The renderer compensates only for Window Server rotation, so
+the image stays in the same position on the physical glass. Its orientation is
+carried separately in `ViewfinderGeometry.orientation` and `oriented_size`.
 A consumer saving or transferring a borrowed frame keeps that metadata alongside
 the original pixels; swapping raw width/height would corrupt its stride.
 
-**Rotate view** keeps the previous behavior: it requests 360×640 when selected
-in portrait or 640×360 in landscape, then rotates presentation relative to that
-opening orientation. Each mode retains one complete source axis and crops only
-the centered excess on the other, with no additional zoom or stretching. Both
-use the actual dimensions returned by ECam, including fallback sizes.
+**Rotate view** requests 360×640 when selected in portrait or 640×360 in
+landscape. These are preferences: the physical phone returned 360×270 for the
+portrait request. Both modes preserve the complete returned scene and use
+uniform aspect fit, with centered black margins when the frame and screen have
+different shapes. A portrait request no longer crops that fallback to a narrow
+151×270 strip and magnifies it. Matching frame/screen shapes fill the display.
 
-Switching modes can reopen capture and choose a new crop. Changing orientation
-alone does neither. Camera GL retains the same source texture and changes only
-sampling/presentation metadata while refreshing the EGL window surface. The
-software example borrows the same crop and samples into the current screen
-bitmap. A rear sensor is assumed to be mounted in the device's normal landscape
-orientation (90° from its native portrait display); physical-phone validation
-of that assumption remains necessary.
+Switching modes can reopen capture. Changing orientation alone does not. Camera
+GL retains the source texture and changes only sampling/presentation metadata
+while refreshing the EGL window surface. The software example samples the same
+source directly into a fitted screen rectangle and clears its margins. Neither
+path allocates a rotated source or assumes that requesting landscape pixels
+means adding a 90° rotation. On phones whose bitmap fallback cannot supply the
+requested shape, the two modes can show the same framing at different capture
+resolutions.
 
 `camera_app` displays borrowed BGR565 or RGBX8888 frames through the Window
 Server at up to 30 Hz. `camera_app_gles2` uploads viewfinder frames into a GPU

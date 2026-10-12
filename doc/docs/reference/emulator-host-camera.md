@@ -155,7 +155,7 @@ They do not establish physical-phone camera orientation behavior or Linux
 camera execution. Firmware copying is outside the observed camera interval.
 
 
-## Rear sensor presentation and mode buttons
+## Initial rear sensor presentation and mode buttons (superseded below)
 
 The default is now **Rear camera**, selected by the REAR overlay button.
 Capture negotiates landscape dimensions once, even if opened in portrait.
@@ -207,3 +207,60 @@ Five native presentation tests, host/guest header canaries, both guest app
 builds and style checks pass. Text logs, source snapshots and artifact hashes
 are archived under `~/.symbian-dev/research/camera-modes-20261012`; camera
 photographs and firmware remain outside that archive.
+
+
+## Physical Nokia 808 fallback correction
+
+The owner observed a clockwise quarter-turn in Rear mode in both orientations,
+and a magnified scene in Rotate mode. The 1.0.27 phone trace establishes the
+actual returned dimensions and application transforms:
+
+| Mode | Returned bitmap | Previous source rectangle | Previous portrait presentation |
+| --- | --- | --- | --- |
+| Rear | 480×360 | (0,45,480,270) | Added a clockwise 90° turn, then filled 360×640 |
+| Rotate | 360×270 | (104,0,151,270) | Filled 360×644, discarding 209 of the 360 source columns |
+
+The first transform assumed that requesting landscape also described the
+bitmap's mounting orientation. It does not: the phone's bitmap is aligned to
+the native display. The second assumed that the phone honored a portrait
+request, although its bitmap was 4:3. Filling portrait then retained only about
+42% of its columns, giving roughly 2.38× magnification. Emulator tests had
+returned the requested dimensions and checked metadata rather than a known
+physical scene; their success did not establish the phone's orientation.
+
+The owner chose the complete stream with margins when the requested full-screen
+shape is unavailable. Both examples now preserve every returned source pixel.
+They compensate Window Server rotation relative to the native display, without
+a fixed 90° offset or an inferred opening-orientation offset. GPU presentation
+uses SDK `AspectFitViewport`; software uses SDK `CenteredAspectFit` and
+`TransformFrame` into a rectangle within the existing screen bitmap. Black
+margins replace the former tight crop, with no source recopy or resampling pass
+on orientation changes. The image retains its proportions. The two mode buttons
+keep their compact layout around the same physical-screen group anchor.
+
+For the observed phone frames, both 480×360 and 360×270 now occupy 360×270
+inside a 360×640 portrait window, with 185-pixel top and bottom margins. At a
+90° display rotation they occupy 270×360 centered in the 640×360 logical
+window. These are the same physical-screen rectangle. Native calibration uses
+four distinct corners and a 96×96 central square in a padded 480×360 source.
+It requires all corners, a 72×72 output square and identical physical-screen
+pixels at all four rotations, with the source storage unchanged. Tests also
+cover opening in landscape and the exact 360×270 portrait fallback.
+
+The earlier aspect-fill and 90° reference descriptions above document the
+superseded experiments. The emulator's Qt aspect correction is still required:
+it preserves proportions before delivering a guest bitmap, while this fix
+preserves the complete bitmap returned by ECam. Phone optical correctness of
+the updated build still requires an on-device run.
+
+
+The corrected build passed seven native presentation tests and all four real
+host-camera backend/opening-orientation cases (100.22 seconds including fixture
+setup). There were 36 measured 60-frame intervals of 1977–2001 ms; these are
+emulator throughput measurements, not physical-phone startup times. Tests check
+complete source rectangles in both modes, fitted viewport sizes, black margins,
+button border pixels, mode-selection input, six rotations per case and normal
+camera/guest/frontend shutdown. Both guest apps, host/guest header canaries and
+style checks pass. The signed 1.0.28 phone package contains the exact E32 tested
+in all four emulator cases. The old phone trace and final text/hash evidence are
+retained under `~/.symbian-dev/research/camera-phone-framing-20261012`.

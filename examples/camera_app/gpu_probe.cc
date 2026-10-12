@@ -258,7 +258,7 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
   TraceGeometry(window_size, size, window->rotation());
   Trace("GPU: texture and presenter done");
   ABSL_ASSIGN_OR_RETURN(auto waiting_shapes, display::GlesRectBatch::Create());
-  ViewfinderPresentation viewfinder(window->rotation(), window_size);
+  ViewfinderPresentation viewfinder(window_size);
   ABSL_RETURN_IF_ERROR(DrawWaiting(&presenter, &waiting_shapes, size,
                                    time::MonotonicClock::NowNanoseconds()));
   DrawControls(&waiting_shapes, size, window->rotation(), viewfinder.mode());
@@ -304,7 +304,7 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
     if (mode == viewfinder.mode()) {
       return;
     }
-    viewfinder.Configure(mode, window->rotation(), window->size());
+    viewfinder.Configure(mode, window->size());
     restart_pending = true;
     redraw_pending = true;
     Trace(mode == ViewfinderMode::kRearCamera ? "GPU: mode rear"
@@ -527,10 +527,10 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
     const int image_width = geometry.oriented_size.width;
     const int image_height = geometry.oriented_size.height;
     ABSL_ASSIGN_OR_RETURN(
-        auto viewport, display::AspectFillViewport(size.width, size.height,
-                                                   image_width, image_height));
+        auto viewport, display::AspectFitViewport(size.width, size.height,
+                                                  image_width, image_height));
     if (first_frame || redraw_pending) {
-      std::string viewport_detail("GPU: fill viewport=");
+      std::string viewport_detail("GPU: fit viewport=");
       AppendDecimal(viewport.width, &viewport_detail);
       viewport_detail.push_back('x');
       AppendDecimal(viewport.height, &viewport_detail);
@@ -538,6 +538,10 @@ absl::Status RunGpuWindow(display::WindowSurface* absl_nonnull window) {
       AppendDecimal(image_width, &viewport_detail);
       viewport_detail.push_back('x');
       AppendDecimal(image_height, &viewport_detail);
+      viewport_detail.append(" window=");
+      AppendDecimal(size.width, &viewport_detail);
+      viewport_detail.push_back('x');
+      AppendDecimal(size.height, &viewport_detail);
       Trace(viewport_detail);
       std::string bounds("GPU: view crop=");
       for (int value : {content.x, content.y, content.width, content.height}) {

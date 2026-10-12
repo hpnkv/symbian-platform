@@ -160,7 +160,8 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                 )
                 logical_size = "640x360" if landscape else "360x640"
                 assert f"GPU: geometry window={logical_size}" in diagnostic
-                assert f"GPU: fill viewport={logical_size}" in diagnostic
+                assert "GPU: fit viewport=" in diagnostic
+                assert f"window={logical_size}" in diagnostic
                 assert "camera GPU swap done" in diagnostic
                 assert "GPU: stream unavailable" not in diagnostic
                 frame = _retry(control.capture, "live-host-camera")
@@ -200,6 +201,10 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                     crop = re.findall(r"GPU: view crop=([\d,]+)", mode_start)[
                         -1
                     ]
+                    source_width, source_height = map(
+                        int, source_size.split("x")
+                    )
+                    assert crop == f"0,0,{source_width},{source_height},"
                     if presentation == "rear":
                         assert source_size == "640x360"
                         assert crop == "0,0,640,360,"
@@ -207,6 +212,19 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                         previous = log.read_text(errors="replace")
                         change = _retry(control.screen_mode, mode)
                         expected = "640x360" if mode else "360x640"
+                        image_width, image_height = (
+                            (source_height, source_width)
+                            if mode
+                            else (source_width, source_height)
+                        )
+                        width, height = (640, 360) if mode else (360, 640)
+                        if width * image_height > height * image_width:
+                            fit_width = height * image_width // image_height
+                            fit_height = height
+                        else:
+                            fit_width = width
+                            fit_height = width * image_height // image_width
+                        expected_fit = f"{fit_width}x{fit_height}"
                         assert (change["width"], change["height"]) == (
                             (640, 360) if mode else (360, 640)
                         )
@@ -216,7 +234,8 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                                 len(previous) :
                             ]
                             if (
-                                f"GPU: fill viewport={expected}" in updated
+                                f"GPU: fit viewport={expected_fit}" in updated
+                                and f"window={expected}" in updated
                                 and "GPU: presented 60 frames in " in updated
                             ):
                                 break
@@ -241,6 +260,10 @@ def test_camera_gl_receives_host_frames(tmp_path, backend, landscape):
                             assert image.size == (
                                 (1280, 720) if mode else (720, 1280)
                             )
+                            if (fit_width, fit_height) != (width, height):
+                                assert image.convert("RGB").getpixel(
+                                    (0, 0)
+                                ) == (0, 0, 0)
                             # The group stays at physical (180,584), with an
                             # eight-pixel gap between pills in either rotation.
                             # Check each pill's logical top-center border.

@@ -131,16 +131,8 @@ class SoftwareFrameConsumer final {
         auto geometry,
         viewfinder_->Describe(source_->layout.width, source_->layout.height,
                               window_->rotation()));
-    ABSL_ASSIGN_OR_RETURN(auto source,
-                          camera::CropFrameView(*source_, geometry.crop));
-    camera::MutableFrameView output;
-    output.layout = {.width = frame.size.width,
-                     .height = frame.size.height,
-                     .format = camera::PixelFormat::kRgb565,
-                     .stride_bytes = {frame.pitch_bytes, 0, 0}};
-    output.planes[0] = frame.pixels;
-    ABSL_RETURN_IF_ERROR(camera::TransformFrame(source, output, *filter_,
-                                                nullptr, geometry.orientation));
+    ABSL_RETURN_IF_ERROR(
+        RenderSoftwareViewfinder(*source_, frame, geometry, *filter_));
     DrawControls(frame, window_->rotation(), viewfinder_->mode());
     return absl::OkStatus();
   }
@@ -160,7 +152,7 @@ absl::Status RunWindow(display::WindowSurface* absl_nonnull window) {
   const bool discovery_ok = inventory.ok();
   const bool camera_present = inventory.ok() && inventory->available_count > 0;
   camera::CameraStream stream;
-  ViewfinderPresentation viewfinder(window->rotation(), window->size());
+  ViewfinderPresentation viewfinder(window->size());
   Trace("software: mode rear");
   if (camera_present) {
     Trace("software: stream open begin");
@@ -192,7 +184,7 @@ absl::Status RunWindow(display::WindowSurface* absl_nonnull window) {
     if (mode == viewfinder.mode()) {
       return;
     }
-    viewfinder.Configure(mode, window->rotation(), window->size());
+    viewfinder.Configure(mode, window->size());
     restart_pending = true;
     Trace(mode == ViewfinderMode::kRearCamera ? "software: mode rear"
                                               : "software: mode rotate");
